@@ -281,6 +281,32 @@ describe('checkHelpCatalog on a synthetic repo', () => {
         expect(predicatesOf(tree)).toEqual([]);
     });
 
+    it('accepts section:accommodation.politicas linked by its token, and drops a web-only slug in neither list', () => {
+        // Arrange
+        const withAnchor = (anchor: string, token: string) =>
+            greenCatalog({
+                c: {
+                    frontmatter: { covers: ['page:mi-cuenta/suscripcion', anchor] },
+                    canDo: `Ir a {{link:subscription}}, ${token} y {{article:a|a}}.`
+                }
+            });
+        const tree = syntheticTree({
+            files: withAnchor(
+                'section:accommodation.politicas',
+                '{{link:section:accommodation:politicas}}'
+            )
+        });
+        put(tree.root, `${PORTAL_PAGES_DIR}/mi-cuenta/propiedades/[id]/editar/politicas.astro`);
+        const webOnly = syntheticTree({
+            files: withAnchor('section:accommodation.reglas', '{{link:subscription}}')
+        });
+        put(webOnly.root, `${PORTAL_PAGES_DIR}/mi-cuenta/propiedades/[id]/editar/reglas.astro`);
+
+        // Act / Assert
+        expect(predicatesOf(tree)).toEqual([]);
+        expect(predicatesOf(webOnly)).toEqual(['IL-1', 'a5']);
+    });
+
     it('fails a6 on a limit token naming no limit key (AC-27)', () => {
         expect(
             predicatesOf(

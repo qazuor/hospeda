@@ -2,11 +2,12 @@
  * @file destination.schema.ts
  * @description `HelpDestination` (HOS-2410 `docs/data-model.md` §2.1): where an
  * article sends the owner. Any portal destination that names no record, or an
- * editor section of one of the owner's own listings (`ownEditorSection`, which
+ * editor page of one of the owner's own listings (`ownEditorSection`, which
  * `get_help` fills in from the caller's listings). Each may carry a `label`.
  */
 
 import {
+    EDITOR_NON_SECTION_PAGE_SLUGS,
     EDITOR_SECTION_SLUGS,
     PORTAL_PAGE_LABELS,
     PORTAL_ROUTE_TEMPLATES,
@@ -46,13 +47,20 @@ const label = z.string().min(1).max(HELP_DESTINATION_LABEL_MAX).optional();
 /** A destination of one kind that carries nothing but the kind. */
 const bare = <K extends string>(kind: K) => z.object({ kind: z.literal(kind), label }).strict();
 
-/** An editor section of one vertical, by catalog section id. */
+/**
+ * An editor page of one vertical: a catalog section id, or the id of an editor
+ * page that is not a catalog section (`EDITOR_NON_SECTION_PAGE_SLUGS`, such as
+ * the accommodation `policies` page).
+ */
 const ownEditorSection = <V extends 'accommodation' | 'venue' | 'experience'>(vertical: V) =>
     z
         .object({
             kind: z.literal('ownEditorSection'),
             vertical: z.literal(vertical),
-            section: z.enum(keysOf(EDITOR_SECTION_SLUGS[vertical])),
+            section: z.enum([
+                ...keysOf(EDITOR_SECTION_SLUGS[vertical]),
+                ...keysOf(EDITOR_NON_SECTION_PAGE_SLUGS[vertical])
+            ]),
             label
         })
         .strict();

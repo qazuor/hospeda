@@ -103,6 +103,8 @@ describe('HelpDestinationSchema', () => {
     it.each([
         { kind: 'plans', vertical: 'venue', label: 'Planes' },
         { kind: 'ownEditorSection', vertical: 'venue', section: 'menu' },
+        { kind: 'ownEditorSection', vertical: 'accommodation', section: 'policies' },
+        { kind: 'ownEditorSection', vertical: 'experience', section: 'aiQuestions' },
         { kind: 'page', page: 'accountHome' },
         { kind: 'helpArticle', id: 'photos' },
         { kind: 'partnerPanel' }
@@ -115,6 +117,7 @@ describe('HelpDestinationSchema', () => {
         { kind: 'declareBenefitUsage', slug: 'x' },
         { kind: 'page', page: 'promotionEdit' },
         { kind: 'ownEditorSection', vertical: 'accommodation', section: 'menu' },
+        { kind: 'ownEditorSection', vertical: 'venue', section: 'policies' },
         { kind: 'plans', vertical: 'tourist' },
         { kind: 'faq', url: 'https://example.test' }
     ])('rejects %j', (destination) => {

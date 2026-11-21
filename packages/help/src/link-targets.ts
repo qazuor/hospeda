@@ -11,15 +11,34 @@
  */
 
 import {
+    EDITOR_NON_SECTION_PAGE_SLUGS,
     EDITOR_SECTION_SLUGS,
+    editorSlugOf,
     PORTAL_ROUTE_TEMPLATES,
     type PortalListingVertical
 } from '@repo/portal-routes';
 import {
     HELP_STATIC_PAGE_KEYS,
     type HelpDestination,
+    HelpDestinationSchema,
     type HelpStaticPageKey
 } from './destination.schema';
+
+/** Per vertical, every editor page id a `section` link may name. */
+const HELP_EDITOR_PAGE_IDS: Readonly<Record<PortalListingVertical, readonly string[]>> = {
+    accommodation: [
+        ...Object.keys(EDITOR_SECTION_SLUGS.accommodation),
+        ...Object.keys(EDITOR_NON_SECTION_PAGE_SLUGS.accommodation)
+    ],
+    venue: [
+        ...Object.keys(EDITOR_SECTION_SLUGS.venue),
+        ...Object.keys(EDITOR_NON_SECTION_PAGE_SLUGS.venue)
+    ],
+    experience: [
+        ...Object.keys(EDITOR_SECTION_SLUGS.experience),
+        ...Object.keys(EDITOR_NON_SECTION_PAGE_SLUGS.experience)
+    ]
+};
 
 /** How many arguments a target takes and what they mean. */
 type LinkTargetArity = 'none' | 'vertical' | 'section' | 'page';
@@ -118,7 +137,13 @@ function listingVertical(arg: string | undefined): PortalListingVertical | undef
     return LISTING_VERTICALS.find((vertical) => vertical === arg);
 }
 
-/** The catalog section id of an editor slug of a vertical, or `undefined`. */
+/**
+ * The `ownEditorSection` destination of an editor slug of a vertical: a catalog
+ * section slug or the slug of an editor page that is not a catalog section
+ * (`EDITOR_NON_SECTION_PAGE_SLUGS`). `undefined` when the vertical has neither.
+ * The ids come from the destination schema, so a slug resolves exactly when the
+ * schema would accept its destination.
+ */
 function sectionIdOfSlug({
     vertical,
     slug
@@ -126,35 +151,21 @@ function sectionIdOfSlug({
     readonly vertical: PortalListingVertical;
     readonly slug: string;
 }): HelpDestination | undefined {
-    switch (vertical) {
-        case 'accommodation': {
-            const slugs = EDITOR_SECTION_SLUGS.accommodation;
-            const section = (Object.keys(slugs) as Array<keyof typeof slugs>).find(
-                (id) => slugs[id] === slug
-            );
-            return section === undefined
-                ? undefined
-                : { kind: 'ownEditorSection', vertical, section };
-        }
-        case 'venue': {
-            const slugs = EDITOR_SECTION_SLUGS.venue;
-            const section = (Object.keys(slugs) as Array<keyof typeof slugs>).find(
-                (id) => slugs[id] === slug
-            );
-            return section === undefined
-                ? undefined
-                : { kind: 'ownEditorSection', vertical, section };
-        }
-        case 'experience': {
-            const slugs = EDITOR_SECTION_SLUGS.experience;
-            const section = (Object.keys(slugs) as Array<keyof typeof slugs>).find(
-                (id) => slugs[id] === slug
-            );
-            return section === undefined
-                ? undefined
-                : { kind: 'ownEditorSection', vertical, section };
+    for (const candidate of HELP_EDITOR_PAGE_IDS[vertical]) {
+        const destination = HelpDestinationSchema.safeParse({
+            kind: 'ownEditorSection',
+            vertical,
+            section: candidate
+        });
+        if (
+            destination.success &&
+            destination.data.kind === 'ownEditorSection' &&
+            editorSlugOf({ vertical, section: destination.data.section }) === slug
+        ) {
+            return destination.data;
         }
     }
+    return undefined;
 }
 
 /**

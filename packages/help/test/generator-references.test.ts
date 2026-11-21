@@ -116,6 +116,24 @@ describe('buildHelpIndex', () => {
             ).toEqual(['a6']);
         });
 
+        it('lets a token link a covered editor page that is not a catalog section (politicas)', () => {
+            // Arrange: a5 accepts section:accommodation.politicas, so a token must be able to link it.
+            const covers = {
+                covers: ['page:mi-cuenta/suscripcion', 'section:accommodation.politicas']
+            };
+            const unlinked = greenCatalog({ a: { frontmatter: covers } });
+            const linked = greenCatalog({
+                a: {
+                    frontmatter: covers,
+                    canDo: 'Ir a {{link:subscription}}, {{link:section:accommodation:politicas}} y {{article:b|el otro}}.'
+                }
+            });
+
+            // Act / Assert
+            expect(predicatesOf(unlinked)).toEqual(['IL-1']);
+            expect(predicatesOf(linked)).toEqual([]);
+        });
+
         it('fails IL-1 for a covered editor section, and passes once it is linked', () => {
             // Arrange
             const covers = { covers: ['page:mi-cuenta/suscripcion', 'section:venue.carta'] };

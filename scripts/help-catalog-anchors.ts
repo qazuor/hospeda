@@ -11,7 +11,7 @@
  * | Kind | Resolves when |
  * |---|---|
  * | `page` | `<path>.astro` or `<path>/index.astro` exists under the web pages dir |
- * | `section` | the vertical's editor section page exists and the slug is a shared editor slug or a `slug: '<x>'` literal of the vertical's web editor registry |
+ * | `section` | the slug is in the vertical's `EDITOR_SECTION_SLUGS` or `EDITOR_NON_SECTION_PAGE_SLUGS` (the same lists a `{{link:section}}` token resolves from, so a5 and IL-1 agree) and its editor page exists |
  * | `entitlement` / `limit` | a value of `EntitlementKeyEnum` / `LimitKeyEnum` |
  * | `enum` | a value of `PublicationStatusEnum`, `SUBSCRIPTION_STATUSES` or `TrialStatusEnum` |
  * | `tool` | a `name: '<x>'` (or `*_TOOL_NAME = '<x>'`) of a `defineTool` under `apps/api/src/mcp/tools` |
@@ -19,7 +19,8 @@
  * | `file` | the file exists |
  *
  * Does NOT see: whether a `section` slug still belongs to the section the
- * article talks about (only that its page exists); a tool defined without a
+ * article talks about (only that its page exists); a web editor page that is
+ * in neither list (add it to `EDITOR_NON_SECTION_PAGE_SLUGS`); a tool defined without a
  * literal name; a vocabulary added to the enum list without a source here.
  */
 
@@ -27,11 +28,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseHelpAnchor } from '../packages/help/src/anchors.js';
 import {
+    EDITOR_NON_SECTION_PAGE_SLUGS,
     EDITOR_SECTION_SLUGS,
     EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
     PORTAL_ROUTE_TEMPLATES,
-    PORTAL_SECTION_PLACEHOLDER,
-    type PortalListingVertical
+    PORTAL_SECTION_PLACEHOLDER
 } from '../packages/portal-routes/src/index.js';
 import { EntitlementKeyEnum, LimitKeyEnum } from '../packages/schemas/src/catalog/key-enums.js';
 import { VERTICAL_ACTIVATION_EVENT_BY_VERTICAL } from '../packages/schemas/src/catalog/vertical-activation-event.js';
@@ -45,13 +46,6 @@ export const SUBSCRIPTION_STATUSES_FILE =
 
 /** Where the MCP tools are defined. */
 export const MCP_TOOLS_DIR = 'apps/api/src/mcp/tools';
-
-/** The web editor registry of each vertical, which may add web-only slugs. */
-export const WEB_EDITOR_REGISTRY_FILES: Readonly<Record<PortalListingVertical, string>> = {
-    accommodation: 'apps/web/src/lib/editor/accommodation-editor-sections.ts',
-    venue: 'apps/web/src/lib/editor/listing-editor-registry.ts',
-    experience: 'apps/web/src/lib/editor/listing-editor-registry.ts'
-};
 
 /** The closed vocabularies an anchor resolves against. Injectable for the tests. */
 export interface HelpRepoVocabularies {
@@ -120,14 +114,11 @@ function sectionResolves({ root, target }: { readonly root: string; readonly tar
     if (vertical !== 'accommodation' && vertical !== 'venue' && vertical !== 'experience') {
         return false;
     }
-    const shared: readonly string[] = Object.values(EDITOR_SECTION_SLUGS[vertical]);
-    const registry = join(root, WEB_EDITOR_REGISTRY_FILES[vertical]);
-    const webOnly = existsSync(registry)
-        ? [...readFileSync(registry, 'utf8').matchAll(/slug:\s*'([a-z0-9-]+)'/g)].map(
-              (match) => match[1]
-          )
-        : [];
-    if (!shared.includes(slug) && !webOnly.includes(slug)) {
+    const slugs: readonly string[] = [
+        ...Object.values(EDITOR_SECTION_SLUGS[vertical]),
+        ...Object.values(EDITOR_NON_SECTION_PAGE_SLUGS[vertical])
+    ];
+    if (!slugs.includes(slug)) {
         return false;
     }
     const template = PORTAL_ROUTE_TEMPLATES[EDITOR_SECTION_TEMPLATE_BY_VERTICAL[vertical]];

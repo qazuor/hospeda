@@ -134,6 +134,11 @@ describe('resolveHelpLinkTarget', () => {
         [['create', 'venue'], 'publicar/comer-y-salir'],
         [['inquiries'], 'mi-cuenta/consultas-propietario'],
         [['help'], 'mi-cuenta/ayuda'],
+        [['section', 'accommodation', 'politicas'], 'mi-cuenta/propiedades/[id]/editar/politicas'],
+        [
+            ['section', 'venue', 'preguntas-ia'],
+            'mi-cuenta/comercio/[vertical]/[id]/editar/preguntas-ia'
+        ],
         [['page', 'accountHome'], 'mi-cuenta'],
         [['page', 'promotionNew'], 'mi-cuenta/promociones/nueva']
     ])('resolves %j to the page %s', (args, template) => {
@@ -151,7 +156,7 @@ describe('resolveHelpLinkTarget', () => {
         [['faq', 'extra']],
         [['section', 'venue']],
         [['section', 'venue', 'calendario']],
-        [['section', 'accommodation', 'politicas']],
+        [['section', 'venue', 'politicas']],
         [['page']],
         [['page', 'nope']],
         [['page', 'accountHome', 'extra']],

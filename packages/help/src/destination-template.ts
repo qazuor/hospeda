@@ -6,7 +6,7 @@
  */
 
 import {
-    EDITOR_SECTION_SLUGS,
+    editorSlugOf,
     type PortalDestination,
     portalDestinationTemplate
 } from '@repo/portal-routes';
@@ -55,13 +55,12 @@ export function helpDestinationTemplate({
  * The editor slug of an `ownEditorSection` destination.
  *
  * @param args.destination - An editor-section destination
- * @returns The slug, for example `fotos`
+ * @returns The slug, for example `fotos` or `politicas`
  */
 export function helpEditorSectionSlug({
     destination
 }: {
     readonly destination: Extract<HelpDestination, { readonly kind: 'ownEditorSection' }>;
 }): string {
-    const slugs: Readonly<Record<string, string>> = EDITOR_SECTION_SLUGS[destination.vertical];
-    return slugs[destination.section] ?? '';
+    return editorSlugOf({ vertical: destination.vertical, section: destination.section }) ?? '';
 }
