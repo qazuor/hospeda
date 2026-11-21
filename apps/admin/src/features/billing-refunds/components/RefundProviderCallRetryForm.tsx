@@ -26,12 +26,15 @@ const BASE = 'admin-billing.proposedRefunds.providerRetry';
 const RETRY_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
     REFUND_NOT_CONFIRMED: `${BASE}.rejections.REFUND_NOT_CONFIRMED`,
     REFUND_HAS_NO_UNANSWERED_CALL: `${BASE}.rejections.REFUND_HAS_NO_UNANSWERED_CALL`,
-    REFUND_PAST_PROVIDER_WINDOW: `${BASE}.rejections.REFUND_PAST_PROVIDER_WINDOW`
+    REFUND_PAST_PROVIDER_WINDOW: `${BASE}.rejections.REFUND_PAST_PROVIDER_WINDOW`,
+    REFUND_RETRY_IN_PROGRESS: `${BASE}.rejections.REFUND_RETRY_IN_PROGRESS`,
+    REFUND_CALL_TOO_OLD_TO_RETRY: `${BASE}.rejections.REFUND_CALL_TOO_OLD_TO_RETRY`
 };
 
 /** Copy for each resent call's outcome. */
 const CALL_OUTCOME_KEYS: Readonly<Record<RefundProviderCallRetryCallOutcome, TranslationKey>> = {
     SENT: `${BASE}.calls.SENT`,
+    FOUND_AT_PROVIDER: `${BASE}.calls.FOUND_AT_PROVIDER`,
     AWAITING_PROVIDER_ANSWER: `${BASE}.calls.AWAITING_PROVIDER_ANSWER`,
     PROVIDER_KEY_CONFLICT: `${BASE}.calls.PROVIDER_KEY_CONFLICT`,
     PROVIDER_REJECTED_FAILED: `${BASE}.calls.PROVIDER_REJECTED_FAILED`
@@ -65,7 +68,12 @@ export function retrySummaryKey({
 }): TranslationKey {
     if (response.status === 'EXECUTED') return `${BASE}.summary.EXECUTED`;
     if (response.status === 'FAILED') return `${BASE}.summary.FAILED`;
-    if (response.calls.every((call) => call.outcome === 'SENT'))
+    // An empty `calls` means every call was already accepted and only RF3 ran again.
+    if (
+        response.calls.every(
+            (call) => call.outcome === 'SENT' || call.outcome === 'FOUND_AT_PROVIDER'
+        )
+    )
         return `${BASE}.summary.WAITING_ACCREDITATION`;
     return `${BASE}.summary.STILL_UNANSWERED`;
 }

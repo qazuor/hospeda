@@ -181,6 +181,37 @@ describe('retry helpers', () => {
                 })
             })
         ).toBe(`${base}.STILL_UNANSWERED`);
+        expect(
+            retrySummaryKey({
+                response: response({
+                    status: 'CONFIRMED',
+                    execution: 'NOT_ACCREDITED_KEPT_CONFIRMED',
+                    calls: [{ idempotencyKey: KEY, outcome: 'FOUND_AT_PROVIDER' }]
+                })
+            })
+        ).toBe(`${base}.WAITING_ACCREDITATION`);
+        // Only RF3 ran again: every call was already accepted.
+        expect(
+            retrySummaryKey({
+                response: response({
+                    status: 'CONFIRMED',
+                    execution: 'NOT_ACCREDITED_KEPT_CONFIRMED',
+                    calls: []
+                })
+            })
+        ).toBe(`${base}.WAITING_ACCREDITATION`);
+    });
+
+    it('maps a concurrent retry to its own advice', () => {
+        expect(readRetryRejection({ error: rejection('REFUND_RETRY_IN_PROGRESS', 409) })).toBe(
+            'admin-billing.proposedRefunds.providerRetry.rejections.REFUND_RETRY_IN_PROGRESS'
+        );
+    });
+
+    it('maps a call too old to retry to the panel advice', () => {
+        expect(readRetryRejection({ error: rejection('REFUND_CALL_TOO_OLD_TO_RETRY', 409) })).toBe(
+            'admin-billing.proposedRefunds.providerRetry.rejections.REFUND_CALL_TOO_OLD_TO_RETRY'
+        );
     });
 
     it('maps the past-window refusal to its own advice and a 500 to the server error', () => {

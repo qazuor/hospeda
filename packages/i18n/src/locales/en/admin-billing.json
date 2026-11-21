@@ -2355,28 +2355,31 @@
         },
         "providerRetry": {
             "title": "Retry with Mercado Pago",
-            "description": "For a confirmed refund stuck because MP did not answer a call (timeout, error or empty response). Each unanswered call is sent again with the same idempotency key, so MP does not refund twice what it had already processed.",
+            "description": "For a confirmed refund stuck because MP did not answer a call (timeout, error or empty response), or one MP accepted that does not show as credited yet. Before resending, the charge is read at MP: if the refund is already there, it is taken and nothing is resent. Only if it does not show up is the call resent, with its same idempotency key.",
             "refundId": "Refund ID",
             "review": "Review",
-            "confirmText": "The unanswered calls of refund {{refundId}} are sent again to Mercado Pago, with their same key. If MP credits it, the refund closes.",
+            "confirmText": "The charge is read at Mercado Pago for refund {{refundId}}. If the refund already shows up, it is taken without resending; otherwise each unanswered call is resent with its same key. If MP shows it credited, the refund closes.",
             "confirm": "Retry with MP",
             "back": "Back",
             "summary": {
                 "EXECUTED": "MP accepted and credited the refund. It is executed.",
-                "WAITING_ACCREDITATION": "MP accepted the call but does not show it credited yet. The refund stays confirmed and closes on MP's next notice.",
+                "WAITING_ACCREDITATION": "MP has the refund, but it does not show as credited yet. It stays confirmed: it closes with MP's next notice, or by pressing «Retry with MP» again, which reads the charge again.",
                 "FAILED": "MP rejected the call. The refund failed: check the MP panel before refunding by hand (action 14).",
                 "STILL_UNANSWERED": "A call still has no usable answer. Retry later or follow the refunds runbook (§8)."
             },
             "calls": {
                 "SENT": "accepted by MP",
+                "FOUND_AT_PROVIDER": "already at MP: taken without resending",
                 "AWAITING_PROVIDER_ANSWER": "still unanswered",
                 "PROVIDER_KEY_CONFLICT": "MP refused the key as reused: follow the refunds runbook (§8)",
                 "PROVIDER_REJECTED_FAILED": "rejected by MP"
             },
             "rejections": {
                 "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund can be retried.",
-                "REFUND_HAS_NO_UNANSWERED_CALL": "The refund has no unanswered call: there is nothing to retry.",
-                "REFUND_PAST_PROVIDER_WINDOW": "More than 180 days have passed since the charge: MP would refuse any call without saying whether the first one went out. Check the MP panel by hand (refunds runbook, §8)."
+                "REFUND_HAS_NO_UNANSWERED_CALL": "The refund has no unanswered call and no accepted call waiting to be credited: there is nothing to retry.",
+                "REFUND_PAST_PROVIDER_WINDOW": "More than 180 days have passed since the charge: MP would refuse any call without saying whether the first one went out. Check the MP panel by hand (refunds runbook, §8).",
+                "REFUND_RETRY_IN_PROGRESS": "A retry of this refund is already running. Wait for it to finish and check its result.",
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and is no longer resent. Check the charge in the Mercado Pago panel and settle the refund through the panel: \"Record what already happened outside the system (action 14)\" or \"Settle the remainder of a partially accepted refund\"."
             }
         }
     },
