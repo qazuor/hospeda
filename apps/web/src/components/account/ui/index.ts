@@ -8,6 +8,7 @@
  * @module components/account/ui
  */
 
+export { AccountFooter, type AccountFooterProps } from './AccountFooter';
 export { Alert, type AlertProps, type AlertTone } from './Alert';
 export {
     AsyncRegion,
