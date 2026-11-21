@@ -102,15 +102,16 @@ export function ConversationReply(props: ConversationReplyProps) {
             setBody('');
             setSuccess(true);
             onMessageSent?.();
-            // The thread is SSR-rendered: swap its message list in place instead
-            // of reloading the page (HOS-2439), which would also drop scroll and
-            // focus. If the refresh cannot run, the reply is still sent and the
-            // success message stays visible.
+            // The thread is SSR-rendered: swap its container in place instead of
+            // reloading (HOS-2439), which would drop scroll and focus. When the
+            // swap is impossible (network error, redirected to login, markup
+            // missing) fall back to a reload so the sent reply is never invisible.
             if (typeof window !== 'undefined') {
-                await refreshConversationThread({
+                const { refreshed } = await refreshConversationThread({
                     doc: window.document,
                     pageUrl: window.location.href
                 });
+                if (!refreshed) window.location.reload();
             }
         } catch {
             setError(t('conversations.errors.messageSendFailed'));

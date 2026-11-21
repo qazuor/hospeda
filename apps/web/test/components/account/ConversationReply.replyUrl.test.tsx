@@ -10,7 +10,7 @@
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConversationReply } from '../../../src/components/account/ConversationReply.client';
 
 // Mock getApiUrl to return a predictable base URL
@@ -19,6 +19,15 @@ vi.mock('@/lib/env', () => ({
 }));
 
 describe('ConversationReply — replyUrl prop (SPEC-206)', () => {
+    // A send whose thread refresh fails falls back to a reload (HOS-2439); jsdom
+    // cannot navigate, so keep that fallback inert here.
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { href: 'http://localhost/es/mi-cuenta/consultas/c/', reload: vi.fn() }
+        });
+    });
+
     it('renders the reply form with textarea and submit button', () => {
         render(
             <ConversationReply

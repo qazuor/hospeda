@@ -16,7 +16,7 @@ vi.mock('@/lib/env', () => ({
     getApiUrl: () => 'http://localhost:3001'
 }));
 
-const THREAD_AFTER = `<html><body><ol class="conv-thread__messages astro-x"><li>Primer mensaje</li><li>Respuesta nueva</li></ol></body></html>`;
+const THREAD_AFTER = `<html><body><div data-conversation-thread><ol class="conv-thread__messages astro-x"><li>Primer mensaje</li><li>Respuesta nueva</li></ol></div></body></html>`;
 
 describe('ConversationReply — no reload (HOS-2439)', () => {
     const reload = vi.fn();
@@ -32,7 +32,7 @@ describe('ConversationReply — no reload (HOS-2439)', () => {
             }
         });
         document.body.innerHTML =
-            '<ol class="conv-thread__messages astro-x"><li>Primer mensaje</li></ol>';
+            '<div data-conversation-thread><ol class="conv-thread__messages astro-x"><li>Primer mensaje</li></ol></div>';
     });
 
     afterEach(() => {
@@ -75,6 +75,31 @@ describe('ConversationReply — no reload (HOS-2439)', () => {
         );
         await new Promise((r) => setTimeout(r, 800));
         expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('falls back to a reload when the thread cannot be refreshed', async () => {
+        const user = userEvent.setup();
+        vi.spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ id: 'm1' }), {
+                    status: 201,
+                    headers: { 'Content-Type': 'application/json' }
+                })
+            )
+            .mockRejectedValueOnce(new Error('offline'));
+
+        render(
+            <ConversationReply
+                mode="auth"
+                conversationId="conv-1"
+                locale="es"
+            />,
+            { container: document.body.appendChild(document.createElement('div')) }
+        );
+        await user.type(screen.getByPlaceholderText(/escribí tu respuesta/i), 'Hola');
+        await user.click(screen.getByRole('button', { name: /enviar/i }));
+
+        await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
     });
 
     it('declares a textarea font size of at least 16px', () => {
