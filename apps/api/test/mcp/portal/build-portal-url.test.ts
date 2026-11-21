@@ -5,22 +5,18 @@
  * @module test/mcp/portal/build-portal-url
  */
 
-import { LISTING_SECTIONS, LISTING_VERTICALS } from '@repo/schemas';
-import { describe, expect, it } from 'vitest';
 import {
     buildPortalUrl,
-    portalDestinationTemplate
-} from '../../../src/mcp/portal/build-portal-url';
-import {
-    isNonIdentifyingDestination,
-    PORTAL_DESTINATION_LABELS
-} from '../../../src/mcp/portal/portal-destination';
-import {
     EDITOR_SECTION_SLUGS,
+    isNonIdentifyingDestination,
+    PORTAL_DESTINATION_LABELS,
     PORTAL_ROUTE_TEMPLATES,
     type PortalDestination,
+    portalDestinationTemplate,
     UNRELEASED_EDITOR_SECTIONS
-} from '../../../src/mcp/portal/portal-routes';
+} from '@repo/portal-routes';
+import { LISTING_SECTIONS, LISTING_VERTICALS } from '@repo/schemas';
+import { describe, expect, it } from 'vitest';
 
 const SITE = 'https://hospeda.test';
 const ID = '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7';
@@ -240,7 +236,11 @@ describe('the route map', () => {
                 'aiAssistants',
                 'aiAssistantsHistory',
                 'faq',
-                'contact'
+                'contact',
+                'partnerPanel',
+                'helpLanding',
+                'helpArticle',
+                'page'
             ].sort()
         );
     });

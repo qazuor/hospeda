@@ -22,11 +22,11 @@
  * no trial starts (it starts on the first publish).
  */
 
+import type { PortalDestination, PortalSectionId } from '@repo/portal-routes';
+import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
 import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
-import type { PortalDestination, PortalSectionId } from '../../portal/portal-routes';
 import { consumeConfirmationToken, issueConfirmationToken } from '../confirmation-token-store';
 import { defineTool, type ToolHandlerResult, type ToolRefusalLink } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';

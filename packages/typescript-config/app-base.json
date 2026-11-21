@@ -36,6 +36,7 @@
             "@repo/ai-core/*": ["../../packages/ai-core/src/*"],
             "@repo/feedback": ["../../packages/feedback/src/index.ts"],
             "@repo/feedback/*": ["../../packages/feedback/src/*"],
+            "@repo/portal-routes": ["../../packages/portal-routes/src/index.ts"],
             "@repo/content-moderation": ["../../packages/content-moderation/src/index.ts"],
             "@repo/content-moderation/*": ["../../packages/content-moderation/src/*"]
         }

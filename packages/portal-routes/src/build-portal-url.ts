@@ -5,7 +5,7 @@
  *
  * Pure: the site URL comes in as an argument (callers pass `HOSPEDA_SITE_URL`),
  * so nothing here reads the environment and nothing is hardcoded. Like the rest
- * of `mcp/portal/` it imports nothing from `lib/mcp/`, so the HOS-2185 agent can
+ * of this package it imports nothing from the API runtime, so the HOS-2185 agent can
  * reuse it.
  */
 
@@ -133,6 +133,14 @@ function resolveDestination(destination: PortalDestination): ResolvedPath {
             return path('faq');
         case 'contact':
             return path('contact');
+        case 'partnerPanel':
+            return path('partnerPanel');
+        case 'helpLanding':
+            return path('helpLanding');
+        case 'helpArticle':
+            return path('helpArticle', { id: destination.id });
+        case 'page':
+            return path(destination.page, destination.params ?? {});
         default: {
             const unreachable: never = destination;
             throw new Error(`Unknown portal destination: ${JSON.stringify(unreachable)}`);

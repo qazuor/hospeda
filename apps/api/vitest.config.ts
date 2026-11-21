@@ -94,6 +94,7 @@ export default defineConfig({
             ),
             '@repo/db': resolve(import.meta.dirname, '../../packages/db/src'),
             '@repo/logger': resolve(import.meta.dirname, '../../packages/logger/src'),
+            '@repo/portal-routes': resolve(import.meta.dirname, '../../packages/portal-routes/src'),
             '@repo/utils': resolve(import.meta.dirname, '../../packages/utils/src'),
             '@repo/config': resolve(import.meta.dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(import.meta.dirname, '../../packages/service-core/src'),

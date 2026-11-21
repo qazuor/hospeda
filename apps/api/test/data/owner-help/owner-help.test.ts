@@ -9,6 +9,13 @@
  */
 
 import { trans } from '@repo/i18n';
+import {
+    buildPortalUrl,
+    EDITOR_SECTION_SLUGS,
+    PORTAL_ROUTE_TEMPLATES,
+    PORTAL_SECTION_PLACEHOLDER,
+    portalDestinationTemplate
+} from '@repo/portal-routes';
 import { describe, expect, it } from 'vitest';
 import {
     OWNER_HELP_CALLER_AUDIENCES,
@@ -18,15 +25,6 @@ import {
     OwnerHelpTopicSchema
 } from '../../../src/data/owner-help/owner-help';
 import type { OwnerHelpDestination } from '../../../src/data/owner-help/owner-help.types';
-import {
-    buildPortalUrl,
-    portalDestinationTemplate
-} from '../../../src/mcp/portal/build-portal-url';
-import {
-    EDITOR_SECTION_SLUGS,
-    PORTAL_ROUTE_TEMPLATES,
-    PORTAL_SECTION_PLACEHOLDER
-} from '../../../src/mcp/portal/portal-routes';
 import { topicServesAudience } from '../../../src/mcp/tools/help/help-search';
 
 const SITE = 'https://hospeda.test';

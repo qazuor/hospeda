@@ -22,6 +22,7 @@
  *   finds nothing (NG-4).
  */
 
+import type { PortalLocale } from '@repo/portal-routes';
 import type { Actor } from '@repo/service-core';
 import { z } from 'zod';
 import { OWNER_HELP_TOPICS } from '../../../data/owner-help/owner-help';
@@ -32,7 +33,6 @@ import {
 } from '../../../data/owner-help/owner-help.types';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
-import type { PortalLocale } from '../../portal/build-portal-url';
 import { readMyListings } from '../listing/list-my-listings';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import {

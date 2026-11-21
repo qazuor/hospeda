@@ -11,7 +11,7 @@ import type {
     PortalDestination,
     PortalListingVertical,
     PortalSectionId
-} from '../../mcp/portal/portal-routes';
+} from '@repo/portal-routes';
 
 /**
  * Who a topic is for. `any` topics answer every owner. `host` is an

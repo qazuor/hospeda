@@ -1,11 +1,12 @@
 /**
  * @file portal-routes.ts
- * @description The API's own map of the owner portal's pages (HOS-2326, spec
- * HOS-2335 §5.1, owner decision D-1).
+ * @description The map of the owner portal's pages shared by `apps/api` and the
+ * help center (HOS-2326, spec HOS-2335 §5.1, owner decision D-1; extracted into
+ * `@repo/portal-routes` by HOS-2410 PR-2).
  *
  * Every path knowledge of the portal lives in `apps/web`, which `apps/api`
- * cannot import. D-1 chose a deliberate COPY in the API over a refactor of the
- * web or a shared module, and a CI guard to keep the copy honest:
+ * cannot import. D-1 chose a deliberate COPY over a refactor of the web, and a
+ * CI guard to keep the copy honest:
  * `scripts/check-portal-routes.ts` fails when any entry below stops resolving to
  * a page file under `apps/web/src/pages/[lang]/`. Renaming a web page therefore
  * means updating this file in the same PR.
@@ -16,8 +17,8 @@
  * ## What it is NOT
  *
  * - Not a URL builder: `build-portal-url.ts` turns a destination into a URL.
- * - Not a source of truth for the web's routes: the web owns them. This is the
- *   API's copy, and the guard is the only thing keeping the two in step.
+ * - Not a source of truth for the web's routes: the web owns them. This is a
+ *   copy, and the guard is the only thing keeping the two in step.
  *
  * ## Dynamic segments
  *
@@ -89,11 +90,111 @@ export const PORTAL_ROUTE_TEMPLATES = {
     /** The public frequently-asked-questions page (HOS-2333). */
     faq: 'preguntas-frecuentes',
     /** The public contact page, where support is reached (HOS-2333). */
-    contact: 'contacto'
+    contact: 'contacto',
+    /** The partner's own panel (HOS-2410). */
+    partnerPanel: 'mi-cuenta/partner',
+    /** The help center landing (HOS-2410). The page ships in a later PR of the spec. */
+    helpLanding: 'mi-cuenta/ayuda',
+    /** One help article (HOS-2410). The page ships in a later PR of the spec. */
+    helpArticle: 'mi-cuenta/ayuda/[id]',
+    /** The account home. */
+    accountHome: 'mi-cuenta',
+    /** The user's public profile page. */
+    accountPublicProfile: 'mi-cuenta/publica',
+    /** The host dashboard. */
+    hostDashboard: 'mi-cuenta/host-dashboard',
+    /** The owner's promotions list. */
+    promotions: 'mi-cuenta/promociones',
+    /** The form that creates a promotion. */
+    promotionNew: 'mi-cuenta/promociones/nueva',
+    /** The form that edits one promotion. */
+    promotionEdit: 'mi-cuenta/promociones/[id]/editar',
+    /** What's new in the platform. */
+    accountNews: 'mi-cuenta/novedades',
+    /** Edit the user's profile. */
+    accountEditProfile: 'mi-cuenta/editar',
+    /** Complete the profile after sign-up. */
+    accountCompleteProfile: 'mi-cuenta/completar-perfil',
+    /** Change the password. */
+    accountChangePassword: 'mi-cuenta/cambiar-contrasena',
+    /** Add a password to an account that has none. */
+    accountAddPassword: 'mi-cuenta/agregar-contrasena',
+    /** Notification and account preferences. */
+    accountPreferences: 'mi-cuenta/preferencias',
+    /** Newsletter subscription. */
+    accountNewsletter: 'mi-cuenta/newsletter',
+    /** The partner's allies page. */
+    accountAllies: 'mi-cuenta/aliados',
+    /** Subscriber checkout. */
+    checkout: 'suscriptores/checkout',
+    /** Plans for subscribers. */
+    subscriberPlans: 'suscriptores/planes',
+    /** Landing that invites a partner to join. */
+    joinPartner: 'sumate/partner',
+    /** Landing that invites a provider to join. */
+    joinProvider: 'sumate/proveedor',
+    /** Landing that invites a sponsor to join. */
+    joinSponsor: 'sumate/sponsor',
+    /** Claim a partner application. */
+    partnerClaim: 'partners/reclamar',
+    /** Public page of one partner. */
+    partnerPublicPage: 'partners/[slug]',
+    /** Public page of one accommodation. */
+    accommodationPublicPage: 'alojamientos/[slug]',
+    /** Public page of one venue. */
+    venuePublicPage: 'comer-y-salir/[slug]',
+    /** Public page of one experience. */
+    experiencePublicPage: 'experiencias/[slug]'
 } as const;
 
 /** Name of one entry of {@link PORTAL_ROUTE_TEMPLATES}. */
 export type PortalRouteKey = keyof typeof PORTAL_ROUTE_TEMPLATES;
+
+/**
+ * Route keys whose web page has not shipped yet. `check-portal-routes` does not
+ * demand a page for them. The PR that ships the page removes the key here.
+ *
+ * - `helpLanding` and `helpArticle`: the help center pages (HOS-2410 PR-5).
+ */
+export const PORTAL_UNRELEASED_ROUTE_KEYS = [
+    'helpLanding',
+    'helpArticle'
+] as const satisfies readonly PortalRouteKey[];
+
+/**
+ * Route keys reachable through the generic `page` destination, with the Spanish
+ * label each link is shown with. They are the pages the help catalog links to
+ * that no dedicated destination kind covers (HOS-2410, catalog §6.3).
+ */
+export const PORTAL_PAGE_LABELS = {
+    accountHome: 'Ir a mi cuenta',
+    accountPublicProfile: 'Ver mi perfil público',
+    hostDashboard: 'Abrir mi panel de anfitrión',
+    promotions: 'Ver mis promociones',
+    promotionNew: 'Crear una promoción',
+    promotionEdit: 'Editar la promoción',
+    accountNews: 'Ver las novedades',
+    accountEditProfile: 'Editar mi perfil',
+    accountCompleteProfile: 'Completar mi perfil',
+    accountChangePassword: 'Cambiar mi contraseña',
+    accountAddPassword: 'Agregar una contraseña',
+    accountPreferences: 'Abrir mis preferencias',
+    accountNewsletter: 'Administrar el boletín',
+    accountAllies: 'Ver mis aliados',
+    checkout: 'Ir al pago',
+    subscriberPlans: 'Ver los planes de suscriptores',
+    joinPartner: 'Sumarte como partner',
+    joinProvider: 'Sumarte como proveedor',
+    joinSponsor: 'Sumarte como sponsor',
+    partnerClaim: 'Reclamar tu solicitud de partner',
+    partnerPublicPage: 'Ver la página del partner',
+    accommodationPublicPage: 'Ver la página del alojamiento',
+    venuePublicPage: 'Ver la página del comercio',
+    experiencePublicPage: 'Ver la página de la experiencia'
+} as const satisfies Partial<Record<PortalRouteKey, string>>;
+
+/** Name of a route reachable through the generic `page` destination. */
+export type PortalPageKey = keyof typeof PORTAL_PAGE_LABELS;
 
 /**
  * The `[vertical]` URL segment values the venue/experience pages accept. The
@@ -203,6 +304,11 @@ export type PortalListingVertical = ListingVertical;
  *   provider's benefit. The assistant never declares (HOS-2335 NG-8); it links here.
  * - `faq` and `contact`: the public FAQ and contact pages, the fallback of the
  *   help tool (HOS-2333).
+ * - `partnerPanel`: the partner's own panel.
+ * - `helpLanding` and `helpArticle`: the help center and one of its articles
+ *   (`id` is the article id).
+ * - `page`: any page of {@link PORTAL_PAGE_LABELS}. `params` fills the dynamic
+ *   segments of the template (`id`, `slug`); a missing one makes the URL builder throw.
  */
 export type PortalDestination =
     | {
@@ -224,7 +330,15 @@ export type PortalDestination =
     | { readonly kind: 'aiAssistants' }
     | { readonly kind: 'aiAssistantsHistory' }
     | { readonly kind: 'faq' }
-    | { readonly kind: 'contact' };
+    | { readonly kind: 'contact' }
+    | { readonly kind: 'partnerPanel' }
+    | { readonly kind: 'helpLanding' }
+    | { readonly kind: 'helpArticle'; readonly id: string }
+    | {
+          readonly kind: 'page';
+          readonly page: PortalPageKey;
+          readonly params?: Readonly<Record<string, string>>;
+      };
 
 /** Name of a destination kind. */
 export type PortalDestinationKind = PortalDestination['kind'];

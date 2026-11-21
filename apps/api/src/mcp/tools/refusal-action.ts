@@ -18,14 +18,15 @@
  * Never throws: a broken link must not change the refusal the user reads.
  */
 
+import {
+    buildPortalUrl,
+    describePortalDestination,
+    isNonIdentifyingDestination,
+    type PortalLocale
+} from '@repo/portal-routes';
 import { ServiceErrorCode } from '@repo/schemas';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
-import { buildPortalUrl, type PortalLocale } from '../portal/build-portal-url';
-import {
-    describePortalDestination,
-    isNonIdentifyingDestination
-} from '../portal/portal-destination';
 import type {
     ToolAction,
     ToolDefinition,
