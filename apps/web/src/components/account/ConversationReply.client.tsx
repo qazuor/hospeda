@@ -9,6 +9,7 @@ import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { refreshConversationThread } from '@/lib/refresh-conversation-thread';
 import styles from './ConversationReply.module.css';
 
 /** Mode A: authenticated user replying via protected endpoint */
@@ -101,12 +102,16 @@ export function ConversationReply(props: ConversationReplyProps) {
             setBody('');
             setSuccess(true);
             onMessageSent?.();
-            // The thread is SSR-rendered, so the new message only shows on
-            // reload. Let the success state render briefly, then refresh so
-            // the user sees their reply in context.
-            setTimeout(() => {
-                if (typeof window !== 'undefined') window.location.reload();
-            }, 600);
+            // The thread is SSR-rendered: swap its message list in place instead
+            // of reloading the page (HOS-2439), which would also drop scroll and
+            // focus. If the refresh cannot run, the reply is still sent and the
+            // success message stays visible.
+            if (typeof window !== 'undefined') {
+                await refreshConversationThread({
+                    doc: window.document,
+                    pageUrl: window.location.href
+                });
+            }
         } catch {
             setError(t('conversations.errors.messageSendFailed'));
         } finally {
@@ -150,7 +155,10 @@ export function ConversationReply(props: ConversationReplyProps) {
                 <textarea
                     id="reply-body"
                     value={body}
-                    onChange={(e) => setBody(e.target.value)}
+                    onChange={(e) => {
+                        setBody(e.target.value);
+                        setSuccess(false);
+                    }}
                     placeholder={t('conversations.thread.replyPlaceholder')}
                     className={`${styles.textarea} ${isOverLimit ? styles.textareaError : ''}`}
                     rows={3}
