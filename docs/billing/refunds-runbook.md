@@ -277,12 +277,13 @@ first reads the charge at Mercado Pago. If the read shows exactly one refund for
 that nothing of ours cites yet, the lost call landed: it is bound to that refund and NOT sent again.
 Only when no such refund shows up is the call resent, with the SAME `X-Idempotency-Key` and amount.
 Wait the same `<N>` hours of query 4.1 first, so you do not race a call still in flight and the
-charge read has caught up. Keep `<N>` well under 24, or the retry will already refuse (below). Only one retry of a refund runs at a time: a second click answers 409
-`REFUND_RETRY_IN_PROGRESS`; wait for the first one's result. A call sent more than 24 hours ago
-is not resent: the retry answers 409 `REFUND_CALL_TOO_OLD_TO_RETRY` before touching Mercado Pago
-(owner decision on #4643). Then check the charge in the Mercado Pago panel and settle through the
-panel: **Record what already happened outside the system (action 14)** or **Settle the remainder
-of a partially accepted refund**, following steps 1-2 below to decide which. The 24-hour limit can
+charge read has caught up. Keep `<N>` well under 24: past 24 hours the retry no longer posts (below). Only one retry of a refund runs at a time: a second click answers 409
+`REFUND_RETRY_IN_PROGRESS`; wait for the first one's result. The retry still reads the charge and binds what it finds, however old the call. Only
+POSTING a call again is limited: if a call sent more than 24 hours ago would have to be posted
+again (the charge shows no refund to bind it to), the retry answers 409
+`REFUND_CALL_TOO_OLD_TO_RETRY`, posts nothing and writes nothing (owner decision on #4643). Then go
+to steps 1-2 below and record the call's answer by hand (8.1 or 8.2). Action 14 and **Settle the
+remainder** do NOT apply here: both refuse a refund with an unanswered call. The 24-hour limit can
 be relaxed once matrix row `EX-73` is measured. Then read each call's answer:
 
 | Answer for a call | What happened | Next |
