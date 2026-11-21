@@ -14,6 +14,7 @@ import { parse as parseYaml } from 'yaml';
 import { type HelpArticleFrontmatter, HelpArticleFrontmatterSchema } from '../article.schema';
 import {
     HELP_MAX_STEPS,
+    HELP_RELATED_ANCHOR,
     HELP_RELATED_HEADINGS,
     HELP_SECTION_ANCHORS,
     HELP_SECTION_HEADINGS,
@@ -21,7 +22,7 @@ import {
     type HelpLocale,
     type HelpSectionKey
 } from '../constants';
-import { helpSubHeading, slugifyHelpHeading } from '../headings';
+import { helpSubHeading, isHelpAnchorId, slugifyHelpHeading } from '../headings';
 
 export { slugifyHelpHeading };
 
@@ -55,7 +56,7 @@ export interface ParsedHelpBody {
         readonly notExpect: string;
         readonly troubleshooting: string;
     };
-    /** Every anchor id of the article: the five section anchors plus each `###` anchor. */
+    /** Every anchor id of the article: the five section anchors, `relacionados` and each `###` anchor. */
     readonly anchors: readonly string[];
 }
 
@@ -120,6 +121,10 @@ function onSubHeading({ state, text }: { readonly state: BodyState; readonly tex
     const { anchor } = helpSubHeading({ text });
     if (anchor === '') {
         state.errors.push(`"### ${text}" has no usable anchor id`);
+    } else if (!isHelpAnchorId({ anchor })) {
+        state.errors.push(
+            `explicit anchor "{#${anchor}}" ("### ${text}") must start with a letter: the web drops an id that starts with a digit`
+        );
     } else if (state.anchors.includes(anchor)) {
         state.errors.push(`duplicate anchor id "${anchor}" ("### ${text}")`);
     } else {
@@ -186,7 +191,12 @@ export function parseHelpBody({
         parts: { canDo: [], howTo: [], expect: [], notExpect: [], troubleshooting: [] },
         after: [],
         steps: [],
-        anchors: HELP_SECTION_KEYS.map((key) => HELP_SECTION_ANCHORS[key]),
+        // The five section anchors and «Relacionados» are reserved: a `###`
+        // with the same id would make the page hold two elements with it.
+        anchors: [
+            ...HELP_SECTION_KEYS.map((key) => HELP_SECTION_ANCHORS[key]),
+            HELP_RELATED_ANCHOR
+        ],
         errors: []
     };
 

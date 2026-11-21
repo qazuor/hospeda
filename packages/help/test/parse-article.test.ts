@@ -50,6 +50,7 @@ describe('parseHelpBody', () => {
             'que-esperar',
             'que-no-esperar',
             'problemas-comunes',
+            'relacionados',
             'despues-del-paso',
             'fotos'
         ]);
@@ -76,6 +77,65 @@ describe('parseHelpBody', () => {
         expect('errors' in result && result.errors.join('\n')).toContain(
             'duplicate anchor id "igual"'
         );
+    });
+
+    it('reserves the «Relacionados» anchor like the five section anchors', () => {
+        // Act
+        const result = parseHelpBody({
+            body: ['## Qué podés hacer', '', '### Relacionados', '', 'x'].join('\n'),
+            locale: 'es'
+        });
+
+        // Assert
+        expect('errors' in result && result.errors.join('\n')).toContain(
+            'duplicate anchor id "relacionados"'
+        );
+    });
+
+    it('rejects an explicit anchor that starts with a digit, naming it', () => {
+        // Act
+        const result = parseHelpBody({
+            body: ['## Qué podés hacer', '', '### En un día {#24h}', '', 'x'].join('\n'),
+            locale: 'es'
+        });
+
+        // Assert
+        expect('errors' in result && result.errors.join('\n')).toContain(
+            'explicit anchor "{#24h}" ("### En un día {#24h}") must start with a letter'
+        );
+    });
+
+    it('prefixes a slugged anchor whose heading starts with a digit', () => {
+        // Act
+        const result = parseHelpBody({
+            body: [
+                '## Qué podés hacer',
+                '',
+                'x',
+                '',
+                '## Cómo se hace',
+                '',
+                '1. x',
+                '',
+                '## Qué esperar',
+                '',
+                'x',
+                '',
+                '## Qué NO esperar',
+                '',
+                'x',
+                '',
+                '## Problemas comunes',
+                '',
+                '### 48 horas sin respuesta',
+                '',
+                'x'
+            ].join('\n'),
+            locale: 'es'
+        });
+
+        // Assert
+        expect('body' in result && result.body.anchors).toContain('h-48-horas-sin-respuesta');
     });
 
     it('rejects a locale with no headings defined yet', () => {

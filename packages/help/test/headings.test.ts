@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { helpSubHeading, slugifyHelpHeading } from '../src/headings';
+import { helpSubHeading, isHelpAnchorId, slugifyHelpHeading } from '../src/headings';
 
 describe('helpSubHeading', () => {
     it('uses the explicit {#id} and drops it from the visible text', () => {
@@ -29,5 +29,28 @@ describe('helpSubHeading', () => {
         expect(helpSubHeading({ text: 'Dice «Compras pausadas»' }).anchor).toBe(
             slugifyHelpHeading({ text: 'Dice «Compras pausadas»' })
         );
+    });
+});
+
+describe('anchors that start with a digit (the web drops such an id)', () => {
+    it('prefixes the slug with h-', () => {
+        expect(slugifyHelpHeading({ text: '48 horas sin respuesta' })).toBe(
+            'h-48-horas-sin-respuesta'
+        );
+        expect(helpSubHeading({ text: '¿24 horas?' }).anchor).toBe('h-24-horas');
+    });
+
+    it('leaves a slug that starts with a letter alone', () => {
+        expect(slugifyHelpHeading({ text: 'Hace 48 horas' })).toBe('hace-48-horas');
+    });
+
+    it('keeps an explicit digit anchor as written, so the generator can reject it', () => {
+        expect(helpSubHeading({ text: 'En un día {#24h}' })).toEqual({
+            text: 'En un día',
+            anchor: '24h'
+        });
+        expect(isHelpAnchorId({ anchor: '24h' })).toBe(false);
+        expect(isHelpAnchorId({ anchor: 'h-24h' })).toBe(true);
+        expect(isHelpAnchorId({ anchor: slugifyHelpHeading({ text: '7 días' }) })).toBe(true);
     });
 });
