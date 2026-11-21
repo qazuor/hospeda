@@ -1,6 +1,6 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the HostTradeRevoked email template (HOS-278 R-4).
@@ -39,7 +39,6 @@ export function HostTradeRevoked({ recipientName, listingName, reason }: HostTra
     return (
         <EmailLayout
             previewText={`Tu ficha ${listingName} ya no aparece en el directorio de Hospeda`}
-            showUnsubscribe={false}
         >
             <Heading>Sobre tu ficha en el directorio</Heading>
 

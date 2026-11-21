@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 import {
     formatTrialGreeting,
@@ -45,10 +45,7 @@ export function TrialExpired({
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
-        <EmailLayout
-            previewText="Terminó tu prueba y tu publicación dejó de verse"
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText="Terminó tu prueba y tu publicación dejó de verse">
             <Heading>Tu publicación salió del sitio</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

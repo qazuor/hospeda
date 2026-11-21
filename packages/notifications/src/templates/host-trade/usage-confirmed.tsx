@@ -1,7 +1,7 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the UsageConfirmed email template (HOS-376 §6.6).
@@ -37,10 +37,7 @@ export function UsageConfirmed({
     reviewUrl
 }: UsageConfirmedProps) {
     return (
-        <EmailLayout
-            previewText={`${counterpartName} confirmó el uso del beneficio`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`${counterpartName} confirmó el uso del beneficio`}>
             <Heading>Quedó confirmado</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

@@ -6,6 +6,7 @@ import type {
     PublicationStatusEnum
 } from '@repo/schemas';
 import type { z } from 'zod';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 /**
  * The offers the web screen sells: recurring addons, paid at the provider checkout, and
@@ -238,4 +239,27 @@ export function isOfferFullyActive(input: {
         );
     }
     return false;
+}
+
+/** Neutral plans entry (the five-audience index) used when no single audience applies. */
+export const NEUTRAL_PLANS_PATH = 'suscriptores/planes';
+
+const PLANS_PATH_BY_VERTICAL: Readonly<Record<string, string>> = {
+    accommodation: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
+    venue: PRICING_PAGE_PATH_BY_AUDIENCE.venue,
+    experience: PRICING_PAGE_PATH_BY_AUDIENCE.experience,
+    tourist: PRICING_PAGE_PATH_BY_AUDIENCE.tourist
+};
+
+/**
+ * HOS-2426: where to send an owner with no eligible subscription. An addon compatible with
+ * exactly one vertical links to that vertical's pricing page; any other case (several
+ * verticals, or one with no pricing page) links to the neutral plans index, never to a
+ * guessed audience.
+ */
+export function addonPlansPath(input: { readonly compatibleVerticals: readonly string[] }): string {
+    const [only] = input.compatibleVerticals;
+    const path =
+        input.compatibleVerticals.length === 1 && only ? PLANS_PATH_BY_VERTICAL[only] : undefined;
+    return path ?? NEUTRAL_PLANS_PATH;
 }

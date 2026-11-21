@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type {
-    BaseLayoutProps,
     CreateEmailClientInput,
     EmailClient,
+    EmailLayoutProps,
     ResetPasswordTemplateProps,
     SendEmailInput,
     SendEmailResult,
     VerifyEmailTemplateProps
 } from '../src/index.js';
 import {
-    BaseLayout,
     createEmailClient,
+    EmailLayout,
     ResetPasswordTemplate,
     sendEmail,
     VerifyEmailTemplate
@@ -33,10 +33,10 @@ describe('email barrel exports', () => {
         expect(typeof sendEmail).toBe('function');
     });
 
-    it('should export BaseLayout component', () => {
+    it('should export EmailLayout component', () => {
         // Assert
-        expect(BaseLayout).toBeDefined();
-        expect(typeof BaseLayout).toBe('function');
+        expect(EmailLayout).toBeDefined();
+        expect(typeof EmailLayout).toBe('function');
     });
 
     it('should export VerifyEmailTemplate component', () => {
@@ -57,7 +57,7 @@ describe('email barrel exports', () => {
         const client = {} as EmailClient;
         const sendInput = {} as SendEmailInput;
         const sendResult = {} as SendEmailResult;
-        const baseProps = {} as BaseLayoutProps;
+        const layoutProps = {} as EmailLayoutProps;
         const verifyProps = {} as VerifyEmailTemplateProps;
         const resetProps = {} as ResetPasswordTemplateProps;
 
@@ -66,7 +66,7 @@ describe('email barrel exports', () => {
         expect(client).toBeDefined();
         expect(sendInput).toBeDefined();
         expect(sendResult).toBeDefined();
-        expect(baseProps).toBeDefined();
+        expect(layoutProps).toBeDefined();
         expect(verifyProps).toBeDefined();
         expect(resetProps).toBeDefined();
     });

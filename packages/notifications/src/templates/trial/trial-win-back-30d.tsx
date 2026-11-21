@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import {
     formatTrialGreeting,
     trialSeriesStyles as styles,
@@ -38,7 +38,7 @@ export function TrialWinBack30Days({
     return (
         <EmailLayout
             previewText="Pasó un mes: ¿es buen momento para volver a publicar?"
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>¿Retomamos tu publicación?</Heading>
 
