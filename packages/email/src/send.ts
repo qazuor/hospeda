@@ -1,7 +1,7 @@
-import { render } from '@react-email/render';
 import { createLogger } from '@repo/logger';
 import type { ReactElement } from 'react';
 import type { EmailClient } from './client.js';
+import { renderEmailBodies } from './render.js';
 
 const logger = createLogger('email');
 
@@ -135,11 +135,10 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     } = input;
 
     try {
-        const htmlContent = await render(react);
         // HOS-2107: send a text/plain alternative rendered from the same component.
         // HTML-only mail is flagged by spam filters (MIME_HTML_ONLY) and is
         // unreadable in text clients; Brevo takes the plain part as `textContent`.
-        const textContent = await render(react, { plainText: true });
+        const { html: htmlContent, text: textContent } = await renderEmailBodies({ react });
 
         const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
 
