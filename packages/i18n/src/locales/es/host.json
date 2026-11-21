@@ -282,6 +282,8 @@
                 "photosDescription_one": "Subí hasta {{cap}} foto de tu propiedad para atraer más huéspedes",
                 "photosDescription_other": "Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes",
                 "photosDescriptionLoading": "Cargando tu límite de fotos…",
+                "photosDescriptionNoPlan": "Tu plan actual no incluye subir fotos. Elegí un plan para agregarlas.",
+                "photosPlansCta": "Ver planes",
                 "externalReputation": "Reputación externa",
                 "calendar": "Calendario",
                 "capacityPricing": "Capacidad y precio",

@@ -248,6 +248,24 @@ describe('HOS-1024 — header + gallery label show the PLAN cap, not the entity 
     });
 });
 
+describe('HOS-2442 — an owner with no plan is told so instead of loading forever', () => {
+    it('stops saying "loading" once entitlements resolved with no cap, and points to the plans', async () => {
+        mockIsLoading.mockReturnValue(false);
+        mockLimit.mockReturnValue(0);
+        mockDraftLimit.mockReturnValue(0);
+
+        render(<PhotoSection {...defaultProps} />);
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+        expect(screen.queryByText('Cargando tu límite de fotos…')).not.toBeInTheDocument();
+        expect(screen.getByText(/Tu plan actual no incluye subir fotos/)).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
+            'href',
+            expect.stringMatching(/^\/es\//)
+        );
+    });
+});
+
 describe('HOS-1024 — the loading window shows no number and disables the upload control', () => {
     it('shows loading copy (no cap number) while entitlements resolve', async () => {
         mockIsLoading.mockReturnValue(true);

@@ -58,6 +58,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
+import { PhotoSectionDescription } from './PhotoSectionDescription.client';
 import { PublishReadyDialog } from './PublishReadyDialog.client';
 import { MAX_PHOTOS_LIMIT_KEY, resolveEffectiveGalleryCap } from './photo-section-helpers';
 import { SortablePhotoGallery } from './SortablePhotoGallery.client';
@@ -256,19 +257,12 @@ export function PhotoSection({
             <h3 className={styles.sectionTitle}>
                 {t('host.properties.editor.section.photos', 'Fotos')}
             </h3>
-            <p
-                className={styles.sectionDescription}
-                aria-busy={!isGalleryCapResolved}
-            >
-                {isGalleryCapResolved
-                    ? tPlural('host.properties.editor.section.photosDescription', galleryCap, {
-                          cap: galleryCap
-                      })
-                    : t(
-                          'host.properties.editor.section.photosDescriptionLoading',
-                          'Cargando tu límite de fotos…'
-                      )}
-            </p>
+            <PhotoSectionDescription
+                locale={locale}
+                isLoading={isEntitlementsLoading}
+                isResolved={isGalleryCapResolved}
+                cap={galleryCap}
+            />
 
             {/* Featured Image (Portada) */}
             <div>
