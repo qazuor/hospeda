@@ -14,7 +14,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
-import { ChatIcon } from '@repo/icons';
+import { AlertCircleIcon, ChatIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -38,6 +38,9 @@ const pageSize = 20;
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 const result = await protectedConversationsApi.list({ page, pageSize, cookieHeader });
 
+// HOS-2422: a failed read must not look like an empty inbox. `loadFailed`
+// drives an error state with a retry link instead of "no tenés consultas".
+const loadFailed = !result.ok;
 const conversations = result.ok ? result.data.items : [];
 const pagination = result.ok ? result.data.pagination : null;
 
@@ -67,7 +70,19 @@ function getInitials(name: string): string {
 
     <AccountSectionCard>
         <div class="messages-inbox">
-            {conversations.length === 0 ? (
+            {loadFailed ? (
+                <AccountEmptyState
+                    title={t('conversations.inbox.loadError.title', 'No pudimos cargar tus consultas')}
+                    description={t(
+                        'conversations.inbox.loadError.body',
+                        'Hubo un problema al leer tu bandeja. Tus consultas siguen ahí: probá de nuevo en un momento.'
+                    )}
+                    ctaHref={Astro.url.pathname + Astro.url.search}
+                    ctaLabel={t('conversations.inbox.loadError.retry', 'Reintentar')}
+                >
+                    <AlertCircleIcon slot="icon" size={28} aria-hidden={true} />
+                </AccountEmptyState>
+            ) : conversations.length === 0 ? (
                 <AccountEmptyState
                     title={t('conversations.empty.guestInboxTitle', 'Todavía no tenés consultas')}
                     description={t('conversations.empty.guestInbox')}
@@ -132,7 +147,7 @@ function getInitials(name: string): string {
             )}
 
             {pagination && pagination.totalPages > 1 && (
-                <nav class="messages-inbox__pagination" aria-label="Pagination">
+                <nav class="messages-inbox__pagination" aria-label={t('common.pagination', 'Paginación')}>
                     {page > 1 && (
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page - 1}`}
