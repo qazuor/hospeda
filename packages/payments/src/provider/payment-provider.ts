@@ -284,6 +284,13 @@ export interface ChargeRefund {
     readonly amount: Money;
     /** True only for a refund the provider reads `approved` (the only measured status, D-1); anything else fails closed. */
     readonly accredited: boolean;
+    /**
+     * True only when the provider reads the refund `rejected` or `cancelled`: it was refused and
+     * moved no money (HOS-2516). Those statuses are documented by Mercado Pago but not measured
+     * (matrix row EX-74). Absent or false means "not known to be rejected": a refund still in
+     * process is never read as rejected, so nothing fails a refund on a status it cannot name.
+     */
+    readonly rejected?: boolean;
 }
 
 /** Capability 7 output: a charge as read by id. */
