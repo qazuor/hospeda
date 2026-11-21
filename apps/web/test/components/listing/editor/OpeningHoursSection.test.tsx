@@ -9,6 +9,8 @@
  *
  * @module test/components/listing/editor/OpeningHoursSection
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { OpeningHours } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -86,6 +88,40 @@ describe('OpeningHoursSection', () => {
             closed: false,
             shifts: [{ open: '10:00', close: '14:00' }]
         });
+    });
+
+    it('seeds a default 09:00-18:00 shift when "Cerrado" is unticked (HOS-2446)', () => {
+        const { onChange } = renderSection();
+
+        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+
+        expect(lastEmitted(onChange).days.mon).toEqual({
+            closed: false,
+            shifts: [{ open: '09:00', close: '18:00' }]
+        });
+    });
+
+    it('keeps the existing shifts when re-opening a day that already had them (HOS-2446)', () => {
+        const wasClosedWithShifts = {
+            timezone: 'America/Argentina/Buenos_Aires',
+            days: { mon: { closed: true, shifts: [{ open: '08:00', close: '12:00' }] } }
+        } as unknown as OpeningHours;
+        const { onChange } = renderSection({ value: wasClosedWithShifts });
+
+        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+
+        expect(lastEmitted(onChange).days.mon.shifts).toEqual([{ open: '08:00', close: '12:00' }]);
+    });
+
+    it('wraps the shift row so it does not overflow on narrow screens (HOS-2446)', () => {
+        const css = readFileSync(
+            resolve(
+                __dirname,
+                '../../../../src/components/listing/editor/OpeningHoursSection.module.css'
+            ),
+            'utf8'
+        );
+        expect(css).toMatch(/\.shiftRow\s*\{[^}]*flex-wrap:\s*wrap/);
     });
 
     it('emits all seven days on every edit, not just the touched one', () => {

@@ -54,6 +54,9 @@ const DEFAULT_TZ = 'America/Argentina/Buenos_Aires';
  */
 const OPENING_HOURS_FIELD = { prefix: LISTING_FIELD_PREFIX, name: 'openingHours' } as const;
 
+/** Window seeded when a closed day is opened and has no shifts of its own (HOS-2446). */
+const DEFAULT_SHIFT = { open: '09:00', close: '18:00' } as const;
+
 /**
  * ISO weekday keys with their Spanish fallback labels. The visible label is
  * resolved through `@repo/i18n` (`listing.owner.editor.sections.openingHoursDays.<key>`)
@@ -258,7 +261,14 @@ export function OpeningHoursSection({
                                         onChange(
                                             withDay(value, key, {
                                                 closed: event.target.checked,
-                                                shifts: event.target.checked ? [] : schedule.shifts
+                                                // HOS-2446: opening a day with no shifts used to
+                                                // show only the "+" button. Seed the default
+                                                // window so a slot is there to edit.
+                                                shifts: event.target.checked
+                                                    ? []
+                                                    : schedule.shifts.length > 0
+                                                      ? schedule.shifts
+                                                      : [{ ...DEFAULT_SHIFT }]
                                             })
                                         )
                                     }
@@ -393,10 +403,7 @@ export function OpeningHoursSection({
                                         onChange(
                                             withDay(value, key, {
                                                 closed: false,
-                                                shifts: [
-                                                    ...schedule.shifts,
-                                                    { open: '09:00', close: '18:00' }
-                                                ]
+                                                shifts: [...schedule.shifts, { ...DEFAULT_SHIFT }]
                                             })
                                         )
                                     }

@@ -28,6 +28,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { parseProfileStatus } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
@@ -182,6 +183,12 @@ try {
 	// edit endpoint is GET-degraded; the PATCH path is the source of
 	// truth.
 }
+// HOS-2431: an account that only signs in with Google/Facebook has no password.
+// `null` (status unavailable) falls back to the change-password reading.
+const profileStatus = await parseProfileStatus({
+	cookieHeader: Astro.request.headers.get('cookie')
+});
+const hasPassword = profileStatus ? profileStatus.hasCredentialAccount : true;
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="editar">
@@ -189,6 +196,7 @@ try {
 
 	<ProfileEditForm
 		client:load
+		hasPassword={hasPassword}
 		initialUser={initialUser}
 		locale={locale}
 		apiUrl={apiUrl}

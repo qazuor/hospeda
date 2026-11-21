@@ -96,6 +96,7 @@ const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversa
             <span class="conv-thread__accommodation">{conversation.accommodationName}</span>
         </div>
 
+        <div data-conversation-thread style="display: contents">
         {nextCursor && (
             <div class="conv-thread__load-older">
                 <a
@@ -135,6 +136,7 @@ const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversa
                 </li>
             ))}
         </ol>
+        </div>
 
         {!listingAdmitsMessages ? (
             <ListingGoneNotice locale={locale} availability={listingAvailability} />

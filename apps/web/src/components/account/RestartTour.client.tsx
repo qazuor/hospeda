@@ -3,6 +3,7 @@ import type { TourConfig } from '@/config/tours';
 import { getWelcomeToursForRoles } from '@/config/tours';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildTourDriverTexts, filterStepsPresentOnPage } from '@/lib/tour-driver';
 
 interface RestartTourProps {
     readonly locale: SupportedLocale;
@@ -39,6 +40,15 @@ export function RestartTour({ locale, userRoles }: RestartTourProps) {
         (tour: TourConfig) => {
             if (runningTourId !== null) return;
 
+            // HOS-2448: replaying from Preferences runs on a page that has none of
+            // the dashboard's anchors; drop the steps with nothing to point at
+            // instead of floating them in the centre.
+            const visibleSteps = filterStepsPresentOnPage({
+                steps: tour.steps,
+                doc: document
+            });
+            if (visibleSteps.length === 0) return;
+
             void (async () => {
                 // `@/lib/load-driver` re-exports driver.js and pulls in its
                 // stylesheet, so both land in the same async chunk (HOS-369 W3-4).
@@ -53,15 +63,12 @@ export function RestartTour({ locale, userRoles }: RestartTourProps) {
                 };
 
                 const instance = driver({
-                    showProgress: true,
+                    ...buildTourDriverTexts({ t }),
                     allowClose: true,
                     smoothScroll: true,
                     animate: true,
-                    nextBtnText: t('account.welcomeTour.next', 'Siguiente'),
-                    prevBtnText: t('account.welcomeTour.prev', 'Anterior'),
-                    doneBtnText: t('account.welcomeTour.done', 'Finalizar'),
                     onDestroyStarted: handleDestroy,
-                    steps: tour.steps.map((step) => ({
+                    steps: visibleSteps.map((step) => ({
                         ...(step.target === 'center' ? {} : { element: step.target }),
                         popover: {
                             title: t(step.title, step.title),

@@ -2345,12 +2345,41 @@
             "success": "Refund closed. MP had accepted {{accepted}} and the remainder of {{remainder}} was recorded.",
             "rejections": {
                 "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund's remainder can be settled.",
-                "REFUND_CALL_UNANSWERED": "A provider call is still unanswered. This case is not closed here: follow the stuck refunds runbook.",
+                "REFUND_CALL_UNANSWERED": "A provider call is still unanswered. Use «Retry with Mercado Pago» on this screen first; if it does not close it, follow the stuck refunds runbook.",
                 "REFUND_HAS_NO_ACCEPTED_CALL": "The provider accepted no part of this refund. Decline it, then settle it with action 14.",
                 "REMAINDER_AMOUNT_MISMATCH": "The remainder does not match what is still owed: the refund amount minus what the provider credited.",
                 "ACCEPTED_PART_NOT_ACCREDITED": "The provider does not show the part it accepted as credited. Check the charge in the provider panel before recording the remainder.",
                 "REMAINDER_NOT_FOUND_AT_PROVIDER": "The provider shows no credited refund with that reference and amount on this charge.",
                 "OTHER_REFUND_CALL_UNANSWERED": "Another refund of this payment has a provider call still unanswered. Wait until it is resolved before recording the remainder: the refund you see in the panel may belong to that call."
+            }
+        },
+        "providerRetry": {
+            "title": "Retry with Mercado Pago",
+            "description": "For a confirmed refund stuck because MP did not answer a call (timeout, error or empty response), or one MP accepted that does not show as credited yet. Before resending, the charge is read at MP: if the refund is already there, it is taken and nothing is resent. Only if it does not show up is the call resent, with its same idempotency key.",
+            "refundId": "Refund ID",
+            "review": "Review",
+            "confirmText": "The charge is read at Mercado Pago for refund {{refundId}}. If the refund already shows up, it is taken without resending; otherwise each unanswered call is resent with its same key. If MP shows it credited, the refund closes.",
+            "confirm": "Retry with MP",
+            "back": "Back",
+            "summary": {
+                "EXECUTED": "MP accepted and credited the refund. It is executed.",
+                "WAITING_ACCREDITATION": "MP has the refund, but it does not show as credited yet. It stays confirmed: it closes with MP's next notice, or by pressing «Retry with MP» again, which reads the charge again.",
+                "FAILED": "MP rejected the call. The refund failed: check the MP panel before refunding by hand (action 14).",
+                "STILL_UNANSWERED": "A call still has no usable answer. Retry later or follow the refunds runbook (§8)."
+            },
+            "calls": {
+                "SENT": "accepted by MP",
+                "FOUND_AT_PROVIDER": "already at MP: taken without resending",
+                "AWAITING_PROVIDER_ANSWER": "still unanswered",
+                "PROVIDER_KEY_CONFLICT": "MP refused the key as reused: follow the refunds runbook (§8)",
+                "PROVIDER_REJECTED_FAILED": "rejected by MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund can be retried.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "The refund has no unanswered call and no accepted call waiting to be credited: there is nothing to retry.",
+                "REFUND_PAST_PROVIDER_WINDOW": "More than 180 days have passed since the charge: MP would refuse any call without saying whether the first one went out. Check the MP panel by hand (refunds runbook, §8).",
+                "REFUND_RETRY_IN_PROGRESS": "A retry of this refund is already running. Wait for it to finish and check its result.",
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and the charge shows no refund to bind it to, so it is not resent (nothing was sent or recorded). Follow the refunds runbook, §8 steps 1-2: check the charge in the Mercado Pago panel and record the call's answer by hand (§8.1 or §8.2)."
             }
         }
     },

@@ -34,7 +34,11 @@ vi.mock('../../../src/lib/avatar-utils', () => ({
         name ? (name[0]?.toUpperCase() ?? '?') : '?'
 }));
 
-vi.mock('../../../src/store/toast-store', () => ({ addToast: vi.fn() }));
+vi.mock('../../../src/store/toast-store', () => ({
+    addToast: vi.fn(() => 'toast-id'),
+    removeToast: vi.fn(),
+    getToasts: () => []
+}));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 

@@ -8,7 +8,15 @@
  * Hydrate with `client:visible` (caller's responsibility).
  */
 
-import { CloseIcon, CopyIcon, FacebookIcon, ShareIcon, WhatsappIcon } from '@repo/icons';
+import {
+    CloseIcon,
+    CopyIcon,
+    FacebookIcon,
+    ShareIcon,
+    TelegramIcon,
+    WhatsappIcon,
+    XIcon
+} from '@repo/icons';
 import { useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -27,6 +35,8 @@ interface ShareButtonsProps {
     readonly locale: SupportedLocale;
     /** Optional CSS class override on the root element */
     readonly className?: string;
+    /** Compact icon-only trigger for placement over a gallery photo. */
+    readonly appearance?: 'icon-overlay';
 }
 
 /** Checks whether the Web Share API is available on the device. */
@@ -44,21 +54,32 @@ function isMobileViewport(): boolean {
  * On mobile with Web Share API support triggers native share sheet.
  * On desktop or unsupported mobile shows a popover with 5 share actions.
  */
-export function ShareButtons({ url, title, locale, className }: ShareButtonsProps) {
+export function ShareButtons({ url, title, locale, className, appearance }: ShareButtonsProps) {
     const { t } = createTranslations(locale);
+    const isOverlay = appearance === 'icon-overlay';
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
+    const rootRef = useRef<HTMLDivElement>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
 
-    // Close popover on outside click or Escape key
+    // The overlay owns Escape only within its trigger and popup. Keep the legacy listener global.
     useEffect(() => {
         if (!isOpen) return;
+        const root = rootRef.current;
+        const keyTarget = isOverlay ? root : document;
 
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.key === 'Escape') {
+                if (isOverlay) event.stopPropagation();
                 setIsOpen(false);
                 triggerRef.current?.focus();
+            }
+        }
+
+        function handleFocusOut(event: FocusEvent): void {
+            if (!(event.relatedTarget instanceof Node) || !root?.contains(event.relatedTarget)) {
+                setIsOpen(false);
             }
         }
 
@@ -72,14 +93,16 @@ export function ShareButtons({ url, title, locale, className }: ShareButtonsProp
             }
         }
 
-        document.addEventListener('keydown', handleKeyDown);
+        keyTarget?.addEventListener('keydown', handleKeyDown as EventListener);
+        if (isOverlay) root?.addEventListener('focusout', handleFocusOut);
         document.addEventListener('mousedown', handleClickOutside);
 
         return () => {
-            document.removeEventListener('keydown', handleKeyDown);
+            keyTarget?.removeEventListener('keydown', handleKeyDown as EventListener);
+            if (isOverlay) root?.removeEventListener('focusout', handleFocusOut);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen]);
+    }, [isOpen, isOverlay]);
 
     // Focus first popover item when opened
     useEffect(() => {
@@ -91,14 +114,27 @@ export function ShareButtons({ url, title, locale, className }: ShareButtonsProp
 
     async function handleMainClick(): Promise<void> {
         if (hasWebShareApi() && isMobileViewport()) {
+            if (isOverlay && isOpen) {
+                dismissPopover();
+                return;
+            }
             try {
                 await navigator.share({ url, title });
-            } catch {
-                // User cancelled or share failed — fall through silently
+            } catch (error) {
+                if (isOverlay && !(error instanceof DOMException && error.name === 'AbortError')) {
+                    setIsOpen(true);
+                }
             }
             return;
         }
         setIsOpen((prev) => !prev);
+    }
+
+    function dismissPopover(): void {
+        setIsOpen(false);
+        if (isOverlay && rootRef.current?.contains(document.activeElement)) {
+            triggerRef.current?.focus();
+        }
     }
 
     async function handleCopyUrl(): Promise<void> {
@@ -116,7 +152,7 @@ export function ShareButtons({ url, title, locale, className }: ShareButtonsProp
                 message: t('ui.errors.general', 'Ha ocurrido un error')
             });
         }
-        setIsOpen(false);
+        dismissPopover();
     }
 
     const encodedUrl = encodeURIComponent(url);
@@ -148,7 +184,12 @@ export function ShareButtons({ url, title, locale, className }: ShareButtonsProp
         {
             label: 'X',
             href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
-            icon: (
+            icon: isOverlay ? (
+                <XIcon
+                    size={20}
+                    aria-hidden="true"
+                />
+            ) : (
                 <span
                     className={styles.xIcon}
                     aria-hidden="true"
@@ -162,42 +203,45 @@ export function ShareButtons({ url, title, locale, className }: ShareButtonsProp
             label: 'Telegram',
             href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
             icon: (
-                <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
+                <TelegramIcon
+                    size={20}
                     aria-hidden="true"
-                >
-                    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
-                </svg>
+                />
             ),
-            ariaLabel: 'Compartir en Telegram'
+            ariaLabel: isOverlay ? t('ui.accessibility.shareOnTelegram') : 'Compartir en Telegram'
         }
     ] as const;
 
     return (
-        <div className={`${styles.root}${className ? ` ${className}` : ''}`}>
+        <div
+            ref={rootRef}
+            className={`${styles.root}${isOverlay ? ` ${styles.iconOverlay}` : ''}${className ? ` ${className}` : ''}`}
+        >
             <button
                 ref={triggerRef}
                 type="button"
                 className={styles.trigger}
                 aria-label={t('ui.accessibility.shareViaDevice', 'Compartir')}
                 aria-expanded={isOpen}
-                aria-haspopup="menu"
+                aria-haspopup={isOverlay ? undefined : 'menu'}
                 onClick={() => void handleMainClick()}
             >
                 <ShareIcon
                     size={20}
                     aria-hidden="true"
                 />
-                <span className={styles.triggerLabel}>{t('ui.actions.share', 'Compartir')}</span>
+                {!isOverlay && (
+                    <span className={styles.triggerLabel}>
+                        {t('ui.actions.share', 'Compartir')}
+                    </span>
+                )}
             </button>
 
             {isOpen && (
+                // biome-ignore lint/a11y/useAriaPropsSupportedByRole: both possible roles (group and menu) support an accessible name.
                 <div
                     ref={popoverRef}
-                    role="menu"
+                    role={isOverlay ? 'group' : 'menu'}
                     aria-label={t('ui.accessibility.shareViaDevice', 'Compartir')}
                     className={styles.popover}
                 >
@@ -209,7 +253,7 @@ export function ShareButtons({ url, title, locale, className }: ShareButtonsProp
                             type="button"
                             className={styles.closeBtn}
                             aria-label={t('ui.accessibility.closeModal', 'Cerrar')}
-                            onClick={() => setIsOpen(false)}
+                            onClick={dismissPopover}
                         >
                             <CloseIcon
                                 size={16}
@@ -220,31 +264,31 @@ export function ShareButtons({ url, title, locale, className }: ShareButtonsProp
 
                     <ul
                         className={styles.list}
-                        role="presentation"
+                        role={isOverlay ? undefined : 'presentation'}
                     >
                         {shareLinks.map((link) => (
                             <li
                                 key={link.label}
-                                role="presentation"
+                                role={isOverlay ? undefined : 'presentation'}
                             >
                                 <a
                                     href={link.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    role="menuitem"
+                                    role={isOverlay ? undefined : 'menuitem'}
                                     className={styles.item}
                                     aria-label={link.ariaLabel}
-                                    onClick={() => setIsOpen(false)}
+                                    onClick={dismissPopover}
                                 >
                                     <span className={styles.itemIcon}>{link.icon}</span>
                                     <span className={styles.itemLabel}>{link.label}</span>
                                 </a>
                             </li>
                         ))}
-                        <li role="presentation">
+                        <li role={isOverlay ? undefined : 'presentation'}>
                             <button
                                 type="button"
-                                role="menuitem"
+                                role={isOverlay ? undefined : 'menuitem'}
                                 className={`${styles.item} ${styles.copyBtn}`}
                                 aria-label={t('ui.accessibility.copyLink', 'Copiar enlace')}
                                 onClick={() => void handleCopyUrl()}

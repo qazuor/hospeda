@@ -22,25 +22,20 @@
 
 import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { useRef, useState } from 'react';
-import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
-import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { addToast } from '@/store/toast-store';
 import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
 import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
-import {
-    buildInitialProfileSnapshot,
-    buildProfilePatch,
-    ProfileEditFormSchema,
-    type ProfileSnapshot
-} from './ProfileEditForm.helpers';
+import { buildInitialProfileSnapshot, type ProfileSnapshot } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 import { ProfileEditLocationSection } from './ProfileEditLocationSection';
 import { ProfileEditPersonalSection } from './ProfileEditPersonalSection';
+import { ProfileEditSecuritySection } from './ProfileEditSecuritySection';
 import { ProfileEditSocialSection } from './ProfileEditSocialSection';
+import { useProfileEditSubmit } from './useProfileEditSubmit';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -89,70 +84,8 @@ interface ProfileEditFormProps {
     readonly initialUser: ProfileEditUser;
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
-}
-
-interface ApiResponse<T> {
-    readonly success: boolean;
-    readonly data?: T;
-    readonly error?: { readonly message: string };
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Upload a file to the media endpoint and return the persisted URL.
- */
-async function uploadAvatarFile({
-    file,
-    base,
-    locale,
-    fallbackMessage
-}: {
-    readonly file: File;
-    readonly base: string;
-    readonly locale?: SupportedLocale;
-    readonly fallbackMessage: string;
-}): Promise<string> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await fetch(`${base}/api/v1/protected/media/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
-    });
-
-    if (!res.ok) {
-        let apiError: { code?: string; message?: string } | undefined;
-        try {
-            const body = (await res.json()) as ApiResponse<unknown>;
-            if (body.error) apiError = body.error;
-        } catch {
-            // ignore — keep apiError undefined; helper will use fallback
-        }
-        throw new Error(translateApiError({ error: apiError, locale, fallback: fallbackMessage }));
-    }
-
-    const body = (await res.json()) as ApiResponse<{ url: string }>;
-    const url = body.data?.url;
-    if (!url) throw new Error(fallbackMessage);
-    return url;
-}
-
-/**
- * Drop keys whose value is `undefined`. `ProfileEditSchema` is a
- * `z.strictObject`, so unknown keys cause validation failures — but a
- * field literally set to `undefined` still counts as a present key in
- * JS (`{a: undefined}` has key `a`). Filtering them out keeps the
- * payload compatible with the strict schema while letting the caller
- * write the natural `value || undefined` pattern.
- */
-function omitUndefined(input: Record<string, unknown>): Record<string, unknown> {
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(input)) {
-        if (v !== undefined) out[k] = v;
-    }
-    return out;
+    /** Whether the account has an email+password login (HOS-2431). Defaults to true when unknown. */
+    readonly hasPassword?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -164,7 +97,12 @@ function omitUndefined(input: Record<string, unknown>): Record<string, unknown> 
  *
  * @param props - Component props (see {@link ProfileEditFormProps})
  */
-export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditFormProps) {
+export function ProfileEditForm({
+    initialUser,
+    locale,
+    apiUrl,
+    hasPassword = true
+}: ProfileEditFormProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -213,16 +151,6 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
     const [avatarCompressing, setAvatarCompressing] = useState(false);
-
-    // ── Form meta ─────────────────────────────────────────────────────────
-    //
-    // Validation is delegated to the shared `useZodForm` primitive (HOS-190
-    // slice 3) instead of the old locally-owned `fieldErrors`/`formError`
-    // state + `parseZodErrors` helper.
-
-    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
-        useZodForm({ schema: ProfileEditFormSchema, t });
-    const [submitting, setSubmitting] = useState(false);
 
     // F6 (HOS-190): the PATCH diff is computed against this MUTABLE baseline,
     // resynced to the persisted values after every successful save (see
@@ -327,163 +255,37 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         setAvatarFile(uploadableFile);
     }
 
-    // ── Submit ────────────────────────────────────────────────────────────
-
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-        e.preventDefault();
-        setFormError(null);
-
-        const current = snapshotFromState();
-        const {
-            flatChanged,
-            payload: fieldPayload,
-            clearedRequiredNames
-        } = buildProfilePatch({ current, baseline });
-
-        // BETA-189 P1: a visually-required name (displayName/firstName/lastName)
-        // that HAD a value at baseline and is now empty is a "clear" the server
-        // silently drops — block + announce it inline instead of reporting a
-        // misleading success. A name that was NEVER set (baseline empty) stays
-        // omitted, so an incomplete OAuth signup can still save unrelated fields
-        // (read⊇write).
-        if (clearedRequiredNames.length > 0) {
-            handleApiError({
-                details: clearedRequiredNames.map((field) => ({
-                    field,
-                    message: t(
-                        `account.editProfile.errors.${field}Required`,
-                        'Este campo es obligatorio'
-                    )
-                }))
-            });
-            addToast({
-                type: 'error',
-                message: t('validation.formHasErrors')
-            });
-            return;
-        }
-
-        // BETA-189 P2 + F6: only report success when a real change was persisted.
-        // A diff-empty submit shows a "no changes" info toast (mirroring the
-        // AccommodationEditor) instead of a misleading "profile updated".
-        const avatarChanged = avatarFile !== null || avatarUrl !== baseline.avatarUrl;
-        if (Object.keys(fieldPayload).length === 0 && !avatarChanged) {
-            addToast({
-                type: 'info',
-                message: t('account.editProfile.noChanges', 'No hay cambios para guardar')
-            });
-            return;
-        }
-
-        // Validate ONLY the changed fields (read⊇write): a pre-existing invalid
-        // value the user is not touching never blocks an unrelated save. This is
-        // also where the server-aligned bio bound (min 10 / max 300) is enforced
-        // client-side — BETA-189 P4.
-        const parsed = validate(omitUndefined(flatChanged));
-
-        if (!parsed.success) {
-            return;
-        }
-
-        setSubmitting(true);
-
-        try {
-            let finalAvatarUrl: string | undefined = avatarUrl || undefined;
-
-            if (avatarFile) {
-                setAvatarUploading(true);
-                try {
-                    const uploaded = await uploadAvatarFile({
-                        file: avatarFile,
-                        base,
-                        locale,
-                        fallbackMessage: t(
-                            'account.avatar.errors.uploadFailed',
-                            'No se pudo subir la imagen. Probá de nuevo.'
-                        )
-                    });
-                    finalAvatarUrl = uploaded;
-                    setAvatarUrl(uploaded);
-                    if (previewUrl) {
-                        URL.revokeObjectURL(previewUrl);
-                        setPreviewUrl(null);
-                    }
-                    setAvatarFile(null);
-                } finally {
-                    setAvatarUploading(false);
-                }
-            }
-
-            // Assemble the API payload from the computed diff (see
-            // `buildProfilePatch` for the flat→JSONB nesting rules:
-            // phone→contactInfo.mobilePhone, bio/website/occupation→profile.*,
-            // country/province/city/…→location.*, facebookUrl/…→socialNetworks.*)
-            // plus the avatar, which is only sent when it actually changed vs the
-            // baseline (so an unchanged existing avatar never forces a non-empty
-            // PATCH and defeats the "no changes" path above).
-            const payload: Record<string, unknown> = { ...fieldPayload };
-            if (finalAvatarUrl !== undefined && finalAvatarUrl !== baseline.avatarUrl) {
-                payload.image = finalAvatarUrl;
-            }
-
-            const res = await fetch(`${base}/api/v1/protected/users/${initialUser.id}`, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const localizedFallback = t(
-                    'account.editProfile.errors.saveFailed',
-                    'No se pudo guardar el perfil'
-                );
-                let apiError: { code?: string; message?: string } | undefined;
-                try {
-                    const body = (await res.json()) as ApiResponse<unknown>;
-                    if (body.error) apiError = body.error;
-                } catch {
-                    // ignore — keep apiError undefined; helper will use fallback
-                }
-                // handleApiError sets fieldErrors/formError via the shared
-                // primitive (falls back to the banner since this route sends
-                // no per-field `details` in production — see field-errors.ts
-                // module doc); the toast reuses the same resolved text.
-                const msg = translateApiError({
-                    error: apiError,
-                    t,
-                    fallback: localizedFallback
-                });
-                handleApiError(apiError, localizedFallback);
-                addToast({ type: 'error', message: msg });
-                return;
-            }
-
-            // F6: resync the baseline to what is now persisted (the current
-            // snapshot, carrying the uploaded avatar URL) so a subsequent revert
-            // of a just-saved field is correctly detected as a change.
-            setBaseline({ ...current, avatarUrl: finalAvatarUrl ?? current.avatarUrl });
-            addToast({
-                type: 'success',
-                message: t('account.editProfile.success', 'Perfil actualizado correctamente')
-            });
-        } catch (err) {
-            const msg =
-                err instanceof Error
-                    ? err.message
-                    : t('account.editProfile.errors.saveFailed', 'No se pudo guardar el perfil');
-            setFormError(msg);
-            addToast({ type: 'error', message: msg });
-        } finally {
-            setSubmitting(false);
-        }
-    }
+    const formRef = useRef<HTMLFormElement>(null);
+    // Validation state (`fieldErrors`, `formError`) is owned by the submit hook.
+    const { fieldErrors, formError, clearError, submitting, saved, setSaved, handleSubmit } =
+        useProfileEditSubmit({
+            userId: initialUser.id,
+            base,
+            locale,
+            t,
+            snapshotFromState,
+            baseline,
+            setBaseline,
+            avatar: {
+                file: avatarFile,
+                url: avatarUrl,
+                previewUrl,
+                setUrl: setAvatarUrl,
+                setPreviewUrl,
+                setFile: setAvatarFile,
+                setUploading: setAvatarUploading
+            },
+            formRef
+        });
 
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
         <form
+            ref={formRef}
             className={styles.form}
+            // HOS-2444: editing anything after a save retires the inline success.
+            onChange={() => setSaved(false)}
             onSubmit={(e) => {
                 void handleSubmit(e);
             }}
@@ -564,6 +366,12 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 onPostalCodeChange={bindChange('postalCode', setPostalCode)}
             />
 
+            <ProfileEditSecuritySection
+                locale={locale}
+                t={t}
+                hasPassword={hasPassword}
+            />
+
             {formError && (
                 <div
                     className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
@@ -571,6 +379,15 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                     aria-live="polite"
                 >
                     {formError}
+                </div>
+            )}
+
+            {saved && (
+                <div
+                    className={`${styles.feedbackBanner} ${styles.feedbackBannerSuccess}`}
+                    role="status"
+                >
+                    {t('account.editProfile.success', 'Perfil actualizado correctamente')}
                 </div>
             )}
 

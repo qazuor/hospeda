@@ -556,16 +556,20 @@ function ToggleRow({
                 >
                     {label}
                 </label>
-                <span className={styles.prefDescription}>{description}</span>
+                <span
+                    className={styles.prefDescription}
+                    id={`${id}-desc`}
+                >
+                    {description}
+                </span>
             </div>
             <div className={styles.toggleWrap}>
-                <label
-                    className={styles.toggle}
-                    aria-label={label}
-                >
+                <label className={styles.toggle}>
                     <input
                         id={id}
                         type="checkbox"
+                        role="switch"
+                        aria-checked={checked}
                         checked={checked}
                         disabled={saving}
                         onChange={onToggle}

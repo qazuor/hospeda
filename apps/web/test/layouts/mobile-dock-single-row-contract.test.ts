@@ -105,6 +105,14 @@ const DOCK_TRIGGER = '[data-mobile-dock] .floatingTrigger';
 const DOCK_LABEL = '[data-mobile-dock] .floatingTriggerLabel';
 
 describe('HOS-1780 compact dock across the whole mobile range', () => {
+    it('places the empty contact slot first within the existing row', () => {
+        const source = read('components/shared/dock/MobileDock.astro');
+
+        expect(source).toMatch(
+            /<div class="mobile-dock__row">\s*<div data-mobile-dock-slot="contact"><\/div>/
+        );
+    });
+
     it('tightens the row gap and lateral padding below the base values', () => {
         const gaps = under(dock, '.mobile-dock__row', COMPACT).filter((r) => 'gap' in r.decls);
         // The base rule keeps `var(--space-2)`; the compact one is declared later.

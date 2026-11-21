@@ -920,6 +920,10 @@
             "notFound": "Promoção não encontrada.",
             "forbidden": "Você não tem permissão para acessar esta promoção."
         },
+        "success": {
+            "created": "Promoção criada",
+            "updated": "Promoção atualizada"
+        },
         "actions": {
             "edit": "Editar",
             "delete": "Excluir",

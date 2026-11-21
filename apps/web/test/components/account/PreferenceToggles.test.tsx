@@ -15,6 +15,8 @@
  * - SPEC-183 T-006: PATCH error with known code surfaces localized text
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PreferenceToggles } from '../../../src/components/account/PreferenceToggles.client';
@@ -157,7 +159,7 @@ describe('PreferenceToggles', () => {
         globalThis.fetch = buildGetMock();
         renderToggles();
         await waitFor(() => {
-            const checkbox = screen.getByRole('checkbox', { name: /recibir el bolet.n/i });
+            const checkbox = screen.getByRole('switch', { name: /recibir el bolet.n/i });
             expect(checkbox).not.toBeChecked();
         });
     });
@@ -166,7 +168,7 @@ describe('PreferenceToggles', () => {
         globalThis.fetch = buildGetMock();
         renderToggles();
         await waitFor(() => {
-            const emailCheckbox = screen.getByRole('checkbox', {
+            const emailCheckbox = screen.getByRole('switch', {
                 name: /correo electrónico/i
             });
             expect(emailCheckbox).toBeChecked();
@@ -195,9 +197,9 @@ describe('PreferenceToggles', () => {
         });
 
         renderToggles();
-        await waitFor(() => screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
+        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
 
-        const checkbox = screen.getByRole('checkbox', { name: /recibir el bolet.n/i });
+        const checkbox = screen.getByRole('switch', { name: /recibir el bolet.n/i });
         fireEvent.click(checkbox);
 
         await waitFor(() => {
@@ -227,9 +229,9 @@ describe('PreferenceToggles', () => {
         });
 
         renderToggles();
-        await waitFor(() => screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
+        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
 
-        const checkbox = screen.getByRole('checkbox', { name: /recibir el bolet.n/i });
+        const checkbox = screen.getByRole('switch', { name: /recibir el bolet.n/i });
         fireEvent.click(checkbox);
 
         await waitFor(() => {
@@ -283,8 +285,8 @@ describe('PreferenceToggles', () => {
         });
 
         renderToggles();
-        await waitFor(() => screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
-        fireEvent.click(screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
+        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
+        fireEvent.click(screen.getByRole('switch', { name: /recibir el bolet.n/i }));
 
         // translateApiError must be called with the full error object (not just message).
         await waitFor(() => {
@@ -324,8 +326,8 @@ describe('PreferenceToggles', () => {
         });
 
         renderToggles();
-        await waitFor(() => screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
-        fireEvent.click(screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
+        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
+        fireEvent.click(screen.getByRole('switch', { name: /recibir el bolet.n/i }));
 
         await waitFor(() => {
             expect(mockTranslateApiError).toHaveBeenCalledWith(
@@ -348,7 +350,7 @@ describe('PreferenceToggles — AI questions digest (HOS-2101)', () => {
 
         renderToggles();
         const checkbox = await waitFor(() =>
-            screen.getByRole('checkbox', { name: /recibir el resumen semanal/i })
+            screen.getByRole('switch', { name: /recibir el resumen semanal/i })
         );
 
         expect((checkbox as HTMLInputElement).checked).toBe(true);
@@ -362,7 +364,7 @@ describe('PreferenceToggles — AI questions digest (HOS-2101)', () => {
 
         renderToggles();
         const checkbox = await waitFor(() =>
-            screen.getByRole('checkbox', { name: /recibir el resumen semanal/i })
+            screen.getByRole('switch', { name: /recibir el resumen semanal/i })
         );
 
         expect((checkbox as HTMLInputElement).checked).toBe(false);
@@ -380,7 +382,7 @@ describe('PreferenceToggles — AI questions digest (HOS-2101)', () => {
         });
         renderToggles();
         const checkbox = await waitFor(() =>
-            screen.getByRole('checkbox', { name: /recibir el resumen semanal/i })
+            screen.getByRole('switch', { name: /recibir el resumen semanal/i })
         );
 
         // Act
@@ -389,5 +391,57 @@ describe('PreferenceToggles — AI questions digest (HOS-2101)', () => {
         // Assert
         await waitFor(() => expect(patchBodies).toHaveLength(1));
         expect(patchBodies[0]).toEqual({ settings: { aiQuestionsDigest: false } });
+    });
+});
+
+describe('PreferenceToggles — switch accessibility (HOS-2435)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('exposes each toggle as role=switch with a matching aria-checked', async () => {
+        globalThis.fetch = buildGetMock();
+        renderToggles();
+
+        const switches = await waitFor(() => {
+            const found = screen.getAllByRole('switch');
+            expect(found.length).toBeGreaterThan(0);
+            return found;
+        });
+
+        for (const el of switches) {
+            expect(el.getAttribute('aria-checked')).toBe(String((el as HTMLInputElement).checked));
+        }
+    });
+
+    it('points aria-describedby at an element that exists', async () => {
+        globalThis.fetch = buildGetMock();
+        renderToggles();
+
+        const switches = await waitFor(() => screen.getAllByRole('switch'));
+
+        for (const el of switches) {
+            const describedBy = el.getAttribute('aria-describedby');
+            expect(describedBy).toBeTruthy();
+            expect(document.getElementById(describedBy as string)).not.toBeNull();
+        }
+    });
+
+    it('does not label the switch twice (wrapper label has no aria-label)', async () => {
+        globalThis.fetch = buildGetMock();
+        renderToggles();
+        const switches = await waitFor(() => screen.getAllByRole('switch'));
+
+        for (const el of switches) {
+            expect(el.closest('label')?.hasAttribute('aria-label')).toBe(false);
+        }
+    });
+
+    it('declares a visible keyboard focus style for the switch track', () => {
+        const css = readFileSync(
+            resolve(__dirname, '../../../src/components/account/PreferenceToggles.module.css'),
+            'utf8'
+        );
+        expect(css).toMatch(/\.toggle input:focus-visible\s*\+\s*\.toggleTrack\s*\{[^}]*outline/);
     });
 });

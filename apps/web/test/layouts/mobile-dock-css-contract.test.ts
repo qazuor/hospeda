@@ -90,6 +90,15 @@ function mobileValue(
 describe('HOS-1768 dock CSS contract (rendered behaviour, not source strings)', () => {
     const START = '[data-mobile-dock-slot="start"]';
 
+    it('keeps contact in a boxless slot so it does not add a flex gap while empty', () => {
+        const slots = '[data-mobile-dock-slot]';
+        const contact = '[data-mobile-dock-slot="contact"]';
+        const base = dockRules.filter((rule) => !rule.mobile && rule.selector === slots);
+
+        expect(base.at(-1)?.decls.display).toBe('contents');
+        expect(dockRules.filter((rule) => rule.selector === contact)).toEqual([]);
+    });
+
     it('hides the start slot on desktop but un-hides it inside the mobile query', () => {
         const base = dockRules.filter((r) => !r.mobile && r.selector === START);
         expect(base.at(-1)?.decls.display).toBe('none');
