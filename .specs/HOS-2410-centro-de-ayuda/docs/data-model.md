@@ -120,7 +120,9 @@ articles it mentions and to the exact portal part it explains. Guard (a) enforce
 - **IL-1 Portal parts are linked.** Every `page:` and `section:` anchor in an
   article's `covers` or `entryFor` appears in its body at least once as a
   `{{link:…}}` token pointing to that page or section. An article never explains
-  a screen without a link to it.
+  a screen without a link to it. A page with no dedicated target is linked
+  with `{{link:page:<key>}}` (§5.1). A token inside a «Cómo se hace» step does
+  not count and fails a1 until `get_help` resolves tokens (PR-12).
 - **IL-2 Mentions are links.** Inside the body, a reference to another article's
   topic is an `{{article:…}}` token, never plain text. Not machine-checkable in
   general; reviewers check it. The guard checks the reverse case it can see: an
@@ -195,20 +197,34 @@ articles it mentions and to the exact portal part it explains. Guard (a) enforce
 ```text
 token  = "{{" kind ":" args [ "|" label ] "}}"
 kind   = "limit" | "link" | "article"
-args   = arg *( ":" arg )          ; arg = [a-z0-9_.-]+
+args   = arg *( ":" arg )          ; arg = [A-Za-z0-9_.-]+
 label  = 1*80 chars, no "{", "}", "|"
 ```
 
 | Token | Args | Example |
 |---|---|---|
 | `limit` | `<limitKey>[:<vertical>]` (vertical defaults to the article's single `verticals` value; required when it has several) | `{{limit:max_photos_per_accommodation}}` |
-| `link` | `<target>[:<arg>…]` where target ∈ `plans:<vertical>`, `subscription`, `addons`, `list:<vertical>`, `create:<vertical>`, `section:<vertical>:<sectionSlug>`, `inquiries`, `providerDirectory`, `benefitUsages`, `providerPanel`, `partnerPanel`, `aiAssistants`, `faq`, `contact`, `help` | `{{link:plans:venue\|ver los planes}}` |
+| `link` | `<target>[:<arg>…]` where target ∈ `plans:<vertical>`, `subscription`, `addons`, `list:<vertical>`, `create:<vertical>`, `section:<vertical>:<sectionSlug>`, `inquiries`, `providerDirectory`, `benefitUsages`, `providerPanel`, `partnerPanel`, `aiAssistants`, `faq`, `contact`, `help`, `page:<pageKey>` | `{{link:plans:venue\|ver los planes}}`, `{{link:page:accountHome}}` |
 | `article` | `<id>[:<anchor>]`, where anchor is a section key anchor (§3) or a `###` anchor of that article (IL-3) | `{{article:pause-resume\|cómo pausar}}`, `{{article:photos:problemas-comunes\|si tus fotos no se ven}}` |
 
 Each `link` target maps 1:1 to a `PortalDestination` (a closed table in
 `@repo/help`, typed `satisfies Record<…>`). Without a label, the link uses the
 destination's default label (`portal-destination.ts`). Tokens are forbidden in
 `title`, `summary` and `keywords`.
+
+`arg` allows uppercase because several link targets and page keys are
+camelCase (`providerDirectory`, `accountHome`); limit keys, verticals, article
+ids and anchors stay lowercase by their own grammars.
+
+`page:<pageKey>` reaches the generic `page` destination of `@repo/portal-routes`
+(owner decision 2026-11-21, PR-3 deviation 3). `<pageKey>` is a key of
+`PORTAL_PAGE_LABELS` whose template in `PORTAL_ROUTE_TEMPLATES` has no
+`[dynamic]` segment (`HELP_STATIC_PAGE_KEYS`). Keys that name a record
+(`promotionEdit`, the public pages by slug) are rejected, like every
+destination that names a record. The route → page-key map
+(`HELP_PAGE_KEYS_BY_ROUTE`) is derived from `PORTAL_ROUTE_TEMPLATES`, never kept
+by hand: a `page:<route>` anchor (IL-1) is satisfied by `{{link:page:<key>}}`
+when `<key>` maps to that route, and the IL-1 failure names the token to add.
 
 ### 5.2 Who resolves what
 
