@@ -257,4 +257,29 @@ describe('createAnchorHasher', () => {
             hashBefore('page:mi-cuenta/suscripcion')
         );
     });
+
+    it('keeps a section hash when only its menu order changes (owner decision 2026-11-21)', () => {
+        // Arrange
+        const root = syntheticRoot();
+        const entry = { id: 'photos', order: 3, fields: ['photos'], entitlementKey: 'x' };
+        const hashOf = (value: Record<string, unknown>) =>
+            createAnchorHasher({
+                root,
+                sources: sources({ sectionCatalog: new Map([['accommodation.photos', value]]) })
+            })('section:accommodation.fotos');
+        const base = hashOf(entry);
+
+        // Act
+        const reordered = hashOf({ ...entry, order: 7 });
+        const withoutOrder = hashOf({ id: 'photos', fields: ['photos'], entitlementKey: 'x' });
+        const otherFields = hashOf({ ...entry, fields: ['photos', 'video'] });
+        const otherKey = hashOf({ ...entry, entitlementKey: 'y' });
+
+        // Assert
+        expect(base.ok).toBe(true);
+        expect(reordered).toEqual(base);
+        expect(withoutOrder).toEqual(base);
+        expect(otherFields).not.toEqual(base);
+        expect(otherKey).not.toEqual(base);
+    });
 });

@@ -144,8 +144,27 @@ function sectionInput({
     const entry =
         sectionId === undefined
             ? null
-            : (sources.sectionCatalog.get(`${vertical}.${sectionId}`) ?? null);
+            : withoutPresentationFields({
+                  entry: sources.sectionCatalog.get(`${vertical}.${sectionId}`) ?? null
+              });
     return `${file}\n${readText({ root, file })}\n${toCanonicalJson({ value: entry })}`;
+}
+
+/**
+ * Fields of a `LISTING_SECTIONS` entry left out of a section hash. `order` is
+ * where the section sits in the editor menu: presentation, not what an article
+ * explains, so renumbering the menu must not flag every article that covers a
+ * section (owner decision, 2026-11-21).
+ */
+export const SECTION_PRESENTATION_FIELDS = ['order'] as const;
+
+/** A section catalog entry without its {@link SECTION_PRESENTATION_FIELDS}. */
+function withoutPresentationFields({ entry }: { readonly entry: unknown }): unknown {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
+        return entry;
+    }
+    const excluded: ReadonlySet<string> = new Set(SECTION_PRESENTATION_FIELDS);
+    return Object.fromEntries(Object.entries(entry).filter(([key]) => !excluded.has(key)));
 }
 
 /** The text hashed for one anchor, or `undefined` when it names nothing hashable. */
