@@ -88,3 +88,21 @@ export const radius = {
     semantic: radiusSemantic,
     organic: radiusOrganic
 } as const;
+
+// ============================================================================
+// App radius scale — account area (HOS-2454, HOS-2413 T-001)
+//
+// Three radii for the app. `radius-pill` already exists in `radiusSemantic`
+// and is reused as is; `radius-card` (24px) stays for the public site.
+// ============================================================================
+
+/** App radius scale for the Mi Cuenta kit. */
+export const radiusApp = {
+    /** Buttons, inputs, chips, thumbnails, nav items. Web token `--radius-control`. */
+    control: '8px',
+    /** Section, Dialog, Drawer, Toast, StickySaveBar. Web token `--radius-surface`. */
+    surface: '12px'
+} as const satisfies Record<string, string>;
+
+/** Name of an app radius step. */
+export type RadiusAppName = keyof typeof radiusApp;

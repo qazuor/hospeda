@@ -1,0 +1,47 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`T-002 · generated CSS > emits the kit delta dark overrides 1`] = `
+[
+  "--action-primary: var(--brand-primary);",
+  "--action-primary-hover: oklch(0.626 0.17 259);",
+  "--on-action-primary: oklch(1 0 0);",
+  "--action-accent: var(--brand-accent);",
+  "--action-accent-hover: oklch(0.662 0.19 55);",
+  "--on-action-accent: oklch(1 0 0);",
+  "--action-danger: oklch(0.55 0.2 27);",
+  "--on-action-danger: oklch(0.98 0 0);",
+  "--control-bg: oklch(0.235 0.038 258);",
+  "--control-border: oklch(0.6 0.03 258);",
+  "--nav-active-bg: oklch(0.33 0.07 259);",
+  "--nav-active-fg: oklch(0.84 0.09 259);",
+  "--upsell-bg: oklch(0.31 0.05 55);",
+  "--upsell-fg: oklch(0.8 0.14 60);",
+  "--upsell-border: oklch(0.48 0.09 55);",
+  "--shadow-sticky: 0 -6px 20px -6px oklch(0 0 0 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.08);",
+]
+`;
+
+exports[`T-002 · generated CSS > emits the kit delta in the light :root block 1`] = `
+[
+  "--action-primary: var(--brand-primary);",
+  "--action-primary-hover: oklch(0.58 0.19 259);",
+  "--on-action-primary: oklch(1 0 0);",
+  "--action-accent: var(--brand-accent);",
+  "--action-accent-hover: oklch(0.644 0.18 55);",
+  "--on-action-accent: oklch(1 0 0);",
+  "--action-danger: oklch(0.577 0.245 27.325);",
+  "--on-action-danger: oklch(0.98 0 0);",
+  "--control-bg: oklch(1 0 0);",
+  "--control-border: oklch(0.6 0.02 250);",
+  "--nav-active-bg: oklch(0.95 0.03 259);",
+  "--nav-active-fg: oklch(0.5 0.18 259);",
+  "--upsell-bg: oklch(0.97 0.03 60);",
+  "--upsell-fg: oklch(0.5 0.15 50);",
+  "--upsell-border: oklch(0.85 0.08 60);",
+  "--shadow-sticky: 0 -4px 16px -6px oklch(from var(--core-foreground) l c h / 0.16), 0 1px 2px oklch(from var(--core-foreground) l c h / 0.08);",
+  "--sidebar-w: 240px;",
+  "--editor-nav-w: 224px;",
+  "--form-max: 720px;",
+  "--reading-max: 640px;",
+]
+`;

@@ -177,8 +177,10 @@ describe('theme exports', () => {
         // HOS-1942 added destructive-text (light = destructive, dark lifted) → 239 / 71.
         // HOS-2058 added 5 amenity-type tokens (parking, laundry, water-activities,
         // wellness, dining; light only) → 244 / 71.
-        expect(Object.keys(webLight)).toHaveLength(244);
-        expect(Object.keys(webDark)).toHaveLength(71);
+        // HOS-2413 PR-1 added the Mi Cuenta app tokens (web-account.ts: 84 light,
+        // 37 dark) → 328 / 108.
+        expect(Object.keys(webLight)).toHaveLength(328);
+        expect(Object.keys(webDark)).toHaveLength(108);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/
         // user-role/auth-provider/amenity-type/sponsor-type families to admin-light,

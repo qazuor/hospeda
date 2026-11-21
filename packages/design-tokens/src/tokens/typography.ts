@@ -165,3 +165,93 @@ export const typography = {
     lineHeight,
     semantic: semanticTypography
 } as const;
+
+// ============================================================================
+// App typography — account area (HOS-2454, HOS-2413 T-001)
+//
+// The nine aliases the Mi Cuenta kit uses, with the approved catalog's size,
+// line height and weight. Each size points at an EXISTING `--text-*` token
+// when one has the same value (`sizeToken`); the two 28px roles have no
+// matching token (`--text-h2` is a fluid clamp), so they carry a literal rem.
+// `sizePx` is the reference number tests check: the floor is 12px.
+//
+// The theme emits, per alias `<name>`:
+//   --app-<name>          font shorthand: `<weight> <size>/<leading> <family>`
+//   --app-<name>-size     font-size
+//   --app-<name>-leading  line-height
+//   --app-<name>-weight   font-weight
+//   --app-<name>-tracking letter-spacing (only when the catalog sets one)
+// ============================================================================
+
+/** One app typography role. */
+export type AppTypographyRole = {
+    /** Catalog size in px (12px floor). */
+    readonly sizePx: number;
+    /** Existing semantic `--text-*` token with the same size, if any. */
+    readonly sizeToken: string | null;
+    /** Catalog line height in px. */
+    readonly leadingPx: number;
+    /** Font weight. */
+    readonly weight: 400 | 500 | 700;
+    /** Font family token (without `--`). */
+    readonly family: 'font-heading' | 'font-sans';
+    /** Letter spacing, when the catalog sets one. */
+    readonly tracking?: string;
+};
+
+/** Minimum app font size in px (catalog «piso de 12px»). */
+export const APP_TYPOGRAPHY_FLOOR_PX = 12;
+
+/**
+ * App typography aliases for the account area, keyed by role name.
+ * Values come from the approved component catalog (v5, 2026-11-20).
+ */
+export const appTypography = {
+    title: {
+        sizePx: 28,
+        sizeToken: null,
+        leadingPx: 34,
+        weight: 700,
+        family: 'font-heading',
+        tracking: '-0.01em'
+    },
+    section: {
+        sizePx: 20,
+        sizeToken: 'text-lg',
+        leadingPx: 28,
+        weight: 700,
+        family: 'font-heading'
+    },
+    'card-title': {
+        sizePx: 18,
+        sizeToken: 'text-h6',
+        leadingPx: 26,
+        weight: 500,
+        family: 'font-heading'
+    },
+    stat: { sizePx: 28, sizeToken: null, leadingPx: 32, weight: 700, family: 'font-heading' },
+    body: { sizePx: 16, sizeToken: 'text-body', leadingPx: 24, weight: 400, family: 'font-sans' },
+    control: {
+        sizePx: 15,
+        sizeToken: 'text-body-md',
+        leadingPx: 20,
+        weight: 500,
+        family: 'font-sans'
+    },
+    ui: { sizePx: 14, sizeToken: 'text-body-sm', leadingPx: 20, weight: 400, family: 'font-sans' },
+    meta: { sizePx: 13, sizeToken: 'text-meta', leadingPx: 18, weight: 400, family: 'font-sans' },
+    caption: {
+        sizePx: 12,
+        sizeToken: 'text-caption',
+        leadingPx: 16,
+        weight: 500,
+        family: 'font-sans',
+        tracking: '0.02em'
+    }
+} as const satisfies Record<string, AppTypographyRole>;
+
+/** Name of an app typography role (`title`, `section`, …). */
+export type AppTypographyName = keyof typeof appTypography;
+
+/** Converts a px number to the rem string the theme emits (16px root). */
+export const pxToRem = ({ px }: { readonly px: number }): string => `${px / 16}rem`;
