@@ -373,7 +373,15 @@ export class UserBookmarkCollectionService extends BaseCrudService<
         // type are returned (and counted). Used by the collection detail page
         // to power the entity type tabs.
         entityType: z
-            .enum(['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT', 'POST'])
+            .enum([
+                'ACCOMMODATION',
+                'DESTINATION',
+                'ATTRACTION',
+                'EVENT',
+                'POST',
+                'VENUE',
+                'EXPERIENCE'
+            ])
             .optional()
     });
 
@@ -668,7 +676,14 @@ export class UserBookmarkCollectionService extends BaseCrudService<
             readonly includeBookmarks?: boolean;
             readonly bookmarksPage?: number;
             readonly bookmarksPageSize?: number;
-            readonly entityType?: 'ACCOMMODATION' | 'DESTINATION' | 'ATTRACTION' | 'EVENT' | 'POST';
+            readonly entityType?:
+                | 'ACCOMMODATION'
+                | 'DESTINATION'
+                | 'ATTRACTION'
+                | 'EVENT'
+                | 'POST'
+                | 'VENUE'
+                | 'EXPERIENCE';
         },
         ctx?: ServiceContext
     ): Promise<

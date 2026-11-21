@@ -28,7 +28,17 @@ const collectionService = new UserBookmarkCollectionService({ logger: apiLogger 
 const GetCollectionByIdQuerySchema = {
     bookmarksPage: z.coerce.number().int().min(1).default(1),
     bookmarksPageSize: z.coerce.number().int().min(1).max(100).default(20),
-    entityType: z.enum(['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT', 'POST']).optional()
+    entityType: z
+        .enum([
+            'ACCOMMODATION',
+            'DESTINATION',
+            'ATTRACTION',
+            'EVENT',
+            'POST',
+            'VENUE',
+            'EXPERIENCE'
+        ])
+        .optional()
 };
 
 export const getUserBookmarkCollectionByIdRoute = createProtectedRoute({
@@ -59,6 +69,8 @@ export const getUserBookmarkCollectionByIdRoute = createProtectedRoute({
             | 'ATTRACTION'
             | 'EVENT'
             | 'POST'
+            | 'VENUE'
+            | 'EXPERIENCE'
             | undefined;
 
         const result = await collectionService.getCollectionById(actor, {

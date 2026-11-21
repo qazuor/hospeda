@@ -131,4 +131,22 @@ describe('MarketComparisonWidget', () => {
         expect(screen.getByText('Tu rating')).toBeInTheDocument();
         expect(screen.getByText('Prom. destino')).toBeInTheDocument();
     });
+
+    it('formats a fractional average price without extra decimals (HOS-2427)', () => {
+        const fractional = {
+            items: [{ ...mockData.items[0], yourPrice: 8500, destinationAvgPrice: 59333.333333 }]
+        };
+        const { container } = render(
+            <MarketComparisonWidget
+                locale="es"
+                data={fractional as never}
+                isLoading={false}
+                error={null}
+            />
+        );
+        const text = container.textContent ?? '';
+        expect(text).not.toContain('59.333,333');
+        expect(text).toMatch(/\$\s?59\.333(?![.,]\d)/);
+        expect(text).toMatch(/\$\s?8\.500(?![.,]\d)/);
+    });
 });

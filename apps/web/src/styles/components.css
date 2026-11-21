@@ -606,6 +606,13 @@
     margin: 0;
 }
 
+/* === Stat unavailable state (HOS-2424) === */
+.stat-value--unavailable {
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+}
+
 /* === Stat shimmer skeleton === */
 .stat-value--loading {
     display: inline-block;

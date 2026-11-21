@@ -23,6 +23,13 @@ import { CollectionDetailActions } from '@/components/account/CollectionDetailAc
 import { EditableNote } from '@/components/account/EditableNote';
 import { ICON_OPTIONS } from '@/components/account/collection-picker-config';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
+import {
+	COLLECTION_ENTITY_PATH_SEGMENTS,
+	COLLECTION_ENTITY_TYPES,
+	COLLECTION_FILTER_LABELS,
+	parseCollectionEntityType
+} from '@/lib/collection-entity-types';
+import type { CollectionEntityType } from '@/lib/collection-entity-types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
@@ -55,17 +62,11 @@ if (!id) {
 const rawEntityType = Astro.url.searchParams.get('entityType');
 const rawPage = Astro.url.searchParams.get('bookmarksPage');
 
-/** Valid entity type keys for filtering */
-const VALID_ENTITY_TYPES = ['ACCOMMODATION', 'DESTINATION', 'ATTRACTION', 'EVENT', 'POST'] as const;
-type ValidEntityType = (typeof VALID_ENTITY_TYPES)[number];
+type ValidEntityType = CollectionEntityType;
 
-function isValidEntityType(val: string | null): val is ValidEntityType {
-	return VALID_ENTITY_TYPES.includes(val as ValidEntityType);
-}
-
-const activeEntityType: ValidEntityType | undefined = isValidEntityType(rawEntityType)
-	? rawEntityType
-	: undefined;
+const activeEntityType: ValidEntityType | undefined = parseCollectionEntityType({
+	value: rawEntityType
+});
 
 const currentPage = rawPage && /^\d+$/.test(rawPage) ? Math.max(1, parseInt(rawPage, 10)) : 1;
 
@@ -185,28 +186,16 @@ interface EntityTypeTab {
 
 const entityTypeTabs: readonly EntityTypeTab[] = [
 	{ key: 'ALL', label: t('account.favorites.filter.all', 'Todos') },
-	{
-		key: 'ACCOMMODATION',
-		label: t('account.favorites.filter.accommodations', 'Alojamientos')
-	},
-	{ key: 'DESTINATION', label: t('account.favorites.filter.destinations', 'Destinos') },
-	{ key: 'EVENT', label: t('account.favorites.filter.events', 'Eventos') },
-	{ key: 'POST', label: t('account.favorites.filter.posts', 'Posts') }
+	...COLLECTION_ENTITY_TYPES.map((type) => ({
+		key: type,
+		label: t(COLLECTION_FILTER_LABELS[type].key, COLLECTION_FILTER_LABELS[type].fallback)
+	}))
 ];
 
-/**
- * Path segment used to build entity URLs per type.
- */
-const ENTITY_PATH_SEGMENTS: Readonly<Record<string, string>> = {
-	ACCOMMODATION: 'alojamientos',
-	DESTINATION: 'destinos',
-	EVENT: 'eventos',
-	POST: 'publicaciones',
-	ATTRACTION: 'atracciones'
-};
-
 function resolveEntityHref(entityType: string, entityId: string): string {
-	const segment = ENTITY_PATH_SEGMENTS[entityType] ?? entityType.toLowerCase();
+	const segment =
+		COLLECTION_ENTITY_PATH_SEGMENTS[entityType as CollectionEntityType] ??
+		entityType.toLowerCase();
 	return buildUrl({ locale, path: `${segment}/${entityId}` });
 }
 
@@ -375,7 +364,7 @@ const apiBase = getApiUrl();
 							const displayTitle =
 								bookmark.name ??
 								bookmark.entityName ??
-								t('account.favorites.collections.no_collection', 'Sin título');
+								t('common.untitled', 'Sin título');
 							return (
 								<li class="coleccion-card">
 									<!-- Image: server-enriched featured image with type label fallback -->
@@ -424,6 +413,7 @@ const apiBase = getApiUrl();
 											saveErrorMessage={t(
 												'account.favorites.errors.saveFailed'
 											)}
+											savedLabel={t('account.favorites.notes.saved', 'Nota guardada')}
 										/>
 									</div>
 
@@ -448,7 +438,7 @@ const apiBase = getApiUrl();
 				{bookmarksData && totalPages > 1 && (
 					<nav
 						class="coleccion-pagination"
-						aria-label={t('account.favorites.filter.label', 'Paginación')}
+						aria-label={t('common.pagination', 'Paginación')}
 					>
 						{currentPage > 1 ? (
 							<a
@@ -459,14 +449,14 @@ const apiBase = getApiUrl();
 									'Página anterior'
 								)}
 							>
-								{t('account.favorites.collections.prevPage', 'Anterior')}
+								{t('common.prev', 'Anterior')}
 							</a>
 						) : (
 							<span
 								class="coleccion-pagination__btn coleccion-pagination__btn--disabled"
 								aria-disabled="true"
 							>
-								{t('account.favorites.collections.prevPage', 'Anterior')}
+								{t('common.prev', 'Anterior')}
 							</span>
 						)}
 
@@ -490,14 +480,14 @@ const apiBase = getApiUrl();
 									'Página siguiente'
 								)}
 							>
-								{t('account.favorites.collections.nextPage', 'Siguiente')}
+								{t('common.next', 'Siguiente')}
 							</a>
 						) : (
 							<span
 								class="coleccion-pagination__btn coleccion-pagination__btn--disabled"
 								aria-disabled="true"
 							>
-								{t('account.favorites.collections.nextPage', 'Siguiente')}
+								{t('common.next', 'Siguiente')}
 							</span>
 						)}
 					</nav>

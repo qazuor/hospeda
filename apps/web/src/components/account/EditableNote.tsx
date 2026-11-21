@@ -59,6 +59,11 @@ export interface EditableNoteProps {
     /** i18n fallback message for save errors. */
     readonly saveErrorMessage: string;
     /**
+     * Confirmation shown (as a status message) after a successful save.
+     * Optional; when omitted no confirmation is rendered (HOS-2445).
+     */
+    readonly savedLabel?: string;
+    /**
      * Current locale, used to translate API error responses by `code`.
      * Optional for backwards-compat; without it the component falls back to
      * the API's English `message` (the current behavior pre-fix).
@@ -86,6 +91,7 @@ export function EditableNote({
     textareaLabel,
     editButtonLabel,
     saveErrorMessage,
+    savedLabel,
     locale
 }: EditableNoteProps) {
     const [isEditing, setIsEditing] = useState(false);
@@ -95,8 +101,16 @@ export function EditableNote({
     // when the host page is SSR-rendered and never re-passes a new initialValue
     // (collection detail page is the main consumer of this fallback).
     const [persistedValue, setPersistedValue] = useState(initialValue ?? '');
+    // True right after a successful save; drives the "saved" confirmation.
+    const [justSaved, setJustSaved] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const saveButtonRef = useRef<HTMLButtonElement>(null);
+    // Set by Escape/Cancel so the blur that follows (including the one fired on
+    // unmount) never saves a note the user just discarded (HOS-2445).
+    const cancelledRef = useRef(false);
+    // Draft whose save failed; blur does not retry it until the draft changes,
+    // so one failure cannot re-fire PATCH + toast on every later blur.
+    const failedDraftRef = useRef<string | null>(null);
 
     // Reset draft + mirror whenever the persisted value changes (e.g. after a
     // successful save the parent passes the new value back in).
@@ -121,11 +135,15 @@ export function EditableNote({
     }
 
     const handleEdit = useCallback(() => {
+        cancelledRef.current = false;
+        failedDraftRef.current = null;
+        setJustSaved(false);
         setDraft(initialValue ?? '');
         setIsEditing(true);
     }, [initialValue]);
 
     const handleCancel = useCallback(() => {
+        cancelledRef.current = true;
         setDraft(initialValue ?? '');
         setIsEditing(false);
     }, [initialValue]);
@@ -169,8 +187,11 @@ export function EditableNote({
 
             setPersistedValue(draft);
             onSaved?.(draft);
+            failedDraftRef.current = null;
             setIsEditing(false);
+            setJustSaved(true);
         } catch (err) {
+            failedDraftRef.current = draft;
             const msg = err instanceof Error ? err.message : saveErrorMessage;
             addToast({ type: 'error', message: msg });
             // Keep editor open with current draft so the user can retry.
@@ -178,6 +199,27 @@ export function EditableNote({
             setIsSaving(false);
         }
     }, [apiBase, bookmarkId, draft, isSaving, onSaved, saveErrorMessage, locale]);
+
+    /**
+     * Saves when the textarea loses focus so a typed note is never silently
+     * dropped (HOS-2445). Moving focus to the Save/Cancel buttons is left to
+     * those buttons; an unchanged draft just closes the editor.
+     */
+    const handleBlur = useCallback(
+        (e: React.FocusEvent<HTMLTextAreaElement>) => {
+            const next = e.relatedTarget as Node | null;
+            if (next && e.currentTarget.parentElement?.contains(next)) return;
+            if (isSaving || cancelledRef.current) return;
+            if (draft === failedDraftRef.current) return;
+            if (draft === persistedValue) {
+                setIsEditing(false);
+                return;
+            }
+            if (draft.length > NOTE_MAX_LENGTH) return;
+            void handleSave();
+        },
+        [draft, persistedValue, isSaving, handleSave]
+    );
 
     const currentLength = draft.length;
     const isOverLimit = currentLength > NOTE_MAX_LENGTH;
@@ -200,6 +242,7 @@ export function EditableNote({
                     maxLength={NOTE_MAX_LENGTH + 1} // allow one extra to show over-limit UI
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    onBlur={handleBlur}
                     disabled={isSaving}
                 />
                 <div className={styles.editorFooter}>
@@ -214,6 +257,7 @@ export function EditableNote({
                         <button
                             type="button"
                             className={styles.cancelBtn}
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={handleCancel}
                             disabled={isSaving}
                         >
@@ -223,6 +267,7 @@ export function EditableNote({
                             ref={saveButtonRef}
                             type="button"
                             className={styles.saveBtn}
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                                 void handleSave();
                             }}
@@ -240,14 +285,25 @@ export function EditableNote({
     // ── Read view ─────────────────────────────────────────────────────────────
 
     return (
-        <button
-            type="button"
-            className={hasNote ? styles.noteDisplay : styles.notePlaceholder}
-            onClick={handleEdit}
-            aria-label={editButtonLabel}
-            title={editButtonLabel}
-        >
-            {hasNote ? displayValue : placeholder}
-        </button>
+        <>
+            <button
+                type="button"
+                className={hasNote ? styles.noteDisplay : styles.notePlaceholder}
+                onClick={handleEdit}
+                aria-label={editButtonLabel}
+                title={editButtonLabel}
+            >
+                {hasNote ? displayValue : placeholder}
+            </button>
+            {justSaved && savedLabel ? (
+                <span
+                    className={styles.savedStatus}
+                    role="status"
+                    data-testid="note-saved-status"
+                >
+                    {savedLabel}
+                </span>
+            ) : null}
+        </>
     );
 }

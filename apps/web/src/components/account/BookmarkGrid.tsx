@@ -148,6 +148,8 @@ export interface BookmarkGridProps {
     readonly noteEditButtonLabel: string;
     /** Error message shown via toast when saving a note fails */
     readonly noteSaveErrorMessage: string;
+    /** Confirmation shown after a note is saved (HOS-2445). */
+    readonly noteSavedLabel?: string;
     /** Visible label for the "Move to collection" action button */
     readonly moveBtnLabel: string;
     /** Accessible label template for the move button (must contain {{name}}) */
@@ -200,6 +202,7 @@ export function BookmarkGrid({
     noteTextareaLabel,
     noteEditButtonLabel,
     noteSaveErrorMessage,
+    noteSavedLabel,
     moveBtnLabel,
     moveBtnAriaLabel,
     onRemove,
@@ -273,6 +276,7 @@ export function BookmarkGrid({
                                     textareaLabel={noteTextareaLabel}
                                     editButtonLabel={noteEditButtonLabel}
                                     saveErrorMessage={noteSaveErrorMessage}
+                                    savedLabel={noteSavedLabel}
                                     locale={locale}
                                 />
                             </div>

@@ -841,7 +841,8 @@
             "event": "Events",
             "experience": "Experiences",
             "venue": "Food & nightlife",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Attractions"
         },
         "collections": {
             "create": "Create collection",
@@ -864,6 +865,7 @@
             "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
             "errorTitle": "We couldn't load the collection",
             "backToList": "Back to my favorites",
+            "bookmarksLabel": "favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
             "pageInfo": "Page {{page}} of {{total}}",
@@ -903,10 +905,6 @@
         },
         "filter": {
             "all": "All",
-            "accommodations": "Accommodations",
-            "destinations": "Destinations",
-            "events": "Events",
-            "posts": "Posts",
             "label": "Filter by type"
         },
         "bookmarks": {
@@ -926,7 +924,8 @@
         "notes": {
             "cancel": "Cancel",
             "placeholder": "Add a personal note...",
-            "save": "Save note"
+            "save": "Save note",
+            "saved": "Note saved"
         },
         "removeBtn": "Remove",
         "removeLabel": "Remove from favorites",
@@ -1025,6 +1024,7 @@
                 "reviews": "My Reviews",
                 "subscription": "My Subscription",
                 "favoritesDesc": "Saved accommodations",
+                "unavailable": "Not available",
                 "reviewsDesc": "Published reviews",
                 "subscriptionDesc": "Current plan",
                 "subscriptionStatus": "Subscription status",
@@ -1359,7 +1359,9 @@
         "deleteError": "Could not delete the alert",
         "upgrade": {
             "title": "Price alerts",
-            "message": "Price alerts are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+            "message_one": "Price alerts are available on the {{plans}} plan. Upgrade your plan to access this feature.",
+            "message_other": "Price alerts are available on the {{plans}} plans. Upgrade your plan to access this feature.",
+            "messageNoPlans": "Price alerts are not included in your current plan. Upgrade your plan to access this feature.",
             "cta": "View plans"
         },
         "listLabel": "Your active price alerts",
