@@ -25,7 +25,9 @@ export type SeededCall =
           readonly providerAmount?: number;
       }
     | { readonly kind: 'REJECTED'; readonly amount: number }
-    | { readonly kind: 'UNANSWERED'; readonly amount: number };
+    | { readonly kind: 'UNANSWERED'; readonly amount: number }
+    /** Completed without a provider refund id and not as a rejection (the provider was unavailable). */
+    | { readonly kind: 'UNAVAILABLE'; readonly amount: number };
 
 /**
  * Persists calls on a refund the way `persistCall` + `completeCall` leave them, and moves the
@@ -54,7 +56,9 @@ export async function seedProviderCalls(input: {
                 ? { outcome: 'ACCEPTED', providerRefundId }
                 : call.kind === 'REJECTED'
                   ? { outcome: 'REJECTED', refusal: 'AMOUNT_NOT_ACCEPTED' }
-                  : null;
+                  : call.kind === 'UNAVAILABLE'
+                    ? { outcome: 'UNAVAILABLE' }
+                    : null;
         await db.insert(idempotencyKeys).values({
             key,
             operation: 'REFUND_CREATE',
