@@ -133,25 +133,31 @@ export function resolveHelpText({
         replace: (token) => {
             const [first = '', second] = token.args;
             const label = token.label === undefined ? {} : { label: token.label };
-            if (token.kind === 'limit') {
+            const { kind } = token;
+            if (kind === 'limit') {
                 return resolvers.limit({
                     key: first,
                     vertical: limitVertical({ arg: second, verticals: article.verticals }),
                     ...label
                 });
             }
-            if (token.kind === 'link') {
+            if (kind === 'link') {
                 const resolved = resolveHelpLinkTarget({ args: token.args });
                 return resolved.ok
                     ? resolvers.link({ destination: resolved.destination, ...label })
                     : (token.label ?? '');
             }
-            return resolvers.article({
-                id: first,
-                ...(second === undefined ? {} : { anchor: second }),
-                target: findArticle({ id: first }),
-                ...label
-            });
+            if (kind === 'article') {
+                return resolvers.article({
+                    id: first,
+                    ...(second === undefined ? {} : { anchor: second }),
+                    target: findArticle({ id: first }),
+                    ...label
+                });
+            }
+            // A new token kind (a future `shot`) must get its own branch and resolver.
+            const unhandled: never = kind;
+            throw new Error(`unhandled help token kind: ${String(unhandled)}`);
         }
     });
 }
