@@ -2379,7 +2379,7 @@
                 "REFUND_HAS_NO_UNANSWERED_CALL": "The refund has no unanswered call and no accepted call waiting to be credited: there is nothing to retry.",
                 "REFUND_PAST_PROVIDER_WINDOW": "More than 180 days have passed since the charge: MP would refuse any call without saying whether the first one went out. Check the MP panel by hand (refunds runbook, §8).",
                 "REFUND_RETRY_IN_PROGRESS": "A retry of this refund is already running. Wait for it to finish and check its result.",
-                "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and is no longer resent. Check the charge in the Mercado Pago panel and settle the refund through the panel: \"Record what already happened outside the system (action 14)\" or \"Settle the remainder of a partially accepted refund\"."
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and the charge shows no refund to bind it to, so it is not resent (nothing was sent or recorded). Follow the refunds runbook, §8 steps 1-2: check the charge in the Mercado Pago panel and record the call's answer by hand (§8.1 or §8.2)."
             }
         }
     },

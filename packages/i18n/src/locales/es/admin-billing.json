@@ -2379,7 +2379,7 @@
                 "REFUND_HAS_NO_UNANSWERED_CALL": "La devolución no tiene llamadas sin respuesta ni aceptadas pendientes de acreditar: no hay nada que reintentar.",
                 "REFUND_PAST_PROVIDER_WINDOW": "Pasaron más de 180 días del cobro: MP rechazaría cualquier llamada sin decir si la primera salió. Revisá el panel de MP a mano (runbook de devoluciones, §8).",
                 "REFUND_RETRY_IN_PROGRESS": "Ya hay un reintento de esta devolución en curso. Esperá a que termine y mirá el resultado.",
-                "REFUND_CALL_TOO_OLD_TO_RETRY": "El llamado sin respuesta se envió hace más de 24 horas y ya no se reenvía. Mirá el cobro en el panel de Mercado Pago y cerrá la devolución por el panel: «Asentar lo que ya pasó por fuera (acción 14)» o «Asentar el resto de una devolución aceptada en parte»."
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "El llamado sin respuesta se envió hace más de 24 horas y el cobro no muestra ninguna devolución para atarlo, así que no se reenvía (no se envió ni se registró nada). Seguí el runbook de devoluciones, §8 pasos 1-2: revisá el cobro en el panel de Mercado Pago y registrá la respuesta del llamado a mano (§8.1 o §8.2)."
             }
         }
     },

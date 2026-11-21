@@ -2379,7 +2379,7 @@
                 "REFUND_HAS_NO_UNANSWERED_CALL": "O reembolso não tem chamadas sem resposta nem aceitas aguardando crédito: não há nada para tentar de novo.",
                 "REFUND_PAST_PROVIDER_WINDOW": "Passaram-se mais de 180 dias desde a cobrança: o MP recusaria qualquer chamada sem dizer se a primeira saiu. Confira o painel do MP manualmente (runbook de reembolsos, §8).",
                 "REFUND_RETRY_IN_PROGRESS": "Já há uma nova tentativa deste reembolso em andamento. Espere terminar e confira o resultado.",
-                "REFUND_CALL_TOO_OLD_TO_RETRY": "A chamada sem resposta foi enviada há mais de 24 horas e não é mais reenviada. Confira a cobrança no painel do Mercado Pago e encerre o reembolso pelo painel: «Registrar o que já aconteceu fora do sistema (ação 14)» ou «Registrar o restante de um reembolso aceito em parte»."
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "A chamada sem resposta foi enviada há mais de 24 horas e a cobrança não mostra nenhum reembolso para vinculá-la, então ela não é reenviada (nada foi enviado nem registrado). Siga o runbook de reembolsos, §8 passos 1-2: confira a cobrança no painel do Mercado Pago e registre a resposta da chamada manualmente (§8.1 ou §8.2)."
             }
         }
     },
