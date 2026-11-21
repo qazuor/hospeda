@@ -63,6 +63,13 @@ with an optional `label` (1–80 chars). The types are now imported from
 `@repo/portal-routes`. The new kinds `partnerPanel`, `helpLanding` and
 `helpArticle {id}` are allowed (`helpArticle.id` must exist).
 
+`ownEditorSection.section` is a catalog section id of the vertical
+(`EDITOR_SECTION_SLUGS`) or the id of an editor page that is not a catalog
+section (`EDITOR_NON_SECTION_PAGE_SLUGS` in `@repo/portal-routes`: `policies`
+for accommodation, `aiQuestions` for every vertical). Owner decision
+2026-11-21 (PR-3 deviation 4): the portal's `listingEditor` destination takes
+the same ids, so the MCP can link those pages too.
+
 ### 2.2 `Anchor` grammar
 
 ```text
@@ -73,7 +80,7 @@ kind     = "page" | "section" | "entitlement" | "limit" | "enum" | "tool" | "act
 | Kind | Target | Example | Resolves when |
 |---|---|---|---|
 | `page` | route template under `apps/web/src/pages/[lang]/`, no locale, no slashes at the ends, web segment names | `page:mi-cuenta/suscripcion` | `<path>.astro` or `<path>/index.astro` exists (same lookup as `pageExists`, `scripts/check-portal-routes.ts`) |
-| `section` | `<vertical>.<sectionSlug>`, the web editor slug | `section:venue.carta`, `section:accommodation.politicas` | The vertical's editor page `…/editar/<slug>.astro` exists, and the slug is in that vertical's web editor registry (`apps/web/src/lib/editor/accommodation-editor-sections.ts`, `listing-editor-registry.ts`) |
+| `section` | `<vertical>.<sectionSlug>`, the web editor slug | `section:venue.carta`, `section:accommodation.politicas` | The slug is in that vertical's `EDITOR_SECTION_SLUGS` or `EDITOR_NON_SECTION_PAGE_SLUGS` (`packages/portal-routes/src/portal-routes.ts`), and the editor page `…/editar/<slug>.astro` exists. These are the same lists a `{{link:section:…}}` token resolves from (§5.1), so every anchor guard (a) accepts can satisfy IL-1. A web editor page in neither list is added to `EDITOR_NON_SECTION_PAGE_SLUGS`, where `check-portal-routes` checks its page |
 | `entitlement` | entitlement key | `entitlement:manage_venue_menu` | Value of `EntitlementKeyEnum` (`packages/schemas/src/catalog/key-enums.ts:2`) |
 | `limit` | limit key | `limit:max_photos_per_accommodation` | Value of `LimitKeyEnum` (`key-enums.ts:65`) |
 | `enum` | `<Vocabulary>.<VALUE>` from a closed list | `enum:PublicationStatus.MODERATED` | `PublicationStatus` → `PublicationStatusEnum` (`packages/schemas/src/enums/publication-status.enum.ts:21`), `SubscriptionStatus` → `SUBSCRIPTION_STATUSES` (`packages/db/src/schemas/vertical/subscription.dbschema.ts:22`), `TrialStatus` → `TrialStatusEnum` (`packages/schemas/src/enums/trial-status.enum.ts:14`). Adding a vocabulary is a guard change |
@@ -85,7 +92,9 @@ Why `section` uses the **web slug**, not the catalog section id: the editor has
 pages that are not catalog sections, e.g. `politicas` (`accommodation-editor-sections.ts:112`)
 and `preguntas-ia` (`:91`, `listing-editor-registry.ts:112`). The slug is what
 the owner sees in the URL. The catalog entry is still hashed when one exists
-(`docs/guards.md` §4.2).
+(`docs/guards.md` §4.2). Those pages are listed per vertical in
+`EDITOR_NON_SECTION_PAGE_SLUGS`, next to `EDITOR_SECTION_SLUGS`, instead of
+being scraped from the web registries.
 
 ## 3. Body
 
@@ -204,7 +213,7 @@ label  = 1*80 chars, no "{", "}", "|"
 | Token | Args | Example |
 |---|---|---|
 | `limit` | `<limitKey>[:<vertical>]` (vertical defaults to the article's single `verticals` value; required when it has several) | `{{limit:max_photos_per_accommodation}}` |
-| `link` | `<target>[:<arg>…]` where target ∈ `plans:<vertical>`, `subscription`, `addons`, `list:<vertical>`, `create:<vertical>`, `section:<vertical>:<sectionSlug>`, `inquiries`, `providerDirectory`, `benefitUsages`, `providerPanel`, `partnerPanel`, `aiAssistants`, `faq`, `contact`, `help`, `page:<pageKey>` | `{{link:plans:venue\|ver los planes}}`, `{{link:page:accountHome}}` |
+| `link` | `<target>[:<arg>…]` where target ∈ `plans:<vertical>`, `subscription`, `addons`, `list:<vertical>`, `create:<vertical>`, `section:<vertical>:<editorSlug>` (a slug of `EDITOR_SECTION_SLUGS` or `EDITOR_NON_SECTION_PAGE_SLUGS` of that vertical), `inquiries`, `providerDirectory`, `benefitUsages`, `providerPanel`, `partnerPanel`, `aiAssistants`, `faq`, `contact`, `help`, `page:<pageKey>` | `{{link:plans:venue\|ver los planes}}`, `{{link:page:accountHome}}` |
 | `article` | `<id>[:<anchor>]`, where anchor is a section key anchor (§3) or a `###` anchor of that article (IL-3) | `{{article:pause-resume\|cómo pausar}}`, `{{article:photos:problemas-comunes\|si tus fotos no se ven}}` |
 
 Each `link` target maps 1:1 to a `PortalDestination` (a closed table in
