@@ -20,7 +20,7 @@
         "markAllRead": "Marcar tudo como lido",
         "seeEntry": "Ver",
         "showMore": "Ver mais novidades",
-        "showingCount": "Mostrando {{shown}} de {{total}}"
+        "showingCount": "Exibindo {{shown}} de {{total}}"
     },
     "status": {
         "new": "Novo"
