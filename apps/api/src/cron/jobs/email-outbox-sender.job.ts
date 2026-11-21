@@ -28,49 +28,24 @@ import {
     notificationLogModel,
     userModel
 } from '@repo/db';
-import type { PartnerClaimSecretIssuer } from '@repo/notifications';
 import {
     BrevoEmailTransport,
-    createBillingCourtesyRenderers,
-    createBillingGraceReminderRenderers,
-    createBillingLatePaymentRefundRenderers,
-    createBillingManualInstallmentOpenedRenderers,
-    createBillingManualPaymentRenderers,
-    createBillingOneTimeAddonActivatedRenderers,
-    createBillingPlanMigrationRenderers,
-    createBillingPromoRenderers,
-    createBillingProviderWatchRenderers,
-    createBillingReconciliationRenderers,
-    createBillingRenewalRenderers,
-    createBillingSignupRenderers,
     createEmailClient,
-    createListingArchivedRenderers,
-    createListingRetentionRenderers,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
-    createPartnerApplicationRenderers,
-    createTrialCampaignRenderers,
-    createVerticalListingRenderers,
     type EmailOutboxDeliveryDeps,
-    type ListingNamesReader,
-    OUTBOX_MAIL_RENDERERS,
     type OutboxEscalation,
     PreferenceService,
-    processEmailOutboxBatch,
-    type ReconciliationSubjectsReader
+    processEmailOutboxBatch
 } from '@repo/notifications';
-import { resolveLatePaymentRefundMailCopy } from '../../utils/billing-late-payment-refund-mail-copy.js';
-import { resolveManualInstallmentMailCopy } from '../../utils/billing-manual-installment-mail-copy.js';
-import { resolveOneTimeAddonActivatedMailCopy } from '../../utils/billing-one-time-addon-activated-mail-copy.js';
+import {
+    type BuildOutboxRendererRegistryInput,
+    buildOutboxRendererRegistry
+} from '../../services/email-outbox/outbox-renderer-registry.js';
 import { getClock } from '../../utils/clock.js';
 import { resolveOutboxEmailClientConfig } from '../../utils/e2e-mail-capture.js';
 import { getEmailEnvironmentLabel, getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
-import { readListingNames } from '../../utils/listing-publication/listing-names-reader.js';
-import { apiLogger } from '../../utils/logger.js';
-import { issuePartnerClaimSecret } from '../../utils/partner-application/partner-claim-secret.js';
-import { resolvePartnerMailCopy } from '../../utils/partner-application/partner-mail-copy.js';
-import { readReconciliationSubjects } from '../../utils/reconciliation-summary/reconciliation-subjects-reader.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
 /** The sender runs every minute. */
@@ -83,73 +58,15 @@ export const EMAIL_OUTBOX_LEASE_MS = 5 * 60 * 1000;
 export const EMAIL_OUTBOX_BATCH_SIZE = 50;
 
 /**
- * Builds the production outbox renderer with shared, trial, renewal, promo-ending, reconciliation,
- * signup, vertical listing, on-archive, pre-archive/pre-deletion retention, and partner application notices.
+ * Builds the production outbox renderer: the registry composed by
+ * {@link buildOutboxRendererRegistry}, wrapped so an unknown template throws.
  *
  * @param input - Renderer configuration. `readListingNames` defaults to the
  *   database reader; tests inject a fake.
  * @returns The renderer used by the outbox sender.
  */
-export function buildOutboxSenderRender(input: {
-    readonly siteUrl: string;
-    readonly readListingNames?: ListingNamesReader;
-    /** Resolves the reconciliation summary's subjects; defaults to the database reader. */
-    readonly readReconciliationSubjects?: ReconciliationSubjectsReader;
-    /** Admin panel base URL for the summary's links. Absent: no links. */
-    readonly adminUrl?: string;
-    /** Non-production marker (e.g. `STAGING`) for the summary header. Absent in production. */
-    readonly environmentLabel?: string;
-    /** Issues and persists a claim secret; tests inject a fake to avoid database writes. */
-    readonly issuePartnerClaimSecret?: PartnerClaimSecretIssuer;
-}) {
-    return createOutboxMailRenderer({
-        renderers: {
-            ...OUTBOX_MAIL_RENDERERS,
-            ...createTrialCampaignRenderers({ siteUrl: input.siteUrl }),
-            ...createBillingRenewalRenderers({ siteUrl: input.siteUrl }),
-            ...createBillingGraceReminderRenderers({ siteUrl: input.siteUrl }),
-            ...createBillingPromoRenderers({ siteUrl: input.siteUrl }),
-            ...createBillingPlanMigrationRenderers({ siteUrl: input.siteUrl }),
-            ...createBillingCourtesyRenderers(),
-            ...createBillingProviderWatchRenderers(),
-            ...createBillingReconciliationRenderers({
-                siteUrl: input.siteUrl,
-                readSubjects: input.readReconciliationSubjects ?? readReconciliationSubjects,
-                ...(input.adminUrl ? { adminUrl: input.adminUrl } : {}),
-                ...(input.environmentLabel ? { environmentLabel: input.environmentLabel } : {}),
-                onEnrichmentError: ({ error }) =>
-                    apiLogger.warn(
-                        { error: error instanceof Error ? error.message : String(error) },
-                        'Reconciliation summary: subjects could not be resolved; sending the bare lines'
-                    )
-            }),
-            ...createBillingManualPaymentRenderers(),
-            ...createBillingManualInstallmentOpenedRenderers({
-                siteUrl: input.siteUrl,
-                resolveCopy: resolveManualInstallmentMailCopy
-            }),
-            ...createBillingLatePaymentRefundRenderers({
-                resolveCopy: resolveLatePaymentRefundMailCopy
-            }),
-            ...createBillingOneTimeAddonActivatedRenderers({
-                siteUrl: input.siteUrl,
-                readListingNames: input.readListingNames ?? readListingNames,
-                resolveCopy: resolveOneTimeAddonActivatedMailCopy
-            }),
-            ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),
-            ...createVerticalListingRenderers({
-                siteUrl: input.siteUrl,
-                readListingNames: input.readListingNames ?? readListingNames
-            }),
-            ...createListingArchivedRenderers({ siteUrl: input.siteUrl }),
-            ...createListingRetentionRenderers({ siteUrl: input.siteUrl }),
-            ...createPartnerApplicationRenderers({
-                siteUrl: input.siteUrl,
-                issueClaimSecret: input.issuePartnerClaimSecret ?? issuePartnerClaimSecret,
-                resolveCopy: resolvePartnerMailCopy
-            })
-        }
-    });
+export function buildOutboxSenderRender(input: BuildOutboxRendererRegistryInput) {
+    return createOutboxMailRenderer({ renderers: buildOutboxRendererRegistry(input) });
 }
 
 /** Everything the run needs except the reporting hooks, which are built from the run's logger. */
