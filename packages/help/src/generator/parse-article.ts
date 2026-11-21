@@ -165,14 +165,9 @@ function onHowToBlock({ state, token }: { readonly state: BodyState; readonly to
                     'a step of «Cómo se hace» must be plain text, with no nested block'
                 );
             }
+            // A step may carry tokens since HOS-2410 PR-12: get_help resolves them,
+            // and a malformed one is reported by a6 like any other.
             const step = item.text.trim();
-            if (step.includes('{{')) {
-                // get_help returns the steps verbatim and resolves no token until
-                // HOS-2410 PR-12, so a token here would reach the agent raw.
-                state.errors.push(
-                    `a step of «Cómo se hace» must not carry a {{token}} until get_help resolves tokens (HOS-2410 PR-12): "${step}"`
-                );
-            }
             state.steps.push(step);
         }
         return;

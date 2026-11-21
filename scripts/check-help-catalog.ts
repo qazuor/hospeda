@@ -45,9 +45,10 @@
  * - Whether a FAQ item still agrees with the article that extends it.
  * - Whether a `section` slug still belongs to the section the article talks
  *   about (only that its page exists), the blind spot of `check-portal-routes`.
- * - IL-2 in the «Cómo se hace» steps: get_help returns them verbatim and does
- *   not resolve tokens yet (HOS-2410 PR-12), so a step cannot carry a token
- *   (a1 rejects any `{{` in a step) and cannot satisfy IL-1 either.
+ * - IL-2 in the «Cómo se hace» steps. Since HOS-2410 PR-12 get_help resolves
+ *   step tokens, so a step may carry a token and its link tokens count for
+ *   IL-1, but IL-2 still reads only the prose: the steps of the 16 migrated
+ *   topics are frozen byte for byte by AC-15, and one of them quotes a title.
  * - `helpTopicId` literals in API refusals (none exist today).
  *
  * Exit codes: 0 = clean (stale articles may be listed); 1 = a violation.
