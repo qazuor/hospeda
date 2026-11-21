@@ -128,7 +128,7 @@ describe('HELP_INDEX', () => {
 
     it.each(
         HELP_ARTICLES.map((article) => [article.id, article] as const)
-    )('%s states no price and no percentage (ported from owner-help.test.ts until guard (d), PR-4)', (_id, article) => {
+    )('%s states no price and no percentage', (_id, article) => {
         // Arrange: plan values are DB rows; the help points to the plans page.
         const { howTo, ...prose } = article.sections;
         const texts = [
