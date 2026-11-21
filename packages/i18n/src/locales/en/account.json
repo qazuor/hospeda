@@ -1915,6 +1915,8 @@
             "page": "Page {{page}}",
             "loadMore": "Show more",
             "loadedMore": "{{count}} more loaded"
-        }
+        },
+        "switchSaveError": "The change could not be saved. Please try again.",
+        "switchLockedLink": "See how to turn it on"
     }
 }

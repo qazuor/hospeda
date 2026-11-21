@@ -26,6 +26,13 @@ export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radi
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { CountPill, type CountPillProps, StatusPill, type StatusPillProps } from './StatusPill';
+export {
+    Switch,
+    type SwitchProps,
+    SwitchRow,
+    type SwitchRowLock,
+    type SwitchRowProps
+} from './Switch';
 export { KitNestingError } from './section-depth-context';
 export {
     STATUS_TONES,

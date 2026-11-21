@@ -1,0 +1,102 @@
+/* Switch.module.css — Switch and SwitchRow (HOS-2413 T-016). 44x24 track; the
+   off track uses control-border (at least 3:1 on the card). */
+
+.switch {
+    position: relative;
+    flex: none;
+    inline-size: 2.75rem;
+    block-size: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background-color: var(--control-border);
+    cursor: pointer;
+    transition: background-color var(--duration-fast);
+}
+
+/* 44px touch target around the 24px track. */
+.switch::before {
+    content: "";
+    position: absolute;
+    inset-block: calc(var(--space-2) * -1);
+    inset-inline: 0;
+}
+
+.switch[aria-checked="true"] {
+    background-color: var(--action-primary);
+}
+
+.switch:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.switch:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.thumb {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-start: var(--space-1);
+    inline-size: 1rem;
+    block-size: 1rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--control-bg);
+    transition: transform var(--duration-fast);
+}
+
+.switch[aria-checked="true"] .thumb {
+    transform: translateX(1.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .switch,
+    .thumb {
+        transition: none;
+    }
+}
+
+/* ── SwitchRow ───────────────────────────────────────────────────────── */
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-block-size: 4rem;
+    padding-block: var(--space-3);
+}
+
+.text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-inline-size: 0;
+}
+
+.label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font: var(--app-control);
+    color: var(--core-foreground);
+}
+
+.description {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.error {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--status-danger-fg);
+}
+
+.lockedLink {
+    font: var(--app-meta);
+}

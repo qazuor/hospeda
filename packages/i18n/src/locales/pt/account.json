@@ -1915,6 +1915,8 @@
             "page": "Página {{page}}",
             "loadMore": "Ver mais",
             "loadedMore": "{{count}} carregados"
-        }
+        },
+        "switchSaveError": "Não foi possível salvar a alteração. Tente novamente.",
+        "switchLockedLink": "Veja como ativar"
     }
 }
