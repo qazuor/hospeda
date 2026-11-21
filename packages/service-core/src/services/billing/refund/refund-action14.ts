@@ -1,9 +1,10 @@
 import type { DrizzleClient } from '@repo/db';
-import { addonInstances, and, eq, refundCalls, refunds, subscriptions } from '@repo/db';
+import { addonInstances, eq, subscriptions } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
 import { type Actor, ServiceError } from '../../../types';
 import { isSystemActor } from '../../../utils/system-actor';
+import { readCitedProviderRefundIds } from './refund-call-tally';
 import type { LockedRefundSource } from './refund-source';
 
 /** The administrative action that records a refund made outside our flow (ACC:14, Coord-178). */
@@ -100,7 +101,9 @@ export function externalReferenceAlreadySettled(): ServiceError {
 
 /**
  * A provider panel reference identifies one refund: it may be neither another row's panel
- * reference nor the provider id of one of our own calls (HOS-1540 notes H3).
+ * reference nor the provider id of one of our own calls (HOS-1540 notes H3), nor the id a call
+ * kept after the provider rejected it post-acceptance. One rule for every citation, shared with
+ * the resend's binding ({@link readCitedProviderRefundIds}, HOS-2517).
  *
  * @param input.tx - The transaction.
  * @param input.reference - The provider panel refund id.
@@ -110,18 +113,6 @@ export async function assertPanelReferenceUnused(input: {
     readonly tx: DrizzleClient;
     readonly reference: string;
 }): Promise<void> {
-    const { tx, reference } = input;
-    const [settled] = await tx
-        .select({ id: refunds.id })
-        .from(refunds)
-        .where(
-            and(eq(refunds.externalRef, reference), eq(refunds.externalChannel, 'PROVIDER_PANEL'))
-        )
-        .limit(1);
-    const [called] = await tx
-        .select({ id: refundCalls.id })
-        .from(refundCalls)
-        .where(eq(refundCalls.providerRefundId, reference))
-        .limit(1);
-    if (settled || called) throw externalReferenceAlreadySettled();
+    const cited = await readCitedProviderRefundIds({ db: input.tx, ids: [input.reference] });
+    if (cited.has(input.reference)) throw externalReferenceAlreadySettled();
 }

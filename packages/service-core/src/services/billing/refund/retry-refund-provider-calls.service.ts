@@ -3,12 +3,12 @@ import { eq, getDb, manualPayments, payments, refunds } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
-import type { Pool } from 'pg';
 import { type Actor, ServiceError } from '../../../types';
 import { type ExecuteRefundResult, executeRefundFromProviderRead } from './execute-refund.service';
 import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
-import { readRefundCallTally } from './refund-call-tally';
+import { readRefundCallTally, refundCallRetryCutoff } from './refund-call-tally';
 import { settleRefundRejectedAfterAcceptance } from './refund-rejected-after-acceptance';
+import { withRefundCallClaim } from './refund-retry-claim';
 import { providerRefundWindow } from './refund-window';
 import {
     type ResendRefundCallOutcome,
@@ -18,15 +18,10 @@ import {
 const logger = createLogger('retry-refund-provider-calls');
 
 /**
- * How long after a call was sent "Retry with MP" may still POST it again (owner decision on
- * #4643, HOS-2516). The resend reads the charge first, but a provider read that lags behind a
- * refund it already made, combined with a provider that has forgotten the idempotency key, could
- * still post a second refund (matrix row EX-73, `UNKNOWN`). Inside 24 hours the key is the cover.
- * Past it, only the POST is refused (`REFUND_CALL_TOO_OLD_TO_RETRY`): reading the charge, binding
- * a refund found there, the accepted-then-rejected check and RF3 still run, and the operator
- * follows the refunds runbook §8.1/§8.2. This limit can be relaxed once EX-73 is measured.
+ * Re-exported from its single home, `refund-call-tally.ts` (HOS-2538): the retry's POST limit and
+ * the panel settlement's eligibility are the same instant.
  */
-export const REFUND_CALL_RETRY_LIMIT_MS = 24 * 60 * 60 * 1000;
+export { REFUND_CALL_RETRY_LIMIT_MS } from './refund-call-tally';
 
 /** Every `reason` a rejection of `retryRefundProviderCalls` carries, for an exhaustive HTTP mapping. */
 export const RETRY_REFUND_PROVIDER_CALLS_REJECTIONS = [
@@ -92,7 +87,7 @@ type RetryMode = 'RESEND' | 'REEXECUTE';
 /**
  * Decides, in the error contract's order, whether this refund may be retried and how:
  * 404 missing refund or source → 403 administrative action 13 on the payer → 409/422 business.
- * Its transaction ends before any provider I/O; concurrency is handled by {@link withRetryClaim}.
+ * Its transaction ends before any provider I/O; concurrency is handled by {@link withRefundCallClaim}.
  */
 async function assertRetryable(
     input: RetryRefundProviderCallsInput,
@@ -182,57 +177,6 @@ async function assertRetryable(
     });
 }
 
-/** Namespace of the per-refund retry lock, hashed with the refund id like the cron locks. */
-const RETRY_LOCK_PREFIX = 'refund-retry:';
-
-/**
- * Single-flight per refund (HOS-2516 review): a second retry of the same refund while one runs
- * (a double click, two admins) is refused with `REFUND_RETRY_IN_PROGRESS` instead of racing the
- * first one into a false `PROVIDER_REFUND_ALREADY_CITED`.
- *
- * Why a session advisory lock on a dedicated connection: the work spans provider I/O, and a
- * transaction (`FOR UPDATE`, `pg_advisory_xact_lock`) must not stay open across it. The session
- * lock holds one idle pool connection for the retry's duration and no transaction. It needs no
- * schema change, and unlike a claim row it cannot go stale: if the process dies, the connection
- * closes and PostgreSQL drops the lock. Same mechanism as `apps/api/src/cron/cron-lock.ts`.
- *
- * Cost: each running retry holds one pool connection idle for its whole duration, on top of the
- * ones its own queries borrow. Retries are rare manual actions, so this stays far below the pool
- * size; many concurrent retries would compete with the API for connections.
- */
-async function withRetryClaim<T>(refundId: string, run: () => Promise<T>): Promise<T> {
-    const pool = (getDb() as ReturnType<typeof getDb> & { readonly $client: Pool }).$client;
-    const client = await pool.connect();
-    let destroyClient = false;
-    try {
-        const lock = await client.query<{ readonly acquired: boolean }>(
-            'SELECT pg_try_advisory_lock(hashtext($1 || $2)::bigint) AS acquired',
-            [RETRY_LOCK_PREFIX, refundId]
-        );
-        if (lock.rows[0]?.acquired !== true)
-            throw reject(
-                ServiceErrorCode.ALREADY_EXISTS,
-                'Another retry of this refund is running',
-                'REFUND_RETRY_IN_PROGRESS'
-            );
-        try {
-            return await run();
-        } finally {
-            try {
-                await client.query('SELECT pg_advisory_unlock(hashtext($1 || $2)::bigint)', [
-                    RETRY_LOCK_PREFIX,
-                    refundId
-                ]);
-            } catch {
-                // A connection whose unlock failed may still hold the lock: never reuse it.
-                destroyClient = true;
-            }
-        }
-    } finally {
-        client.release(destroyClient);
-    }
-}
-
 /**
  * RF3 right after a resend in which the provider answered every call with an accepted refund.
  * RF3 reads the charge and executes only what the read reports accredited (accepted is not
@@ -290,7 +234,7 @@ async function executeAfterResend(input: {
  * unanswered call goes through {@link resendUnansweredRefundCalls}, which reads the charge first
  * and only posts again when the lost call did not land; when every call ends accepted, RF3 runs
  * at once (see executeAfterResend). A refund with every call already accepted and nothing
- * unanswered only runs RF3 again. One retry per refund at a time ({@link withRetryClaim}).
+ * unanswered only runs RF3 again. One retry per refund at a time ({@link withRefundCallClaim}).
  *
  * @param input - The actor and the refund.
  * @param ports - The payment provider and the clock.
@@ -305,7 +249,7 @@ export async function retryRefundProviderCalls(
     // refund nor a forbidden actor ever learns whether a retry is running. Inside the claim every
     // rule is checked again, since the refund may have changed while the claim was awaited.
     await assertRetryable(input, ports.clock, true);
-    return withRetryClaim(input.refundId, () => runRetry(input, ports));
+    return withRefundCallClaim(input.refundId, () => runRetry(input, ports));
 }
 
 async function runRetry(
@@ -321,9 +265,7 @@ async function runRetry(
                       {
                           refundId: input.refundId,
                           ...(input.correlationId ? { correlationId: input.correlationId } : {}),
-                          postCutoff: new Date(
-                              ports.clock.now().getTime() - REFUND_CALL_RETRY_LIMIT_MS
-                          )
+                          postCutoff: refundCallRetryCutoff({ now: ports.clock.now() })
                       },
                       ports
                   )

@@ -1,16 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import {
-    and,
-    eq,
-    getDb,
-    idempotencyKeys,
-    inArray,
-    isNull,
-    payments,
-    refundCalls,
-    refunds,
-    sql
-} from '@repo/db';
+import { and, eq, getDb, idempotencyKeys, isNull, payments, refundCalls, refunds } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct, PaymentProviderError } from '@repo/payments';
@@ -21,7 +10,7 @@ import {
     type AmbiguousRefundAnswerReason,
     type AmbiguousRefundCandidate
 } from './ambiguous-refund-answer.error';
-import { hasOtherUnansweredRefundCall } from './refund-call-tally';
+import { hasOtherUnansweredRefundCall, readCitedProviderRefundIds } from './refund-call-tally';
 import { completeCall } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
 import { lockRefundSource } from './refund-source';
@@ -67,45 +56,9 @@ export type ResendRefundCallsResult = {
 
 type ConfirmedPayment = typeof payments.$inferSelect;
 
-/**
- * HOS-2517: the provider refund ids among `ids` that already settle something of ours, either
- * as the panel reference of a refund (action 14, `PROVIDER_PANEL`), as the provider id of a
- * refund call, or as the provider id a call kept after the provider rejected it post-acceptance
- * (HOS-2516). Such an id must never be bound to another call.
- */
-async function readCitedProviderRefundIds(ids: readonly string[]): Promise<ReadonlySet<string>> {
-    if (ids.length === 0) return new Set();
-    const db = getDb();
-    const [called, settled, rejected] = await Promise.all([
-        db
-            .select({ id: refundCalls.providerRefundId })
-            .from(refundCalls)
-            .where(inArray(refundCalls.providerRefundId, [...ids])),
-        db
-            .select({ id: refunds.externalRef })
-            .from(refunds)
-            .where(
-                and(
-                    inArray(refunds.externalRef, [...ids]),
-                    eq(refunds.externalChannel, 'PROVIDER_PANEL')
-                )
-            ),
-        // A call whose refund the provider accepted and then rejected keeps that id only in its
-        // stored result (`settleRefundRejectedAfterAcceptance` clears `provider_refund_id`). The
-        // refund is still the other call's: it must never be bound to a different call.
-        db
-            .select({ id: sql<string | null>`${idempotencyKeys.result}->>'providerRefundId'` })
-            .from(idempotencyKeys)
-            .where(
-                and(
-                    sql`${idempotencyKeys.result}->>'code' = 'REJECTED_AFTER_ACCEPTANCE'`,
-                    inArray(sql`${idempotencyKeys.result}->>'providerRefundId'`, [...ids])
-                )
-            )
-    ]);
-    return new Set(
-        [...called, ...settled, ...rejected].flatMap(({ id }) => (id === null ? [] : [id]))
-    );
+/** HOS-2517: the cited subset of `ids`, read on the pool ({@link readCitedProviderRefundIds}). */
+function readCited(ids: readonly string[]): Promise<ReadonlySet<string>> {
+    return readCitedProviderRefundIds({ db: getDb(), ids });
 }
 
 /**
@@ -143,7 +96,7 @@ async function readUncitedProviderRefunds(input: {
             entry.amount.amountMinor === input.amount &&
             entry.amount.currency === input.payment.currency
     );
-    const cited = await readCitedProviderRefundIds(matching.map((entry) => entry.refundId));
+    const cited = await readCited(matching.map((entry) => entry.refundId));
     const candidates = matching
         .filter((entry) => !cited.has(entry.refundId))
         .map((entry) => ({
@@ -237,7 +190,7 @@ export async function resendUnansweredRefundCalls(
     )
         throw new ServiceError(
             ServiceErrorCode.ALREADY_EXISTS,
-            'An unanswered call that would be posted again was sent more than 24 hours ago, and the charge shows no refund to bind it to; follow the refunds runbook §8.1/§8.2',
+            'An unanswered call that would be posted again was sent more than 24 hours ago, and the charge shows no refund to bind it to; check the provider panel and settle the refund with action 14 (refunds runbook §8, step 0)',
             undefined,
             'REFUND_CALL_TOO_OLD_TO_RETRY'
         );
@@ -264,11 +217,7 @@ export async function resendUnansweredRefundCalls(
             }
             // HOS-2517 again at bind time: a panel settlement (`/external`) or another call may
             // have cited this provider refund since phase 1 read it uncited.
-            if (
-                (await readCitedProviderRefundIds([plan.providerRefundId])).has(
-                    plan.providerRefundId
-                )
-            ) {
+            if ((await readCited([plan.providerRefundId])).has(plan.providerRefundId)) {
                 alertAmbiguous({
                     ...context,
                     reason: 'PROVIDER_REFUND_ALREADY_CITED',
@@ -443,7 +392,7 @@ async function postCall(args: {
             }
             providerRefundId = only.providerRefundId;
         }
-        if ((await readCitedProviderRefundIds([providerRefundId])).has(providerRefundId)) {
+        if ((await readCited([providerRefundId])).has(providerRefundId)) {
             // HOS-2517: binding an id already cited would count one provider refund twice.
             alertAmbiguous({
                 ...context,
