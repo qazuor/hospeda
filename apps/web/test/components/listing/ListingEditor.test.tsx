@@ -599,10 +599,11 @@ describe('ListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('venue', 'openingHours');
 
-        // Open Monday and give it a shift — the minimal real "configure one
-        // day" flow. Every other day is left untouched.
+        // Open Monday — the minimal real "configure one day" flow. Since
+        // HOS-2446, unticking «Cerrado» on a day without shifts seeds the
+        // default 09:00-18:00 shift, so no extra "add shift" click is needed.
+        // Every other day is left untouched.
         fireEvent.click(screen.getByLabelText('Lun cerrado'));
-        fireEvent.click(screen.getByLabelText('Agregar turno Lun'));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));

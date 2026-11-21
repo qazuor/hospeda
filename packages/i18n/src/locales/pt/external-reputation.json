@@ -37,6 +37,7 @@
     "ownerConfig": {
         "title": "Configuração de reputação externa",
         "addListing": "Adicionar link de plataforma",
+        "addingListing": "Adicionando...",
         "showLink": "Mostrar link para a plataforma",
         "showReviews": "Mostrar avaliações de texto",
         "masterToggle": "Exibir seção de reputação externa",

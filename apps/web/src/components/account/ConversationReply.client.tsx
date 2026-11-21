@@ -9,6 +9,7 @@ import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { refreshConversationThread } from '@/lib/refresh-conversation-thread';
 import styles from './ConversationReply.module.css';
 
 /** Mode A: authenticated user replying via protected endpoint */
@@ -101,12 +102,17 @@ export function ConversationReply(props: ConversationReplyProps) {
             setBody('');
             setSuccess(true);
             onMessageSent?.();
-            // The thread is SSR-rendered, so the new message only shows on
-            // reload. Let the success state render briefly, then refresh so
-            // the user sees their reply in context.
-            setTimeout(() => {
-                if (typeof window !== 'undefined') window.location.reload();
-            }, 600);
+            // The thread is SSR-rendered: swap its container in place instead of
+            // reloading (HOS-2439), which would drop scroll and focus. When the
+            // swap is impossible (network error, redirected to login, markup
+            // missing) fall back to a reload so the sent reply is never invisible.
+            if (typeof window !== 'undefined') {
+                const { refreshed } = await refreshConversationThread({
+                    doc: window.document,
+                    pageUrl: window.location.href
+                });
+                if (!refreshed) window.location.reload();
+            }
         } catch {
             setError(t('conversations.errors.messageSendFailed'));
         } finally {
@@ -150,7 +156,10 @@ export function ConversationReply(props: ConversationReplyProps) {
                 <textarea
                     id="reply-body"
                     value={body}
-                    onChange={(e) => setBody(e.target.value)}
+                    onChange={(e) => {
+                        setBody(e.target.value);
+                        setSuccess(false);
+                    }}
                     placeholder={t('conversations.thread.replyPlaceholder')}
                     className={`${styles.textarea} ${isOverLimit ? styles.textareaError : ''}`}
                     rows={3}

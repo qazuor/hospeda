@@ -27,6 +27,8 @@ const { driverMock, driveMock, destroyMock } = vi.hoisted(() => {
     return { driverMock: driver, driveMock: drive, destroyMock: destroy };
 });
 
+vi.mock('@/hooks/use-cookie-consent-decided', () => ({ useCookieConsentDecided: () => true }));
+
 vi.mock('@/lib/load-driver', () => ({ driver: driverMock }));
 
 vi.mock('@/hooks/use-tour-state', () => ({

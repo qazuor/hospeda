@@ -113,6 +113,12 @@
     background-color: var(--brand-primary);
 }
 
+.toggle input:focus-visible + .toggleTrack {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
+}
+
 .toggleThumb {
     position: absolute;
     top: 3px;

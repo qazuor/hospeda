@@ -91,6 +91,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
                 <span class="guest-thread__accommodation">{conversation.accommodationName}</span>
             </div>
 
+            <div data-conversation-thread style="display: contents">
             {olderCursor && (
                 <div class="guest-thread__load-older">
                     <a
@@ -133,6 +134,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
                     </time>
                 </p>
             )}
+            </div>
 
             {canReply ? (
                 <ConversationReply

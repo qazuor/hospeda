@@ -274,3 +274,11 @@
 .submitBtn {
     composes: primary from "./AccountButton.module.css";
 }
+
+.securityLink {
+    display: inline-block;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}

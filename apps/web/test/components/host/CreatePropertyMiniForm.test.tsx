@@ -303,12 +303,14 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
         onChange,
         testId,
         label,
-        value
+        value,
+        error
     }: {
         onChange: (item: { id: string; label: string }) => void;
         testId?: string;
         label: string;
         value?: { id: string; label: string } | null;
+        error?: string | null;
         [key: string]: unknown;
     }) => {
         const mockItem =
@@ -318,20 +320,27 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
                   ? { id: '11111111-1111-4111-8111-111111111111', label: 'Mock City' }
                   : { id: 'mock-id', label: 'Mock Option' };
         return (
-            <button
-                type="button"
-                data-testid={testId ? `${testId}-mock-select` : 'mock-select'}
-                aria-label={`select-${label}`}
-                // Expose the CURRENT selection, not just the field label. Without
-                // this the mock can never reflect a programmatic `setCity`, which
-                // is how the auto-select assertions below stayed green for months
-                // while the opposite behaviour shipped (HOS-286).
-                data-selected-id={value?.id ?? ''}
-                data-selected-label={value?.label ?? ''}
-                onClick={() => onChange(mockItem)}
-            >
-                {value?.label ?? label}
-            </button>
+            <>
+                {error ? (
+                    <span data-testid={testId ? `${testId}-error` : 'mock-select-error'}>
+                        {error}
+                    </span>
+                ) : null}
+                <button
+                    type="button"
+                    data-testid={testId ? `${testId}-mock-select` : 'mock-select'}
+                    aria-label={`select-${label}`}
+                    // Expose the CURRENT selection, not just the field label. Without
+                    // this the mock can never reflect a programmatic `setCity`, which
+                    // is how the auto-select assertions below stayed green for months
+                    // while the opposite behaviour shipped (HOS-286).
+                    data-selected-id={value?.id ?? ''}
+                    data-selected-label={value?.label ?? ''}
+                    onClick={() => onChange(mockItem)}
+                >
+                    {value?.label ?? label}
+                </button>
+            </>
         );
     }
 }));
@@ -563,6 +572,34 @@ describe('CreatePropertyMiniForm — step indicator (HOS-456)', () => {
         const form = container.querySelector('form');
         const indicator = screen.getByTestId('step-indicator');
         expect(form?.firstElementChild).toBe(indicator);
+    });
+});
+
+describe('CreatePropertyMiniForm — select errors clear on pick (HOS-2447)', () => {
+    it('clears the type error once a valid type is chosen', async () => {
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        await user.click(getSubmitButton());
+        expect(await screen.findByTestId('property-type-error')).toBeInTheDocument();
+
+        await user.click(screen.getByTestId('property-type-mock-select'));
+
+        expect(screen.queryByTestId('property-type-error')).not.toBeInTheDocument();
+        // The city was not picked, so its own error must stay.
+        expect(screen.getByTestId('property-city-error')).toBeInTheDocument();
+    });
+
+    it('clears the city error once a city is chosen', async () => {
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        await user.click(getSubmitButton());
+        expect(await screen.findByTestId('property-city-error')).toBeInTheDocument();
+
+        await user.click(screen.getByTestId('property-city-mock-select'));
+
+        expect(screen.queryByTestId('property-city-error')).not.toBeInTheDocument();
     });
 });
 
