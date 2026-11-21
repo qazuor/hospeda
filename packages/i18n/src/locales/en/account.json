@@ -18,7 +18,9 @@
         "empty": "No updates yet",
         "emptyDesc": "When we ship platform improvements or new features, you'll see them here.",
         "markAllRead": "Mark all as read",
-        "seeEntry": "View"
+        "seeEntry": "View",
+        "showMore": "Show more updates",
+        "showingCount": "Showing {{shown}} of {{total}}"
     },
     "status": {
         "new": "New"
@@ -943,6 +945,12 @@
             "fetchFailed": "Error loading favorites",
             "removeFailed": "Error removing favorite",
             "saveFailed": "No se pudo guardar la nota"
+        },
+        "removeFavoriteConfirm": {
+            "title": "Remove from favorites",
+            "message": "Remove this favorite?",
+            "confirm": "Remove",
+            "messageWithNote": "Remove this favorite? The note you wrote for it is deleted too."
         }
     },
     "reviews": {
@@ -1869,5 +1877,15 @@
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
         "accountNotice": "You are about to change the password for this account:"
+    },
+    "notFound": {
+        "title": "We could not find what you were looking for",
+        "description": "The link may be out of date or the content may no longer exist.",
+        "back": {
+            "account": "Back to my account",
+            "messages": "Back to my inquiries",
+            "ownerMessages": "Back to my property inquiries",
+            "listings": "Back to my listings"
+        }
     }
 }

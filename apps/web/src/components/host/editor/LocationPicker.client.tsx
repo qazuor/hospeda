@@ -432,7 +432,7 @@ export function LocationPicker({
                         className={styles.mapPlaceholder}
                         aria-hidden="true"
                     >
-                        Loading map...
+                        {t('host.properties.editor.location.mapLoading', 'Cargando mapa...')}
                     </div>
                 }
             >
@@ -443,6 +443,10 @@ export function LocationPicker({
                     markerPosition={hasValidCoords ? { lat: Number(lat), lng: Number(lng) } : null}
                     disabled={disabled}
                     onMove={handleMapMove}
+                    ariaLabel={t(
+                        'host.properties.editor.location.mapAriaLabel',
+                        'Mapa de ubicación'
+                    )}
                 />
             </Suspense>
 

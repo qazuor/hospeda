@@ -116,7 +116,7 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
     it('redirects unauthenticated visitors to signin (safety-net guard)', () => {
         expect(source).toContain('Astro.locals.user');
         expect(source).toMatch(/if\s*\(\s*!user\s*\)/);
-        expect(source).toContain("path: 'auth/signin'");
+        expect(source).toContain('buildLoginRedirect');
     });
 
     it('fetches the caller own partner listing, forwarding the session cookie', () => {

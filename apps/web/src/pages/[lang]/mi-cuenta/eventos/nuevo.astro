@@ -43,7 +43,7 @@ const { t } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const canCreateEvents = hasEventsNavAccess({ roles: user.roles });

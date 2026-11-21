@@ -35,9 +35,16 @@
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import { COLLECTION_CREATED_EVENT } from '../../../src/components/account/collection-created-event';
 import { UserFavoritesList } from '../../../src/components/account/UserFavoritesList.client';
 import { addToast } from '../../../src/store/toast-store';
+
+// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
+// `show-confirmation-dialog.test.tsx`; here the user always confirms.
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: vi.fn().mockResolvedValue(true)
+}));
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -361,6 +368,74 @@ describe('UserFavoritesList', () => {
         await waitFor(() => {
             expect(screen.getByText('Casa del Litoral')).toBeInTheDocument();
         });
+    });
+
+    it('asks for confirmation and keeps the favorite when the user cancels (HOS-2429)', async () => {
+        vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
+        const fetchMock = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') {
+                return Promise.resolve(makeSuccessResponse());
+            }
+            return Promise.resolve(makeListResponse([BOOKMARK_1, BOOKMARK_2], 2));
+        });
+        globalThis.fetch = fetchMock;
+
+        renderList();
+        await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
+
+        const removeButtons = screen.getAllByRole('button', { name: /quitar de favoritos/i });
+        fireEvent.click(removeButtons[0] as HTMLElement);
+
+        await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+        expect(screen.getByText('Casa del Litoral')).toBeInTheDocument();
+        const deleteCalls = fetchMock.mock.calls.filter(
+            ([, opts]) => (opts as RequestInit | undefined)?.method === 'DELETE'
+        );
+        expect(deleteCalls).toHaveLength(0);
+    });
+
+    it('warns that the note is deleted too when the favorite has one (HOS-2429)', async () => {
+        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') {
+                return Promise.resolve(makeSuccessResponse());
+            }
+            return Promise.resolve(
+                makeListResponse([{ ...BOOKMARK_1, description: 'Mi nota' }], 1)
+            );
+        });
+
+        renderList();
+        await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
+
+        fireEvent.click(screen.getByRole('button', { name: /quitar de favoritos/i }));
+
+        await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalled());
+        const options = vi.mocked(showConfirmationDialog).mock.calls.at(-1)?.[0];
+        expect(options?.message).toContain('nota');
+    });
+
+    it('opens ONE confirmation on a double-click of remove (HOS-2429)', async () => {
+        let resolveDialog: (value: boolean) => void = () => {};
+        vi.mocked(showConfirmationDialog).mockImplementationOnce(
+            () => new Promise<boolean>((resolve) => (resolveDialog = resolve))
+        );
+        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') return Promise.resolve(makeSuccessResponse());
+            return Promise.resolve(makeListResponse([BOOKMARK_1], 1));
+        });
+
+        renderList();
+        await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
+
+        const button = screen.getByRole('button', { name: /quitar de favoritos/i });
+        fireEvent.click(button);
+        fireEvent.click(button);
+
+        await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+        resolveDialog(false);
     });
 
     it('removes card optimistically on Quitar click', async () => {

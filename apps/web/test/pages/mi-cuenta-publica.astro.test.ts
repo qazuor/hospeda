@@ -23,7 +23,7 @@ describe('mi-cuenta/publica/index.astro (HOS-131 "Publicá en Hospeda" hub)', ()
     it('redirects unauthenticated visitors to signin (safety-net guard)', () => {
         expect(source).toContain('Astro.locals.user');
         expect(source).toMatch(/if\s*\(\s*!user\s*\)/);
-        expect(source).toContain("path: 'auth/signin'");
+        expect(source).toContain('buildLoginRedirect');
     });
 
     it('resolves locale from Astro.locals', () => {

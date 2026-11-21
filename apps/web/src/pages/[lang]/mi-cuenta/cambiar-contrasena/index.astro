@@ -24,6 +24,7 @@ import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import { parseProfileStatus } from '@/lib/middleware-helpers';
 import { SET_PASSWORD_SEGMENT } from '@/lib/routes';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm.client';
@@ -35,7 +36,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // future config drift.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const t = createT(locale);

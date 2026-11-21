@@ -34,6 +34,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
+import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -230,6 +232,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
+    const runSingleFlight = useSingleFlight();
 
     // ── Collections state (fetched once on mount) ──────────────────────────
     const [collections, setCollections] = useState<readonly BookmarkCollectionItem[]>([]);
@@ -456,6 +459,28 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     // ── Remove (optimistic) ───────────────────────────────────────────────
 
     async function handleRemove(bookmark: BookmarkItem) {
+        // HOS-2429: removing also drops the note, instantly and for good, so ask
+        // first. Cancel (or no DOM) leaves the list untouched.
+        const hasNote = Boolean(bookmark.description?.trim());
+        // N2: a double-click must not stack two dialogs.
+        const confirmed = await runSingleFlight(() =>
+            showConfirmationDialog({
+                title: t('account.favorites.removeFavoriteConfirm.title', 'Quitar de favoritos'),
+                message: hasNote
+                    ? t(
+                          'account.favorites.removeFavoriteConfirm.messageWithNote',
+                          '¿Quitar este favorito? También se elimina la nota que le escribiste.'
+                      )
+                    : t(
+                          'account.favorites.removeFavoriteConfirm.message',
+                          '¿Quitar este favorito?'
+                      ),
+                confirmLabel: t('account.favorites.removeFavoriteConfirm.confirm', 'Quitar'),
+                cancelLabel: t('common.cancel', 'Cancelar')
+            })
+        );
+        if (!confirmed) return;
+
         // Capture only this bookmark's original index — NOT a full snapshot.
         // Restoring a whole snapshot on failure would re-insert other bookmarks
         // that a concurrent remove already deleted from the server (stale UI).

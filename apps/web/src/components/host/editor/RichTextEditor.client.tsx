@@ -304,59 +304,59 @@ function Toolbar({ editor, locale }: ToolbarProps) {
         <>
             <div
                 role="toolbar"
-                aria-label="Formato"
+                aria-label={t('common.richText.toolbar.label', 'Formato')}
                 className={styles.toolbar}
             >
                 <ToolbarButton
-                    label="Negrita"
+                    label={t('common.richText.toolbar.bold', 'Negrita')}
                     icon={BoldIcon}
                     isActive={editor.isActive('bold')}
                     onClick={() => editor.chain().focus().toggleBold().run()}
                 />
                 <ToolbarButton
-                    label="Cursiva"
+                    label={t('common.richText.toolbar.italic', 'Cursiva')}
                     icon={ItalicIcon}
                     isActive={editor.isActive('italic')}
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                 />
                 <ToolbarButton
-                    label="Subrayado"
+                    label={t('common.richText.toolbar.underline', 'Subrayado')}
                     icon={UnderlineIcon}
                     isActive={editor.isActive('underline')}
                     onClick={() => editor.chain().focus().toggleUnderline().run()}
                 />
                 <ToolbarTextButton
-                    label="Encabezado 2"
+                    label={t('common.richText.toolbar.heading2', 'Encabezado 2')}
                     text="H2"
                     isActive={editor.isActive('heading', { level: 2 })}
                     onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
                 />
                 <ToolbarTextButton
-                    label="Encabezado 3"
+                    label={t('common.richText.toolbar.heading3', 'Encabezado 3')}
                     text="H3"
                     isActive={editor.isActive('heading', { level: 3 })}
                     onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
                 />
                 <ToolbarButton
-                    label="Lista"
+                    label={t('common.richText.toolbar.bulletList', 'Lista')}
                     icon={ListIcon}
                     isActive={editor.isActive('bulletList')}
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
                 />
                 <ToolbarButton
-                    label="Lista numerada"
+                    label={t('common.richText.toolbar.orderedList', 'Lista numerada')}
                     icon={ListOrderedIcon}
                     isActive={editor.isActive('orderedList')}
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 />
                 <ToolbarButton
-                    label="Cita"
+                    label={t('common.richText.toolbar.quote', 'Cita')}
                     icon={QuotesIcon}
                     isActive={editor.isActive('blockquote')}
                     onClick={() => editor.chain().focus().toggleBlockquote().run()}
                 />
                 <ToolbarButton
-                    label="Enlace"
+                    label={t('common.richText.toolbar.link', 'Enlace')}
                     icon={LinkIcon}
                     isActive={editor.isActive('link')}
                     onClick={promptForLink}

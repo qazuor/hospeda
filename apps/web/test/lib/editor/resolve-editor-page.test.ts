@@ -112,4 +112,22 @@ describe('resolveEditorPage', () => {
             need: ['faqs']
         });
     });
+
+    it('keeps path AND query string in the login return URL (HOS-2433)', async () => {
+        const { astro, redirects } = createAstro({ user: null });
+        astro.url = new URL(
+            'https://example.com/es/mi-cuenta/propiedades/acc-1/editar/preguntas/?tab=2'
+        );
+
+        const result = await resolveEditorPage({
+            astro: astro as never,
+            sectionSlug: 'preguntas',
+            need: ['faqs']
+        });
+
+        expect(result.redirect).toBeDefined();
+        expect(redirects[0]).toBe(
+            `/es/auth/signin?redirectTo=${encodeURIComponent('/es/mi-cuenta/propiedades/acc-1/editar/preguntas/?tab=2')}`
+        );
+    });
 });

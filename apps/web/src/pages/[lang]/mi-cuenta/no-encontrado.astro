@@ -1,0 +1,52 @@
+---
+/**
+ * @file mi-cuenta/no-encontrado.astro
+ * @description In-layout 404 for account resources that do not exist (HOS-2434).
+ * Reached through `Astro.rewrite()` from threads and editors (see
+ * `@/lib/account-not-found`), never linked to directly. The status is set to 404
+ * here so crawlers and the browser still see a real "not found".
+ * @route /{lang}/mi-cuenta/no-encontrado/
+ * @rendering SSR (on-demand, auth-protected)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import {
+    ACCOUNT_NOT_FOUND_BACK_TARGETS,
+    resolveAccountNotFoundBackKey
+} from '@/lib/account-not-found';
+import { AlertCircleIcon } from '@repo/icons';
+
+export const prerender = false;
+
+Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const backKey = resolveAccountNotFoundBackKey({ value: Astro.url.searchParams.get('back') });
+const target = ACCOUNT_NOT_FOUND_BACK_TARGETS[backKey];
+const title = t('account.notFound.title', 'No encontramos lo que buscabas');
+const description = t(
+    'account.notFound.description',
+    'Puede que el enlace esté desactualizado o que el contenido ya no exista.'
+);
+---
+
+<AccountLayout locale={locale} title={title} description={description}>
+    <AccountSectionCard>
+        <AccountEmptyState
+            title={title}
+            description={description}
+            ctaHref={buildUrl({ locale, path: target.path })}
+            ctaLabel={t(target.labelKey)}
+        >
+            <AlertCircleIcon slot="icon" size={28} aria-hidden={true} />
+        </AccountEmptyState>
+    </AccountSectionCard>
+</AccountLayout>

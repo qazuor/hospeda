@@ -1,12 +1,19 @@
 import { SparkleIcon } from '@repo/icons';
 import { formatCalendarDate } from '@repo/utils';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import type { WhatsNewItem } from '@/hooks/use-whats-new';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { renderMarkdownToHtml } from '@/lib/whats-new/render-markdown';
+
+/**
+ * Entries shown before the reader asks for more (HOS-2449). The catalog grows
+ * without bound, and rendering every entry made the page ~20.000px tall on
+ * mobile.
+ */
+export const WHATS_NEW_PAGE_SIZE = 10;
 
 interface WhatsNewPageListProps {
     readonly locale: SupportedLocale;
@@ -15,13 +22,17 @@ interface WhatsNewPageListProps {
 export function WhatsNewPageList({ locale }: WhatsNewPageListProps) {
     const { t } = createTranslations(locale);
     const { items, isLoading, markSeen } = useWhatsNew();
+    const [visibleCount, setVisibleCount] = useState(WHATS_NEW_PAGE_SIZE);
+    const visibleItems = useMemo(() => items.slice(0, visibleCount), [items, visibleCount]);
 
+    // Only entries the reader can actually see are marked as seen: an entry
+    // hidden behind "show more" keeps its "new" badge until it is revealed.
     useEffect(() => {
-        const unseenIds = items.filter((item) => !item.seen).map((item) => item.id);
+        const unseenIds = visibleItems.filter((item) => !item.seen).map((item) => item.id);
         if (unseenIds.length > 0) {
             markSeen(unseenIds);
         }
-    }, [items, markSeen]);
+    }, [visibleItems, markSeen]);
 
     if (isLoading) {
         return <p className="whats-new-page__empty">{t('common.loading', 'Cargando...')}</p>;
@@ -42,13 +53,34 @@ export function WhatsNewPageList({ locale }: WhatsNewPageListProps) {
 
     return (
         <div>
-            {items.map((item) => (
+            {visibleItems.map((item) => (
                 <WhatsNewCard
                     key={item.id}
                     item={item}
                     locale={locale}
                 />
             ))}
+            {items.length > visibleItems.length && (
+                <div className="whats-new-page__more">
+                    <p className="whats-new-page__count">
+                        {t(
+                            'account.whatsNewPanel.showingCount',
+                            'Mostrando {{shown}} de {{total}}',
+                            {
+                                shown: visibleItems.length,
+                                total: items.length
+                            }
+                        )}
+                    </p>
+                    <button
+                        type="button"
+                        className="whats-new-page__more-btn"
+                        onClick={() => setVisibleCount((count) => count + WHATS_NEW_PAGE_SIZE)}
+                    >
+                        {t('account.whatsNewPanel.showMore', 'Ver más novedades')}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

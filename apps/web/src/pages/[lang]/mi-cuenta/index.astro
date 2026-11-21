@@ -19,6 +19,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasAccommodationsNavAccess, hasListingNavAccess } from '@/lib/nav-gating';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
@@ -40,7 +41,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // Auth guard: middleware should have redirected already, but this is the safety net.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const t = createT(locale);

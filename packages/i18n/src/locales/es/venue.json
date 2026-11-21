@@ -349,7 +349,17 @@
                 "translationLocked": "Traducir la carta está disponible desde el plan {{plan}}. Podés borrar las traducciones y guardar la carta en español.",
                 "translationLockedNoPlan": "Traducir la carta está disponible en un plan pago. Podés borrar las traducciones y guardar la carta en español.",
                 "translationLockedHint": "Disponible desde el plan {{plan}}. Borrá el inglés y el portugués para guardar la carta en español.",
-                "translationLockedHintNoPlan": "Disponible en un plan pago. Borrá el inglés y el portugués para guardar la carta en español."
+                "translationLockedHintNoPlan": "Disponible en un plan pago. Borrá el inglés y el portugués para guardar la carta en español.",
+                "removeSectionConfirm": {
+                    "title": "Quitar sección",
+                    "message": "¿Quitar esta sección y todos sus platos de la carta?",
+                    "confirm": "Quitar sección"
+                },
+                "removeItemConfirm": {
+                    "title": "Quitar plato",
+                    "message": "¿Quitar este plato de la carta?",
+                    "confirm": "Quitar plato"
+                }
             },
             "dailySpecials": {
                 "title": "Menú del día",

@@ -33,6 +33,13 @@ import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge';
+import {
+    ACCOUNT_LIST_PAGE_SIZE,
+    buildAccountPageHref,
+    fetchListTotal,
+    parsePageParam,
+    resolveAccountPageState
+} from '@/lib/account-pagination';
 import { resolveNeedsPlanBannerView } from '@/lib/host/needs-plan-banner';
 import { publishApi } from '@/lib/api/endpoints-protected';
 import {
@@ -44,6 +51,7 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import PropertyCard from '@/components/host/PropertyCard.astro';
+import AccountPagination from '@/components/account/AccountPagination.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { BuildingIcon } from '@repo/icons';
 import btn from '@/components/account/AccountButton.module.css';
@@ -64,7 +72,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 // Role gate: only host-level roles may manage properties. A plain tourist
@@ -84,6 +92,14 @@ if (!hasAccommodationsNavAccess({ roles: user.roles })) {
 
 let properties: readonly Accommodation[] = [];
 let fetchError = false;
+
+// HOS-2440: the list is paginated (`?page=N`) instead of silently cut at 50.
+const requestedPage = parsePageParam({ value: Astro.url.searchParams.get('page') });
+let totalProperties: number | null = null;
+// Owner-wide counts (not this page's): the usage badge and the "needs a plan"
+// banner describe the whole portfolio, so they cannot be read off one page.
+let publishedTotal: number | null = null;
+let draftTotal: number | null = null;
 
 // ── Usage/limit data for plan-awareness badge ──
 let usageData: { currentUsage: number; maxAllowed: number; threshold: string } | null = null;
@@ -133,29 +149,52 @@ try {
         // the publish destination. The third joins the existing Promise.all rather
         // than awaiting after it — this is one extra billing read per page
         // load, and serialising it would add its latency to every render.
-        const [accomResponse, usageBadgeResult, destinationResult, noticesResult] = await Promise.all([
+        const countUrl = (status: PublicationStatusEnum) =>
+            `${apiUrl}/api/v1/protected/accommodations?pageSize=1&publicationStatus=${status}`;
+        const [
+            accomResponse,
+            usageBadgeResult,
+            destinationResult,
+            noticesResult,
+            publishedTotalResult,
+            draftTotalResult
+        ] = await Promise.all([
             fetch(
-                `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
+                `${apiUrl}/api/v1/protected/accommodations?page=${requestedPage}&pageSize=${ACCOUNT_LIST_PAGE_SIZE}&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
             fetchHostUsageBadge({ cookieHeader }),
             publishApi.subscribeDestination({ vertical: 'accommodation', cookieHeader }),
-            publishApi.listingNotices({ vertical: 'accommodation', cookieHeader })
+            publishApi.listingNotices({ vertical: 'accommodation', cookieHeader }),
+            // Non-fatal: a failed count must not mark the whole list as failed.
+            fetchListTotal({ url: countUrl(PublicationStatusEnum.PUBLISHED), headers }),
+            fetchListTotal({ url: countUrl(PublicationStatusEnum.DRAFT), headers })
         ]);
 
         if (accomResponse.ok) {
             const body = (await accomResponse.json()) as {
-                data?: { items?: readonly Accommodation[] };
+                data?: {
+                    items?: readonly Accommodation[];
+                    pagination?: { total?: number };
+                };
             };
             properties = body.data?.items ?? [];
+            totalProperties = body.data?.pagination?.total ?? null;
         } else {
             fetchError = true;
             logger.error('[propiedades] API responded with status', accomResponse.status);
         }
 
-        const publishedCount = properties.filter(
-            (property) => property.publicationStatus === PublicationStatusEnum.PUBLISHED
-        ).length;
+        publishedTotal = publishedTotalResult;
+        draftTotal = draftTotalResult;
+
+        // Owner-wide published count; falls back to this page's count only when
+        // the count read failed (the pre-pagination behaviour).
+        const publishedCount =
+            publishedTotal ??
+            properties.filter(
+                (property) => property.publicationStatus === PublicationStatusEnum.PUBLISHED
+            ).length;
         usageData = buildUsageBadge({ effectiveSet: usageBadgeResult.effectiveSet, currentUsage: publishedCount });
         hasOwnerPlan = usageBadgeResult.hasOwnerPlan;
         effectiveSetReadOk = usageBadgeResult.entitlementsReadOk;
@@ -207,6 +246,14 @@ const publishNewUrl = buildUrl({
 // error, keeping the whole "publish" journey pointing at one place.
 const ownerPlansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
+const pageState = resolveAccountPageState({ requestedPage, total: totalProperties });
+if (!fetchError && pageState.isPastEnd) {
+    // A stale `?page=` past the end must not read as "you have no properties".
+    return Astro.redirect(
+        buildAccountPageHref({ locale, path: 'mi-cuenta/propiedades', page: pageState.totalPages })
+    );
+}
+
 const isEmpty = properties.length === 0;
 
 // HOS-217: proactive "anfitrión en preparación" banner — an owner with at
@@ -216,9 +263,10 @@ const isEmpty = properties.length === 0;
 // (list level) instead of only reactively (card level) matches the
 // requested onboarding journey. Decision extracted to a pure, unit-tested
 // helper (see `@/lib/host/needs-plan-banner`).
-const hasDraftProperty = properties.some(
-    (property) => property.publicationStatus === PublicationStatusEnum.DRAFT
-);
+const hasDraftProperty =
+    draftTotal !== null
+        ? draftTotal > 0
+        : properties.some((property) => property.publicationStatus === PublicationStatusEnum.DRAFT);
 const needsPlanBanner = resolveNeedsPlanBannerView({
     isEmpty,
     fetchError,
@@ -319,6 +367,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     ) : !isEmpty ? (
         /* Properties grid — each PropertyCard carries its own branded accent
              bar (no outer wrapper). */
+        <>
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
@@ -332,6 +381,13 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
                 </div>
             ))}
         </div>
+        <AccountPagination
+            locale={locale}
+            path="mi-cuenta/propiedades"
+            page={pageState.page}
+            totalPages={pageState.totalPages}
+        />
+        </>
     ) : (
         /* Empty state: uses the shared EmptyState component with a @repo/icons icon
              for visual consistency with the rest of the web app. */

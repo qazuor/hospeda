@@ -42,6 +42,7 @@ import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.
 import { useFaqAiDraft } from '@/hooks/use-faq-ai-draft';
 import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
@@ -308,8 +309,17 @@ export function ListingFaqManager({
                 setPrefillMessageId(null);
             }
         } else {
+            // HOS-2428: surface the server's reason (plan / coverage / permission)
+            // instead of one generic line that hid why the save was refused.
             setActionError(
-                t('listing.owner.editor.faqManager.saveError', 'No se pudo guardar la pregunta.')
+                translateApiError({
+                    error: result.error,
+                    t,
+                    fallback: t(
+                        'listing.owner.editor.faqManager.saveError',
+                        'No se pudo guardar la pregunta.'
+                    )
+                })
             );
         }
     }, [addValues, basePath, t, prefillMessageId]);
@@ -371,10 +381,14 @@ export function ListingFaqManager({
                 setEditErrors(NO_FIELD_ERRORS);
             } else {
                 setActionError(
-                    t(
-                        'listing.owner.editor.faqManager.saveError',
-                        'No se pudo guardar la pregunta.'
-                    )
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
+                            'listing.owner.editor.faqManager.saveError',
+                            'No se pudo guardar la pregunta.'
+                        )
+                    })
                 );
             }
         },

@@ -70,6 +70,11 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Motivo: ['pt'],
     Sistema: ['pt'],
     Anterior: ['pt'],
+    // Same words in Brazilian Portuguese (HOS-2436 rich-text toolbar and weekday abbreviations).
+    Lista: ['pt'],
+    'Lista numerada': ['pt'],
+    Sáb: ['pt'],
+    Dom: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
     '{{count}} de {{max}} caracteres': ['pt'],
     // Same spelling in Brazilian Portuguese / English (HOS-2119 owner traffic panel).

@@ -32,6 +32,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
 import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
+
+// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
+// `show-confirmation-dialog.test.tsx`; here the user always confirms.
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: vi.fn().mockResolvedValue(true)
+}));
+
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)
 // ---------------------------------------------------------------------------
@@ -504,6 +512,40 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(imgs[0]).toHaveAttribute('src', GALLERY_ROW_2.url);
             });
             expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
+        });
+
+        it('opens ONE confirmation when the remove button is double-clicked (HOS-2429)', async () => {
+            let resolveDialog: (value: boolean) => void = () => {};
+            vi.mocked(showConfirmationDialog).mockImplementationOnce(
+                () => new Promise<boolean>((resolve) => (resolveDialog = resolve))
+            );
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
+            mockRemoveMedia.mockReturnValue(makeRemoveOk());
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
+
+            const button = screen.getAllByLabelText('Eliminar')[0] as HTMLElement;
+            fireEvent.click(button);
+            fireEvent.click(button);
+
+            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+            resolveDialog(false);
+        });
+
+        it('asks for confirmation and deletes nothing when the user cancels (HOS-2429)', async () => {
+            vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
+            mockRemoveMedia.mockReturnValue(makeRemoveOk());
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
+
+            fireEvent.click(screen.getAllByLabelText('Eliminar')[0] as HTMLElement);
+
+            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+            expect(mockRemoveMedia).not.toHaveBeenCalled();
+            expect(screen.getAllByRole('img')).toHaveLength(2);
         });
 
         it('does NOT remove the item from state when removeMedia fails', async () => {
