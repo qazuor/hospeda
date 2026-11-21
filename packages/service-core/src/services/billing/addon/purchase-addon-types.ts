@@ -30,6 +30,13 @@ export const PURCHASE_ADDON_REFUSAL_REASONS = [
 /** One closed A1 refusal reason. */
 export type PurchaseAddonRefusalReason = (typeof PURCHASE_ADDON_REFUSAL_REASONS)[number];
 
+/**
+ * HOS-2518: the `ServiceError` reason (`SERVICE_UNAVAILABLE`) A1 throws when it collided on the
+ * purchase identity and no purchase took the identity within the wait. Nothing was created, so
+ * the owner retries with the same order id; the API answers it with its own localized copy.
+ */
+export const PURCHASE_IDENTITY_BUSY_REASON = 'PURCHASE_IDENTITY_BUSY' as const;
+
 /** Result of A1, including conflict and replay outcomes. */
 export type PurchaseAddonResult =
     | {
