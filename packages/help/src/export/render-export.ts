@@ -11,7 +11,7 @@
  * ## <article title>            one per article, sorted by title (es collation)
  * <summary>
  * ### Qué podés hacer … ### Problemas comunes   the five sections, fixed order
- * ### Relacionados              the related titles
+ * ### Relacionados              the related titles, left out when there are none
  * ```
  *
  * Tokens resolve as `docs/data-model.md` §5.2 fixes for the export: a limit reads
@@ -66,6 +66,11 @@ function exportDestination(destination: HelpDestination): HelpDestination {
         : destination;
 }
 
+/** Escapes the characters that would end or nest a Markdown link text early. */
+function escapeLinkText(text: string): string {
+    return text.replace(/[\\[\]]/g, '\\$&');
+}
+
 /** A Markdown link to a destination, or just its label when no URL can be built. */
 function markdownLink({
     destination,
@@ -77,7 +82,7 @@ function markdownLink({
     readonly siteUrl: string;
 }): string {
     const target = exportDestination(destination);
-    const text = label ?? helpDestinationLabel({ destination: target });
+    const text = escapeLinkText(label ?? helpDestinationLabel({ destination: target }));
     try {
         const url = buildPortalUrl({
             destination: toPortalDestination({ destination: target }),
@@ -107,6 +112,23 @@ function inAudience({
     readonly audience: HelpExportAudience;
 }): boolean {
     return audience === 'all' || article.audiences.some((value) => value === audience);
+}
+
+/**
+ * The articles an export of the audience holds, in catalog order.
+ *
+ * @param args.articles - The catalog
+ * @param args.audience - The exported audience
+ * @returns The articles of that audience (every article for `all`)
+ */
+export function helpExportArticles({
+    articles,
+    audience
+}: {
+    readonly articles: readonly HelpArticle[];
+    readonly audience: HelpExportAudience;
+}): readonly HelpArticle[] {
+    return articles.filter((article) => inAudience({ article, audience }));
 }
 
 /** Renders one article as a `##` block. */
@@ -158,7 +180,7 @@ function renderArticle({
         section(headings.expect, expect),
         section(headings.notExpect, notExpect),
         section(headings.troubleshooting, troubleshooting),
-        `### ${relatedHeading}${related.length > 0 ? `\n\n${related}` : ''}`
+        ...(related.length > 0 ? [`### ${relatedHeading}\n\n${related}`] : [])
     ].join('\n\n');
 }
 
@@ -178,8 +200,7 @@ export function renderHelpExport({ articles, audience, siteUrl }: RenderHelpExpo
     const byId = new Map(articles.map((article) => [article.id, article]));
     const collator = new Intl.Collator(EXPORT_LOCALE);
     const label = audience === 'all' ? ALL_AUDIENCES_LABEL : HELP_AUDIENCE_LABELS[audience];
-    const blocks = articles
-        .filter((article) => inAudience({ article, audience }))
+    const blocks = helpExportArticles({ articles, audience })
         .sort((left, right) => collator.compare(left.title, right.title))
         .map((article) => renderArticle({ article, audience, siteUrl, byId }));
     return `${[`# Ayuda Hospeda — ${label}`, ...blocks].join('\n\n')}\n`;

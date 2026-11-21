@@ -10,7 +10,9 @@
  * - Without `--out` the document goes to stdout and nothing else does: every
  *   message goes to stderr, so the output can be piped (AC-35).
  * - An invalid or missing audience exits 1 with the valid list and writes
- *   nothing (AC-36). So does a missing or malformed site URL.
+ *   nothing (AC-36). So does a missing or malformed site URL, one with a query
+ *   or a fragment (the links are built under it), and an audience that has no
+ *   article yet.
  * - With `--out` the file is written whole or not at all: a temp file in the
  *   same directory, then a rename (AC-37). A relative path is resolved against
  *   the directory pnpm was started from (`INIT_CWD`), not the package folder.
@@ -26,17 +28,21 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
 import type { HelpArticle } from '../article.schema';
-import { HELP_EXPORT_AUDIENCES, renderHelpExport } from './render-export';
+import { HELP_EXPORT_AUDIENCES, helpExportArticles, renderHelpExport } from './render-export';
 
 /** The arguments of the export, validated. */
 export const HelpExportArgsSchema = z.object({
     audience: z.enum(HELP_EXPORT_AUDIENCES, {
         error: `--audience must be one of: ${HELP_EXPORT_AUDIENCES.join(', ')}`
     }),
-    siteUrl: z.url({
-        protocol: /^https?$/,
-        error: '--site-url must be an absolute http(s) URL, for example https://hospeda.com.ar'
-    }),
+    siteUrl: z
+        .url({
+            protocol: /^https?$/,
+            error: '--site-url must be an absolute http(s) URL, for example https://hospeda.com.ar'
+        })
+        .refine((value) => !/[?#]/.test(value), {
+            error: '--site-url must not carry a query (?) or a fragment (#): every link is built under it'
+        }),
     out: z.string().min(1).optional()
 });
 
@@ -118,6 +124,10 @@ export function runHelpExport({ argv, articles, stdout, stderr, cwd }: RunHelpEx
         return 1;
     }
     const { audience, siteUrl, out } = parsed.data;
+    if (helpExportArticles({ articles, audience }).length === 0) {
+        stderr(`no article is written for the audience "${audience}" yet; nothing exported\n`);
+        return 1;
+    }
     const document = renderHelpExport({ articles, audience, siteUrl });
     if (out === undefined) {
         stdout(document);

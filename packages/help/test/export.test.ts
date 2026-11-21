@@ -26,12 +26,20 @@ const SITE = 'https://example.test';
 const VALID = 'host, venue, experience, provider, partner, all';
 
 /** Runs the export in-process, capturing both streams. */
-function runInProcess({ argv, cwd = process.cwd() }: { argv: string[]; cwd?: string }) {
+function runInProcess({
+    argv,
+    cwd = process.cwd(),
+    articles = HELP_ARTICLES
+}: {
+    argv: string[];
+    cwd?: string;
+    articles?: readonly HelpArticle[];
+}) {
     let stdout = '';
     let stderr = '';
     const code = runHelpExport({
         argv,
-        articles: HELP_ARTICLES,
+        articles,
         stdout: (text) => {
             stdout += text;
         },
@@ -121,6 +129,25 @@ describe('help export (HOS-2410 US-10)', () => {
     });
 
     describe('rendering', () => {
+        it('escapes brackets in a link label', () => {
+            const base = HELP_ARTICLES.find((article) => article.id === 'addons');
+            if (base === undefined) throw new Error('no addons article');
+            const article = {
+                ...base,
+                sections: { ...base.sections, canDo: 'Ir a {{link:addons|Comprar [ya]}}.' }
+            };
+            const out = renderHelpExport({ articles: [article], audience: 'all', siteUrl: SITE });
+            expect(out).toContain(`[Comprar \\[ya\\]](${SITE}/es/mi-cuenta/complementos/)`);
+        });
+
+        it('leaves out the related heading when no related article is in the bundle', () => {
+            const base = HELP_ARTICLES.find((article) => article.id === 'addons');
+            if (base === undefined) throw new Error('no addons article');
+            const out = renderHelpExport({ articles: [base], audience: 'all', siteUrl: SITE });
+            expect(out).not.toContain('### Relacionados');
+            expect(out).toContain('### Problemas comunes');
+        });
+
         it('nests a section ### under the export ### and drops its explicit id', () => {
             const out = renderHelpExport({
                 articles: HELP_ARTICLES,
@@ -172,6 +199,40 @@ describe('help export (HOS-2410 US-10)', () => {
             const result = runInProcess({ argv });
             expect(result.code).toBe(1);
             expect(result.stdout).toBe('');
+        });
+    });
+
+    describe('site URL and empty audiences', () => {
+        it.each([
+            [`${SITE}/?ref=flyer`],
+            [`${SITE}#top`],
+            [`${SITE}/?`]
+        ])('exits 1 with a clear message for a site URL with a query or fragment (%s)', (url) => {
+            const result = runInProcess({ argv: ['--audience', 'venue', '--site-url', url] });
+            expect(result.code).toBe(1);
+            expect(result.stdout).toBe('');
+            expect(result.stderr).toContain('must not carry a query (?) or a fragment (#)');
+        });
+
+        it('accepts a site URL with a path', () => {
+            const result = runInProcess({
+                argv: ['--audience', 'venue', '--site-url', `${SITE}/base`]
+            });
+            expect(result.code).toBe(0);
+            expect(result.stdout).toContain(`](${SITE}/base/es/`);
+        });
+
+        it('exits 1 and writes nothing when the audience has no article', () => {
+            const hostOnly = HELP_ARTICLES.filter(
+                (article) => !article.audiences.includes('partner')
+            );
+            const result = runInProcess({
+                argv: ['--audience', 'partner', '--site-url', SITE],
+                articles: hostOnly
+            });
+            expect(result.code).toBe(1);
+            expect(result.stdout).toBe('');
+            expect(result.stderr).toContain('no article is written for the audience "partner"');
         });
     });
 
