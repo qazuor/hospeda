@@ -23,15 +23,15 @@ export type BuildInquiryMessageResult =
 const dateSchema = z.string().date();
 const capacitySchema = z.number().int().positive();
 
-/** Builds a localized inquiry from valid booking fields without changing visitor input. */
-export function buildInquiryMessage({
+/** Validates optional booking fields without generating a draft. */
+export function validateInquiryFields({
     locale,
     checkIn,
     checkOut,
     guests,
     capacity
-}: BuildInquiryMessageInput): BuildInquiryMessageResult {
-    const { t, tPlural } = createTranslations(locale);
+}: BuildInquiryMessageInput): BuildInquiryMessageResult['errors'] {
+    const { t } = createTranslations(locale);
     const errors: Partial<Record<'checkIn' | 'checkOut' | 'guests', string>> = {};
     if (checkIn && !dateSchema.safeParse(checkIn).success) {
         errors.checkIn = t('accommodations.detail.listingContact.errors.invalidDate');
@@ -55,7 +55,15 @@ export function buildInquiryMessage({
             );
         }
     }
-    if (Object.keys(errors).length > 0) return { errors };
+    return Object.keys(errors).length > 0 ? errors : undefined;
+}
+
+/** Builds a localized inquiry from valid booking fields without changing visitor input. */
+export function buildInquiryMessage(input: BuildInquiryMessageInput): BuildInquiryMessageResult {
+    const errors = validateInquiryFields(input);
+    if (errors) return { errors };
+    const { locale, checkIn, checkOut, guests } = input;
+    const { t, tPlural } = createTranslations(locale);
     if (!checkIn && !checkOut && guests === undefined) {
         return { message: t('conversations.form.prefill.intro') };
     }
