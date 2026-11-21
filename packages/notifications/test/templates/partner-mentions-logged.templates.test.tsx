@@ -38,13 +38,15 @@ const single: PartnerMentionsLoggedProps = {
 };
 
 /**
- * Anchors in the email body. The shared layout footer always adds one link to
- * the site home (HOS-2519), which is chrome, not a channel link.
+ * Anchors in the email body. The shared layout footer always adds exactly one
+ * link to the site home, marked `data-layout-link="home"` (HOS-2519), which is
+ * chrome, not a channel link. Only that marked anchor is excluded.
  */
 function bodyAnchors({ html }: { readonly html: string }): readonly string[] {
-    return (html.match(/<a\s[^>]*>/g) ?? []).filter(
-        (anchor) => !anchor.includes('href="https://hospeda.com.ar"')
-    );
+    const anchors = html.match(/<a\s[^>]*>/g) ?? [];
+    const layoutAnchors = anchors.filter((anchor) => anchor.includes('data-layout-link="home"'));
+    expect(layoutAnchors).toHaveLength(1);
+    return anchors.filter((anchor) => !anchor.includes('data-layout-link='));
 }
 
 describe('PartnerMentionsLogged — AC-3 copy constraint', () => {

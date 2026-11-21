@@ -39,7 +39,9 @@ const cases = EMAIL_CATALOG.flatMap((entry) =>
 );
 
 describe('email catalog: unified layout on every scenario (HOS-2519 PR-3)', () => {
-    it('has scenarios to check', () => {
+    it('has a full catalog and at least one scenario per entry to check', () => {
+        // Fails on an empty or truncated catalog, which would make it.each vacuous.
+        expect(EMAIL_CATALOG.length).toBeGreaterThanOrEqual(120);
         expect(cases.length).toBeGreaterThanOrEqual(EMAIL_CATALOG.length);
     });
 

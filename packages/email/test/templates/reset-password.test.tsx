@@ -159,14 +159,17 @@ describe('ResetPasswordTemplate', () => {
             );
 
             // Assert
-            // The layout footer adds its own site-home link (HOS-2519), so only
-            // the anchors that point at the action URL are counted.
+            // The layout footer adds its own site-home link (HOS-2519), marked
+            // data-layout-link="home"; it is the only anchor excluded.
             const anchors = html.match(/<a\b[^>]*>[\s\S]*?<\/a>/g) ?? [];
-            const actionAnchors = anchors.filter((anchor) => anchor.includes(`href="${url}"`));
-            expect(actionAnchors).toHaveLength(1);
-            for (const anchor of anchors) {
-                expect(anchor).not.toContain(`>${url}`);
-            }
+            const layoutAnchors = anchors.filter((anchor) =>
+                anchor.includes('data-layout-link="home"')
+            );
+            const bodyAnchors = anchors.filter((anchor) => !layoutAnchors.includes(anchor));
+            expect(layoutAnchors).toHaveLength(1);
+            expect(bodyAnchors).toHaveLength(1);
+            expect(bodyAnchors[0]).toContain(`href="${url}"`);
+            expect(bodyAnchors[0]).not.toContain(`>${url}`);
             expect(html).toContain(url);
         });
     });
