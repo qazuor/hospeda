@@ -129,6 +129,11 @@
     color: var(--core-foreground);
 }
 
+.driver-popover-close-btn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
 .driver-overlay {
     background-color: var(--overlay);
 }

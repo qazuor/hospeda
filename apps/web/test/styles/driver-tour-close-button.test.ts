@@ -25,6 +25,13 @@ describe('driver tour close button (HOS-2448)', () => {
         expect(ruleFor('.driver-popover-close-btn')).toMatch(/background-color:\s*transparent/);
     });
 
+    it('shows a visible keyboard focus outline on the close button', () => {
+        const focus =
+            css.match(/\.driver-popover-close-btn:focus-visible\s*\{([^}]*outline:[^}]*)\}/)?.[1] ??
+            '';
+        expect(focus).toMatch(/outline:\s*2px solid var\(--brand-primary\)/);
+    });
+
     it('reserves room beside the title so the close icon never covers it', () => {
         expect(ruleFor('.driver-popover-title')).toMatch(/padding-inline-end/);
     });
