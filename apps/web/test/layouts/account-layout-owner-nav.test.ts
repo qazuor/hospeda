@@ -21,6 +21,8 @@ import { getNavForSurface, type NavGroup } from '../../src/config/navigation';
 import { isVisibleByRoles } from '../../src/lib/nav-gating';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
+// HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
+const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
 
 /** Computes the sidebar nav groups exactly as `AccountLayout.astro` does for a given role. */
 function sidebarGroupsForRole(role: string | null): readonly NavGroup[] {
@@ -34,16 +36,17 @@ describe('AccountLayout — sidebar wiring (HOS-131 T-007)', () => {
     it('renders navigation from the single-source config via getNavForSurface', () => {
         // Also imports PROVIDER_NAV_GROUP (H-158) — see
         // account-layout-provider-nav.test.ts for that entry's own coverage.
-        expect(source).toContain(
-            "import { getNavForSurface, PROVIDER_NAV_GROUP } from '@/config/navigation';"
-        );
-        expect(source).toContain("surface: 'sidebar'");
+        expect(modelSource).toContain('getNavForSurface');
+        expect(modelSource).toContain('PROVIDER_NAV_GROUP');
+        expect(modelSource).toContain("surface: 'sidebar'");
     });
 
     it('gates server-side via isVisibleByRoles (HOS-131 D-4), not the scattered role helpers', () => {
-        expect(source).toContain(
+        expect(modelSource).toContain(
             "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
+        expect(modelSource).not.toContain('isHostRole');
+        expect(modelSource).not.toContain('isOwnerRole');
         expect(source).not.toContain('isHostRole');
         expect(source).not.toContain('isOwnerRole');
     });
