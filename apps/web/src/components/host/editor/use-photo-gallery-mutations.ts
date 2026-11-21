@@ -16,6 +16,7 @@ import { useCallback } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
+import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
 import {
     buildReorderPayload,
     mediaRowToItem,
@@ -76,6 +77,8 @@ export function usePhotoGalleryMutations({
      */
     const handleFeaturedRemove = useCallback(async () => {
         if (!featuredItem?.id) return;
+        // HOS-2429: the delete is immediate and irreversible, so ask first.
+        if (!(await confirmPhotoRemoval({ t }))) return;
         setError(null);
         setOpLoading(true);
 
@@ -108,6 +111,8 @@ export function usePhotoGalleryMutations({
     const handleGalleryRemove = useCallback(
         async (item: AccommodationMediaItem) => {
             if (!item.id) return;
+            // HOS-2429: the delete is immediate and irreversible, so ask first.
+            if (!(await confirmPhotoRemoval({ t }))) return;
             setError(null);
             setOpLoading(true);
 

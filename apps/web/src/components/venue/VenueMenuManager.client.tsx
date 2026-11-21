@@ -89,6 +89,7 @@ import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlan
 import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
 import { getApiUrl } from '@/lib/env';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
@@ -447,9 +448,30 @@ export function VenueMenuManager({
         setSections((prev) => [...prev, { ...EMPTY_SECTION }]);
     }, []);
 
-    const removeSection = useCallback((index: number) => {
-        setSections((prev) => prev.filter((_, i) => i !== index));
-    }, []);
+    // HOS-2429: removing a section drops all its dishes at once, so it asks
+    // first. Cancel leaves the draft untouched.
+    const removeSection = useCallback(
+        async (index: number) => {
+            const confirmed = await showConfirmationDialog({
+                title: t(
+                    'venue.owner.editor.menuManager.removeSectionConfirm.title',
+                    'Quitar sección'
+                ),
+                message: t(
+                    'venue.owner.editor.menuManager.removeSectionConfirm.message',
+                    '¿Quitar esta sección y todos sus platos de la carta?'
+                ),
+                confirmLabel: t(
+                    'venue.owner.editor.menuManager.removeSectionConfirm.confirm',
+                    'Quitar sección'
+                ),
+                cancelLabel: t('common.cancel', 'Cancelar')
+            });
+            if (!confirmed) return;
+            setSections((prev) => prev.filter((_, i) => i !== index));
+        },
+        [t]
+    );
 
     const moveSection = useCallback((index: number, delta: number) => {
         setSections((prev) => movedBy(prev, index, delta));
@@ -471,15 +493,32 @@ export function VenueMenuManager({
         );
     }, []);
 
-    const removeItem = useCallback((sectionIndex: number, itemIndex: number) => {
-        setSections((prev) =>
-            prev.map((section, i) =>
-                i === sectionIndex
-                    ? { ...section, items: section.items.filter((_, j) => j !== itemIndex) }
-                    : section
-            )
-        );
-    }, []);
+    // HOS-2429: same confirmation for a single dish.
+    const removeItem = useCallback(
+        async (sectionIndex: number, itemIndex: number) => {
+            const confirmed = await showConfirmationDialog({
+                title: t('venue.owner.editor.menuManager.removeItemConfirm.title', 'Quitar plato'),
+                message: t(
+                    'venue.owner.editor.menuManager.removeItemConfirm.message',
+                    '¿Quitar este plato de la carta?'
+                ),
+                confirmLabel: t(
+                    'venue.owner.editor.menuManager.removeItemConfirm.confirm',
+                    'Quitar plato'
+                ),
+                cancelLabel: t('common.cancel', 'Cancelar')
+            });
+            if (!confirmed) return;
+            setSections((prev) =>
+                prev.map((section, i) =>
+                    i === sectionIndex
+                        ? { ...section, items: section.items.filter((_, j) => j !== itemIndex) }
+                        : section
+                )
+            );
+        },
+        [t]
+    );
 
     const patchItem = useCallback(
         (sectionIndex: number, itemIndex: number, patch: Partial<MenuItemDraft>) => {
@@ -1233,7 +1272,7 @@ export function VenueMenuManager({
                                         type="button"
                                         className={styles.dangerButton}
                                         onClick={() => {
-                                            removeSection(sectionIndex);
+                                            void removeSection(sectionIndex);
                                         }}
                                     >
                                         {t(
@@ -1369,7 +1408,7 @@ export function VenueMenuManager({
                                             type="button"
                                             className={styles.dangerButton}
                                             onClick={() => {
-                                                removeItem(sectionIndex, itemIndex);
+                                                void removeItem(sectionIndex, itemIndex);
                                             }}
                                         >
                                             {t(

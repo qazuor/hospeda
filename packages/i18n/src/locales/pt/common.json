@@ -279,6 +279,11 @@
             "message_other": "Você tem alterações não salvas nesta página: se sair agora, elas se perdem. Além disso, {{count}} fotos continuam sem texto alternativo, o que os leitores de tela leem em voz alta e os buscadores usam para entender suas imagens. Quer sair mesmo assim?",
             "confirm": "Sair e descartar as alterações",
             "cancel": "Continuar editando"
+        },
+        "removePhoto": {
+            "title": "Excluir foto",
+            "message": "Excluir esta foto? Esta ação não pode ser desfeita.",
+            "confirm": "Excluir"
         }
     },
     "modal": {

@@ -937,6 +937,12 @@
             "fetchFailed": "Error loading favorites",
             "removeFailed": "Error removing favorite",
             "saveFailed": "No se pudo guardar la nota"
+        },
+        "removeFavoriteConfirm": {
+            "title": "Remove from favorites",
+            "message": "Remove this favorite?",
+            "confirm": "Remove",
+            "messageWithNote": "Remove this favorite? The note you wrote for it is deleted too."
         }
     },
     "reviews": {

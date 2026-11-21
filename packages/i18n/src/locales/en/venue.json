@@ -349,7 +349,17 @@
                 "translationLocked": "Translating the menu is available starting with the {{plan}} plan. You can clear the translations and save the menu in Spanish only.",
                 "translationLockedNoPlan": "Translating the menu is available on a paid plan. You can clear the translations and save the menu in Spanish only.",
                 "translationLockedHint": "Available starting with the {{plan}} plan. Clear the English and Portuguese fields to save the menu in Spanish only.",
-                "translationLockedHintNoPlan": "Available on a paid plan. Clear the English and Portuguese fields to save the menu in Spanish only."
+                "translationLockedHintNoPlan": "Available on a paid plan. Clear the English and Portuguese fields to save the menu in Spanish only.",
+                "removeSectionConfirm": {
+                    "title": "Remove section",
+                    "message": "Remove this section and all its dishes from the menu?",
+                    "confirm": "Remove section"
+                },
+                "removeItemConfirm": {
+                    "title": "Remove dish",
+                    "message": "Remove this dish from the menu?",
+                    "confirm": "Remove dish"
+                }
             },
             "dailySpecials": {
                 "title": "Today's menu",

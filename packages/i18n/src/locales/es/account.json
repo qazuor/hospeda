@@ -937,6 +937,12 @@
             "fetchFailed": "Error al cargar los favoritos",
             "removeFailed": "Error al quitar el favorito",
             "saveFailed": "No se pudo guardar la nota"
+        },
+        "removeFavoriteConfirm": {
+            "title": "Quitar de favoritos",
+            "message": "¿Quitar este favorito?",
+            "confirm": "Quitar",
+            "messageWithNote": "¿Quitar este favorito? También se elimina la nota que le escribiste."
         }
     },
     "reviews": {

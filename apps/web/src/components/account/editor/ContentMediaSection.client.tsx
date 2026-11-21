@@ -57,6 +57,7 @@ import {
 } from '@/lib/api/endpoints-protected';
 import { visibleApiMessage } from '@/lib/api-errors';
 import { getApiUrl } from '@/lib/env';
+import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -437,6 +438,10 @@ export function ContentMediaSection({
         if (!featuredItem?.id || !canWrite) {
             return;
         }
+        // HOS-2429: the delete is immediate and irreversible, so ask first.
+        if (!(await confirmPhotoRemoval({ t }))) {
+            return;
+        }
         setError(null);
         setOpLoading(true);
 
@@ -552,6 +557,10 @@ export function ContentMediaSection({
     const handleGalleryRemove = useCallback(
         async (item: ContentMediaItem) => {
             if (!item.id || !canWrite) {
+                return;
+            }
+            // HOS-2429: the delete is immediate and irreversible, so ask first.
+            if (!(await confirmPhotoRemoval({ t }))) {
                 return;
             }
             setError(null);
