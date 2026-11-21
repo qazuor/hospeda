@@ -342,17 +342,34 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
             for (const { clause: number } of CORTE_MAP.filter(({ retired }) => retired)) {
                 const at = spec.search(new RegExp(`^${number}\\. ~~`, 'm'));
                 expect(at, `LISTA:B6 clause ${number} is struck through`).toBeGreaterThan(-1);
-                const end = spec.indexOf('\n\n', at);
-                expect(spec.slice(at, end), `clause ${number} note`).toContain(RETIRED_CLAUSE_NOTE);
+                // The span ends where the next clause starts (or the list ends), as in B10, so
+                // one clause's note never covers its neighbour.
+                const next = spec.indexOf(`\n${number + 1}. `, at);
+                const span = spec.slice(at, next > -1 ? next : spec.indexOf('\n\n', at));
+                const noteAt = span.indexOf(RETIRED_CLAUSE_NOTE);
+                expect(noteAt, `clause ${number} note`).toBeGreaterThan(-1);
+                expect(
+                    span.slice(0, noteAt).trimEnd(),
+                    `clause ${number} text is struck through up to its note`
+                ).toMatch(new RegExp(`^${number}\\. ~~[^~]+~~ —$`));
             }
             for (const id of RETIRED_IDS) {
-                const block = new RegExp(`^${id}\\n(.+)\\n`, 'm').exec(spec);
-                expect(block?.[1], `${id} carries the retired note`).toBe(RETIRED_NOTE);
-                const body = spec.slice(
-                    spec.indexOf(`\n${id}\n`),
-                    spec.indexOf('\n\n<a id=', spec.indexOf(`\n${id}\n`))
-                );
-                expect(body, `${id} body is struck through`).toMatch(/\n~~.+~~\n?/);
+                const start = spec.indexOf(`\n${id}\n`);
+                expect(start, `${id} heading`).toBeGreaterThan(-1);
+                const lines = spec
+                    .slice(start + 1, spec.indexOf('\n\n<a id=', start))
+                    .split('\n')
+                    .slice(1);
+                expect(lines[0], `${id} carries the retired note`).toBe(RETIRED_NOTE);
+                // Every body line is struck through: only the metadata lines stay plain.
+                const body = lines
+                    .slice(1)
+                    .filter((line) => line.trim() && !/^(Tipo|Cubre|Fuente):/.test(line));
+                expect(body.length, `${id} has a body`).toBeGreaterThan(0);
+                expect(
+                    body.filter((line) => !/^~~.+~~$/.test(line)),
+                    `${id} body lines not struck through`
+                ).toEqual([]);
             }
         });
         it('no test title still claims a retired B6 id', () => {
