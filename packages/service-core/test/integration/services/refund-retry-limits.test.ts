@@ -2,6 +2,7 @@ import type { PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
+import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import {
     REFUND_CALL_RETRY_LIMIT_MS,
     retryRefundProviderCalls
@@ -50,37 +51,82 @@ async function stuckRefund() {
     return { seeded, lossy };
 }
 
-describe('HOS-2516 owner decision: no resend of a call older than 24 hours', () => {
+/** A provider the refund calls do not reach until `reach()`: the first call never landed. */
+function cutProvider(provider: PaymentProvider) {
+    const refund = vi.fn(provider.refund.bind(provider));
+    const readCharge = vi.fn(provider.readCharge.bind(provider));
+    let reachable = false;
+    const wrapped = new Proxy(provider, {
+        get(target, property, receiver) {
+            if (property === 'readCharge') return readCharge;
+            if (property === 'refund')
+                return async (input: Parameters<PaymentProvider['refund']>[0]) => {
+                    if (!reachable)
+                        throw new PaymentProviderError({
+                            code: 'UNAVAILABLE',
+                            capability: 'refund',
+                            message: 'network cut'
+                        });
+                    return refund(input);
+                };
+            return Reflect.get(target, property, receiver);
+        }
+    });
+    return {
+        wrapped,
+        refund,
+        readCharge,
+        reach() {
+            reachable = true;
+        }
+    };
+}
+
+/** Confirms a refund whose only call never reached the provider: nothing at MP to bind. */
+async function neverLanded() {
+    const seeded = await refundConfirmFixture();
+    const cut = cutProvider(seeded.fixture.provider);
+    const confirmed = await confirmRefund(
+        { actor: seeded.actor, refundId: seeded.refundId },
+        { clock: seeded.fixture.clock, provider: cut.wrapped }
+    );
+    expect(confirmed.outcome).toBe('AWAITING_PROVIDER_ANSWER');
+    cut.reach();
+    return { seeded, cut };
+}
+
+describe('HOS-2516 the 24-hour limit only stops posting a call again', () => {
     it.skipIf(skip)(
-        'refuses with REFUND_CALL_TOO_OLD_TO_RETRY before any provider call, past 24 hours',
+        'past 24 hours, with nothing at MP to bind, refuses with 409 and posts nothing',
         async () => {
-            // Arrange: the unanswered call was sent 24 hours and 1 ms ago.
-            const { seeded, lossy } = await stuckRefund();
+            // Arrange: the unanswered call was sent 24 hours and 1 ms ago and never landed.
+            const { seeded, cut } = await neverLanded();
             seeded.fixture.clock.advance({ ms: REFUND_CALL_RETRY_LIMIT_MS + 1 });
-            lossy.readCharge.mockClear();
 
             // Act + Assert
             await expect(
                 retryRefundProviderCalls(
                     { actor: seeded.actor, refundId: seeded.refundId },
-                    { clock: seeded.fixture.clock, provider: lossy.wrapped }
+                    { clock: seeded.fixture.clock, provider: cut.wrapped }
                 )
             ).rejects.toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'REFUND_CALL_TOO_OLD_TO_RETRY'
             });
-            expect(lossy.readCharge).not.toHaveBeenCalled();
-            expect(lossy.refund).toHaveBeenCalledTimes(1);
+            expect(cut.readCharge).toHaveBeenCalled();
+            expect(cut.refund).not.toHaveBeenCalled();
             const rows = await refundConfirmRows(seeded.refundId);
             expect(rows.keys[0]?.completedAt).toBeNull();
+            expect(rows.keys[0]?.result).toBeNull();
+            expect(rows.calls[0]?.providerRefundId).toBeNull();
             expect(rows.refund?.status).toBe('CONFIRMED');
         }
     );
 
-    it.skipIf(skip)('still resends a call sent exactly 24 hours ago', async () => {
-        // Arrange
+    it.skipIf(skip)('past 24 hours, binds a lost call that landed and executes', async () => {
+        // Arrange: the call landed at MP but its answer was lost, more than 24 hours ago.
         const { seeded, lossy } = await stuckRefund();
-        seeded.fixture.clock.advance({ ms: REFUND_CALL_RETRY_LIMIT_MS });
+        seeded.fixture.clock.advance({ ms: REFUND_CALL_RETRY_LIMIT_MS + 1 });
 
         // Act
         const result = await retryRefundProviderCalls(
@@ -88,8 +134,26 @@ describe('HOS-2516 owner decision: no resend of a call older than 24 hours', () 
             { clock: seeded.fixture.clock, provider: lossy.wrapped }
         );
 
-        // Assert
+        // Assert: the read and the binding still run; nothing is posted.
         expect(result.calls.map((call) => call.outcome)).toEqual(['FOUND_AT_PROVIDER']);
+        expect(result.status).toBe('EXECUTED');
+        expect(lossy.refund).toHaveBeenCalledTimes(1);
+    });
+
+    it.skipIf(skip)('still posts a call sent exactly 24 hours ago', async () => {
+        // Arrange
+        const { seeded, cut } = await neverLanded();
+        seeded.fixture.clock.advance({ ms: REFUND_CALL_RETRY_LIMIT_MS });
+
+        // Act
+        const result = await retryRefundProviderCalls(
+            { actor: seeded.actor, refundId: seeded.refundId },
+            { clock: seeded.fixture.clock, provider: cut.wrapped }
+        );
+
+        // Assert
+        expect(result.calls.map((call) => call.outcome)).toEqual(['SENT']);
+        expect(cut.refund).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -194,6 +258,64 @@ describe('HOS-2516 owner decision: a refund the provider accepted and then rejec
             expect(after.calls.map((call) => call.providerRefundId).filter(Boolean)).toEqual([
                 accepted[1]
             ]);
+        }
+    );
+
+    it.skipIf(skip)(
+        'never binds another refund of the payment to a provider refund rejected after acceptance',
+        async () => {
+            // Arrange: refund X (4000) is accepted, then MP rejects it, and the retry fails it.
+            const seeded = await refundConfirmFixture(10000, 4000);
+            await seeded.fixture.provider
+                .refund({
+                    chargeId: seeded.charge.chargeId,
+                    amount: { amountMinor: 1, currency: 'ARS' },
+                    reference: `m13-${crypto.randomUUID()}`
+                })
+                .catch(() => undefined);
+            await confirmRefund(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
+            );
+            const xRefundId = (await refundConfirmRows(seeded.refundId)).calls[0]
+                ?.providerRefundId as string;
+            await seeded.fixture.provider.rejectRefund({
+                chargeId: seeded.charge.chargeId,
+                refundId: xRefundId
+            });
+            const failed = await retryRefundProviderCalls(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
+            );
+            expect(failed.status).toBe('FAILED');
+            // Refund Y, same payment and amount, has a call that never reached MP.
+            const y = await requestRefund(
+                {
+                    source: { kind: 'PAYMENT', id: seeded.payment.id },
+                    amount: 4000,
+                    reason: 'REVOCATION'
+                },
+                { clock: seeded.fixture.clock }
+            );
+            const cut = cutProvider(seeded.fixture.provider);
+            await confirmRefund(
+                { actor: seeded.actor, refundId: y.refundId },
+                { clock: seeded.fixture.clock, provider: cut.wrapped }
+            );
+            cut.reach();
+
+            // Act
+            const result = await retryRefundProviderCalls(
+                { actor: seeded.actor, refundId: y.refundId },
+                { clock: seeded.fixture.clock, provider: cut.wrapped }
+            );
+
+            // Assert: X's rejected refund is not Y's; Y posts its own and gets its own id.
+            expect(result.calls.map((call) => call.outcome)).toEqual(['SENT']);
+            expect(cut.refund).toHaveBeenCalledTimes(1);
+            const yId = (await refundConfirmRows(y.refundId)).calls[0]?.providerRefundId;
+            expect(yId).toEqual(expect.any(String));
+            expect(yId).not.toBe(xRefundId);
         }
     );
 });

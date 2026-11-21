@@ -280,16 +280,26 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
         expect((await confirmRows(seeded.refundId)).keys[0]?.completedAt).toBeNull();
     });
 
-    it('answers 409 REFUND_CALL_TOO_OLD_TO_RETRY past 24 hours, before any provider call', async () => {
+    it('answers 409 REFUND_CALL_TOO_OLD_TO_RETRY past 24 hours when it would post, posting nothing', async () => {
         const { seeded, lossy } = await seedStuckRefund();
         await getDb()
             .update(refundCalls)
             .set({ createdAt: new Date(confirmClock.now().getTime() - 25 * 3600000) })
             .where(eq(refundCalls.refundId, seeded.refundId));
-        const readCharge = vi.spyOn(lossy.provider, 'readCharge');
+        // The charge read shows no refund to bind, so the retry would have to post again.
+        const readCharge = vi.fn(async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+            const read = await lossy.provider.readCharge(input);
+            return { ...read, snapshot: { ...read.snapshot, refunds: [] } };
+        });
+        const blind = new Proxy(lossy.provider, {
+            get(target, property, receiver) {
+                if (property === 'readCharge') return readCharge;
+                return Reflect.get(target, property, receiver);
+            }
+        });
         const response = await retryRequest({
             refundId: seeded.refundId,
-            provider: lossy.provider,
+            provider: blind,
             actor: { id: seeded.adminId, role: 'SUPER_ADMIN', permissions }
         });
         expect(response.status).toBe(409);
@@ -297,8 +307,9 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
             code: 'ALREADY_EXISTS',
             reason: 'REFUND_CALL_TOO_OLD_TO_RETRY'
         });
-        expect(readCharge).not.toHaveBeenCalled();
+        expect(readCharge).toHaveBeenCalled();
         expect(lossy.refund).toHaveBeenCalledTimes(1);
         expect(audit).not.toHaveBeenCalled();
+        expect((await confirmRows(seeded.refundId)).keys[0]?.completedAt).toBeNull();
     });
 });

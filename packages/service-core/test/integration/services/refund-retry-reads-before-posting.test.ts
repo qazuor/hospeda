@@ -1,7 +1,8 @@
-import { sql } from '@repo/db';
+import { eq, refunds, sql } from '@repo/db';
 import { registerCaptureHook, unregisterCaptureHook } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
+import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { AmbiguousRefundAnswerError } from '../../../src/services/billing/refund/ambiguous-refund-answer.error.js';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
@@ -183,6 +184,17 @@ describe('HOS-2516 the retry reads the charge before posting a lost call again',
                 () => null,
                 (error: unknown) => error
             );
+            // 403 answers before the claim: a forbidden actor never learns a retry is running.
+            const outsider = await retryRefundProviderCalls(
+                {
+                    ...request,
+                    actor: { ...seeded.actor, permissions: [PermissionEnum.ACCESS_PANEL_ADMIN] }
+                },
+                ports
+            ).then(
+                () => null,
+                (error: unknown) => error
+            );
             release();
             const done = await first;
 
@@ -190,6 +202,10 @@ describe('HOS-2516 the retry reads the charge before posting a lost call again',
             expect(second).toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'REFUND_RETRY_IN_PROGRESS'
+            });
+            expect(outsider).toMatchObject({
+                code: 'FORBIDDEN',
+                reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN'
             });
             expect(done.calls.map(({ outcome }) => outcome)).toEqual(['FOUND_AT_PROVIDER']);
             expect(ambiguousReasons(captured, seeded.refundId)).toEqual([]);
@@ -208,6 +224,49 @@ describe('HOS-2516 the retry reads the charge before posting a lost call again',
                   AND ((classid::bigint << 32) | objid::bigint)
                       = hashtext(${'refund-retry:'} || ${seeded.refundId})::bigint`);
             expect(held.rows).toEqual([{ n: 0 }]);
+        }
+    );
+});
+
+describe('HOS-2516 the retry never binds a refund that stopped being CONFIRMED', () => {
+    it.skipIf(skip)(
+        'a refund failed (a chargeback) while the charge was read is not bound',
+        async () => {
+            // Arrange: the lost call landed; while the retry reads the charge, the refund fails.
+            const { seeded, provider } = await landedAndStuck({ forgetsKey: false });
+            let failedOnce = false;
+            const chargeback = new Proxy(provider.wrapped, {
+                get(target, property, receiver) {
+                    if (property === 'readCharge')
+                        return async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+                            const read = await target.readCharge(input);
+                            if (!failedOnce) {
+                                failedOnce = true;
+                                await getServiceTestDb()
+                                    .update(refunds)
+                                    .set({ status: 'FAILED' })
+                                    .where(eq(refunds.id, seeded.refundId));
+                            }
+                            return read;
+                        };
+                    return Reflect.get(target, property, receiver);
+                }
+            });
+
+            // Act
+            const result = await retryRefundProviderCalls(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: chargeback }
+            );
+
+            // Assert
+            expect(result.calls.map(({ outcome }) => outcome)).toEqual([
+                'AWAITING_PROVIDER_ANSWER'
+            ]);
+            expect(result.status).toBe('FAILED');
+            const rows = await refundConfirmRows(seeded.refundId);
+            expect(rows.calls.map((call) => call.providerRefundId)).toEqual([null]);
+            expect(rows.keys[0]?.completedAt).toBeNull();
         }
     );
 });
