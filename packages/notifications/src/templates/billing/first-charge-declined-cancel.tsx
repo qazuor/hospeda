@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject and heading of the notice sent before the payment authorization of a signup whose first charge was declined is cancelled. */
 export const FIRST_CHARGE_DECLINED_CANCEL_SUBJECT =

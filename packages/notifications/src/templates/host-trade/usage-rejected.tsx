@@ -1,6 +1,6 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the UsageRejected email template (HOS-376 §6.5).
@@ -34,10 +34,7 @@ export interface UsageRejectedProps {
  */
 export function UsageRejected({ recipientName, counterpartName, note }: UsageRejectedProps) {
     return (
-        <EmailLayout
-            previewText={`${counterpartName} no reconoció el uso del beneficio`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`${counterpartName} no reconoció el uso del beneficio`}>
             <Heading>No quedó registrado</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

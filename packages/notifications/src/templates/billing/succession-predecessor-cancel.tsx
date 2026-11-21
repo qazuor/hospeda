@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the S17 notice sent before cancelling the predecessor authorization. */
 export const SUCCESSION_PREDECESSOR_CANCEL_SUBJECT = 'Tu cambio de plan ya está activo';

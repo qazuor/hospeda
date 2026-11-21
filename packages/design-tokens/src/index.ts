@@ -32,6 +32,7 @@
 // ============================================================================
 
 export * from './tokens/colors.js';
+export * from './tokens/email-palette.js';
 export * from './tokens/layout.js';
 export * from './tokens/motion.js';
 export * from './tokens/radius.js';

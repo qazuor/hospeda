@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for SubscriptionPaused email template
@@ -29,10 +29,7 @@ export interface SubscriptionPausedProps {
  */
 export function SubscriptionPaused({ recipientName, planName, baseUrl }: SubscriptionPausedProps) {
     return (
-        <EmailLayout
-            previewText={`Tu suscripcion al plan ${planName} ha sido pausada`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Tu suscripcion al plan ${planName} ha sido pausada`}>
             <Heading>Tu suscripcion ha sido pausada</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

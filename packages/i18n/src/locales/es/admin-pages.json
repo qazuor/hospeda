@@ -2245,5 +2245,53 @@
             "restoreError": "No se pudo restaurar el tipo.",
             "inUse": "No se puede: {{count}} partner(s) usan este tipo. Asignales otro tipo primero."
         }
+    },
+    "emailPreviews": {
+        "title": "Emails",
+        "description": "Vista previa de cada email que envía la plataforma, renderizado en el servidor con datos de ejemplo. No se envía nada.",
+        "searchLabel": "Buscar emails",
+        "searchPlaceholder": "Buscar por nombre, clave o id",
+        "domainFilterLabel": "Filtrar por dominio",
+        "clearFilters": "Limpiar filtros",
+        "count": "{{shown}} de {{total}}",
+        "notWired": "sin envío en producción",
+        "empty": "Ningún email coincide con los filtros.",
+        "loading": "Cargando catálogo...",
+        "loadError": "No se pudo cargar el catálogo de emails.",
+        "retry": "Reintentar",
+        "selectPrompt": "Elegí un email de la lista.",
+        "subjectLabel": "Asunto",
+        "scenarioLabel": "Escenario",
+        "widthLabel": "Ancho de la vista previa",
+        "desktop": "Escritorio (600 px)",
+        "mobile": "Móvil (375 px)",
+        "previewLoading": "Generando vista previa...",
+        "previewError": "No se pudo generar la vista previa",
+        "plainText": "Texto plano",
+        "iframeTitle": "Vista previa del email: {{name}}",
+        "sendPaths": {
+            "notification": "Notificación",
+            "outbox": "Outbox",
+            "auth": "Autenticación",
+            "conversation": "Conversación",
+            "alert-digest": "Resumen de alertas",
+            "newsletter": "Newsletter"
+        },
+        "domains": {
+            "auth": "Autenticación",
+            "billing": "Facturación",
+            "subscription": "Suscripciones",
+            "trial": "Prueba gratuita",
+            "listing": "Fichas",
+            "host-trade": "Intercambios entre anfitriones",
+            "alliance": "Alianzas",
+            "partner": "Partners",
+            "conversation": "Conversaciones",
+            "admin": "Administración",
+            "newsletter": "Newsletter",
+            "alerts": "Alertas",
+            "contact-feedback": "Contacto y feedback",
+            "ai": "Inteligencia artificial"
+        }
     }
 }

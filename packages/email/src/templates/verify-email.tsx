@@ -1,5 +1,5 @@
 import { Button, Heading, Text } from '@react-email/components';
-import { BaseLayout } from './base-layout.js';
+import { EmailLayout } from './email-layout.js';
 import { resolveGreeting } from './greeting.js';
 
 /**
@@ -44,7 +44,7 @@ export interface VerifyEmailTemplateProps {
  */
 export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTemplateProps) {
     return (
-        <BaseLayout showUnsubscribe={false}>
+        <EmailLayout>
             <Heading style={h1}>Verifica tu dirección de correo electrónico</Heading>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>
@@ -75,7 +75,7 @@ export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTempla
                 Este enlace expira en 24 horas. Si no solicitaste esta verificación, puedes ignorar
                 este correo de forma segura.
             </Text>
-        </BaseLayout>
+        </EmailLayout>
     );
 }
 

@@ -2245,5 +2245,53 @@
             "restoreError": "The type could not be restored.",
             "inUse": "Not allowed: {{count}} partner(s) use this type. Assign them another type first."
         }
+    },
+    "emailPreviews": {
+        "title": "Emails",
+        "description": "Preview of every email the platform sends, rendered on the server with sample data. Nothing is sent.",
+        "searchLabel": "Search emails",
+        "searchPlaceholder": "Search by name, key or id",
+        "domainFilterLabel": "Filter by domain",
+        "clearFilters": "Clear filters",
+        "count": "{{shown}} of {{total}}",
+        "notWired": "not sent in production",
+        "empty": "No email matches the filters.",
+        "loading": "Loading catalog...",
+        "loadError": "The email catalog could not be loaded.",
+        "retry": "Retry",
+        "selectPrompt": "Pick an email from the list.",
+        "subjectLabel": "Subject",
+        "scenarioLabel": "Scenario",
+        "widthLabel": "Preview width",
+        "desktop": "Desktop (600 px)",
+        "mobile": "Mobile (375 px)",
+        "previewLoading": "Rendering preview...",
+        "previewError": "The preview could not be rendered",
+        "plainText": "Plain text",
+        "iframeTitle": "Email preview: {{name}}",
+        "sendPaths": {
+            "notification": "Notification",
+            "outbox": "Outbox",
+            "auth": "Authentication",
+            "conversation": "Conversation",
+            "alert-digest": "Alert digest",
+            "newsletter": "Newsletter"
+        },
+        "domains": {
+            "auth": "Authentication",
+            "billing": "Billing",
+            "subscription": "Subscriptions",
+            "trial": "Free trial",
+            "listing": "Listings",
+            "host-trade": "Host trades",
+            "alliance": "Alliances",
+            "partner": "Partners",
+            "conversation": "Conversations",
+            "admin": "Administration",
+            "newsletter": "Newsletter",
+            "alerts": "Alerts",
+            "contact-feedback": "Contact and feedback",
+            "ai": "Artificial intelligence"
+        }
     }
 }

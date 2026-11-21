@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 import {
     formatTrialGreeting,
@@ -38,7 +38,7 @@ export function TrialEnding10Days({
     return (
         <EmailLayout
             previewText="¿Te está sirviendo tu publicación? Contanos cómo va"
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>¿Cómo venís con tu publicación?</Heading>
 

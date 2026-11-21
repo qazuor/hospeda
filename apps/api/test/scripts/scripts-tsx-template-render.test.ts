@@ -16,7 +16,7 @@ describe('TEST:1779:1 template render under the API tsx config', () => {
             const tempDir = mkdtempSync(join(tmpdir(), 'hos-1779-render-'));
             const entry = join(tempDir, 'render.mts');
             const layout = pathToFileURL(
-                join(ROOT, 'packages/notifications/src/templates/components/layout.tsx')
+                join(ROOT, 'packages/email/src/templates/email-layout.tsx')
             ).href;
             const verify = pathToFileURL(
                 join(ROOT, 'packages/email/src/templates/verify-email.tsx')

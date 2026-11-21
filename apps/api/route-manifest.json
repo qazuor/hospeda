@@ -899,6 +899,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/email-previews"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/email-previews/render"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/entities/:type/:id/tags"
         },
         {

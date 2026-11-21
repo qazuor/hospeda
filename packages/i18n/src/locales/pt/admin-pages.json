@@ -2245,5 +2245,53 @@
             "restoreError": "Não foi possível restaurar o tipo.",
             "inUse": "Não permitido: {{count}} parceiro(s) usam este tipo. Atribua outro tipo a eles primeiro."
         }
+    },
+    "emailPreviews": {
+        "title": "E-mails",
+        "description": "Pré-visualização de cada e-mail que a plataforma envia, renderizado no servidor com dados de exemplo. Nada é enviado.",
+        "searchLabel": "Buscar e-mails",
+        "searchPlaceholder": "Buscar por nome, chave ou id",
+        "domainFilterLabel": "Filtrar por domínio",
+        "clearFilters": "Limpar filtros",
+        "count": "{{shown}} de {{total}}",
+        "notWired": "sem envio em produção",
+        "empty": "Nenhum e-mail corresponde aos filtros.",
+        "loading": "Carregando catálogo...",
+        "loadError": "Não foi possível carregar o catálogo de e-mails.",
+        "retry": "Tentar novamente",
+        "selectPrompt": "Escolha um e-mail da lista.",
+        "subjectLabel": "Assunto",
+        "scenarioLabel": "Cenário",
+        "widthLabel": "Largura da pré-visualização",
+        "desktop": "Desktop (600 px)",
+        "mobile": "Celular (375 px)",
+        "previewLoading": "Gerando pré-visualização...",
+        "previewError": "Não foi possível gerar a pré-visualização",
+        "plainText": "Texto simples",
+        "iframeTitle": "Pré-visualização do e-mail: {{name}}",
+        "sendPaths": {
+            "notification": "Notificação",
+            "outbox": "Outbox",
+            "auth": "Autenticação",
+            "conversation": "Conversa",
+            "alert-digest": "Resumo de alertas",
+            "newsletter": "Newsletter"
+        },
+        "domains": {
+            "auth": "Autenticação",
+            "billing": "Faturamento",
+            "subscription": "Assinaturas",
+            "trial": "Teste gratuito",
+            "listing": "Anúncios",
+            "host-trade": "Trocas entre anfitriões",
+            "alliance": "Alianças",
+            "partner": "Parceiros",
+            "conversation": "Conversas",
+            "admin": "Administração",
+            "newsletter": "Newsletter",
+            "alerts": "Alertas",
+            "contact-feedback": "Contato e feedback",
+            "ai": "Inteligência artificial"
+        }
     }
 }

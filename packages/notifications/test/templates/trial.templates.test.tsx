@@ -107,13 +107,16 @@ describe('Trial Email Templates', () => {
             expect(html).toContain('https://hospeda.com.ar/precios');
         });
 
-        it('should include unsubscribe option', () => {
+        it('should not link to the preferences page yet (HOS-2519 OQ-2)', () => {
             // Arrange & Act
             const html = renderToStaticMarkup(TrialEndingReminder(validProps));
 
             // Assert
-            // Trial reminders are REMINDER category, should have unsubscribe
-            expect(html).toContain('preferencias');
+            // REMINDER category, but the web preferences page does not drive
+            // REMINDER opt-outs today, so the footer carries no preferences link
+            // and never the old unresolved {{unsubscribe_url}} placeholder.
+            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            expect(html).not.toContain('unsubscribe_url');
         });
 
         it('should handle different upgrade URLs correctly', () => {

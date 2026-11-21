@@ -4,7 +4,7 @@ Email notification system for the Hospeda billing platform. Provides transaction
 
 ## Overview
 
-The notification system handles all email communications for billing events, subscription lifecycle, add-ons, trials, and system alerts. It integrates with Resend for email delivery, Redis for retry queue management, and PostgreSQL for delivery logging.
+The notification system handles all email communications for billing events, subscription lifecycle, add-ons, trials, and system alerts. It integrates with Brevo (transactional REST API, via `@repo/email`) for email delivery, Redis for retry queue management, and PostgreSQL for delivery logging.
 
 **Key Features:**
 
@@ -26,10 +26,10 @@ pnpm add @repo/notifications
 Required environment variables:
 
 ```env
-# Resend API Configuration
-HOSPEDA_RESEND_API_KEY=re_xxxxxxxxxxxxx          # Resend API key
-HOSPEDA_RESEND_FROM_EMAIL=noreply@hospeda.com.ar # Default sender email
-HOSPEDA_RESEND_FROM_NAME=Hospeda                  # Default sender name
+# Brevo API configuration (read by the host app, e.g. apps/api)
+HOSPEDA_EMAIL_API_KEY=xkeysib-xxxxxxxxxxxxx      # Brevo API key
+HOSPEDA_EMAIL_FROM_EMAIL=noreply@hospeda.com.ar  # Default sender email (optional)
+HOSPEDA_EMAIL_FROM_NAME=Hospeda                  # Default sender name (optional)
 
 # Redis (Optional - for retry queue)
 HOSPEDA_REDIS_URL=redis://localhost:6379         # Redis connection URL
@@ -114,15 +114,24 @@ All templates are built with React Email for responsive, beautiful emails.
 ### Basic Usage
 
 ```ts
-import { NotificationService, NotificationType } from '@repo/notifications';
-import { createResendClient } from '@repo/notifications/config';
-import { ResendEmailTransport } from '@repo/notifications/transports';
+import {
+  BrevoEmailTransport,
+  NotificationService,
+  NotificationType,
+  PreferenceService,
+  RetryService
+} from '@repo/notifications';
+import { createEmailClient } from '@repo/email';
 import { getDb } from '@repo/db';
 import { createLogger } from '@repo/logger';
 
-// Create email transport
-const resendClient = createResendClient();
-const emailTransport = new ResendEmailTransport(resendClient);
+// Create email transport (Brevo). In apps/api, pass getEmailSender(), which
+// also carries the [STAGING] subject prefix outside production.
+const emailClient = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
+const emailTransport = new BrevoEmailTransport(emailClient, {
+  fromEmail: env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar',
+  fromName: env.HOSPEDA_EMAIL_FROM_NAME ?? 'Hospeda'
+});
 
 // Create notification service
 const notificationService = new NotificationService({
@@ -574,7 +583,7 @@ for (const trial of expiringTrials) {
 The notification system is designed to fail gracefully:
 
 - **Redis unavailable**: Retry system disabled, errors logged
-- **Resend API error**: Notification logged as failed, no crash
+- **Brevo API error**: Notification logged as failed, no crash
 - **Database logging error**: Email still sent, logging error logged
 
 ### Error Response
