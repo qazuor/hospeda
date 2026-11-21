@@ -9,7 +9,7 @@
  * ## What it checks (a failure exits 1)
  *
  * - (a1) Every content file parses, its frontmatter passes the schema, its body
- *   has the five sections in order, it renders under the 5 000-character
+ *   has the five sections in order, no «Cómo se hace» step carries a token, it renders under the 5 000-character
  *   ceiling, and the layout rules R-1…R-4 hold.
  * - (a2) Every destination resolves to a page under `apps/web/src/pages/[lang]/`,
  *   through the route map and the same page lookup as `check-portal-routes`.
@@ -43,7 +43,8 @@
  * - Whether a `section` slug still belongs to the section the article talks
  *   about (only that its page exists), the blind spot of `check-portal-routes`.
  * - IL-2 in the «Cómo se hace» steps: get_help returns them verbatim and does
- *   not resolve tokens yet (HOS-2410 PR-12), so a step cannot carry a token.
+ *   not resolve tokens yet (HOS-2410 PR-12), so a step cannot carry a token
+ *   (a1 rejects any `{{` in a step) and cannot satisfy IL-1 either.
  * - `helpTopicId` literals in API refusals (none exist today).
  *
  * Exit codes: 0 = clean (stale articles may be listed); 1 = a violation.

@@ -186,6 +186,27 @@ describe('buildHelpIndex', () => {
             expect(predicatesOf(greenCatalog({ a: { body } }))).toContain('a1');
         });
 
+        it.each([
+            ['a link token', 'Entrá a {{link:subscription}}.'],
+            ['an article token', 'Leé {{article:b}}.'],
+            ['a broken token', 'Escribí {{ algo.']
+        ])('fails with %s in a step, which get_help would return raw (until PR-12)', (_label, step) => {
+            // Act
+            const details = detailsOf(greenCatalog({ a: { steps: ['Primero.', step] } })).join(
+                '\n'
+            );
+
+            // Assert
+            expect(details).toContain('a1 ');
+            expect(details).toContain('must not carry a {{token}}');
+        });
+
+        it('accepts the same token in the prose after the steps', () => {
+            expect(
+                predicatesOf(greenCatalog({ a: { after: 'Después, {{link:subscription}}.' } }))
+            ).toEqual([]);
+        });
+
         it('fails with a second ordered list in «Cómo se hace»', () => {
             expect(predicatesOf(greenCatalog({ a: { after: '1. Otra lista.' } }))).toContain('a1');
         });
