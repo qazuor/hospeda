@@ -140,8 +140,13 @@ export interface CheckHelpCatalogResult {
     readonly articleCount: number;
 }
 
-/** Today in Argentina, as `YYYY-MM-DD`. */
-function argentinaToday({ now }: { readonly now: Date }): string {
+/**
+ * Today in Argentina, as `YYYY-MM-DD`: the date review dates are written in.
+ *
+ * @param args.now - The clock
+ * @returns The local date
+ */
+export function argentinaToday({ now }: { readonly now: Date }): string {
     return new Intl.DateTimeFormat('en-CA', {
         timeZone: REVIEW_TIME_ZONE,
         year: 'numeric',
@@ -387,7 +392,7 @@ export function run(args: Partial<CheckHelpCatalogArgs> = {}): {
     const { violations, stale, articleCount } = checkHelpCatalog({ root: REPO_ROOT, ...args });
     const staleLines = stale.map(
         (entry) =>
-            `  - ${entry.id}: ${entry.detail}. Re-check it and run pnpm help:review once it exists (PR-4); until then bump reviewedAt.`
+            `  - ${entry.id}: ${entry.detail}. Re-read it against the portal, edit it if needed, then run pnpm help:review <id>.`
     );
     if (violations.length > 0) {
         const predicates = [...new Set(violations.map((violation) => violation.predicate))].sort();

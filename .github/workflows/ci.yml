@@ -437,6 +437,16 @@ jobs:
       # Fix: cover the unit in an article, or add the exemption with its reason.
       - name: Check every owner-facing surface has help or an exemption (HOS-2410)
         run: pnpm check:help-coverage
+      # HOS-2410 guard (c), change coupling. Its own step, like every guard here.
+      # packages/help/help.lock.json records, per article, the hash of every anchor it covers
+      # (a page file, a section page + its catalog entry, a key definition row, an enum value
+      # set, a tool source file...) as of its last review. Fails when anchored code changed
+      # and the article was not re-reviewed, when the lock and the articles disagree on the
+      # article set or the review date, or when the lock is empty.
+      # Fix: re-read the article against the portal, edit it if needed, then run
+      # `pnpm help:review <id>` and commit the article, the lock and the index.
+      - name: Check help articles were re-reviewed after the code they explain changed (HOS-2410)
+        run: pnpm check:help-lock
       # Drizzle skips, without an error, any migration whose `when` is not above the
       # last applied one. Rule 1 (monotonic journal) always runs; rule 2 (new entries
       # above origin/<base>) only on a PR to staging or main. On `push` base_ref is
