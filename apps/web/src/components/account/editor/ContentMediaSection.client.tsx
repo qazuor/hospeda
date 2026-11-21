@@ -58,6 +58,7 @@ import {
 import { visibleApiMessage } from '@/lib/api-errors';
 import { getApiUrl } from '@/lib/env';
 import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
+import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -434,12 +435,13 @@ export function ContentMediaSection({
      * removing is the clear action. `removeMedia` deletes the Cloudinary binary
      * server-side before dropping the row.
      */
+    const runSingleFlight = useSingleFlight();
     const handleFeaturedRemove = useCallback(async () => {
         if (!featuredItem?.id || !canWrite) {
             return;
         }
         // HOS-2429: the delete is immediate and irreversible, so ask first.
-        if (!(await confirmPhotoRemoval({ t }))) {
+        if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) {
             return;
         }
         setError(null);
@@ -463,7 +465,7 @@ export function ContentMediaSection({
             );
         }
         setOpLoading(false);
-    }, [canWrite, featuredItem, entity, entityId, t, reportError]);
+    }, [canWrite, featuredItem, entity, entityId, t, reportError, runSingleFlight]);
 
     // --- Gallery handlers ---
 
@@ -560,7 +562,7 @@ export function ContentMediaSection({
                 return;
             }
             // HOS-2429: the delete is immediate and irreversible, so ask first.
-            if (!(await confirmPhotoRemoval({ t }))) {
+            if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) {
                 return;
             }
             setError(null);
@@ -585,7 +587,7 @@ export function ContentMediaSection({
             }
             setOpLoading(false);
         },
-        [canWrite, entity, entityId, t, reportError]
+        [canWrite, entity, entityId, t, reportError, runSingleFlight]
     );
 
     /**

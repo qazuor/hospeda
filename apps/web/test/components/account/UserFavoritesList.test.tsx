@@ -416,6 +416,28 @@ describe('UserFavoritesList', () => {
         expect(options?.message).toContain('nota');
     });
 
+    it('opens ONE confirmation on a double-click of remove (HOS-2429)', async () => {
+        let resolveDialog: (value: boolean) => void = () => {};
+        vi.mocked(showConfirmationDialog).mockImplementationOnce(
+            () => new Promise<boolean>((resolve) => (resolveDialog = resolve))
+        );
+        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') return Promise.resolve(makeSuccessResponse());
+            return Promise.resolve(makeListResponse([BOOKMARK_1], 1));
+        });
+
+        renderList();
+        await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
+
+        const button = screen.getByRole('button', { name: /quitar de favoritos/i });
+        fireEvent.click(button);
+        fireEvent.click(button);
+
+        await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+        resolveDialog(false);
+    });
+
     it('removes card optimistically on Quitar click', async () => {
         globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
             const method = opts?.method ?? 'GET';

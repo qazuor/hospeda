@@ -514,6 +514,25 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             expect(mockRequestLeaveWarning).not.toHaveBeenCalled();
         });
 
+        it('opens ONE confirmation when the remove button is double-clicked (HOS-2429)', async () => {
+            let resolveDialog: (value: boolean) => void = () => {};
+            vi.mocked(showConfirmationDialog).mockImplementationOnce(
+                () => new Promise<boolean>((resolve) => (resolveDialog = resolve))
+            );
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
+            mockRemoveMedia.mockReturnValue(makeRemoveOk());
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
+
+            const button = screen.getAllByLabelText('Eliminar')[0] as HTMLElement;
+            fireEvent.click(button);
+            fireEvent.click(button);
+
+            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+            resolveDialog(false);
+        });
+
         it('asks for confirmation and deletes nothing when the user cancels (HOS-2429)', async () => {
             vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
