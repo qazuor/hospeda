@@ -286,7 +286,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             });
             expect(body.data.unreadConversations).toBe(0);
             // HOS-2424: the zeros are a fallback and must be flagged as such.
-            expect(body.data.unavailable).toContain('properties');
+            expect(body.data.unavailable).toEqual(['properties', 'unreadConversations']);
         });
 
         it('flags unreadConversations as unavailable when getUnreadCount fails (HOS-2424)', async () => {

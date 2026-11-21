@@ -228,7 +228,9 @@ export const hostDashboardRoute = createProtectedRoute({
             });
             const unavailable: HostDashboardResponse['unavailable'] = [
                 ...(propertiesDegraded ? (['properties'] as const) : []),
-                ...(unread.degraded ? (['unreadConversations'] as const) : [])
+                // With the properties read degraded there are no accommodation ids, so
+                // the unread count was computed from an empty list: not a real 0.
+                ...(unread.degraded || propertiesDegraded ? (['unreadConversations'] as const) : [])
             ];
 
             const response: HostDashboardResponse = {
