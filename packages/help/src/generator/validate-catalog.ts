@@ -24,7 +24,7 @@ import {
     helpEditorSectionSlug,
     toPortalDestination
 } from '../destination-template';
-import { resolveHelpLinkTarget } from '../link-targets';
+import { helpPageKeysForRoute, resolveHelpLinkTarget } from '../link-targets';
 import { HELP_RETIRED_IDS } from '../retired-ids';
 import { type HelpToken, parseHelpTokens, replaceHelpTokens } from '../tokens';
 import { type HelpCatalogIssue, helpIssue } from './issues';
@@ -193,12 +193,17 @@ function linkCoverageIssues({ entry }: { readonly entry: ParsedHelpEntry }): Hel
                     )
                   : true;
         if (!linked) {
+            const pageKeys = kind === 'page' ? helpPageKeysForRoute({ route: target }) : [];
+            const hint =
+                pageKeys.length > 0
+                    ? ` (for example ${pageKeys.map((key) => `{{link:page:${key}}}`).join(' or ')})`
+                    : '';
             issues.push(
                 helpIssue({
                     predicate: 'IL-1',
                     file,
                     articleId: article.id,
-                    detail: `${anchor} is covered but the body has no {{link:…}} token to it`
+                    detail: `${anchor} is covered but the body has no {{link:…}} token to it${hint}`
                 })
             );
         }

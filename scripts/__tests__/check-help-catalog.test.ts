@@ -244,6 +244,26 @@ describe('checkHelpCatalog on a synthetic repo', () => {
         expect(predicatesOf(syntheticTree({ files }))).toEqual([]);
     });
 
+    it('accepts a covered page linked by {{link:page:<key>}}, and fails a2 when its page is gone', () => {
+        // Arrange
+        const files = greenCatalog({
+            c: {
+                frontmatter: {
+                    covers: ['page:mi-cuenta/suscripcion', 'page:mi-cuenta'],
+                    destinations: [{ kind: 'subscription' }, { kind: 'page', page: 'accountHome' }]
+                },
+                canDo: 'Ir a {{link:subscription}}, {{link:page:accountHome}} y {{article:a|a}}.'
+            }
+        });
+        const tree = syntheticTree({ files });
+        put(tree.root, `${PORTAL_PAGES_DIR}/mi-cuenta/index.astro`);
+
+        // Act / Assert
+        expect(predicatesOf(tree)).toEqual([]);
+        rmSync(path.join(tree.root, PORTAL_PAGES_DIR, 'mi-cuenta/index.astro'));
+        expect(predicatesOf(tree)).toEqual(['a2', 'a5']);
+    });
+
     it('resolves a section anchor once its editor page exists', () => {
         // Arrange
         const files = greenCatalog({

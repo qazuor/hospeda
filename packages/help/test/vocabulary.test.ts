@@ -5,12 +5,19 @@
  * @module test/vocabulary
  */
 
+import { PORTAL_PAGE_LABELS, PORTAL_ROUTE_TEMPLATES } from '@repo/portal-routes';
 import { VerticalEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { parseHelpAnchor } from '../src/anchors';
 import { HELP_VERTICALS } from '../src/constants';
+import { HELP_STATIC_PAGE_KEYS } from '../src/destination.schema';
 import { helpDestinationTemplate } from '../src/destination-template';
-import { HELP_LINK_TARGETS, resolveHelpLinkTarget } from '../src/link-targets';
+import {
+    HELP_LINK_TARGETS,
+    HELP_PAGE_KEYS_BY_ROUTE,
+    helpPageKeysForRoute,
+    resolveHelpLinkTarget
+} from '../src/link-targets';
 import { parseHelpTokens, replaceHelpTokens } from '../src/tokens';
 
 describe('parseHelpAnchor', () => {
@@ -104,7 +111,9 @@ describe('resolveHelpLinkTarget', () => {
                     ? [name]
                     : arity === 'vertical'
                       ? [name, 'venue']
-                      : [name, 'venue', 'carta'];
+                      : arity === 'page'
+                        ? [name, 'accountHome']
+                        : [name, 'venue', 'carta'];
 
             // Act
             const resolved = resolveHelpLinkTarget({ args });
@@ -124,7 +133,9 @@ describe('resolveHelpLinkTarget', () => {
         [['list', 'experience'], 'mi-cuenta/comercio'],
         [['create', 'venue'], 'publicar/comer-y-salir'],
         [['inquiries'], 'mi-cuenta/consultas-propietario'],
-        [['help'], 'mi-cuenta/ayuda']
+        [['help'], 'mi-cuenta/ayuda'],
+        [['page', 'accountHome'], 'mi-cuenta'],
+        [['page', 'promotionNew'], 'mi-cuenta/promociones/nueva']
     ])('resolves %j to the page %s', (args, template) => {
         const resolved = resolveHelpLinkTarget({ args });
         expect(resolved.ok && helpDestinationTemplate({ destination: resolved.destination })).toBe(
@@ -140,9 +151,50 @@ describe('resolveHelpLinkTarget', () => {
         [['faq', 'extra']],
         [['section', 'venue']],
         [['section', 'venue', 'calendario']],
-        [['section', 'accommodation', 'politicas']]
+        [['section', 'accommodation', 'politicas']],
+        [['page']],
+        [['page', 'nope']],
+        [['page', 'accountHome', 'extra']],
+        [['page', 'promotionEdit']],
+        [['page', 'venuePublicPage']]
     ])('rejects %j', (args) => {
         expect(resolveHelpLinkTarget({ args }).ok).toBe(false);
+    });
+});
+
+describe('the page link target', () => {
+    it("accepts every static page key and resolves it to that key's template", () => {
+        for (const key of HELP_STATIC_PAGE_KEYS) {
+            const resolved = resolveHelpLinkTarget({ args: ['page', key] });
+            expect(resolved.ok && resolved.destination, key).toEqual({ kind: 'page', page: key });
+            expect(PORTAL_ROUTE_TEMPLATES[key], key).not.toContain('[');
+        }
+    });
+
+    it('excludes every page key whose template names a record (deviation 6)', () => {
+        // Arrange
+        const dynamic = (
+            Object.keys(PORTAL_PAGE_LABELS) as Array<keyof typeof PORTAL_PAGE_LABELS>
+        ).filter((key) => PORTAL_ROUTE_TEMPLATES[key].includes('['));
+
+        // Assert
+        expect(dynamic.length).toBeGreaterThan(0);
+        for (const key of dynamic) {
+            expect(resolveHelpLinkTarget({ args: ['page', key] }).ok, key).toBe(false);
+        }
+    });
+
+    it('derives the route → page-key map from PORTAL_ROUTE_TEMPLATES', () => {
+        // Assert: every static key is under its own template, and nothing else is.
+        expect([...HELP_PAGE_KEYS_BY_ROUTE.values()].flat().sort()).toEqual(
+            [...HELP_STATIC_PAGE_KEYS].sort()
+        );
+        for (const [route, keys] of HELP_PAGE_KEYS_BY_ROUTE) {
+            for (const key of keys) expect(PORTAL_ROUTE_TEMPLATES[key]).toBe(route);
+        }
+        expect(helpPageKeysForRoute({ route: 'mi-cuenta' })).toEqual(['accountHome']);
+        expect(helpPageKeysForRoute({ route: 'mi-cuenta/promociones/[id]/editar' })).toEqual([]);
+        expect(helpPageKeysForRoute({ route: 'mi-cuenta/suscripcion' })).toEqual([]);
     });
 });
 

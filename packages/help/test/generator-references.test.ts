@@ -83,6 +83,39 @@ describe('buildHelpIndex', () => {
             expect(predicatesOf(files)).toEqual(['IL-1']);
         });
 
+        it('fails IL-1 for a covered page reachable only by a page key, naming the token, and passes with it', () => {
+            // Arrange
+            const covers = { covers: ['page:mi-cuenta/suscripcion', 'page:mi-cuenta'] };
+            const unlinked = greenCatalog({ a: { frontmatter: covers } });
+            const linked = greenCatalog({
+                a: {
+                    frontmatter: covers,
+                    canDo: 'Ir a {{link:subscription}}, {{link:page:accountHome}} y {{article:b|el otro}}.'
+                }
+            });
+            const wrongKey = greenCatalog({
+                a: {
+                    frontmatter: covers,
+                    canDo: 'Ir a {{link:subscription}}, {{link:page:promotions}} y {{article:b|el otro}}.'
+                }
+            });
+
+            // Act / Assert
+            expect(buildHelpIndex({ files: unlinked }).issues.map((issue) => issue.detail)).toEqual(
+                [
+                    'page:mi-cuenta is covered but the body has no {{link:…}} token to it (for example {{link:page:accountHome}})'
+                ]
+            );
+            expect(predicatesOf(linked)).toEqual([]);
+            expect(predicatesOf(wrongKey)).toEqual(['IL-1']);
+        });
+
+        it('fails a6 on a page key that names a record', () => {
+            expect(
+                predicatesOf(greenCatalog({ c: { expect: 'Ver {{link:page:promotionEdit}}.' } }))
+            ).toEqual(['a6']);
+        });
+
         it('fails IL-1 for a covered editor section, and passes once it is linked', () => {
             // Arrange
             const covers = { covers: ['page:mi-cuenta/suscripcion', 'section:venue.carta'] };

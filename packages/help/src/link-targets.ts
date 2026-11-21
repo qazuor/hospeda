@@ -4,13 +4,25 @@
  * (HOS-2410 `docs/data-model.md` §5.1). Each target maps 1:1 to a
  * {@link HelpDestination}, so every link in an article goes through the portal
  * route map and never names a URL.
+ *
+ * `page:<key>` reaches the generic `page` destination of `@repo/portal-routes`,
+ * restricted to the keys whose template has no `[dynamic]` segment
+ * ({@link HELP_STATIC_PAGE_KEYS}): a help article is static and names no record.
  */
 
-import { EDITOR_SECTION_SLUGS, type PortalListingVertical } from '@repo/portal-routes';
-import type { HelpDestination } from './destination.schema';
+import {
+    EDITOR_SECTION_SLUGS,
+    PORTAL_ROUTE_TEMPLATES,
+    type PortalListingVertical
+} from '@repo/portal-routes';
+import {
+    HELP_STATIC_PAGE_KEYS,
+    type HelpDestination,
+    type HelpStaticPageKey
+} from './destination.schema';
 
 /** How many arguments a target takes and what they mean. */
-type LinkTargetArity = 'none' | 'vertical' | 'section';
+type LinkTargetArity = 'none' | 'vertical' | 'section' | 'page';
 
 /** One entry of {@link HELP_LINK_TARGETS}. */
 interface LinkTargetSpec {
@@ -34,7 +46,8 @@ export const HELP_LINK_TARGETS = {
     aiAssistants: { arity: 'none' },
     faq: { arity: 'none' },
     contact: { arity: 'none' },
-    help: { arity: 'none' }
+    help: { arity: 'none' },
+    page: { arity: 'page' }
 } as const satisfies Record<string, LinkTargetSpec>;
 
 /** Name of a link target. */
@@ -61,6 +74,39 @@ const LISTING_VERTICALS: readonly PortalListingVertical[] = [
     'venue',
     'experience'
 ];
+
+/**
+ * The static page keys of each route template, derived from
+ * `PORTAL_ROUTE_TEMPLATES` (never kept by hand): what a `page:<route>` anchor
+ * can be linked with as `{{link:page:<key>}}`.
+ */
+export const HELP_PAGE_KEYS_BY_ROUTE: ReadonlyMap<string, readonly HelpStaticPageKey[]> = (() => {
+    const byRoute = new Map<string, HelpStaticPageKey[]>();
+    for (const key of HELP_STATIC_PAGE_KEYS) {
+        const route = PORTAL_ROUTE_TEMPLATES[key];
+        byRoute.set(route, [...(byRoute.get(route) ?? []), key]);
+    }
+    return byRoute;
+})();
+
+/**
+ * The static page keys whose template is a route.
+ *
+ * @param args.route - A route template, as in a `page:<route>` anchor
+ * @returns The keys, empty when no `page` destination reaches the route
+ *
+ * @example
+ * ```ts
+ * helpPageKeysForRoute({ route: 'mi-cuenta' }); // ['accountHome']
+ * ```
+ */
+export function helpPageKeysForRoute({
+    route
+}: {
+    readonly route: string;
+}): readonly HelpStaticPageKey[] {
+    return HELP_PAGE_KEYS_BY_ROUTE.get(route) ?? [];
+}
 
 /** Result of {@link resolveHelpLinkTarget}. */
 export type ResolveHelpLinkTargetResult =
@@ -142,6 +188,16 @@ export function resolveHelpLinkTarget({
             return { ok: false, reason: `link target "${name}" takes no argument` };
         }
         return { ok: true, destination };
+    }
+    if (arity === 'page') {
+        const page = HELP_STATIC_PAGE_KEYS.find((key) => key === rest[0]);
+        if (rest.length !== 1 || page === undefined) {
+            return {
+                ok: false,
+                reason: `link target "page" needs one static page key (${HELP_STATIC_PAGE_KEYS.join(', ')})`
+            };
+        }
+        return { ok: true, destination: { kind: 'page', page } };
     }
     const vertical = listingVertical(rest[0]);
     if (vertical === undefined) {

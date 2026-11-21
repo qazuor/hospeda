@@ -28,6 +28,9 @@
  * - (a9) Non-vacuity: at least one article. The per-audience form (one article
  *   per audience) turns on in the closing PR of HOS-2410 (`requireEveryAudience`).
  * - (IL-1…IL-5) The interlinking rules of `docs/data-model.md` §3.1.
+ *   A covered page with no dedicated link target is linked with
+ *   `{{link:page:<key>}}`; the route → key map is derived from
+ *   `PORTAL_ROUTE_TEMPLATES`, and the IL-1 failure names the token to add.
  *
  * ## What it reports without failing (exit 0)
  *
