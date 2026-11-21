@@ -82,6 +82,10 @@ interface DockItemSource {
 /** Every mobile dock control must mark its measured root and become static. */
 const DOCK_ITEMS: readonly DockItemSource[] = [
     {
+        component: 'components/listing/contact/ListingContactBar.client.tsx',
+        css: 'components/listing/contact/ListingContactBar.module.css'
+    },
+    {
         component: 'components/shared/navigation/ScrollToTop.astro',
         css: 'components/shared/navigation/ScrollToTop.astro'
     },
@@ -111,7 +115,7 @@ const DOCK_ITEMS: readonly DockItemSource[] = [
     }
 ];
 
-const PORTAL_SLOTS = ['above', 'filters', 'map-cards', 'ai-search', 'ai-chat'] as const;
+const PORTAL_SLOTS = ['above', 'contact', 'filters', 'map-cards', 'ai-search', 'ai-chat'] as const;
 
 function read(relative: string): string {
     return fs.readFileSync(path.join(WEB_SRC, relative), 'utf8');
