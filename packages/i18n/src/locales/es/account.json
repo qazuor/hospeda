@@ -1861,6 +1861,11 @@
         "close": "Cerrar",
         "required": "obligatorio",
         "optional": "(opcional)",
-        "opensInNewTab": "(se abre en otra pestaña)"
+        "opensInNewTab": "(se abre en otra pestaña)",
+        "errorPrefix": "Error:",
+        "charCount": "{{current}} de {{max}} caracteres",
+        "charNearLimit": "Quedan {{remaining}} caracteres",
+        "charAtLimit": "Llegaste al límite de {{max}} caracteres",
+        "charOverLimit": "Superaste el límite de {{max}} caracteres en {{over}}"
     }
 }
