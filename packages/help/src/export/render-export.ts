@@ -200,7 +200,7 @@ export function renderHelpExport({ articles, audience, siteUrl }: RenderHelpExpo
     const byId = new Map(articles.map((article) => [article.id, article]));
     const collator = new Intl.Collator(EXPORT_LOCALE);
     const label = audience === 'all' ? ALL_AUDIENCES_LABEL : HELP_AUDIENCE_LABELS[audience];
-    const blocks = helpExportArticles({ articles, audience })
+    const blocks = [...helpExportArticles({ articles, audience })]
         .sort((left, right) => collator.compare(left.title, right.title))
         .map((article) => renderArticle({ article, audience, siteUrl, byId }));
     return `${[`# Ayuda Hospeda — ${label}`, ...blocks].join('\n\n')}\n`;
