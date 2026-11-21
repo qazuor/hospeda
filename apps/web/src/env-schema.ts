@@ -243,5 +243,18 @@ export const serverEnvBaseSchema = z.object({
      * photographs. The single truthiness decision lives in `@repo/media`.
      */
     HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS: z.string().optional(),
+    /**
+     * Gate for the Mi Cuenta kit gallery page (`/mi-cuenta/kit/`, HOS-2413 OD-6).
+     * Off by default: the page answers 404 on staging and production. The E2E
+     * suite and local development turn it on with the literal string `'true'`.
+     *
+     * Parsed with an explicit `=== 'true'` and NOT `z.coerce.boolean()`, whose
+     * `Boolean(str)` makes the string `'false'` truthy (HOS-410,
+     * `check-no-coerce-boolean`).
+     */
+    HOSPEDA_ACCOUNT_KIT_GALLERY: z
+        .string()
+        .optional()
+        .transform((value) => value === 'true'),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
