@@ -21,6 +21,17 @@ const discount = (durationKind: 'N_CHARGES' | 'FIRST_CHARGE' | 'FOREVER') => ({
 });
 
 describe('AC:B9b:12 HOS-1591 TEST:B9b:12 (support) — promo redemption island', () => {
+    it('announces hydration with data-hydrated only after mount (HOS-2401)', () => {
+        render(
+            <PromoCodeRedeem
+                vertical="accommodation"
+                locale="es"
+                offer="SUBSCRIPTION"
+            />
+        );
+        expect(screen.getByTestId('promo-redeem')).toHaveAttribute('data-hydrated', 'true');
+    });
+
     it('shows N charges, discounted amount, later amount, and provider email', async () => {
         vi.mocked(promoCodeApi.redeem).mockResolvedValue(discount('N_CHARGES') as never);
         render(
