@@ -368,4 +368,50 @@ describe('EditableNote', () => {
 
         expect(fetchMock).not.toHaveBeenCalled();
     });
+
+    it('does not save when blur has no relatedTarget and Cancel is then clicked (WebKit) (HOS-2445)', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(makeOkResponse('x'));
+        globalThis.fetch = fetchMock;
+        renderNote({ initialValue: null });
+        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
+        fireEvent.change(textarea, { target: { value: 'Descartar' } });
+        const cancel = screen.getByRole('button', { name: 'Cancelar' });
+        // WebKit: mousedown on a button does not focus it. The default action of
+        // mousedown (moving focus, hence blur) must be prevented.
+        const notPrevented = fireEvent.mouseDown(cancel);
+        expect(notPrevented).toBe(false);
+        fireEvent.click(cancel);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does not save when the editor is cancelled with Escape and then blurs (HOS-2445)', async () => {
+        const fetchMock = vi.fn();
+        globalThis.fetch = fetchMock;
+        renderNote({ initialValue: null });
+        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
+        fireEvent.change(textarea, { target: { value: 'Descartar' } });
+        fireEvent.keyDown(textarea, { key: 'Escape' });
+        fireEvent.blur(textarea);
+        await new Promise((r) => setTimeout(r, 20));
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does not re-fire PATCH and toast on every blur after a failed save (HOS-2445)', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(makeErrorResponse());
+        globalThis.fetch = fetchMock;
+        renderNote({ initialValue: null });
+        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
+        fireEvent.change(textarea, { target: { value: 'Mi nota' } });
+        fireEvent.blur(textarea);
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(addToast).toHaveBeenCalledTimes(1));
+        fireEvent.blur(textarea);
+        fireEvent.blur(textarea);
+        await new Promise((r) => setTimeout(r, 20));
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(addToast).toHaveBeenCalledTimes(1);
+    });
 });

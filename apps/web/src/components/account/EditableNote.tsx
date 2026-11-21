@@ -105,6 +105,12 @@ export function EditableNote({
     const [justSaved, setJustSaved] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const saveButtonRef = useRef<HTMLButtonElement>(null);
+    // Set by Escape/Cancel so the blur that follows (including the one fired on
+    // unmount) never saves a note the user just discarded (HOS-2445).
+    const cancelledRef = useRef(false);
+    // Draft whose save failed; blur does not retry it until the draft changes,
+    // so one failure cannot re-fire PATCH + toast on every later blur.
+    const failedDraftRef = useRef<string | null>(null);
 
     // Reset draft + mirror whenever the persisted value changes (e.g. after a
     // successful save the parent passes the new value back in).
@@ -129,12 +135,15 @@ export function EditableNote({
     }
 
     const handleEdit = useCallback(() => {
+        cancelledRef.current = false;
+        failedDraftRef.current = null;
         setJustSaved(false);
         setDraft(initialValue ?? '');
         setIsEditing(true);
     }, [initialValue]);
 
     const handleCancel = useCallback(() => {
+        cancelledRef.current = true;
         setDraft(initialValue ?? '');
         setIsEditing(false);
     }, [initialValue]);
@@ -178,9 +187,11 @@ export function EditableNote({
 
             setPersistedValue(draft);
             onSaved?.(draft);
+            failedDraftRef.current = null;
             setIsEditing(false);
             setJustSaved(true);
         } catch (err) {
+            failedDraftRef.current = draft;
             const msg = err instanceof Error ? err.message : saveErrorMessage;
             addToast({ type: 'error', message: msg });
             // Keep editor open with current draft so the user can retry.
@@ -198,7 +209,8 @@ export function EditableNote({
         (e: React.FocusEvent<HTMLTextAreaElement>) => {
             const next = e.relatedTarget as Node | null;
             if (next && e.currentTarget.parentElement?.contains(next)) return;
-            if (isSaving) return;
+            if (isSaving || cancelledRef.current) return;
+            if (draft === failedDraftRef.current) return;
             if (draft === persistedValue) {
                 setIsEditing(false);
                 return;
@@ -245,6 +257,7 @@ export function EditableNote({
                         <button
                             type="button"
                             className={styles.cancelBtn}
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={handleCancel}
                             disabled={isSaving}
                         >
@@ -254,6 +267,7 @@ export function EditableNote({
                             ref={saveButtonRef}
                             type="button"
                             className={styles.saveBtn}
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                                 void handleSave();
                             }}
