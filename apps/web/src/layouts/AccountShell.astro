@@ -1,0 +1,134 @@
+---
+/**
+ * @file AccountShell.astro
+ * @description The new account page frame (HOS-2413 T-020, OD-1/OD-2). An Astro
+ * LAYOUT composing React pieces: `BaseLayout chrome="account"` (compact header,
+ * one-line footer, no dock), the `AccountBar` island below 64rem and the
+ * `AccountSidebar` from 64rem.
+ *
+ * It is LANDED OFF: `AccountLayout` only renders it for `shell="account"`, and
+ * the default is still `legacy`, so no page changes until the flip PR.
+ *
+ * The session is read by `AccountLayout`, which hands this layout the already
+ * built `navModel`; nothing here reads the request session, so every page that uses
+ * it stays session-blind.
+ *
+ * The content column carries `container-type: inline-size` and
+ * `container-name: account-content` (BaseLayout owns `<main id="main-content">`
+ * that wraps this whole shell, so the skip link keeps working).
+ */
+
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { getSiteUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import type { AccountNavModel } from '@/lib/account-nav-model';
+import { AccountBar } from '@/components/account/ui/AccountBar';
+import { AccountSidebar } from '@/components/account/ui/AccountSidebar';
+import { buildSidebarView } from '@/components/account/ui/account-sidebar-view';
+import {
+	type AccountShellTemplate,
+	resolveShellTemplate,
+} from '@/components/account/ui/account-shell-template';
+import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
+import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
+import { AiAssistantsNavReveal } from '@/components/account/AiAssistantsNavReveal.client';
+import BaseLayout from './BaseLayout.astro';
+import styles from './AccountShell.module.css';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly navModel: AccountNavModel;
+	readonly title?: string;
+	readonly description?: string;
+	readonly template?: AccountShellTemplate;
+	/** True when the MCP feature is off: the AI-assistants entry needs its reveal island. */
+	readonly aiAssistantsHidden?: boolean;
+}
+
+const { locale, navModel, title, description, template, aiAssistantsHidden = false } = Astro.props;
+
+const { t } = createTranslations(locale);
+const canonicalUrl = new URL(Astro.url.pathname, getSiteUrl()).href;
+const resolvedTitle = title ?? t('account.title');
+const resolvedDescription = description ?? t('account.description');
+const resolvedTemplate = resolveShellTemplate({ template });
+
+const view = buildSidebarView({ model: navModel, locale });
+
+/** Icons are component references: they stay on the server and never cross an island boundary. */
+const icons = Object.fromEntries([
+	...navModel.groups.flatMap((entry) => entry.items.map(({ item }) => [item.id, item.icon] as const)),
+	...navModel.doors.map(({ door }) => [door.id, door.icon] as const),
+]);
+---
+
+<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription} chrome="account">
+	<slot name="head-early" slot="head-early" />
+	<SEOHead
+		slot="head"
+		title={resolvedTitle}
+		description={resolvedDescription}
+		locale={locale}
+		canonical={canonicalUrl}
+		noindex={true}
+	/>
+
+	<div class={styles.shell} data-account-shell>
+		<div class={styles.bar}>
+			<AccountBar client:media="(max-width: 63.99rem)" view={view} locale={locale} />
+		</div>
+
+		<aside class={styles.sidebar}>
+			<AccountSidebar view={view} locale={locale} icons={icons}>
+				<WhatsNewCountPill slot="whatsNewCount" locale={locale} client:idle />
+				<BenefitUsagesCountPill slot="benefitUsagesCount" locale={locale} client:idle />
+				{aiAssistantsHidden && <AiAssistantsNavReveal slot="aiAssistantsReveal" client:idle />}
+			</AccountSidebar>
+		</aside>
+
+		<div class={styles.content} data-account-content data-template={resolvedTemplate}>
+			<slot />
+		</div>
+	</div>
+</BaseLayout>
+
+<script>
+	import { ACCOUNT_NAV_STORAGE_KEY, parseStoredNavState } from '@/lib/account-nav-collapse';
+
+	/**
+	 * Layers the remembered open/closed state of each nav area on top of the
+	 * server-rendered `open` defaults (HOS-2124). The area holding the current
+	 * page is never closed. Storage access is wrapped in try/catch.
+	 */
+	function initAccountNavGroups(): void {
+		const groups = document.querySelectorAll<HTMLDetailsElement>('[data-account-sidebar] details[data-nav-group]');
+		if (groups.length === 0) return;
+		let raw: string | null = null;
+		try {
+			raw = localStorage.getItem(ACCOUNT_NAV_STORAGE_KEY);
+		} catch {
+			raw = null;
+		}
+		const stored = parseStoredNavState({ raw });
+		for (const details of groups) {
+			const id = details.dataset.navGroup;
+			if (!id) continue;
+			const remembered = stored[id];
+			if (typeof remembered === 'boolean' && details.dataset.containsActive !== 'true') {
+				details.open = remembered;
+			}
+			details.querySelector('summary')?.addEventListener('click', () => {
+				const next = !details.open;
+				try {
+					const current = parseStoredNavState({ raw: localStorage.getItem(ACCOUNT_NAV_STORAGE_KEY) });
+					localStorage.setItem(ACCOUNT_NAV_STORAGE_KEY, JSON.stringify({ ...current, [id]: next }));
+				} catch {
+					// Storage unavailable: the choice just won't be remembered.
+				}
+			});
+		}
+	}
+
+	document.addEventListener('astro:page-load', initAccountNavGroups);
+</script>

@@ -25,6 +25,12 @@ export {
     formatSavedTime
 } from './AutoSaveChip';
 export {
+    ACCOUNT_SHELL_TEMPLATES,
+    type AccountShellTemplate,
+    DEFAULT_ACCOUNT_SHELL_TEMPLATE,
+    resolveShellTemplate
+} from './account-shell-template';
+export {
     buildSidebarView,
     type SidebarGroupView,
     type SidebarItemView,

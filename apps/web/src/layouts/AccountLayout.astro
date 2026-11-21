@@ -19,9 +19,11 @@ import { buildUrl } from '@/lib/urls';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
 import BaseLayout from './BaseLayout.astro';
+import AccountShell from './AccountShell.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { AI_ASSISTANTS_NAV_ITEM_ID } from '@/config/navigation';
 import { buildAccountNavModel } from '@/lib/account-nav-model';
+import type { AccountShellTemplate } from '@/components/account/ui/account-shell-template';
 import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
 import { AiAssistantsNavReveal } from '@/components/account/AiAssistantsNavReveal.client';
 
@@ -30,6 +32,14 @@ interface Props {
 	readonly title?: string;
 	readonly description?: string;
 	readonly activeSection?: string;
+	/**
+	 * HOS-2413 (OD-1): the frame to render. `legacy` is the current layout and the
+	 * DEFAULT, so no page changes. `account` renders the new `AccountShell`; it is
+	 * a short-lived switch that the flip PR removes together with the legacy markup.
+	 */
+	readonly shell?: 'legacy' | 'account';
+	/** Page template for the new shell (`list`, `form`, `dashboard`, `reading`, `editor`). */
+	readonly template?: AccountShellTemplate;
 }
 
 const {
@@ -37,6 +47,8 @@ const {
 	title,
 	description,
 	activeSection = 'mi-cuenta',
+	shell = 'legacy',
+	template,
 } = Astro.props;
 
 const { t } = createTranslations(locale);
@@ -92,6 +104,19 @@ const navModel = buildAccountNavModel({
 const activeLabel = t(navModel.activeLabelKey);
 ---
 
+{shell === 'account' ? (
+	<AccountShell
+		locale={locale}
+		navModel={navModel}
+		title={resolvedTitle}
+		description={resolvedDescription}
+		template={template}
+		aiAssistantsHidden={!mcpEnabled}
+	>
+		<slot name="head-early" slot="head-early" />
+		<slot />
+	</AccountShell>
+) : (
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
 	<slot name="head-early" slot="head-early" />
 	<SEOHead
@@ -228,6 +253,7 @@ const activeLabel = t(navModel.activeLabelKey);
 		</div>
 	</div>
 </BaseLayout>
+)}
 
 <script>
 	import { ACCOUNT_NAV_STORAGE_KEY, parseStoredNavState } from '@/lib/account-nav-collapse';
