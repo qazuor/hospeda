@@ -34,6 +34,12 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import {
+    ACCOUNT_LIST_PAGE_SIZE,
+    buildAccountPageHref,
+    parsePageParam,
+    resolveAccountPageState
+} from '@/lib/account-pagination';
 import { hasEventsNavAccess } from '@/lib/nav-gating';
 import { webLogger as logger } from '@/lib/logger';
 import { eventEditApi } from '@/lib/api/endpoints-protected';
@@ -41,6 +47,7 @@ import { transformEventEditCardList } from '@/lib/api/transforms';
 import type { EventEditListItem } from '@/lib/api/types';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountPagination from '@/components/account/AccountPagination.astro';
 import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import EditableContentCard from '@/components/account/EditableContentCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
@@ -68,12 +75,17 @@ const canManageEvents = hasEventsNavAccess({ roles: user.roles });
 let events: readonly EventEditListItem[] = [];
 let fetchError = false;
 
+// HOS-2440: paginated (`?page=N`) instead of silently cut at 50.
+const requestedPage = parsePageParam({ value: Astro.url.searchParams.get('page') });
+let totalItems: number | null = null;
+
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
 const result = canManageEvents
     ? await eventEditApi.listOwn({
           cookieHeader,
-          pageSize: 50,
+          page: requestedPage,
+          pageSize: ACCOUNT_LIST_PAGE_SIZE,
           sortBy: 'createdAt',
           sortOrder: 'desc'
       })
@@ -82,6 +94,7 @@ const result = canManageEvents
 if (result) {
     if (result.ok) {
         events = transformEventEditCardList({ items: result.data.items });
+        totalItems = result.data.pagination?.total ?? null;
     } else {
         fetchError = true;
         logger.error('[mi-cuenta/eventos] Failed to fetch own events', result.error.message);
@@ -115,6 +128,14 @@ const emptyCtaLabel = t(
 );
 
 const createUrl = buildUrl({ locale, path: 'mi-cuenta/eventos/nuevo' });
+
+const pageState = resolveAccountPageState({ requestedPage, total: totalItems });
+if (!fetchError && pageState.isPastEnd) {
+    // A stale `?page=` past the end must not read as "you have none".
+    return Astro.redirect(
+        buildAccountPageHref({ locale, path: 'mi-cuenta/eventos', page: pageState.totalPages })
+    );
+}
 
 const isEmpty = events.length === 0;
 ---
@@ -158,6 +179,7 @@ const isEmpty = events.length === 0;
             </a>
         </div>
     ) : !isEmpty ? (
+        <>
         <div class="my-content-page__grid" role="list" aria-label={title}>
             {events.map((event) => (
                 <div class="my-content-page__item" role="listitem" data-reveal="up">
@@ -173,6 +195,13 @@ const isEmpty = events.length === 0;
                 </div>
             ))}
         </div>
+        <AccountPagination
+            locale={locale}
+            path="mi-cuenta/eventos"
+            page={pageState.page}
+            totalPages={pageState.totalPages}
+        />
+        </>
     ) : (
         <EmptyState
             locale={locale}

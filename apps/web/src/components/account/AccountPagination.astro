@@ -1,0 +1,91 @@
+---
+/**
+ * @file AccountPagination.astro
+ * @description Previous / next pager for the `/mi-cuenta/` list pages
+ * (HOS-2440). Plain links, so it works without JavaScript and keeps the page in
+ * the URL. Renders nothing when there is a single page. Labels come from
+ * `@repo/i18n` (`common.prevPage`, `common.nextPage`, `common.pagination`).
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildAccountPageHref } from '@/lib/account-pagination';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** Page path below the locale, e.g. `mi-cuenta/propiedades`. */
+    readonly path: string;
+    /** Current 1-based page. */
+    readonly page: number;
+    /** Total number of pages. */
+    readonly totalPages: number;
+}
+
+const { locale, path, page, totalPages } = Astro.props;
+const { t } = createTranslations(locale);
+const hasPrev = page > 1;
+const hasNext = page < totalPages;
+---
+
+{
+    totalPages > 1 && (
+        <nav class="account-pager" aria-label={t('common.pagination', 'Paginación')}>
+            {hasPrev ? (
+                <a
+                    class="account-pager__link"
+                    rel="prev"
+                    href={buildAccountPageHref({ locale, path, page: page - 1 })}
+                >
+                    <span aria-hidden="true">&larr;</span> {t('common.prevPage', 'Página anterior')}
+                </a>
+            ) : (
+                <span />
+            )}
+            <span class="account-pager__info" aria-current="page">
+                {page} / {totalPages}
+            </span>
+            {hasNext ? (
+                <a
+                    class="account-pager__link"
+                    rel="next"
+                    href={buildAccountPageHref({ locale, path, page: page + 1 })}
+                >
+                    {t('common.nextPage', 'Página siguiente')} <span aria-hidden="true">&rarr;</span>
+                </a>
+            ) : (
+                <span />
+            )}
+        </nav>
+    )
+}
+
+<style>
+    .account-pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3, 12px);
+        margin-top: var(--space-6, 24px);
+    }
+
+    .account-pager__link {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        text-decoration: none;
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button, 8px);
+        transition: background-color var(--duration-fast, 0.2s) ease;
+    }
+
+    .account-pager__link:hover {
+        background-color: var(--muted);
+    }
+
+    .account-pager__info {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+    }
+</style>
