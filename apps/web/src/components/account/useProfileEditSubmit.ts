@@ -19,13 +19,13 @@ import {
     useState
 } from 'react';
 import { translateApiError } from '@/lib/api-errors';
-import type { UseZodFormResult } from '@/lib/forms/use-zod-form';
+import { type UseZodFormResult, useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { addToast, getToasts, removeToast } from '@/store/toast-store';
 import {
     buildProfilePatch,
     focusFirstInvalidProfileField,
-    type ProfileEditFormSchema,
+    ProfileEditFormSchema,
     type ProfileSnapshot
 } from './ProfileEditForm.helpers';
 
@@ -115,16 +115,18 @@ export interface UseProfileEditSubmitParams {
     readonly baseline: ProfileSnapshot;
     readonly setBaseline: Dispatch<SetStateAction<ProfileSnapshot>>;
     readonly avatar: ProfileEditSubmitAvatar;
-    readonly form: Pick<
-        UseZodFormResult<typeof ProfileEditFormSchema>,
-        'validate' | 'handleApiError' | 'setFormError'
-    >;
     /** The `<form>` element, so focus lookups stay inside it. */
     readonly formRef: RefObject<HTMLFormElement | null>;
 }
 
 /** Result of {@link useProfileEditSubmit}. */
 export interface UseProfileEditSubmitResult {
+    /** Field-level errors from client validation and API 400 details. */
+    readonly fieldErrors: UseZodFormResult<typeof ProfileEditFormSchema>['fieldErrors'];
+    /** Form-level error banner text, or `null`. */
+    readonly formError: string | null;
+    /** Clears one field's error (call from that field's change handler). */
+    readonly clearError: (field: string) => void;
     readonly submitting: boolean;
     /** `true` after a successful save, until the user edits something again. */
     readonly saved: boolean;
@@ -147,10 +149,12 @@ export function useProfileEditSubmit({
     baseline,
     setBaseline,
     avatar,
-    form,
     formRef
 }: UseProfileEditSubmitParams): UseProfileEditSubmitResult {
-    const { validate, handleApiError, setFormError } = form;
+    // Validation is delegated to the shared `useZodForm` primitive (HOS-190
+    // slice 3). It lives HERE, next to the submit that clears and sets its banner.
+    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
+        useZodForm({ schema: ProfileEditFormSchema, t });
     const { file: avatarFile, url: avatarUrl, previewUrl } = avatar;
     const {
         setUrl: setAvatarUrl,
@@ -346,5 +350,13 @@ export function useProfileEditSubmit({
         }
     }
 
-    return { submitting, saved, setSaved, handleSubmit };
+    return {
+        fieldErrors,
+        formError,
+        clearError,
+        submitting,
+        saved,
+        setSaved,
+        handleSubmit
+    };
 }

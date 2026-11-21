@@ -23,18 +23,13 @@
 import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { useRef, useState } from 'react';
 import { getInitials } from '@/lib/avatar-utils';
-import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { addToast } from '@/store/toast-store';
 import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
 import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
-import {
-    buildInitialProfileSnapshot,
-    ProfileEditFormSchema,
-    type ProfileSnapshot
-} from './ProfileEditForm.helpers';
+import { buildInitialProfileSnapshot, type ProfileSnapshot } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 import { ProfileEditLocationSection } from './ProfileEditLocationSection';
 import { ProfileEditPersonalSection } from './ProfileEditPersonalSection';
@@ -157,15 +152,6 @@ export function ProfileEditForm({
     const [avatarUploading, setAvatarUploading] = useState(false);
     const [avatarCompressing, setAvatarCompressing] = useState(false);
 
-    // ── Form meta ─────────────────────────────────────────────────────────
-    //
-    // Validation is delegated to the shared `useZodForm` primitive (HOS-190
-    // slice 3) instead of the old locally-owned `fieldErrors`/`formError`
-    // state + `parseZodErrors` helper.
-
-    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
-        useZodForm({ schema: ProfileEditFormSchema, t });
-
     // F6 (HOS-190): the PATCH diff is computed against this MUTABLE baseline,
     // resynced to the persisted values after every successful save (see
     // `handleSubmit`). Without the resync, reverting a just-saved field would
@@ -270,26 +256,27 @@ export function ProfileEditForm({
     }
 
     const formRef = useRef<HTMLFormElement>(null);
-    const { submitting, saved, setSaved, handleSubmit } = useProfileEditSubmit({
-        userId: initialUser.id,
-        base,
-        locale,
-        t,
-        snapshotFromState,
-        baseline,
-        setBaseline,
-        avatar: {
-            file: avatarFile,
-            url: avatarUrl,
-            previewUrl,
-            setUrl: setAvatarUrl,
-            setPreviewUrl,
-            setFile: setAvatarFile,
-            setUploading: setAvatarUploading
-        },
-        form: { validate, handleApiError, setFormError },
-        formRef
-    });
+    // Validation state (`fieldErrors`, `formError`) is owned by the submit hook.
+    const { fieldErrors, formError, clearError, submitting, saved, setSaved, handleSubmit } =
+        useProfileEditSubmit({
+            userId: initialUser.id,
+            base,
+            locale,
+            t,
+            snapshotFromState,
+            baseline,
+            setBaseline,
+            avatar: {
+                file: avatarFile,
+                url: avatarUrl,
+                previewUrl,
+                setUrl: setAvatarUrl,
+                setPreviewUrl,
+                setFile: setAvatarFile,
+                setUploading: setAvatarUploading
+            },
+            formRef
+        });
 
     // ── Render ────────────────────────────────────────────────────────────
 
