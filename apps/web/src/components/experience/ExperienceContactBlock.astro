@@ -68,12 +68,21 @@ import {
 } from '@/lib/experience-contact';
 import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 
+import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
+
 interface Props {
+    readonly listingId: string;
     readonly contactInfo: ExperienceContactInfo | null;
     readonly locale: SupportedLocale;
 }
 
-const { contactInfo, locale } = Astro.props;
+const { contactInfo, locale, listingId } = Astro.props;
+const contactOrigin: ContactOrigin = 'contact_block';
+const trackingAttributes = {
+    'data-listing-id': listingId,
+    'data-vertical': 'experience',
+    'data-contact-origin': contactOrigin
+};
 const { t } = createTranslations(locale);
 
 /**
@@ -135,6 +144,8 @@ const heading = t('experience.detail.contact', 'Contacto');
         {phones.map(({ value, key }) => (
             <a
                 href={toTelHref(value)}
+                data-contact-channel="phone"
+                {...trackingAttributes}
                 class="exp-contact__link"
                 aria-label={
                     key === 'work'
@@ -153,6 +164,8 @@ const heading = t('experience.detail.contact', 'Contacto');
         {workEmail && (
             <a
                 href={`mailto:${workEmail}`}
+                data-contact-channel="email"
+                {...trackingAttributes}
                 class="exp-contact__link"
                 aria-label={t(
                     'experience.detail.contactEmailAriaLabel',
@@ -167,6 +180,8 @@ const heading = t('experience.detail.contact', 'Contacto');
         {websiteHref && (
             <a
                 href={websiteHref}
+                data-contact-channel="website"
+                {...trackingAttributes}
                 class="exp-contact__link"
                 target="_blank"
                 rel="noopener noreferrer"

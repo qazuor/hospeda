@@ -342,6 +342,7 @@ const venueDetailSectionBlocks: Readonly<
                       Component: VenueContactBlock,
                       props: {
                           contactInfo: venue.contactInfo,
+                          listingId: venue.id,
                           menuUrl: venue.menuUrl,
                           socialNetworks: venue.socialNetworks,
                           locale
@@ -561,6 +562,11 @@ const breadcrumbItems = [
         apiUrl={getApiUrl()}
     />
 </DetailLayout>
+
+<script>
+    import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-links';
+    initContactLinkTracking({ document });
+</script>
 
 <style>
     .venue-detail {

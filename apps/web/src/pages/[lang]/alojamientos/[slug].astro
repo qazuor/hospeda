@@ -555,14 +555,15 @@ const faqSections = accommodation.faqs.map((faq) => ({
         <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqSetInLanguage(accommodation.faqs, locale)} />
     )}
 
-    <Breadcrumbs
-        slot="breadcrumbs"
-        locale={locale}
-        items={[
-            { label: t('accommodations.title'), path: 'alojamientos' },
-            { label: accommodation.name }
-        ]}
-    />
+    <div slot="breadcrumbs" class="acc-detail-breadcrumbs">
+        <Breadcrumbs
+            locale={locale}
+            items={[
+                { label: t('accommodations.title'), path: 'alojamientos' },
+                { label: accommodation.name }
+            ]}
+        />
+    </div>
 
     <Fragment slot="page-header">
         <DetailHeader
@@ -570,6 +571,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             lang={locale}
             accommodationId={accommodation.id}
             bookmarkCount={bookmarkCount}
+            hasMobileGalleryControls
         />
     </Fragment>
 
@@ -612,6 +614,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
              but never shown on the public page). The existing WhatsApp button
              (sidebar, OwnerCard) is untouched — this block never carries that number. -->
         <AccommodationContactBlock
+            listingId={accommodation.id}
             contactInfo={accommodation.contactInfo}
             socialNetworks={accommodation.socialNetworks}
             locale={locale}
@@ -798,7 +801,17 @@ const faqSections = accommodation.faqs.map((faq) => ({
     </Fragment>
 </DetailLayout>
 
+<script>
+    import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-links';
+    initContactLinkTracking({ document });
+</script>
+
 <style>
+    @media (max-width: 767px) {
+        :global(.wave-header__breadcrumbs:has(.acc-detail-breadcrumbs)) {
+            display: none;
+        }
+    }
     .acc-detail {
         display: flex;
         flex-direction: column;

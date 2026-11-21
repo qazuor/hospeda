@@ -327,6 +327,7 @@ const breadcrumbItems = [
              HOSPEDA's number — not the provider's. The published subset is
              narrowed by `ExperiencePublicContactInfoSchema`. -->
         <ExperienceContactBlock
+            listingId={experience.id}
             contactInfo={experience.contactInfo}
             locale={locale}
         />
@@ -379,6 +380,11 @@ const breadcrumbItems = [
         apiUrl={getApiUrl()}
     />
 </DetailLayout>
+
+<script>
+    import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-links';
+    initContactLinkTracking({ document });
+</script>
 
 <style>
     .exp-detail {
