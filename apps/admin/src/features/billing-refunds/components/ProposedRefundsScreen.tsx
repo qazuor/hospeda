@@ -47,9 +47,10 @@ export function formatProposedRefundAmount({
 
 /**
  * Proposed-refund screen, gated by the permission of the action it feeds. Below the list, a person
- * who may run action 14 records the remainder of a partially accepted refund (HOS-2406), and «Retry
- * with MP» (HOS-2516) resends the unanswered provider calls of a confirmed refund: both refunds have
- * a live provider call, so neither is in the list.
+ * who may run action 14 records the remainder of a partially accepted refund (HOS-2406) or of one
+ * stuck on a call unanswered for more than 24 hours (HOS-2538), and «Retry with MP» (HOS-2516)
+ * resends the unanswered provider calls of a confirmed refund: those refunds have a live provider
+ * call, so none is in the list.
  */
 export function ProposedRefundsScreen() {
     return (

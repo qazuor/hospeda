@@ -48,6 +48,7 @@ const REJECTION_ANSWERS: Readonly<Record<SettleRefundRemainderRejection, Rejecti
     REFUND_HAS_NO_ACCEPTED_CALL: CONFLICT,
     EXTERNAL_REFERENCE_ALREADY_SETTLED: CONFLICT,
     ACCEPTED_PART_NOT_ACCREDITED: CONFLICT,
+    UNCITED_PROVIDER_REFUND_ON_CHARGE: CONFLICT,
     REFUND_STATE_CHANGED: CONFLICT
 };
 
@@ -63,7 +64,9 @@ function isRemainderRejection(
 /**
  * POST /api/v1/admin/billing-refunds/{refundId}/settle-remainder — administrative action 14 over a
  * `CONFIRMED` refund the provider accepted only in part (HOS-2406): a person records the remainder
- * they refunded by hand from the provider panel, and the refund closes `EXECUTED`.
+ * they refunded by hand from the provider panel, and the refund closes `EXECUTED`. Also (HOS-2538)
+ * a `CONFIRMED` refund whose only unanswered provider calls are older than 24 hours, which «Retry
+ * with MP» can no longer post: those calls are answered `SETTLED_EXTERNALLY`.
  * `requiredPermissions` is only the route's early 403; step 3 (the action's own permission, the
  * payer as subject, the system actor) is decided by the service inside its transaction.
  */
@@ -72,7 +75,7 @@ export const adminSettleRefundRemainderRoute = createAdminRoute({
     path: '/{refundId}/settle-remainder',
     summary: 'Settle the remainder of a partially accepted refund (ACC:14, HOS-2406)',
     description:
-        'Records the remainder of a CONFIRMED refund the provider accepted only in part, refunded by hand from the provider panel, and closes the refund EXECUTED. Requires billing.settleExternal; evaluated on the payer as subject.',
+        'Records the remainder of a CONFIRMED refund the provider accepted only in part, or stuck on provider calls unanswered for more than 24 hours, refunded by hand from the provider panel, and closes the refund EXECUTED. Requires billing.settleExternal; evaluated on the payer as subject.',
     tags: ['Billing refunds', 'Admin'],
     requiredPermissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL],
     requestParams: RefundRemainderSettlementParamsSchema.shape,
@@ -105,7 +108,11 @@ export const adminSettleRefundRemainderRoute = createAdminRoute({
                 metadata: {
                     administrativeAction: 'ACC_14',
                     transition: 'RF3',
-                    settlement: 'PARTIAL_REFUND_REMAINDER',
+                    settlement:
+                        result.settledStaleCallKeys.length > 0
+                            ? 'STALE_PROVIDER_CALL'
+                            : 'PARTIAL_REFUND_REMAINDER',
+                    settledStaleCallKeys: result.settledStaleCallKeys,
                     subjectId: result.subjectId,
                     acceptedAmount: result.acceptedAmount,
                     amount: result.remainderAmount,

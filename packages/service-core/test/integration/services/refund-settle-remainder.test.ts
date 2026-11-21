@@ -35,7 +35,8 @@ describe('HOS-2406 the manual remainder closes a partially accepted refund', () 
                 acceptedAmount: 4000,
                 remainderAmount: 2000,
                 paymentOutcome: 'P4',
-                coverageReleased: false
+                coverageReleased: false,
+                settledStaleCallKeys: []
             });
             expect(await refundById(arranged.refundId)).toMatchObject({
                 status: 'EXECUTED',

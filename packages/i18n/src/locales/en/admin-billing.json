@@ -2332,8 +2332,8 @@
         "genericError": "The action could not be completed. Try again.",
         "serverError": "The server could not complete the action. Try again later.",
         "remainder": {
-            "title": "Settle the remainder of a partially accepted refund",
-            "description": "For a confirmed refund that Mercado Pago accepted only in part. Refund the rest from the MP panel and record it here: the refund closes and the payment balance squares.",
+            "title": "Settle the remainder of a refund from the MP panel",
+            "description": "For a confirmed refund that Mercado Pago accepted only in part, or that is stuck on a call unanswered for more than 24 hours («Retry with Mercado Pago» no longer resends it). Refund what is still owed from the MP panel (all of it, if MP accepted nothing) and record it here: the refund closes, the payment balance squares and the old call is answered.",
             "refundId": "Refund ID",
             "amount": "Remainder refunded by hand (in pesos)",
             "reference": "Refund ID in the MP panel",
@@ -2345,12 +2345,13 @@
             "success": "Refund closed. MP had accepted {{accepted}} and the remainder of {{remainder}} was recorded.",
             "rejections": {
                 "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund's remainder can be settled.",
-                "REFUND_CALL_UNANSWERED": "A provider call is still unanswered. Use «Retry with Mercado Pago» on this screen first; if it does not close it, follow the stuck refunds runbook.",
-                "REFUND_HAS_NO_ACCEPTED_CALL": "The provider accepted no part of this refund. Decline it, then settle it with action 14.",
+                "REFUND_CALL_UNANSWERED": "A provider call sent less than 24 hours ago is still unanswered. Use «Retry with Mercado Pago» on this screen first; after 24 hours, if it is still not closed, you can settle it here.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "The provider accepted no part of this refund and it has no unanswered call. Decline it, then settle it with action 14.",
                 "REMAINDER_AMOUNT_MISMATCH": "The remainder does not match what is still owed: the refund amount minus what the provider credited.",
                 "ACCEPTED_PART_NOT_ACCREDITED": "The provider does not show the part it accepted as credited. Check the charge in the provider panel before recording the remainder.",
                 "REMAINDER_NOT_FOUND_AT_PROVIDER": "The provider shows no credited refund with that reference and amount on this charge.",
-                "OTHER_REFUND_CALL_UNANSWERED": "Another refund of this payment has a provider call still unanswered. Wait until it is resolved before recording the remainder: the refund you see in the panel may belong to that call."
+                "OTHER_REFUND_CALL_UNANSWERED": "Another refund of this payment has a provider call still unanswered. Wait until it is resolved before recording the remainder: the refund you see in the panel may belong to that call.",
+                "UNCITED_PROVIDER_REFUND_ON_CHARGE": "The charge shows a Mercado Pago refund for the unanswered call's amount that nothing records: it may be that call, which landed. Use «Retry with Mercado Pago», which binds it, instead of settling here."
             }
         },
         "providerRetry": {
@@ -2379,7 +2380,7 @@
                 "REFUND_HAS_NO_UNANSWERED_CALL": "The refund has no unanswered call and no accepted call waiting to be credited: there is nothing to retry.",
                 "REFUND_PAST_PROVIDER_WINDOW": "More than 180 days have passed since the charge: MP would refuse any call without saying whether the first one went out. Check the MP panel by hand (refunds runbook, §8).",
                 "REFUND_RETRY_IN_PROGRESS": "A retry of this refund is already running. Wait for it to finish and check its result.",
-                "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and the charge shows no refund to bind it to, so it is not resent (nothing was sent or recorded). Follow the refunds runbook, §8 steps 1-2: check the charge in the Mercado Pago panel and record the call's answer by hand (§8.1 or §8.2)."
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and the charge shows no refund to bind it to, so it is not resent (nothing was sent or recorded). Check the charge in the Mercado Pago panel, refund from there whatever is still owed, and record it with action 14 in «Settle the remainder» on this screen: the refund closes and the call is answered (refunds runbook, §8 step 0)."
             }
         }
     },

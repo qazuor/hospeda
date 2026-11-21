@@ -281,10 +281,9 @@ charge read has caught up. Keep `<N>` well under 24: past 24 hours the retry no 
 `REFUND_RETRY_IN_PROGRESS`; wait for the first one's result. The retry still reads the charge and binds what it finds, however old the call. Only
 POSTING a call again is limited: if a call sent more than 24 hours ago would have to be posted
 again (the charge shows no refund to bind it to), the retry answers 409
-`REFUND_CALL_TOO_OLD_TO_RETRY`, posts nothing and writes nothing (owner decision on #4643). Then go
-to steps 1-2 below and record the call's answer by hand (8.1 or 8.2). Action 14 and **Settle the
-remainder** do NOT apply here: both refuse a refund with an unanswered call. The 24-hour limit can
-be relaxed once matrix row `EX-73` is measured. Then read each call's answer:
+`REFUND_CALL_TOO_OLD_TO_RETRY`, posts nothing and writes nothing (owner decision on #4643). That
+case no longer goes to 8.1/8.2: settle it with action 14 from the admin, section 8.4 (HOS-2538).
+The 24-hour limit can be relaxed once matrix row `EX-73` is measured. Then read each call's answer:
 
 | Answer for a call | What happened | Next |
 |---|---|---|
@@ -511,6 +510,46 @@ Do not write anything, and escalate (section 9), when you see any of these:
 - a status you do not recognise;
 - a payment that shows a chargeback.
 
+### 8.4 A call older than 24 hours that the retry will not post: action 14 (HOS-2538)
+
+Come here when «Retry with Mercado Pago» answered `REFUND_CALL_TOO_OLD_TO_RETRY`. No direct
+write and no owner OK on the database are needed: it is an admin action with its own audit record.
+
+1. **Read Mercado Pago (section 6).** The retry already read the charge and found no refund to
+   bind the lost call to. Look at the panel anyway.
+   - If the panel shows an `approved` refund for the call's amount that the read did not (a lagging
+     read), do NOT refund again: wait and press **Retry with Mercado Pago** later, which binds it.
+   - If the panel shows nothing for the call (or a `rejected`/`cancelled` one), the customer is
+     still owed the money.
+2. **Refund by hand from the Mercado Pago panel** what is still owed: the whole refund amount when
+   no call of the refund was accepted, or the refund amount minus what Mercado Pago credited for
+   the accepted calls.
+3. **Record it with action 14.** In **Billing → Reconciliation → Refunds**, use **Settle the
+   remainder of a refund from the MP panel** with the refund id, that amount and the new Mercado
+   Pago refund id as the reference. It is
+   `POST /api/v1/admin/billing-refunds/<refund_id>/settle-remainder` with
+   `{"amount": <centavos>, "reference": "<Mercado Pago refund id>"}` and permission
+   `billing.settleExternal` (`apps/api/src/routes/billing-refund/admin/settle-remainder.ts`).
+   The refund closes `EXECUTED` for its full amount, as a panel refund (`executed_via = 'EXTERNAL'`,
+   `external_channel = 'PROVIDER_PANEL'`, `external_ref` the reference, `settled_by` you), the
+   payment is updated (P3/P4/P5) and the hung mark attachments resolve, exactly as after a normal
+   execution. Every stale call is answered `SETTLED_EXTERNALLY` (result
+   `{"outcome": "SETTLED_EXTERNALLY", "code": "SETTLED_EXTERNALLY", "panelReference": ...}`, no
+   `provider_refund_id`): it is never resent and never bound to a Mercado Pago refund afterwards,
+   and the reference you cited counts as cited, so no other call or refund can claim it.
+
+What it refuses (all 409 unless noted; full list in `apps/api/docs/error-contract.md`, «Action 14
+remainder settlement»):
+
+| Answer | Why | Next |
+|---|---|---|
+| `REFUND_CALL_UNANSWERED` | A call of this refund was sent 24 hours ago or less (exactly 24 h included) | Use **Retry with Mercado Pago**: it may still post the call under its key |
+| `OTHER_REFUND_CALL_UNANSWERED` | Another refund of the same payment has an unanswered call: the panel refund you cite could be that call's (HOS-2517) | Close that refund first |
+| `UNCITED_PROVIDER_REFUND_ON_CHARGE` | The charge shows a refund for a stale call's amount that nothing of ours records: the lost call may have landed | **Retry with Mercado Pago**, which binds it. Do not refund again |
+| `EXTERNAL_REFERENCE_ALREADY_SETTLED` | The reference is already another refund's panel reference or another call's provider refund | Check the reference; escalate if it is right |
+| `REMAINDER_NOT_FOUND_AT_PROVIDER` (422) | The charge read shows no `approved` refund with that reference for exactly that amount | Check the reference and the amount, or wait until Mercado Pago approves the panel refund |
+| `REMAINDER_AMOUNT_MISMATCH` (422) | The amount is not what is still owed; the message says what is | Use the amount in the message |
+
 ## 9. Audit trail
 
 Leave all three:
@@ -565,5 +604,6 @@ own permission and refuses an admin acting on their own account
 HOS-2402 asks for an exit for both cases. Case A got one in HOS-2406 (the remainder settlement on
 the refunds screen, `POST /api/v1/admin/billing-refunds/<refund_id>/settle-remainder`); section 7
 still describes the manual path and should be rewritten to point there. Case B got its first one in
-HOS-2516 («Retry with MP», section 8, step 0); the direct writes of 8.1 and 8.2 remain only for what
-the retry cannot close. Update or retire this note when the rest merges.
+HOS-2516 («Retry with MP», section 8, step 0), and HOS-2538 closed the call the retry will no longer
+post (action 14, section 8.4); the direct writes of 8.1 and 8.2 remain only for what neither can
+close. Update or retire this note when the rest merges.
