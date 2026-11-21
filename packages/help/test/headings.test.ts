@@ -54,3 +54,15 @@ describe('anchors that start with a digit (the web drops such an id)', () => {
         expect(isHelpAnchorId({ anchor: slugifyHelpHeading({ text: '7 días' }) })).toBe(true);
     });
 });
+
+describe('helpSubHeading on adversarial whitespace (js/polynomial-redos)', () => {
+    it('stays linear on a long run of tabs and still finds the anchor', () => {
+        const started = Date.now();
+        const noAnchor = helpSubHeading({ text: `a${'\t'.repeat(50000)}b` });
+        const withAnchor = helpSubHeading({ text: `a${'\t'.repeat(50000)}{#fotos}\t\t` });
+
+        expect(noAnchor.text).toBe(`a${'\t'.repeat(50000)}b`);
+        expect(withAnchor).toEqual({ text: 'a', anchor: 'fotos' });
+        expect(Date.now() - started).toBeLessThan(1000);
+    });
+});

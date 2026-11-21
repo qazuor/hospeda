@@ -18,8 +18,12 @@
  * An explicit `### Heading {#id}` anchor at the end of the heading text. It
  * matches a leading digit on purpose, so the generator can name and reject it
  * instead of showing `{#24h}` as heading text.
+ *
+ * There is deliberately no leading `\s*`: it overlaps with the text before it
+ * and made the match quadratic on a long run of whitespace (CodeQL
+ * `js/polynomial-redos`). The caller trims what precedes the match instead.
  */
-export const HELP_EXPLICIT_ANCHOR = /\s*\{#([a-z0-9]+(?:-[a-z0-9]+)*)\}\s*$/;
+export const HELP_EXPLICIT_ANCHOR = /\{#([a-z0-9]+(?:-[a-z0-9]+)*)\}\s*$/;
 
 /** What a valid anchor id looks like: kebab-case starting with a letter. */
 export const HELP_ANCHOR_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
