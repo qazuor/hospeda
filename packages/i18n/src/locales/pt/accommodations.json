@@ -429,6 +429,44 @@
         "clearFilters": "Limpar filtros"
     },
     "detail": {
+        "listingContact": {
+            "bar": {
+                "inquire": "Enviar consulta",
+                "contact": "Entrar em contato",
+                "viewMenu": "Ver cardápio",
+                "priceOnRequest": "Consultar preço"
+            },
+            "panel": {
+                "title": "Fale com {{name}}",
+                "shortcuts": { "whatsapp": "WhatsApp", "phone": "Ligar", "email": "E-mail" },
+                "trust": "Sua consulta vai direto para o anfitrião. Sem comissões."
+            },
+            "fields": { "checkIn": "Chegada", "checkOut": "Saída", "guests": "Hóspedes" },
+            "errors": {
+                "checkOutAfterCheckIn": "A saída deve ser depois da chegada",
+                "invalidDate": "Informe uma data válida.",
+                "guestsRange": "Informe um número inteiro de hóspedes entre 1 e {{capacity}}.",
+                "guestsCapacityUnavailable": "O limite de hóspedes desta acomodação não está disponível."
+            },
+            "inquiry": {
+                "dates": "de {{checkIn}} a {{checkOut}}",
+                "from": "a partir de {{checkIn}}",
+                "until": "até {{checkOut}}",
+                "guests_one": "para {{count}} pessoa",
+                "guests_other": "para {{count}} pessoas",
+                "withDates": "Olá, está disponível {{dates}}?",
+                "withGuests": "Olá, está disponível {{guests}}?",
+                "withDatesAndGuests": "Olá, está disponível {{dates}} {{guests}}?"
+            },
+            "summary": { "title": "Preço e contato" },
+            "units": {
+                "perNight": "/noite",
+                "perDay": "/dia",
+                "perHour": "/hora",
+                "perPerson": "/pessoa",
+                "perGroup": "/grupo"
+            }
+        },
         "home": "Início",
         "accommodations": "Acomodações",
         "description": "Descrição",
