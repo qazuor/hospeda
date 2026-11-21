@@ -230,6 +230,64 @@ describe('HOS-2516 the retry reads the charge before posting a lost call again',
 
 describe('HOS-2516 the retry never binds a refund that stopped being CONFIRMED', () => {
     it.skipIf(skip)(
+        'a refund failed (a chargeback) while the charge was read is not posted again',
+        async () => {
+            // Arrange: the first call never reached MP; the refund fails during the retry's read.
+            const seeded = await refundConfirmFixture();
+            const refund = vi.fn(seeded.fixture.provider.refund.bind(seeded.fixture.provider));
+            let reachable = false;
+            let failedOnce = false;
+            const provider = new Proxy(seeded.fixture.provider, {
+                get(target, property, receiver) {
+                    if (property === 'refund')
+                        return async (input: Parameters<PaymentProvider['refund']>[0]) => {
+                            if (!reachable)
+                                throw new PaymentProviderError({
+                                    code: 'UNAVAILABLE',
+                                    capability: 'refund',
+                                    message: 'network cut'
+                                });
+                            return refund(input);
+                        };
+                    if (property === 'readCharge')
+                        return async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+                            const read = await target.readCharge(input);
+                            if (reachable && !failedOnce) {
+                                failedOnce = true;
+                                await getServiceTestDb()
+                                    .update(refunds)
+                                    .set({ status: 'FAILED' })
+                                    .where(eq(refunds.id, seeded.refundId));
+                            }
+                            return read;
+                        };
+                    return Reflect.get(target, property, receiver);
+                }
+            });
+            await confirmRefund(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+            reachable = true;
+
+            // Act
+            const result = await retryRefundProviderCalls(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+
+            // Assert: nothing posted for a FAILED refund; the call stays unanswered.
+            expect(result.calls.map(({ outcome }) => outcome)).toEqual([
+                'AWAITING_PROVIDER_ANSWER'
+            ]);
+            expect(result.status).toBe('FAILED');
+            expect(refund).not.toHaveBeenCalled();
+            expect(await providerRefunds(seeded)).toHaveLength(0);
+            expect((await refundConfirmRows(seeded.refundId)).keys[0]?.completedAt).toBeNull();
+        }
+    );
+
+    it.skipIf(skip)(
         'a refund failed (a chargeback) while the charge was read is not bound',
         async () => {
             // Arrange: the lost call landed; while the retry reads the charge, the refund fails.

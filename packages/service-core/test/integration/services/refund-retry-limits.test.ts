@@ -1,6 +1,7 @@
+import { registerCaptureHook, unregisterCaptureHook } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import {
@@ -11,6 +12,7 @@ import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { refundConfirmFixture, refundConfirmRows } from './support/refund-confirm-fixtures.js';
 
 afterAll(closeServiceTestPool);
+afterEach(unregisterCaptureHook);
 const skip = !isServiceTestDbAvailable();
 
 /** A provider whose first refund answer is lost after it reached the fake (a timeout or a 5xx). */
@@ -102,6 +104,8 @@ describe('HOS-2516 the 24-hour limit only stops posting a call again', () => {
             // Arrange: the unanswered call was sent 24 hours and 1 ms ago and never landed.
             const { seeded, cut } = await neverLanded();
             seeded.fixture.clock.advance({ ms: REFUND_CALL_RETRY_LIMIT_MS + 1 });
+            const captured: unknown[] = [];
+            registerCaptureHook((error) => captured.push(error));
 
             // Act + Assert
             await expect(
@@ -120,6 +124,8 @@ describe('HOS-2516 the 24-hour limit only stops posting a call again', () => {
             expect(rows.keys[0]?.result).toBeNull();
             expect(rows.calls[0]?.providerRefundId).toBeNull();
             expect(rows.refund?.status).toBe('CONFIRMED');
+            // The refusal raises no alert either: it leaves nothing behind.
+            expect(captured).toEqual([]);
         }
     );
 

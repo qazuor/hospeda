@@ -24,6 +24,7 @@ import {
 import { hasOtherUnansweredRefundCall } from './refund-call-tally';
 import { completeCall } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
+import { lockRefundSource } from './refund-source';
 
 const logger = createLogger('resend-refund-call');
 
@@ -257,12 +258,24 @@ export async function resendUnansweredRefundCalls(
         if (plan.action === 'BIND') {
             // A chargeback may have moved the refund out of CONFIRMED since it was read: never
             // bind a call of a refund that is no longer waiting for one.
-            const [current] = await db
-                .select({ status: refunds.status })
-                .from(refunds)
-                .where(eq(refunds.id, input.refundId))
-                .limit(1);
-            if (current?.status !== 'CONFIRMED') {
+            if (!(await isStillConfirmed({ refundId: input.refundId, paymentId: payment.id }))) {
+                outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
+                continue;
+            }
+            // HOS-2517 again at bind time: a panel settlement (`/external`) or another call may
+            // have cited this provider refund since phase 1 read it uncited.
+            if (
+                (await readCitedProviderRefundIds([plan.providerRefundId])).has(
+                    plan.providerRefundId
+                )
+            ) {
+                alertAmbiguous({
+                    ...context,
+                    reason: 'PROVIDER_REFUND_ALREADY_CITED',
+                    candidates: [
+                        { providerRefundId: plan.providerRefundId, amountMinor: plan.call.amount }
+                    ]
+                });
                 outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
                 continue;
             }
@@ -278,6 +291,28 @@ export async function resendUnansweredRefundCalls(
         outcomes.push(await postCall({ refund, payment, call: plan.call, context, input, ports }));
     }
     return { refundId: input.refundId, outcomes };
+}
+
+/**
+ * Whether the refund is still `CONFIRMED`, read under the same lock order as `persistCall` and RF3
+ * (the payment source, then the refund row). The short transaction commits before the caller's
+ * provider I/O, so no transaction stays open across it. A chargeback committed before this check
+ * is seen; one that commits after it races the provider call exactly as it does for a first call.
+ */
+async function isStillConfirmed(input: {
+    readonly refundId: string;
+    readonly paymentId: string;
+}): Promise<boolean> {
+    return getDb().transaction(async (tx) => {
+        await lockRefundSource({ tx, source: { kind: 'PAYMENT', id: input.paymentId } });
+        const [current] = await tx
+            .select({ status: refunds.status })
+            .from(refunds)
+            .where(eq(refunds.id, input.refundId))
+            .limit(1)
+            .for('update');
+        return current?.status === 'CONFIRMED';
+    });
 }
 
 type PendingCall = {
@@ -371,6 +406,9 @@ async function postCall(args: {
     const { refund, payment, call, context, input, ports } = args;
     const key = call.idempotencyKey;
     const awaiting = { idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' } as const;
+    // A chargeback between phase 1 and now may have failed the refund: never post money for a
+    // refund that is no longer CONFIRMED. Checked and committed before the provider I/O.
+    if (!(await isStillConfirmed({ refundId: refund.id, paymentId: payment.id }))) return awaiting;
     let providerCallPending = true;
     try {
         const response = await ports.provider.refund({
