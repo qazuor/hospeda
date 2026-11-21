@@ -419,12 +419,15 @@ jobs:
       # packages/portal-routes/src/portal-routes.ts in the same PR.
       - name: Check the assistant's portal links still resolve to web pages (HOS-2326)
         run: pnpm check:portal-routes
-      # The assistant's `get_help` answers from a curated catalog of how-to topics. This fails
-      # when a topic links to a page that no longer exists in apps/web or extends a FAQ item
-      # that is gone, and lists (without failing) topics not re-checked in 180 days.
-      # Fix: update apps/api/src/data/owner-help in the same PR as the web change.
-      - name: Check the owner help catalog still matches the portal (HOS-2333)
-        run: pnpm check:owner-help
+      # HOS-2410 guard (a). The help center (web) and the assistant's `get_help` answer from
+      # the Markdown articles in packages/help/content, compiled to a committed index. This
+      # fails when an article does not parse or breaks a layout or interlinking rule, links
+      # to a page that no longer exists in apps/web, extends a FAQ item that is gone, anchors
+      # to a key, tool, enum or file that does not exist, or when the committed index is
+      # stale. It lists (without failing) articles not re-checked in 180 days.
+      # Fix: edit the article, run `pnpm help:build`, commit the index in the same PR.
+      - name: Check the help catalog matches the portal and its index (HOS-2410)
+        run: pnpm check:help-catalog
       # Drizzle skips, without an error, any migration whose `when` is not above the
       # last applied one. Rule 1 (monotonic journal) always runs; rule 2 (new entries
       # above origin/<base>) only on a PR to staging or main. On `push` base_ref is
