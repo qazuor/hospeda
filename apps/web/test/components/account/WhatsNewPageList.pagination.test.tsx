@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { markSeen } = vi.hoisted(() => ({ markSeen: vi.fn() }));
 
-const items = Array.from({ length: 25 }, (_, i) => ({
+const FIXTURE = Array.from({ length: 25 }, (_, i) => ({
     id: `entry-${i + 1}`,
     title: `Entry ${i + 1}`,
     body: 'Body',
@@ -18,6 +18,9 @@ const items = Array.from({ length: 25 }, (_, i) => ({
     seen: false,
     audience: 'all'
 }));
+
+// Cloned per test in `beforeEach` so no test can leak mutations into another.
+let items: typeof FIXTURE = [];
 
 vi.mock('@/hooks/use-whats-new', () => ({
     useWhatsNew: () => ({ items, isLoading: false, markSeen })
@@ -31,6 +34,7 @@ import {
 describe('WhatsNewPageList pagination (HOS-2449)', () => {
     beforeEach(() => {
         markSeen.mockClear();
+        items = FIXTURE.map((entry) => ({ ...entry }));
     });
 
     it('renders only one page of entries when there are more', () => {
@@ -59,8 +63,20 @@ describe('WhatsNewPageList pagination (HOS-2449)', () => {
         expect(marked).not.toContain('entry-11');
     });
 
+    it('marks the newly revealed entries as seen after "show more"', () => {
+        render(<WhatsNewPageList locale="en" />);
+        markSeen.mockClear();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Show more updates' }));
+
+        const marked = markSeen.mock.calls.flatMap(([ids]) => ids as string[]);
+        expect(marked).toContain('entry-11');
+        expect(marked).toContain('entry-20');
+        expect(marked).not.toContain('entry-21');
+    });
+
     it('shows no "show more" control when everything fits on one page', () => {
-        items.splice(5);
+        items = items.slice(0, 5);
         const { container } = render(<WhatsNewPageList locale="es" />);
 
         expect(container.querySelectorAll('article')).toHaveLength(5);
