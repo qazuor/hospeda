@@ -25,6 +25,76 @@ import {
 
 afterEach(cleanTempDirs);
 
+/** Two malformed locks built from a valid one: merge conflict markers, and a line failing the schema. */
+function malformedLocks(valid: string): ReadonlyArray<readonly [string, string]> {
+    const lines = valid.trimEnd().split('\n');
+    const conflict = [
+        lines[0],
+        lines[1],
+        '<<<<<<< HEAD',
+        lines[2],
+        '=======',
+        lines[2]?.replace(/"reviewedAt":"[^"]+"/, '"reviewedAt":"2026-11-18"'),
+        '>>>>>>> other',
+        ...lines.slice(3)
+    ].join('\n');
+    const schema = valid.replace(/"hash":"[a-f0-9]{64}"/, '"hash":"nope"');
+    return [
+        ['conflict markers', `${conflict}\n`],
+        ['a line failing the schema', schema]
+    ];
+}
+
+describe('pnpm help:review on a malformed lock (regression)', () => {
+    it('refuses to review and leaves the lock and the article untouched', () => {
+        // Arrange
+        const root = syntheticRoot();
+        reviewAll(root);
+        const lockFile = path.join(root, HELP_LOCK_PATH);
+        for (const [label, text] of malformedLocks(readFileSync(lockFile, 'utf8'))) {
+            writeFileSync(lockFile, text);
+            const articleBefore = readFileSync(articlePath(root, 'a'), 'utf8');
+
+            // Act
+            const result = reviewHelpArticles({
+                root,
+                ids: ['a'],
+                now: LATER_DAY,
+                sources: sources()
+            });
+
+            // Assert
+            expect(result.exitCode, label).toBe(1);
+            expect(result.output, label).toContain('does not parse, so it was not touched');
+            expect(readFileSync(lockFile, 'utf8'), label).toBe(text);
+            expect(readFileSync(articlePath(root, 'a'), 'utf8'), label).toBe(articleBefore);
+        }
+    });
+
+    it('--list exits 1 and reports the parse error', () => {
+        // Arrange
+        const root = syntheticRoot();
+        reviewAll(root);
+        const lockFile = path.join(root, HELP_LOCK_PATH);
+        const [[, conflict], [, schema]] = malformedLocks(readFileSync(lockFile, 'utf8')) as [
+            readonly [string, string],
+            readonly [string, string]
+        ];
+
+        // Act
+        writeFileSync(lockFile, conflict);
+        const conflicted = listHelpReviews({ root, sources: sources() });
+        writeFileSync(lockFile, schema);
+        const invalid = listHelpReviews({ root, sources: sources() });
+
+        // Assert
+        expect(conflicted.exitCode).toBe(1);
+        expect(conflicted.output).toContain('is not valid JSON');
+        expect(invalid.exitCode).toBe(1);
+        expect(invalid.output).toMatch(/lock entry 0: hash/);
+    });
+});
+
 describe('pnpm help:review', () => {
     it('refuses an unknown id and writes nothing', () => {
         // Arrange

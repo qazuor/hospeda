@@ -65,18 +65,40 @@ function writeWhole({ file, text }: { readonly file: string; readonly text: stri
     renameSync(temp, file);
 }
 
-/** The lock entries of a lock file (an absent file reads as none). */
-function readLock({ lockFile }: { readonly lockFile: string }): readonly HelpLockEntry[] {
-    return existsSync(lockFile)
-        ? parseHelpLock({ text: readFileSync(lockFile, 'utf8') }).entries
-        : [];
+/**
+ * The lock of a lock file (an absent file reads as empty). A lock that does not
+ * parse whole (merge conflict markers, a line failing the schema, an order or
+ * duplicate problem) is never rewritten: rewriting it from the entries that did
+ * parse would silently drop every other article's line.
+ */
+function readLock({
+    lockFile
+}: {
+    readonly lockFile: string;
+}):
+    | { readonly ok: true; readonly entries: readonly HelpLockEntry[] }
+    | { readonly ok: false; readonly output: string } {
+    if (!existsSync(lockFile)) {
+        return { ok: true, entries: [] };
+    }
+    const { entries, problems } = parseHelpLock({ text: readFileSync(lockFile, 'utf8') });
+    return problems.length === 0
+        ? { ok: true, entries }
+        : {
+              ok: false,
+              output: [
+                  `help:review: ${HELP_LOCK_PATH} does not parse, so it was not touched:`,
+                  ...problems.map((problem) => `  - ${problem}`),
+                  'Fix the lock by hand (for a merge conflict, take either side), then run help:review again.'
+              ].join('\n')
+          };
 }
 
 /**
  * `pnpm help:review --list`: the articles whose anchors differ from the lock.
  *
  * @param args - See {@link HelpReviewContext}
- * @returns One line per article to review; exit 0 (1 only when the content does not parse)
+ * @returns One line per article to review; exit 0 (1 only when the content or the lock does not parse)
  */
 export function listHelpReviews({
     root,
@@ -91,7 +113,11 @@ export function listHelpReviews({
             output: 'help:review: the content does not parse. Run pnpm check:help-catalog'
         };
     }
-    const lock = new Map(readLock({ lockFile }).map((entry) => [entry.id, entry]));
+    const read = readLock({ lockFile });
+    if (!read.ok) {
+        return { exitCode: 1, output: read.output };
+    }
+    const lock = new Map(read.entries.map((entry) => [entry.id, entry]));
     const hash = createAnchorHasher({ root, ...(sources === undefined ? {} : { sources }) });
     const lines: string[] = [];
     for (const article of articles) {
@@ -160,9 +186,16 @@ export function reviewHelpArticles({
             output: `help:review: unknown article id(s): ${unknown.join(', ')}. Nothing written.`
         };
     }
+    const read = readLock({ lockFile });
+    if (!read.ok) {
+        return { exitCode: 1, output: `${read.output}\nNothing written.` };
+    }
+    const targets = [...new Set(ids)].flatMap((id) => {
+        const file = byId.get(id);
+        return file === undefined ? [] : [file];
+    });
     const edited = new Map<string, string>();
-    for (const id of new Set(ids)) {
-        const file = byId.get(id) as HelpContentFile;
+    for (const file of targets) {
         const end = file.source.indexOf('\n---', 3);
         const frontmatter = end === -1 ? '' : file.source.slice(0, end);
         if (!REVIEWED_AT_LINE.test(frontmatter)) {
@@ -188,7 +221,7 @@ export function reviewHelpArticles({
         };
     }
     const hash = createAnchorHasher({ root, ...(sources === undefined ? {} : { sources }) });
-    const lock = new Map(readLock({ lockFile }).map((entry) => [entry.id, entry]));
+    const lock = new Map(read.entries.map((entry) => [entry.id, entry]));
     for (const id of new Set(ids)) {
         const article = built.index.locales.es.find((candidate) => candidate.id === id);
         const fresh = article === undefined ? undefined : computeLockEntry({ article, hash });
