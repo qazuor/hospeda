@@ -272,18 +272,27 @@ Refunds**, paste the refund id in **Retry with Mercado Pago** and confirm. It is
 `POST /api/v1/admin/billing-refunds/<refund_id>/retry-provider-calls` with body
 `{"confirmed": true}` and permission `billing.refund`
 (`apps/api/src/routes/billing-refund/admin/retry-provider-calls.ts`; rejections in
-`apps/api/docs/error-contract.md`, «Action 13 provider call retry»). It resends every unanswered
-call with the SAME `X-Idempotency-Key` and amount, so a request Mercado Pago already processed comes
-back as the same refund instead of a second one. Wait the same `<N>` hours of query 4.1 first, so
-you do not race a call still in flight. Then read each call's answer:
+`apps/api/docs/error-contract.md`, «Action 13 provider call retry»). For each unanswered call it
+first reads the charge at Mercado Pago. If the read shows exactly one refund for the call's amount
+that nothing of ours cites yet, the lost call landed: it is bound to that refund and NOT sent again.
+Only when no such refund shows up is the call resent, with the SAME `X-Idempotency-Key` and amount.
+Wait the same `<N>` hours of query 4.1 first, so you do not race a call still in flight and the
+charge read has caught up. Keep `<N>` well under 24, or the retry will already refuse (below). Only one retry of a refund runs at a time: a second click answers 409
+`REFUND_RETRY_IN_PROGRESS`; wait for the first one's result. A call sent more than 24 hours ago
+is not resent: the retry answers 409 `REFUND_CALL_TOO_OLD_TO_RETRY` before touching Mercado Pago
+(owner decision on #4643). Then check the charge in the Mercado Pago panel and settle through the
+panel: **Record what already happened outside the system (action 14)** or **Settle the remainder
+of a partially accepted refund**, following steps 1-2 below to decide which. The 24-hour limit can
+be relaxed once matrix row `EX-73` is measured. Then read each call's answer:
 
 | Answer for a call | What happened | Next |
 |---|---|---|
-| `SENT` and `execution: "EXECUTED"` | Mercado Pago accepted it and the charge read shows it accredited for the full amount. The refund is `EXECUTED` | Nothing. Leave the audit trail (section 9) |
-| `SENT` and `execution: "NOT_ACCREDITED_KEPT_CONFIRMED"` | Accepted, not accredited yet (accepted is not accredited) | Nothing to write: the next charge notice executes it. If it does not within a day, it is case A (section 7) |
-| `SENT` and `execution: null` | Accepted, but the charge read after it failed | Nothing to write: the next charge notice executes it |
+| `FOUND_AT_PROVIDER` or `SENT`, and `execution: "EXECUTED"` | The refund was already at Mercado Pago (`FOUND_AT_PROVIDER`, nothing resent) or the resend was accepted (`SENT`), and the charge read shows it accredited for the full amount. The refund is `EXECUTED` | Nothing. Leave the audit trail (section 9) |
+| `FOUND_AT_PROVIDER` or `SENT`, and `execution: "NOT_ACCREDITED_KEPT_CONFIRMED"` | Accepted, not accredited yet (accepted is not accredited) | Nothing to write. The next charge notice executes it, or press **Retry with Mercado Pago** again later: with every call accepted it only re-runs RF3, which reads the charge (`calls: []`). If it is still not accredited after a day, it is case A (section 7) |
+| `FOUND_AT_PROVIDER` or `SENT`, and `execution: null` with `status: "CONFIRMED"` | Accepted, but the charge read after it failed | Nothing to write: the next charge notice or another retry executes it |
+| `status: "FAILED"` with `execution: null` and no `PROVIDER_REJECTED_FAILED` (also with `calls: []`) | Mercado Pago had accepted the refund and now reads it `rejected` or `cancelled` (matrix row `EX-74`). The call is recorded as rejected by the provider (`REJECTED_AFTER_ACCEPTANCE`) and the refund is `FAILED` (RF5) | Section 8.1 from step 5 (check Mercado Pago, then action 14 if still owed) |
 | `PROVIDER_REJECTED_FAILED` | Mercado Pago rejected the call. The refund is `FAILED` (RF5) | Section 8.1 from step 5 (check Mercado Pago, then action 14 if still owed) |
-| `AWAITING_PROVIDER_ANSWER` | Still no answer; an answer without id that matched no single uncited refund; or an answer naming a Mercado Pago refund id that is already the panel reference of a refund or the id of another call (HOS-2517). The last two raise a Sentry alert (`AmbiguousRefundAnswerError`, with its `reason`) | Retry later. If it persists, or the alert says `PROVIDER_REFUND_ALREADY_CITED`, steps 1-2 below |
+| `AWAITING_PROVIDER_ANSWER` | Still no answer; the charge read before resending failed (nothing was sent); the read showed SEVERAL uncited refunds for the amount (nothing was sent; Sentry alert `SEVERAL_UNNAMED_PAYMENT_REFUNDS`); an answer without id that matched no single uncited refund; or an answer naming a Mercado Pago refund id that is already the panel reference of a refund or the id of another call (HOS-2517). The last two raise a Sentry alert (`AmbiguousRefundAnswerError`, with its `reason`) | Retry later. If it persists, or the alert says `PROVIDER_REFUND_ALREADY_CITED`, steps 1-2 below |
 | `PROVIDER_KEY_CONFLICT` | Mercado Pago refused the key as reused | Steps 1-2 below |
 
 A 422 `REFUND_PAST_PROVIDER_WINDOW` means the charge is more than 180 days old: a refusal from
@@ -294,10 +303,13 @@ resent (section 2).
 **How long Mercado Pago remembers the key is NOT measured** (matrix row `EX-73` in
 `.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md`). `RF-6` measured
 an immediate replay: same key and body, `200` with an empty body and no new refund. Nobody
-measured a replay days later. If Mercado Pago has forgotten the key, the retry creates a SECOND
-refund and the money goes back twice. So for a call older than about a day, do step 1 first:
-look in the Mercado Pago panel for a refund of that charge and amount. If one exists, do not
-retry; go to step 2. Retry only when the panel shows none.
+measured a replay days later. The read before resending covers the common case: a lost call that
+landed shows up on the charge and is bound without sending anything, so a forgotten key cannot
+double it. What is left is a refund Mercado Pago processed but does not show on the charge read
+yet, together with a forgotten key: then the resend creates a SECOND refund. That is why the
+`<N>`-hour wait comes first. If you have any reason to think the read lags (Mercado Pago incident,
+a refund you can see in the panel but not in the read), check the panel before retrying, and go
+to step 2 if the refund is there.
 
 Only when the retry cannot close it does this case need one direct write, and only that write.
 Everything after it goes through the existing actions.
