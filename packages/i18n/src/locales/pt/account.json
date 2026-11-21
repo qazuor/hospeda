@@ -1870,15 +1870,15 @@
             "provider": "Fornecedores",
             "partner": "Parceiros"
         },
-        "audiencesLabel": "Para",
+        "audiencesLabel": "Para quem",
         "search": {
             "label": "Buscar na ajuda",
             "placeholder": "Por exemplo: como envio fotos",
             "onlyMine": "Só para o meu tipo de conta",
-            "results_one": "{{count}} resultado",
-            "results_other": "{{count}} resultados",
+            "results_one": "{{count}} resultado encontrado",
+            "results_other": "{{count}} resultados encontrados",
             "noMatch": "Não encontramos ajuda para isso",
-            "submit": "Buscar"
+            "submit": "Pesquisar"
         },
         "fallback": {
             "title": "Não encontrou o que procurava?",
@@ -1891,7 +1891,7 @@
             "reviewedAt": "Revisado em {{date}}",
             "tocLabel": "Neste artigo",
             "tocToggle": "Índice do artigo",
-            "pagesTitle": "Páginas",
+            "pagesTitle": "Telas do app",
             "faqLink": "Veja também nas perguntas frequentes",
             "onlySpanish": "Este artigo por enquanto está disponível só em espanhol.",
             "limitNeutral": "o limite do seu plano",
