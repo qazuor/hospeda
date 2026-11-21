@@ -220,3 +220,27 @@ describe('page destination types', () => {
         probe({ kind: 'page', page: 'accountHome', params: { id: 'a' } });
     });
 });
+
+describe('buildPortalUrl site URL normalisation (js/polynomial-redos)', () => {
+    const destination = { kind: 'page', page: 'accountHome' } satisfies PortalDestination;
+
+    it('strips a long run of trailing slashes in linear time', () => {
+        const started = Date.now();
+        const url = buildPortalUrl({ destination, siteUrl: `${SITE}${'/'.repeat(100000)}` });
+
+        expect(url.startsWith(`${SITE}/`)).toBe(true);
+        expect(url.startsWith(`${SITE}//`)).toBe(false);
+        expect(Date.now() - started).toBeLessThan(1000);
+    });
+
+    it('keeps slashes that are not trailing and still rejects a slash-only site URL', () => {
+        const started = Date.now();
+        const noisy = `${'/'.repeat(100000)}x`;
+
+        expect(buildPortalUrl({ destination, siteUrl: noisy }).startsWith(noisy)).toBe(true);
+        expect(() => buildPortalUrl({ destination, siteUrl: '/'.repeat(100000) })).toThrow(
+            'site URL'
+        );
+        expect(Date.now() - started).toBeLessThan(1000);
+    });
+});
