@@ -53,7 +53,7 @@ export function AccountEmptyState({
             >
                 {icon}
             </span>
-            <h3 className={styles.title}>{title}</h3>
+            <h2 className={styles.title}>{title}</h2>
             <p className={styles.text}>{description}</p>
             {hasCta && (
                 <a

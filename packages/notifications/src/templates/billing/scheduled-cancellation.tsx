@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject and heading of the notice sent before a cancelled subscription's automatic charge is cancelled. */
 export const SCHEDULED_CANCELLATION_SUBJECT = 'Cancelamos el cobro automático de tu suscripción';

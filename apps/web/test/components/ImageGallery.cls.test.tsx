@@ -341,7 +341,7 @@ describe('ImageGallery detail variant — every cell img carries cellImg class (
 
     it('count=1: featured img has class "cellImg"', () => {
         const container = renderDetail(1);
-        const imgs = Array.from(container.querySelectorAll('img'));
+        const imgs = Array.from(container.querySelectorAll('[data-count] img'));
         expect(imgs.length).toBe(1);
         for (const img of imgs) {
             expect(img.className).toContain('cellImg');
@@ -350,7 +350,7 @@ describe('ImageGallery detail variant — every cell img carries cellImg class (
 
     it('count=3: all 3 cell imgs carry class "cellImg"', () => {
         const container = renderDetail(3);
-        const imgs = Array.from(container.querySelectorAll('img'));
+        const imgs = Array.from(container.querySelectorAll('[data-count] img'));
         expect(imgs.length).toBe(3);
         for (const img of imgs) {
             expect(img.className).toContain('cellImg');
@@ -364,7 +364,7 @@ describe('ImageGallery detail variant — every cell img carries cellImg class (
          * for consistent cover cropping.
          */
         const container = renderDetail(5);
-        const imgs = Array.from(container.querySelectorAll('img'));
+        const imgs = Array.from(container.querySelectorAll('[data-count] img'));
         expect(imgs.length).toBe(4);
         for (const img of imgs) {
             expect(img.className).toContain('cellImg');

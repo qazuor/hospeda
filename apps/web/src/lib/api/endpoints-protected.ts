@@ -4239,7 +4239,9 @@ type CollectionBookmarkEntityType =
     | 'DESTINATION'
     | 'ATTRACTION'
     | 'EVENT'
-    | 'POST';
+    | 'POST'
+    | 'VENUE'
+    | 'EXPERIENCE';
 
 /** Single bookmark row returned inside a collection detail response */
 export interface CollectionBookmarkRow {

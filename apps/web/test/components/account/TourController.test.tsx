@@ -26,6 +26,8 @@ const { driverMock, hasNextStepMock } = vi.hoisted(() => {
     return { driverMock: driver, hasNextStepMock: hasNextStep };
 });
 
+vi.mock('@/hooks/use-cookie-consent-decided', () => ({ useCookieConsentDecided: () => true }));
+
 vi.mock('@/lib/load-driver', () => ({ driver: driverMock }));
 
 vi.mock('@/hooks/use-tour-state', () => ({

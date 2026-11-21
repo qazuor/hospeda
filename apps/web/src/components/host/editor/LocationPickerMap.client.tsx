@@ -18,6 +18,8 @@ export interface LocationPickerMapProps {
     readonly markerPosition: { readonly lat: number; readonly lng: number } | null;
     readonly disabled: boolean;
     readonly onMove: (lat: number, lng: number) => void;
+    /** Accessible name of the map region, already translated by the caller. */
+    readonly ariaLabel: string;
 }
 
 const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -34,7 +36,8 @@ export function LocationPickerMap({
     center,
     markerPosition,
     disabled,
-    onMove
+    onMove,
+    ariaLabel
 }: LocationPickerMapProps) {
     const mapRef = useRef<HTMLDivElement>(null);
     const leafletMapRef = useRef<unknown>(null);
@@ -167,7 +170,7 @@ export function LocationPickerMap({
             ref={mapRef}
             className={styles.mapContainer}
             role="application"
-            aria-label="Mapa de ubicación"
+            aria-label={ariaLabel}
         />
     );
 }

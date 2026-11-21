@@ -349,7 +349,17 @@
                 "translationLocked": "Traduzir o cardápio está disponível a partir do plano {{plan}}. Você pode apagar as traduções e salvar o cardápio apenas em espanhol.",
                 "translationLockedNoPlan": "Traduzir o cardápio está disponível em um plano pago. Você pode apagar as traduções e salvar o cardápio apenas em espanhol.",
                 "translationLockedHint": "Disponível a partir do plano {{plan}}. Apague o inglês e o português para salvar o cardápio apenas em espanhol.",
-                "translationLockedHintNoPlan": "Disponível em um plano pago. Apague o inglês e o português para salvar o cardápio apenas em espanhol."
+                "translationLockedHintNoPlan": "Disponível em um plano pago. Apague o inglês e o português para salvar o cardápio apenas em espanhol.",
+                "removeSectionConfirm": {
+                    "title": "Remover seção",
+                    "message": "Remover esta seção e todos os seus pratos do cardápio?",
+                    "confirm": "Remover seção"
+                },
+                "removeItemConfirm": {
+                    "title": "Remover prato",
+                    "message": "Remover este prato do cardápio?",
+                    "confirm": "Remover prato"
+                }
             },
             "dailySpecials": {
                 "title": "Menu do dia",

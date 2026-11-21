@@ -1,6 +1,6 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the PartnerRevoked email template (HOS-278 R-4).
@@ -41,10 +41,7 @@ export interface PartnerRevokedProps {
  */
 export function PartnerRevoked({ recipientName, partnerName, reason }: PartnerRevokedProps) {
     return (
-        <EmailLayout
-            previewText={`${partnerName} ya no aparece entre los aliados de Hospeda`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`${partnerName} ya no aparece entre los aliados de Hospeda`}>
             <Heading>Sobre tu ficha de aliado</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

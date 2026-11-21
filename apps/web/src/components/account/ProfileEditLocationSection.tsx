@@ -105,12 +105,12 @@ export function ProfileEditLocationSection({
             className={styles.section}
             aria-labelledby="location-section-title"
         >
-            <h3
+            <h2
                 className={styles.sectionTitle}
                 id="location-section-title"
             >
                 {t('account.pages.editProfile.locationSection')}
-            </h3>
+            </h2>
             <div className={styles.grid}>
                 <AddressField
                     id="country"

@@ -45,6 +45,10 @@ vi.mock('../../hooks/useProposedRefunds', () => ({
         refetch: vi.fn()
     })
 }));
+// The screen also renders «Retry with MP» (HOS-2516); its mutation is out of this test's scope.
+vi.mock('../../hooks/useRetryRefundProviderCalls', () => ({
+    useRetryRefundProviderCalls: () => ({ mutateAsync: vi.fn(), isPending: false })
+}));
 vi.mock('../../hooks/useSettleRefundRemainder', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     useSettleRefundRemainder: () => ({ mutateAsync: state.settle, isPending: state.pending })
@@ -131,6 +135,11 @@ describe('RefundRemainderSettlementForm', () => {
         ['ACCEPTED_PART_NOT_ACCREDITED', remainder.rejections.ACCEPTED_PART_NOT_ACCREDITED],
         ['REMAINDER_NOT_FOUND_AT_PROVIDER', remainder.rejections.REMAINDER_NOT_FOUND_AT_PROVIDER],
         ['OTHER_REFUND_CALL_UNANSWERED', remainder.rejections.OTHER_REFUND_CALL_UNANSWERED],
+        [
+            'UNCITED_PROVIDER_REFUND_ON_CHARGE',
+            remainder.rejections.UNCITED_PROVIDER_REFUND_ON_CHARGE
+        ],
+        ['REFUND_RETRY_IN_PROGRESS', remainder.rejections.REFUND_RETRY_IN_PROGRESS],
         ['REFUND_CALL_UNANSWERED', remainder.rejections.REFUND_CALL_UNANSWERED],
         ['REFUND_NOT_CONFIRMED', remainder.rejections.REFUND_NOT_CONFIRMED],
         ['REFUND_HAS_NO_ACCEPTED_CALL', remainder.rejections.REFUND_HAS_NO_ACCEPTED_CALL],

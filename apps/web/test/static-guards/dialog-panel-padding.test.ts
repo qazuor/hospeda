@@ -81,7 +81,14 @@ const TSX_PATH = path.join(UI_DIR, 'Dialog.client.tsx');
  * They never suppress the fallback.
  */
 const SLOT_CLASSES = ['header', 'body', 'bodyBare', 'footer'] as const;
-const NON_SLOT_CLASSES = ['overlay', 'panel', 'title', 'closeButton', 'closeButtonFloating'];
+const NON_SLOT_CLASSES = [
+    'overlay',
+    'panel',
+    'title',
+    'closeButton',
+    'closeButtonFloating',
+    'sheetHandle'
+];
 
 /** Matches the `.panel { … }` rule body (first declaration block only). */
 const PANEL_RULE = /^\.panel\s*\{([^}]*)\}/m;
@@ -186,6 +193,23 @@ describe('dialog panel padding (HOS-1235 static guard)', () => {
                 'rule. The two selectors match on specificity, so source order is the only ' +
                 'thing deciding which wins — move it back below.'
         ).toBe(true);
+    });
+
+    it('adds the safe-area inset to bare mobile sheets and uses only the inset for slotted sheets', () => {
+        const mobile = css.split('@media (max-width: 767px)')[1] ?? '';
+        const sheet = /\.panel\[data-variant="sheet"\]\s*\{([^}]*)\}/.exec(mobile)?.[1];
+        const slotted = /\.panel\[data-variant="sheet"\]:has\(([^)]*)\)\s*\{([^}]*)\}/.exec(mobile);
+
+        expect(sheet).toContain(
+            'padding-bottom: calc(var(--space-5, 20px) + env(safe-area-inset-bottom, 0px));'
+        );
+        expect(slotted?.[2]).toContain('padding-bottom: env(safe-area-inset-bottom, 0px);');
+        expect(
+            slotted?.[1]
+                .split(',')
+                .map((selector) => selector.trim())
+                .sort()
+        ).toEqual(SLOT_CLASSES.map((slot) => `.${slot}`).sort());
     });
 
     it('the component references exactly the frozen set of style classes', () => {

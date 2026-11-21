@@ -46,7 +46,7 @@ const listUrl = buildUrl({ locale, path: 'mi-cuenta/publicaciones' });
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 if (!hasPostsNavAccess({ roles: user.roles })) {

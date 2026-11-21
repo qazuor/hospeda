@@ -1,0 +1,286 @@
+---
+/**
+ * @file mi-cuenta/ayuda/index.astro
+ * @description Help center landing (HOS-2410 `docs/web-ui.md` §2, US-1, US-2).
+ * @route /{lang}/mi-cuenta/ayuda/
+ * @rendering SSR
+ *
+ * Search box, one tab per audience and a FAQ/contact fallback. The HTML is the
+ * same for every reader (D-H4): the selected tab comes from `?para=` (a query
+ * parameter, not a session read) and defaults to `host`. The
+ * `HelpAudiencePreselect` island picks the reader's tab in the browser when
+ * `?para=` is absent. Without JavaScript every panel is visible, stacked, each
+ * with its `h2` (AC-4); `initHelpTabs` turns them into tabs.
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { HelpAudiencePreselect } from '@/components/account/help/HelpAudiencePreselect.client';
+import { HelpSearch } from '@/components/account/help/HelpSearch.client';
+import { HELP_AUDIENCES } from '@repo/help';
+import { HELP_AUDIENCE_LABEL_KEYS } from '@/lib/help/help-audience';
+import {
+	DEFAULT_HELP_AUDIENCE,
+	helpArticlesForAudience,
+	listLocalizedHelpArticles,
+	parseHelpAudience,
+	toHelpSearchEntries,
+} from '@/lib/help/help-catalog';
+import { helpArticlePath, helpDestinationPath } from '@/lib/help/help-tokens';
+import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import type { SupportedLocale } from '@/lib/i18n';
+
+/** Longest `?q=` the landing searches; anything longer is cut. */
+const MAX_QUERY_LENGTH = 200;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+if (!user) {
+	return Astro.redirect(
+		buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }),
+	);
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.help.landing.title');
+const description = t('account.help.landing.description');
+
+const para = parseHelpAudience({ value: Astro.url.searchParams.get('para') });
+const selected = para ?? DEFAULT_HELP_AUDIENCE;
+const initialQuery = (Astro.url.searchParams.get('q') ?? '').slice(0, MAX_QUERY_LENGTH);
+
+const articles = listLocalizedHelpArticles({ locale });
+const panels = HELP_AUDIENCES.map((audience) => ({
+	audience,
+	label: t(HELP_AUDIENCE_LABEL_KEYS[audience]),
+	items: helpArticlesForAudience({ articles, audience, locale }),
+}));
+const searchEntries = toHelpSearchEntries({ articles });
+const articlePaths = Object.fromEntries(
+	articles.map(({ article }) => [article.id, helpArticlePath({ id: article.id, locale })]),
+);
+const faqPath = helpDestinationPath({ destination: { kind: 'faq' }, locale });
+const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, locale });
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="ayuda">
+	<AccountPageHeader title={title} description={description} />
+
+	<HelpSearch
+		client:idle
+		locale={locale}
+		articles={searchEntries}
+		initialAudience={selected}
+		initialQuery={initialQuery}
+		articlePaths={articlePaths}
+		faqPath={faqPath}
+		contactPath={contactPath}
+	/>
+
+	<div class="help-tabs" data-help-tabs data-selected={selected}>
+		<div class="help-tabs__list" role="tablist" aria-label={t('account.help.landing.tabsLabel')} hidden>
+			{panels.map(({ audience, label }) => (
+				<button
+					type="button"
+					class="help-tabs__tab"
+					role="tab"
+					id={`help-tab-${audience}`}
+					aria-controls={`help-panel-${audience}`}
+					aria-selected={audience === selected ? 'true' : 'false'}
+					tabindex={audience === selected ? 0 : -1}
+					data-audience={audience}
+				>
+					{label}
+				</button>
+			))}
+		</div>
+
+		{panels.map(({ audience, label, items }) => (
+			<section
+				class="help-tabs__panel"
+				id={`help-panel-${audience}`}
+				aria-labelledby={`help-heading-${audience}`}
+				data-audience={audience}
+			>
+				<h2 class="help-tabs__heading" id={`help-heading-${audience}`}>{label}</h2>
+				{items.length > 0 ? (
+					<ul class="help-cards">
+						{items.map(({ article }) => (
+							<li class="help-card">
+								<a
+									class="help-card__link"
+									href={`${helpArticlePath({ id: article.id, locale })}?para=${audience}`}
+								>
+									{article.title}
+								</a>
+								<p class="help-card__summary">{article.summary}</p>
+							</li>
+						))}
+					</ul>
+				) : (
+					<div class="help-tabs__empty">
+						<p>{t('account.help.landing.emptyAudience')}</p>
+						<p class="help-links">
+							<a href={faqPath}>{t('account.help.fallback.faq')}</a>
+							<a href={contactPath}>{t('account.help.fallback.contact')}</a>
+						</p>
+					</div>
+				)}
+			</section>
+		))}
+	</div>
+
+	<aside class="help-fallback" aria-labelledby="help-fallback-title">
+		<h2 class="help-fallback__title" id="help-fallback-title">{t('account.help.fallback.title')}</h2>
+		<p class="help-links">
+			<a href={faqPath}>{t('account.help.fallback.faq')}</a>
+			<a href={contactPath}>{t('account.help.fallback.contact')}</a>
+		</p>
+	</aside>
+
+	{para === undefined && <HelpAudiencePreselect client:idle />}
+</AccountLayout>
+
+<script>
+	import { initHelpTabs } from '@/lib/help/help-tabs';
+
+	let cleanup: (() => void) | undefined;
+
+	document.addEventListener('astro:page-load', () => {
+		cleanup?.();
+		const root = document.querySelector<HTMLElement>('[data-help-tabs]');
+		cleanup = root ? initHelpTabs({ root }) : undefined;
+	});
+</script>
+
+<style>
+	.help-tabs {
+		margin-bottom: var(--space-8);
+	}
+
+	.help-tabs__list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-bottom: var(--space-4);
+		border-bottom: 1px solid var(--core-foreground-a08);
+	}
+
+	.help-tabs__list[hidden] {
+		display: none;
+	}
+
+	.help-tabs__tab {
+		min-height: 44px;
+		padding: var(--space-2) var(--space-4);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-md);
+		font-weight: 500;
+		color: var(--core-muted-foreground);
+		background: none;
+		border: none;
+		border-bottom: 3px solid transparent;
+		cursor: pointer;
+	}
+
+	.help-tabs__tab[aria-selected='true'] {
+		color: var(--brand-accent);
+		border-bottom-color: var(--brand-accent);
+		font-weight: 600;
+	}
+
+	.help-tabs__tab:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+	}
+
+	.help-tabs__panel {
+		margin-bottom: var(--space-6);
+	}
+
+	.help-tabs__panel[hidden] {
+		display: none;
+	}
+
+	.help-tabs__heading {
+		margin: 0 0 var(--space-3);
+		font-family: var(--font-heading);
+		font-size: var(--text-lg);
+		color: var(--core-foreground);
+	}
+
+	/* With the tabs live, the tab names the panel: the stacked heading goes. */
+	.help-tabs.is-enhanced .help-tabs__heading {
+		display: none;
+	}
+
+	.help-cards {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-3);
+	}
+
+	@media (min-width: 64rem) {
+		.help-cards {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	.help-card {
+		padding: var(--space-4);
+		background-color: var(--core-card);
+		border: 1px solid var(--core-foreground-a08);
+		border-radius: var(--radius-card);
+	}
+
+	.help-card__link {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		color: var(--brand-primary);
+		text-decoration: underline;
+	}
+
+	.help-card__summary {
+		margin: var(--space-1) 0 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-md);
+		color: var(--core-muted-foreground);
+	}
+
+	.help-tabs__empty,
+	.help-fallback {
+		padding: var(--space-4);
+		border: 1px dashed var(--core-foreground-a08);
+		border-radius: var(--radius-card);
+		font-family: var(--font-sans);
+		color: var(--core-muted-foreground);
+	}
+
+	.help-tabs__empty p {
+		margin: 0 0 var(--space-2);
+	}
+
+	.help-fallback__title {
+		margin: 0 0 var(--space-2);
+		font-family: var(--font-heading);
+		font-size: var(--text-body-lg);
+		color: var(--core-foreground);
+	}
+
+	.help-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		margin: 0;
+	}
+
+	.help-links a {
+		color: var(--brand-primary);
+		text-decoration: underline;
+	}
+</style>

@@ -945,7 +945,7 @@ export function ExternalReputationSection({
                         disabled={isAdding || !addUrl.trim()}
                     >
                         {isAdding
-                            ? t('external-reputation.ownerConfig.addListing', 'Agregando...')
+                            ? t('external-reputation.ownerConfig.addingListing', 'Agregando...')
                             : t('external-reputation.ownerConfig.addListing', 'Agregar')}
                     </button>
                 </div>

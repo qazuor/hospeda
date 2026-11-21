@@ -9,6 +9,7 @@ Generated 2026-11-20 from origin/staging @ 7e71508cce. Read-only inventory.
 > they use `{{limit:…}}` / `{{link:plans:…}}` tokens (guard (d)).
 
 **Path prefixes:**
+
 - `E/` = `apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/`
 - `W/` = `apps/web/src/`
 - `S/` = `packages/schemas/src/`
@@ -16,11 +17,13 @@ Generated 2026-11-20 from origin/staging @ 7e71508cce. Read-only inventory.
 - `C/` = `scripts/production-catalog/catalog.ts`
 
 **Counts:**
+
 - 21 `.astro` files under `comercio/**`.
 - 26 section rows: venue 14 + `preguntas-ia`; experience 10 + `preguntas-ia`.
 - 130 rows in total, for 37 proposed articles.
 
 **Business lines:**
+
 - Venue has two lines:
   - `food` (urlSlug `gastronomia`): owns `menu` and `dailySpecials`.
   - `nightlife` (urlSlug `noche`): owns `nightInfo`.
@@ -33,6 +36,7 @@ Generated 2026-11-20 from origin/staging @ 7e71508cce. Read-only inventory.
 - A section of a line the listing does not have is `absent`: its URL redirects to the hub and the data is kept (`V/listing-sections/resolve-listing-sections.ts:179-184`).
 
 **Merge convention:**
+
 - `page:` rows of section files go in the article's `covers`.
 - `section:` anchors go in its `entryFor`.
 
@@ -71,7 +75,7 @@ Generated 2026-11-20 from origin/staging @ 7e71508cce. Read-only inventory.
 
 ### 1.2 Sections
 
-Registry: `S/catalog/listing-sections.ts`. API slugs: `apps/api/src/mcp/portal/portal-routes.ts:135-176`.
+Registry: `S/catalog/listing-sections.ts`. API slugs: `packages/portal-routes/src/portal-routes.ts:261-302`.
 `carta` and `menu-del-dia` exist only with the `food` line, and `de-noche` only with `nightlife`.
 
 | anchor | kind | aud | what the owner sees, sets, validates, gating, public | source | plannedArticle |

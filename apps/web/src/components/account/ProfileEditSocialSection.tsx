@@ -109,12 +109,12 @@ export function ProfileEditSocialSection({
             className={styles.section}
             aria-labelledby="social-section-title"
         >
-            <h3
+            <h2
                 className={styles.sectionTitle}
                 id="social-section-title"
             >
                 {t('account.pages.editProfile.socialSection')}
-            </h3>
+            </h2>
             <div className={styles.grid}>
                 <SocialField
                     id="facebookUrl"

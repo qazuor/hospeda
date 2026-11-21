@@ -16,10 +16,10 @@
  * `READ_OWN`: the guide reads only the caller's own drafts.
  */
 
+import { buildPortalUrl } from '@repo/portal-routes';
 import { VerticalEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import {
     AccommodationCreateFieldsSchema,

@@ -1,7 +1,7 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the UsageConfirmationReminder email template (HOS-376 AC-8).
@@ -38,10 +38,7 @@ export function UsageConfirmationReminder({
     actionUrl
 }: UsageConfirmationReminderProps) {
     return (
-        <EmailLayout
-            previewText={`Sigue pendiente el uso del beneficio con ${counterpartName}`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Sigue pendiente el uso del beneficio con ${counterpartName}`}>
             <Heading>Te quedó algo pendiente</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

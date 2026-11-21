@@ -24,6 +24,8 @@
  * (HOS-2184 AC-9). Any other failure fails the call.
  */
 
+import type { PortalDestination } from '@repo/portal-routes';
+import { buildPortalUrl, describePortalDestination, type PortalLocale } from '@repo/portal-routes';
 import {
     ConversationStatusEnum,
     EntityTypeEnum,
@@ -33,9 +35,6 @@ import {
 } from '@repo/schemas';
 import { type Actor, entityViewService } from '@repo/service-core';
 import { env } from '../../../utils/env';
-import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
-import { describePortalDestination } from '../../portal/portal-destination';
-import type { PortalDestination } from '../../portal/portal-routes';
 import { readOwnerAccommodationIds } from '../inquiry/inquiry-readers';
 import { getInquiryConversationService } from '../inquiry/inquiry-services';
 import { LISTING_STATS_INQUIRY_MONTHS } from '../listing/get-listing-stats.accommodation';

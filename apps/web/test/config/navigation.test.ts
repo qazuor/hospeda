@@ -530,3 +530,30 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(editorial?.items.map((item) => item.id)).toEqual(['myEvents']);
     });
 });
+
+describe('help entry (HOS-2410 web-ui §5, AC-23)', () => {
+    it('sits in the cuenta group right after whatsNew, ungated, on sidebar and mobile', () => {
+        // Arrange
+        const cuenta = findGroup(ACCOUNT_NAV_GROUPS, 'cuenta');
+        const ids = cuenta?.items.map((item) => item.id) ?? [];
+        const help = cuenta?.items.find((item) => item.id === 'help');
+
+        // Assert
+        expect(ids.indexOf('help')).toBe(ids.indexOf('whatsNew') + 1);
+        expect(help?.href).toBe('mi-cuenta/ayuda');
+        expect(help?.i18nKey).toBe('account.nav.help');
+        expect(help?.requiredPermission).toBeUndefined();
+        expect(help?.surfaces).toEqual(expect.arrayContaining(['sidebar', 'mobile']));
+    });
+
+    it('is shown to a user with no role-gated access at all', () => {
+        // Act
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.USER])
+        });
+
+        // Assert
+        expect(findGroup(groups, 'cuenta')?.items.some((item) => item.id === 'help')).toBe(true);
+    });
+});

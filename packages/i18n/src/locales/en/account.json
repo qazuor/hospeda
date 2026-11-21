@@ -18,7 +18,9 @@
         "empty": "No updates yet",
         "emptyDesc": "When we ship platform improvements or new features, you'll see them here.",
         "markAllRead": "Mark all as read",
-        "seeEntry": "View"
+        "seeEntry": "View",
+        "showMore": "Show more updates",
+        "showingCount": "Showing {{shown}} of {{total}}"
     },
     "status": {
         "new": "New"
@@ -155,7 +157,8 @@
         "myEvents": "My events",
         "provider": "My provider listing",
         "repeatTour": "Repetir tour",
-        "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta"
+        "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
+        "help": "Help"
     },
     "doors": {
         "sectionLabel": "Discover more",
@@ -238,6 +241,12 @@
         "uploading": "Subiendo…"
     },
     "editProfile": {
+        "security": {
+            "description": "Change the password you use to sign in to Hospeda.",
+            "changePasswordLink": "Change password",
+            "noPasswordDescription": "You sign in with Google or Facebook and do not have a password yet. Add one to also sign in with your email.",
+            "addPasswordLink": "Add password"
+        },
         "fields": {
             "displayName": "Display name",
             "firstName": "First name",
@@ -840,7 +849,8 @@
             "event": "Events",
             "experience": "Experiences",
             "venue": "Food & nightlife",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Attractions"
         },
         "collections": {
             "create": "Create collection",
@@ -863,6 +873,7 @@
             "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
             "errorTitle": "We couldn't load the collection",
             "backToList": "Back to my favorites",
+            "bookmarksLabel": "favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
             "pageInfo": "Page {{page}} of {{total}}",
@@ -902,10 +913,6 @@
         },
         "filter": {
             "all": "All",
-            "accommodations": "Accommodations",
-            "destinations": "Destinations",
-            "events": "Events",
-            "posts": "Posts",
             "label": "Filter by type"
         },
         "bookmarks": {
@@ -925,7 +932,8 @@
         "notes": {
             "cancel": "Cancel",
             "placeholder": "Add a personal note...",
-            "save": "Save note"
+            "save": "Save note",
+            "saved": "Note saved"
         },
         "removeBtn": "Remove",
         "removeLabel": "Remove from favorites",
@@ -938,6 +946,12 @@
             "fetchFailed": "Error loading favorites",
             "removeFailed": "Error removing favorite",
             "saveFailed": "No se pudo guardar la nota"
+        },
+        "removeFavoriteConfirm": {
+            "title": "Remove from favorites",
+            "message": "Remove this favorite?",
+            "confirm": "Remove",
+            "messageWithNote": "Remove this favorite? The note you wrote for it is deleted too."
         }
     },
     "reviews": {
@@ -991,7 +1005,6 @@
             "description": "Manage your account, favorites, reviews and preferences.",
             "greeting": "Welcome",
             "dashboardLabel": "Dashboard",
-            "viewLabel": "View",
             "nav": {
                 "editProfile": "Edit Profile",
                 "editProfileDesc": "Update your personal information and profile photo",
@@ -1024,6 +1037,7 @@
                 "reviews": "My Reviews",
                 "subscription": "My Subscription",
                 "favoritesDesc": "Saved accommodations",
+                "unavailable": "Not available",
                 "reviewsDesc": "Published reviews",
                 "subscriptionDesc": "Current plan",
                 "subscriptionStatus": "Subscription status",
@@ -1044,7 +1058,13 @@
                 "listings": "My listings",
                 "listingsDesc": "Published listings",
                 "listingsHidden_one": "{{count}} listing not published: it is not visible to the public.",
-                "listingsHidden_other": "{{count}} listings not published: they are not visible to the public."
+                "listingsHidden_other": "{{count}} listings not published: they are not visible to the public.",
+                "viewProperties": "View my properties",
+                "viewMessages": "View unread messages",
+                "viewListings": "View my listings",
+                "viewFavorites": "View my favorites",
+                "viewReviews": "View my reviews",
+                "viewSubscription": "View my subscription"
             },
             "sectionsLabel": "Sections"
         },
@@ -1055,6 +1075,7 @@
             "personalSection": "Personal information",
             "extrasSection": "Más sobre vos",
             "locationSection": "Ubicación",
+            "securitySection": "Security",
             "socialSection": "Redes sociales"
         },
         "favorites": {
@@ -1358,7 +1379,9 @@
         "deleteError": "Could not delete the alert",
         "upgrade": {
             "title": "Price alerts",
-            "message": "Price alerts are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+            "message_one": "Price alerts are available on the {{plans}} plan. Upgrade your plan to access this feature.",
+            "message_other": "Price alerts are available on the {{plans}} plans. Upgrade your plan to access this feature.",
+            "messageNoPlans": "Price alerts are not included in your current plan. Upgrade your plan to access this feature.",
             "cta": "View plans"
         },
         "listLabel": "Your active price alerts",
@@ -1853,7 +1876,64 @@
             "weak": "Débil"
         },
         "strengthLabel": "Seguridad de la contraseña",
+        "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
         "accountNotice": "You are about to change the password for this account:"
+    },
+    "notFound": {
+        "title": "We could not find what you were looking for",
+        "description": "The link may be out of date or the content may no longer exist.",
+        "back": {
+            "account": "Back to my account",
+            "messages": "Back to my inquiries",
+            "ownerMessages": "Back to my property inquiries",
+            "listings": "Back to my listings"
+        }
+    },
+    "help": {
+        "landing": {
+            "title": "Help for publishing on Hospeda",
+            "description": "Everything you can do, how to do it and what to expect.",
+            "tabsLabel": "Account type",
+            "emptyAudience": "We are still writing the help for this account type."
+        },
+        "audiences": {
+            "host": "Accommodations",
+            "venue": "Food and nightlife",
+            "experience": "Experiences",
+            "provider": "Providers",
+            "partner": "Partners"
+        },
+        "audiencesLabel": "For",
+        "search": {
+            "label": "Search the help",
+            "placeholder": "For example: how do I upload photos",
+            "onlyMine": "Only for my account type",
+            "results_one": "{{count}} result",
+            "results_other": "{{count}} results",
+            "noMatch": "We could not find help for that",
+            "submit": "Search"
+        },
+        "fallback": {
+            "title": "Did not find what you were looking for?",
+            "faq": "See the frequently asked questions",
+            "contact": "Write to us"
+        },
+        "article": {
+            "breadcrumbRoot": "Help",
+            "breadcrumbLabel": "Help path",
+            "reviewedAt": "Reviewed on {{date}}",
+            "tocLabel": "In this article",
+            "tocToggle": "Article contents",
+            "pagesTitle": "Pages",
+            "faqLink": "See also in the frequently asked questions",
+            "onlySpanish": "This article is only available in Spanish for now.",
+            "limitNeutral": "your plan limit",
+            "unlimited": "no limit",
+            "title": "Help: {{title}}"
+        },
+        "link": {
+            "ariaLabel": "Help: {{title}} (opens in a new tab)"
+        }
     },
     "ui": {
         "loading": "Loading…",

@@ -15,7 +15,9 @@
 import { useCallback } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
-import { visibleApiMessage } from '@/lib/api-errors';
+import { translateApiError } from '@/lib/api-errors';
+import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
+import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import {
     buildReorderPayload,
     mediaRowToItem,
@@ -70,12 +72,16 @@ export function usePhotoGalleryMutations({
     setOpLoading,
     reportUploadError
 }: UsePhotoGalleryMutationsParams): UsePhotoGalleryMutationsResult {
+    const runSingleFlight = useSingleFlight();
+
     /**
      * Delete the current featured (portada) row.
      * There is no "unfeature" endpoint — removing is the clear action.
      */
     const handleFeaturedRemove = useCallback(async () => {
         if (!featuredItem?.id) return;
+        // HOS-2429: the delete is immediate and irreversible, so ask first.
+        if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) return;
         setError(null);
         setOpLoading(true);
 
@@ -88,12 +94,26 @@ export function usePhotoGalleryMutations({
             setFeaturedItem(null);
         } else {
             setError(
-                visibleApiMessage({ error: result.error }) ??
-                    t('host.properties.editor.photo.removeFailed', 'No se pudo eliminar la imagen')
+                translateApiError({
+                    error: result.error,
+                    t,
+                    fallback: t(
+                        'host.properties.editor.photo.removeFailed',
+                        'No se pudo eliminar la imagen'
+                    )
+                })
             );
         }
         setOpLoading(false);
-    }, [featuredItem, accommodationId, t, setError, setOpLoading, setFeaturedItem]);
+    }, [
+        featuredItem,
+        accommodationId,
+        t,
+        setError,
+        setOpLoading,
+        setFeaturedItem,
+        runSingleFlight
+    ]);
 
     /**
      * Delete a gallery photo by its DB UUID.
@@ -102,6 +122,8 @@ export function usePhotoGalleryMutations({
     const handleGalleryRemove = useCallback(
         async (item: AccommodationMediaItem) => {
             if (!item.id) return;
+            // HOS-2429: the delete is immediate and irreversible, so ask first.
+            if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) return;
             setError(null);
             setOpLoading(true);
 
@@ -114,16 +136,19 @@ export function usePhotoGalleryMutations({
                 setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
             } else {
                 setError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.removeFailed',
                             'No se pudo eliminar la imagen'
                         )
+                    })
                 );
             }
             setOpLoading(false);
         },
-        [accommodationId, t, setError, setOpLoading, setGalleryItems]
+        [accommodationId, t, setError, setOpLoading, setGalleryItems, runSingleFlight]
     );
 
     /**
@@ -154,11 +179,14 @@ export function usePhotoGalleryMutations({
 
             if (!result.ok) {
                 reportUploadError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.promoteFailed',
                             'No se pudo usar esta foto como portada'
                         )
+                    })
                 );
                 setOpLoading(false);
                 return;
@@ -234,11 +262,14 @@ export function usePhotoGalleryMutations({
             } else {
                 setGalleryItems(previousGalleryItems);
                 reportUploadError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.reorderFailed',
                             'No se pudo guardar el nuevo orden'
                         )
+                    })
                 );
             }
             setOpLoading(false);
@@ -314,11 +345,14 @@ export function usePhotoGalleryMutations({
 
             if (!result.ok) {
                 reportUploadError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.metadataSaveFailed',
                             'No se pudieron guardar los datos de la foto'
                         )
+                    })
                 );
                 setOpLoading(false);
                 return false;

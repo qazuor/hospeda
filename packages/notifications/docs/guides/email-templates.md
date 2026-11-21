@@ -25,7 +25,6 @@ src/templates/
 │   ├── admin-payment-failure.tsx     # Payment failure alert for admins
 │   └── admin-system-event.tsx        # System event notification
 └── components/
-    ├── layout.tsx    # Shared email layout (header, footer, branding)
     ├── heading.tsx   # Reusable heading component
     ├── button.tsx    # CTA button component
     └── info-row.tsx  # Key-value info row
@@ -33,22 +32,19 @@ src/templates/
 
 ## Shared Layout
 
-All templates use `EmailLayout` from `src/templates/components/layout.tsx`. It provides:
+All templates use `EmailLayout` from **`@repo/email`** (HOS-2519). It is the single layout for every Hospeda email, auth mails included; there is no layout inside this package anymore. It provides:
 
-- **Header** .. Dark background with "Hospeda" logo and "Turismo en el Litoral" tagline
-- **Content area** .. White background, padded container
-- **Footer** .. Company info with optional unsubscribe link
-- **Spanish language** .. `<html lang="es">`
+- **Header** .. White band with the hosted PNG logo (`alt="Hospeda"`), the "Turismo en el Litoral" tagline and a brand accent bar. Skipped in the text/plain part
+- **Content area** .. Padded 600px card, fluid down to 320px
+- **Footer** .. "Hospeda - Turismo en el Litoral", the platform description, a `hospeda.com.ar` link and the optional preferences link
+- **Email-client-safe** .. `<html lang="es">`, light color-scheme, inline styles with `emailPalette` hex colors, no flexbox/grid/CSS variables/SVG
 
 ```tsx
-import { EmailLayout } from '../components/layout';
+import { EmailLayout } from '@repo/email';
 
 export function MyTemplate({ recipientName }: MyTemplateProps) {
   return (
-    <EmailLayout
-      previewText="Preview text for email client"
-      showUnsubscribe={true}  // Shows for reminder emails
-    >
+    <EmailLayout previewText="Preview text for email client">
       <Heading>Hola {recipientName}</Heading>
       <Text>Email content here</Text>
     </EmailLayout>
@@ -56,15 +52,19 @@ export function MyTemplate({ recipientName }: MyTemplateProps) {
 }
 ```
 
+Full reference: [`packages/email/CLAUDE.md`](../../../email/CLAUDE.md).
+
 ## Shared Components
 
 ### EmailLayout
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `previewText` | `string` | Required | Preview text shown in email client inbox |
+| `previewText` | `string` | Optional | Preview text shown in email client inbox (every template in this package sets it) |
 | `children` | `ReactNode` | Required | Main email content |
-| `showUnsubscribe` | `boolean` | `false` | Show unsubscribe link in footer |
+| `footerLink` | `'preferences' \| 'none'` | `'none'` | `'preferences'` links to `https://hospeda.com.ar/es/mi-cuenta/preferencias/` |
+
+Use `footerLink="preferences"` only when the recipient has an account AND the web preferences page actually controls that email. No template qualifies today: the page writes `settings.notifications.allowEmails`, which `PreferenceService` does not read, so REMINDER opt-outs are not driven by it (HOS-2519 OQ-2). The 13 REMINDER templates (trial ending, trial win-back, renewal reminder) and the anonymous-guest conversation token mails therefore set `footerLink="none"` explicitly. Never ship a `{{placeholder}}` href: nothing substitutes it.
 
 ### Button (CTA)
 
@@ -115,7 +115,7 @@ Fallback subject: `Notificacion de Hospeda`
 ```tsx
 // src/templates/feature/feature-announcement.tsx
 import { Text, Link } from '@react-email/components';
-import { EmailLayout } from '../components/layout';
+import { EmailLayout } from '@repo/email';
 import { EmailHeading } from '../components/heading';
 import { EmailButton } from '../components/button';
 
@@ -133,10 +133,7 @@ export function FeatureAnnouncement({
   learnMoreUrl
 }: FeatureAnnouncementProps) {
   return (
-    <EmailLayout
-      previewText={`Nueva funcion: ${featureName}`}
-      showUnsubscribe={true}
-    >
+    <EmailLayout previewText={`Nueva funcion: ${featureName}`}>
       <EmailHeading>Nueva funcion disponible</EmailHeading>
       <Text>Hola {recipientName},</Text>
       <Text>
@@ -208,16 +205,9 @@ interface SendEmailInput {
 
 Two implementations are provided:
 
-- **ResendEmailTransport** .. Production delivery via Resend API
+- **BrevoEmailTransport** (`resend-transport.ts`, legacy file name) .. Production delivery via the Brevo API, rendering HTML + text through `renderEmailBodies` from `@repo/email`
 - **MockEmailTransport** .. In-memory mock for testing (records sent emails)
 
 ## Previewing Templates
 
-To preview email templates during development, use React Email's dev server:
-
-```bash
-cd packages/notifications
-npx email dev
-```
-
-This opens a browser with live previews of all templates.
+Every template has an entry in the email catalog (`src/catalog/`) with sample scenarios. The admin previewer renders them through the real pipeline (subject, HTML and text), and `apps/api/test/services/email-preview/` renders every scenario in CI, including the layout checks (one `<html lang="es">`, logo, footer, no unsafe CSS, no `{{`, text part, size under 90 KB). Add a catalog entry when you add a template.

@@ -1,0 +1,135 @@
+/* HelpSearch.module.css */
+/* Scoped styles for the HelpSearch island (HOS-2410 web-ui §3). */
+/* ALL values use CSS custom properties from global.css. */
+
+.search {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    margin-bottom: var(--space-6, 24px);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-md);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.input {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--core-foreground);
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+}
+
+.input:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    min-height: 44px;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+}
+
+.status {
+    margin: 0;
+    min-height: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--core-muted-foreground);
+}
+
+.results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.result {
+    padding: var(--space-4, 16px);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+}
+
+.resultLink {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-body);
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+
+.resultSummary {
+    margin: var(--space-1, 4px) 0 var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-md);
+    color: var(--core-muted-foreground);
+}
+
+.chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+}
+
+.chip {
+    padding: 2px var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: var(--text-caption);
+    color: var(--brand-accent);
+    background-color: var(--brand-accent-a08);
+    border-radius: var(--radius-pill);
+}
+
+.empty {
+    padding: var(--space-4, 16px);
+    border: 1px dashed var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+}
+
+.emptyTitle {
+    margin: 0 0 var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.emptyLinks {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-md);
+}
+
+.emptyLinks a {
+    color: var(--brand-primary);
+    text-decoration: underline;
+}

@@ -66,7 +66,7 @@ describe('consultas-propietario/index.astro (SPEC-206 owner inbox)', () => {
     });
 
     it('redirects unauthenticated users to sign-in', () => {
-        expect(source).toContain('auth/signin');
+        expect(source).toContain('buildLoginRedirect');
     });
 
     it('uses buildUrl for internal navigation', () => {

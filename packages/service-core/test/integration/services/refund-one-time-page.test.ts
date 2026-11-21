@@ -156,7 +156,7 @@ describe('HOS-2179 §5.11 AC-13 refund of a one-time page purchase', () => {
     );
 
     it.skipIf(skip)(
-        'replays a lost answer with the same key and binds it, moving the money once',
+        'binds a lost answer that landed from the charge read, moving the money once',
         async () => {
             // Arrange
             const s = await refundPageFixture();
@@ -201,9 +201,13 @@ describe('HOS-2179 §5.11 AC-13 refund of a one-time page purchase', () => {
             expect(before.calls).toHaveLength(1);
             expect(before.keys[0]?.completedAt).toBeNull();
             const key = before.calls[0]!.idempotencyKey;
-            expect(replay.outcomes).toEqual([{ idempotencyKey: key, outcome: 'SENT' }]);
-            expect(spy.refund).toHaveBeenCalledTimes(2);
-            expect(spy.refund.mock.calls[1]?.[0]).toEqual(spy.refund.mock.calls[0]?.[0]);
+            // HOS-2516: the resend reads the charge before posting. The lost call landed, so it is
+            // bound to that refund without a second POST (how long the provider keeps the key is
+            // not measured, EX-73). The replay under the same key is covered in refund-resend.test.
+            expect(replay.outcomes).toEqual([
+                { idempotencyKey: key, outcome: 'FOUND_AT_PROVIDER' }
+            ]);
+            expect(spy.refund).toHaveBeenCalledTimes(1);
             expect(again).toMatchObject({ reason: 'REFUND_NOT_OPEN' });
             const charge = await s.f.fake.readCharge({ chargeId: s.charge.chargeId });
             expect(charge.snapshot.refunds).toHaveLength(1);

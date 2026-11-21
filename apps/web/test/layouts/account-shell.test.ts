@@ -73,8 +73,8 @@ describe('AccountShell.astro', () => {
 });
 
 describe('AccountLayout shell switch (OD-1)', () => {
-    it('defaults to the legacy shell so no page changes', () => {
-        expect(layout).toContain("shell = 'legacy',");
+    it('defaults to the new account shell, keeping legacy as a rollback (T-031)', () => {
+        expect(layout).toContain("shell = 'account',");
         expect(layout).toContain("readonly shell?: 'legacy' | 'account';");
     });
 

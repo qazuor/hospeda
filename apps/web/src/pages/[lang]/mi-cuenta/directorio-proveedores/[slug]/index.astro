@@ -49,7 +49,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // Safety net: middleware already protects /mi-cuenta/* and comes back here.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const slug = Astro.params.slug;
@@ -115,9 +115,9 @@ if (provider) {
         reviewTotal = reviewsResult.data.pagination.total;
         reviewTotalPages = reviewsResult.data.pagination.totalPages;
     } else {
-        // The page still renders: the benefit and the contact button are worth
-        // more than nothing, and a host who came to call someone can still do
-        // it. But the reviews section must SAY it failed rather than fall back
+        // The page still renders: the benefit and the provider's details are
+        // worth more than nothing, and a host who came to find someone can still
+        // read them. But the reviews section must SAY it failed rather than fall back
         // to the empty state — zero rows is what a failed read and an unreviewed
         // provider have in common, and only one of them may be stated as fact
         // about a real person's trade.

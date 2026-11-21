@@ -313,10 +313,10 @@ export function ProviderUsagesPanel({
                 what a host declared about him. Hiding this would leave rows he
                 is the only person able to resolve stuck until they expire. */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('host-trades.provider.usages.pending.title', 'Esperan tu confirmación')}
                     {pending.length > 0 ? ` (${pending.length})` : ''}
-                </h3>
+                </h2>
 
                 {pending.length === 0 ? (
                     <p className={styles.empty}>
@@ -409,12 +409,12 @@ export function ProviderUsagesPanel({
                     onSubmit={handleSubmit}
                     noValidate
                 >
-                    <h3 className={styles.formTitle}>
+                    <h2 className={styles.formTitle}>
                         {t(
                             'host-trades.provider.usages.form.title',
                             'Registrar un uso del beneficio'
                         )}
-                    </h3>
+                    </h2>
 
                     <fieldset className={styles.channelGroup}>
                         <legend
@@ -576,10 +576,10 @@ export function ProviderUsagesPanel({
             )}
 
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('host-trades.provider.usages.list.title', 'Usos registrados')}
                     {total > 0 ? ` (${total})` : ''}
-                </h3>
+                </h2>
 
                 {usages.length === 0 ? (
                     <p className={styles.empty}>

@@ -419,15 +419,45 @@ jobs:
       # The API keeps its own copy of the owner portal's paths for the links on assistant
       # refusals; this fails when a page the copy points at is renamed or deleted in
       # apps/web, or an editor section slug stops having its page. Fix: update
-      # apps/api/src/mcp/portal/portal-routes.ts in the same PR.
+      # packages/portal-routes/src/portal-routes.ts in the same PR.
       - name: Check the assistant's portal links still resolve to web pages (HOS-2326)
         run: pnpm check:portal-routes
-      # The assistant's `get_help` answers from a curated catalog of how-to topics. This fails
-      # when a topic links to a page that no longer exists in apps/web or extends a FAQ item
-      # that is gone, and lists (without failing) topics not re-checked in 180 days.
-      # Fix: update apps/api/src/data/owner-help in the same PR as the web change.
-      - name: Check the owner help catalog still matches the portal (HOS-2333)
-        run: pnpm check:owner-help
+      # HOS-2410 guard (a). The help center (web) and the assistant's `get_help` answer from
+      # the Markdown articles in packages/help/content, compiled to a committed index. This
+      # fails when an article does not parse or breaks a layout or interlinking rule, links
+      # to a page that no longer exists in apps/web, extends a FAQ item that is gone, anchors
+      # to a key, tool, enum or file that does not exist, or when the committed index is
+      # stale. It lists (without failing) articles not re-checked in 180 days.
+      # Fix: edit the article, run `pnpm help:build`, commit the index in the same PR.
+      - name: Check the help catalog matches the portal and its index (HOS-2410)
+        run: pnpm check:help-catalog
+      # HOS-2410 guard (b), reverse coverage. Its own step, like every guard here. Every
+      # owner-facing unit the code has (account pages and editor sections, entitlement and
+      # limit keys, registered MCP tools) is enumerated at run time and must be covered by an
+      # article (entryFor for pages and sections, covers for keys and tools) or exempted with
+      # a reason in packages/help/coverage-exemptions.json. Fails on an uncovered unit, a stale
+      # or malformed exemption, a unit both covered and exempt, or an empty universe set.
+      # Fix: cover the unit in an article, or add the exemption with its reason.
+      - name: Check every owner-facing surface has help or an exemption (HOS-2410)
+        run: pnpm check:help-coverage
+      # HOS-2410 guard (c), change coupling. Its own step, like every guard here.
+      # packages/help/help.lock.json records, per article, the hash of every anchor it covers
+      # (a page file, a section page + its catalog entry, a key definition row, an enum value
+      # set, a tool source file...) as of its last review. Fails when anchored code changed
+      # and the article was not re-reviewed, when the lock and the articles disagree on the
+      # article set or the review date, or when the lock is empty.
+      # Fix: re-read the article against the portal, edit it if needed, then run
+      # `pnpm help:review <id>` and commit the article, the lock and the index.
+      - name: Check help articles were re-reviewed after the code they explain changed (HOS-2410)
+        run: pnpm check:help-lock
+      # HOS-2410 guard (d), values. Its own step, like every guard here. check:commercial-values
+      # only scans billing TS sources; this scans the help content (title, summary, keywords and
+      # every section, every locale, tokens removed, accents folded). Fails on a number next to a
+      # currency marker, a plan-tier word (basico, premium, gold, ...), or a number near a limit
+      # noun or after hasta/maximo/minimo/tope de (a number followed by MB, KB, GB, px or
+      # caracteres is allowed). Fix: write {{limit:<key>}} and {{link:plans:<vertical>}}.
+      - name: Check help content states no price, plan name or plan limit (HOS-2410)
+        run: pnpm check:help-values
       # Drizzle skips, without an error, any migration whose `when` is not above the
       # last applied one. Rule 1 (monotonic journal) always runs; rule 2 (new entries
       # above origin/<base>) only on a PR to staging or main. On `push` base_ref is

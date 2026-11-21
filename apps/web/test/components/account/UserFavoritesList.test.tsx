@@ -35,9 +35,16 @@
 
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import { COLLECTION_CREATED_EVENT } from '../../../src/components/account/collection-created-event';
 import { UserFavoritesList } from '../../../src/components/account/UserFavoritesList.client';
 import { addToast } from '../../../src/store/toast-store';
+
+// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
+// `show-confirmation-dialog.test.tsx`; here the user always confirms.
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: vi.fn().mockResolvedValue(true)
+}));
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -361,6 +368,74 @@ describe('UserFavoritesList', () => {
         await waitFor(() => {
             expect(screen.getByText('Casa del Litoral')).toBeInTheDocument();
         });
+    });
+
+    it('asks for confirmation and keeps the favorite when the user cancels (HOS-2429)', async () => {
+        vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
+        const fetchMock = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') {
+                return Promise.resolve(makeSuccessResponse());
+            }
+            return Promise.resolve(makeListResponse([BOOKMARK_1, BOOKMARK_2], 2));
+        });
+        globalThis.fetch = fetchMock;
+
+        renderList();
+        await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
+
+        const removeButtons = screen.getAllByRole('button', { name: /quitar de favoritos/i });
+        fireEvent.click(removeButtons[0] as HTMLElement);
+
+        await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+        expect(screen.getByText('Casa del Litoral')).toBeInTheDocument();
+        const deleteCalls = fetchMock.mock.calls.filter(
+            ([, opts]) => (opts as RequestInit | undefined)?.method === 'DELETE'
+        );
+        expect(deleteCalls).toHaveLength(0);
+    });
+
+    it('warns that the note is deleted too when the favorite has one (HOS-2429)', async () => {
+        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') {
+                return Promise.resolve(makeSuccessResponse());
+            }
+            return Promise.resolve(
+                makeListResponse([{ ...BOOKMARK_1, description: 'Mi nota' }], 1)
+            );
+        });
+
+        renderList();
+        await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
+
+        fireEvent.click(screen.getByRole('button', { name: /quitar de favoritos/i }));
+
+        await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalled());
+        const options = vi.mocked(showConfirmationDialog).mock.calls.at(-1)?.[0];
+        expect(options?.message).toContain('nota');
+    });
+
+    it('opens ONE confirmation on a double-click of remove (HOS-2429)', async () => {
+        let resolveDialog: (value: boolean) => void = () => {};
+        vi.mocked(showConfirmationDialog).mockImplementationOnce(
+            () => new Promise<boolean>((resolve) => (resolveDialog = resolve))
+        );
+        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') return Promise.resolve(makeSuccessResponse());
+            return Promise.resolve(makeListResponse([BOOKMARK_1], 1));
+        });
+
+        renderList();
+        await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
+
+        const button = screen.getByRole('button', { name: /quitar de favoritos/i });
+        fireEvent.click(button);
+        fireEvent.click(button);
+
+        await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+        resolveDialog(false);
     });
 
     it('removes card optimistically on Quitar click', async () => {
@@ -946,6 +1021,89 @@ describe('UserFavoritesList', () => {
         // The badge next to "Sin colección" should show 2
         const noCollectionHeadings = screen.getAllByText('Sin colección');
         expect(noCollectionHeadings.length).toBeGreaterThan(0);
+    });
+
+    // ── HOS-2420: "Sin colección" must cover every page, not the visible one ──
+
+    it('asks the server for uncollected bookmarks so the filter covers all pages (HOS-2420)', async () => {
+        // 30 favorites in total, page 1 holds only collected ones: the old
+        // client-side filter would have shown an EMPTY "Sin colección".
+        const uncollectedOnPage2 = {
+            ...BOOKMARK_1,
+            id: 'bm-late',
+            name: 'Favorito sin colección tardío',
+            entityName: 'Favorito sin colección tardío'
+        };
+        const fetchMock = makeRoutedFetchMock({
+            bookmarksHandler: (url) => {
+                const params = new URL(url).searchParams;
+                if (params.get('pageSize') === '1') return makeListResponse([], 30);
+                // A server honoring `uncollected=true` returns only those, paginated.
+                return params.get('uncollected') === 'true'
+                    ? makeListResponse([uncollectedOnPage2], 1)
+                    : makeListResponse([COLLECTED_BOOKMARK], 30);
+            }
+        });
+        globalThis.fetch = fetchMock;
+        renderList();
+
+        expect(await screen.findByText('Favorito sin colección tardío')).toBeInTheDocument();
+        const listCalls = fetchMock.mock.calls
+            .map(([url]: [string]) => new URL(url))
+            .filter(
+                (u: URL) =>
+                    u.pathname.endsWith('/user-bookmarks') &&
+                    u.searchParams.get('pageSize') === '12'
+            );
+        expect(listCalls.length).toBeGreaterThan(0);
+        for (const u of listCalls) expect(u.searchParams.get('uncollected')).toBe('true');
+    });
+
+    it('header counter shows the server total, not the page length (HOS-2420)', async () => {
+        const page = Array.from({ length: 12 }, (_, i) => ({
+            ...BOOKMARK_1,
+            id: `bm-p${i}`,
+            name: `Fav ${i}`,
+            entityName: `Fav ${i}`
+        }));
+        globalThis.fetch = makeRoutedFetchMock({
+            bookmarksHandler: (url) =>
+                new URL(url).searchParams.get('pageSize') === '1'
+                    ? makeListResponse([], 30)
+                    : makeListResponse(page, 30)
+        });
+        renderList();
+        const heading = (await screen.findByText('Sin colección')).parentElement as HTMLElement;
+        expect(within(heading).getByText('30')).toBeInTheDocument();
+        expect(within(heading).queryByText('12')).not.toBeInTheDocument();
+    });
+
+    it('clamps the page to the last one when the total shrinks below it (HOS-2420)', async () => {
+        const twelve = Array.from({ length: 12 }, (_, i) => ({
+            ...BOOKMARK_1,
+            id: `bm-c${i}`,
+            name: `Fav ${i}`,
+            entityName: `Fav ${i}`
+        }));
+        const seenPages: string[] = [];
+        globalThis.fetch = makeRoutedFetchMock({
+            bookmarksHandler: (url) => {
+                const params = new URL(url).searchParams;
+                if (params.get('pageSize') === '1') return makeListResponse([], 13);
+                const p = params.get('page') ?? '1';
+                seenPages.push(p);
+                // The 13th favorite was removed elsewhere: page 2 is now empty and
+                // the total is 12, so only one page exists.
+                return p === '2' ? makeListResponse([], 12) : makeListResponse(twelve, 13);
+            }
+        });
+        renderList();
+        const next = await screen.findByRole('button', { name: /página siguiente/i });
+        fireEvent.click(next);
+        await waitFor(() => expect(seenPages).toContain('2'));
+        // After the empty page 2 the component must go back to page 1.
+        await waitFor(() => expect(seenPages.filter((p) => p === '1').length).toBeGreaterThan(1));
+        expect(await screen.findByText('Fav 0')).toBeInTheDocument();
     });
 
     // ── T-049d: Inline note editor integration ────────────────────────────────

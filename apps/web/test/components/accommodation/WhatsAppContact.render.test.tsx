@@ -13,7 +13,7 @@
  * only ever come from the protected endpoint's own response.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildAuthSnapshot } from '../../helpers/auth-session';
@@ -31,6 +31,8 @@ vi.mock('@/lib/auth-cache', () => ({
 }));
 
 const mockGetWhatsApp = vi.fn();
+const { trackEvent } = vi.hoisted(() => ({ trackEvent: vi.fn() }));
+vi.mock('@/lib/analytics/umami-client', () => ({ trackEvent }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     protectedAccommodationsApi: {
@@ -53,6 +55,7 @@ describe('WhatsAppContact island', () => {
     beforeEach(() => {
         mockReadCachedAuthMe.mockReset();
         mockGetWhatsApp.mockReset();
+        trackEvent.mockClear();
     });
 
     it('renders the upsell and calls nothing for a visitor with no session', async () => {
@@ -86,25 +89,48 @@ describe('WhatsAppContact island', () => {
 
         render(<WhatsAppContact {...PROPS} />);
 
-        expect(await screen.findByText(NUMBER)).toBeInTheDocument();
+        const number = await screen.findByText(NUMBER);
+        expect(number.closest('p')?.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
         expect(screen.queryByRole('link', { name: /WhatsApp/i })).not.toBeInTheDocument();
         expect(mockGetWhatsApp).toHaveBeenCalledWith({ id: 'acc-1' });
     });
 
-    it('renders a wa.me deep link for a direct-entitled viewer', async () => {
+    it.each([
+        'sidebar',
+        'panel'
+    ] as const)('tracks the entitled deep-link click from %s, never on render', async (origin) => {
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
         mockGetWhatsApp.mockResolvedValue({
             ok: true,
             data: { number: NUMBER, direct: true, entitled: true }
         });
 
-        render(<WhatsAppContact {...PROPS} />);
+        render(
+            <WhatsAppContact
+                {...PROPS}
+                origin={origin === 'panel' ? origin : undefined}
+            />
+        );
 
         const link = await screen.findByRole('link', { name: 'Consultar por WhatsApp' });
         expect(link.getAttribute('href')).toContain('wa.me/');
         // The shared builder strips the leading '+', without which wa.me does
         // not resolve the recipient (HOS-289).
         expect(link.getAttribute('href')).not.toContain('+');
+        expect(link.querySelector('svg')).toHaveAttribute('fill', 'currentColor');
+        expect(trackEvent).not.toHaveBeenCalled();
+
+        link.addEventListener('click', (event) => event.preventDefault(), { once: true });
+        fireEvent.click(link);
+
+        expect(trackEvent).toHaveBeenCalledExactlyOnceWith('listing_contact_clicked', {
+            listing_id: PROPS.accommodationId,
+            vertical: 'accommodation',
+            channel: 'whatsapp',
+            origin,
+            is_whatsapp_entitled: true,
+            locale: 'es'
+        });
     });
 
     it('falls back to the upsell when the viewer is signed in but unentitled', async () => {

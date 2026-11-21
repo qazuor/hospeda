@@ -1,0 +1,113 @@
+---
+/** @file Public, server-rendered price and host summary for the single-column layout. */
+import { getMediaUrl } from '@repo/media';
+import type { AccommodationOwnerData } from '@/data/types';
+import { getInitialsFromName } from '@/lib/avatar-utils';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { formatHostSince } from '@/lib/listing-contact/format-host-since';
+import type { ListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
+import { getListingContactPrice } from '@/lib/listing-contact/listing-contact-price';
+import { MobileBookingSummaryActions } from './MobileBookingSummaryActions.client';
+
+interface Props {
+    readonly listingId: string;
+    readonly panelId: string;
+    readonly locale: SupportedLocale;
+    readonly price: ListingContactPrice;
+    readonly minNights?: number | null;
+    readonly maxNights?: number | null;
+    readonly owner: Pick<AccommodationOwnerData, 'name' | 'image'>;
+    readonly ownerJoinedAt: string | Date | null;
+    readonly hasWhatsapp: boolean;
+}
+
+const { listingId, panelId, locale, price, minNights, maxNights, owner, ownerJoinedAt, hasWhatsapp } = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+const display = getListingContactPrice({ price, locale });
+const avatar = owner.image ? getMediaUrl(owner.image, { preset: 'avatar' }) : null;
+const { since } = formatHostSince({ ownerJoinedAt, locale });
+---
+
+<section class="booking-summary" aria-label={t('accommodations.detail.listingContact.summary.title')}>
+    <div>
+        {display && <p class="booking-summary__price"><strong>{display.amount}</strong> {display.unit}</p>}
+        {(minNights != null || maxNights != null) && (
+            <ul class="booking-summary__nights">
+                {minNights != null && <li>{tPlural('accommodations.detail.pricing.minNightsFact', minNights)}</li>}
+                {maxNights != null && <li>{tPlural('accommodations.detail.pricing.maxNightsFact', maxNights)}</li>}
+            </ul>
+        )}
+    </div>
+    <div class="booking-summary__owner">
+        <span class="booking-summary__avatar" aria-hidden="true">
+            {getInitialsFromName(owner.name)}
+            {avatar && <img src={avatar} alt="" width="40" height="40" decoding="async" data-hide-on-error />}
+        </span>
+        <div>
+            <strong>{owner.name}</strong>
+            {since && <p>{t('accommodations.detail.listingContact.summary.hostSince', undefined, { date: since })}</p>}
+        </div>
+    </div>
+    <MobileBookingSummaryActions client:media="(max-width: 1024px)" listingId={listingId} panelId={panelId} locale={locale} hasWhatsapp={hasWhatsapp} />
+</section>
+
+<style>
+    .booking-summary {
+        display: none;
+    }
+
+    @media (max-width: 1024px) {
+        .booking-summary {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-3);
+            padding: var(--space-4);
+            background: var(--core-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+        }
+    }
+
+    .booking-summary__owner {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .booking-summary__avatar {
+        position: relative;
+        display: grid;
+        place-items: center;
+        flex: none;
+        inline-size: 40px;
+        block-size: 40px;
+        overflow: hidden;
+        border-radius: var(--radius-pill);
+        background: var(--surface-warm);
+    }
+
+    .booking-summary__avatar img {
+        position: absolute;
+        inset: 0;
+        object-fit: cover;
+    }
+
+    .booking-summary p,
+    .booking-summary__nights {
+        margin: 0;
+        color: var(--core-muted-foreground);
+    }
+
+    .booking-summary__nights {
+        padding: 0;
+        list-style: none;
+    }
+
+    .booking-summary__price strong {
+        color: var(--core-foreground);
+        font-size: var(--text-lg);
+    }
+</style>

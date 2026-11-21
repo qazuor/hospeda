@@ -19,6 +19,7 @@ import {
 } from '../../billing-reconciliation/reconciliation-labels';
 import { useProposedRefunds } from '../hooks/useProposedRefunds';
 import { ProposedRefundActions } from './ProposedRefundActions';
+import { RefundProviderCallRetryForm } from './RefundProviderCallRetryForm';
 import { RefundRemainderSettlementForm } from './RefundRemainderSettlementForm';
 
 const PAGE_SIZE = 50;
@@ -46,8 +47,10 @@ export function formatProposedRefundAmount({
 
 /**
  * Proposed-refund screen, gated by the permission of the action it feeds. Below the list, a person
- * who may run action 14 records the remainder of a partially accepted refund (HOS-2406): such a
- * refund has an accepted provider call, so it is not in the list.
+ * who may run action 14 records the remainder of a partially accepted refund (HOS-2406) or of one
+ * stuck on a call unanswered for more than 24 hours (HOS-2538), and «Retry with MP» (HOS-2516)
+ * resends the unanswered provider calls of a confirmed refund: those refunds have a live provider
+ * call, so none is in the list.
  */
 export function ProposedRefundsScreen() {
     return (
@@ -57,6 +60,7 @@ export function ProposedRefundsScreen() {
                 <PermissionGate permissions={[PermissionEnum.BILLING_SETTLE_EXTERNAL]}>
                     <RefundRemainderSettlementForm />
                 </PermissionGate>
+                <RefundProviderCallRetryForm />
             </div>
         </PermissionGate>
     );

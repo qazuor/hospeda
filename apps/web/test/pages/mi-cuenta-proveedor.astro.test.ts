@@ -6,7 +6,7 @@
  * `mi-cuenta-aliados.astro.test.ts`.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -23,7 +23,7 @@ describe('mi-cuenta/proveedor/index.astro (HOS-278 §8 provider self-service)', 
     it('redirects unauthenticated visitors to signin (safety-net guard)', () => {
         expect(source).toContain('Astro.locals.user');
         expect(source).toMatch(/if\s*\(\s*!user\s*\)/);
-        expect(source).toContain("path: 'auth/signin'");
+        expect(source).toContain('buildLoginRedirect');
     });
 
     it('fetches the caller own listing, forwarding the session cookie', () => {
@@ -42,7 +42,15 @@ describe('mi-cuenta/proveedor/index.astro (HOS-278 §8 provider self-service)', 
         expect(source).toContain('trade === null');
         expect(source).toContain('account.provider.empty.text');
         expect(source).toContain('account.provider.empty.cta');
-        expect(source).toContain("path: 'mi-cuenta/aliados'");
+    });
+
+    it('empty-state CTA points at the public /sumate/proveedor landing, not at its own section (HOS-2450)', () => {
+        const emptyState = source.slice(source.indexOf('trade === null'));
+        const ctaHref = emptyState.match(/<a href=\{buildUrl\(\{ locale, path: '([^']+)' \}\)\}>/);
+        expect(ctaHref?.[1]).toBe('sumate/proveedor');
+        expect(
+            existsSync(resolve(__dirname, '../../src/pages/[lang]/sumate/proveedor/index.astro'))
+        ).toBe(true);
     });
 
     it('renders a revoked state (no edit form) when the listing was taken down', () => {

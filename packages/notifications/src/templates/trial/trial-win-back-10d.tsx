@@ -1,9 +1,9 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 import {
     formatTrialGreeting,
@@ -36,7 +36,7 @@ export function TrialWinBack10Days({
     return (
         <EmailLayout
             previewText="No tenés que cargar nada de nuevo: está todo como lo dejaste"
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Tus fotos y tus datos siguen guardados</Heading>
 

@@ -543,6 +543,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/retry-provider-calls"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/:refundId/settle-remainder"
         },
         {
@@ -892,6 +896,14 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/destinations/reviews/:id/restore"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/email-previews"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/email-previews/render"
         },
         {
             "method": "GET",

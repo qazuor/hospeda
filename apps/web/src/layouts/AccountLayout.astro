@@ -21,6 +21,7 @@ import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsa
 import BaseLayout from './BaseLayout.astro';
 import AccountShell from './AccountShell.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import PageHelpRow from '@/components/account/help/PageHelpRow.astro';
 import { AI_ASSISTANTS_NAV_ITEM_ID } from '@/config/navigation';
 import { buildAccountNavModel } from '@/lib/account-nav-model';
 import type { AccountShellTemplate } from '@/components/account/ui/account-shell-template';
@@ -33,9 +34,10 @@ interface Props {
 	readonly description?: string;
 	readonly activeSection?: string;
 	/**
-	 * HOS-2413 (OD-1): the frame to render. `legacy` is the current layout and the
-	 * DEFAULT, so no page changes. `account` renders the new `AccountShell`; it is
-	 * a short-lived switch that the flip PR removes together with the legacy markup.
+	 * HOS-2413 (OD-1): the frame to render. `account` renders the new
+	 * `AccountShell` and is the DEFAULT since the owner turned the new UI on
+	 * (T-031, 2026-11-21). `legacy` keeps the previous layout one prop away as a
+	 * rollback; a later PR removes it together with the legacy markup.
 	 */
 	readonly shell?: 'legacy' | 'account';
 	/** Page template for the new shell (`list`, `form`, `dashboard`, `reading`, `editor`). */
@@ -47,7 +49,7 @@ const {
 	title,
 	description,
 	activeSection = 'mi-cuenta',
-	shell = 'legacy',
+	shell = 'account',
 	template,
 } = Astro.props;
 
@@ -114,6 +116,8 @@ const activeLabel = t(navModel.activeLabelKey);
 		aiAssistantsHidden={!mcpEnabled}
 	>
 		<slot name="head-early" slot="head-early" />
+		<!-- HOS-2410 web-ui §6: the «?» of a page without AccountPageHeader. -->
+		<PageHelpRow locale={locale} fallback />
 		<slot />
 	</AccountShell>
 ) : (
@@ -151,7 +155,7 @@ const activeLabel = t(navModel.activeLabelKey);
 				</button>
 
 				<!-- Sidebar navigation -->
-				<aside id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
+				<aside id="account-nav" class="account-page__sidebar" aria-label={t('account.navigation')}>
 				<nav class="account-nav">
 					{navModel.groups.map((entry) => {
 						const { group, suppressHeader, containsActive, defaultOpen } = entry;
@@ -248,6 +252,9 @@ const activeLabel = t(navModel.activeLabelKey);
 
 			<!-- Content area -->
 			<div class="account-page__content">
+				<!-- HOS-2410 web-ui §6: the «?» of a page without AccountPageHeader.
+				     Hidden by the global rule below when the page has the header. -->
+				<PageHelpRow locale={locale} fallback />
 				<slot />
 			</div>
 		</div>
@@ -370,6 +377,18 @@ const activeLabel = t(navModel.activeLabelKey);
 
 	document.addEventListener('astro:page-load', initAccountNav);
 </script>
+
+<style is:global>
+	/*
+	 * HOS-2410 web-ui §6: AccountPageHeader carries the page's «?» in its title
+	 * row, so the layout's fallback copy steps aside (display: none also takes
+	 * it out of the accessibility tree).
+	 */
+	.account-page__content:has([data-account-page-header]) > [data-help-fallback],
+	[data-account-content]:has([data-account-page-header]) > [data-help-fallback] {
+		display: none;
+	}
+</style>
 
 <style>
 	.account-page {

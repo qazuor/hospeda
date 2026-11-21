@@ -17,11 +17,126 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createTranslations } from '@/lib/i18n';
 
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/accommodation/DetailHeader.astro'),
     'utf8'
 );
+
+describe('accommodation mobile title block (AC-1.19)', () => {
+    const page = readFileSync(
+        resolve(__dirname, '../../../src/pages/[lang]/alojamientos/[slug].astro'),
+        'utf8'
+    );
+    const mobileStyles = src.match(/@media \(max-width: 767px\)[\s\S]*?(?=@media|<\/style>)/)?.[0];
+    const badges = src.match(/<div\s+class="detail-header__badges"[^>]*>/)?.[0];
+
+    it('hides the visual breadcrumb wrapper without moving the structured breadcrumbs', () => {
+        expect(page).toMatch(
+            /@media \(max-width: 767px\)\s*\{\s*:global\(\.wave-header__breadcrumbs:has\(\.acc-detail-breadcrumbs\)\)\s*\{\s*display: none/
+        );
+        expect(page).toContain('<div slot="breadcrumbs" class="acc-detail-breadcrumbs">');
+        expect(page).toContain('<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />');
+    });
+
+    it('hides duplicate back and favorite controls only with the gallery opt-in', () => {
+        expect(src).toContain('hasMobileGalleryControls = false');
+        expect(src).toContain("'detail-header--mobile-gallery': hasMobileGalleryControls");
+        expect(page).toMatch(/<DetailHeader\b[^>]*\bhasMobileGalleryControls\b[^>]*\/>/);
+        expect(mobileStyles).toMatch(
+            /\.detail-header--mobile-gallery \.detail-header__back-row,\s*\.detail-header--mobile-gallery \.detail-header__favorite-only\s*\{\s*display: none/
+        );
+    });
+
+    it('gives the badges one horizontally scrollable line with 12px labels', () => {
+        expect(mobileStyles).toMatch(
+            /\.detail-header__badges\s*\{[^}]*flex-wrap: nowrap;[^}]*overflow-x: auto;/
+        );
+        expect(mobileStyles).toContain('--acc-type-font-size: 12px;');
+        expect(mobileStyles).toContain('font-size: 12px;');
+    });
+
+    it('shares one mobile title and Compare row between expanded and sticky compact states', () => {
+        expect(mobileStyles).toMatch(
+            /:global\(\.wave-header\) \.detail-header--mobile-gallery \.detail-header__body\s*\{[^}]*\bdisplay: grid;[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto;[^}]*grid-template-areas:\s*"badges badges"\s*"title compare"\s*"destination destination"/
+        );
+        expect(mobileStyles).toMatch(
+            /:global\(\.wave-header\) \.detail-header--mobile-gallery \.detail-header__main\s*\{[^}]*\bdisplay: contents;/
+        );
+        expect(src).toMatch(/\.detail-header__name\s*\{\s*grid-area: title;/);
+        expect(src).toMatch(/\.detail-header__favorite\s*\{\s*grid-area: compare;/);
+        expect(mobileStyles).toMatch(
+            /:global\(\.detail-header__compare-btn\)\s*\{[^}]*width: 32px;[^}]*height: 32px;/
+        );
+    });
+
+    it('gives the badges scroller an accessible name and visible focus ring', () => {
+        expect.soft(badges).toContain('role="group"');
+        expect.soft(badges).toContain("aria-label={t('accommodations.detail.badges.scrollLabel')}");
+        expect(src).toMatch(
+            /\.detail-header__badges:focus-visible\s*\{[^}]*outline: 2px solid var\(--brand-primary\);/
+        );
+    });
+
+    it('only puts badges in the tab sequence on mobile, including after client navigation', () => {
+        const page = document.implementation.createHTMLDocument();
+        const breakpoint = Object.assign(new EventTarget(), { matches: false });
+        // Slice the component's own inline script out of its source. This reads a
+        // trusted repo file, not untrusted HTML, so plain index lookups suffice.
+        const scriptOpen = '<script>';
+        const scriptStart = src.indexOf(scriptOpen);
+        const scriptEnd = src.indexOf('</script>', scriptStart);
+        const script =
+            scriptStart >= 0 && scriptEnd > scriptStart
+                ? src.slice(scriptStart + scriptOpen.length, scriptEnd)
+                : '';
+        const badgeMarkup = `${badges ?? ''}</div>`;
+        const tabIndex = () =>
+            page.querySelector('.detail-header__badges')?.getAttribute('tabindex');
+        page.body.innerHTML = badgeMarkup;
+
+        expect.soft(tabIndex()).toBe('-1');
+        new Function('document', 'window', script)(page, {
+            matchMedia: (query: string) => {
+                expect(query).toBe('(max-width: 767px)');
+                return breakpoint;
+            }
+        });
+        expect.soft(tabIndex()).toBe('-1');
+
+        breakpoint.matches = true;
+        breakpoint.dispatchEvent(new Event('change'));
+        expect.soft(tabIndex()).toBe('0');
+
+        page.body.innerHTML = badgeMarkup;
+        page.dispatchEvent(new Event('astro:page-load'));
+        expect.soft(tabIndex()).toBe('0');
+
+        breakpoint.matches = false;
+        breakpoint.dispatchEvent(new Event('change'));
+        expect(tabIndex()).toBe('-1');
+    });
+
+    it.each([
+        ['es', 'Distintivos del alojamiento'],
+        ['en', 'Accommodation badges'],
+        ['pt', 'Selos da hospedagem']
+    ] as const)('localizes the badges scroller name in %s', (locale, expected) => {
+        const { t } = createTranslations(locale);
+
+        expect(t('accommodations.detail.badges.scrollLabel')).toBe(expected);
+    });
+
+    it('renders a single compare control between the title and destination in tab order', () => {
+        const markup = src.split('<style>')[0] ?? '';
+
+        expect(markup.match(/<DetailCompareButton\b/g)).toHaveLength(1);
+        expect(markup).toMatch(
+            /<\/h1>[\s\S]*?<DetailCompareButton\b[\s\S]*?class="detail-header__destination /
+        );
+    });
+});
 
 describe('DetailHeader.astro — type badge unification', () => {
     describe('imports', () => {
@@ -180,8 +295,33 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
             expect(src).toMatch(/class="[^"]*\bdetail-header__main\b/);
         });
 
-        it('puts the FavoriteButton in a sibling detail-header__favorite container', () => {
-            expect(src).toMatch(/class="detail-header__favorite"/);
+        it('keeps the action cluster in the right column of the desktop grid', () => {
+            expect(src).toMatch(
+                /\.detail-header__main\s*\{[^}]*display: grid;[^}]*grid-template-areas:\s*"badges compare"\s*"title compare"\s*"destination compare"/
+            );
+            expect(src).toMatch(/\.detail-header__favorite\s*\{[^}]*align-self: start;/);
+        });
+
+        it('reserves a top-right action column in compact mode starting at 768px', () => {
+            const desktopStyles = src.match(
+                /@media \(min-width: 768px\)[\s\S]*?(?=@media|<\/style>)/
+            )?.[0];
+            const compactMain = desktopStyles?.match(
+                /:global\(\.wave-header\.wave-header--compact\) \.detail-header__main\s*\{([^}]*)\}/
+            )?.[1];
+            const compactActions = desktopStyles?.match(
+                /:global\(\.wave-header--compact\) \.detail-header__favorite\s*\{([^}]*)\}/
+            )?.[1];
+
+            expect(compactMain).toMatch(/display: grid;/);
+            expect(compactMain).toMatch(/grid-template-columns:[^;]+ auto;/);
+            expect(compactMain).toMatch(
+                /grid-template-areas:\s*"badges title destination \. compare"/
+            );
+            expect(compactActions).toContain('align-self: start;');
+            expect(desktopStyles).toMatch(
+                /\.detail-header__name,\s*:global\(\.wave-header--compact\) \.detail-header__destination\s*\{[^}]*overflow-wrap: anywhere;/
+            );
         });
 
         it('keeps the favorite right-aligned via margin-left: auto', () => {

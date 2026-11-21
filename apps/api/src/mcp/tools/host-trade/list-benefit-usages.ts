@@ -30,6 +30,7 @@
  * Notes and provider names are third-party text, wrapped as untrusted (C-5).
  */
 
+import { buildPortalUrl } from '@repo/portal-routes';
 import {
     type HostTradeBenefitUsage,
     HostTradeUsageDeclaredByEnum,
@@ -39,7 +40,6 @@ import {
 import { type Actor, isUsageCounterpart } from '@repo/service-core';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
 import { excerptText, MCP_LIST_MAX_PAGE_SIZE } from '../response-budget';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';

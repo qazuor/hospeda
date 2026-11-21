@@ -18,7 +18,9 @@
         "empty": "Nenhuma novidade ainda",
         "emptyDesc": "Quando publicarmos melhorias ou novos recursos da plataforma, você vai vê-los aqui.",
         "markAllRead": "Marcar tudo como lido",
-        "seeEntry": "Ver"
+        "seeEntry": "Ver",
+        "showMore": "Ver mais novidades",
+        "showingCount": "Exibindo {{shown}} de {{total}}"
     },
     "status": {
         "new": "Novo"
@@ -155,7 +157,8 @@
         "myEvents": "Meus eventos",
         "provider": "Minha ficha de fornecedor",
         "repeatTour": "Repetir tour",
-        "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta"
+        "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
+        "help": "Ajuda"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -238,6 +241,12 @@
         "uploading": "Subiendo…"
     },
     "editProfile": {
+        "security": {
+            "description": "Altere a senha que você usa para entrar na Hospeda.",
+            "changePasswordLink": "Alterar senha",
+            "noPasswordDescription": "Você entra com a sua conta do Google ou Facebook e ainda não tem senha. Adicione uma para também entrar com o seu e-mail.",
+            "addPasswordLink": "Adicionar senha"
+        },
         "fields": {
             "displayName": "Nome de exibição",
             "firstName": "Nome",
@@ -840,7 +849,8 @@
             "event": "Eventos",
             "experience": "Experiências",
             "venue": "Comer e sair",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Atrações"
         },
         "collections": {
             "create": "Criar coleção",
@@ -863,6 +873,7 @@
             "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
             "errorTitle": "Não conseguimos carregar a coleção",
             "backToList": "Voltar para meus favoritos",
+            "bookmarksLabel": "favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -902,10 +913,6 @@
         },
         "filter": {
             "all": "Todos",
-            "accommodations": "Acomodações",
-            "destinations": "Destinos",
-            "events": "Eventos",
-            "posts": "Posts",
             "label": "Filtrar por tipo"
         },
         "bookmarks": {
@@ -925,7 +932,8 @@
         "notes": {
             "cancel": "Cancelar",
             "placeholder": "Adicione uma nota pessoal...",
-            "save": "Salvar nota"
+            "save": "Salvar nota",
+            "saved": "Nota salva"
         },
         "removeBtn": "Remover",
         "removeLabel": "Remover dos favoritos",
@@ -938,6 +946,12 @@
             "fetchFailed": "Erro ao carregar favoritos",
             "removeFailed": "Erro ao remover favorito",
             "saveFailed": "No se pudo guardar la nota"
+        },
+        "removeFavoriteConfirm": {
+            "title": "Remover dos favoritos",
+            "message": "Remover este favorito?",
+            "confirm": "Remover",
+            "messageWithNote": "Remover este favorito? A nota que você escreveu para ele também é excluída."
         }
     },
     "reviews": {
@@ -991,7 +1005,6 @@
             "description": "Gerencie sua conta, favoritos, avaliações e preferencias.",
             "greeting": "Bem-vindo",
             "dashboardLabel": "Painel",
-            "viewLabel": "Ver",
             "nav": {
                 "editProfile": "Editar perfil",
                 "editProfileDesc": "Atualize suas informações pessoais e foto de perfil",
@@ -1024,6 +1037,7 @@
                 "reviews": "Minhas avaliações",
                 "subscription": "Minha assinatura",
                 "favoritesDesc": "Acomodações salvas",
+                "unavailable": "Indisponível",
                 "reviewsDesc": "Avaliações publicadas",
                 "subscriptionDesc": "Plano atual",
                 "subscriptionStatus": "Estado da assinatura",
@@ -1044,7 +1058,13 @@
                 "listings": "Minhas fichas",
                 "listingsDesc": "Fichas publicadas",
                 "listingsHidden_one": "{{count}} ficha não publicada: não aparece para o público.",
-                "listingsHidden_other": "{{count}} fichas não publicadas: não aparecem para o público."
+                "listingsHidden_other": "{{count}} fichas não publicadas: não aparecem para o público.",
+                "viewProperties": "Ver meus imóveis",
+                "viewMessages": "Ver mensagens não lidas",
+                "viewListings": "Ver minhas fichas",
+                "viewFavorites": "Ver meus favoritos",
+                "viewReviews": "Ver minhas avaliações",
+                "viewSubscription": "Ver minha assinatura"
             },
             "sectionsLabel": "Seções"
         },
@@ -1055,6 +1075,7 @@
             "personalSection": "Informações pessoais",
             "extrasSection": "Más sobre vos",
             "locationSection": "Ubicación",
+            "securitySection": "Segurança",
             "socialSection": "Redes sociales"
         },
         "favorites": {
@@ -1358,7 +1379,9 @@
         "deleteError": "Não foi possível excluir o alerta",
         "upgrade": {
             "title": "Alertas de preço",
-            "message": "Alertas de preço estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+            "message_one": "Os alertas de preço estão disponíveis no plano {{plans}}. Atualize seu plano para acessar.",
+            "message_other": "Os alertas de preço estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
+            "messageNoPlans": "Os alertas de preço não estão incluídos no seu plano atual. Atualize seu plano para acessar.",
             "cta": "Ver planos"
         },
         "listLabel": "Seus alertas de preço ativos",
@@ -1853,7 +1876,64 @@
             "weak": "Débil"
         },
         "strengthLabel": "Seguridad de la contraseña",
+        "subtitleVoluntary": "Escolha uma nova senha para a sua conta. Você vai precisar da atual.",
         "accountNotice": "Você vai alterar a senha desta conta:"
+    },
+    "notFound": {
+        "title": "Não encontramos o que você procurava",
+        "description": "O link pode estar desatualizado ou o conteúdo pode não existir mais.",
+        "back": {
+            "account": "Voltar para a minha conta",
+            "messages": "Voltar para as minhas consultas",
+            "ownerMessages": "Voltar para as consultas das minhas propriedades",
+            "listings": "Voltar para as minhas publicações"
+        }
+    },
+    "help": {
+        "landing": {
+            "title": "Ajuda para publicar no Hospeda",
+            "description": "Tudo o que você pode fazer, como fazer e o que esperar.",
+            "tabsLabel": "Tipo de conta",
+            "emptyAudience": "Ainda estamos escrevendo a ajuda para este tipo de conta."
+        },
+        "audiences": {
+            "host": "Hospedagens",
+            "venue": "Comer e sair",
+            "experience": "Experiências",
+            "provider": "Fornecedores",
+            "partner": "Parceiros"
+        },
+        "audiencesLabel": "Para quem",
+        "search": {
+            "label": "Buscar na ajuda",
+            "placeholder": "Por exemplo: como envio fotos",
+            "onlyMine": "Só para o meu tipo de conta",
+            "results_one": "{{count}} resultado encontrado",
+            "results_other": "{{count}} resultados encontrados",
+            "noMatch": "Não encontramos ajuda para isso",
+            "submit": "Pesquisar"
+        },
+        "fallback": {
+            "title": "Não encontrou o que procurava?",
+            "faq": "Ver as perguntas frequentes",
+            "contact": "Escreva para nós"
+        },
+        "article": {
+            "breadcrumbRoot": "Ajuda",
+            "breadcrumbLabel": "Caminho da ajuda",
+            "reviewedAt": "Revisado em {{date}}",
+            "tocLabel": "Neste artigo",
+            "tocToggle": "Índice do artigo",
+            "pagesTitle": "Telas do app",
+            "faqLink": "Veja também nas perguntas frequentes",
+            "onlySpanish": "Este artigo por enquanto está disponível só em espanhol.",
+            "limitNeutral": "o limite do seu plano",
+            "unlimited": "sem limite",
+            "title": "Ajuda: {{title}}"
+        },
+        "link": {
+            "ariaLabel": "Ajuda: {{title}} (abre em uma nova aba)"
+        }
     },
     "ui": {
         "loading": "Carregando…",

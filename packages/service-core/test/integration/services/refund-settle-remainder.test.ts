@@ -35,7 +35,8 @@ describe('HOS-2406 the manual remainder closes a partially accepted refund', () 
                 acceptedAmount: 4000,
                 remainderAmount: 2000,
                 paymentOutcome: 'P4',
-                coverageReleased: false
+                coverageReleased: false,
+                settledStaleCallKeys: []
             });
             expect(await refundById(arranged.refundId)).toMatchObject({
                 status: 'EXECUTED',
@@ -92,17 +93,22 @@ describe('HOS-2406 every other state is a typed rejection that moves nothing', (
             // Arrange
             const arranged = await partiallyAcceptedRefund();
 
-            // Act
-            const tooMuch = settleRemainder(arranged.settler, arranged, { amount: 2001 });
-            const tooLittle = settleRemainder(arranged.settler, arranged, { amount: 1999 });
+            // Act: one after the other; concurrent settlements of one refund are single-flight
+            // (HOS-2538, REFUND_RETRY_IN_PROGRESS).
+            const tooMuch = await settleRemainder(arranged.settler, arranged, {
+                amount: 2001
+            }).catch((error: unknown) => error);
+            const tooLittle = await settleRemainder(arranged.settler, arranged, {
+                amount: 1999
+            }).catch((error: unknown) => error);
 
             // Assert
-            await expect(tooMuch).rejects.toMatchObject({
+            expect(tooMuch).toMatchObject({
                 code: 'VALIDATION_ERROR',
                 reason: 'REMAINDER_AMOUNT_MISMATCH',
                 message: expect.stringContaining('must be 2000')
             });
-            await expect(tooLittle).rejects.toMatchObject({ reason: 'REMAINDER_AMOUNT_MISMATCH' });
+            expect(tooLittle).toMatchObject({ reason: 'REMAINDER_AMOUNT_MISMATCH' });
             await expectUntouched(arranged);
         }
     );
