@@ -7,6 +7,7 @@
 
 import {
     PORTAL_PAGE_LABELS,
+    PORTAL_ROUTE_TEMPLATES,
     type PortalDestination,
     type PortalDestinationKind
 } from './portal-routes';
@@ -75,7 +76,8 @@ export function isNonIdentifyingDestination({
         case 'declareBenefitUsage':
             return false;
         case 'page':
-            return destination.params === undefined || Object.keys(destination.params).length === 0;
+            // A page names a record exactly when its template has a dynamic segment.
+            return !PORTAL_ROUTE_TEMPLATES[destination.page].includes('[');
         default:
             return true;
     }

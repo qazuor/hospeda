@@ -196,6 +196,31 @@ export const PORTAL_PAGE_LABELS = {
 /** Name of a route reachable through the generic `page` destination. */
 export type PortalPageKey = keyof typeof PORTAL_PAGE_LABELS;
 
+/** Names of the `[dynamic]` segments of a path template, as a union. */
+type TemplateParamNames<T extends string> = T extends `${string}[${infer Name}]${infer Rest}`
+    ? Name | TemplateParamNames<Rest>
+    : never;
+
+/** The dynamic segments of the template a page key resolves to (`never` when it has none). */
+export type PortalPageParamNames<K extends PortalPageKey> = TemplateParamNames<
+    (typeof PORTAL_ROUTE_TEMPLATES)[K]
+>;
+
+/**
+ * A link to one page of {@link PORTAL_PAGE_LABELS}, discriminated by `page`:
+ * a page whose template has dynamic segments requires `params` with exactly
+ * those names (derived from the template); any other page takes no `params`.
+ */
+export type PortalPageDestination = {
+    readonly [K in PortalPageKey]: [PortalPageParamNames<K>] extends [never]
+        ? { readonly kind: 'page'; readonly page: K; readonly params?: never }
+        : {
+              readonly kind: 'page';
+              readonly page: K;
+              readonly params: Readonly<Record<PortalPageParamNames<K>, string>>;
+          };
+}[PortalPageKey];
+
 /**
  * The `[vertical]` URL segment values the venue/experience pages accept. The
  * guard checks the web still serves both (`LISTING_EDITOR_VERTICALS`).
@@ -307,8 +332,9 @@ export type PortalListingVertical = ListingVertical;
  * - `partnerPanel`: the partner's own panel.
  * - `helpLanding` and `helpArticle`: the help center and one of its articles
  *   (`id` is the article id).
- * - `page`: any page of {@link PORTAL_PAGE_LABELS}. `params` fills the dynamic
- *   segments of the template (`id`, `slug`); a missing one makes the URL builder throw.
+ * - `page`: any page of {@link PORTAL_PAGE_LABELS}, see {@link PortalPageDestination}.
+ *   `params` fills the template's dynamic segments (`id`, `slug`) and is required exactly
+ *   when the page has them.
  */
 export type PortalDestination =
     | {
@@ -334,11 +360,7 @@ export type PortalDestination =
     | { readonly kind: 'partnerPanel' }
     | { readonly kind: 'helpLanding' }
     | { readonly kind: 'helpArticle'; readonly id: string }
-    | {
-          readonly kind: 'page';
-          readonly page: PortalPageKey;
-          readonly params?: Readonly<Record<string, string>>;
-      };
+    | PortalPageDestination;
 
 /** Name of a destination kind. */
 export type PortalDestinationKind = PortalDestination['kind'];
