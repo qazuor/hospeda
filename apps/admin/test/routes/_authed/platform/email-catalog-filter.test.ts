@@ -43,6 +43,26 @@ describe('email catalog filter', () => {
         );
     });
 
+    it('matches on the id alone when neither the name nor the key contain it', () => {
+        // Arrange: an id that is not a substring of its key or its name
+        const idOnly = entry({
+            key: 'notification.trial_ending_2d',
+            id: 'zeta-template-id',
+            name: 'Fin de prueba',
+            domain: 'trial'
+        });
+
+        // Act
+        const result = filterEmailCatalog({
+            entries: [...ENTRIES, idOnly],
+            search: 'ZETA-template',
+            domains: []
+        });
+
+        // Assert
+        expect(result).toEqual([idOnly]);
+    });
+
     it('combines the search with a multi-domain filter', () => {
         expect(
             filterEmailCatalog({ entries: ENTRIES, search: '', domains: ['auth', 'billing'] })
