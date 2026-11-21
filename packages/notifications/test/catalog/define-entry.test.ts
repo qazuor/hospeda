@@ -4,10 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     buildPreviewOutboxRow,
     defineEmailCatalogEntry,
+    defineNotificationEntry,
     defineOutboxEntry,
     type EmailCatalogRenderDeps,
     EmailCatalogScenarioNotFoundError
 } from '../../src/catalog/index';
+import { NotificationType, type PartnerRevokedPayload } from '../../src/types/notification.types';
 
 const deps = (
     outboxRenderer: EmailCatalogRenderDeps['outboxRenderer']
@@ -123,5 +125,48 @@ describe('buildPreviewOutboxRow', () => {
             status: 'pending'
         });
         expect(row.recipientEmail).toMatch(/@example\.com$/);
+    });
+});
+
+describe('defineNotificationEntry', () => {
+    const scenario = (type: NotificationType.PARTNER_REVOKED): PartnerRevokedPayload => ({
+        type,
+        recipientEmail: 'ana.ejemplo@example.com',
+        recipientName: 'Ana Ejemplo',
+        userId: null,
+        partnerName: 'Comercio de Ejemplo',
+        reason: 'Motivo de ejemplo'
+    });
+
+    it('accepts scenarios whose payload type matches the entry type', () => {
+        const entry = defineNotificationEntry<PartnerRevokedPayload>({
+            type: NotificationType.PARTNER_REVOKED,
+            name: 'Aliado dado de baja',
+            domain: 'partner',
+            scenarios: [{ id: 'a', label: 'A', input: scenario(NotificationType.PARTNER_REVOKED) }]
+        });
+        expect(entry.key).toBe('notification.partner_revoked');
+    });
+
+    it('rejects a scenario whose payload type differs from the entry type', () => {
+        // Arrange — a scenario copy-pasted from partner_revoked under another key.
+        const define = () =>
+            defineNotificationEntry<PartnerRevokedPayload>({
+                type: NotificationType.HOST_TRADE_REVOKED,
+                name: 'Ficha dada de baja',
+                domain: 'host-trade',
+                scenarios: [
+                    {
+                        id: 'copied',
+                        label: 'Copiado',
+                        input: scenario(NotificationType.PARTNER_REVOKED)
+                    }
+                ]
+            });
+
+        // Act & Assert
+        expect(define).toThrow(
+            'Scenario "copied" of email catalog entry "notification.host_trade_revoked" has payload type "partner_revoked"'
+        );
     });
 });

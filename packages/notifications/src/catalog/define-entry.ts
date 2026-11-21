@@ -108,12 +108,24 @@ export interface DefineNotificationEntryInput<TPayload extends NotificationPaylo
  * Builds a `notification.*` entry rendered through `renderNotificationEmail`,
  * the function `NotificationService.send` uses.
  *
+ * Every scenario's `payload.type` must equal the entry's `type`: the template
+ * is selected from the payload, so a copy-pasted scenario of another type
+ * would otherwise preview template X under the key `notification.Y`.
+ *
  * @param input - The entry definition.
  * @returns The catalog entry.
+ * @throws {Error} At module load when a scenario's payload type differs from the entry type.
  */
 export function defineNotificationEntry<TPayload extends NotificationPayload>(
     input: DefineNotificationEntryInput<TPayload>
 ): EmailCatalogEntry {
+    for (const scenario of input.scenarios) {
+        if (scenario.input.type !== input.type) {
+            throw new Error(
+                `Scenario "${scenario.id}" of email catalog entry "notification.${input.type}" has payload type "${scenario.input.type}"`
+            );
+        }
+    }
     return defineEmailCatalogEntry<TPayload>({
         sendPath: 'notification',
         id: input.type,
