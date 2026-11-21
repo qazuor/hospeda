@@ -1,7 +1,6 @@
 import { addonInstances, eq, idempotencyKeys, providerLinks, subscriptions } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
-import { sendOneTimeOrder } from '../../../src/services/billing/addon/send-one-time-order.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import {
     createProduct,
@@ -26,12 +25,14 @@ async function rows(ownerId: string) {
 }
 
 describe('TEST:B10:3 AC:B10:2 addon purchase identity', () => {
+    // TEST:B6:10 / AC:B6:12 were written over the card order; HOS-2179 T-7 moved them to the page.
     it.skipIf(skip)(
-        'replays one request into one instance, one key and one provider order',
+        'TEST:B6:10 AC:B6:12 replays one request into one instance, one key and one payment page',
         async () => {
             const f = await purchaseFixture();
             // The paying principal and payment are seeded directly.
             await principalFixture({ ownerId: f.ownerId, credited: true });
+            const page = vi.spyOn(f.fake, 'requestOneTimePayment');
             const input = f.input();
             const first = await purchaseAddon(input, f.ports);
             const second = await purchaseAddon(input, f.ports);
@@ -46,45 +47,20 @@ describe('TEST:B10:3 AC:B10:2 addon purchase identity', () => {
                 .select()
                 .from(idempotencyKeys)
                 .where(eq(idempotencyKeys.subjectId, instances[0]!.id));
-            expect(keys).toMatchObject([
-                {
-                    key: `order:${input.orderRequestId}`,
-                    operation: 'ORDER_CREATE',
-                    subjectId: instances[0]!.id
-                }
-            ]);
-            const chargeOnce = vi.spyOn(f.fake, 'chargeOnce');
-            const orderInput = {
-                orderRequestId: input.orderRequestId,
-                payerEmail: 'payer@example.test',
-                payment: {
-                    token: `card-${crypto.randomUUID()}`,
-                    brand: 'visa',
-                    kind: 'credit' as const
-                }
-            };
-            const sent = await sendOneTimeOrder(orderInput, {
-                provider: f.fake,
-                clock: f.ports.clock
+            expect(keys).toHaveLength(1);
+            expect(keys[0]).toMatchObject({
+                operation: 'PAYMENT_PAGE_CREATE',
+                subjectId: instances[0]!.id
             });
-            const resent = await sendOneTimeOrder(orderInput, {
-                provider: f.fake,
-                clock: f.ports.clock
-            });
-            expect(sent.outcome).toBe('ORDER_PLACED');
-            expect(resent.outcome).toBe('ORDER_ALREADY_PLACED');
-            expect(chargeOnce).toHaveBeenCalledTimes(1);
-            expect(f.fake.ordersFor({ reference: input.orderRequestId })).toEqual({
-                orders: 1,
-                paid: 1
-            });
+            expect(page).toHaveBeenCalledTimes(1);
         }
     );
 
+    // A one-time page purchase resumes its page instead (addon-one-time-page-occupied, HOS-2179).
     it.skipIf(skip)(
-        'returns PENDING_ELSEWHERE for a different request on the same identity',
+        'returns PENDING_ELSEWHERE for a different recurring request on the same identity',
         async () => {
-            const f = await purchaseFixture();
+            const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
             // The paying principal and payment are seeded directly.
             await principalFixture({ ownerId: f.ownerId, credited: true });
             const first = await purchaseAddon(f.input(), f.ports);

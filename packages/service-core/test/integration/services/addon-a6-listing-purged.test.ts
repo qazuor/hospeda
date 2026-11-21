@@ -123,7 +123,7 @@ describe('TEST:B10:7 AC:B10:6 A6 act and lost-push safety net', () => {
         ).toEqual(['COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA']);
     });
 
-    it('cancels a pending one-time order locally without a provider cancellation', async () => {
+    it('cancels a pending one-time page purchase locally without a provider cancellation', async () => {
         const h = await createA6Fixture({ status: 'PENDING_AUTHORIZATION', chargeKind: 'UNA_VEZ' });
         await h.verticals.purgeListing({ listingId: h.listingId });
         const cancel = vi.spyOn(h.f.fake, 'cancel');

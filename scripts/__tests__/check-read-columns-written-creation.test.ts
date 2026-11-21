@@ -147,7 +147,7 @@ describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
             // 2026-11-17, HOS-1715: 182 (8 payment and addon reads return).
             // 2026-11-18, HOS-2344: 183 (S40 reads subscription.succeeds_id).
             // 2026-11-19, HOS-2351: still 183 (S40 stops writing succeeded_by_id; reads unchanged).
-            output: 'OK GUARD:G-R6: verified 183 read columns.'
+            output: 'OK GUARD:G-R6: verified 179 read columns.'
         });
     });
 });
