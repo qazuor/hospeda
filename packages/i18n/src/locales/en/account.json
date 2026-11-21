@@ -863,6 +863,7 @@
             "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
             "errorTitle": "We couldn't load the collection",
             "backToList": "Back to my favorites",
+            "bookmarksLabel": "favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
             "pageInfo": "Page {{page}} of {{total}}",
@@ -906,6 +907,9 @@
             "destinations": "Destinations",
             "events": "Events",
             "posts": "Posts",
+            "venues": "Food & nightlife",
+            "experiences": "Experiences",
+            "attractions": "Attractions",
             "label": "Filter by type"
         },
         "bookmarks": {

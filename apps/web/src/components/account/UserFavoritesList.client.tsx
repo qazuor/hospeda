@@ -814,7 +814,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                                 key={col.id}
                                 collection={col}
                                 locale={locale}
-                                bookmarksLabel={t('account.favorites.removeLabel', 'favoritos')}
+                                bookmarksLabel={t(
+                                    'account.favorites.collections.bookmarksLabel',
+                                    'favoritos'
+                                )}
                                 collectionsBasePath={COLLECTIONS_PATH}
                             />
                         ))}

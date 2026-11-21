@@ -863,6 +863,7 @@
             "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
             "errorTitle": "Não conseguimos carregar a coleção",
             "backToList": "Voltar para meus favoritos",
+            "bookmarksLabel": "favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -906,6 +907,9 @@
             "destinations": "Destinos",
             "events": "Eventos",
             "posts": "Posts",
+            "venues": "Comer e sair",
+            "experiences": "Experiências",
+            "attractions": "Atrações",
             "label": "Filtrar por tipo"
         },
         "bookmarks": {
