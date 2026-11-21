@@ -1,29 +1,27 @@
 /**
  * HOS-2410 (owner decision on PR-3 deviation 4): the editor pages that are not
  * catalog sections (`EDITOR_NON_SECTION_PAGE_SLUGS`) are reachable through a
- * `listingEditor` destination, and each one is a real page of `apps/web` that
- * the web's own editor registry lists.
+ * `listingEditor` destination, and each one is a real page of `apps/web`,
+ * checked per vertical against that vertical's own editor folder.
+ *
+ * The reverse (a web editor page missing from the lists) is predicate (b2) of
+ * `scripts/check-portal-routes.ts`, which lists the editor folders.
  */
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     buildPortalUrl,
     EDITOR_NON_SECTION_PAGE_SLUGS,
     EDITOR_SECTION_SLUGS,
+    EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
     editorSlugOf,
-    portalDestinationTemplate
+    PORTAL_ROUTE_TEMPLATES,
+    PORTAL_SECTION_PLACEHOLDER
 } from '../src/index';
 
 const SITE = 'https://hospeda.test';
 const WEB = path.resolve(import.meta.dirname, '../../../apps/web');
-
-/** The web file whose registry adds each vertical's non-section pages. */
-const WEB_REGISTRY = {
-    accommodation: 'src/lib/editor/accommodation-editor-sections.ts',
-    venue: 'src/lib/editor/listing-editor-registry.ts',
-    experience: 'src/lib/editor/listing-editor-registry.ts'
-} as const;
 
 describe('EDITOR_NON_SECTION_PAGE_SLUGS', () => {
     it('holds politicas for accommodation and preguntas-ia for every vertical', () => {
@@ -44,28 +42,29 @@ describe('EDITOR_NON_SECTION_PAGE_SLUGS', () => {
         }
     });
 
-    it('matches a `slug:` of the web editor registry and a page file, per vertical', () => {
-        // Arrange: every (vertical, page) of the list, typed (the first test pins the list).
-        const cases = [
-            ['accommodation', 'policies'],
-            ['accommodation', 'aiQuestions'],
-            ['venue', 'aiQuestions'],
-            ['experience', 'aiQuestions']
-        ] as const;
+    it.each([
+        'accommodation',
+        'venue',
+        'experience'
+    ] as const)('%s keeps its own «Preguntas a la IA» entry, and every page it lists is a file under its own editor folder', (vertical) => {
+        // Arrange: the vertical's own entries and its own section template, nothing shared.
+        const entries = Object.entries(EDITOR_NON_SECTION_PAGE_SLUGS[vertical]);
+        const template = PORTAL_ROUTE_TEMPLATES[EDITOR_SECTION_TEMPLATE_BY_VERTICAL[vertical]];
 
-        for (const [vertical, section] of cases) {
-            // Act
-            const source = readFileSync(path.join(WEB, WEB_REGISTRY[vertical]), 'utf8');
-            const template = portalDestinationTemplate({
-                destination: { kind: 'listingEditor', vertical, id: 'x', section }
-            });
-            const file = path.join(WEB, 'src/pages/[lang]', `${template}.astro`);
-
-            // Assert
-            expect(source, `${vertical}/${section}`).toContain(
-                `slug: '${editorSlugOf({ vertical, section })}'`
+        // Assert
+        expect(EDITOR_NON_SECTION_PAGE_SLUGS[vertical]).toHaveProperty(
+            'aiQuestions',
+            'preguntas-ia'
+        );
+        for (const [id, slug] of entries) {
+            const file = path.join(
+                WEB,
+                'src/pages/[lang]',
+                `${template.replace(PORTAL_SECTION_PLACEHOLDER, slug)}.astro`
             );
-            expect(existsSync(file) && statSync(file).isFile(), file).toBe(true);
+            expect(existsSync(file) && statSync(file).isFile(), `${vertical}/${id}: ${file}`).toBe(
+                true
+            );
         }
     });
 });
