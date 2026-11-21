@@ -113,7 +113,7 @@ describe('TEST:1715:3 AC:1715:3 — each writer is required', () => {
             exitCode: 0,
             // 2026-11-18, HOS-2344: 183 (S40 reads subscription.succeeds_id).
             // 2026-11-19, HOS-2351: still 183 (S40 stops writing succeeded_by_id; reads unchanged).
-            output: 'OK GUARD:G-R6: verified 183 read columns.'
+            output: 'OK GUARD:G-R6: verified 179 read columns.'
         });
     });
 

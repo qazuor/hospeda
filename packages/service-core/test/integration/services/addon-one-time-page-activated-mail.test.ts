@@ -51,7 +51,7 @@ async function listingPageSetup(): Promise<Setup & { readonly listingId: string 
         ownerId: f.ownerId,
         acceptsFeature: true
     });
-    const request = { ...f.input(crypto.randomUUID(), listingId), oneTimeChannel: 'PAGE' as const };
+    const request = f.input(crypto.randomUUID(), listingId);
     const ports = {
         ...f.ports,
         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),

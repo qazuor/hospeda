@@ -3,7 +3,6 @@ import type { NoticeDelivery } from '@repo/payments';
 import { FAKE_NOTICE_CHANNEL_HEADER } from '@repo/payments/fake';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { abandonOneTimeAddon } from '../../../src/services/billing/addon/expire-addon-authorization-windows-one-time';
-import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import { receiveProviderDelivery } from '../../../src/services/billing/notice/receive-provider-delivery.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { createProduct, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
@@ -216,29 +215,6 @@ describe('HOS-2179 §5.3 path 1: the payment notice of a page purchase reaches A
         const [notice] = webhooksDeliveries(s);
         if (!notice) throw new Error('notice missing');
         expect(await deliver(s, notice)).toEqual({ ack: 'OK', outcome: 'UNKNOWN_RESOURCE' });
-    });
-
-    it.skipIf(skip)('leaves an order purchase on the order path', async () => {
-        const s = await pageSetup();
-        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
-        const order = await purchaseAddon(orderRequest, s.f.ports);
-        if (order.outcome !== 'CREATED') throw new Error(order.outcome);
-        // A payment carrying the order purchase's reference, with no authorization.
-        const page = await s.f.fake.requestOneTimePayment({
-            reference: orderRequest.orderRequestId,
-            idempotencyKey: `page:${orderRequest.orderRequestId}`,
-            amount: { amountMinor: 10000, currency: 'ARS' },
-            reason: 'Order purchase reference',
-            returnUrl: 'https://example.test/return',
-            expiresAt: new Date(s.f.ports.clock.now().getTime() + 3_600_000).toISOString()
-        });
-        s.f.fake.takeDeliveries();
-        s.f.fake.payOnPage({ paymentPageId: page.paymentPageId, outcome: 'approved' });
-        const [notice] = webhooksDeliveries(s);
-        if (!notice) throw new Error('notice missing');
-        expect(await deliver(s, notice)).toEqual({ ack: 'OK', outcome: 'UNKNOWN_RESOURCE' });
-        expect(await pagePayments(order.instanceId)).toHaveLength(0);
-        expect(await pageMarks(order.instanceId)).toHaveLength(0);
     });
 
     it.skipIf(skip)(
