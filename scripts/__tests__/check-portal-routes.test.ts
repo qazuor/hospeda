@@ -153,6 +153,27 @@ describe('GUARD portal-routes', () => {
         });
     });
 
+    describe('(a) an unreleased route (HOS-2410 help center)', () => {
+        it('stays green while its page does not exist', () => {
+            const root = syntheticTree();
+            rmSync(PAGES(root, 'mi-cuenta/ayuda'), { recursive: true, force: true });
+            rmSync(PAGES(root, 'mi-cuenta/ayuda.astro'), { force: true });
+
+            expect(run({ root }).exitCode).toBe(0);
+        });
+
+        it('turns red once it is no longer listed as unreleased', () => {
+            const root = syntheticTree();
+            rmSync(PAGES(root, 'mi-cuenta/ayuda'), { recursive: true, force: true });
+            rmSync(PAGES(root, 'mi-cuenta/ayuda.astro'), { force: true });
+
+            const result = run({ root, data: { ...DEFAULT_ROUTE_DATA, unreleasedRouteKeys: [] } });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain('helpLanding');
+        });
+    });
+
     describe('(a) a missing page turns it red', () => {
         it('deleting the subscription page', () => {
             const root = syntheticTree();
