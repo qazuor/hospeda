@@ -49,17 +49,21 @@ describe('[slug].astro — CompareBar mount (HOS-85 post-review fix)', () => {
         expect(compareBarIndex).toBeLessThan(layoutCloseIndex);
     });
 
-    it('does NOT mount CompareBar inside the sidebar slot', () => {
-        // The sidebar Fragment must open AFTER the CompareBar mount, so
-        // CompareBar lands in the default slot (harmless either way since it
-        // is fixed-position, but the sidebar isn't rendered on narrow
-        // viewports the same way the main slot is — keep it out of there).
-        const compareBarIndex = slugPageSrc.indexOf('<CompareBar locale={locale} client:idle />');
-        const sidebarFragmentIndex = slugPageSrc.indexOf('<Fragment slot="sidebar">');
+    it('keeps the comparison and contact islands together in the default slot', () => {
+        const defaultContent = slugPageSrc.replace(
+            /<Fragment slot="(?:after-content|sidebar)">[\s\S]*?<\/Fragment>/g,
+            ''
+        );
 
-        expect(compareBarIndex).toBeGreaterThan(-1);
-        expect(sidebarFragmentIndex).toBeGreaterThan(-1);
-        expect(compareBarIndex).toBeLessThan(sidebarFragmentIndex);
+        expect(defaultContent).toContain('<CompareBar locale={locale} client:idle />');
+        for (const island of ['ListingContactBar', 'ListingContactPanel']) {
+            expect(slugPageSrc.match(new RegExp(`<${island}\\b`, 'g'))).toHaveLength(1);
+            expect(defaultContent).toMatch(
+                new RegExp(
+                    `<${island}\\s+client:idle(?:(?!\\/>)[\\s\\S])*hasWhatsapp=\\{accommodation\\.hasWhatsapp\\}`
+                )
+            );
+        }
     });
 });
 
