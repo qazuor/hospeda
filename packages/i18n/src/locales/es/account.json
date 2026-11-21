@@ -1914,7 +1914,8 @@
             "next": "Página siguiente",
             "page": "Página {{page}}",
             "loadMore": "Ver más",
-            "loadedMore": "Se cargaron {{count}} más"
+            "loadedMore": "Se cargaron {{count}} más",
+            "loadError": "No pudimos cargar más. Probá de nuevo."
         },
         "switchSaveError": "No se pudo guardar el cambio. Probá de nuevo.",
         "switchLockedLink": "Ver cómo activarlo",

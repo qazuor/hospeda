@@ -78,3 +78,9 @@
     white-space: nowrap;
     border: 0;
 }
+
+.error {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--status-danger-fg);
+}

@@ -1914,7 +1914,8 @@
             "next": "Next page",
             "page": "Page {{page}}",
             "loadMore": "Show more",
-            "loadedMore": "{{count}} more loaded"
+            "loadedMore": "{{count}} more loaded",
+            "loadError": "We could not load more. Please try again."
         },
         "switchSaveError": "The change could not be saved. Please try again.",
         "switchLockedLink": "See how to turn it on",

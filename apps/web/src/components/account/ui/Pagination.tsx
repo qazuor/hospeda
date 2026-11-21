@@ -144,12 +144,15 @@ export function Pagination(props: PaginationProps) {
     const t = createT(locale);
     const [announcement, setAnnouncement] = useState('');
     const [loading, setLoading] = useState(false);
+    const [failed, setFailed] = useState(false);
     const navLabel = props.ariaLabel ?? t('account.ui.pagination.label');
 
     if (props.variant === 'loadMore') {
         const { onLoadMore, hasMore = true } = props;
         const handleLoadMore = async () => {
             setLoading(true);
+            setFailed(false);
+            setAnnouncement('');
             try {
                 const result = await onLoadMore();
                 if (result) {
@@ -160,6 +163,11 @@ export function Pagination(props: PaginationProps) {
                     );
                     result.focusFirstNew?.();
                 }
+            } catch {
+                // A failed load must be said, never swallowed: the button stays
+                // so the user can retry, and the live region announces it.
+                setAnnouncement(t('account.ui.pagination.loadError'));
+                setFailed(true);
             } finally {
                 setLoading(false);
             }
@@ -179,11 +187,19 @@ export function Pagination(props: PaginationProps) {
                         {t('account.ui.pagination.loadMore')}
                     </Button>
                 ) : null}
+                {failed ? (
+                    <p
+                        role="alert"
+                        className={styles.error}
+                    >
+                        {announcement}
+                    </p>
+                ) : null}
                 <p
                     aria-live="polite"
                     className={styles.visuallyHidden}
                 >
-                    {announcement}
+                    {failed ? '' : announcement}
                 </p>
             </nav>
         );

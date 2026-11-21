@@ -131,4 +131,29 @@ describe('Pagination', () => {
         );
         expect(screen.queryByRole('button')).toBeNull();
     });
+
+    it('loadMore catches a rejection, says it in translated copy and lets the user retry', async () => {
+        // Arrange
+        const user = userEvent.setup();
+        const onLoadMore = vi
+            .fn()
+            .mockRejectedValueOnce(new Error('network down'))
+            .mockResolvedValueOnce({ addedCount: 3 });
+        render(
+            <Pagination
+                variant="loadMore"
+                locale="es"
+                onLoadMore={onLoadMore}
+            />
+        );
+        // Act
+        await user.click(screen.getByRole('button', { name: 'Ver más' }));
+        // Assert: message shown, raw error never rendered, button still there
+        expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar más');
+        expect(screen.queryByText('network down')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Ver más' })).not.toHaveAttribute('aria-busy');
+        // Retry succeeds and clears the error
+        await user.click(screen.getByRole('button', { name: 'Ver más' }));
+        await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    });
 });
