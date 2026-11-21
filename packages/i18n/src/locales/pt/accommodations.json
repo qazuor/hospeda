@@ -458,7 +458,7 @@
                 "withGuests": "Olá, está disponível {{guests}}?",
                 "withDatesAndGuests": "Olá, está disponível {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Preço e contato" },
+            "summary": { "title": "Preço e contato", "hostSince": "Anfitrião desde {{date}}" },
             "units": {
                 "perNight": "/noite",
                 "perDay": "/dia",

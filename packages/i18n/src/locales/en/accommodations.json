@@ -458,7 +458,7 @@
                 "withGuests": "Hello, is it available {{guests}}?",
                 "withDatesAndGuests": "Hello, is it available {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Price and contact" },
+            "summary": { "title": "Price and contact", "hostSince": "Host since {{date}}" },
             "units": {
                 "perNight": "/night",
                 "perDay": "/day",
