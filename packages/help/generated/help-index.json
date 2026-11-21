@@ -1,5 +1,5 @@
 {
-  "contentHash": "70671e7f67cba835d4908a6753dcf25901c1ba6f564fffb104e2ce0de355afe9",
+  "contentHash": "41a689a5255b681a3275975d5940ced028704a43462512d1a9009cb67ce7efec",
   "locales": {
     "es": [
       {
@@ -324,7 +324,7 @@
           "benefit-usage",
           "provider-directory"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
           "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
@@ -631,7 +631,7 @@
           "addons",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis propiedades}}.\n\nPara un comercio o una experiencia, {{link:contact|escribinos}}.",
           "expect": "- Antes de confirmar ves los complementos que se pierden con la publicación, sin devolución (mirá {{article:addons|los complementos}}).\n- El borrado es definitivo: textos, fotos y preguntas se borran.",

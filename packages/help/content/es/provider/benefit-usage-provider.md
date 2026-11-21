@@ -30,7 +30,7 @@ covers:
   - "tool:reject_benefit_usage"
   - "tool:undo_benefit_rejection"
 entryFor: []
-reviewedAt: "2026-11-20"
+reviewedAt: "2026-11-21"
 ---
 
 ## Qué podés hacer
