@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Resolved copy of the late payment refunded mail (HOS-2179 P-3, D3). */
 export interface LatePaymentRefundedProps {

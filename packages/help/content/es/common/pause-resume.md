@@ -45,7 +45,7 @@ covers:
   - "page:mi-cuenta/complementos"
   - "tool:set_listing_publication"
 entryFor: []
-reviewedAt: "2026-11-20"
+reviewedAt: "2026-11-21"
 ---
 
 ## Qué podés hacer

@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatCurrency, formatDate } from '../utils/index.js';
 
 /**

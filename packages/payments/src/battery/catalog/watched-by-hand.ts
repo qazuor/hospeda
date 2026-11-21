@@ -93,18 +93,6 @@ export const WATCHED_BY_HAND: readonly WatchedByHand[] = [
         reason: 'a card change emits a zero-amount validation: it needs a card and a person'
     },
     {
-        row: 'RP14',
-        reason: 'order refunds need an order charged with a card token, which is not the subscription path'
-    },
-    {
-        row: 'RP15',
-        reason: 'one-time order creation needs a card token, which is not the subscription path'
-    },
-    {
-        row: 'RP16',
-        reason: 'a declined one-time order needs a card token, which is not the subscription path'
-    },
-    {
         row: 'RP18',
         reason: 'a second approved payment on one payment page needs a person paying twice on the provider page (HOS-2179)'
     },

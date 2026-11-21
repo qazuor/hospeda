@@ -130,8 +130,10 @@ articles it mentions and to the exact portal part it explains. Guard (a) enforce
   article's `covers` or `entryFor` appears in its body at least once as a
   `{{link:…}}` token pointing to that page or section. An article never explains
   a screen without a link to it. A page with no dedicated target is linked
-  with `{{link:page:<key>}}` (§5.1). A token inside a «Cómo se hace» step does
-  not count and fails a1 until `get_help` resolves tokens (PR-12).
+  with `{{link:page:<key>}}` (§5.1). Since PR-12 `get_help` resolves tokens, so
+  a step may carry tokens and its link tokens count. IL-2 still reads only the
+  prose: AC-15 freezes the steps of the 16 migrated topics, and one of them
+  (provider-directory, step 3) quotes another title.
 - **IL-2 Mentions are links.** Inside the body, a reference to another article's
   topic is an `{{article:…}}` token, never plain text. Not machine-checkable in
   general; reviewers check it. The guard checks the reverse case it can see: an

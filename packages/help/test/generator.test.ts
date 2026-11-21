@@ -188,17 +188,19 @@ describe('buildHelpIndex', () => {
 
         it.each([
             ['a link token', 'Entrá a {{link:subscription}}.'],
-            ['an article token', 'Leé {{article:b}}.'],
-            ['a broken token', 'Escribí {{ algo.']
-        ])('fails with %s in a step, which get_help would return raw (until PR-12)', (_label, step) => {
+            ['an article token', 'Leé {{article:b}}.']
+        ])('accepts %s in a step, which get_help resolves since PR-12', (_label, step) => {
+            expect(predicatesOf(greenCatalog({ a: { steps: ['Primero.', step] } }))).toEqual([]);
+        });
+
+        it('fails with a broken token in a step (a6)', () => {
             // Act
-            const details = detailsOf(greenCatalog({ a: { steps: ['Primero.', step] } })).join(
-                '\n'
-            );
+            const details = detailsOf(
+                greenCatalog({ a: { steps: ['Primero.', 'Escribí {{ algo.'] } })
+            ).join('\n');
 
             // Assert
-            expect(details).toContain('a1 ');
-            expect(details).toContain('must not carry a {{token}}');
+            expect(details).toContain('a6 ');
         });
 
         it('accepts the same token in the prose after the steps', () => {

@@ -13,6 +13,8 @@
             "@repo/logger": ["../../packages/logger/src"],
             "@repo/i18n": ["../../packages/i18n/src"],
             "@repo/schemas": ["../../packages/schemas/src"],
+            "@repo/help": ["../../packages/help/src"],
+            "@repo/portal-routes": ["../../packages/portal-routes/src"],
             "@repo/service-core": ["../../packages/service-core/src"]
         }
     },

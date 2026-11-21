@@ -42,6 +42,18 @@ export interface BuildPortalUrlArgs {
 const DYNAMIC_SEGMENT = /\[([A-Za-z]+)\]/g;
 
 /**
+ * Removes every trailing `/` of a string by index. A loop, not `/\/+$/`: the
+ * regex is quadratic on a long run of slashes (CodeQL `js/polynomial-redos`).
+ */
+function stripTrailingSlashes(value: string): string {
+    let end = value.length;
+    while (end > 0 && value.charCodeAt(end - 1) === 47) {
+        end -= 1;
+    }
+    return value.slice(0, end);
+}
+
+/**
  * Fills the dynamic segments of a template. Every value is URL-encoded; a
  * segment with no value is a programming error and throws, because a link with a
  * hole in it is worse than none.
@@ -207,7 +219,7 @@ export function buildPortalUrl({
     locale = PORTAL_DEFAULT_LOCALE,
     siteUrl
 }: BuildPortalUrlArgs): string {
-    const base = siteUrl.trim().replace(/\/+$/, '');
+    const base = stripTrailingSlashes(siteUrl.trim());
     if (base === '') {
         throw new Error('Portal links need the configured site URL');
     }

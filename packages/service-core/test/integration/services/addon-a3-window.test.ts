@@ -3,15 +3,12 @@ import {
     domainEvent,
     emailOutbox,
     eq,
-    payments,
     providerLinks,
     subscriptions
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { expireAddonAuthorizationWindows } from '../../../src/services/billing/addon/expire-addon-authorization-windows.service';
-import { expireOneTimeAddon } from '../../../src/services/billing/addon/expire-addon-authorization-windows-one-time';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
-import { sendOneTimeOrder } from '../../../src/services/billing/addon/send-one-time-order.service';
 import { retryOurCancellation } from '../../../src/services/billing/reconciliation/sweep/our-cancellation-retry';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { payingPrincipal } from './support/addon-a2-fixtures';
@@ -70,121 +67,6 @@ describe('TEST:B10:5 AC:B10:4 A3 only confirms expired addon purchases', () => {
                 f.advanceTo(new Date((await row()).createdAt.getTime() + 73 * HOUR))
         };
     }
-
-    it.skipIf(!isServiceTestDbAvailable())(
-        'without order id abandons with zero creation or search calls',
-        async () => {
-            const s = await setup();
-            await s.advance();
-            const charge = vi.spyOn(s.f.fake, 'chargeOnce');
-            const search = vi.spyOn(s.f.fake, 'searchOrders');
-            const result = await s.expire();
-            expect(result).toMatchObject({ abandoned: 1, activated: 0 });
-            expect((await s.row()).status).toBe('ABANDONED');
-            expect(charge).toHaveBeenCalledTimes(0);
-            expect(search).toHaveBeenCalledTimes(0);
-            expect(s.f.fake.ordersFor({ reference: s.request.orderRequestId })).toEqual({
-                orders: 0,
-                paid: 0
-            });
-        }
-    );
-
-    it.skipIf(!isServiceTestDbAvailable())(
-        'approved stored order runs A2 with its payment',
-        async () => {
-            const s = await setup();
-            await sendOneTimeOrder(
-                {
-                    orderRequestId: s.request.orderRequestId,
-                    payerEmail: 'payer@example.test',
-                    payment: { token: `card-${crypto.randomUUID()}`, brand: 'visa', kind: 'credit' }
-                },
-                s.f.ports
-            );
-            await s.advance();
-            expect(await s.expire()).toMatchObject({ activated: 1, abandoned: 0 });
-            expect((await s.row()).status).toBe('ACTIVE');
-            const rows = await getServiceTestDb()
-                .select()
-                .from(payments)
-                .where(eq(payments.addonInstanceId, s.bought.instanceId));
-            expect(rows).toHaveLength(1);
-            expect(rows[0]).toMatchObject({
-                status: 'SUCCEEDED',
-                addonInstanceId: s.bought.instanceId
-            });
-        }
-    );
-
-    it.skipIf(!isServiceTestDbAvailable())(
-        'defers when an order id appeared after candidate selection',
-        async () => {
-            const s = await setup();
-            await sendOneTimeOrder(
-                {
-                    orderRequestId: s.request.orderRequestId,
-                    payerEmail: 'payer@example.test',
-                    payment: { token: `card-${crypto.randomUUID()}`, brand: 'visa', kind: 'credit' }
-                },
-                s.f.ports
-            );
-            await s.advance();
-            expect(
-                await expireOneTimeAddon(
-                    { instanceId: s.bought.instanceId, providerOrderId: null },
-                    s.ports
-                )
-            ).toBe('DEFERRED');
-            expect((await s.row()).status).toBe('PENDING_AUTHORIZATION');
-            expect(await s.expire()).toMatchObject({ activated: 1 });
-        }
-    );
-
-    it.skipIf(!isServiceTestDbAvailable())(
-        'unapproved stored order abandons and keeps its order id',
-        async () => {
-            const s = await setup();
-            const token = `card-${crypto.randomUUID()}`;
-            s.f.fake.declineOrderPayments({ paymentToken: token });
-            await sendOneTimeOrder(
-                {
-                    orderRequestId: s.request.orderRequestId,
-                    payerEmail: 'payer@example.test',
-                    payment: { token, brand: 'visa', kind: 'credit' }
-                },
-                s.f.ports
-            );
-            const orderId = (await s.row()).providerOrderId;
-            await s.advance();
-            expect(await s.expire()).toMatchObject({ abandoned: 1, activated: 0 });
-            expect(await s.row()).toMatchObject({ status: 'ABANDONED', providerOrderId: orderId });
-        }
-    );
-
-    it.skipIf(!isServiceTestDbAvailable())(
-        'failed order read defers, then the next run resolves',
-        async () => {
-            const s = await setup();
-            await sendOneTimeOrder(
-                {
-                    orderRequestId: s.request.orderRequestId,
-                    payerEmail: 'payer@example.test',
-                    payment: { token: `card-${crypto.randomUUID()}`, brand: 'visa', kind: 'credit' }
-                },
-                s.f.ports
-            );
-            await s.advance();
-            const read = vi
-                .spyOn(s.f.fake, 'readOrder')
-                .mockRejectedValueOnce(new Error('offline'));
-            expect(await s.expire()).toMatchObject({ pending: 1, abandoned: 0 });
-            expect((await s.row()).status).toBe('PENDING_AUTHORIZATION');
-            read.mockRestore();
-            expect(await s.expire()).toMatchObject({ activated: 1 });
-            expect((await s.row()).status).toBe('ACTIVE');
-        }
-    );
 
     it.skipIf(!isServiceTestDbAvailable())(
         'authorized recurring addon runs A2 without cancelling',

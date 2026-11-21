@@ -15,7 +15,6 @@ import { vi } from 'vitest';
 import { applyA2Recurring } from '../../../../src/services/billing/addon/addon-instance-a2';
 import type { CancelPurgedListingAddonPorts } from '../../../../src/services/billing/addon/addon-instance-a6';
 import { purchaseAddon } from '../../../../src/services/billing/addon/purchase-addon.service';
-import { sendOneTimeOrder } from '../../../../src/services/billing/addon/send-one-time-order.service';
 import { getServiceTestDb } from '../helpers';
 import { payingPrincipal } from './addon-a2-fixtures';
 import { purchaseFixture } from './addon-purchase-fixtures';
@@ -68,17 +67,6 @@ export async function createA6Fixture(input: {
     const orderRequestId = crypto.randomUUID();
     const bought = await purchaseAddon(f.input(orderRequestId, listingId), f.ports);
     if (bought.outcome !== 'CREATED') throw new Error(`Addon purchase returned ${bought.outcome}`);
-    if (input.chargeKind === 'UNA_VEZ') {
-        const sent = await sendOneTimeOrder(
-            {
-                orderRequestId,
-                payerEmail: 'payer@example.test',
-                payment: { token: `a6-${crypto.randomUUID()}`, brand: 'visa', kind: 'credit' }
-            },
-            { provider: f.fake, clock: f.ports.clock }
-        );
-        if (sent.outcome !== 'ORDER_PLACED') throw new Error(`Order send returned ${sent.outcome}`);
-    }
     const [instance] = await getServiceTestDb()
         .select()
         .from(addonInstances)

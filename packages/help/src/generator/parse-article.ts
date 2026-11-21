@@ -14,6 +14,7 @@ import { parse as parseYaml } from 'yaml';
 import { type HelpArticleFrontmatter, HelpArticleFrontmatterSchema } from '../article.schema';
 import {
     HELP_MAX_STEPS,
+    HELP_RELATED_ANCHOR,
     HELP_RELATED_HEADINGS,
     HELP_SECTION_ANCHORS,
     HELP_SECTION_HEADINGS,
@@ -21,6 +22,9 @@ import {
     type HelpLocale,
     type HelpSectionKey
 } from '../constants';
+import { helpSubHeading, isHelpAnchorId, slugifyHelpHeading } from '../headings';
+
+export { slugifyHelpHeading };
 
 /**
  * The Markdown constructs an article may use, block or inline: paragraphs,
@@ -42,9 +46,6 @@ const ALLOWED_CONSTRUCTS: ReadonlySet<string> = new Set([
     'br'
 ]);
 
-/** An explicit `### Heading {#id}` anchor. */
-const EXPLICIT_ANCHOR = /\s*\{#([a-z0-9]+(?:-[a-z0-9]+)*)\}\s*$/;
-
 /** The body of one article, split into its sections. */
 export interface ParsedHelpBody {
     /** Raw Markdown of each section, trimmed. `howTo` is split into steps and the rest. */
@@ -55,7 +56,7 @@ export interface ParsedHelpBody {
         readonly notExpect: string;
         readonly troubleshooting: string;
     };
-    /** Every anchor id of the article: the five section anchors plus each `###` anchor. */
+    /** Every anchor id of the article: the five section anchors, `relacionados` and each `###` anchor. */
     readonly anchors: readonly string[];
 }
 
@@ -67,27 +68,6 @@ export type ParseHelpArticleResult =
           readonly body: ParsedHelpBody;
       }
     | { readonly ok: false; readonly errors: readonly string[] };
-
-/**
- * Slugifies a `###` heading into its anchor id: lowercase, accents stripped,
- * every run of non-alphanumerics a single `-`, no edge hyphens.
- *
- * @param args.text - The heading text
- * @returns The anchor id
- *
- * @example
- * ```ts
- * slugifyHelpHeading({ text: 'Mis fotos no se ven' }); // 'mis-fotos-no-se-ven'
- * ```
- */
-export function slugifyHelpHeading({ text }: { readonly text: string }): string {
-    return text
-        .normalize('NFD')
-        .replace(/\p{M}+/gu, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-}
 
 /** The child tokens of a token, when it has any. */
 function childrenOf(token: Token): readonly Token[] {
@@ -138,10 +118,13 @@ interface BodyState {
 
 /** Handles one `###` heading. */
 function onSubHeading({ state, text }: { readonly state: BodyState; readonly text: string }) {
-    const explicit = EXPLICIT_ANCHOR.exec(text);
-    const anchor = explicit?.[1] ?? slugifyHelpHeading({ text });
+    const { anchor } = helpSubHeading({ text });
     if (anchor === '') {
         state.errors.push(`"### ${text}" has no usable anchor id`);
+    } else if (!isHelpAnchorId({ anchor })) {
+        state.errors.push(
+            `explicit anchor "{#${anchor}}" ("### ${text}") must start with a letter: the web drops an id that starts with a digit`
+        );
     } else if (state.anchors.includes(anchor)) {
         state.errors.push(`duplicate anchor id "${anchor}" ("### ${text}")`);
     } else {
@@ -165,14 +148,9 @@ function onHowToBlock({ state, token }: { readonly state: BodyState; readonly to
                     'a step of «Cómo se hace» must be plain text, with no nested block'
                 );
             }
+            // A step may carry tokens since HOS-2410 PR-12: get_help resolves them,
+            // and a malformed one is reported by a6 like any other.
             const step = item.text.trim();
-            if (step.includes('{{')) {
-                // get_help returns the steps verbatim and resolves no token until
-                // HOS-2410 PR-12, so a token here would reach the agent raw.
-                state.errors.push(
-                    `a step of «Cómo se hace» must not carry a {{token}} until get_help resolves tokens (HOS-2410 PR-12): "${step}"`
-                );
-            }
             state.steps.push(step);
         }
         return;
@@ -208,7 +186,12 @@ export function parseHelpBody({
         parts: { canDo: [], howTo: [], expect: [], notExpect: [], troubleshooting: [] },
         after: [],
         steps: [],
-        anchors: HELP_SECTION_KEYS.map((key) => HELP_SECTION_ANCHORS[key]),
+        // The five section anchors and «Relacionados» are reserved: a `###`
+        // with the same id would make the page hold two elements with it.
+        anchors: [
+            ...HELP_SECTION_KEYS.map((key) => HELP_SECTION_ANCHORS[key]),
+            HELP_RELATED_ANCHOR
+        ],
         errors: []
     };
 

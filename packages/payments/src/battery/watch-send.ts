@@ -35,9 +35,7 @@ import { guardWrite, releaseWrite, type WatchRunState } from './watch-write-guar
 /**
  * The statuses that are a definitive rejection: the provider refused the request and no money
  * moved, so the reservation is given back. Every other status of a money write (408, 409, 425, 429,
- * any other 4xx, 5xx) is an unknown outcome: the reservation stays and the run stops. One exception
- * (G3): a 402 to `orders.create` whose body names the failed order under `data.id` is a definitive
- * decline too, exactly as the adapter reads it (see `declinedOrderIdOf`).
+ * any other 4xx, 5xx) is an unknown outcome: the reservation stays and the run stops.
  */
 const DEFINITIVE_REJECTION_STATUSES: ReadonlySet<number> = new Set([400, 401, 403, 404, 422]);
 
@@ -75,22 +73,6 @@ function idOf(body: unknown): string | undefined {
     if (typeof body !== 'object' || body === null || !('id' in body)) return undefined;
     const id = (body as { readonly id: unknown }).id;
     return typeof id === 'string' || typeof id === 'number' ? String(id) : undefined;
-}
-
-/**
- * G3: the id of the failed order a declined `orders.create` answers with a 402 (`EX-30`, `RP16`).
- * Read exactly as the adapter reads it (`mercadopago-order-charge.ts`, `DeclinedOrderSchema`): a
- * non-empty string under `data.id`. Anything else is not a readable decline.
- *
- * @param body - The 402 answer's body
- * @returns The failed order's id, or `undefined` when the body carries none
- */
-function declinedOrderIdOf(body: unknown): string | undefined {
-    if (typeof body !== 'object' || body === null || !('data' in body)) return undefined;
-    const data = (body as { readonly data: unknown }).data;
-    if (typeof data !== 'object' || data === null || !('id' in data)) return undefined;
-    const id = (data as { readonly id: unknown }).id;
-    return typeof id === 'string' && id.length > 0 ? id : undefined;
 }
 
 /** A money write that left, kept so {@link GuardedSend.replay} can resend it verbatim (F4). */
@@ -285,23 +267,14 @@ export function createGuardedSend(args: {
             });
         }
         shapes[label] = shapeOfAnswer(response.body);
-        // G3: a 402 to `orders.create` whose body names the failed order is a definitive decline
-        // (EX-30, RP16), read as the adapter reads it. A 402 without a readable id stays unknown.
-        const declinedId =
-            operation.rule === 'orders.create' && response.status === 402
-                ? declinedOrderIdOf(response.body)
-                : undefined;
-        if (
-            tracked &&
-            (DEFINITIVE_REJECTION_STATUSES.has(response.status) || declinedId !== undefined)
-        ) {
+        if (tracked && DEFINITIVE_REJECTION_STATUSES.has(response.status)) {
             // A definitive refusal: nothing moved, so the reservation is given back and the
             // corrected ledger is persisted. (A 5xx or a lost answer keeps it, below.)
             releaseWrite({ operation, state });
             if (operation.kind === 'charge') entryCharged -= operation.statedMinor ?? 0;
             // The provider may still have answered an id (traceability). It goes in `providerIds`
             // only: it is NOT one of this run's objects, so it never becomes a valid target.
-            const refusedId = declinedId ?? idOf(response.body);
+            const refusedId = idOf(response.body);
             if (sent !== null && refusedId !== undefined) sent.firstId = refusedId;
             if (refusedId !== undefined) providerIds.push(refusedId);
             await recordOrAbort(

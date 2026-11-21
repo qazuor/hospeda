@@ -1,0 +1,230 @@
+/**
+ * @file help-pages.test.ts
+ * @description Source-level guards for the help center pages and the «?»
+ * wiring (HOS-2410 `docs/web-ui.md` §2, §4, §5, §6, §8).
+ *
+ * SCOPE, stated plainly: Vitest cannot render `.astro`, so these assertions
+ * prove what the pages DECLARE. Everything they compute is tested for real in
+ * `test/lib/help/*` and the islands in `test/components/account/help/*`.
+ */
+
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
+import { HELP_INDEX } from '@repo/help';
+import {
+    EDITOR_NON_SECTION_PAGE_SLUGS,
+    EDITOR_SECTION_SLUGS,
+    EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
+    PORTAL_ROUTE_TEMPLATES
+} from '@repo/portal-routes';
+import { describe, expect, it } from 'vitest';
+import { findHelpEntry, pageHelpAnchor } from '../../src/lib/help/help-entry';
+
+const SRC = resolve(__dirname, '../../src');
+const PAGES = resolve(SRC, 'pages/[lang]');
+const read = (path: string): string => readFileSync(resolve(SRC, path), 'utf8');
+
+const LANDING = read('pages/[lang]/mi-cuenta/ayuda/index.astro');
+const ARTICLE = read('pages/[lang]/mi-cuenta/ayuda/[id].astro');
+const HEADER = read('components/account/AccountPageHeader.astro');
+const SHELL = read('layouts/EditorShellLayout.astro');
+const HELP_LINK = read('components/account/help/HelpLink.astro');
+const LAYOUT = read('layouts/AccountLayout.astro');
+const HELP_ROW = read('components/account/help/PageHelpRow.astro');
+
+/** What gives a page its «?»: the header, an editor layout, the account layout's row, or the row itself. */
+const HELP_PATH =
+    /<AccountPageHeader\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b|<AccountLayout\b|<PageHelpRow\b/;
+
+/**
+ * Account pages with no user surface: they redirect before rendering, so they
+ * need no «?» (web-ui §6, `comercio/nuevo` is a 301 to /publicar).
+ */
+const REDIRECT_ONLY_PAGES = ['comercio/nuevo/[vertical].astro', 'comercio/nuevo/index.astro'];
+
+/** Every `.astro` page under `/mi-cuenta`, relative to that folder. */
+function accountPages(): string[] {
+    const root = resolve(PAGES, 'mi-cuenta');
+    const walk = (dir: string): string[] =>
+        readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+            const path = resolve(dir, entry.name);
+            if (entry.isDirectory()) return walk(path);
+            return entry.name.endsWith('.astro') ? [relative(root, path)] : [];
+        });
+    return walk(root).sort();
+}
+
+/** The `Astro.routePattern` of a page file under `/mi-cuenta`. */
+function routePatternOf(file: string): string {
+    const route = file.replace(/\.astro$/, '').replace(/(^|\/)index$/, '');
+    return `/[lang]/mi-cuenta${route === '' ? '' : `/${route}`}`;
+}
+
+/** The source of the page a `page:mi-cuenta/...` anchor names. */
+function pageSource(anchor: string): string | undefined {
+    const route = anchor.replace(/^page:/, '');
+    for (const file of [`${route}.astro`, `${route}/index.astro`]) {
+        const path = resolve(PAGES, file);
+        if (existsSync(path)) {
+            return readFileSync(path, 'utf8');
+        }
+    }
+    return undefined;
+}
+
+describe('help landing (web-ui §2)', () => {
+    it('redirects a guest to sign-in and reads no other per-user value (D-H4)', () => {
+        expect(LANDING).toMatch(
+            /if \(!user\) \{\s*return Astro\.redirect\(buildUrl\(\{ locale, path: 'auth\/signin' \}\)\);/
+        );
+        expect(LANDING).not.toMatch(/user\.[a-zA-Z]/);
+    });
+
+    it('marks the nav entry active and hydrates both islands lazily', () => {
+        expect(LANDING).toContain('activeSection="ayuda"');
+        expect(LANDING).toMatch(/<HelpSearch\s+client:idle/);
+        expect(LANDING).toContain('<HelpAudiencePreselect client:idle />');
+    });
+
+    it('ships the tablist hidden, so without JS every panel shows with its h2 (AC-4)', () => {
+        expect(LANDING).toMatch(/role="tablist"[^>]*hidden/);
+        expect(LANDING).toMatch(/<h2 class="help-tabs__heading"/);
+        expect(LANDING).toContain('initHelpTabs');
+    });
+
+    it('selects the tab from ?para= only, never from the session (AC-3)', () => {
+        expect(LANDING).toContain("searchParams.get('para')");
+        expect(LANDING).toContain('{para === undefined && <HelpAudiencePreselect');
+    });
+});
+
+describe('help article (web-ui §4)', () => {
+    it('answers 404 for an unknown id (AC-10)', () => {
+        expect(ARTICLE).toMatch(
+            /if \(found === undefined\) \{\s*return new Response\(null, \{ status: 404 \}\);/
+        );
+    });
+
+    it('wraps the content in its content locale, with the fallback notice (AC-11)', () => {
+        expect(ARTICLE).toContain('<article class="help-article" lang={contentLocale}>');
+        expect(ARTICLE).toContain('{isFallback && <p class="help-article__notice"');
+    });
+
+    it('loads the limit island only when the article has a limit token', () => {
+        expect(ARTICLE).toContain('{limitVerticals.length > 0 && <HelpLimitValues client:idle');
+    });
+
+    it('renders a side index and a mobile details index', () => {
+        expect(ARTICLE).toContain('<details class="help-article__toc-mobile">');
+        expect(ARTICLE.match(/data-help-toc/g)?.length).toBeGreaterThanOrEqual(2);
+    });
+});
+
+describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
+    it('the header derives the page anchor from the route and renders HelpLink', () => {
+        expect(HEADER).toContain('pageHelpAnchor({ routePattern: Astro.routePattern })');
+        expect(HEADER).toContain('<HelpLink anchor={anchor} locale={locale} />');
+    });
+
+    it('the editor shell passes the section anchor of its vertical', () => {
+        expect(SHELL).toContain(
+            'sectionHelpAnchor({ vertical: registry.id, slug: currentSectionSlug })'
+        );
+        expect(SHELL).toContain('helpAnchor={helpAnchor}');
+    });
+
+    it('HelpLink renders nothing without an entry and opens in a new tab', () => {
+        expect(HELP_LINK).toContain('{entry !== undefined && (');
+        expect(HELP_LINK).toContain('target="_blank"');
+        expect(HELP_LINK).toContain('rel="noopener"');
+    });
+
+    it.each(
+        HELP_INDEX.locales.es.flatMap((article) =>
+            article.entryFor
+                .filter((anchor) => anchor.startsWith('page:mi-cuenta'))
+                .map((anchor) => [anchor, article.id] as const)
+        )
+    )('%s resolves to a «?» that opens %s (web-ui §8)', (anchor, id) => {
+        // Arrange
+        const source = pageSource(anchor);
+        const file = accountPages().find(
+            (page) => pageHelpAnchor({ routePattern: routePatternOf(page) }) === anchor
+        );
+
+        // Assert: the page exists, has a «?» path, derives this anchor, and it finds the article
+        expect(source, `${anchor} names no page`).toBeDefined();
+        expect(source).toMatch(HELP_PATH);
+        expect(source).not.toMatch(/helpAnchor=\{null\}/);
+        expect(file, `no page derives ${anchor}`).toBeDefined();
+        expect(findHelpEntry({ anchor, locale: 'es' })?.id).toBe(id);
+    });
+
+    it.each(
+        HELP_INDEX.locales.es.flatMap((article) =>
+            article.entryFor.filter((anchor) => anchor.startsWith('section:'))
+        )
+    )('%s names a real editor slug of its vertical, with a page', (anchor) => {
+        // Arrange
+        const [vertical = '', slug = ''] = anchor.replace(/^section:/, '').split('.');
+        const slugs = [
+            ...Object.values(
+                EDITOR_SECTION_SLUGS[vertical as keyof typeof EDITOR_SECTION_SLUGS] ?? {}
+            ),
+            ...Object.values(
+                EDITOR_NON_SECTION_PAGE_SLUGS[
+                    vertical as keyof typeof EDITOR_NON_SECTION_PAGE_SLUGS
+                ] ?? {}
+            )
+        ];
+        const templateKey =
+            EDITOR_SECTION_TEMPLATE_BY_VERTICAL[
+                vertical as keyof typeof EDITOR_SECTION_TEMPLATE_BY_VERTICAL
+            ];
+        const template = templateKey === undefined ? '' : PORTAL_ROUTE_TEMPLATES[templateKey];
+        const page = template.replace('[section]', slug);
+
+        // Assert
+        expect(slugs, `${anchor}: no such slug in ${vertical}`).toContain(slug);
+        expect(
+            existsSync(resolve(PAGES, `${page}.astro`)) ||
+                existsSync(resolve(PAGES, page, 'index.astro')),
+            `${anchor}: no page at ${page}`
+        ).toBe(true);
+        expect(findHelpEntry({ anchor, locale: 'es' })).toBeDefined();
+    });
+
+    it('every /mi-cuenta page has a «?» path, except the redirect-only ones', () => {
+        // Act
+        const missing = accountPages().filter(
+            (page) =>
+                !REDIRECT_ONLY_PAGES.includes(page) &&
+                !HELP_PATH.test(readFileSync(resolve(PAGES, 'mi-cuenta', page), 'utf8'))
+        );
+
+        // Assert
+        expect(missing).toEqual([]);
+        for (const page of REDIRECT_ONLY_PAGES) {
+            expect(readFileSync(resolve(PAGES, 'mi-cuenta', page), 'utf8')).toContain('redirect(');
+        }
+    });
+
+    it('the account layout renders the page row, hidden next to a header', () => {
+        expect(LAYOUT).toContain('<PageHelpRow locale={locale} fallback />');
+        expect(LAYOUT).toContain(
+            '.account-page__content:has([data-account-page-header]) > [data-help-fallback]'
+        );
+        expect(HEADER).toContain('data-account-page-header');
+        expect(HELP_ROW).toContain('pageHelpAnchor({ routePattern: Astro.routePattern })');
+    });
+
+    it('claims outside /mi-cuenta get no «?» from the account header (AC-21)', () => {
+        const outside = HELP_INDEX.locales.es
+            .flatMap((article) => article.entryFor)
+            .filter((anchor) => anchor.startsWith('page:') && !anchor.startsWith('page:mi-cuenta'));
+        for (const anchor of outside) {
+            const route = `/[lang]/${anchor.replace(/^page:/, '')}`;
+            expect(pageHelpAnchor({ routePattern: route })).toBeUndefined();
+        }
+    });
+});

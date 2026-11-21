@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the notice sent after payment on an already cancelled preapproval. */
 export const PAID_AFTER_CANCELLATION_SUBJECT = 'Tu pago entró, pero tu suscripción no se renueva';

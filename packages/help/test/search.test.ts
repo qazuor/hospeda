@@ -93,3 +93,20 @@ describe('findOwnerHelpTopic', () => {
         expect(findOwnerHelpTopic({ topics: HELP_ARTICLES, id: 'cal.*' })).toBeUndefined();
     });
 });
+
+describe('searchOwnerHelp limit (HOS-2410 web-ui §3)', () => {
+    const many: readonly HelpSearchable[] = Array.from({ length: 12 }, (_, index) => ({
+        id: `topic-${index}`,
+        title: `Tema ${index}`,
+        keywords: ['fotos'],
+        audiences: ['host']
+    }));
+
+    it('returns at most three topics by default, what get_help answers with', () => {
+        expect(searchOwnerHelp({ topics: many, question: 'fotos' })).toHaveLength(3);
+    });
+
+    it('returns up to the given limit when one is passed', () => {
+        expect(searchOwnerHelp({ topics: many, question: 'fotos', limit: 10 })).toHaveLength(10);
+    });
+});

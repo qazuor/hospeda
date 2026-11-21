@@ -27,7 +27,8 @@ vi.mock('@repo/email', () => ({
 
 const mockConversationVerify = vi.fn((props: unknown) => props);
 
-vi.mock('@repo/notifications', () => ({
+vi.mock('@repo/notifications', async () => ({
+    ...(await import('../../../../packages/notifications/src/templates/conversation/subjects.ts')),
     ConversationVerify: mockConversationVerify
 }));
 

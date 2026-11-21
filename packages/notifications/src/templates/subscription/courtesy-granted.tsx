@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Props for the CourtesyGranted email template (HOS-180). */
 export interface CourtesyGrantedProps {
@@ -40,10 +40,7 @@ export function CourtesyGranted({
     const cycleLabel = cycles === 1 ? 'un período' : `${cycles} períodos`;
 
     return (
-        <EmailLayout
-            previewText={`Te regalamos ${cycleLabel} de tu plan ${planName}`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Te regalamos ${cycleLabel} de tu plan ${planName}`}>
             <Heading>Te regalamos {cycleLabel}</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

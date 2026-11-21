@@ -19,6 +19,7 @@ import {
     type HelpFolder,
     type HelpLocale
 } from '../constants';
+import type { HelpDestination } from '../destination.schema';
 import {
     helpDestinationTemplate,
     helpEditorSectionSlug,
@@ -167,12 +168,21 @@ function tokenIssues({
 /** IL-1: every page and section the article covers is linked from its body. */
 function linkCoverageIssues({ entry }: { readonly entry: ParsedHelpEntry }): HelpCatalogIssue[] {
     const { file, frontmatter: article } = entry;
-    const destinations = tokensOf({ body: entry.body })
-        .tokens.filter((token) => token.kind === 'link')
-        .flatMap((token) => {
-            const resolved = resolveHelpLinkTarget({ args: token.args });
-            return resolved.ok ? [resolved.destination] : [];
-        });
+    const destinations = tokensOf({ body: entry.body }).tokens.flatMap(
+        (token): HelpDestination[] => {
+            if (token.kind === 'link') {
+                const resolved = resolveHelpLinkTarget({ args: token.args });
+                return resolved.ok ? [resolved.destination] : [];
+            }
+            // An {{article}} token is a link to the help article page, so it
+            // links `page:mi-cuenta/ayuda/[id]` (no {{link}} target names an
+            // article id).
+            const [id] = token.args;
+            return token.kind === 'article' && id !== undefined
+                ? [{ kind: 'helpArticle', id }]
+                : [];
+        }
+    );
     const issues: HelpCatalogIssue[] = [];
     for (const anchor of new Set([...article.covers, ...article.entryFor])) {
         const [kind, target = ''] = [
@@ -357,9 +367,11 @@ export function validateHelpCatalog({
                 })
             );
         }
-        // IL-2 reads the prose only: the «Cómo se hace» steps are returned verbatim
-        // by get_help, which does not resolve tokens yet (HOS-2410 PR-12), so a
-        // step cannot carry an {{article}} token.
+        // IL-2 reads the prose only. A step may carry an {{article}} token since
+        // HOS-2410 PR-12 (get_help resolves it), but the steps of the 16 migrated
+        // topics are frozen byte for byte by AC-15, and one of them quotes a title
+        // (provider-directory, step 3). Extending IL-2 to the steps is a content
+        // change for a later PR, not part of the resolver.
         const prose = bodyTexts({ body: entry.body })
             .prose.map((text) => replaceHelpTokens({ text, replace: () => '' }))
             .join('\n');

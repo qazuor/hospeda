@@ -40,8 +40,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                     returnUrl: addonPurchaseReturnUrl({
                         ctx,
                         orderRequestId: parsed.orderRequestId
-                    }),
-                    oneTimeChannel: 'PAGE'
+                    })
                 },
                 ports
             );

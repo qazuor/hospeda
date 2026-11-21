@@ -1,0 +1,88 @@
+---
+/**
+ * @file HelpLink.astro
+ * @description The «?» button of an owner page (HOS-2410 `docs/web-ui.md` §6,
+ * US-6, AC-21, AC-22).
+ *
+ * It opens, in a new tab, the article whose `entryFor` claims `anchor`. When no
+ * article claims it (an exempt page, a page outside `/mi-cuenta`, or a page
+ * whose article is not written yet) it renders NOTHING: a «?» that leads to a
+ * generic page is worse than no «?».
+ *
+ * Same HTML for every reader (D-H4): it reads only the anchor and the locale.
+ */
+
+import { findHelpEntry } from '@/lib/help/help-entry';
+import { helpArticlePath } from '@/lib/help/help-tokens';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	/** A `page:` or `section:` anchor; absent means no «?». */
+	readonly anchor: string | null | undefined;
+	readonly locale: SupportedLocale;
+}
+
+const { anchor, locale } = Astro.props;
+const entry = findHelpEntry({ anchor, locale });
+const { t } = createTranslations(locale);
+---
+
+{entry !== undefined && (
+	<a
+		class="help-link"
+		href={helpArticlePath({ id: entry.id, locale })}
+		target="_blank"
+		rel="noopener"
+		aria-label={t('account.help.link.ariaLabel', undefined, { title: entry.title })}
+		data-help-link={entry.id}
+	>
+		<span class="help-link__mark" aria-hidden="true">?</span>
+	</a>
+)}
+
+<style>
+	/* 44px hit area (WCAG 2.5.8 target size) around a 32px visible circle. */
+	.help-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		text-decoration: none;
+	}
+
+	.help-link__mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		font-family: var(--font-heading);
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--brand-primary);
+		background-color: var(--core-card);
+		border: 1.5px solid var(--brand-primary);
+		border-radius: 50%;
+		transition: background-color 150ms ease, color 150ms ease;
+	}
+
+	.help-link:hover .help-link__mark {
+		color: var(--core-card);
+		background-color: var(--brand-primary);
+	}
+
+	.help-link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.help-link__mark {
+			transition: none;
+		}
+	}
+</style>

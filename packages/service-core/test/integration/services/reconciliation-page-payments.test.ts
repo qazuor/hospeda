@@ -104,42 +104,45 @@ async function paidTwiceUnnoticed() {
     return { s, instance, first, second };
 }
 
-describe('HOS-2179 §5.10 the sweep searches page payments', () => {
-    it.skipIf(skip)('opens mark 23 for a paid purchase with no live instance', async () => {
-        const { s, instance, paid } = await paidWithoutLiveInstance();
-        const search = vi.spyOn(s.f.fake, 'searchCharges');
-        const read = vi.spyOn(s.f.fake, 'readCharge');
+describe('TEST:B11:20 HOS-2179 §5.10 the sweep searches page payments', () => {
+    it.skipIf(skip)(
+        'LISTA:B11 cláusula 7 (página de pago, HOS-2179): opens mark 23 for a paid purchase with no live instance',
+        async () => {
+            const { s, instance, paid } = await paidWithoutLiveInstance();
+            const search = vi.spyOn(s.f.fake, 'searchCharges');
+            const read = vi.spyOn(s.f.fake, 'readCharge');
 
-        const summary = await sweepPagePayments(s, [instance.id]);
+            const summary = await sweepPagePayments(s, [instance.id]);
 
-        expect(summary.pagePayments).toEqual({
-            examined: 1,
-            duplicateMarked: 0,
-            lateMarked: 1,
-            divergenceMarked: 0,
-            failures: []
-        });
-        expect(search).toHaveBeenCalledWith({
-            reference: instance.orderRequestId,
-            createdFrom: new Date(purchaseNow.getTime() - 3_600_000).toISOString(),
-            createdTo: s.f.ports.clock.now().toISOString()
-        });
-        // The search only yields ids: the decision comes from the read by id (INV:D6).
-        expect(read).toHaveBeenCalledWith({ chargeId: paid.chargeId });
-        expect(await pageMarks(instance.id)).toEqual([
-            { reason: 'ORDEN_PAGADA_SIN_INSTANCIA', liftedAt: null }
-        ]);
-        const [event] = await pageMarkEvents(instance.id);
-        expect(event?.actorType).toBe('job');
-        expect(changeOf(event ?? { changes: [] }, 'provider.charge_id')).toBe(paid.chargeId);
-        expect((await pageInstance(instance.id)).status).toBe('ABANDONED');
-        // D1: the sweep hangs the charge's own payment row from the mark, never credited.
-        const held = await heldPagePayments(instance.id);
-        expect(
-            held.map((row) => [row.payment.providerFactId, row.reason, row.payment.status])
-        ).toEqual([[paid.chargeId, 'ORDEN_PAGADA_SIN_INSTANCIA', 'SUCCEEDED']]);
-        expect(await activationPagePayments(instance.id)).toHaveLength(0);
-    });
+            expect(summary.pagePayments).toEqual({
+                examined: 1,
+                duplicateMarked: 0,
+                lateMarked: 1,
+                divergenceMarked: 0,
+                failures: []
+            });
+            expect(search).toHaveBeenCalledWith({
+                reference: instance.orderRequestId,
+                createdFrom: new Date(purchaseNow.getTime() - 3_600_000).toISOString(),
+                createdTo: s.f.ports.clock.now().toISOString()
+            });
+            // The search only yields ids: the decision comes from the read by id (INV:D6).
+            expect(read).toHaveBeenCalledWith({ chargeId: paid.chargeId });
+            expect(await pageMarks(instance.id)).toEqual([
+                { reason: 'ORDEN_PAGADA_SIN_INSTANCIA', liftedAt: null }
+            ]);
+            const [event] = await pageMarkEvents(instance.id);
+            expect(event?.actorType).toBe('job');
+            expect(changeOf(event ?? { changes: [] }, 'provider.charge_id')).toBe(paid.chargeId);
+            expect((await pageInstance(instance.id)).status).toBe('ABANDONED');
+            // D1: the sweep hangs the charge's own payment row from the mark, never credited.
+            const held = await heldPagePayments(instance.id);
+            expect(
+                held.map((row) => [row.payment.providerFactId, row.reason, row.payment.status])
+            ).toEqual([[paid.chargeId, 'ORDEN_PAGADA_SIN_INSTANCIA', 'SUCCEEDED']]);
+            expect(await activationPagePayments(instance.id)).toHaveLength(0);
+        }
+    );
 
     it.skipIf(skip)('does not mark the same payment again on the next run', async () => {
         const { s, instance } = await paidWithoutLiveInstance();

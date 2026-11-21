@@ -29,6 +29,7 @@ related:
   - reviews
   - inquiries
   - amenities
+  - help-center
 covers:
   - "file:apps/web/src/components/account/AiAssistantsPanel.client.tsx"
 entryFor:

@@ -89,8 +89,12 @@ describe('HELP_INDEX', () => {
         expect(fresh.json).toBe(readFileSync(HELP_INDEX_FILE, 'utf8'));
     });
 
-    it('holds exactly the 16 migrated topic ids, sorted by id', () => {
-        expect(HELP_ARTICLES.map((article) => article.id)).toEqual(Object.keys(MIGRATION).sort());
+    it('holds exactly the 16 migrated topic ids plus the new ones, sorted by id', () => {
+        // Articles written after the migration (HOS-2410 PR-5: help-center).
+        const added = ['help-center'];
+        expect(HELP_ARTICLES.map((article) => article.id)).toEqual(
+            [...Object.keys(MIGRATION), ...added].sort()
+        );
         expect(HELP_INDEX.locales.en).toBeUndefined();
     });
 

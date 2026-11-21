@@ -6,6 +6,7 @@
 export * from './api.schema.js'; // Query parameters (pagination, sort, search, date/price/location ranges)
 export * from './auth.schema.js'; // Authentication schemas (actor, auth status, cache stats)
 export * from './billing/index.js'; // Billing schemas (plan change request/response)
+export * from './email-preview/email-preview.schema.js'; // Admin email previewer (HOS-2519)
 export * from './examples/task.schema.js';
 export * from './health/health.schema.js';
 export * from './health.schema.js'; // Health check schemas (health, database, liveness, readiness)

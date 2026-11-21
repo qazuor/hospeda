@@ -116,13 +116,15 @@ describe('partnerPanel, helpLanding and helpArticle', () => {
         ).toBe(`${SITE}/pt/mi-cuenta/ayuda/`);
     });
 
-    it('should only leave the help center pages without a web page, and nothing else', () => {
+    it('should leave no route without a web page once the help center shipped (HOS-2410 PR-5)', () => {
         const missing = Object.entries(PORTAL_ROUTE_TEMPLATES)
             .filter(([, template]) => !template.includes('[section]') && !pageExists(template))
             .map(([key]) => key)
             .sort();
         expect(missing).toEqual([...PORTAL_UNRELEASED_ROUTE_KEYS].sort());
-        expect(PORTAL_UNRELEASED_ROUTE_KEYS).toEqual(['helpLanding', 'helpArticle']);
+        expect(PORTAL_UNRELEASED_ROUTE_KEYS).toEqual([]);
+        expect(pageExists(PORTAL_ROUTE_TEMPLATES.helpLanding)).toBe(true);
+        expect(pageExists(PORTAL_ROUTE_TEMPLATES.helpArticle)).toBe(true);
     });
 
     it('should label the new kinds', () => {
@@ -216,5 +218,29 @@ describe('page destination types', () => {
         probe({ kind: 'page', page: 'venuePublicPage', params: { id: 'a' } });
         // @ts-expect-error a static page takes no params
         probe({ kind: 'page', page: 'accountHome', params: { id: 'a' } });
+    });
+});
+
+describe('buildPortalUrl site URL normalisation (js/polynomial-redos)', () => {
+    const destination = { kind: 'page', page: 'accountHome' } satisfies PortalDestination;
+
+    it('strips a long run of trailing slashes in linear time', () => {
+        const started = Date.now();
+        const url = buildPortalUrl({ destination, siteUrl: `${SITE}${'/'.repeat(100000)}` });
+
+        expect(url.startsWith(`${SITE}/`)).toBe(true);
+        expect(url.startsWith(`${SITE}//`)).toBe(false);
+        expect(Date.now() - started).toBeLessThan(1000);
+    });
+
+    it('keeps slashes that are not trailing and still rejects a slash-only site URL', () => {
+        const started = Date.now();
+        const noisy = `${'/'.repeat(100000)}x`;
+
+        expect(buildPortalUrl({ destination, siteUrl: noisy }).startsWith(noisy)).toBe(true);
+        expect(() => buildPortalUrl({ destination, siteUrl: '/'.repeat(100000) })).toThrow(
+            'site URL'
+        );
+        expect(Date.now() - started).toBeLessThan(1000);
     });
 });

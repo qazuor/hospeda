@@ -20,6 +20,7 @@ import { createT } from '@/lib/i18n';
 import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import { buildUrl } from '@/lib/urls';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHelpRow from '@/components/account/help/PageHelpRow.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { SetPassword } from '@/components/account/SetPassword.client';
 
@@ -61,6 +62,8 @@ const returnUrl = resolveSafeReturnPath({ rawReturn: rawReturnUrl, locale });
         canonical={canonicalUrl}
         noindex={true}
     />
+
+    <PageHelpRow locale={locale} />
 
     <SetPassword
         client:load

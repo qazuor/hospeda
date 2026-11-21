@@ -140,6 +140,7 @@
         "preferences": "Preferencias",
         "newsletter": "Boletín de novedades",
         "whatsNew": "Qué hay de nuevo",
+        "help": "Ayuda",
         "aiAssistants": "Asistentes de IA",
         "favorites": "Favoritos",
         "searchHistory": "Historial de búsquedas",
@@ -1854,5 +1855,51 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
+    },
+    "help": {
+        "landing": {
+            "title": "Ayuda para publicar en Hospeda",
+            "description": "Todo lo que podés hacer, cómo hacerlo y qué esperar.",
+            "tabsLabel": "Tipo de cuenta",
+            "emptyAudience": "Todavía estamos escribiendo la ayuda para este tipo de cuenta."
+        },
+        "audiences": {
+            "host": "Alojamientos",
+            "venue": "Comer y salir",
+            "experience": "Experiencias",
+            "provider": "Proveedores",
+            "partner": "Aliados"
+        },
+        "audiencesLabel": "Para",
+        "search": {
+            "label": "Buscar en la ayuda",
+            "placeholder": "Por ejemplo: cómo subo fotos",
+            "onlyMine": "Solo para mi tipo de cuenta",
+            "results_one": "{{count}} resultado",
+            "results_other": "{{count}} resultados",
+            "noMatch": "No encontramos ayuda para eso",
+            "submit": "Buscar"
+        },
+        "fallback": {
+            "title": "¿No encontraste lo que buscabas?",
+            "faq": "Ver las preguntas frecuentes",
+            "contact": "Escribinos"
+        },
+        "article": {
+            "breadcrumbRoot": "Ayuda",
+            "breadcrumbLabel": "Ruta de la ayuda",
+            "reviewedAt": "Revisado el {{date}}",
+            "tocLabel": "En este artículo",
+            "tocToggle": "Índice del artículo",
+            "pagesTitle": "Páginas",
+            "faqLink": "Ver también en preguntas frecuentes",
+            "onlySpanish": "Este artículo por ahora está disponible solo en español.",
+            "limitNeutral": "el tope de tu plan",
+            "unlimited": "sin tope",
+            "title": "Ayuda: {{title}}"
+        },
+        "link": {
+            "ariaLabel": "Ayuda: {{title}} (se abre en una pestaña nueva)"
+        }
     }
 }

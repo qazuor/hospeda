@@ -99,11 +99,12 @@ function predicatesOf(tree: Tree, now: Date = NOW): string[] {
 
 describe('check-help-catalog on the real repo', () => {
     it('is green, and reads every article', () => {
-        // Act
-        const result = run({ now: NOW });
+        // Act: the real content carries real review dates, so it is checked
+        // against the real clock (a fixed NOW goes stale as articles land).
+        const result = run({ now: new Date() });
 
         // Assert
-        expect(result.output).toMatch(/^OK GUARD:help-catalog: 16 articles/);
+        expect(result.output).toMatch(/^OK GUARD:help-catalog: 17 articles/);
         expect(result.exitCode).toBe(0);
     });
 
@@ -153,8 +154,9 @@ describe('checkHelpCatalog on a synthetic repo', () => {
         expect(predicatesOf(tree)).toEqual(['a2', 'a5']);
     });
 
-    it('skips a destination whose page has not shipped yet (helpLanding)', () => {
-        // Arrange
+    it('demands the help center page now that it shipped (HOS-2410 PR-5 released helpLanding)', () => {
+        // Arrange: the synthetic tree has no mi-cuenta/ayuda page, and the key
+        // is no longer in PORTAL_UNRELEASED_ROUTE_KEYS, so nothing skips it.
         const files = greenCatalog({
             a: {
                 frontmatter: { destinations: [{ kind: 'subscription' }, { kind: 'helpLanding' }] }
@@ -162,7 +164,7 @@ describe('checkHelpCatalog on a synthetic repo', () => {
         });
 
         // Act / Assert
-        expect(predicatesOf(syntheticTree({ files }))).toEqual([]);
+        expect(predicatesOf(syntheticTree({ files }))).toEqual(['a2']);
     });
 
     it('fails a3 when the faqKey is not an es FAQ item, and passes when it is', () => {

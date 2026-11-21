@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the notice sent before S13 cancels a permanent grant subscription's authorization. */
 export const PERMANENT_GRANT_CANCEL_SUBJECT = 'Tu suscripción ya no se cobra';

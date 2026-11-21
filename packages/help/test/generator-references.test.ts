@@ -83,6 +83,19 @@ describe('buildHelpIndex', () => {
             expect(predicatesOf(files)).toEqual(['IL-1']);
         });
 
+        it('counts a link token inside a step for IL-1, now that get_help resolves it (PR-12)', () => {
+            // Arrange: the only {{link:subscription}} moves into a step.
+            const files = greenCatalog({
+                a: {
+                    canDo: 'Leer {{article:b|el otro}}.',
+                    steps: ['Entrá a {{link:subscription}}.', 'Segundo paso.']
+                }
+            });
+
+            // Act / Assert
+            expect(predicatesOf(files)).toEqual([]);
+        });
+
         it('fails IL-1 for a covered page reachable only by a page key, naming the token, and passes with it', () => {
             // Arrange
             const covers = { covers: ['page:mi-cuenta/suscripcion', 'page:mi-cuenta'] };
@@ -108,6 +121,23 @@ describe('buildHelpIndex', () => {
             );
             expect(predicatesOf(linked)).toEqual([]);
             expect(predicatesOf(wrongKey)).toEqual(['IL-1']);
+        });
+
+        it('counts an {{article}} token as a link to the help article page (IL-1)', () => {
+            // Arrange: no {{link}} target names an article id
+            const covers = { covers: ['page:mi-cuenta/suscripcion', 'page:mi-cuenta/ayuda/[id]'] };
+            const withArticle = greenCatalog({ a: { frontmatter: covers } });
+            const withoutArticle = greenCatalog({
+                a: { frontmatter: covers, canDo: 'Ir a {{link:subscription}}.' }
+            });
+
+            // Act / Assert
+            expect(predicatesOf(withArticle)).toEqual([]);
+            expect(
+                buildHelpIndex({ files: withoutArticle }).issues.map((issue) => issue.detail)
+            ).toContain(
+                'page:mi-cuenta/ayuda/[id] is covered but the body has no {{link:…}} token to it'
+            );
         });
 
         it('fails a6 on a page key that names a record', () => {

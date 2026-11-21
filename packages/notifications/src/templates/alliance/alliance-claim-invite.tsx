@@ -1,7 +1,7 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the AllianceClaimInvite email template (HOS-278 §6.2).
@@ -41,10 +41,7 @@ export function AllianceClaimInvite({
     expiresAtLabel
 }: AllianceClaimInviteProps) {
     return (
-        <EmailLayout
-            previewText="Recibimos una postulación con tu email — confirmá si fuiste vos"
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText="Recibimos una postulación con tu email — confirmá si fuiste vos">
             <Heading>¿Fuiste vos?</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

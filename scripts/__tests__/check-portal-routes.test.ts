@@ -156,12 +156,19 @@ describe('GUARD portal-routes', () => {
     });
 
     describe('(a) an unreleased route (HOS-2410 help center)', () => {
+        // The help center shipped (PR-5), so the real list is empty; the
+        // mechanism is exercised by listing the help keys explicitly.
+        const UNRELEASED_HELP = {
+            ...DEFAULT_ROUTE_DATA,
+            unreleasedRouteKeys: ['helpLanding', 'helpArticle']
+        } as const;
+
         it('stays green while its page does not exist', () => {
             const root = syntheticTree();
             rmSync(PAGES(root, 'mi-cuenta/ayuda'), { recursive: true, force: true });
             rmSync(PAGES(root, 'mi-cuenta/ayuda.astro'), { force: true });
 
-            expect(run({ root }).exitCode).toBe(0);
+            expect(run({ root, data: UNRELEASED_HELP }).exitCode).toBe(0);
         });
 
         it('turns red once it is no longer listed as unreleased', () => {
@@ -169,7 +176,7 @@ describe('GUARD portal-routes', () => {
             rmSync(PAGES(root, 'mi-cuenta/ayuda'), { recursive: true, force: true });
             rmSync(PAGES(root, 'mi-cuenta/ayuda.astro'), { force: true });
 
-            const result = run({ root, data: { ...DEFAULT_ROUTE_DATA, unreleasedRouteKeys: [] } });
+            const result = run({ root });
 
             expect(result.exitCode).toBe(1);
             expect(result.output).toContain('helpLanding');
