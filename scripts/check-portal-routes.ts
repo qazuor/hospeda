@@ -21,6 +21,8 @@
  * - (b) Every `EDITOR_SECTION_SLUGS` entry resolves to the section's editor
  *   page of that vertical: the vertical's section template with `[section]`
  *   replaced by the slug, for example `propiedades/[id]/editar/servicios.astro`.
+ *   So does every `EDITOR_NON_SECTION_PAGE_SLUGS` entry, the editor pages that
+ *   are not catalog sections (`politicas`, `preguntas-ia`, HOS-2410).
  * - (c) A section template that no vertical's slugs are expanded over is never
  *   checked, so it is a violation (it would look verified and not be).
  * - (d) Where a template has a `[vertical]` segment, both values the API fills it
@@ -53,6 +55,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+    EDITOR_NON_SECTION_PAGE_SLUGS,
     EDITOR_SECTION_SLUGS,
     EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
     PORTAL_ROUTE_TEMPLATES,
@@ -84,7 +87,7 @@ export interface Violation {
 /** What each predicate means; printed with the violations. */
 export const PREDICATE_MESSAGES: Readonly<Record<Predicate, string>> = {
     a: 'GUARD:portal-routes (a): a PORTAL_ROUTE_TEMPLATES entry has no page in apps/web (dynamic segments are matched by name).',
-    b: 'GUARD:portal-routes (b): an EDITOR_SECTION_SLUGS entry has no editor page for its vertical.',
+    b: 'GUARD:portal-routes (b): an EDITOR_SECTION_SLUGS or EDITOR_NON_SECTION_PAGE_SLUGS entry has no editor page for its vertical.',
     c: 'GUARD:portal-routes (c): a section template is not expanded over any vertical, so it is never checked.',
     d: 'GUARD:portal-routes (d): the web no longer serves a [vertical] value the API links with.',
     e: 'GUARD:portal-routes (e): the pages folder is missing or has no pages, so nothing was checked.'
@@ -96,6 +99,8 @@ export interface PortalRouteData {
     readonly templates: Readonly<Record<string, string>>;
     /** Per vertical, the editor slug of each section id. */
     readonly sectionSlugs: Readonly<Record<string, Readonly<Record<string, string>>>>;
+    /** Per vertical, the editor slug of each page that is not a catalog section. */
+    readonly editorPageSlugs?: Readonly<Record<string, Readonly<Record<string, string>>>>;
     /** Per vertical, the key of the template its sections live under. */
     readonly sectionTemplateByVertical: Readonly<Record<string, string>>;
     /** The `[vertical]` segment values the API fills in. */
@@ -106,10 +111,27 @@ export interface PortalRouteData {
     readonly unreleasedRouteKeys?: readonly string[];
 }
 
+/** Per vertical, the slugs of its catalog sections and of its other editor pages, merged. */
+export function editorSlugsByVertical({
+    data
+}: {
+    readonly data: PortalRouteData;
+}): Readonly<Record<string, Readonly<Record<string, string>>>> {
+    const pages = data.editorPageSlugs ?? {};
+    const verticals = new Set([...Object.keys(data.sectionSlugs), ...Object.keys(pages)]);
+    return Object.fromEntries(
+        [...verticals].map((vertical) => [
+            vertical,
+            { ...data.sectionSlugs[vertical], ...pages[vertical] }
+        ])
+    );
+}
+
 /** The route data of the API, as shipped. */
 export const DEFAULT_ROUTE_DATA: PortalRouteData = {
     templates: PORTAL_ROUTE_TEMPLATES,
     sectionSlugs: EDITOR_SECTION_SLUGS,
+    editorPageSlugs: EDITOR_NON_SECTION_PAGE_SLUGS,
     sectionTemplateByVertical: EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
     verticalValues: PORTAL_VERTICAL_SEGMENT_VALUES,
     sectionPlaceholder: PORTAL_SECTION_PLACEHOLDER,
@@ -227,7 +249,7 @@ export function checkPortalRoutes({
         }
     }
 
-    for (const [vertical, slugs] of Object.entries(data.sectionSlugs)) {
+    for (const [vertical, slugs] of Object.entries(editorSlugsByVertical({ data }))) {
         const templateKey = data.sectionTemplateByVertical[vertical];
         const template = templateKey === undefined ? undefined : data.templates[templateKey];
         if (template === undefined || !template.includes(placeholder)) {
@@ -294,7 +316,7 @@ export function run({
         ];
         return { exitCode: 1, output: lines.join('\n') };
     }
-    const sections = Object.values(data.sectionSlugs).reduce(
+    const sections = Object.values(editorSlugsByVertical({ data })).reduce(
         (total, slugs) => total + Object.keys(slugs).length,
         0
     );

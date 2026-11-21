@@ -307,8 +307,42 @@ export const EDITOR_SECTION_SLUGS = {
     >;
 };
 
+/**
+ * Per vertical, the editor pages that are NOT catalog sections, by the web's
+ * page id, with their URL slug (HOS-2410, owner decision on PR-3 deviation 4).
+ *
+ * They are kept out of {@link EDITOR_SECTION_SLUGS} on purpose. That map is
+ * keyed by the domain catalog (`LISTING_SECTIONS`), which describes what a
+ * listing CONTAINS and drives completeness, section PATCHes and entitlement
+ * gating. These pages are second editor routes the web adds at its registry:
+ *
+ * - `policies` (`politicas`, accommodation, HOS-2123): edits the `policies`
+ *   field, which still belongs to the catalog's `amenities` section
+ *   (`ACCOMMODATION_POLICIES_SECTION` in
+ *   `apps/web/src/lib/editor/accommodation-editor-sections.ts`).
+ * - `aiQuestions` (`preguntas-ia`, every vertical, HOS-2101): reads the chat
+ *   log and edits nothing (`ACCOMMODATION_AI_QUESTIONS_SECTION` there, and
+ *   `LISTING_AI_QUESTIONS_SECTION` in `listing-editor-registry.ts`).
+ *
+ * A `listingEditor` destination may name them as its `section`, and
+ * `check-portal-routes` checks each one has its page, like the catalog sections.
+ */
+export const EDITOR_NON_SECTION_PAGE_SLUGS = {
+    accommodation: { policies: 'politicas', aiQuestions: 'preguntas-ia' },
+    venue: { aiQuestions: 'preguntas-ia' },
+    experience: { aiQuestions: 'preguntas-ia' }
+} as const satisfies { readonly [V in ListingVertical]: Readonly<Record<string, string>> };
+
 /** Any editor section id, of any vertical. */
 export type PortalSectionId = ListingSectionId<ListingVertical>;
+
+/** Any editor page id that is not a catalog section, of any vertical. */
+export type PortalEditorPageId = {
+    [V in ListingVertical]: keyof (typeof EDITOR_NON_SECTION_PAGE_SLUGS)[V];
+}[ListingVertical];
+
+/** What a `listingEditor` destination may open: a catalog section or another editor page. */
+export type PortalEditorTarget = PortalSectionId | PortalEditorPageId;
 
 /** A vertical the owner portal manages listings for. */
 export type PortalListingVertical = ListingVertical;
@@ -317,9 +351,10 @@ export type PortalListingVertical = ListingVertical;
  * Where a link points. A closed union, TypeScript only: it is never published
  * as a tool schema. The URL is built from it by `buildPortalUrl`.
  *
- * - `listingEditor`: the editor hub of a listing, or one of its sections.
- *   `section` is a catalog section id; one the vertical does not have falls back
- *   to the hub.
+ * - `listingEditor`: the editor hub of a listing, or one of its pages.
+ *   `section` is a catalog section id or an id of
+ *   {@link EDITOR_NON_SECTION_PAGE_SLUGS}; one the vertical does not have falls
+ *   back to the hub.
  * - `ownerListings`: the list of the owner's listings of a vertical.
  * - `createListing`: the publish page of a vertical.
  * - `plans`: the plans of a vertical.
@@ -341,7 +376,7 @@ export type PortalDestination =
           readonly kind: 'listingEditor';
           readonly vertical: PortalListingVertical;
           readonly id: string;
-          readonly section?: PortalSectionId;
+          readonly section?: PortalEditorTarget;
       }
     | { readonly kind: 'ownerListings'; readonly vertical: PortalListingVertical }
     | { readonly kind: 'createListing'; readonly vertical: PortalListingVertical }

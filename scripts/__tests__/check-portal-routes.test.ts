@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
     DEFAULT_ROUTE_DATA,
+    editorSlugsByVertical,
     LISTING_EDITOR_VERTICALS_FILE,
     PORTAL_PAGES_DIR,
     type PortalRouteData,
@@ -76,7 +77,7 @@ function syntheticTree({
     for (const template of Object.values(data.templates)) {
         if (!template.includes(data.sectionPlaceholder)) addPage(template);
     }
-    for (const [vertical, slugs] of Object.entries(data.sectionSlugs)) {
+    for (const [vertical, slugs] of Object.entries(editorSlugsByVertical({ data }))) {
         const key = data.sectionTemplateByVertical[vertical];
         const template = key === undefined ? undefined : data.templates[key];
         if (template === undefined) continue;
@@ -273,6 +274,47 @@ describe('GUARD portal-routes', () => {
 
             expect(result.exitCode).toBe(1);
             expect(result.output).toContain('venue/menu');
+        });
+
+        it('deleting the accommodation «Políticas» page, which is not a catalog section', () => {
+            const root = realShapedTree();
+            rmSync(PAGES(root, 'mi-cuenta/propiedades/[id]/editar/politicas.astro'));
+
+            const result = run({ root });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain(PREDICATE_MESSAGES.b);
+            expect(result.output).toContain('accommodation/policies');
+        });
+
+        it('deleting the venue/experience «Preguntas a la IA» page', () => {
+            const root = realShapedTree();
+            rmSync(PAGES(root, 'mi-cuenta/comercio/[vertical]/[id]/editar/preguntas-ia.astro'));
+
+            const result = run({ root });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain('venue/aiQuestions');
+            expect(result.output).toContain('experience/aiQuestions');
+        });
+
+        it('a non-section page renamed in the map: the page of the new slug does not exist', () => {
+            const root = syntheticTree();
+
+            const result = run({
+                root,
+                data: {
+                    ...DEFAULT_ROUTE_DATA,
+                    editorPageSlugs: {
+                        ...DEFAULT_ROUTE_DATA.editorPageSlugs,
+                        accommodation: { policies: 'reglas', aiQuestions: 'preguntas-ia' }
+                    }
+                }
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain('accommodation/policies');
+            expect(result.output).toContain('reglas');
         });
 
         it('deleting an experience-only editor section page', () => {
