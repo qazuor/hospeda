@@ -4,6 +4,16 @@ import { BillingAnalyticsEventSchemas } from './catalog-billing.js';
 const idSchema = z.string().min(1);
 const slugSchema = z.string().min(1);
 const localeSchema = z.string().min(2).max(8).optional();
+
+/** Surfaces from which a visitor can initiate listing contact. */
+export const ContactOriginSchema = z.enum([
+    'bar',
+    'panel',
+    'summary',
+    'sidebar',
+    'contact_block',
+    'gallery'
+]);
 const nullableStringSchema = z.string().min(1).nullable().optional();
 const nullableNumberSchema = z.number().finite().nullable().optional();
 const countSchema = z.number().int().nonnegative();
@@ -71,6 +81,7 @@ export const AnalyticsEvents = {
     postViewed: 'post_viewed',
     searchPerformed: 'search_performed',
     listingInternalEntry: 'listing_internal_entry',
+    listingContactClicked: 'listing_contact_clicked',
     contactOwnerStarted: 'contact_owner_started',
     contactOwnerCompleted: 'contact_owner_completed',
     contactOwnerFailed: 'contact_owner_failed',
@@ -188,6 +199,14 @@ export const AnalyticsEventSchemas = {
     [AnalyticsEvents.listingInternalEntry]: z.object({
         entity_id: entityIdSchema,
         entity_type: z.enum(ANALYTICS_LISTING_ENTITY_TYPES),
+        locale: localeSchema
+    }),
+    [AnalyticsEvents.listingContactClicked]: z.object({
+        listing_id: idSchema,
+        vertical: z.enum(['accommodation', 'experience', 'venue', 'partner']),
+        channel: z.enum(['whatsapp', 'phone', 'email', 'website', 'menu', 'social', 'form_open']),
+        origin: ContactOriginSchema,
+        is_whatsapp_entitled: z.boolean().optional(),
         locale: localeSchema
     }),
     [AnalyticsEvents.contactOwnerStarted]: z

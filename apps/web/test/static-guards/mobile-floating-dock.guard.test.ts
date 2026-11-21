@@ -205,6 +205,13 @@ describe('mobile floating dock guard (TEST:1768:20)', () => {
         }
     });
 
+    it('reserves the contact slot without requiring a portal before the listing bar ships', () => {
+        const source = read('components/shared/dock/MobileDock.astro');
+
+        expect(MOBILE_DOCK_SLOTS).toContain('contact');
+        expect(source.match(/<div\b[^>]*data-mobile-dock-slot="contact"/g)).toHaveLength(1);
+    });
+
     it('keeps numeric z-index values out of dock mobile media blocks', () => {
         const offenders = Object.entries(FIXED_POSITION_FILES)
             .filter(([, category]) => category === 'dock')

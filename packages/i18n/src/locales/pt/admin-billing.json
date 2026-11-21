@@ -2349,7 +2349,8 @@
                 "REFUND_HAS_NO_ACCEPTED_CALL": "O provedor não aceitou nenhuma parte deste reembolso. Recuse-o e depois registre-o com a ação 14.",
                 "REMAINDER_AMOUNT_MISMATCH": "O restante não confere com o que falta reembolsar: o valor do reembolso menos o que o provedor creditou.",
                 "ACCEPTED_PART_NOT_ACCREDITED": "O provedor não mostra como creditada a parte que tinha aceitado. Confira a cobrança no painel do provedor antes de registrar o restante.",
-                "REMAINDER_NOT_FOUND_AT_PROVIDER": "O provedor não mostra nesta cobrança um reembolso creditado com essa referência e esse valor."
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "O provedor não mostra nesta cobrança um reembolso creditado com essa referência e esse valor.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Outro reembolso deste pagamento tem uma chamada ao provedor ainda sem resposta. Aguarde a resolução antes de registrar o restante: o reembolso que você vê no painel pode ser dessa chamada."
             }
         }
     },

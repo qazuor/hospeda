@@ -15,14 +15,14 @@
  *     (HOS-310, see `@/lib/dialog-history`). Opt out with
  *     `claimHistoryEntry={false}` when the dialog itself resolves into a
  *     navigation.
- *   - Focus management: focuses the panel on open, restores focus to the
- *     element that had it before opening on close.
+ *   - Focus management: focuses the panel on open (the first eligible control
+ *     for sheets) and restores the previous focus on close.
  *   - Focus-trap so Tab cannot escape the panel (shared implementation in
  *     `@/lib/focus-trap`, not a local copy).
  *   - SSR-safe (only renders after mount).
  *   - Sized via `size`: sm | md | lg | full.
  *   - Visual variant via `variant`: solid (default) | transparent (the panel
- *     surrenders its background, used by the image lightbox).
+ *     surrenders its background, used by the image lightbox) | sheet.
  *
  * Use the Header/Body components for the standard structure, or pass any
  * children for a custom layout.
@@ -38,7 +38,7 @@ import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 // Shared with every other modal-like surface (the hero search bottom-sheets,
 // the collection pickers). This file used to keep a byte-equivalent private
 // copy, which meant a fix to one trap silently left the other one leaking.
-import { trapFocus } from '@/lib/focus-trap';
+import { getTabStops, trapFocus } from '@/lib/focus-trap';
 import { cn } from '../../../lib/cn';
 import styles from './Dialog.module.css';
 
@@ -46,9 +46,12 @@ import styles from './Dialog.module.css';
 // Public API
 // ---------------------------------------------------------------------------
 
+/** Width preset for a centered dialog. */
 export type DialogSize = 'sm' | 'md' | 'lg' | 'full';
-export type DialogVariant = 'solid' | 'transparent';
+/** Panel presentation: solid, unstyled for lightboxes, or a responsive bottom sheet. */
+export type DialogVariant = 'solid' | 'transparent' | 'sheet';
 
+/** Controlled modal state, accessible labeling and presentation options. */
 export interface DialogProps {
     /** Controlled open state. When `false` the dialog renders nothing. */
     readonly isOpen: boolean;
@@ -60,9 +63,9 @@ export interface DialogProps {
     readonly ariaLabel?: string;
     /** Element id of a visible title; sets `aria-labelledby`. */
     readonly ariaLabelledBy?: string;
-    /** Size preset for the panel. Defaults to `md`. */
+    /** Size preset for the panel. Defaults to `md`; the sheet has a fixed responsive size. */
     readonly size?: DialogSize;
-    /** Visual variant. `transparent` removes the panel chrome (used by lightboxes). */
+    /** `transparent` removes panel chrome; `sheet` anchors the panel at the bottom on mobile. */
     readonly variant?: DialogVariant;
     /** Whether `Esc` closes the dialog. Default: `true`. */
     readonly closeOnEscape?: boolean;
@@ -132,14 +135,23 @@ export function Dialog({
     useEffect(() => {
         if (!isOpen || !mounted) return;
         const previouslyFocused = document.activeElement as HTMLElement | null;
-        // Focus the panel root so screen readers announce the dialog and Tab
-        // starts inside the trap. Use a microtask to wait for the DOM to settle.
-        const id = requestAnimationFrame(() => panelRef.current?.focus());
+        const id = requestAnimationFrame(() => {
+            const panel = panelRef.current;
+            if (!panel) return;
+            if (variant === 'sheet') {
+                const { tabStops } = getTabStops({ container: panel });
+                for (const control of tabStops) {
+                    control.focus();
+                    if (document.activeElement === control) return;
+                }
+            }
+            panel.focus();
+        });
         return () => {
             cancelAnimationFrame(id);
             previouslyFocused?.focus?.();
         };
-    }, [isOpen, mounted]);
+    }, [isOpen, mounted, variant]);
 
     // Back button closes the dialog instead of leaving the page (HOS-310).
     // Gated on `mounted` so the entry is only claimed once the portal is real.
@@ -189,7 +201,7 @@ export function Dialog({
             <div
                 ref={panelRef}
                 className={cn(styles.panel, 'dialog-panel', className)}
-                data-size={size}
+                data-size={variant === 'sheet' ? 'md' : size}
                 data-variant={variant}
                 role="dialog"
                 aria-modal="true"
@@ -197,6 +209,12 @@ export function Dialog({
                 aria-labelledby={ariaLabelledBy}
                 tabIndex={-1}
             >
+                {variant === 'sheet' && (
+                    <div
+                        className={styles.sheetHandle}
+                        aria-hidden="true"
+                    />
+                )}
                 {children}
             </div>
         </div>,
