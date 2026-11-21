@@ -35,6 +35,7 @@ import {
     isCreationRefusedBeforeExisting
 } from './purchase-addon-rejection';
 import {
+    PURCHASE_IDENTITY_BUSY_REASON,
     type PurchaseAddonInput,
     PurchaseAddonInputSchema,
     type PurchaseAddonResult
@@ -199,10 +200,14 @@ const OCCUPANT_POLL_MS = 50;
  * A3. So this re-reads with a short pause until a committed purchase appears: it never writes,
  * and it answers the live purchase as soon as the other tab commits.
  *
+ * It covers recurring (PERIODICO) purchases too: any identity conflict whose re-read comes back
+ * empty (an occupant released or expired by another entry in between) waits here the same way.
+ *
  * @param input.identity - The owner, product and target the request asked for
  * @returns The committed purchase that holds the identity
- * @throws ServiceError (`SERVICE_UNAVAILABLE`) when no purchase holds the identity by the end of
- *   the wait: this request created nothing, so the owner can retry with the same order id
+ * @throws ServiceError (`SERVICE_UNAVAILABLE`, reason `PURCHASE_IDENTITY_BUSY`) when no purchase
+ *   holds the identity by the end of the wait: this request created nothing, so the owner can
+ *   retry with the same order id
  */
 async function awaitIdentityOccupant(input: {
     readonly identity: PurchaseIdentity;
@@ -222,7 +227,9 @@ async function awaitIdentityOccupant(input: {
     );
     throw new ServiceError(
         ServiceErrorCode.SERVICE_UNAVAILABLE,
-        'Another purchase of this addon was changing; try again'
+        'Another purchase of this addon was changing; try again',
+        undefined,
+        PURCHASE_IDENTITY_BUSY_REASON
     );
 }
 

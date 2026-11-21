@@ -21,7 +21,10 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { abandonOneTimeAddon } from '../../../src/services/billing/addon/expire-addon-authorization-windows-one-time';
 import { paymentPageCheckoutUrlOf } from '../../../src/services/billing/addon/one-time-payment-page';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
-import type { PurchaseAddonResult } from '../../../src/services/billing/addon/purchase-addon-types';
+import {
+    PURCHASE_IDENTITY_BUSY_REASON,
+    type PurchaseAddonResult
+} from '../../../src/services/billing/addon/purchase-addon-types';
 import type * as occupantModule from '../../../src/services/billing/addon/purchase-identity-occupant';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { retirePurchaseFixtures } from './support/addon-purchase-fixtures';
@@ -175,7 +178,8 @@ describe('HOS-2518: a tab that loses the identity while the other tab replaces t
             };
 
             await expect(purchaseAddon(retry(), s.f.ports)).rejects.toMatchObject({
-                code: ServiceErrorCode.SERVICE_UNAVAILABLE
+                code: ServiceErrorCode.SERVICE_UNAVAILABLE,
+                reason: PURCHASE_IDENTITY_BUSY_REASON
             });
 
             expect(await liveInstances(s)).toHaveLength(0);
