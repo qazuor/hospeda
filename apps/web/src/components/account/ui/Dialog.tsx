@@ -47,6 +47,16 @@ export interface DialogProps {
      * @default true
      */
     readonly claimHistoryEntry?: boolean;
+    /**
+     * `false` blocks Escape and the scrim click (the close button and the
+     * actions still work). Use while a save is in flight.
+     * @default true
+     */
+    readonly dismissible?: boolean;
+    /** Hide the header close button (a confirmation offers Cancel instead). */
+    readonly hideCloseButton?: boolean;
+    /** `alertdialog` for an interrupting confirmation. @default 'dialog' */
+    readonly role?: 'dialog' | 'alertdialog';
     /** Optional help anchor rendered as `data-help` on the panel content. */
     readonly helpId?: HelpAnchor;
     /** Dialog body. */
@@ -88,6 +98,9 @@ export function Dialog({
     size = 'md',
     initialFocus,
     claimHistoryEntry = true,
+    dismissible = true,
+    hideCloseButton = false,
+    role = 'dialog',
     helpId,
     children
 }: DialogProps) {
@@ -102,6 +115,9 @@ export function Dialog({
             className={styles.panel}
             overlayClassName={styles.overlay}
             claimHistoryEntry={claimHistoryEntry}
+            closeOnEscape={dismissible}
+            closeOnOverlayClick={dismissible}
+            role={role}
         >
             {initialFocus ? <FocusOnMount target={initialFocus} /> : null}
             <header
@@ -117,18 +133,20 @@ export function Dialog({
                     </h2>
                     {description ? <p className={styles.description}>{description}</p> : null}
                 </div>
-                <Button
-                    variant="quiet"
-                    size="sm"
-                    iconOnly
-                    aria-label={t('account.ui.dialogClose')}
-                    onClick={() => onOpenChange(false)}
-                >
-                    <CloseIcon
+                {hideCloseButton ? null : (
+                    <Button
+                        variant="quiet"
                         size="sm"
-                        aria-hidden="true"
-                    />
-                </Button>
+                        iconOnly
+                        aria-label={t('account.ui.dialogClose')}
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <CloseIcon
+                            size="sm"
+                            aria-hidden="true"
+                        />
+                    </Button>
+                )}
             </header>
             <div className={`${styles.body} dialog-panel-scroll`}>{children}</div>
             {footer ? <footer className={styles.footer}>{footer}</footer> : null}

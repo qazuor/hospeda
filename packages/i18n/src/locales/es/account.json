@@ -1904,6 +1904,9 @@
                 "REJECTED": "Rechazado",
                 "EXPIRED": "Vencido"
             }
-        }
+        },
+        "cancel": "Cancelar",
+        "confirmError": "No pudimos completar la acción. Probá de nuevo.",
+        "drawerClose": "Cerrar panel"
     }
 }

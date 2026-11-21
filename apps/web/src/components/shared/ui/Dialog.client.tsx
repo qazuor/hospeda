@@ -84,6 +84,12 @@ export interface DialogProps {
      * confirm that navigates the moment it resolves.
      */
     readonly claimHistoryEntry?: boolean;
+    /**
+     * ARIA role of the panel. `alertdialog` is for a confirmation that
+     * interrupts the user and needs an answer (HOS-2413 `ConfirmDialog`).
+     * Default: `dialog`.
+     */
+    readonly role?: 'dialog' | 'alertdialog';
 }
 
 /**
@@ -101,7 +107,8 @@ export function Dialog({
     closeOnOverlayClick = true,
     className,
     overlayClassName,
-    claimHistoryEntry = true
+    claimHistoryEntry = true,
+    role = 'dialog'
 }: DialogProps): JSX.Element | null {
     const panelRef = useRef<HTMLDivElement>(null);
     // Render only after mount so SSR + initial hydration don't try to use `document`.
@@ -186,12 +193,13 @@ export function Dialog({
             onClick={handleOverlayClick}
             role="presentation"
         >
+            {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: `role` is `dialog` or `alertdialog`, and both support `aria-modal`; the rule cannot resolve the prop. */}
             <div
                 ref={panelRef}
                 className={cn(styles.panel, 'dialog-panel', className)}
                 data-size={size}
                 data-variant={variant}
-                role="dialog"
+                role={role}
                 aria-modal="true"
                 aria-label={ariaLabel}
                 aria-labelledby={ariaLabelledBy}

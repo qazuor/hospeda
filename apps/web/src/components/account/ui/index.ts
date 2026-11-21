@@ -11,6 +11,7 @@
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
+export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { Field, type FieldProps } from './Field';
@@ -35,3 +36,4 @@ export {
 export { counterLevel, Textarea, type TextareaProps } from './Textarea';
 export { TextInput, type TextInputProps } from './TextInput';
 export { TextLink, type TextLinkProps, type TextLinkTone } from './TextLink';
+export { type ConfirmRequest, type UseConfirmResult, useConfirm } from './use-confirm';
