@@ -244,38 +244,38 @@ describe('DetailVariant — rendered cell image count per total', () => {
 
     it('1 image: 1 cell img (featured only)', () => {
         const { container } = renderDetail(IMG_1);
-        const imgs = container.querySelectorAll('img');
+        const imgs = container.querySelectorAll('[data-count] img');
         expect(imgs.length).toBe(1);
     });
 
     it('2 images: 2 cell imgs (featured + 1 half thumb)', () => {
         const { container } = renderDetail(IMG_2);
-        const imgs = container.querySelectorAll('img');
+        const imgs = container.querySelectorAll('[data-count] img');
         expect(imgs.length).toBe(2);
     });
 
     it('3 images: 3 cell imgs (featured + 2 quarter thumbs)', () => {
         const { container } = renderDetail(IMG_3);
-        const imgs = container.querySelectorAll('img');
+        const imgs = container.querySelectorAll('[data-count] img');
         expect(imgs.length).toBe(3);
     });
 
     it('4 images: 4 cell imgs (featured + 3 quarter thumbs)', () => {
         const { container } = renderDetail(IMG_4);
-        const imgs = container.querySelectorAll('img');
+        const imgs = container.querySelectorAll('[data-count] img');
         expect(imgs.length).toBe(4);
     });
 
     it('5 images: 4 cell imgs (featured + 2 regular thumbs + 1 overlay bg img)', () => {
         const { container } = renderDetail(IMG_5);
         // featured + 2 regular thumb buttons + 1 overlay div (contains 1 aria-hidden img)
-        const imgs = container.querySelectorAll('img');
+        const imgs = container.querySelectorAll('[data-count] img');
         expect(imgs.length).toBe(4);
     });
 
     it('7 images: still 4 cell imgs (bounded at featured + 3 thumb slots)', () => {
         const { container } = renderDetail(IMG_7);
-        const imgs = container.querySelectorAll('img');
+        const imgs = container.querySelectorAll('[data-count] img');
         expect(imgs.length).toBe(4);
     });
 });
@@ -678,9 +678,9 @@ describe('DetailVariant — featured cell LCP attributes (SPEC-157 REQ-3 regress
 
     it('thumbnail imgs are lazy-loaded', () => {
         const { container } = renderDetail(IMG_4);
-        const imgs = Array.from(container.querySelectorAll('img'));
-        // imgs[0] = featured (eager); imgs[1..3] = thumbs (lazy)
-        for (const thumb of imgs.slice(1)) {
+        const thumbs = Array.from(container.querySelectorAll('[data-count] .thumbGrid img'));
+        expect(thumbs).toHaveLength(3);
+        for (const thumb of thumbs) {
             expect(thumb.getAttribute('loading')).toBe('lazy');
         }
     });
@@ -728,9 +728,9 @@ describe('DetailVariant — cell images show a loading skeleton (BETA-147)', () 
         expect(img.className).not.toContain('cellImgSkeleton');
     });
 
-    it('every non-lightbox cell img carries the skeleton class while loading', () => {
+    it('every mosaic cell img carries the skeleton class while loading', () => {
         const { container } = renderDetail(IMG_4);
-        const imgs = Array.from(container.querySelectorAll('img'));
+        const imgs = Array.from(container.querySelectorAll('[data-count] img'));
         expect(imgs.length).toBeGreaterThan(1);
         for (const img of imgs) {
             expect(img.className).toContain('cellImgSkeleton');

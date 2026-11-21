@@ -580,6 +580,11 @@ const faqSections = accommodation.faqs.map((faq) => ({
             variant="detail"
             locale={locale}
             viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
+            mobile={{
+                backHref: buildUrl({ locale, path: 'alojamientos' }),
+                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name },
+                favorite: { entityId: accommodation.id, entityType: 'ACCOMMODATION', variant: 'standalone' }
+            }}
             client:load
         />
         <QuickFacts extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />

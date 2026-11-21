@@ -130,16 +130,18 @@ describe('ImageGallery', () => {
         });
 
         it('keeps thumbnails lazily loaded (only the featured image is eager)', () => {
-            render(
+            const { container } = render(
                 <ImageGallery
                     images={IMAGES}
                     locale="es"
                     variant="detail"
                 />
             );
-            const imgs = screen.getAllByRole('img');
+            const imgs = Array.from(container.querySelectorAll('[data-count] img'));
             // imgs[0] is the featured image; the rest are thumbnails.
-            for (const thumb of imgs.slice(1)) {
+            const thumbnails = imgs.slice(1);
+            expect(thumbnails).toHaveLength(3);
+            for (const thumb of thumbnails) {
                 expect(thumb).toHaveAttribute('loading', 'lazy');
             }
         });
@@ -202,8 +204,9 @@ describe('ImageGallery', () => {
             });
             fireEvent.click(featuredBtn as HTMLElement);
 
-            expect(screen.queryByTestId('chevron-left')).not.toBeInTheDocument();
-            expect(screen.queryByTestId('chevron-right')).not.toBeInTheDocument();
+            const dialog = within(screen.getByRole('dialog'));
+            expect(dialog.queryByTestId('chevron-left')).not.toBeInTheDocument();
+            expect(dialog.queryByTestId('chevron-right')).not.toBeInTheDocument();
         });
     });
 
