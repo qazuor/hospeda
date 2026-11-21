@@ -258,6 +258,14 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
      */
     const uncollectedBookmarks = bookmarks.filter((b) => !b.collectionId);
 
+    // When the total shrinks (removals, moves, other devices) below the current
+    // page, that page no longer exists: go back to the last one (HOS-2420).
+    useEffect(() => {
+        if (!loading && !error && page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [loading, error, page, totalPages]);
+
     // ── Tab switch handler ─────────────────────────────────────────────────
 
     function handleTabChange(key: FavoritesTabKey) {
@@ -381,9 +389,14 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
             setLoading(true);
             setError(null);
             try {
+                // `uncollected=true` makes the SERVER filter out bookmarks that
+                // belong to a collection BEFORE paginating, so the "Sin colección"
+                // section covers every uncollected favorite and not just the
+                // slice that happened to land on the current page (HOS-2420).
                 const params = new URLSearchParams({
                     page: String(targetPage),
-                    pageSize: String(PAGE_SIZE)
+                    pageSize: String(PAGE_SIZE),
+                    uncollected: 'true'
                 });
                 // ALL: no entityType filter → server returns the global list.
                 if (key !== 'ALL') {
@@ -403,8 +416,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 const fetchedTotal = body.data?.total ?? 0;
                 setBookmarks([...(body.data?.bookmarks ?? [])]);
                 setTotal(fetchedTotal);
-                // Reuse active tab total for its badge (avoids extra round-trip)
-                setTabCounts((prev) => ({ ...prev, [key]: fetchedTotal }));
+                // NOTE: the tab badge is NOT updated from this response. This
+                // fetch is narrowed to uncollected bookmarks, so its total is
+                // smaller than the tab's real favorites count (HOS-2420); the
+                // badge comes from the unfiltered count-only fetches on mount.
             } catch (err) {
                 if (err instanceof Error && err.name === 'AbortError') return;
                 const msg = err instanceof Error ? err.message : fetchErrorMsg;
@@ -578,6 +593,11 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
         // Update the local copy of the moved bookmark so the uncollected
         // section reflects the change without a full re-fetch.
         if (bookmarkToMove) {
+            // The list is server-filtered to uncollected bookmarks, so a bookmark
+            // that just joined a collection also leaves the paginated total.
+            if (newCollectionId !== null && !bookmarkToMove.collectionId) {
+                setTotal((prev) => Math.max(0, prev - 1));
+            }
             setBookmarks((prev) =>
                 prev.map((b) =>
                     b.id === bookmarkToMove.id ? { ...b, collectionId: newCollectionId } : b
@@ -654,9 +674,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 {/* Section heading */}
                 <div className={styles.sectionHeading}>
                     <h3 className={styles.sectionHeadingTitle}>{noCollectionLabel}</h3>
-                    <span className={styles.sectionHeadingCount}>
-                        {uncollectedBookmarks.length}
-                    </span>
+                    <span className={styles.sectionHeadingCount}>{total}</span>
                 </div>
 
                 {uncollectedBookmarks.length === 0 ? (
@@ -704,6 +722,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             'Agregá una nota personal...'
                         )}
                         noteSaveErrorMessage={t('account.favorites.errors.saveFailed')}
+                        noteSavedLabel={t('account.favorites.notes.saved', 'Nota guardada')}
                         moveBtnLabel={t('account.favorites.collections.move', 'Mover')}
                         moveBtnAriaLabel={t(
                             'account.favorites.collections.move_button_aria',
@@ -801,7 +820,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                                 key={col.id}
                                 collection={col}
                                 locale={locale}
-                                bookmarksLabel={t('account.favorites.removeLabel', 'favoritos')}
+                                bookmarksLabel={t(
+                                    'account.favorites.collections.bookmarksLabel',
+                                    'favoritos'
+                                )}
                                 collectionsBasePath={COLLECTIONS_PATH}
                             />
                         ))}

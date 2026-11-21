@@ -53,6 +53,8 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Desconectar: ['pt'],
     'Desconectar {{name}}': ['pt'],
     Cancelar: ['pt'],
+    // Same word in Brazilian Portuguese (HOS-2432 collection card count label).
+    favoritos: ['pt'],
     Permitir: ['pt'],
     'Conectando...': ['pt'],
     'Cancelando...': ['pt'],

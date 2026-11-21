@@ -53,8 +53,8 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
         });
 
         it('validates entityType against an allowed set', () => {
-            expect(pageSrc).toContain('VALID_ENTITY_TYPES');
-            expect(pageSrc).toContain('isValidEntityType');
+            expect(pageSrc).toContain('COLLECTION_ENTITY_TYPES');
+            expect(pageSrc).toContain('parseCollectionEntityType');
         });
 
         it('defaults page to 1 when param is absent', () => {
@@ -108,10 +108,9 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
 
         it('uses i18n keys for tab labels', () => {
             expect(pageSrc).toContain('account.favorites.filter.all');
-            expect(pageSrc).toContain('account.favorites.filter.accommodations');
-            expect(pageSrc).toContain('account.favorites.filter.destinations');
-            expect(pageSrc).toContain('account.favorites.filter.events');
-            expect(pageSrc).toContain('account.favorites.filter.posts');
+            // The per-type labels come from COLLECTION_FILTER_LABELS
+            // (src/lib/collection-entity-types.ts, covered by its own test).
+            expect(pageSrc).toContain('COLLECTION_FILTER_LABELS');
         });
 
         it('resets page to 1 when changing filter', () => {
