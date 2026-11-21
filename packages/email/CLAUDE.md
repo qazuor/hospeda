@@ -68,6 +68,8 @@ What it renders (HOS-2519 §5.1):
 
 - `<html lang="es" dir="ltr">` with `color-scheme: light` metas (limits dark-mode inversion).
 - A centered card, `width="100%"`, `max-width: 600px`, fluid down to 320px with no media query.
+- Outlook desktop (Word) ignores `max-width` and padding on `<table>` styles, so the card sits in an MSO-only 600px "ghost table" (`<!--[if mso]>` comments, each emitted from an empty wrapper `<div>` because React cannot render a bare comment), and every section's padding, background and the accent border live on the `<td>` (`Row`/`Column`), not on the table.
+- The footer links carry `data-layout-link="home"` / `"preferences"` so tests can tell layout chrome from body links.
 - A white header with the hosted PNG logo (`EMAIL_LOGO_URL`, `EMAIL_LOGO_WIDTH` x `EMAIL_LOGO_HEIGHT`, `alt="Hospeda"` styled as a wordmark so a blocked image still reads as the brand), the tagline "Turismo en el Litoral" and a 4px brand accent bar. The header carries `data-skip-in-text="true"`, which React Email's plain-text conversion honours: the text part starts at the body copy.
 - Body padding `32px 24px`; templates keep their own typography.
 - Footer: divider, "Hospeda - Turismo en el Litoral", the platform description line, a `hospeda.com.ar` link to the home, and the optional preferences link.
