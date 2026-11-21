@@ -2349,7 +2349,8 @@
                 "REFUND_HAS_NO_ACCEPTED_CALL": "El proveedor no aceptó ninguna parte de esta devolución. Rechazala y después asentala con la acción 14.",
                 "REMAINDER_AMOUNT_MISMATCH": "El resto no coincide con lo que falta devolver: monto de la devolución menos lo que el proveedor acreditó.",
                 "ACCEPTED_PART_NOT_ACCREDITED": "El proveedor no muestra acreditada la parte que había aceptado. Revisá el cobro en el panel del proveedor antes de registrar el resto.",
-                "REMAINDER_NOT_FOUND_AT_PROVIDER": "El proveedor no muestra en este cobro una devolución acreditada con esa referencia y ese monto."
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "El proveedor no muestra en este cobro una devolución acreditada con esa referencia y ese monto.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Otra devolución de este pago tiene una llamada a MP sin respuesta. Esperá a que se resuelva antes de registrar el resto: el reembolso que ves en el panel puede ser de esa llamada."
             }
         },
         "providerRetry": {
