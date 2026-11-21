@@ -1958,6 +1958,7 @@
         "sidebar": {
             "lockedLabel": "Requiere un plan superior",
             "label": "Navegación de Mi cuenta"
-        }
+        },
+        "breadcrumbs": "Ruta de navegación"
     }
 }

@@ -51,6 +51,7 @@ export { InputGroup, type InputGroupProps } from './InputGroup';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
+export { type Breadcrumb, PageHeader, type PageHeaderProps } from './PageHeader';
 export { type LoadMoreResult, Pagination, type PaginationProps } from './Pagination';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
 export { buildPageRange, type PageSlot } from './pagination-range';

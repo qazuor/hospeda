@@ -1,0 +1,81 @@
+/* PageHeader.module.css — one page anatomy (HOS-2413 T-022). */
+
+.root {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-block-end: var(--space-6);
+}
+
+.crumbs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.crumbSeparator {
+    color: var(--control-border);
+}
+
+.top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-inline-size: 0;
+}
+
+.titleRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.title {
+    margin: 0;
+    font: var(--app-title);
+    letter-spacing: var(--app-title-tracking);
+    color: var(--core-foreground);
+}
+
+.description {
+    margin: 0;
+    max-inline-size: 40rem;
+    font: var(--app-body);
+    color: var(--core-muted-foreground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Narrow container: the actions stack and the primary one goes full width. */
+@container (width < 30rem) {
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+        inline-size: 100%;
+    }
+
+    .actions > * {
+        inline-size: 100%;
+    }
+}
