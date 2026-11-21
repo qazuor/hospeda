@@ -365,9 +365,9 @@ export interface PaymentNotificationPayload extends BaseNotificationPayload {
      * the shared `NotificationPayload` union, constructed as plain numeric
      * literals across ~20 call sites in tests and retry rebuilding that have
      * nothing to do with money units. The brand is enforced where it matters:
-     * at the two producers above, and again where `NotificationService`
-     * hands this value to the `PaymentSuccess`/`PaymentFailure` templates
-     * (`asMajor(p.amount)` in `selectTemplate`, HOS-839) — those templates'
+     * at the two producers above, and again where the notification template
+     * selectors hand this value to the `PaymentSuccess`/`PaymentFailure` templates
+     * (`asMajor(p.amount)` in `services/notification-templates/billing.ts`, HOS-839) — those templates'
      * props DO require `Major`, so a future caller passing centavos into the
      * template layer fails to compile.
      */
