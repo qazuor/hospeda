@@ -76,6 +76,9 @@ const MIGRATION: Readonly<Record<string, readonly [readonly string[], string, re
         'benefit-usage-provider': [['provider'], 'provider', []]
     };
 
+/** A price or a percentage in any form the old catalog test caught. */
+const PRICE_PATTERN = /\$\s*\d|\bAR\$|\d\s*(ARS|USD|pesos)\b|\d\s*%/i;
+
 describe('HELP_INDEX', () => {
     it('equals a fresh generation from the content files', () => {
         // Act
@@ -121,6 +124,41 @@ describe('HELP_INDEX', () => {
             'create-listing': 'owners.ready',
             'pause-resume': 'owners.pause'
         });
+    });
+
+    it.each(
+        HELP_ARTICLES.map((article) => [article.id, article] as const)
+    )('%s states no price and no percentage (ported from owner-help.test.ts until guard (d), PR-4)', (_id, article) => {
+        // Arrange: plan values are DB rows; the help points to the plans page.
+        const { howTo, ...prose } = article.sections;
+        const texts = [
+            article.title,
+            article.summary,
+            ...howTo.steps,
+            howTo.after,
+            ...Object.values(prose)
+        ];
+
+        // Assert
+        for (const text of texts) {
+            expect(text).not.toMatch(PRICE_PATTERN);
+        }
+    });
+
+    it('the price pattern catches the forms it is meant to', () => {
+        for (const sample of [
+            '$ 1500',
+            '$1500',
+            'AR$ 900',
+            '900 ARS',
+            '10 USD',
+            '300 pesos',
+            '20 %',
+            '15%'
+        ]) {
+            expect(sample).toMatch(PRICE_PATTERN);
+        }
+        expect('hasta 10 MB y 3 fotos').not.toMatch(PRICE_PATTERN);
     });
 
     it('finds nothing for an unknown id or a locale with no content', () => {
