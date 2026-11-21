@@ -984,6 +984,53 @@ describe('UserFavoritesList', () => {
         for (const u of listCalls) expect(u.searchParams.get('uncollected')).toBe('true');
     });
 
+    it('header counter shows the server total, not the page length (HOS-2420)', async () => {
+        const page = Array.from({ length: 12 }, (_, i) => ({
+            ...BOOKMARK_1,
+            id: `bm-p${i}`,
+            name: `Fav ${i}`,
+            entityName: `Fav ${i}`
+        }));
+        globalThis.fetch = makeRoutedFetchMock({
+            bookmarksHandler: (url) =>
+                new URL(url).searchParams.get('pageSize') === '1'
+                    ? makeListResponse([], 30)
+                    : makeListResponse(page, 30)
+        });
+        renderList();
+        const heading = (await screen.findByText('Sin colección')).parentElement as HTMLElement;
+        expect(within(heading).getByText('30')).toBeInTheDocument();
+        expect(within(heading).queryByText('12')).not.toBeInTheDocument();
+    });
+
+    it('clamps the page to the last one when the total shrinks below it (HOS-2420)', async () => {
+        const twelve = Array.from({ length: 12 }, (_, i) => ({
+            ...BOOKMARK_1,
+            id: `bm-c${i}`,
+            name: `Fav ${i}`,
+            entityName: `Fav ${i}`
+        }));
+        const seenPages: string[] = [];
+        globalThis.fetch = makeRoutedFetchMock({
+            bookmarksHandler: (url) => {
+                const params = new URL(url).searchParams;
+                if (params.get('pageSize') === '1') return makeListResponse([], 13);
+                const p = params.get('page') ?? '1';
+                seenPages.push(p);
+                // The 13th favorite was removed elsewhere: page 2 is now empty and
+                // the total is 12, so only one page exists.
+                return p === '2' ? makeListResponse([], 12) : makeListResponse(twelve, 13);
+            }
+        });
+        renderList();
+        const next = await screen.findByRole('button', { name: /página siguiente/i });
+        fireEvent.click(next);
+        await waitFor(() => expect(seenPages).toContain('2'));
+        // After the empty page 2 the component must go back to page 1.
+        await waitFor(() => expect(seenPages.filter((p) => p === '1').length).toBeGreaterThan(1));
+        expect(await screen.findByText('Fav 0')).toBeInTheDocument();
+    });
+
     // ── T-049d: Inline note editor integration ────────────────────────────────
 
     it('renders note placeholder on each bookmark card when description is null', async () => {

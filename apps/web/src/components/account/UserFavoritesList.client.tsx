@@ -258,6 +258,14 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
      */
     const uncollectedBookmarks = bookmarks.filter((b) => !b.collectionId);
 
+    // When the total shrinks (removals, moves, other devices) below the current
+    // page, that page no longer exists: go back to the last one (HOS-2420).
+    useEffect(() => {
+        if (!loading && !error && page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [loading, error, page, totalPages]);
+
     // ── Tab switch handler ─────────────────────────────────────────────────
 
     function handleTabChange(key: FavoritesTabKey) {
@@ -666,9 +674,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 {/* Section heading */}
                 <div className={styles.sectionHeading}>
                     <h3 className={styles.sectionHeadingTitle}>{noCollectionLabel}</h3>
-                    <span className={styles.sectionHeadingCount}>
-                        {uncollectedBookmarks.length}
-                    </span>
+                    <span className={styles.sectionHeadingCount}>{total}</span>
                 </div>
 
                 {uncollectedBookmarks.length === 0 ? (

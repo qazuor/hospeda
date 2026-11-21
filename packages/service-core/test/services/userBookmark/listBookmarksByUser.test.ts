@@ -69,8 +69,24 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
         });
         expect(modelMock.findAll).toHaveBeenCalledWith(
             expect.objectContaining({ userId: bookmark.userId, collectionId: null }),
-            { page: 2, pageSize: 12 }
+            { page: 2, pageSize: 12, sortBy: 'createdAt', sortOrder: 'desc', thenSortBy: 'id' }
         );
+    });
+
+    it('orders by createdAt desc then id so LIMIT/OFFSET pages are stable (HOS-2420)', async () => {
+        asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
+        await service.listBookmarksByUser(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            userId: bookmark.userId
+        });
+        expect(asMock(modelMock.findAll).mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            thenSortBy: 'id'
+        });
     });
 
     it('does not filter by collection when uncollected is omitted', async () => {

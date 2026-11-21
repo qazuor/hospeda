@@ -299,7 +299,15 @@ export class UserBookmarkService extends BaseCrudService<
                     // null → `collection_id IS NULL`, applied before pagination (HOS-2420)
                     filter.collectionId = null;
                 }
-                const { items, total } = await this.model.findAll(filter, { page, pageSize });
+                // Stable order (newest first, id as tie-break): without an ORDER BY,
+                // LIMIT/OFFSET pages may repeat or skip rows (HOS-2420).
+                const { items, total } = await this.model.findAll(filter, {
+                    page,
+                    pageSize,
+                    sortBy: 'createdAt',
+                    sortOrder: 'desc',
+                    thenSortBy: 'id'
+                });
                 const enriched = await enrichBookmarksWithEntityInfo(items, ctx?.tx);
                 return { bookmarks: enriched, total };
             }
