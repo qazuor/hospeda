@@ -19,12 +19,17 @@ export const listUserBookmarksRoute = createProtectedRoute({
     path: '/',
     summary: 'List user bookmarks',
     description:
-        'Returns paginated bookmarks for the authenticated user. Optionally filter by entity type.',
+        'Returns paginated bookmarks for the authenticated user. Optionally filter by entity type, and with uncollected=true return only bookmarks that belong to no collection.',
     tags: ['User Bookmarks'],
     requestQuery: {
         entityType: z.nativeEnum(EntityTypeEnum).optional(),
         /** `true` returns only bookmarks without a collection (HOS-2420). */
-        uncollected: z.enum(['true', 'false']).optional(),
+        uncollected: z
+            .enum(['true', 'false'])
+            .optional()
+            .describe(
+                'When "true", return only bookmarks that belong to no collection. Filtering happens before pagination, so page and total cover the whole uncollected set.'
+            ),
         page: z.coerce.number().int().min(1).default(1),
         pageSize: z.coerce.number().int().min(1).max(100).default(10)
     },
