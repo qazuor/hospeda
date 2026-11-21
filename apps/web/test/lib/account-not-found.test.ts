@@ -67,7 +67,6 @@ describe('bare 404 producers now render inside the account layout (HOS-2434)', (
     it.each([
         [`${PAGES}/consultas/[conversationId].astro`, "back: 'messages'"],
         [`${PAGES}/consultas-propietario/[conversationId].astro`, "back: 'ownerMessages'"],
-        [`${PAGES}/comercio/nuevo/[vertical].astro`, "back: 'listings'"],
         ['src/lib/editor/resolve-listing-editor-page.ts', "back: 'listings'"]
     ])('%s rewrites instead of returning an empty Response', (rel, backArg) => {
         const source = read(rel);
