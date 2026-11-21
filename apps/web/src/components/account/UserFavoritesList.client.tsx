@@ -716,6 +716,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             'Agregá una nota personal...'
                         )}
                         noteSaveErrorMessage={t('account.favorites.errors.saveFailed')}
+                        noteSavedLabel={t('account.favorites.notes.saved', 'Nota guardada')}
                         moveBtnLabel={t('account.favorites.collections.move', 'Mover')}
                         moveBtnAriaLabel={t(
                             'account.favorites.collections.move_button_aria',

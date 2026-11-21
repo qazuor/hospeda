@@ -325,4 +325,47 @@ describe('EditableNote', () => {
         expect(saveBtn).toBeVisible();
         expect(cancelBtn).toBeVisible();
     });
+
+    // ── HOS-2445: save on blur ────────────────────────────────────────────────
+
+    it('saves the note on blur and shows the saved status (HOS-2445)', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(makeOkResponse('Mi nota'));
+        globalThis.fetch = fetchMock;
+        const { props } = renderNote({ initialValue: null, savedLabel: 'Nota guardada' } as never);
+        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+
+        const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
+        fireEvent.change(textarea, { target: { value: 'Mi nota' } });
+        fireEvent.blur(textarea);
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'PATCH' });
+        await waitFor(() => expect(props.onSaved).toHaveBeenCalledWith('Mi nota'));
+        expect(await screen.findByTestId('note-saved-status')).toHaveTextContent('Nota guardada');
+    });
+
+    it('does not save on blur when the draft is unchanged', async () => {
+        const fetchMock = vi.fn();
+        globalThis.fetch = fetchMock;
+        renderNote({ initialValue: 'Igual' });
+        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.blur(screen.getByRole('textbox', { name: 'Nota personal' }));
+
+        await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument());
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('does not double-save when focus moves to the Cancel button', async () => {
+        const fetchMock = vi.fn();
+        globalThis.fetch = fetchMock;
+        renderNote({ initialValue: null });
+        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
+        fireEvent.change(textarea, { target: { value: 'Descartar' } });
+        fireEvent.blur(textarea, {
+            relatedTarget: screen.getByRole('button', { name: 'Cancelar' })
+        });
+
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
 });

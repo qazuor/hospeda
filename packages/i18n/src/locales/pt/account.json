@@ -925,7 +925,8 @@
         "notes": {
             "cancel": "Cancelar",
             "placeholder": "Adicione uma nota pessoal...",
-            "save": "Salvar nota"
+            "save": "Salvar nota",
+            "saved": "Nota salva"
         },
         "removeBtn": "Remover",
         "removeLabel": "Remover dos favoritos",
