@@ -53,7 +53,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 // Role gate: only editor-tier roles may see their own-content dashboard.

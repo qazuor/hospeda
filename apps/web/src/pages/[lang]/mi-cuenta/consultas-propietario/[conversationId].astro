@@ -13,6 +13,8 @@ import { resolveConversationBubbleSide } from '@/lib/conversation-bubble-side';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
 import { getApiUrl } from '@/lib/env';
 
@@ -23,7 +25,15 @@ const { t } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
+}
+
+// HOS-2433: role gate by PERMISSION (never by role name). The sidebar entry for
+// this inbox lives in the host group gated on ACCOMMODATION_CREATE, so the page
+// applies the same predicate and the two can never disagree. A user without it
+// is sent back to the account home instead of seeing an empty owner inbox.
+if (!hasAccommodationsNavAccess({ roles: user.roles })) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 
 const { conversationId } = Astro.params;

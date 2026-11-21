@@ -13,6 +13,7 @@ import { resolveConversationBubbleSide } from '@/lib/conversation-bubble-side';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 
 export const prerender = false;
@@ -22,7 +23,7 @@ const { t } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const { conversationId } = Astro.params;

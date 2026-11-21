@@ -106,7 +106,7 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
     describe('auth guard', () => {
         it('redirects unauthenticated users', () => {
             expect(src).toContain('Astro.redirect');
-            expect(src).toContain('auth/signin');
+            expect(src).toContain('buildLoginRedirect');
         });
     });
 

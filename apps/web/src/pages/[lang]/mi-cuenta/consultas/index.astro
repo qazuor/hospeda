@@ -13,6 +13,7 @@ import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import { AlertCircleIcon, ChatIcon } from '@repo/icons';
 
@@ -24,7 +25,7 @@ const { t } = createTranslations(locale);
 // Auth gate: middleware protects /mi-cuenta/* so user is always set here
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 // Pagination from URL search params

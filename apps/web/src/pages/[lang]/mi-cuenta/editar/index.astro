@@ -29,12 +29,13 @@ import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
 
 if (!user) {
-	return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+	return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const { t } = createTranslations(locale);

@@ -9,6 +9,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { WhatsNewPageList } from '@/components/account/WhatsNewPageList.client';
@@ -19,7 +20,7 @@ const locale = (Astro.locals.locale ?? (Astro.params.lang as SupportedLocale | u
 const user = Astro.locals.user;
 
 if (!user) {
-    return Astro.redirect(`/${locale}/auth/signin`);
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const { t } = createTranslations(locale);

@@ -13,6 +13,7 @@
  */
 
 import { getApiUrl } from '@/lib/env';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
@@ -33,7 +34,7 @@ const user = locals.user;
 
 if (!user) {
     return Astro.redirect(
-        `/${locale}/auth/signin?redirect=${encodeURIComponent(`/${locale}/mi-cuenta/newsletter/`)}`
+        buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search })
     );
 }
 
