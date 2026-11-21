@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { type PublishVerticalSlug, promoCodeApi } from '@/lib/api/endpoints-protected';
 import {
     parseRedeemResult,
@@ -18,6 +18,14 @@ type State = 'idle' | 'pending' | 'done' | 'rejected' | 'error';
 /** Inline promo redemption for subscriptions and active trials. */
 export function PromoCodeRedeem({ vertical, locale, offer }: PromoCodeRedeemProps) {
     const { t, tPlural } = createTranslations(locale);
+    // Announces hydration with `data-hydrated` (same ref-based pattern as
+    // SignupCheckout, HOS-1890): the input is server-rendered, so a code typed
+    // before React attaches stays in the DOM while `code` state is still '' and
+    // the submit sends an empty code (HOS-2401).
+    const rootRef = useRef<HTMLElement>(null);
+    useEffect(() => {
+        rootRef.current?.setAttribute('data-hydrated', 'true');
+    }, []);
     const [code, setCode] = useState('');
     const [state, setState] = useState<State>('idle');
     const [lines, setLines] = useState<
@@ -61,6 +69,7 @@ export function PromoCodeRedeem({ vertical, locale, offer }: PromoCodeRedeemProp
             : 'account.subscription.promoRedeem.subscriptionTitle';
     return (
         <section
+            ref={rootRef}
             className={styles.root}
             data-testid="promo-redeem"
             data-vertical={vertical}

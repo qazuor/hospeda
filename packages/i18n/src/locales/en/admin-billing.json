@@ -2349,7 +2349,8 @@
                 "REFUND_HAS_NO_ACCEPTED_CALL": "The provider accepted no part of this refund. Decline it, then settle it with action 14.",
                 "REMAINDER_AMOUNT_MISMATCH": "The remainder does not match what is still owed: the refund amount minus what the provider credited.",
                 "ACCEPTED_PART_NOT_ACCREDITED": "The provider does not show the part it accepted as credited. Check the charge in the provider panel before recording the remainder.",
-                "REMAINDER_NOT_FOUND_AT_PROVIDER": "The provider shows no credited refund with that reference and amount on this charge."
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "The provider shows no credited refund with that reference and amount on this charge.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Another refund of this payment has a provider call still unanswered. Wait until it is resolved before recording the remainder: the refund you see in the panel may belong to that call."
             }
         }
     },

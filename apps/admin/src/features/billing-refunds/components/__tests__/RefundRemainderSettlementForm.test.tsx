@@ -130,6 +130,7 @@ describe('RefundRemainderSettlementForm', () => {
         ['REMAINDER_AMOUNT_MISMATCH', remainder.rejections.REMAINDER_AMOUNT_MISMATCH],
         ['ACCEPTED_PART_NOT_ACCREDITED', remainder.rejections.ACCEPTED_PART_NOT_ACCREDITED],
         ['REMAINDER_NOT_FOUND_AT_PROVIDER', remainder.rejections.REMAINDER_NOT_FOUND_AT_PROVIDER],
+        ['OTHER_REFUND_CALL_UNANSWERED', remainder.rejections.OTHER_REFUND_CALL_UNANSWERED],
         ['REFUND_CALL_UNANSWERED', remainder.rejections.REFUND_CALL_UNANSWERED],
         ['REFUND_NOT_CONFIRMED', remainder.rejections.REFUND_NOT_CONFIRMED],
         ['REFUND_HAS_NO_ACCEPTED_CALL', remainder.rejections.REFUND_HAS_NO_ACCEPTED_CALL],
