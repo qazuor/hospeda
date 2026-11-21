@@ -13,7 +13,7 @@ const globalCss = read('styles/global.css');
 const toast = read('components/ui/ToastViewport.module.css');
 const slots = read('lib/mobile-dock/mobile-dock-slots.ts');
 
-const SLOT_ORDER = ['above', 'filters', 'start', 'map-cards', 'ai-search', 'ai-chat'];
+const SLOT_ORDER = ['above', 'contact', 'filters', 'start', 'map-cards', 'ai-search', 'ai-chat'];
 
 describe('TEST:1768:1 MobileDock layout contract', () => {
     it('mounts one dock in BaseLayout and forwards listing dock-start', () => {
@@ -26,7 +26,7 @@ describe('TEST:1768:1 MobileDock layout contract', () => {
         );
         expect(slotNames).toEqual(SLOT_ORDER);
         expect(slots).toMatch(
-            /MOBILE_DOCK_SLOTS\s*=\s*\[\s*'above',\s*'filters',\s*'start',\s*'map-cards',\s*'ai-search',\s*'ai-chat'\s*\]\s+as const/
+            /MOBILE_DOCK_SLOTS\s*=\s*\[\s*'above',\s*'contact',\s*'filters',\s*'start',\s*'map-cards',\s*'ai-search',\s*'ai-chat'\s*\]\s+as const/
         );
         expect(dock).toContain('data-mobile-dock-slot="start" data-listing-swap="dock-start"');
         expect(dock).not.toMatch(/Astro\.(locals|cookies|request)/);

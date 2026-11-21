@@ -586,7 +586,9 @@ describe('ContactHost', () => {
             });
 
             await waitFor(() => {
-                expect(document.getElementById('guestEmail-error')).toBeInTheDocument();
+                expect(screen.getByLabelText(/email/i)).toHaveAccessibleDescription(
+                    'zodError.conversation.guestEmail.invalid'
+                );
             });
             expect(fetchSpy).not.toHaveBeenCalled();
         });
@@ -613,11 +615,13 @@ describe('ContactHost', () => {
                 fireEvent.submit(document.querySelector('form')!);
             });
             await waitFor(() => {
-                expect(document.getElementById('guestEmail-error')).toBeInTheDocument();
+                expect(emailInput).toHaveAccessibleDescription(
+                    'zodError.conversation.guestEmail.invalid'
+                );
             });
 
             fireEvent.change(emailInput, { target: { value: 'ana@test.com' } });
-            expect(document.getElementById('guestEmail-error')).not.toBeInTheDocument();
+            expect(emailInput).not.toHaveAccessibleDescription();
         });
 
         // HOS-816 regression (HOS-837). This form carries its banner in a state
@@ -667,7 +671,9 @@ describe('ContactHost', () => {
             });
 
             await waitFor(() => {
-                expect(document.getElementById('guestEmail-error')).toBeInTheDocument();
+                expect(emailInput).toHaveAccessibleDescription(
+                    'zodError.conversation.guestEmail.invalid'
+                );
             });
             expect(screen.queryAllByRole('alert').map((el) => el.textContent)).not.toContain('bad');
         });
@@ -949,6 +955,42 @@ describe('ContactHost', () => {
                 locale: LOCALE,
                 source_page: 'accommodation_detail'
             });
+        });
+
+        it('attributes a panel inquiry to its source and opening surface', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: async () => ({ data: { status: 'PENDING_VERIFICATION' } })
+                })
+            );
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    locale={LOCALE}
+                    sourcePage="accommodation_contact_panel"
+                    origin="bar"
+                    initialMessage="Is it available?"
+                />
+            );
+            fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Ana' } });
+            fireEvent.change(screen.getByLabelText(/email/i), {
+                target: { value: 'ana@test.com' }
+            });
+
+            await act(async () => fireEvent.submit(document.querySelector('form')!));
+
+            for (const event of ['contact_owner_started', 'contact_owner_completed']) {
+                expect(trackEventSpy).toHaveBeenCalledWith(
+                    event,
+                    expect.objectContaining({
+                        source_page: 'accommodation_contact_panel',
+                        origin: 'bar'
+                    })
+                );
+            }
         });
 
         it('Mode B: fires booking_request_sent when an authenticated conversation is created', async () => {

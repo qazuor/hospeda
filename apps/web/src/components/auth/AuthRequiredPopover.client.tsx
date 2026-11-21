@@ -55,6 +55,10 @@ export interface AuthRequiredPopoverProps {
     readonly signInLabel?: string;
     /** Register button text. Defaults to 'Crear cuenta'. */
     readonly registerLabel?: string;
+    /** Opt-in dialog ID for the trigger's aria-controls; enables focus entry and return. */
+    readonly keyboardEntryId?: string;
+    /** Opt into resize dismissal and provide a focus target if the anchor becomes hidden. */
+    readonly hiddenAnchorFallbackRef?: RefObject<HTMLElement | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -150,9 +154,12 @@ export function AuthRequiredPopover({
     dialogLabel = 'Autenticacion requerida',
     closeLabel = 'Cerrar',
     signInLabel = 'Iniciar sesión',
-    registerLabel = 'Crear cuenta'
+    registerLabel = 'Crear cuenta',
+    keyboardEntryId,
+    hiddenAnchorFallbackRef
 }: AuthRequiredPopoverProps): JSX.Element | null {
     const popoverRef = useRef<HTMLDivElement>(null);
+    const closeRef = useRef<HTMLButtonElement>(null);
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState<PopoverPosition | null>(null);
     // Render only after mount to support SSR (document is undefined on the server).
@@ -199,25 +206,41 @@ export function AuthRequiredPopover({
         const frame = requestAnimationFrame(() => setIsVisible(true));
 
         const handleScroll = (): void => onClose();
+        const handleResize = (): void => {
+            if (hiddenAnchorFallbackRef && anchor.getClientRects().length === 0) {
+                if (popover.contains(document.activeElement)) {
+                    hiddenAnchorFallbackRef.current?.focus({ preventScroll: true });
+                }
+                onClose();
+                return;
+            }
+            update();
+        };
 
         window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
-        window.addEventListener('resize', update, { passive: true });
+        window.addEventListener('resize', handleResize, { passive: true });
 
         return () => {
             cancelAnimationFrame(frame);
             window.removeEventListener('scroll', handleScroll, { capture: true });
-            window.removeEventListener('resize', update);
+            window.removeEventListener('resize', handleResize);
         };
-    }, [mounted, anchorRef, onClose]);
+    }, [mounted, anchorRef, onClose, hiddenAnchorFallbackRef]);
+
+    useLayoutEffect(() => {
+        if (mounted && keyboardEntryId) closeRef.current?.focus({ preventScroll: true });
+    }, [mounted, keyboardEntryId]);
 
     // Close on Escape key.
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'Escape') onClose();
+            if (event.key !== 'Escape') return;
+            if (keyboardEntryId) anchorRef.current?.focus({ preventScroll: true });
+            onClose();
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
+    }, [onClose, anchorRef, keyboardEntryId]);
 
     // Close on click outside the popover (also ignore clicks on the anchor itself
     // so toggling via the trigger does not immediately re-close).
@@ -237,8 +260,8 @@ export function AuthRequiredPopover({
     const popoverNode = (
         <div
             ref={popoverRef}
-            // biome-ignore lint/a11y/useSemanticElements: Using div with role="dialog" for a non-modal popover
             role="dialog"
+            id={keyboardEntryId}
             aria-label={dialogLabel}
             className={cn(
                 styles.popover,
@@ -261,8 +284,12 @@ export function AuthRequiredPopover({
 
             {/* Close button */}
             <button
+                ref={closeRef}
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                    if (keyboardEntryId) anchorRef.current?.focus({ preventScroll: true });
+                    onClose();
+                }}
                 aria-label={closeLabel}
                 className={styles.closeButton}
             >

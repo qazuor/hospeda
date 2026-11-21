@@ -761,7 +761,7 @@ describe('LCP guard — featured img priority attributes and srcset candidate se
             />
         );
 
-        const imgs = Array.from(container.querySelectorAll('img'));
+        const imgs = Array.from(container.querySelectorAll('[data-count] img'));
         // imgs[0] = featured (eager); imgs[1..N] = thumbs and overlay bg (all lazy).
         const thumbs = imgs.slice(1);
         expect(thumbs.length).toBeGreaterThan(0);
