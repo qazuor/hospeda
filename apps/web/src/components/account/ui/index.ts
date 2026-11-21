@@ -35,6 +35,15 @@ export {
     statusLabelKey,
     toneFor
 } from './status-tone';
+export {
+    type NavTabItem,
+    NavTabs,
+    type NavTabsProps,
+    type TabItem,
+    Tabs,
+    type TabsProps,
+    type TabsVariant
+} from './Tabs';
 export { counterLevel, Textarea, type TextareaProps } from './Textarea';
 export { TextInput, type TextInputProps } from './TextInput';
 export { TextLink, type TextLinkProps, type TextLinkTone } from './TextLink';
