@@ -25,6 +25,8 @@
             "!**/mappings/id-mappings.json",
             "!**/config/generated",
             "!**/packages/help/generated",
+            "!**/packages/help/help.lock.json",
+            "!**/packages/help/coverage-exemptions.json",
             "!**/migrations/meta",
             "!**/.remember",
             "!**/test/**/fixtures",

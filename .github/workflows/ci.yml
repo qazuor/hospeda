@@ -428,6 +428,15 @@ jobs:
       # Fix: edit the article, run `pnpm help:build`, commit the index in the same PR.
       - name: Check the help catalog matches the portal and its index (HOS-2410)
         run: pnpm check:help-catalog
+      # HOS-2410 guard (b), reverse coverage. Its own step, like every guard here. Every
+      # owner-facing unit the code has (account pages and editor sections, entitlement and
+      # limit keys, registered MCP tools) is enumerated at run time and must be covered by an
+      # article (entryFor for pages and sections, covers for keys and tools) or exempted with
+      # a reason in packages/help/coverage-exemptions.json. Fails on an uncovered unit, a stale
+      # or malformed exemption, a unit both covered and exempt, or an empty universe set.
+      # Fix: cover the unit in an article, or add the exemption with its reason.
+      - name: Check every owner-facing surface has help or an exemption (HOS-2410)
+        run: pnpm check:help-coverage
       # Drizzle skips, without an error, any migration whose `when` is not above the
       # last applied one. Rule 1 (monotonic journal) always runs; rule 2 (new entries
       # above origin/<base>) only on a PR to staging or main. On `push` base_ref is
