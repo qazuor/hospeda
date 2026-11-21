@@ -1,0 +1,183 @@
+---
+/**
+ * @file AccountHeader.astro
+ * @description The compact 56px header of the account chrome (HOS-2413 T-018,
+ * D1 «marco compacto»). Rendered by `BaseLayout chrome="account"`.
+ *
+ * It COMPOSES the islands the site header already owns (logo, «Publicar»,
+ * user menu, the site menu behind the hamburger) instead of copying them, so
+ * `Header.astro` stays untouched. The user keeps the way back to the public
+ * site through the site menu (D3).
+ *
+ * Open decision (recorded in the PR): the catalog's CURATED site-menu entries
+ * are not specified in the spec, so this first version feeds the menu the same
+ * entries the site header does.
+ */
+
+import { getImage, Image } from 'astro:assets';
+import { HamburgerIcon } from '@repo/icons';
+import MobileMenuIsland from '@/components/shared/navigation/MobileMenuIsland.astro';
+import { PublishMenu } from '@/components/shared/navigation/PublishMenu.client';
+import { UserMenu } from '@/components/shared/navigation/UserMenu.client';
+import IconButton from '@/components/shared/ui/IconButton.astro';
+import { getAdminUrl } from '@/lib/env';
+import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { buildVenueCollectionNavItems } from '@/lib/venue/business-line-collection';
+import logoSrc from '@/assets/images/logo.webp';
+
+interface Props {
+	readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+let menuLogoSrc = logoSrc.src;
+try {
+	menuLogoSrc = (await getImage({ src: logoSrc, width: 100, format: 'webp' })).src;
+} catch {
+	// Fall back to the unprocessed asset path
+}
+
+const menuNavItems = [
+	{ label: t('nav.accommodations'), href: buildUrl({ locale, path: '/alojamientos/' }) },
+	{ label: t('nav.destinations'), href: buildUrl({ locale, path: '/destinos/' }) },
+	{ label: t('nav.events'), href: buildUrl({ locale, path: '/eventos/' }) },
+	{
+		label: t('nav.venue'),
+		href: buildUrl({ locale, path: '/comer-y-salir/' }),
+		children: buildVenueCollectionNavItems({ locale, t }),
+	},
+	{ label: t('nav.experiences'), href: buildUrl({ locale, path: '/experiencias/' }) },
+	{ label: t('nav.blog'), href: buildUrl({ locale, path: '/publicaciones/' }) },
+	{ label: t('nav.contact'), href: buildUrl({ locale, path: '/contacto/' }) },
+];
+
+const currentPath = Astro.url.pathname;
+const serverUser = Astro.locals.user ?? null;
+const initialUser = serverUser
+	? {
+			id: serverUser.id ?? '',
+			name:
+				typeof serverUser.name === 'string' && serverUser.name.trim().length > 0
+					? serverUser.name
+					: '',
+			email: serverUser.email ?? '',
+			avatarUrl:
+				'avatarUrl' in serverUser && typeof serverUser.avatarUrl === 'string'
+					? serverUser.avatarUrl
+					: 'image' in serverUser && typeof serverUser.image === 'string'
+						? serverUser.image
+						: undefined,
+		}
+	: null;
+const adminPanelUrl = getAdminUrl();
+const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
+---
+
+<header data-account-header class="account-header" role="banner">
+	<div class="account-header__inner">
+		<a
+			href={buildUrl({ locale, path: '/' })}
+			class="account-header__logo"
+			aria-label={t('nav.goHome', 'Hospeda - Go to home')}
+		>
+			<Image src={logoSrc} alt="" width={28} height={30} loading="eager" />
+			<span class="account-header__name">Hospeda</span>
+		</a>
+
+		<div class="account-header__right">
+			<PublishMenu client:idle locale={locale} className="account-header__cta" />
+			<UserMenu
+				client:load
+				initialUser={initialUser}
+				locale={locale}
+				currentPath={currentPath}
+				variant="scrolled"
+				adminPanelUrl={adminPanelUrl}
+				mcpEnabled={mcpEnabled}
+			/>
+			<IconButton
+				ariaLabel={t('nav.openMenu', 'Open navigation menu')}
+				variant="ghost"
+				size="md"
+				data={{ 'mobile-toggle': '' }}
+				aria={{ expanded: false }}
+			>
+				<HamburgerIcon size={24} aria-hidden="true" />
+			</IconButton>
+		</div>
+	</div>
+</header>
+
+<MobileMenuIsland
+	locale={locale}
+	navItems={menuNavItems}
+	currentPath={currentPath}
+	logoSrc={menuLogoSrc}
+	homeHref={buildUrl({ locale, path: '/' })}
+	initialUser={initialUser}
+	initialRoles={serverUser?.roles ?? []}
+	adminPanelUrl={adminPanelUrl}
+	mcpEnabled={mcpEnabled}
+/>
+
+<style>
+	.account-header {
+		position: sticky;
+		top: 0;
+		z-index: var(--z-nav);
+		inline-size: 100%;
+		background-color: var(--core-card);
+		border-block-end: 1px solid var(--border);
+	}
+
+	.account-header__inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		block-size: 3.5rem;
+		padding-inline: var(--space-4);
+		max-inline-size: 90rem;
+		margin-inline: auto;
+	}
+
+	.account-header__logo {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		text-decoration: none;
+		border-radius: var(--radius-control);
+	}
+
+	.account-header__logo:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 2px;
+	}
+
+	.account-header__name {
+		font: var(--app-card-title);
+		color: var(--brand-secondary-foreground);
+	}
+
+	.account-header__right {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	/* The «Publicar» CTA needs room: from 48rem it shows next to the avatar. */
+	.account-header__right :global(.account-header__cta) {
+		display: none;
+	}
+
+	@media (min-width: 48rem) {
+		.account-header__right :global(.account-header__cta) {
+			display: inline-flex;
+		}
+	}
+</style>
