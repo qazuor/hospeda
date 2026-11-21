@@ -16,6 +16,7 @@ import {
     refunds
 } from '@repo/db';
 import { vi } from 'vitest';
+import { confirmOneTimePagePayment } from '../../../../src/services/billing/addon/addon-instance-a2-one-time-page';
 import { purchaseAddon } from '../../../../src/services/billing/addon/purchase-addon.service';
 import { getServiceTestDb, getServiceTestPool } from '../helpers';
 import { payingPrincipal } from './addon-a2-fixtures';
@@ -29,7 +30,7 @@ const boughtInstances: { readonly id: string; readonly ownerId: string }[] = [];
 export async function pageSetup() {
     const f = await purchaseFixture();
     await payingPrincipal(f);
-    const request = { ...f.input(), oneTimeChannel: 'PAGE' as const };
+    const request = f.input();
     const ports = {
         ...f.ports,
         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
@@ -48,6 +49,32 @@ export async function boughtPage(s: Awaited<ReturnType<typeof pageSetup>>) {
     // The principal's own notices are not this purchase's: a test sees only what it pays.
     s.f.fake.takeDeliveries();
     return { instance, paymentPageId: instance.paymentPageId };
+}
+
+/**
+ * Activates a page purchase the way production does: the customer pays on its page and A2
+ * reads the approved payment back by id (HOS-2179 §5.3).
+ *
+ * @param input.f - The purchase fixture whose fake holds the page
+ * @param input.instanceId - The pending page purchase
+ * @returns The activated instance and the page payment's id
+ */
+export async function activatePagePurchase(input: {
+    readonly f: Awaited<ReturnType<typeof purchaseFixture>>;
+    readonly instanceId: string;
+}) {
+    const pending = await pageInstance(input.instanceId);
+    if (!pending.paymentPageId) throw new Error('Payment page missing');
+    const charge = input.f.fake.payOnPage({
+        paymentPageId: pending.paymentPageId,
+        outcome: 'approved'
+    });
+    const confirmed = await confirmOneTimePagePayment(
+        { instanceId: pending.id, chargeId: charge.chargeId },
+        { ...input.f.ports, coverageNotices: { emitCoverageChanged: vi.fn(async () => {}) } }
+    );
+    if (confirmed.outcome !== 'ACTIVATED') throw new Error(`A2 returned ${confirmed.outcome}`);
+    return { instance: await pageInstance(pending.id), paymentId: confirmed.paymentId };
 }
 
 /** The instance as stored. */

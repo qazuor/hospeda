@@ -12,9 +12,14 @@
 export type { CreateEmailClientInput, EmailClient } from './client.js';
 // Client
 export { createEmailClient } from './client.js';
+export type { RenderEmailBodiesInput, RenderedEmailBodies } from './render.js';
+// Rendering
+export { renderEmailBodies } from './render.js';
 export type { SendEmailInput, SendEmailResult } from './send.js';
 // Send functionality
 export { sendEmail } from './send.js';
+// Subjects
+export { RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT } from './subjects.js';
 export type { BaseLayoutProps } from './templates/base-layout.js';
 // Email templates
 export { BaseLayout } from './templates/base-layout.js';

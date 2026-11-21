@@ -4,7 +4,6 @@ import { addonInstances, and, domainEventModel, eq, getDb } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
 import type { CoverageNotices } from '../payment/payment-ports';
-import { confirmOneTimeOrder } from './addon-instance-a2-one-time';
 import type { A5Ports } from './addon-instance-a5';
 import { confirmOneTimePageByReference } from './confirm-one-time-page-by-reference';
 
@@ -12,10 +11,6 @@ const abandonInputSchema = z.object({
     instanceId: z.uuid(),
     expectedProviderOrderId: z.string().min(1).nullable(),
     now: z.date()
-});
-const expireInputSchema = z.object({
-    instanceId: z.uuid(),
-    providerOrderId: z.string().min(1).nullable()
 });
 
 /** Closes a pending one-time addon without touching its stored provider order id. */
@@ -61,30 +56,6 @@ export async function abandonOneTimeAddon(input: {
         });
         return true;
     });
-}
-
-/** A3 only confirms an existing order; an unanswered read leaves the instance pending. */
-export async function expireOneTimeAddon(
-    input: { readonly instanceId: string; readonly providerOrderId: string | null },
-    ports: A5Ports & {
-        readonly provider: PaymentProvider;
-        readonly clock: Clock;
-        readonly coverageNotices: CoverageNotices;
-    }
-): Promise<'ACTIVATED' | 'ABANDONED' | 'DEFERRED'> {
-    expireInputSchema.parse(input);
-    if (input.providerOrderId) {
-        const result = await confirmOneTimeOrder({ instanceId: input.instanceId }, ports);
-        if (result.outcome === 'ACTIVATED') return 'ACTIVATED';
-        if (result.outcome === 'UNKNOWN' || result.outcome === 'NOT_APPLICABLE') return 'DEFERRED';
-    }
-    return (await abandonOneTimeAddon({
-        instanceId: input.instanceId,
-        expectedProviderOrderId: input.providerOrderId,
-        now: ports.clock.now()
-    }))
-        ? 'ABANDONED'
-        : 'DEFERRED';
 }
 
 /**

@@ -95,8 +95,11 @@ const ADDON_WRITER_FIXTURES = [
 /** Every serial group, one advisory key per global service. */
 export const SERIAL_GROUPS: readonly SerialGroup[] = [
     {
+        // A4 (`expireAddonInstances`) also drives this key: it expires EVERY active addon whose
+        // end passed on the caller's clock, so its file's clock (days ahead) expired an add-on a
+        // parallel writer file had just activated and counted it as its own (HOS-2518 CI).
         key: 1_999_001,
-        drives: /billing\/reconciliation\/sweep\/|runReconciliationSweep|reconciliation-sweep-fixtures|reconciliation-exit-game-fixtures|(?:paid-order|credited-payments)-fixtures/,
+        drives: /\bexpireAddonInstances\b|billing\/reconciliation\/sweep\/|runReconciliationSweep|reconciliation-sweep-fixtures|reconciliation-exit-game-fixtures|(?:paid-order|credited-payments)-fixtures/,
         shares: new RegExp(
             [
                 `/(?:${ADDON_WRITER_FIXTURES.join('|')})-fixtures(?:-2)?['.]`,

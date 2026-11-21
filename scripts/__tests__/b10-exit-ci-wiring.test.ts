@@ -21,7 +21,23 @@ interface Clause {
     readonly owner: string;
     readonly titles: readonly { readonly file: string; readonly prefix: string }[];
     readonly seeded: readonly string[];
+    /** Struck through in B10.md: it owes no evidence, and the spec must say why. */
+    readonly retired?: true;
 }
+
+const SPEC_B10 = '.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-3/B10.md';
+/** The note B10.md carries next to every struck-through id (HOS-2179 T-7). */
+const RETIRED_NOTE =
+    '**Retirada por HOS-2179 T-7** (`.specs/HOS-2179-addons-pago-unico-checkout-pro/spec.md` §6.3): irse sin pagar es `A3` y el segundo intento retoma la página.';
+/**
+ * Ids HOS-2179 T-7 retired with the card order (`A7`). They stay in B10.md, struck through,
+ * and no test title owes them; the spec text is checked instead.
+ */
+const RETIRED = {
+    tests: ['TEST:B10:8'],
+    acs: ['AC:B10:7'],
+    clauses: [14]
+} as const;
 
 // LISTA:B10, with the five independent parts of clause 11 checked separately.
 const CLAUSES: readonly Clause[] = [
@@ -174,7 +190,8 @@ const CLAUSES: readonly Clause[] = [
         titles: [],
         seeded: [`${service}addon-purchase-identity.test.ts`, `${service}addon-a3-window.test.ts`]
     },
-    { clause: 14, owner: 'B10', titles: [], seeded: [`${service}addon-a7-declined.test.ts`] },
+    // Retired by HOS-2179 T-7 with the card order (A7); struck through in B10.md.
+    { clause: 14, owner: 'B10', titles: [], seeded: [], retired: true },
     {
         clause: 15,
         owner: 'B8a',
@@ -205,7 +222,9 @@ const CLAUSES: readonly Clause[] = [
         seeded: [`${service}addon-free-choice-listing.test.ts`]
     }
 ];
-const CUT_TESTS = Array.from({ length: 16 }, (_, index) => `TEST:B10:${index + 1}`);
+const CUT_TESTS = Array.from({ length: 16 }, (_, index) => `TEST:B10:${index + 1}`).filter(
+    (id) => !(RETIRED.tests as readonly string[]).includes(id)
+);
 const DEFERRED = {
     test: 'TEST:B10:16',
     part: 'UNA_VEZ',
@@ -323,7 +342,28 @@ describe('TEST:B10:10 TEST:B10:11 TEST:B10:12 TEST:B10:16 AC:B10:9 AC:B10:10 AC:
             'B10'
         ]);
     });
-    for (const entry of CLAUSES) {
+    it('every retired clause and id is struck through in B10.md with the HOS-2179 note', () => {
+        const spec = read(SPEC_B10);
+        expect(CLAUSES.filter(({ retired }) => retired).map(({ clause }) => clause)).toEqual([
+            ...RETIRED.clauses
+        ]);
+        for (const clause of RETIRED.clauses) {
+            const at = spec.search(new RegExp(`^${clause}\\. ~~`, 'm'));
+            expect(at, `LISTA:B10 clause ${clause} is struck through`).toBeGreaterThan(-1);
+            const next = spec.indexOf(`\n${clause + 1}. `, at);
+            expect(spec.slice(at, next), `clause ${clause} note`).toContain(RETIRED_NOTE);
+        }
+        for (const id of [...RETIRED.acs, ...RETIRED.tests]) {
+            const heading = new RegExp(`^\\*\\*${id}\\*\\* — ~~.+~~\\n\\n(.+)$`, 'm').exec(spec);
+            expect(heading?.[1], `${id} is struck through with the note`).toBe(RETIRED_NOTE);
+        }
+    });
+    it('no test title still claims a retired id', () => {
+        expect(
+            RETIRED.tests.filter((id) => allTitles.some((title) => namesId({ title, id })))
+        ).toEqual([]);
+    });
+    for (const entry of CLAUSES.filter(({ retired }) => !retired)) {
         it(`LISTA:B10 clause ${entry.clause} evidence exists under ${entry.owner}`, () => {
             for (const { file, prefix } of entry.titles) {
                 expect(existsSync(path.join(repoRoot, file)), file).toBe(true);
@@ -352,7 +392,7 @@ describe('TEST:B10:10 TEST:B10:11 TEST:B10:12 TEST:B10:16 AC:B10:9 AC:B10:10 AC:
             )
         ).toBe(true);
     });
-    it('all TEST:B10:1 through TEST:B10:16 appear in an existing test title', () => {
+    it('all TEST:B10:1 through TEST:B10:16 but the retired ones appear in a test title', () => {
         expect(
             CUT_TESTS.filter((id) => !allTitles.some((title) => namesId({ title, id })))
         ).toEqual([]);

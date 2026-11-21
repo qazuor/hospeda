@@ -1,4 +1,4 @@
-import { render } from '@react-email/render';
+import { renderEmailBodies } from '@repo/email';
 import type { EmailClient } from '../../config/resend.config.js';
 import { EmailHardBounceError } from '../../services/outbox/email-outbox-delivery.service.js';
 import type {
@@ -79,10 +79,11 @@ export class BrevoEmailTransport implements EmailTransport {
      */
     async send(input: SendEmailInput): Promise<SendEmailResult> {
         try {
-            const htmlContent = await render(input.react);
             // HOS-1990: HTML-only mail scores worse with spam filters and is unreadable in
             // text clients; Brevo takes the plain part as `textContent`.
-            const textContent = await render(input.react, { plainText: true });
+            const { html: htmlContent, text: textContent } = await renderEmailBodies({
+                react: input.react
+            });
 
             const body: Record<string, unknown> = {
                 sender: parseSender(input.from, this.defaultFromEmail, this.defaultFromName),
