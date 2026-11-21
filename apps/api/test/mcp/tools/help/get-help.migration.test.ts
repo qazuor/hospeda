@@ -9,11 +9,33 @@
  * them, with the configured site URL replaced by `{SITE}`. This test runs the
  * tool again and compares the serialized answers byte for byte.
  *
+ * HOS-2410 PR-12 made the answer richer, and the fixture is NOT rewritten for it:
+ *
+ * - The topic gained `summary`, `sections` and `related` (AC-17). AC-15 is about
+ *   `id`, `title`, `steps` and `links` only, so the comparison projects the topic
+ *   to those four fields, in the fixture's key order.
+ * - `get_help` now resolves body tokens, and the pages a `{{link}}` or
+ *   `{{limit}}` token names are APPENDED to the links (`docs/data-model.md`
+ *   §5.2, AC-20). The links of the fixture must still be the first links, byte
+ *   for byte and in order. Each link after them must be the URL of an actual
+ *   link or limit token of that article, for a vertical the audience asking
+ *   works in (a limit only for one of the article's verticals). A link removed,
+ *   reordered or relabelled, or one no token names, still fails.
+ *
  * @module test/mcp/tools/help/get-help.migration
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+    findHelpArticle,
+    type HelpArticle,
+    type HelpDestination,
+    parseHelpTokens,
+    resolveHelpLinkTarget,
+    toPortalDestination
+} from '@repo/help';
+import { buildPortalUrl, type PortalListingVertical } from '@repo/portal-routes';
 import { PublicationStatusEnum } from '@repo/schemas';
 import {
     AccommodationService,
@@ -54,7 +76,83 @@ const LEGACY_IDS = [
     'benefit-usage-provider'
 ] as const;
 
-type Fixture = Record<string, Record<(typeof AUDIENCES)[number], unknown>>;
+/** One topic as the fixture holds it. */
+interface FixtureTopic {
+    readonly id: string;
+    readonly title: string;
+    readonly steps: readonly string[];
+    readonly links: readonly { readonly label: string; readonly url: string }[];
+}
+
+/** The one listing each vertical has in this test. */
+const LISTING_ID: Readonly<Record<PortalListingVertical, string>> = {
+    accommodation: ACC_ID,
+    venue: VEN_ID,
+    experience: EXP_ID
+};
+
+/** The listing vertical of each audience; `undefined` for none (provider, all). */
+const AUDIENCE_VERTICAL: Readonly<Record<string, PortalListingVertical | undefined>> = {
+    host: 'accommodation',
+    venue: 'venue',
+    experience: 'experience'
+};
+
+/** Whether a value is a listing vertical. */
+const isListingVertical = (value: string | undefined): value is PortalListingVertical =>
+    value === 'accommodation' || value === 'venue' || value === 'experience';
+
+/**
+ * Every URL a link or limit token of the article can append for an audience,
+ * computed independently of `help-answer.ts` from the token grammar
+ * (`docs/data-model.md` §5.2).
+ */
+function tokenUrls({
+    article,
+    audience
+}: {
+    readonly article: HelpArticle;
+    readonly audience: string;
+}): ReadonlySet<string> {
+    const { canDo, howTo, expect: toExpect, notExpect, troubleshooting } = article.sections;
+    const texts = [canDo, ...howTo.steps, howTo.after, toExpect, notExpect, troubleshooting];
+    const destinations = texts
+        .flatMap((text) => parseHelpTokens({ text }).tokens)
+        .flatMap((token): HelpDestination[] => {
+            if (token.kind === 'link') {
+                const resolved = resolveHelpLinkTarget({ args: token.args });
+                return resolved.ok ? [resolved.destination] : [];
+            }
+            if (token.kind === 'limit') {
+                const vertical =
+                    token.args[1] ??
+                    (article.verticals.length === 1 ? article.verticals[0] : undefined);
+                return isListingVertical(vertical) && article.verticals.includes(vertical)
+                    ? [{ kind: 'plans', vertical }]
+                    : [];
+            }
+            return [];
+        });
+    const own = AUDIENCE_VERTICAL[audience];
+    const urls = new Set<string>();
+    for (const destination of destinations) {
+        const vertical = 'vertical' in destination ? destination.vertical : undefined;
+        if (vertical !== undefined && audience !== 'all' && own !== vertical) continue;
+        const portal =
+            destination.kind === 'ownEditorSection'
+                ? {
+                      kind: 'listingEditor' as const,
+                      vertical: destination.vertical,
+                      id: LISTING_ID[destination.vertical],
+                      section: destination.section
+                  }
+                : toPortalDestination({ destination });
+        urls.add(buildPortalUrl({ destination: portal, siteUrl: env.HOSPEDA_SITE_URL }));
+    }
+    return urls;
+}
+
+type Fixture = Record<string, Record<(typeof AUDIENCES)[number], FixtureTopic>>;
 
 const FIXTURE: Fixture = JSON.parse(
     readFileSync(resolve(import.meta.dirname, 'fixtures/get-help-pre-migration.json'), 'utf8')
@@ -120,8 +218,30 @@ describe('get_help after the migration to @repo/help (HOS-2410 AC-15)', () => {
             expect(outcome.ok).toBe(true);
             const data = (outcome as { readonly data: GetHelpResult }).data;
             expect(data.topics).toHaveLength(1);
-            const actual = JSON.stringify(data.topics[0]).split(site).join('{SITE}');
-            expect(actual).toBe(JSON.stringify(FIXTURE[id]?.[audience]));
+            const topic = data.topics[0];
+            const expected = FIXTURE[id]?.[audience];
+            if (topic === undefined || expected === undefined) {
+                throw new Error(`no topic or fixture for ${id}/${audience}`);
+            }
+            const unsited = (text: string) => text.split(site).join('{SITE}');
+            const legacy = {
+                id: topic.id,
+                title: topic.title,
+                steps: topic.steps,
+                links: topic.links.slice(0, expected.links.length)
+            };
+            expect(unsited(JSON.stringify(legacy))).toBe(JSON.stringify(expected));
+
+            // Each link after the legacy ones is the URL of one of the article's
+            // link or limit tokens, for the audience asking.
+            const article = findHelpArticle({ id });
+            if (article === undefined) {
+                throw new Error(`no article ${id}`);
+            }
+            const allowed = tokenUrls({ article, audience });
+            for (const extra of topic.links.slice(expected.links.length)) {
+                expect(allowed).toContain(extra.url);
+            }
         });
     });
 });

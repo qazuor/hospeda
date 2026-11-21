@@ -83,6 +83,19 @@ describe('buildHelpIndex', () => {
             expect(predicatesOf(files)).toEqual(['IL-1']);
         });
 
+        it('counts a link token inside a step for IL-1, now that get_help resolves it (PR-12)', () => {
+            // Arrange: the only {{link:subscription}} moves into a step.
+            const files = greenCatalog({
+                a: {
+                    canDo: 'Leer {{article:b|el otro}}.',
+                    steps: ['Entrá a {{link:subscription}}.', 'Segundo paso.']
+                }
+            });
+
+            // Act / Assert
+            expect(predicatesOf(files)).toEqual([]);
+        });
+
         it('fails IL-1 for a covered page reachable only by a page key, naming the token, and passes with it', () => {
             // Arrange
             const covers = { covers: ['page:mi-cuenta/suscripcion', 'page:mi-cuenta'] };

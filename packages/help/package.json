@@ -28,6 +28,7 @@
         "build:ts": "tsup",
         "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
         "generate": "tsx src/generator/cli.ts",
+        "export": "tsx src/export/cli.ts",
         "typecheck": "tsc --noEmit --project ./tsconfig.json",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",

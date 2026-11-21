@@ -367,9 +367,11 @@ export function validateHelpCatalog({
                 })
             );
         }
-        // IL-2 reads the prose only: the «Cómo se hace» steps are returned verbatim
-        // by get_help, which does not resolve tokens yet (HOS-2410 PR-12), so a
-        // step cannot carry an {{article}} token.
+        // IL-2 reads the prose only. A step may carry an {{article}} token since
+        // HOS-2410 PR-12 (get_help resolves it), but the steps of the 16 migrated
+        // topics are frozen byte for byte by AC-15, and one of them quotes a title
+        // (provider-directory, step 3). Extending IL-2 to the steps is a content
+        // change for a later PR, not part of the resolver.
         const prose = bodyTexts({ body: entry.body })
             .prose.map((text) => replaceHelpTokens({ text, replace: () => '' }))
             .join('\n');

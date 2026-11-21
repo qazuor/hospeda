@@ -245,6 +245,11 @@ export const COMMANDS: readonly CommandEntry[] = [
         load: async () => (await import('./commands/whats-new/command.ts')).whatsNewCommand
     },
     {
+        name: 'help',
+        summary: 'Centro de ayuda: exporta las guías de una audiencia a Markdown (export)',
+        load: async () => (await import('./commands/help/command.ts')).helpCommand
+    },
+    {
         name: 'engram',
         summary: 'Acceso seguro y descubrible a la memoria Engram',
         load: async () => (await import('./commands/engram/command.ts')).engramCommand
