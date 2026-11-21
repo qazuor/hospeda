@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 /**
@@ -9,6 +10,16 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * pnpm workspace and run their own suites on bun.
  */
 export default defineConfig({
+    resolve: {
+        alias: {
+            // Reached through packages/help/src (HOS-2410): resolve from source,
+            // like the root tsconfig `paths` do for tsx, so no build is needed.
+            '@repo/portal-routes': resolve(
+                import.meta.dirname,
+                '../packages/portal-routes/src/index.ts'
+            )
+        }
+    },
     test: {
         root: import.meta.dirname,
         include: ['__tests__/**/*.test.ts'],

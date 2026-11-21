@@ -13,9 +13,9 @@
  * WHETHER the actor may see it. Pure: the site URL comes in as an argument.
  */
 
+import type { PortalDestination } from '@repo/portal-routes';
+import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
 import { LISTING_VERTICALS, type ListingVertical } from '@repo/schemas';
-import { buildPortalUrl, type PortalLocale } from './build-portal-url';
-import type { PortalDestination } from './portal-routes';
 
 /** Target type of an inquiry in the audit rows (`auditTarget` of the inquiry tools). */
 const CONVERSATION_TARGET_TYPE = 'conversation';

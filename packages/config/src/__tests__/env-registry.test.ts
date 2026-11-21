@@ -346,8 +346,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * +1 = HOSPEDA_ACCOUNT_KIT_GALLERY (features category, web only) - the gate of
  * the Mi Cuenta kit gallery page (HOS-2413). 291 + 1 = 292.
+ *
+ * +1 = INIT_CWD (system category, platform-injected by pnpm) - read by the
+ * @repo/help export CLI (HOS-2410). 292 + 1 = 293.
  */
-const EXPECTED_VAR_COUNT = 292;
+const EXPECTED_VAR_COUNT = 293;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

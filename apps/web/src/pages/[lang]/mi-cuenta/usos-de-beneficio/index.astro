@@ -42,7 +42,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // Safety net: middleware already protects /mi-cuenta/* and returns here.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;

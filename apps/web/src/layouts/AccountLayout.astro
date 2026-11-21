@@ -21,6 +21,7 @@ import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsa
 import BaseLayout from './BaseLayout.astro';
 import AccountShell from './AccountShell.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import PageHelpRow from '@/components/account/help/PageHelpRow.astro';
 import { AI_ASSISTANTS_NAV_ITEM_ID } from '@/config/navigation';
 import { buildAccountNavModel } from '@/lib/account-nav-model';
 import type { AccountShellTemplate } from '@/components/account/ui/account-shell-template';
@@ -115,6 +116,8 @@ const activeLabel = t(navModel.activeLabelKey);
 		aiAssistantsHidden={!mcpEnabled}
 	>
 		<slot name="head-early" slot="head-early" />
+		<!-- HOS-2410 web-ui §6: the «?» of a page without AccountPageHeader. -->
+		<PageHelpRow locale={locale} fallback />
 		<slot />
 	</AccountShell>
 ) : (
@@ -152,7 +155,7 @@ const activeLabel = t(navModel.activeLabelKey);
 				</button>
 
 				<!-- Sidebar navigation -->
-				<aside id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
+				<aside id="account-nav" class="account-page__sidebar" aria-label={t('account.navigation')}>
 				<nav class="account-nav">
 					{navModel.groups.map((entry) => {
 						const { group, suppressHeader, containsActive, defaultOpen } = entry;
@@ -249,6 +252,9 @@ const activeLabel = t(navModel.activeLabelKey);
 
 			<!-- Content area -->
 			<div class="account-page__content">
+				<!-- HOS-2410 web-ui §6: the «?» of a page without AccountPageHeader.
+				     Hidden by the global rule below when the page has the header. -->
+				<PageHelpRow locale={locale} fallback />
 				<slot />
 			</div>
 		</div>
@@ -371,6 +377,18 @@ const activeLabel = t(navModel.activeLabelKey);
 
 	document.addEventListener('astro:page-load', initAccountNav);
 </script>
+
+<style is:global>
+	/*
+	 * HOS-2410 web-ui §6: AccountPageHeader carries the page's «?» in its title
+	 * row, so the layout's fallback copy steps aside (display: none also takes
+	 * it out of the accessibility tree).
+	 */
+	.account-page__content:has([data-account-page-header]) > [data-help-fallback],
+	[data-account-content]:has([data-account-page-header]) > [data-help-fallback] {
+		display: none;
+	}
+</style>
 
 <style>
 	.account-page {

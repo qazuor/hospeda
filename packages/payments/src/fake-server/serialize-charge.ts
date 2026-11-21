@@ -18,7 +18,7 @@ export function serializeCharge({
         refunds: snapshot.refunds.map((r) => ({
             id: r.refundId,
             amount: r.amount.amountMinor / 100,
-            status: r.accredited ? 'approved' : 'rejected'
+            status: r.accredited ? 'approved' : r.rejected ? 'rejected' : 'in_process'
         })),
         metadata: {},
         point_of_interaction:

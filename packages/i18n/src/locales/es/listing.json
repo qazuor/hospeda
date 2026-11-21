@@ -189,7 +189,22 @@
                 "whatToBringHint": "Un ítem por línea. Lo que tiene que traer la persona que se anota.",
                 "requirements": "Requisitos",
                 "requirementsPlaceholder": "Edad mínima 12 años\nSaber nadar\nNo apto para embarazadas",
-                "requirementsHint": "Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar."
+                "requirementsHint": "Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.",
+                "openingHoursDays": {
+                    "mon": "Lun",
+                    "tue": "Mar",
+                    "wed": "Mié",
+                    "thu": "Jue",
+                    "fri": "Vie",
+                    "sat": "Sáb",
+                    "sun": "Dom"
+                },
+                "openingHoursClosed": "Cerrado",
+                "openingHoursClosedAria": "{{day}} cerrado",
+                "openingHoursOpenAria": "{{day}} apertura {{index}}",
+                "openingHoursCloseAria": "{{day}} cierre {{index}}",
+                "openingHoursRemoveShiftAria": "Quitar turno {{day}} {{index}}",
+                "openingHoursAddShiftAria": "Agregar turno {{day}}"
             },
             "contactField": {
                 "mobilePhone": "Teléfono",

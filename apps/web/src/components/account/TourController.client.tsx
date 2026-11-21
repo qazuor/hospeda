@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNextPendingWelcomeTour, type TourPage } from '@/config/tours';
+import { useCookieConsentDecided } from '@/hooks/use-cookie-consent-decided';
 import { useTourState } from '@/hooks/use-tour-state';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildTourDriverTexts, filterStepsPresentOnPage } from '@/lib/tour-driver';
 
 interface TourControllerProps {
     readonly locale: SupportedLocale;
@@ -20,6 +22,9 @@ type DriverInstance = {
 export function TourController({ locale, userRoles, page }: TourControllerProps) {
     const { t } = createTranslations(locale);
     const { isLoading, hasSeen, markSeen } = useTourState();
+    // HOS-2448: the cookie banner is also a first-visit overlay. Wait for the
+    // visitor's answer so the tour never opens underneath it.
+    const consentDecided = useCookieConsentDecided();
     // HOS-1856: "is running" lives in a ref, not in state. As state it was a
     // dependency of the effect that starts the tour, so `setIsRunning(true)`
     // right before `drive()` changed the deps, React ran that effect's
@@ -35,9 +40,9 @@ export function TourController({ locale, userRoles, page }: TourControllerProps)
     const tour = getNextPendingWelcomeTour({ roles: userRoles, hasSeen, page });
 
     useEffect(() => {
-        if (isLoading || !tour) return;
+        if (isLoading || !tour || !consentDecided) return;
         setShouldStart(true);
-    }, [isLoading, tour]);
+    }, [isLoading, tour, consentDecided]);
 
     const handleComplete = useCallback(() => {
         if (!tour) return;
@@ -67,9 +72,10 @@ export function TourController({ locale, userRoles, page }: TourControllerProps)
             // target to point at. driver.js does not fail on a missing element —
             // it silently floats the popover in the centre — so the step would
             // be shown anyway. Drop it before the tour starts.
-            const visibleSteps = activeTour.steps.filter(
-                (step) => step.target === 'center' || document.querySelector(step.target) !== null
-            );
+            const visibleSteps = filterStepsPresentOnPage({
+                steps: activeTour.steps,
+                doc: document
+            });
 
             // Nothing left to show: do not start, and do not mark the tour as
             // seen — it stays pending for a page where its targets exist.
@@ -98,13 +104,10 @@ export function TourController({ locale, userRoles, page }: TourControllerProps)
             };
 
             driverRef.current = driver({
-                showProgress: true,
+                ...buildTourDriverTexts({ t }),
                 allowClose: true,
                 smoothScroll: true,
                 animate: true,
-                nextBtnText: t('account.welcomeTour.next', 'Siguiente'),
-                prevBtnText: t('account.welcomeTour.prev', 'Anterior'),
-                doneBtnText: t('account.welcomeTour.done', 'Finalizar'),
                 onDestroyStarted: handleDestroy,
                 steps: visibleSteps.map((step) => {
                     // HOS-2073: use the menu-neutral copy when the step's

@@ -47,6 +47,7 @@ import {
 } from '@/lib/listing/vertical-usage';
 import { UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { shouldAnchorMenuQrTour } from '@/lib/venue/menu-qr-tour-anchor';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
 import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
@@ -62,7 +63,7 @@ const { t, tPlural } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 // Role gate: only venue/experience owners (and staff) may manage listings.
@@ -398,11 +399,11 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         flex-wrap: wrap;
         gap: var(--space-3, 0.75rem);
         padding: 0.5rem 1rem;
-        border-radius: var(--radius-pill, 9999px);
+        border-radius: var(--radius-pill);
         font-family: var(--font-sans);
-        font-size: 0.875rem;
+        font-size: var(--text-body-sm);
         font-weight: 500;
-        background-color: var(--surface-warm, oklch(0.96 0.02 60));
+        background-color: var(--surface-warm);
         color: var(--core-foreground);
         border: 1px solid var(--border);
     }
@@ -417,6 +418,13 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         background-color: oklch(0.95 0.05 65);
         color: oklch(0.40 0.12 65);
         border-color: oklch(0.85 0.10 65);
+    }
+
+    /* HOS-2443: reaching the cap is informational (neutral blue), never an error tone. */
+    .mc-usage--atLimit {
+        background-color: oklch(0.95 0.03 240);
+        color: oklch(0.38 0.10 240);
+        border-color: oklch(0.85 0.06 240);
     }
 
     .mc-usage--critical,
@@ -442,7 +450,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         column-gap: var(--space-4, 1rem);
         row-gap: var(--space-1, 0.25rem);
         padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
-        border-radius: var(--radius-card, 12px);
+        border-radius: var(--radius-card);
     }
 
     .mc-usage--card .mc-usage__label {
@@ -479,12 +487,12 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         display: inline-flex;
         align-items: center;
         padding: 0.25rem 0.75rem;
-        border-radius: var(--radius-pill, 9999px);
+        border-radius: var(--radius-pill);
         background-color: var(--brand-primary);
-        color: var(--primary-foreground, #ffffff);
+        color: var(--primary-foreground);
         font-family: var(--font-sans);
         font-weight: 600;
-        font-size: 0.75rem;
+        font-size: var(--text-caption);
         text-decoration: none;
         white-space: nowrap;
         transition: opacity 150ms ease-out;
@@ -509,11 +517,11 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
     .mc-create-cta {
         flex-shrink: 0;
         padding: var(--space-2) var(--space-4);
-        border-radius: var(--radius-button, 0.5rem);
+        border-radius: var(--radius-button);
         background: var(--brand-accent);
         color: var(--accent-foreground);
         font-weight: 600;
-        font-size: var(--text-body-sm, 0.9375rem);
+        font-size: var(--text-body-sm);
         text-decoration: none;
         transition: opacity 150ms ease;
     }
@@ -532,12 +540,12 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
     .mc-empty__text {
         margin: 0;
         color: var(--core-muted-foreground);
-        font-size: var(--text-body-sm, 0.9375rem);
+        font-size: var(--text-body-sm);
     }
 
     .mc-empty__cta {
         padding: var(--space-3) var(--space-8);
-        border-radius: var(--radius-button, 0.5rem);
+        border-radius: var(--radius-button);
         background: var(--brand-accent);
         color: var(--accent-foreground);
         font-weight: 600;
@@ -566,7 +574,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         flex-wrap: wrap;
         padding: var(--space-4);
         border: 1px solid var(--border);
-        border-radius: var(--radius-md, 0.5rem);
+        border-radius: var(--radius-md);
         background: var(--core-card, var(--core-background));
     }
 
@@ -584,10 +592,10 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
     }
 
     .mc-badge {
-        font-size: var(--text-caption, 0.75rem);
+        font-size: var(--text-caption);
         padding: 0.125rem 0.5rem;
-        border-radius: var(--radius-pill, 999px);
-        background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+        border-radius: var(--radius-pill);
+        background: var(--surface-warm);
         color: var(--core-muted-foreground);
     }
 

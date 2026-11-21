@@ -46,6 +46,9 @@ vi.mock('../../hooks/useProposedRefunds', () => ({
         return state.list;
     }
 }));
+vi.mock('../../hooks/useRetryRefundProviderCalls', () => ({
+    useRetryRefundProviderCalls: () => ({ mutateAsync: vi.fn(), isPending: false })
+}));
 vi.mock('../../hooks/useRefundDecision', () => ({
     useConfirmRefundMutation: () => ({ mutateAsync: state.confirm, isPending: false }),
     useDeclineRefundMutation: () => ({ mutateAsync: state.decline, isPending: false })

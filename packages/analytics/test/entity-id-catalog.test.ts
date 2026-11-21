@@ -26,6 +26,24 @@ const additiveCases = [
     [AnalyticsEvents.contactOwnerFailed, contactFailed]
 ] as const;
 
+describe('contact owner attribution', () => {
+    it.each([
+        [AnalyticsEvents.contactOwnerStarted, contactStarted],
+        [AnalyticsEvents.contactOwnerCompleted, contactCompleted],
+        [AnalyticsEvents.contactOwnerFailed, contactFailed]
+    ] as const)('retains optional attribution through %s validation', (name, base) => {
+        const attribution = {
+            source_page: 'accommodation_contact_panel',
+            origin: 'summary'
+        } as const;
+
+        const result = AnalyticsEventSchemas[name].parse({ ...base, ...attribution });
+
+        expect(result).toMatchObject(attribution);
+        expect(AnalyticsEventSchemas[name].safeParse(base).success).toBe(true);
+    });
+});
+
 describe('entity_id / entity_type on view and contact events (HOS-2119 T-016)', () => {
     describe.each(additiveCases)('%s', (name, base) => {
         const schema = AnalyticsEventSchemas[name];

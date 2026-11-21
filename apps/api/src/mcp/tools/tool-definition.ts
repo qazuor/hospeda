@@ -11,12 +11,11 @@
  * `runTool`/`executeTool` (`run-tool.ts`) without MCP.
  */
 
+import type { PortalDestination, PortalLocale } from '@repo/portal-routes';
 import type { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { z } from 'zod';
-import type { PortalLocale } from '../portal/build-portal-url';
-import type { PortalDestination } from '../portal/portal-routes';
 
 /**
  * Error code a tool may report. Every {@link ServiceErrorCode}, plus the

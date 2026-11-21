@@ -59,9 +59,9 @@ export function ProviderQrPanel({ locale, svg, slug, targetUrl }: ProviderQrPane
 
     return (
         <div className={styles.panel}>
-            <h3 className={styles.sectionTitle}>
+            <h2 className={styles.sectionTitle}>
                 {t('host-trades.provider.qr.title', 'Tu código QR')}
-            </h3>
+            </h2>
 
             <p className={styles.rowBody}>
                 {t(

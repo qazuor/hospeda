@@ -87,7 +87,7 @@ describe('ContactHost — accurate API error message (HOS-190)', () => {
             />
         );
 
-        const textarea = document.getElementById('contact-message') as HTMLTextAreaElement;
+        const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
         fireEvent.change(textarea, {
             target: { value: 'Hola, quería consultar por disponibilidad para el finde.' }
         });

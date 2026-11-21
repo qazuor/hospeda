@@ -81,6 +81,12 @@ export const UserBookmarkSearchSchema = BaseSearchSchema.extend({
     // Collection/organization filters
     isPrivate: z.boolean().optional(),
     hasNotes: z.boolean().optional(),
+    /**
+     * When true, only bookmarks that belong to no collection (`collectionId IS NULL`)
+     * are returned, so pagination and totals cover the whole uncollected set
+     * (HOS-2420). When false/omitted, the collection is not filtered.
+     */
+    uncollected: z.boolean().optional(),
 
     // Content-based filters
     notes: z.string().optional(),

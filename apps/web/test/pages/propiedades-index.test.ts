@@ -56,6 +56,7 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
             expect(propiedadesIndexSource).toContain('props-page__usage--ok');
             expect(propiedadesIndexSource).toContain('props-page__usage--warning');
             expect(propiedadesIndexSource).toContain('props-page__usage--critical');
+            expect(propiedadesIndexSource).toContain('props-page__usage--atLimit');
             expect(propiedadesIndexSource).toContain('props-page__usage--exceeded');
         });
     });

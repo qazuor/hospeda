@@ -139,7 +139,7 @@ hashing. A value hash is taken over canonical JSON (sorted keys).
 | Anchor | Hashed input | Why this and not more |
 |---|---|---|
 | `page:` | the page `.astro` file only | Components are not followed; a change three imports deep does not flag every article. Use `file:` for a component that matters |
-| `section:` | the section page file + the catalog entry for that section in `LISTING_SECTIONS` (`packages/schemas/src/catalog/listing-sections.ts:5`) when one exists | A field added to the section is a real change; a change to another section is not |
+| `section:` | the section page file + the catalog entry for that section in `LISTING_SECTIONS` (`packages/schemas/src/catalog/listing-sections.ts:5`) when one exists, without its `order` field (`SECTION_PRESENTATION_FIELDS`, `scripts/help-anchor-hash.ts`) | A field added to the section is a real change; a change to another section is not. `order` is excluded because it is the section's place in the editor menu: presentation, not what the article explains, so renumbering the menu flags nothing (owner decision, 2026-11-21). Every other field of the entry stays hashed |
 | `entitlement:` / `limit:` | the key's definition row (`[key, scope, aggregation, enforcement, class]`, `entitlement-keys.ts:12`) | Not the whole catalog file. Values are DB rows and never hashed |
 | `enum:` | the full value set of the vocabulary | A new state should prompt a review of the articles that explain states |
 | `tool:` | the source file that defines the tool | Description and input schema live there |
@@ -192,24 +192,39 @@ The existing `check:commercial-values` only scans billing TS sources
 scans `title`, `summary`, `keywords` and every body section of every locale, with
 tokens removed and accents folded.
 
-- d1 Currency: a number next to a currency marker (`$`, `ARS`, `USD`, `U$S`,
-  `peso(s)`, `dólar(es)`), on either side.
+- d1 Currency: a number next to a currency marker (`$`, `ARS`, `USD`, `U$S`, `US$`,
+  `peso(s)`, `dólar(es)`), on either side, spaced or glued (`15USD`, `USD15`,
+  `15pesos`). A word marker is bounded by letters only, so `marsupial 15` passes.
 - d2 Plan names: whole-word, case- and accent-insensitive matches against
   `PLAN_TIER_WORDS` (`basico, basic, profesional, professional, premium, gold,
   silver, vip`). A companion test reads every `INSERT INTO "plan"` row name in
   `packages/db/src/migrations/*.sql` (e.g. `0144_production_plan_catalog.sql:3-14`)
-  and fails if a word of a sellable plan name is missing from the list.
+  and fails if a sellable plan name is missing a word the guard would need. It
+  requires only the words that tell a plan apart from the other sellable plans of
+  the same vertical (`role` NULL), not every word of the name: shared words such
+  as the vertical's own name are not plan names. `pro` is deliberately not in the
+  list (it is an ordinary Spanish word).
 - d3 Limits: a number within three words of a limit noun (`foto(s)`,
   `publicacion(es)`, `alojamiento(s)`, `comercio(s)`, `experiencia(s)`,
-  `promocion(es)`, `galeria(s)`, `cuenta(s)`, `consulta(s)`, `mes`, `dia(s)`), or after
-  `hasta | maximo | minimo | tope de`. Allowed: a number directly followed by a unit
-  in `TECHNICAL_UNITS` (`MB, KB, GB, px, caracteres`). Those are technical
-  constants, not plan values.
+  `promocion(es)`, `galeria(s)`, `cuenta(s)`, `consulta(s)`, `mes(es)`, `dia(s)`), or
+  after `hasta | maximo | minimo | tope de`. Numbers and letters are split before
+  matching, so `20fotos` reads as `20 fotos`. Allowed: a number directly followed
+  by a unit in `TECHNICAL_UNITS` (`MB, KB, GB, px, caracteres`). Those are
+  technical constants, not plan values.
+- d3 escape, `FROZEN_SYSTEM_CONSTANTS` (`scripts/check-help-values.ts`): a system
+  constant that reads like a limit but is not a plan value (today only
+  `descripcion (minimo 20)` in `publish-requirements`, the publish validation of
+  the description length). Each entry is an exact folded phrase bound to ONE
+  article id, with a written reason. The phrase is removed from that article only
+  before scanning; the same words in any other article still fire. An entry whose
+  phrase no longer appears in its article fails d3 as stale, so the list can only
+  shrink to what is still true. Adding an entry is visible in review.
 - d4 Non-vacuity: at least one article scanned.
 
 Does NOT see: numbers written as words ("cinco fotos"); a plan named with a
 word not in the list; a commercial claim without a number ("los planes
-superiores incluyen…"); a technical unit misused for a plan limit.
+superiores incluyen…"); a technical unit misused for a plan limit; a plan limit
+inside a phrase listed in `FROZEN_SYSTEM_CONSTANTS` for that article.
 
 ## 7. Acceptance criteria and mutation tests
 

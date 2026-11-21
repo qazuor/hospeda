@@ -235,3 +235,23 @@ describe('HostDashboard inbox links (HOS-2418)', () => {
         }
     });
 });
+
+describe('HostDashboard heading levels (HOS-2453)', () => {
+    it('titles its widgets with h2 so the page h1 is never followed by an h3', async () => {
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: mockDashboardApiResponse
+        });
+
+        render(<HostDashboard locale="es" />);
+
+        await screen.findByText('Owner Pro');
+        const levels = screen.getAllByRole('heading').map((heading) => Number(heading.tagName[1]));
+        expect(levels.length).toBeGreaterThan(0);
+        // The first heading in the island sits right under the page h1.
+        expect(levels[0]).toBe(2);
+        for (let i = 1; i < levels.length; i += 1) {
+            expect(levels[i] - (levels[i - 1] as number)).toBeLessThanOrEqual(1);
+        }
+    });
+});

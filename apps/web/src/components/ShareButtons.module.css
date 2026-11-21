@@ -165,7 +165,7 @@
     flex: 1;
 }
 
-/* X (Twitter) icon text */
+/* Legacy X (Twitter) glyph */
 .xIcon {
     font-size: 0.9rem;
     font-weight: 700;
@@ -186,5 +186,30 @@
         right: auto;
         left: 0;
         min-width: 200px;
+    }
+}
+
+.iconOverlay .trigger {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--core-card);
+    box-shadow: var(--shadow-card);
+}
+
+.iconOverlay .popover {
+    bottom: auto;
+    top: calc(100% + var(--space-2, 8px));
+    right: 0;
+    left: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .iconOverlay .popover {
+        animation: none;
     }
 }

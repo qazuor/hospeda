@@ -28,8 +28,15 @@ import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { ContentMediaSectionProps } from '../../../../src/components/account/editor/ContentMediaSection.client';
 import { ContentMediaSection } from '../../../../src/components/account/editor/ContentMediaSection.client';
+
+// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
+// `show-confirmation-dialog.test.tsx`; here the user always confirms.
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: vi.fn().mockResolvedValue(true)
+}));
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)
@@ -360,6 +367,20 @@ describe('ContentMediaSection — per-operation persistence (HOS-390)', () => {
                 });
             });
             await waitFor(() => expect(screen.queryAllByRole('img')).toHaveLength(0));
+        });
+
+        it('asks for confirmation and deletes nothing when the user cancels (HOS-2429)', async () => {
+            vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
+            mockRemoveMedia.mockReturnValue(makeRemoveOk());
+            await renderHydrated();
+
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
+            fireEvent.click(screen.getAllByLabelText('Eliminar')[0] as HTMLElement);
+
+            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+            expect(mockRemoveMedia).not.toHaveBeenCalled();
+            expect(screen.getAllByRole('img')).toHaveLength(1);
         });
 
         it('never fires a client-side Cloudinary delete — the server owns it', async () => {

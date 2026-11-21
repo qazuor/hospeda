@@ -1,6 +1,6 @@
 import { Link, Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * One logged promotion action, as this template renders it.
@@ -67,10 +67,7 @@ export function PartnerMentionsLogged({
     const isSingle = mentions.length === 1;
 
     return (
-        <EmailLayout
-            previewText={`Difundimos ${partnerName} el ${mentionedAtLabel}`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Difundimos ${partnerName} el ${mentionedAtLabel}`}>
             <Heading>Difundimos tu ficha de aliado</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

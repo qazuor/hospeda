@@ -47,6 +47,7 @@ import { useFaqAiDraft } from '@/hooks/use-faq-ai-draft';
 import { useFaqPrefill } from '@/hooks/use-faq-prefill';
 import { apiClient } from '@/lib/api/client';
 import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -259,8 +260,17 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
             }
         } else {
             webLogger.warn('[FaqSection] add failed:', result.error);
+            // HOS-2428: surface the server's reason (plan / coverage / permission)
+            // instead of one generic line that hid why the save was refused.
             reportError(
-                t('host.properties.editor.faq.saveError', 'No se pudo guardar la pregunta.')
+                translateApiError({
+                    error: result.error,
+                    t,
+                    fallback: t(
+                        'host.properties.editor.faq.saveError',
+                        'No se pudo guardar la pregunta.'
+                    )
+                })
             );
         }
     }, [addValues, accommodationId, t, reportError, reportValidationErrors, prefillMessageId]);
@@ -316,8 +326,17 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 setEditFieldErrors({});
             } else {
                 webLogger.warn('[FaqSection] update failed:', result.error);
+                // HOS-2428: surface the server's reason (plan / coverage / permission)
+                // instead of one generic line that hid why the save was refused.
                 reportError(
-                    t('host.properties.editor.faq.saveError', 'No se pudo guardar la pregunta.')
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
+                            'host.properties.editor.faq.saveError',
+                            'No se pudo guardar la pregunta.'
+                        )
+                    })
                 );
             }
         },

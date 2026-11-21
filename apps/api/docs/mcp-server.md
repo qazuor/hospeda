@@ -269,7 +269,7 @@ Twenty-two tools. `readOnlyHint` is derived from `isWrite`, so the two cannot di
 | `get_listing_amenities` | read | read-only | The catalog of one listing grouped by category (amenity `type`, feature `category`) with `selected` marked, scoped to the listing's vertical. Truncates to the response budget and lists `omittedGroups`. |
 | `get_listing_stats` | read | read-only | Periods `7d`, `30d`, `90d`. Needs the plan's `view_basic_stats` entitlement. Reviews are untrusted text. |
 | `list_reviews` | read | read-only | Reviews received on the user's listings, newest first, every moderation state with its `moderationState`. Filters: `vertical`, `listingId`, `minRating`, `maxRating`, `since`, `moderationState`, paging. Titles, texts and author names are untrusted text. |
-| `get_help` | read | read-only | "How do I do X in Hospeda" for owners and providers, from the curated Spanish help catalog (`data/owner-help`). `question` (up to 300 characters) or `topicId`, optional `audience`. At most 3 topics with `steps` and portal `links`; no match returns no topics plus the FAQ and contact links. |
+| `get_help` | read | read-only | "How do I do X in Hospeda" for owners and providers, from the curated Spanish help catalog (`@repo/help`). `question` (up to 300 characters) or `topicId`, optional `audience`. At most 3 topics with `steps` and portal `links`; no match returns no topics plus the FAQ and contact links. |
 | `get_listing_creation_guide` | read | read-only | Steps, field limits (read from the create schemas), labelled types, city destinations, venue business lines, the user's open drafts and an informational publish quota. |
 | `list_inquiries` | read | read-only | Filters: `status`, `listingId`, paging. Accommodations only. |
 | `get_inquiry` | read | read-only | Never marks the inquiry read. |
@@ -417,20 +417,24 @@ Tool-specific rules:
   `vertical` or `listingId`. A foreign or missing `listingId` is the uniform
   not-found, with a link to the owner's listings. There is no reply field, because
   the feature does not exist.
-- `get_help`: answers from a typed catalog in the API (`apps/api/src/data/owner-help`,
-  HOS-2333, owner decision D-3): about sixteen Spanish topics, each with its steps, its
-  portal destinations and a `reviewedAt`. The search is a normalized keyword match (case
-  and accents ignored, keyword hits plus title words, best three), with no embeddings. The
-  `question` is untrusted: it is only compared against the catalog and is never echoed in
-  the result, in a link or in a log. Links name a destination and are built through the
-  portal route map and `HOSPEDA_SITE_URL`; an editor-section link is filled in from the
-  caller's own listings (at most three per vertical) and falls back to the list pages when
-  they cannot be read. It needs no new consent capability: static help plus the caller's own
-  listing ids, which the `read` capability already covers. An unmatched question or an
-  unknown `topicId` returns `topics: []`, `fallbackLinks` and a `note` that forbids
-  inventing steps. Whoever changes a portal flow updates its topic in the same PR;
-  `pnpm check:owner-help` (CI `Guards` job) fails on a link to a page that is gone or a FAQ
-  item that does not exist, and lists topics not re-checked in 180 days without failing.
+- `get_help`: answers from the help catalog in `@repo/help` (HOS-2410, which replaced the
+  typed catalog of HOS-2333): Markdown articles under `packages/help/content/es/<audience>/`,
+  compiled by `pnpm help:build` into a committed `help-index.json` that the API imports and
+  validates at boot. Each article has its steps («Cómo se hace»), its portal destinations,
+  its audiences and a `reviewedAt`. The search, shared with the web help center, is a
+  normalized keyword match (case and accents ignored, keyword hits plus title words, best
+  three), with no embeddings. A caller with an `audience` only gets the articles that list
+  it. The `question` is untrusted: it is only compared against the catalog and is never
+  echoed in the result, in a link or in a log. Links name a destination and are built
+  through the portal route map and `HOSPEDA_SITE_URL`; an editor-section link is filled in
+  from the caller's own listings (at most three per vertical) and falls back to the list
+  pages when they cannot be read. It needs no new consent capability: static help plus the
+  caller's own listing ids, which the `read` capability already covers. An unmatched
+  question or an unknown `topicId` returns `topics: []`, `fallbackLinks` and a `note` that
+  forbids inventing steps. Whoever changes a portal flow updates its article and the index
+  in the same PR; `pnpm check:help-catalog` (CI `Guards` job) fails on a link to a page
+  that is gone, a FAQ item or anchor that does not exist, a broken interlink or a stale
+  index, and lists articles not re-checked in 180 days without failing.
 - `update_listing_basic`: `amenityIds` and `featureIds` **replace** the whole set
   (`[]` clears it). To add or remove items of one category, use
   `update_listing_amenities`.

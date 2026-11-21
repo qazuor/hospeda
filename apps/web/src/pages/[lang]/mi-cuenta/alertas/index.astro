@@ -18,7 +18,10 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
@@ -29,7 +32,7 @@ const user = Astro.locals.user;
 
 // Auth guard — middleware should have redirected already, this is the safety net.
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const { t } = createTranslations(locale);
@@ -39,6 +42,12 @@ const description = t(
     'Gestioná tus alertas de bajada de precio en Hospeda'
 );
 const apiUrl = getApiUrl();
+// HOS-2437: the plan gate names the catalog plans that carry price alerts. The catalog
+// reader is server-only, so the names are read here and handed to the island.
+const gatePlanNames = planNamesWithEntitlement({
+    result: await fetchPublicPlans({ vertical: 'tourist' }),
+    entitlement: EntitlementKeyEnum.PRICE_ALERTS
+});
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="alertas">
@@ -50,6 +59,7 @@ const apiUrl = getApiUrl();
             locale={locale}
             apiUrl={apiUrl}
             userId={user.id}
+            gatePlanNames={gatePlanNames}
         />
     </AccountSectionCard>
 </AccountLayout>

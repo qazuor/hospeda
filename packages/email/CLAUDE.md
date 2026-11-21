@@ -1,550 +1,148 @@
 # CLAUDE.md - Email Package
 
-> **📚 Main Documentation**: For project-wide guidelines, workflows, and standards, see [CLAUDE.md](../../CLAUDE.md) in the project root.
+> **Main documentation**: for project-wide guidelines see [CLAUDE.md](../../CLAUDE.md) in the project root.
 
 This file provides guidance for working with the Email package (`@repo/email`).
 
 ## Overview
 
-Centralized email service for the Hospeda platform using Resend and React Email. Provides type-safe email sending and pre-built templates for authentication, notifications, and billing emails.
+`@repo/email` is Hospeda's email presentation and send package (HOS-2519 D1):
+
+- **`EmailLayout`**: the ONE layout every Hospeda email renders inside, including the 114 templates in `@repo/notifications`.
+- **`renderEmailBodies`**: the single place that turns a React Email element into the HTML body and the text/plain alternative (HOS-2107, HOS-2519 D4).
+- **`sendEmail`**: a provider call over the **Brevo** REST API (`POST /smtp/email`). There is no Resend anymore; "resend" in some file and class names elsewhere is legacy.
+- The two auth templates (`VerifyEmailTemplate`, `ResetPasswordTemplate`) and their subject constants.
+
+It depends only on `@repo/logger`, `@repo/design-tokens` (for `emailPalette`) and `@react-email/*`. It must never depend on `@repo/notifications` or `@repo/db` (`@repo/notifications` depends on it).
 
 ## Key Commands
 
 ```bash
-# Development
-pnpm dev               # No build needed (uses tsconfig paths)
-pnpm build             # Build for production with tsup
-
-# Testing
-pnpm test              # Run all tests
-pnpm test:watch        # Watch mode
-
-# Code Quality
-pnpm typecheck         # TypeScript validation
-pnpm lint              # Biome linting
-pnpm format            # Format code
-pnpm check             # Biome check + fix
+pnpm build             # tsup (dist is what consumers resolve; rebuild after pulling)
+pnpm test              # Vitest
+pnpm typecheck         # tsc --noEmit
+pnpm lint              # Biome
 ```
+
+`@repo/notifications` resolves this package through `dist`, so a stale build makes a new export arrive `undefined` in its tests. Run `pnpm --filter @repo/email build` after changing anything here (and `pnpm --filter @repo/design-tokens build` if the palette changed).
 
 ## Architecture
 
 ```
 packages/email/
 ├── src/
-│   ├── client.ts              # Resend client singleton
-│   ├── send.ts                # Email sending function
+│   ├── client.ts               # createEmailClient({ apiKey, baseUrl? }) → opaque EmailClient (Brevo)
+│   ├── render.ts               # renderEmailBodies({ react }) → { html, text }
+│   ├── send.ts                 # sendEmail(input) → { success, messageId?, error? } (never throws)
+│   ├── subjects.ts             # RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT
 │   ├── templates/
-│   │   ├── base-layout.tsx    # Base email layout with branding
-│   │   ├── verify-email.tsx   # Email verification template
-│   │   └── reset-password.tsx # Password reset template
-│   └── index.ts               # Public API exports
-├── test/
-│   └── send.test.ts           # Unit tests for email sending
-├── package.json
-├── tsconfig.json
-├── tsup.config.ts
-├── README.md
-└── CLAUDE.md
+│   │   ├── email-layout.tsx    # EmailLayout + EMAIL_* URL constants
+│   │   ├── greeting.ts         # resolveGreeting (auth templates)
+│   │   ├── verify-email.tsx    # VerifyEmailTemplate
+│   │   └── reset-password.tsx  # ResetPasswordTemplate
+│   └── index.ts                # Public API
+└── test/                       # Vitest, mirrors src/
 ```
 
-## Usage Examples
+## EmailLayout
 
-### Basic Email Sending
+```tsx
+import { EmailLayout } from '@repo/email';
 
-```typescript
-import { sendEmail, VerifyEmailTemplate } from '@repo/email';
-
-const result = await sendEmail({
-  to: 'user@example.com',
-  subject: 'Verifica tu correo electrónico',
-  react: VerifyEmailTemplate({
-    name: 'Juan Pérez',
-    verificationUrl: 'https://hospeda.com.ar/verify?token=abc123'
-  })
-});
-
-if (result.success) {
-  console.log('Email sent:', result.messageId);
-} else {
-  console.error('Failed to send:', result.error);
+export function MyEmail() {
+    return (
+        <EmailLayout previewText="Tu reserva fue confirmada">
+            <Text>Contenido</Text>
+        </EmailLayout>
+    );
 }
 ```
 
-### In Authentication Flow
+| Prop | Type | Default | Purpose |
+|---|---|---|---|
+| `previewText` | `string?` | none | Inbox preheader. Omitted: no `<Preview>` is rendered |
+| `children` | `ReactNode` | required | Email body |
+| `footerLink` | `'preferences' \| 'none'` | `'none'` | `'preferences'` adds "Administrar preferencias de notificaciones" linking to `EMAIL_PREFERENCES_URL` |
 
-```typescript
-import { sendEmail, VerifyEmailTemplate } from '@repo/email';
-import { generateVerificationToken } from '@repo/auth';
+What it renders (HOS-2519 §5.1):
 
-async function sendVerificationEmail(userId: string, email: string, name: string) {
-  const token = await generateVerificationToken(userId);
-  const verificationUrl = `${process.env.HOSPEDA_SITE_URL}/verify?token=${token}`;
+- `<html lang="es" dir="ltr">` with `color-scheme: light` metas (limits dark-mode inversion).
+- A centered card, `width="100%"`, `max-width: 600px`, fluid down to 320px with no media query.
+- Outlook desktop (Word) ignores `max-width` and padding on `<table>` styles, so the card sits in an MSO-only 600px "ghost table" (`<!--[if mso]>` comments, each emitted from an empty wrapper `<div>` because React cannot render a bare comment), and every section's padding, background and the accent border live on the `<td>` (`Row`/`Column`), not on the table.
+- The footer links carry `data-layout-link="home"` / `"preferences"` so tests can tell layout chrome from body links.
+- A white header with the hosted PNG logo (`EMAIL_LOGO_URL`, `EMAIL_LOGO_WIDTH` x `EMAIL_LOGO_HEIGHT`, `alt="Hospeda"` styled as a wordmark so a blocked image still reads as the brand), the tagline "Turismo en el Litoral" and a 4px brand accent bar. The header carries `data-skip-in-text="true"`, which React Email's plain-text conversion honours: the text part starts at the body copy.
+- Body padding `32px 24px`; templates keep their own typography.
+- Footer: divider, "Hospeda - Turismo en el Litoral", the platform description line, a `hospeda.com.ar` link to the home, and the optional preferences link.
 
-  const result = await sendEmail({
-    to: email,
-    subject: 'Verifica tu cuenta de Hospeda',
-    react: VerifyEmailTemplate({ name, verificationUrl })
-  });
+Rules that keep it email-client-safe:
 
-  return result.success;
+- Inline styles only. No flexbox, grid, CSS variables, `oklch()`, web fonts, `<style>`-dependent layout or SVG.
+- Colors come from `emailPalette` in `@repo/design-tokens`: hex literals derived from the brand tokens, with a test there that fails on drift. Never hard-code a new brand hex in the layout.
+- Absolute URLs come from module constants (`EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar'`, `EMAIL_LOGO_URL`, `EMAIL_PREFERENCES_URL`), never from `siteUrl`: emails always point at production.
+- Keep it lean: Gmail clips messages over 102 KB. `apps/api/test/services/email-preview/email-catalog-layout.test.ts` asserts every catalog email stays under 90 KB, plus the AC-1.2/2.1/3.2 checks on every scenario.
+
+### The logo asset
+
+`EMAIL_LOGO_URL` is `https://hospeda.com.ar/email/hospeda-logo@2x.png`, served from `apps/web/public/email/hospeda-logo@2x.png` (360x108 PNG, rendered at 180x54). It only resolves once the file reaches production; until then clients show the styled `alt` text. If the asset changes, keep `EMAIL_LOGO_WIDTH`/`EMAIL_LOGO_HEIGHT` at the asset's aspect ratio (Outlook desktop honours the `height` attribute).
+
+### `footerLink="preferences"`: when it is allowed
+
+Only when the recipient has an account AND the web preferences page (`/es/mi-cuenta/preferencias/`) really controls that email. Today no template qualifies: the page writes `settings.notifications.allowEmails`, while `PreferenceService` reads `emailEnabled` / `disabledCategories`, so REMINDER opt-outs are not driven by it (HOS-2519 OQ-2). Anonymous recipients (conversation token mails) never get it.
+
+## Rendering and sending
+
+```ts
+import {
+    createEmailClient,
+    renderEmailBodies,
+    sendEmail,
+    VERIFY_EMAIL_SUBJECT,
+    VerifyEmailTemplate
+} from '@repo/email';
+
+const react = VerifyEmailTemplate({ name, verificationUrl });
+
+// Preview or tests: exactly the bodies an inbox receives.
+const { html, text } = await renderEmailBodies({ react });
+
+// Send (never throws; branch on the result).
+const client = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
+const result = await sendEmail({ client, to: email, subject: VERIFY_EMAIL_SUBJECT, react });
+if (!result.success) {
+    logger.warn('Verification email failed', { error: result.error });
 }
 ```
 
-### In Password Reset Flow
+- `sendEmail` posts `htmlContent` and `textContent` (both from `renderEmailBodies`) to Brevo with a 10s timeout. Default sender `Hospeda <noreply@hospeda.com.ar>` (`fromEmail` / `fromName` / `replyTo` override it).
+- In `apps/api`, do not call `sendEmail` directly: use `sendAppEmail` (`apps/api/src/utils/email-sender.ts`), which adds the `[STAGING]` subject prefix outside production. A guard test enforces it.
+- The notifications transport (`packages/notifications/src/transports/email/`) also renders through `renderEmailBodies`.
 
-```typescript
-import { sendEmail, ResetPasswordTemplate } from '@repo/email';
-import { generatePasswordResetToken } from '@repo/auth';
+## Auth templates
 
-async function sendPasswordResetEmail(userId: string, email: string, name: string) {
-  const token = await generatePasswordResetToken(userId);
-  const resetUrl = `${process.env.HOSPEDA_SITE_URL}/reset-password?token=${token}`;
+| Template | Subject constant | Props | Expiry copy |
+|---|---|---|---|
+| `VerifyEmailTemplate` | `VERIFY_EMAIL_SUBJECT` | `name?`, `verificationUrl` | 24 hours |
+| `ResetPasswordTemplate` | `RESET_PASSWORD_EMAIL_SUBJECT` | `name?`, `resetUrl` | 1 hour |
 
-  const result = await sendEmail({
-    to: email,
-    subject: 'Restablece tu contraseña de Hospeda',
-    react: ResetPasswordTemplate({ name, resetUrl })
-  });
+Both render inside `EmailLayout` with no preheader and `footerLink` `'none'` (transactional). Their copy is owner-approved: do not change it without sign-off. Used by `apps/api/src/lib/auth.ts`.
 
-  return result.success;
-}
-```
+## Adding a template
 
-## Available Templates
+Most templates belong in `@repo/notifications` (`src/templates/<domain>/`), not here. Wherever it lives:
 
-### VerifyEmailTemplate
-
-Email verification for new signups or email changes.
-
-**Props:**
-
-- `name` (string): User's display name
-- `verificationUrl` (string): Verification link with unique token
-
-**Expiry:** 24 hours
-
-**Use cases:**
-
-- New user registration
-- Email address changes
-- Re-verification requests
-
-### ResetPasswordTemplate
-
-Password reset request emails.
-
-**Props:**
-
-- `name` (string): User's display name
-- `resetUrl` (string): Password reset link with unique token
-
-**Expiry:** 1 hour
-
-**Use cases:**
-
-- Forgotten password
-- Security-triggered password reset
-- Account recovery
-
-### BaseLayout
-
-Base email layout with Hospeda branding.
-
-**Props:**
-
-- `children` (ReactNode): Email body content
-- `showUnsubscribe` (boolean, optional): Show unsubscribe text (default: true)
-
-**Features:**
-
-- Consistent header with Hospeda logo
-- Centered container (600px max-width)
-- Branded footer with unsubscribe option
-- Mobile-responsive styles
-
-## Creating Custom Templates
-
-All new templates should extend `BaseLayout`:
-
-```typescript
-import { BaseLayout } from './base-layout.js';
-import { Button, Heading, Text } from '@react-email/components';
-
-export interface WelcomeTemplateProps {
-  readonly name: string;
-  readonly ctaUrl: string;
-}
-
-/**
- * Welcome email template for new users.
- *
- * @param props - Template configuration
- * @returns Rendered email template
- *
- * @example
- * ```tsx
- * import { sendEmail, WelcomeTemplate } from '@repo/email';
- *
- * await sendEmail({
- *   to: 'user@example.com',
- *   subject: 'Bienvenido a Hospeda',
- *   react: WelcomeTemplate({
- *     name: 'Juan Pérez',
- *     ctaUrl: 'https://hospeda.com.ar/dashboard'
- *   })
- * });
- * ```
- */
-export function WelcomeTemplate({ name, ctaUrl }: WelcomeTemplateProps) {
-  return (
-    <BaseLayout>
-      <Heading style={h1}>¡Bienvenido a Hospeda!</Heading>
-      <Text style={text}>Hola {name},</Text>
-      <Text style={text}>
-        Gracias por unirte a Hospeda. Estamos emocionados de tenerte con nosotros.
-      </Text>
-      <Button href={ctaUrl} style={button}>
-        Ir al Dashboard
-      </Button>
-    </BaseLayout>
-  );
-}
-
-// Styles
-const h1 = {
-  color: '#1a202c',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  lineHeight: '32px',
-  margin: '0 0 24px',
-};
-
-const text = {
-  color: '#2d3748',
-  fontSize: '16px',
-  lineHeight: '24px',
-  margin: '0 0 16px',
-};
-
-const button = {
-  backgroundColor: '#3182ce',
-  borderRadius: '6px',
-  color: '#ffffff',
-  display: 'block',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textAlign: 'center' as const,
-  textDecoration: 'none',
-  padding: '12px 24px',
-  margin: '24px 0',
-};
-```
-
-## Configuration
-
-### Environment Variables
-
-```env
-# Required: Resend API key
-HOSPEDA_RESEND_API_KEY=re_your_api_key_here
-```
-
-Get your API key from [Resend Dashboard](https://resend.com/api-keys).
-
-### Default Sender
-
-The default sender address is `Hospeda <noreply@hospeda.com.ar>`. Override with the `from` parameter:
-
-```typescript
-await sendEmail({
-  from: 'Support <support@hospeda.com.ar>',
-  to: 'user@example.com',
-  subject: 'Support Request',
-  react: SupportTemplate({ ... })
-});
-```
+1. Wrap the body in `EmailLayout` from `@repo/email`.
+2. Inline styles only, Spanish copy, no `{{placeholder}}` strings (nothing substitutes them).
+3. Add a catalog entry with scenarios (`packages/notifications/src/catalog/`) so the admin previewer and the catalog-wide tests cover it.
 
 ## Testing
 
-### Unit Tests
-
-Test email sending with mocked Resend client:
-
-```typescript
-import { vi } from 'vitest';
-import { resetResendClient, sendEmail } from '@repo/email';
-
-vi.mock('resend', () => ({
-  Resend: vi.fn().mockImplementation(() => ({
-    emails: {
-      send: vi.fn().mockResolvedValue({
-        data: { id: 'msg_123456' },
-        error: null
-      })
-    }
-  }))
-}));
-
-describe('sendEmail', () => {
-  beforeEach(() => {
-    process.env.HOSPEDA_RESEND_API_KEY = 'test-key';
-  });
-
-  afterEach(() => {
-    resetResendClient();
-    vi.clearAllMocks();
-  });
-
-  it('should send email successfully', async () => {
-    const result = await sendEmail({
-      to: 'test@example.com',
-      subject: 'Test',
-      react: TestTemplate({ ... })
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.messageId).toBe('msg_123456');
-  });
-});
-```
-
-### Template Preview
-
-Use React Email CLI to preview templates locally:
-
-```bash
-# Install React Email CLI (optional)
-npm install -g react-email
-
-# Preview templates
-react-email dev packages/email/src/templates
-```
-
-## Best Practices
-
-### 1. Always Use BaseLayout
-
-All templates should use `BaseLayout` for consistent branding:
-
-```typescript
-// GOOD
-export function MyTemplate() {
-  return (
-    <BaseLayout>
-      <Text>Content</Text>
-    </BaseLayout>
-  );
-}
-
-// BAD - No consistent branding
-export function MyTemplate() {
-  return (
-    <Html>
-      <Body>
-        <Text>Content</Text>
-      </Body>
-    </Html>
-  );
-}
-```
-
-### 2. Use Spanish for User-Facing Text
-
-All email content should be in Spanish (Argentina market):
-
-```typescript
-// GOOD
-<Text>Hola {name}, gracias por registrarte.</Text>
-
-// BAD
-<Text>Hello {name}, thanks for signing up.</Text>
-```
-
-### 3. Handle Errors Gracefully
-
-Email sending is non-blocking and logs errors:
-
-```typescript
-// GOOD - Check result but don't throw
-const result = await sendEmail({ ... });
-if (!result.success) {
-  logger.warn('Failed to send welcome email', { error: result.error });
-  // Continue with flow, email is not critical
-}
-
-// BAD - Don't throw on email failure
-const result = await sendEmail({ ... });
-if (!result.success) {
-  throw new Error('Email failed'); // Blocks user flow
-}
-```
-
-### 4. Include Security Notes
-
-For sensitive operations (password reset, email verification), include expiry and security notes:
-
-```typescript
-<Text style={notice}>
-  Este enlace expira en 1 hora por motivos de seguridad.
-</Text>
-
-<Text style={securityNotice}>
-  Si no solicitaste esto, ignora este correo de forma segura.
-</Text>
-```
-
-### 5. Mobile-Responsive Design
-
-Use inline styles and limit container width:
-
-```typescript
-const container = {
-  maxWidth: '600px',
-  margin: '0 auto',
-  padding: '20px',
-};
-
-const text = {
-  fontSize: '16px',
-  lineHeight: '24px',
-};
-```
-
-## Common Use Cases
-
-### Authentication Emails
-
-```typescript
-// Email verification
-sendEmail({
-  to: user.email,
-  subject: 'Verifica tu cuenta',
-  react: VerifyEmailTemplate({ name: user.name, verificationUrl })
-});
-
-// Password reset
-sendEmail({
-  to: user.email,
-  subject: 'Restablece tu contraseña',
-  react: ResetPasswordTemplate({ name: user.name, resetUrl })
-});
-```
-
-### Notification Emails
-
-```typescript
-// Booking confirmation
-sendEmail({
-  to: user.email,
-  subject: 'Reserva confirmada',
-  react: BookingConfirmationTemplate({ booking, accommodation })
-});
-
-// Payment receipt
-sendEmail({
-  to: user.email,
-  subject: 'Recibo de pago',
-  react: PaymentReceiptTemplate({ payment, invoice })
-});
-```
-
-### Transactional Emails
-
-```typescript
-// Account updates
-sendEmail({
-  to: user.email,
-  subject: 'Tu cuenta ha sido actualizada',
-  react: AccountUpdateTemplate({ changes })
-});
-
-// Plan upgrade
-sendEmail({
-  to: user.email,
-  subject: 'Plan mejorado exitosamente',
-  react: PlanUpgradeTemplate({ oldPlan, newPlan })
-});
-```
-
-## API Reference
-
-### `sendEmail(input: SendEmailInput): Promise<SendEmailResult>`
-
-Send an email using Resend.
-
-**Parameters:**
-
-- `input.to` - Recipient email(s)
-- `input.subject` - Email subject
-- `input.react` - React Email component
-- `input.from` - Sender address (optional)
-- `input.replyTo` - Reply-to address (optional)
-
-**Returns:**
-
-- `success` - Whether email was sent
-- `messageId` - Unique message ID (on success)
-- `error` - Error message (on failure)
-
-### `getResendClient(): Resend`
-
-Get the singleton Resend client instance.
-
-**Throws:** Error if `HOSPEDA_RESEND_API_KEY` is not set
-
-### `resetResendClient(): void`
-
-Reset the Resend client (useful for testing).
-
-## Troubleshooting
-
-### Email Not Sending
-
-1. Check API key is set: `echo $HOSPEDA_RESEND_API_KEY`
-2. Verify domain is configured in Resend dashboard
-3. Check Resend dashboard for delivery status
-4. Review console logs for error messages
-
-### Template Not Rendering
-
-1. Ensure all React Email components are imported
-2. Check for TypeScript errors in template
-3. Preview template with React Email CLI
-4. Verify props are passed correctly
-
-### Styling Issues
-
-1. Use inline styles (email clients don't support external CSS)
-2. Limit container width to 600px for mobile
-3. Test in multiple email clients (Gmail, Outlook, etc.)
-4. Use React Email preview for quick iteration
-
-## Dependencies
-
-- **resend**: Email delivery service (^4.0.0)
-- **@react-email/components**: React components for emails (^0.0.30)
-- **react**: Peer dependency for React Email (>=18.2.0 || ^19)
+- `test/templates/email-layout.test.tsx`: layout structure, footer link, email-safe CSS, text part.
+- `test/templates/{verify-email,reset-password}.test.tsx`: copy and transactional signals.
+- `test/send.test.ts`, `test/render.test.tsx`: Brevo request shape and the HTML/text pairing (fetch is mocked).
+- Catalog-wide layout assertions live in `apps/api/test/services/email-preview/`.
 
 ## Notes
 
-- All templates use Spanish text (Argentina market)
-- Default sender: `Hospeda <noreply@hospeda.com.ar>`
-- Email sending is non-blocking (logs errors, doesn't throw)
-- Maximum email width: 600px (mobile-responsive)
-- Templates include Hospeda branding and footer
-- Sensitive operations include expiry and security notes
-
-## Future Enhancements
-
-Potential additions:
-
-- Booking confirmation template
-- Payment receipt template
-- Review request template
-- Promotional email template
-- Newsletter template
-- Account deletion confirmation
-- Email preference management
-- A/B testing support
-- Analytics integration
-- Multi-language support (English)
+- All copy is Spanish (Argentina market).
+- `sendEmail` never throws; email failures must not block user flows.
+- The env var is `HOSPEDA_EMAIL_API_KEY` (Brevo), read by the host app, not by this package.

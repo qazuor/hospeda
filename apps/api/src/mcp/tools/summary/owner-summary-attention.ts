@@ -23,11 +23,11 @@
  * counts that `list_benefit_usages` pages through, not the rows.
  */
 
+import type { PortalDestination } from '@repo/portal-routes';
+import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
 import { HostTradeUsageDeclaredByEnum, HostTradeUsageStatusEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { env } from '../../../utils/env';
-import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
-import type { PortalDestination } from '../../portal/portal-routes';
 import {
     getHostTradeToolService,
     getHostTradeUsageToolService

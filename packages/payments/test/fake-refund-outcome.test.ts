@@ -62,7 +62,7 @@ describe('AC:B6:5 fake refund outcomes', () => {
         expect(acknowledgement).toEqual({ accepted: true, resourceId: chargeId });
         expect(read.snapshot.refunds).toEqual([
             { refundId: first.refundId, amount: ARS(300), accredited: true },
-            { refundId: second.refundId, amount: ARS(400), accredited: false }
+            { refundId: second.refundId, amount: ARS(400), accredited: false, rejected: true }
         ]);
         expect(read.snapshot.refundedAmount).toEqual(ARS(300));
         expect(notices).toEqual([{ resourceKind: 'charge', resourceId: chargeId, version: '4' }]);

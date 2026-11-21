@@ -46,6 +46,27 @@ const DESCRIPTION_COUNTER_ID = `${DESCRIPTION_ID}-counter`;
 const DESCRIPTION_FORMAT_UPSELL_ID = `${DESCRIPTION_ID}-format-upsell`;
 
 /**
+ * Accommodation type options in display order. Labels resolve through
+ * `host.miniForm.types.<VALUE>` in `@repo/i18n` (HOS-2436); the Spanish
+ * fallback only covers a missing key.
+ */
+const ACCOMMODATION_TYPE_OPTIONS = [
+    { value: 'HOTEL', fallback: 'Hotel' },
+    { value: 'APARTMENT', fallback: 'Apartamento' },
+    { value: 'HOSTEL', fallback: 'Hostel' },
+    { value: 'HOUSE', fallback: 'Casa' },
+    { value: 'CABIN', fallback: 'Cabaña' },
+    { value: 'COUNTRY_HOUSE', fallback: 'Casa de campo' },
+    { value: 'CAMPING', fallback: 'Camping' },
+    { value: 'ROOM', fallback: 'Habitación' },
+    { value: 'MOTEL', fallback: 'Motel' },
+    { value: 'RESORT', fallback: 'Resort' },
+    { value: 'APART_HOTEL', fallback: 'Aparthotel' },
+    { value: 'ESTANCIA', fallback: 'Estancia' },
+    { value: 'BED_AND_BREAKFAST', fallback: 'Bed & Breakfast' }
+] as const;
+
+/**
  * Field length limits. Same three fields the publish mini form edits, so the
  * numbers must match it — a host who fills `name` in one screen and edits it in
  * the other cannot be told two different maximums.
@@ -378,19 +399,14 @@ export function BasicInfoSection({
                     value={data.type}
                     onChange={(e) => onFieldChange('type', e.target.value)}
                 >
-                    <option value="HOTEL">Hotel</option>
-                    <option value="APARTMENT">Apartamento</option>
-                    <option value="HOSTEL">Hostel</option>
-                    <option value="HOUSE">Casa</option>
-                    <option value="CABIN">Cabaña</option>
-                    <option value="COUNTRY_HOUSE">Casa de campo</option>
-                    <option value="CAMPING">Camping</option>
-                    <option value="ROOM">Habitación</option>
-                    <option value="MOTEL">Motel</option>
-                    <option value="RESORT">Resort</option>
-                    <option value="APART_HOTEL">Aparthotel</option>
-                    <option value="ESTANCIA">Estancia</option>
-                    <option value="BED_AND_BREAKFAST">Bed & Breakfast</option>
+                    {ACCOMMODATION_TYPE_OPTIONS.map(({ value, fallback }) => (
+                        <option
+                            key={value}
+                            value={value}
+                        >
+                            {t(`host.miniForm.types.${value}`, fallback)}
+                        </option>
+                    ))}
                 </TextField>
                 {shouldOfferSlugRefreshNearType ? (
                     <SlugRefreshNotice

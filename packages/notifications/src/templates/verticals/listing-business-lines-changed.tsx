@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the third-party business-lines change notice (HOS-1875). */
 export const LISTING_BUSINESS_LINES_CHANGED_SUBJECT = 'Soporte cambió los rubros de tu ficha';

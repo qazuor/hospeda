@@ -2332,8 +2332,8 @@
         "genericError": "Não foi possível concluir a ação. Tente novamente.",
         "serverError": "O servidor não conseguiu concluir a ação. Tente novamente mais tarde.",
         "remainder": {
-            "title": "Registrar o restante de um reembolso aceito em parte",
-            "description": "Para um reembolso confirmado que o Mercado Pago aceitou só em parte. Reembolse o restante pelo painel do MP e registre aqui: o reembolso é fechado e o saldo do pagamento confere.",
+            "title": "Registrar o restante de um reembolso pelo painel do MP",
+            "description": "Para um reembolso confirmado que o Mercado Pago aceitou só em parte, ou que ficou travado numa chamada sem resposta há mais de 24 horas («Tentar novamente com o Mercado Pago» já não a reenvia). Reembolse pelo painel do MP o que falta (tudo, se o MP não aceitou nada) e registre aqui: o reembolso é fechado, o saldo do pagamento confere e a chamada antiga fica respondida.",
             "refundId": "ID do reembolso",
             "amount": "Restante reembolsado manualmente (em pesos)",
             "reference": "ID do reembolso no painel do MP",
@@ -2345,12 +2345,43 @@
             "success": "Reembolso fechado. O MP tinha aceitado {{accepted}} e o restante de {{remainder}} foi registrado.",
             "rejections": {
                 "REFUND_NOT_CONFIRMED": "O reembolso não está confirmado. Só é possível registrar o restante de um reembolso confirmado.",
-                "REFUND_CALL_UNANSWERED": "Há uma chamada ao provedor sem resposta. Este caso não é fechado aqui: siga o guia de reembolsos travados.",
-                "REFUND_HAS_NO_ACCEPTED_CALL": "O provedor não aceitou nenhuma parte deste reembolso. Recuse-o e depois registre-o com a ação 14.",
+                "REFUND_CALL_UNANSWERED": "Há uma chamada ao provedor sem resposta enviada há menos de 24 horas. Use primeiro «Tentar novamente com o Mercado Pago» nesta mesma tela; passadas as 24 horas, se continuar sem fechar, você pode registrá-lo aqui.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "O provedor não aceitou nenhuma parte deste reembolso e ele não tem chamadas sem resposta. Recuse-o e depois registre-o com a ação 14.",
                 "REMAINDER_AMOUNT_MISMATCH": "O restante não confere com o que falta reembolsar: o valor do reembolso menos o que o provedor creditou.",
                 "ACCEPTED_PART_NOT_ACCREDITED": "O provedor não mostra como creditada a parte que tinha aceitado. Confira a cobrança no painel do provedor antes de registrar o restante.",
                 "REMAINDER_NOT_FOUND_AT_PROVIDER": "O provedor não mostra nesta cobrança um reembolso creditado com essa referência e esse valor.",
-                "OTHER_REFUND_CALL_UNANSWERED": "Outro reembolso deste pagamento tem uma chamada ao provedor ainda sem resposta. Aguarde a resolução antes de registrar o restante: o reembolso que você vê no painel pode ser dessa chamada."
+                "OTHER_REFUND_CALL_UNANSWERED": "Outro reembolso deste pagamento tem uma chamada ao provedor ainda sem resposta. Aguarde a resolução antes de registrar o restante: o reembolso que você vê no painel pode ser dessa chamada.",
+                "UNCITED_PROVIDER_REFUND_ON_CHARGE": "A cobrança mostra no Mercado Pago um reembolso no valor da chamada sem resposta que não está registrado em lugar nenhum: pode ser essa chamada, que chegou. Use «Tentar novamente com o Mercado Pago», que o vincula, em vez de registrar aqui.",
+                "REFUND_RETRY_IN_PROGRESS": "Há um «Tentar novamente com o Mercado Pago» deste reembolso em andamento, e o envio pode estar a caminho. Aguarde o resultado e registre o restante só se ele não fechar o reembolso."
+            }
+        },
+        "providerRetry": {
+            "title": "Tentar novamente com o Mercado Pago",
+            "description": "Para um reembolso confirmado que ficou travado porque o MP não respondeu uma chamada (timeout, erro ou resposta vazia), ou que o MP aceitou mas ainda não aparece creditado. Antes de reenviar, a cobrança é lida no MP: se o reembolso já está lá, ele é tomado e nada é reenviado. Só se não aparecer a chamada é reenviada, com a mesma chave de idempotência.",
+            "refundId": "ID do reembolso",
+            "review": "Conferir",
+            "confirmText": "A cobrança do reembolso {{refundId}} é lida no Mercado Pago. Se o reembolso já aparece, ele é tomado sem reenviar; caso contrário, cada chamada sem resposta é reenviada com a mesma chave. Se o MP o mostrar creditado, o reembolso é fechado.",
+            "confirm": "Tentar novamente com o MP",
+            "back": "Voltar",
+            "summary": {
+                "EXECUTED": "O MP aceitou e creditou o reembolso. Ele foi executado.",
+                "WAITING_ACCREDITATION": "O MP tem o reembolso, mas ele ainda não aparece creditado. Continua confirmado: fecha com o próximo aviso do MP, ou tocando de novo em «Tentar novamente com o MP», que lê a cobrança outra vez.",
+                "FAILED": "O MP recusou a chamada. O reembolso falhou: confira o painel do MP antes de reembolsar manualmente (ação 14).",
+                "STILL_UNANSWERED": "Alguma chamada ainda não tem uma resposta utilizável. Tente mais tarde ou siga o runbook de reembolsos (§8)."
+            },
+            "calls": {
+                "SENT": "aceita pelo MP",
+                "FOUND_AT_PROVIDER": "já estava no MP: tomado sem reenviar",
+                "AWAITING_PROVIDER_ANSWER": "continua sem resposta",
+                "PROVIDER_KEY_CONFLICT": "o MP recusou a chave por reutilizada: siga o runbook de reembolsos (§8)",
+                "PROVIDER_REJECTED_FAILED": "recusada pelo MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "O reembolso não está confirmado. Só um reembolso confirmado pode ser reenviado.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "O reembolso não tem chamadas sem resposta nem aceitas aguardando crédito: não há nada para tentar de novo.",
+                "REFUND_PAST_PROVIDER_WINDOW": "Passaram-se mais de 180 dias desde a cobrança: o MP recusaria qualquer chamada sem dizer se a primeira saiu. Confira o painel do MP manualmente (runbook de reembolsos, §8).",
+                "REFUND_RETRY_IN_PROGRESS": "Já há uma nova tentativa deste reembolso em andamento. Espere terminar e confira o resultado.",
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "A chamada sem resposta foi enviada há mais de 24 horas e a cobrança não mostra nenhum reembolso para vinculá-la, então ela não é reenviada (nada foi enviado nem registrado). Confira a cobrança no painel do Mercado Pago, reembolse por lá o que ainda falta e registre com a ação 14 em «Registrar o restante» nesta mesma tela: o reembolso é fechado e a chamada fica respondida (runbook de reembolsos, §8 passo 0)."
             }
         }
     },

@@ -6,11 +6,27 @@
  */
 
 /**
- * CSS selector that matches all keyboard-focusable elements.
- * Used to enumerate the focus ring of a modal-like container.
+ * CSS selector for candidate keyboard-focusable elements.
+ * Use {@link getTabStops} to filter out ineligible candidates.
  */
 export const FOCUSABLE_SELECTORS =
     'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** Returns the eligible descendants for initial modal focus and Tab wrapping. */
+export function getTabStops({ container }: { readonly container: HTMLElement }): {
+    readonly tabStops: readonly HTMLElement[];
+} {
+    const tabStops = Array.from(
+        container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)
+    ).filter(
+        (element) =>
+            element.tabIndex >= 0 &&
+            !element.matches(':disabled') &&
+            !element.closest('[hidden], [inert], [aria-hidden="true"]') &&
+            element.checkVisibility?.({ visibilityProperty: true }) !== false
+    );
+    return { tabStops };
+}
 
 /**
  * True when nothing owns keyboard focus any more — the browser parked it on
@@ -68,11 +84,10 @@ function isFocusLost(): boolean {
 export function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
     if (event.key !== 'Tab') return;
 
-    const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
-    if (focusable.length === 0) return;
-
-    const first = focusable[0] as HTMLElement;
-    const last = focusable[focusable.length - 1] as HTMLElement;
+    const { tabStops } = getTabStops({ container });
+    const first = tabStops[0];
+    const last = tabStops[tabStops.length - 1];
+    if (!first || !last) return;
 
     if (!container.contains(document.activeElement)) {
         // Someone else legitimately holds focus — leave them alone.

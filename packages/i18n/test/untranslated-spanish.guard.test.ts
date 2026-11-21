@@ -33,6 +33,12 @@ type TargetLocale = (typeof TARGET_LOCALES)[number];
 const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = {
     Email: ['en', 'pt'],
     WhatsApp: ['en', 'pt'],
+    // Correct in both Spanish and Brazilian Portuguese (HOS-2521 contact copy).
+    '/hora': ['pt'],
+    '/grupo': ['pt'],
+    // Bed/beds share the same spelling in Spanish and Brazilian Portuguese.
+    '{{count}} cama': ['pt'],
+    '{{count}} camas': ['pt'],
     Facebook: ['en', 'pt'],
     Instagram: ['en', 'pt'],
     YouTube: ['en', 'pt'],
@@ -53,6 +59,8 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Desconectar: ['pt'],
     'Desconectar {{name}}': ['pt'],
     Cancelar: ['pt'],
+    // Same word in Brazilian Portuguese (HOS-2432 collection card count label).
+    favoritos: ['pt'],
     Permitir: ['pt'],
     'Conectando...': ['pt'],
     'Cancelando...': ['pt'],
@@ -62,6 +70,11 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Motivo: ['pt'],
     Sistema: ['pt'],
     Anterior: ['pt'],
+    // Same words in Brazilian Portuguese (HOS-2436 rich-text toolbar and weekday abbreviations).
+    Lista: ['pt'],
+    'Lista numerada': ['pt'],
+    Sáb: ['pt'],
+    Dom: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
     '{{count}} de {{max}} caracteres': ['pt'],
     // Same word in Brazilian Portuguese / English (HOS-2413 Mi Cuenta kit: status words, counter, error prefix).
@@ -93,6 +106,13 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Tipo: ['pt'],
     Resultado: ['pt'],
     Consulta: ['pt'],
+    // Loanwords used as-is in the admin email previewer (HOS-2519).
+    Emails: ['en'],
+    Newsletter: ['en', 'pt'],
+    Partners: ['en'],
+    Outbox: ['en', 'pt'],
+    Alertas: ['pt'],
+    '{{shown}} de {{total}}': ['pt'],
     // Same word in Brazilian Portuguese (HOS-2413 account kit field hint).
     '(opcional)': ['pt']
 };

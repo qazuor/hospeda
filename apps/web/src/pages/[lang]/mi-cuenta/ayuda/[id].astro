@@ -1,0 +1,431 @@
+---
+/**
+ * @file mi-cuenta/ayuda/[id].astro
+ * @description One help article (HOS-2410 `docs/web-ui.md` §4, US-3).
+ * @route /{lang}/mi-cuenta/ayuda/{id}/
+ * @rendering SSR
+ *
+ * Breadcrumb, title, summary, audience chips and review date; the five
+ * sections with their fixed anchors; the generated «Relacionados»; a side
+ * index (a `details` on narrow screens); a «Páginas» box. Content comes from
+ * `@repo/help`, already rendered by `buildHelpArticleView`, and is the same for
+ * every reader (D-H4). A page locale with no translation renders the es
+ * article inside `lang="es"` with a notice (AC-11). An unknown id answers 404
+ * (AC-10). The `HelpLimitValues` island loads only when the article has a
+ * `{{limit}}` token.
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { HelpLimitValues } from '@/components/account/help/HelpLimitValues.client';
+import type { VerticalEnum } from '@repo/schemas';
+import { getSiteUrl } from '@/lib/env';
+import { buildHelpArticleView } from '@/lib/help/help-article-view';
+import { HELP_AUDIENCE_LABEL_KEYS } from '@/lib/help/help-audience';
+import { findLocalizedHelpArticle, parseHelpAudience } from '@/lib/help/help-catalog';
+import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+if (!user) {
+	return Astro.redirect(
+		buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }),
+	);
+}
+
+const found = findLocalizedHelpArticle({ id: Astro.params.id ?? '', locale });
+if (found === undefined) {
+	return new Response(null, { status: 404 });
+}
+
+const { article, contentLocale, isFallback } = found;
+const { t } = createTranslations(locale);
+const contentT = createTranslations(contentLocale).t;
+
+const view = buildHelpArticleView({
+	article,
+	locale,
+	contentLocale,
+	neutralLimitText: contentT('account.help.article.limitNeutral'),
+	siteOrigin: getSiteUrl(),
+});
+
+const para = parseHelpAudience({ value: Astro.url.searchParams.get('para') });
+const crumbAudience =
+	para !== undefined && article.audiences.includes(para) ? para : article.audiences[0];
+const landingPath = buildUrl({ locale, path: 'mi-cuenta/ayuda' });
+const reviewedOn = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
+	new Date(`${article.reviewedAt}T00:00:00Z`),
+);
+const limitVerticals = view.limitVerticals as readonly `${VerticalEnum}`[];
+const pageTitle = t('account.help.article.title', undefined, { title: article.title });
+---
+
+<AccountLayout locale={locale} title={pageTitle} description={article.summary} activeSection="ayuda">
+	<nav class="help-crumbs" aria-label={t('account.help.article.breadcrumbLabel')}>
+		<ol class="help-crumbs__list">
+			<li><a href={landingPath}>{t('account.help.article.breadcrumbRoot')}</a></li>
+			{crumbAudience !== undefined && (
+				<li>
+					<a href={`${landingPath}?para=${crumbAudience}`}>{t(HELP_AUDIENCE_LABEL_KEYS[crumbAudience])}</a>
+				</li>
+			)}
+			<li aria-current="page">{article.title}</li>
+		</ol>
+	</nav>
+
+	{isFallback && <p class="help-article__notice" role="note">{t('account.help.article.onlySpanish')}</p>}
+
+	<search class="help-article__search">
+		<form action={landingPath} method="get" class="help-article__search-form">
+			<label class="help-article__search-label" for="help-article-q">{t('account.help.search.label')}</label>
+			<input class="help-article__search-input" id="help-article-q" type="search" name="q" autocomplete="off" />
+			<button class="help-article__search-button" type="submit">{t('account.help.search.submit')}</button>
+		</form>
+	</search>
+
+	<article class="help-article" lang={contentLocale}>
+		<AccountPageHeader title={article.title} description={article.summary} />
+
+		<div class="help-article__meta">
+			<ul class="help-article__chips" aria-label={t('account.help.audiencesLabel')}>
+				{article.audiences.map((audience) => (
+					<li class="help-article__chip">{t(HELP_AUDIENCE_LABEL_KEYS[audience])}</li>
+				))}
+			</ul>
+			<p class="help-article__reviewed">{t('account.help.article.reviewedAt', undefined, { date: reviewedOn })}</p>
+		</div>
+
+		<details class="help-article__toc-mobile">
+			<summary>{t('account.help.article.tocToggle')}</summary>
+			<nav data-help-toc aria-label={t('account.help.article.tocLabel')}>
+				<ul>
+					{view.toc.map((entry) => <li><a href={`#${entry.anchor}`}>{entry.label}</a></li>)}
+				</ul>
+			</nav>
+		</details>
+
+		<div class="help-article__layout">
+			<div class="help-article__body">
+				{view.sections.map((section) => (
+					<section class="help-article__section" aria-labelledby={section.anchor}>
+						<h2 class="help-article__h2" id={section.anchor}>{section.heading}</h2>
+						<div class="help-article__prose" set:html={section.html} />
+					</section>
+				))}
+
+				<section class="help-article__section" aria-labelledby="relacionados">
+					<h2 class="help-article__h2" id="relacionados">{view.relatedHeading}</h2>
+					<ul class="help-article__related">
+						{view.related.map((entry) => (
+							<li>
+								<a href={entry.href}>{entry.title}</a>
+								<p>{entry.summary}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+
+				{(view.pages.length > 0 || view.faqHref !== undefined) && (
+					<aside class="help-article__pages" aria-labelledby="help-article-pages-title">
+						<h2 class="help-article__pages-title" id="help-article-pages-title">{t('account.help.article.pagesTitle')}</h2>
+						<ul>
+							{view.pages.map((page) => <li><a href={page.href}>{page.label}</a></li>)}
+							{view.faqHref !== undefined && (
+								<li><a href={view.faqHref}>{t('account.help.article.faqLink')}</a></li>
+							)}
+						</ul>
+					</aside>
+				)}
+			</div>
+
+			<nav class="help-article__toc" data-help-toc aria-label={t('account.help.article.tocLabel')}>
+				<p class="help-article__toc-title">{t('account.help.article.tocLabel')}</p>
+				<ul>
+					{view.toc.map((entry) => <li><a href={`#${entry.anchor}`}>{entry.label}</a></li>)}
+				</ul>
+			</nav>
+		</div>
+	</article>
+
+	{limitVerticals.length > 0 && <HelpLimitValues client:idle locale={locale} verticals={limitVerticals} />}
+</AccountLayout>
+
+<script>
+	import { initHelpToc } from '@/lib/help/help-toc';
+
+	let cleanup: (() => void) | undefined;
+
+	document.addEventListener('astro:page-load', () => {
+		cleanup?.();
+		const navs = [...document.querySelectorAll<HTMLElement>('[data-help-toc]')];
+		cleanup = navs.length > 0 ? initHelpToc({ navs }) : undefined;
+	});
+</script>
+
+<style>
+	.help-crumbs__list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		list-style: none;
+		margin: 0 0 var(--space-3);
+		padding: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+	}
+
+	.help-crumbs__list li + li::before {
+		content: '›';
+		margin-right: var(--space-2);
+	}
+
+	.help-crumbs__list a {
+		color: var(--brand-primary);
+	}
+
+	.help-article__notice {
+		margin: 0 0 var(--space-4);
+		padding: var(--space-3) var(--space-4);
+		font-family: var(--font-sans);
+		color: var(--core-foreground);
+		background-color: var(--brand-accent-a08);
+		border-radius: var(--radius-card);
+	}
+
+	.help-article__search-form {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+	}
+
+	.help-article__search-label {
+		width: 100%;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.help-article__search-input {
+		flex: 1;
+		min-width: 12rem;
+		min-height: 44px;
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-sans);
+		color: var(--core-foreground);
+		background-color: var(--core-card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
+	}
+
+	.help-article__search-button {
+		min-height: 44px;
+		padding: var(--space-2) var(--space-4);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		color: var(--core-card);
+		background-color: var(--brand-primary);
+		border: none;
+		border-radius: var(--radius-button);
+		cursor: pointer;
+	}
+
+	.help-article__search-input:focus-visible,
+	.help-article__search-button:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+	}
+
+	.help-article__meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
+		margin: calc(-1 * var(--space-3)) 0 var(--space-6);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+	}
+
+	.help-article__chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.help-article__chip {
+		padding: 2px var(--space-2);
+		color: var(--brand-accent);
+		background-color: var(--brand-accent-a08);
+		border-radius: var(--radius-pill);
+	}
+
+	.help-article__reviewed {
+		margin: 0;
+	}
+
+	.help-article__toc-mobile {
+		margin-bottom: var(--space-6);
+		padding: var(--space-3) var(--space-4);
+		background-color: var(--core-card);
+		border: 1px solid var(--core-foreground-a08);
+		border-radius: var(--radius-card);
+		font-family: var(--font-sans);
+	}
+
+	.help-article__toc-mobile summary {
+		cursor: pointer;
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.help-article__toc {
+		display: none;
+	}
+
+	.help-article__toc ul,
+	.help-article__toc-mobile ul {
+		list-style: none;
+		margin: var(--space-2) 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-md);
+	}
+
+	.help-article__toc a,
+	.help-article__toc-mobile a {
+		color: var(--core-muted-foreground);
+		text-decoration: none;
+	}
+
+	.help-article__toc a[aria-current='location'],
+	.help-article__toc-mobile a[aria-current='location'] {
+		color: var(--brand-accent);
+		font-weight: 600;
+	}
+
+	.help-article__toc-title {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-caption);
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--core-muted-foreground);
+	}
+
+	/*
+	 * Side index from 80rem: below that the account sidebar leaves too little
+	 * width for two columns (the editor shell uses the same breakpoint).
+	 */
+	@media (min-width: 80rem) {
+		.help-article__toc-mobile {
+			display: none;
+		}
+
+		.help-article__layout {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 200px;
+			gap: var(--space-8);
+			align-items: start;
+		}
+
+		.help-article__toc {
+			display: block;
+			position: sticky;
+			top: 110px;
+		}
+	}
+
+	.help-article__section {
+		margin-bottom: var(--space-8);
+		scroll-margin-top: 120px;
+	}
+
+	.help-article__h2 {
+		margin: 0 0 var(--space-3);
+		font-family: var(--font-heading);
+		font-size: var(--text-xl);
+		color: var(--core-foreground);
+		scroll-margin-top: 120px;
+	}
+
+	.help-article__prose {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		line-height: 1.6;
+		color: var(--core-foreground);
+	}
+
+	.help-article__prose :global(h3) {
+		margin: var(--space-5) 0 var(--space-2);
+		font-family: var(--font-heading);
+		font-size: var(--text-body-lg);
+		scroll-margin-top: 120px;
+	}
+
+	.help-article__prose :global(a),
+	.help-article__related a,
+	.help-article__pages a {
+		color: var(--brand-primary);
+		text-decoration: underline;
+	}
+
+	.help-article__prose :global(ol),
+	.help-article__prose :global(ul) {
+		padding-left: var(--space-6);
+	}
+
+	.help-article__related {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		font-family: var(--font-sans);
+	}
+
+	.help-article__related p {
+		margin: var(--space-1) 0 0;
+		font-size: var(--text-body-md);
+		color: var(--core-muted-foreground);
+	}
+
+	.help-article__pages {
+		padding: var(--space-4);
+		background-color: var(--core-card);
+		border: 1px solid var(--core-foreground-a08);
+		border-radius: var(--radius-card);
+		font-family: var(--font-sans);
+	}
+
+	.help-article__pages-title {
+		margin: 0 0 var(--space-2);
+		font-family: var(--font-heading);
+		font-size: var(--text-body-lg);
+		color: var(--core-foreground);
+	}
+
+	.help-article__pages ul {
+		margin: 0;
+		padding-left: var(--space-5);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+</style>

@@ -1,35 +1,32 @@
 /**
  * HOS-2333 (spec HOS-2335 §5.4, AC-C40, AC-C42) — the keyword search over the
- * owner help catalog: normalized (case and accents), scored on keyword hits plus
+ * owner help catalog, now the shared search of `@repo/help` (HOS-2410): normalized (case and accents), scored on keyword hits plus
  * title words, top 3, no embeddings. The question is untrusted, so it is only
  * ever compared, never interpreted.
  *
  * @module test/mcp/tools/help/help-search
  */
 
-import { describe, expect, it } from 'vitest';
-import { OWNER_HELP_TOPICS } from '../../../../src/data/owner-help/owner-help';
-import type { OwnerHelpTopic } from '../../../../src/data/owner-help/owner-help.types';
 import {
     findOwnerHelpTopic,
     HELP_MAX_TOPICS,
+    type HelpSearchable,
+    HELP_ARTICLES as OWNER_HELP_TOPICS,
     searchOwnerHelp,
     tokenizeHelpText
-} from '../../../../src/mcp/tools/help/help-search';
+} from '@repo/help';
+import { describe, expect, it } from 'vitest';
 
 const ids = (question: string, audience?: 'host' | 'venue' | 'experience' | 'provider') =>
     searchOwnerHelp({ topics: OWNER_HELP_TOPICS, question, audience }).map((topic) => topic.id);
 
 /** A small catalog for the scoring rules, so the assertions do not depend on the real one. */
 const topic = (
-    overrides: Partial<OwnerHelpTopic> & Pick<OwnerHelpTopic, 'id'>
-): OwnerHelpTopic => ({
-    audience: 'any',
+    overrides: Partial<HelpSearchable> & Pick<HelpSearchable, 'id'>
+): HelpSearchable => ({
+    audiences: ['host', 'venue', 'experience', 'provider', 'partner'],
     title: 'Un tema',
     keywords: ['zzz'],
-    steps: ['Un paso'],
-    destinations: [],
-    reviewedAt: '2026-11-17',
     ...overrides
 });
 

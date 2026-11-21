@@ -184,7 +184,8 @@ describe('TEST:1710:4 AC:1710:3 fake Mercado Pago charge shape', () => {
                 {
                     refundId: second.refundId,
                     amount: { amountMinor: 300, currency: 'ARS' },
-                    accredited: false
+                    accredited: false,
+                    rejected: true
                 }
             ]);
             expect(read.snapshot.refundedAmount).toEqual({ amountMinor: 500, currency: 'ARS' });

@@ -56,7 +56,8 @@ const DEFAULT_PROPS = {
     center: { lat: -32.48, lng: -58.23 },
     markerPosition: null,
     disabled: false,
-    onMove: vi.fn()
+    onMove: vi.fn(),
+    ariaLabel: 'Mapa de ubicación'
 };
 
 describe('LocationPickerMap (BETA-132)', () => {

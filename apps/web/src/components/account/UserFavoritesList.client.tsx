@@ -34,6 +34,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
+import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -230,6 +232,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
+    const runSingleFlight = useSingleFlight();
 
     // ── Collections state (fetched once on mount) ──────────────────────────
     const [collections, setCollections] = useState<readonly BookmarkCollectionItem[]>([]);
@@ -257,6 +260,14 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
      * server is the source of truth for total count.
      */
     const uncollectedBookmarks = bookmarks.filter((b) => !b.collectionId);
+
+    // When the total shrinks (removals, moves, other devices) below the current
+    // page, that page no longer exists: go back to the last one (HOS-2420).
+    useEffect(() => {
+        if (!loading && !error && page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [loading, error, page, totalPages]);
 
     // ── Tab switch handler ─────────────────────────────────────────────────
 
@@ -381,9 +392,14 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
             setLoading(true);
             setError(null);
             try {
+                // `uncollected=true` makes the SERVER filter out bookmarks that
+                // belong to a collection BEFORE paginating, so the "Sin colección"
+                // section covers every uncollected favorite and not just the
+                // slice that happened to land on the current page (HOS-2420).
                 const params = new URLSearchParams({
                     page: String(targetPage),
-                    pageSize: String(PAGE_SIZE)
+                    pageSize: String(PAGE_SIZE),
+                    uncollected: 'true'
                 });
                 // ALL: no entityType filter → server returns the global list.
                 if (key !== 'ALL') {
@@ -403,8 +419,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 const fetchedTotal = body.data?.total ?? 0;
                 setBookmarks([...(body.data?.bookmarks ?? [])]);
                 setTotal(fetchedTotal);
-                // Reuse active tab total for its badge (avoids extra round-trip)
-                setTabCounts((prev) => ({ ...prev, [key]: fetchedTotal }));
+                // NOTE: the tab badge is NOT updated from this response. This
+                // fetch is narrowed to uncollected bookmarks, so its total is
+                // smaller than the tab's real favorites count (HOS-2420); the
+                // badge comes from the unfiltered count-only fetches on mount.
             } catch (err) {
                 if (err instanceof Error && err.name === 'AbortError') return;
                 const msg = err instanceof Error ? err.message : fetchErrorMsg;
@@ -441,6 +459,28 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     // ── Remove (optimistic) ───────────────────────────────────────────────
 
     async function handleRemove(bookmark: BookmarkItem) {
+        // HOS-2429: removing also drops the note, instantly and for good, so ask
+        // first. Cancel (or no DOM) leaves the list untouched.
+        const hasNote = Boolean(bookmark.description?.trim());
+        // N2: a double-click must not stack two dialogs.
+        const confirmed = await runSingleFlight(() =>
+            showConfirmationDialog({
+                title: t('account.favorites.removeFavoriteConfirm.title', 'Quitar de favoritos'),
+                message: hasNote
+                    ? t(
+                          'account.favorites.removeFavoriteConfirm.messageWithNote',
+                          '¿Quitar este favorito? También se elimina la nota que le escribiste.'
+                      )
+                    : t(
+                          'account.favorites.removeFavoriteConfirm.message',
+                          '¿Quitar este favorito?'
+                      ),
+                confirmLabel: t('account.favorites.removeFavoriteConfirm.confirm', 'Quitar'),
+                cancelLabel: t('common.cancel', 'Cancelar')
+            })
+        );
+        if (!confirmed) return;
+
         // Capture only this bookmark's original index — NOT a full snapshot.
         // Restoring a whole snapshot on failure would re-insert other bookmarks
         // that a concurrent remove already deleted from the server (stale UI).
@@ -578,6 +618,11 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
         // Update the local copy of the moved bookmark so the uncollected
         // section reflects the change without a full re-fetch.
         if (bookmarkToMove) {
+            // The list is server-filtered to uncollected bookmarks, so a bookmark
+            // that just joined a collection also leaves the paginated total.
+            if (newCollectionId !== null && !bookmarkToMove.collectionId) {
+                setTotal((prev) => Math.max(0, prev - 1));
+            }
             setBookmarks((prev) =>
                 prev.map((b) =>
                     b.id === bookmarkToMove.id ? { ...b, collectionId: newCollectionId } : b
@@ -654,9 +699,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 {/* Section heading */}
                 <div className={styles.sectionHeading}>
                     <h3 className={styles.sectionHeadingTitle}>{noCollectionLabel}</h3>
-                    <span className={styles.sectionHeadingCount}>
-                        {uncollectedBookmarks.length}
-                    </span>
+                    <span className={styles.sectionHeadingCount}>{total}</span>
                 </div>
 
                 {uncollectedBookmarks.length === 0 ? (
@@ -704,6 +747,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             'Agregá una nota personal...'
                         )}
                         noteSaveErrorMessage={t('account.favorites.errors.saveFailed')}
+                        noteSavedLabel={t('account.favorites.notes.saved', 'Nota guardada')}
                         moveBtnLabel={t('account.favorites.collections.move', 'Mover')}
                         moveBtnAriaLabel={t(
                             'account.favorites.collections.move_button_aria',
@@ -801,7 +845,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                                 key={col.id}
                                 collection={col}
                                 locale={locale}
-                                bookmarksLabel={t('account.favorites.removeLabel', 'favoritos')}
+                                bookmarksLabel={t(
+                                    'account.favorites.collections.bookmarksLabel',
+                                    'favoritos'
+                                )}
                                 collectionsBasePath={COLLECTIONS_PATH}
                             />
                         ))}

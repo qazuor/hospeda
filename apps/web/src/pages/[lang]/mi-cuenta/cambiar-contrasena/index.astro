@@ -21,8 +21,12 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { resolveSafeReturnPath } from '@/lib/auth-redirect';
+import { parseProfileStatus } from '@/lib/middleware-helpers';
+import { SET_PASSWORD_SEGMENT } from '@/lib/routes';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHelpRow from '@/components/account/help/PageHelpRow.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm.client';
 
@@ -33,16 +37,39 @@ const locale = Astro.locals.locale as SupportedLocale;
 // future config drift.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const t = createT(locale);
 
 const title = t('account.changePassword.title', 'Cambiar contraseña');
-const description = t(
-    'account.changePassword.subtitle',
-    'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
-);
+// HOS-2431: the gate-forced visit and a voluntary one need different copy.
+// `mustChangePassword` is the flag the middleware's step 7.2 gate redirects on,
+// carried on `locals.user` from the `/auth/me` payload.
+const forced = user.mustChangePassword === true;
+const description = forced
+    ? t(
+          'account.changePassword.subtitle',
+          'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
+      )
+    : t('account.changePassword.subtitleVoluntary');
+
+// HOS-2431: an account that only signs in with Google/Facebook has no current
+// password to change, so a voluntary visit goes to the add-password flow instead
+// of promising a form that cannot work. A forced visit never takes this branch:
+// the forced accounts are provisioned with a password.
+if (!forced) {
+    const profileStatus = await parseProfileStatus({
+        cookieHeader: Astro.request.headers.get('cookie')
+    });
+    if (profileStatus && !profileStatus.hasCredentialAccount) {
+        const returnTo = Astro.url.searchParams.get('returnUrl');
+        const setPasswordUrl = buildUrl({ locale, path: `mi-cuenta/${SET_PASSWORD_SEGMENT}` });
+        return Astro.redirect(
+            returnTo ? `${setPasswordUrl}?returnUrl=${encodeURIComponent(returnTo)}` : setPasswordUrl
+        );
+    }
+}
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -69,10 +96,13 @@ const returnUrl = resolveSafeReturnPath({ rawReturn: rawReturnUrl, locale });
         noindex={true}
     />
 
+    <PageHelpRow locale={locale} />
+
     <ChangePasswordForm
         client:load
         locale={locale}
         accountEmail={user.email}
         returnUrl={returnUrl}
+        forced={forced}
     />
 </BaseLayout>
