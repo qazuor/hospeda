@@ -10,6 +10,7 @@ export * from './article.schema';
 export * from './constants';
 export * from './destination.schema';
 export * from './destination-template';
+export * from './headings';
 export * from './help-index';
 export * from './link-targets';
 export * from './retired-ids';

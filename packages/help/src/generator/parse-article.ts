@@ -21,6 +21,9 @@ import {
     type HelpLocale,
     type HelpSectionKey
 } from '../constants';
+import { helpSubHeading, slugifyHelpHeading } from '../headings';
+
+export { slugifyHelpHeading };
 
 /**
  * The Markdown constructs an article may use, block or inline: paragraphs,
@@ -41,9 +44,6 @@ const ALLOWED_CONSTRUCTS: ReadonlySet<string> = new Set([
     'escape',
     'br'
 ]);
-
-/** An explicit `### Heading {#id}` anchor. */
-const EXPLICIT_ANCHOR = /\s*\{#([a-z0-9]+(?:-[a-z0-9]+)*)\}\s*$/;
 
 /** The body of one article, split into its sections. */
 export interface ParsedHelpBody {
@@ -67,27 +67,6 @@ export type ParseHelpArticleResult =
           readonly body: ParsedHelpBody;
       }
     | { readonly ok: false; readonly errors: readonly string[] };
-
-/**
- * Slugifies a `###` heading into its anchor id: lowercase, accents stripped,
- * every run of non-alphanumerics a single `-`, no edge hyphens.
- *
- * @param args.text - The heading text
- * @returns The anchor id
- *
- * @example
- * ```ts
- * slugifyHelpHeading({ text: 'Mis fotos no se ven' }); // 'mis-fotos-no-se-ven'
- * ```
- */
-export function slugifyHelpHeading({ text }: { readonly text: string }): string {
-    return text
-        .normalize('NFD')
-        .replace(/\p{M}+/gu, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-}
 
 /** The child tokens of a token, when it has any. */
 function childrenOf(token: Token): readonly Token[] {
@@ -138,8 +117,7 @@ interface BodyState {
 
 /** Handles one `###` heading. */
 function onSubHeading({ state, text }: { readonly state: BodyState; readonly text: string }) {
-    const explicit = EXPLICIT_ANCHOR.exec(text);
-    const anchor = explicit?.[1] ?? slugifyHelpHeading({ text });
+    const { anchor } = helpSubHeading({ text });
     if (anchor === '') {
         state.errors.push(`"### ${text}" has no usable anchor id`);
     } else if (state.anchors.includes(anchor)) {

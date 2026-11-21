@@ -217,13 +217,18 @@ export interface SearchOwnerHelpArgs<T extends HelpSearchable> {
     readonly question: string;
     /** The kind of owner asking; omit for every article. */
     readonly audience?: HelpAudience;
+    /**
+     * Most topics returned. Defaults to {@link HELP_MAX_TOPICS}, what `get_help`
+     * answers with; the web help search asks for more (HOS-2410 web-ui §3).
+     */
+    readonly limit?: number;
 }
 
 /**
  * The topics a question is about, best first.
  *
- * @param args - The catalog, the question and the optional audience
- * @returns At most {@link HELP_MAX_TOPICS} topics, empty when nothing matches
+ * @param args - The catalog, the question, the optional audience and limit
+ * @returns At most `limit` topics, empty when nothing matches
  *
  * @example
  * ```typescript
@@ -234,7 +239,8 @@ export interface SearchOwnerHelpArgs<T extends HelpSearchable> {
 export function searchOwnerHelp<T extends HelpSearchable>({
     topics,
     question,
-    audience
+    audience,
+    limit = HELP_MAX_TOPICS
 }: SearchOwnerHelpArgs<T>): readonly T[] {
     const questionWords = tokenizeHelpText({ text: question });
     const hasContent = questionWords.some(
@@ -252,7 +258,7 @@ export function searchOwnerHelp<T extends HelpSearchable>({
                 y.score.keyword + y.score.title - (x.score.keyword + x.score.title) ||
                 x.order - y.order
         )
-        .slice(0, HELP_MAX_TOPICS)
+        .slice(0, limit)
         .map((entry) => entry.topic);
 }
 
