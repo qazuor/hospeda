@@ -28,7 +28,7 @@
  * the light value under a dark scope set on a descendant element.
  */
 
-import type { OKLCH } from '../tokens/colors.js';
+import { accent, type OKLCH, river } from '../tokens/colors.js';
 import { controlHeight, layoutAccount } from '../tokens/layout.js';
 import { radiusApp } from '../tokens/radius.js';
 import { appTypography, pxToRem } from '../tokens/typography.js';
@@ -39,6 +39,25 @@ const oklchValue = (l: number, c: number, h: number): OKLCH => ({ l, c, h });
 
 /** Pure white, the D4 `on-action-*` text color. */
 const WHITE = oklchValue(1, 0, 0);
+
+/**
+ * Hover darkening for the action colors (owner decision on D4, 2026-11-21):
+ * OKLCH lightness times this factor (about 8% darker), same chroma and hue,
+ * in both themes. Darker means white text on hover measures at or above the
+ * base pair, never below.
+ */
+export const ACTION_HOVER_LIGHTNESS_FACTOR = 0.92;
+
+/** Darkens a brand color for its hover state (lightness only). */
+const hoverOf = (value: OKLCH): OKLCH => ({
+    l: Math.round(value.l * ACTION_HOVER_LIGHTNESS_FACTOR * 1000) / 1000,
+    c: value.c,
+    h: value.h
+});
+
+/** Dark-theme brand fills, as declared in `web-dark.ts` (a test pins the match). */
+const DARK_BRAND_PRIMARY = oklchValue(0.68, 0.17, 259);
+const DARK_BRAND_ACCENT = oklchValue(0.72, 0.19, 55);
 
 /**
  * Theme-invariant app tokens: radius scale, control heights, layout widths
@@ -95,12 +114,11 @@ export const webAccountLight: Theme = {
 
     // ---- T-002 · action tokens (D4: exact brand aliases, white text) -------
     'action-primary': 'var(--brand-primary)',
-    // The catalog keeps the hover on the brand fill too; the kit signals
-    // hover by other means than a darker action color (D4: no darker token).
-    'action-primary-hover': 'var(--brand-primary)',
+    // Hover: the brand fill about 8% darker (owner decision on D4).
+    'action-primary-hover': hoverOf(river[500]),
     'on-action-primary': WHITE,
     'action-accent': 'var(--brand-accent)',
-    'action-accent-hover': oklchValue(0.66, 0.18, 55),
+    'action-accent-hover': hoverOf(accent[500]),
     'on-action-accent': WHITE,
     'action-danger': oklchValue(0.577, 0.245, 27.325),
     'on-action-danger': oklchValue(0.98, 0, 0),
@@ -150,10 +168,10 @@ export const webAccountDark: Theme = {
     'focus-ring': 'var(--brand-primary-link)',
 
     'action-primary': 'var(--brand-primary)',
-    'action-primary-hover': 'var(--brand-primary)',
+    'action-primary-hover': hoverOf(DARK_BRAND_PRIMARY),
     'on-action-primary': WHITE,
     'action-accent': 'var(--brand-accent)',
-    'action-accent-hover': oklchValue(0.77, 0.18, 55),
+    'action-accent-hover': hoverOf(DARK_BRAND_ACCENT),
     'on-action-accent': WHITE,
     'action-danger': oklchValue(0.55, 0.2, 27),
     'on-action-danger': oklchValue(0.98, 0, 0),

@@ -29,6 +29,7 @@ import { describe, expect, it } from 'vitest';
 import { buildCSS } from '../generators/generate-css.js';
 import * as publicApi from '../index.js';
 import type { Theme, ThemeValue } from '../themes/types.js';
+import { ACTION_HOVER_LIGHTNESS_FACTOR } from '../themes/web-account.js';
 import { webDark } from '../themes/web-dark.js';
 import { webLight } from '../themes/web-light.js';
 import type { OKLCH } from './colors.js';
@@ -88,6 +89,15 @@ const OWNER_ACCEPTED_D4 = {
     dark: { primary: 2.93, accent: 2.62 }
 } as const;
 
+/**
+ * White text on the hover fills (owner decision on D4, 2026-11-21: hover is
+ * the brand ~8% darker). Computed and pinned exactly; each is >= its base pair.
+ */
+const OWNER_ACCEPTED_D4_HOVER = {
+    light: { primary: 4.38, accent: 3.48 },
+    dark: { primary: 3.61, accent: 3.26 }
+} as const;
+
 describe('T-002 · D4 «color de acción» (owner decision, pinned)', () => {
     it.each(THEMES)('action-* are exact brand aliases in %s', (_name, theme) => {
         expect(theme['action-primary']).toBe('var(--brand-primary)');
@@ -108,6 +118,38 @@ describe('T-002 · D4 «color de acción» (owner decision, pinned)', () => {
         );
         expect(ratio(theme, 'on-action-accent', 'action-accent')).toBeGreaterThanOrEqual(
             pin.accent
+        );
+    });
+
+    it.each(
+        THEMES
+    )('hover is the brand fill ~8%% darker, same chroma and hue, in %s', (_name, theme) => {
+        for (const [hover, brand] of [
+            ['action-primary-hover', 'brand-primary'],
+            ['action-accent-hover', 'brand-accent']
+        ] as const) {
+            const h = resolve(theme, hover);
+            const b = resolve(theme, brand);
+            expect(h.c).toBe(b.c);
+            expect(h.h).toBe(b.h);
+            expect(h.l).toBeCloseTo(b.l * ACTION_HOVER_LIGHTNESS_FACTOR, 3);
+            expect(h.l).toBeLessThan(b.l);
+        }
+    });
+
+    it.each(
+        THEMES
+    )('white on hover is pinned and never below the base pair in %s', (name, theme) => {
+        const pin = OWNER_ACCEPTED_D4_HOVER[name];
+        const primaryHover = ratio(theme, 'on-action-primary', 'action-primary-hover');
+        const accentHover = ratio(theme, 'on-action-accent', 'action-accent-hover');
+        expect(primaryHover).toBe(pin.primary);
+        expect(accentHover).toBe(pin.accent);
+        expect(primaryHover).toBeGreaterThanOrEqual(
+            ratio(theme, 'on-action-primary', 'action-primary')
+        );
+        expect(accentHover).toBeGreaterThanOrEqual(
+            ratio(theme, 'on-action-accent', 'action-accent')
         );
     });
 
