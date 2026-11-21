@@ -2,11 +2,18 @@
  * @file AlertsList.upgrade-plan-names.test.tsx
  * @description HOS-2437: the plan-gate state names the plans from the public
  * catalog (those that carry `price_alerts`), never a hardcoded "Plus y VIP".
+ * The SSR page reads the catalog (`planNamesWithEntitlement`) and hands the
+ * names to the island; the island itself never reads the server-only catalog.
  */
 
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlertsList } from '../../../src/components/account/AlertsList.client';
+import {
+    type PublicPlanData,
+    planNamesWithEntitlement
+} from '../../../src/lib/billing/fetch-plans';
 
 vi.mock('../../../src/components/account/AlertsList.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
@@ -14,49 +21,41 @@ vi.mock('../../../src/components/account/AlertsList.module.css', () => ({
     })
 }));
 
-const uuid = (n: number) => `123e4567-e89b-42d3-a456-4266141740${String(n).padStart(2, '0')}`;
-const plan = (n: number, name: string, entitlements: string[]) => ({
-    planId: uuid(n),
-    planVersionId: uuid(n + 20),
-    slug: `plan-${n}`,
+const plan = (name: string, entitlements: string[]): PublicPlanData => ({
+    id: name,
+    vertical: 'tourist',
+    slug: name.toLowerCase(),
     name,
-    description: null,
-    pricingOrder: n,
-    rank: n,
+    description: '',
+    category: 'tourist',
+    monthlyPriceArs: 100,
+    annualPriceArs: null,
+    hasTrial: false,
     trialDays: 0,
+    sortOrder: 0,
+    isActive: true,
     inheritsTouristVip: false,
     entitlements,
-    limits: {},
-    billingOptions: [{ id: uuid(n + 40), cycle: 'monthly', amount: 100, currency: 'ARS' }]
+    limits: {}
 });
 
-function mockApi(plans: readonly object[] | 'catalog-down') {
-    vi.mocked(fetch).mockImplementation(async (input) => {
-        const url = String(input);
-        if (url.includes('/protected/price-alerts')) {
-            return {
-                ok: false,
-                status: 403,
-                json: async () => ({ success: false, error: { code: 'ENTITLEMENT_REQUIRED' } })
-            } as Response;
-        }
-        if (plans === 'catalog-down') return { ok: false, status: 500 } as Response;
+function mockGateApi() {
+    vi.mocked(fetch).mockImplementation(async () => {
         return {
-            ok: true,
-            json: async () => ({
-                success: true,
-                data: { vertical: 'tourist', plans, floor: null, trialOffer: null }
-            })
+            ok: false,
+            status: 403,
+            json: async () => ({ success: false, error: { code: 'ENTITLEMENT_REQUIRED' } })
         } as Response;
     });
 }
 
-async function renderGate() {
+async function renderGate(gatePlanNames?: readonly string[]) {
     render(
         <AlertsList
             locale="es"
             apiUrl="http://localhost:3001"
             userId="user-001"
+            gatePlanNames={gatePlanNames}
         />
     );
     await waitFor(() => expect(screen.queryByText('Cargando alertas...')).not.toBeInTheDocument());
@@ -69,35 +68,63 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
+describe('planNamesWithEntitlement (HOS-2437)', () => {
+    it('keeps only the plans that carry the entitlement, in catalog order', () => {
+        const names = planNamesWithEntitlement({
+            result: {
+                ok: true,
+                plans: [
+                    plan('Explorador', ['price_alerts']),
+                    plan('Sin alertas', ['save_favorites']),
+                    plan('Aventurero', ['price_alerts', 'exclusive_deals'])
+                ]
+            },
+            entitlement: EntitlementKeyEnum.PRICE_ALERTS
+        });
+        expect(names).toEqual(['Explorador', 'Aventurero']);
+    });
+
+    it('names no plan when the catalog could not be read', () => {
+        expect(
+            planNamesWithEntitlement({
+                result: { ok: false, error: 'HTTP 500' },
+                entitlement: EntitlementKeyEnum.PRICE_ALERTS
+            })
+        ).toEqual([]);
+    });
+});
+
 describe('AlertsList plan gate (HOS-2437)', () => {
-    it('names the catalog plans that carry the entitlement, whatever they are called', async () => {
-        mockApi([
-            plan(1, 'Explorador', ['price_alerts']),
-            plan(2, 'Aventurero', ['price_alerts', 'exclusive_deals']),
-            plan(3, 'Sin alertas', ['save_favorites'])
-        ]);
-        await renderGate();
+    it('names the catalog plans it receives, whatever they are called', async () => {
+        mockGateApi();
+        await renderGate(['Explorador', 'Aventurero']);
         await waitFor(() =>
             expect(
                 screen.getByText(/disponibles en los planes Explorador y Aventurero/)
             ).toBeInTheDocument()
         );
         expect(screen.queryByText(/Plus/)).not.toBeInTheDocument();
-        expect(screen.queryByText(/Sin alertas/)).not.toBeInTheDocument();
     });
 
     it('uses the singular form for a single plan', async () => {
-        mockApi([plan(1, 'Explorador', ['price_alerts'])]);
-        await renderGate();
+        mockGateApi();
+        await renderGate(['Explorador']);
         await waitFor(() =>
             expect(screen.getByText(/disponibles en el plan Explorador\./)).toBeInTheDocument()
         );
     });
 
-    it('names no plan at all when the catalog cannot be read', async () => {
-        mockApi('catalog-down');
+    it('names no plan at all when it receives none', async () => {
+        mockGateApi();
         await renderGate();
         const message = await screen.findByText(/no están incluidas en tu plan actual/);
         expect(message.textContent).not.toMatch(/Plus|VIP/);
+    });
+
+    it('never calls the plan catalog from the browser', async () => {
+        mockGateApi();
+        await renderGate(['Explorador']);
+        const urls = vi.mocked(fetch).mock.calls.map(([input]) => String(input));
+        expect(urls.some((url) => url.includes('plan-catalog'))).toBe(false);
     });
 });

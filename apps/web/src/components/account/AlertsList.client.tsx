@@ -33,11 +33,10 @@
  */
 
 import { BellIcon } from '@repo/icons';
-import { EntitlementKeyEnum, type PriceAlertListItem } from '@repo/schemas';
+import type { PriceAlertListItem } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { visibleApiMessage } from '@/lib/api-errors';
-import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -86,6 +85,12 @@ export interface AlertsListProps {
      * `SearchHistoryListProps.userId`).
      */
     readonly userId: string;
+    /**
+     * HOS-2437: names of the catalog plans that carry the price-alerts entitlement, read by
+     * the SSR page (the catalog reader is server-only). Empty when the catalog could not be
+     * read: the plan gate then names no plan.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -96,7 +101,12 @@ export interface AlertsListProps {
  * Lists the authenticated user's active price-alert subscriptions and
  * provides a per-item delete action with inline confirmation.
  */
-export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps) {
+export function AlertsList({
+    locale,
+    apiUrl,
+    userId: _userId,
+    gatePlanNames = []
+}: AlertsListProps) {
     const { t, tPlural } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
@@ -105,9 +115,6 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
     const [alerts, setAlerts] = useState<PriceAlertListItem[]>([]);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-    // HOS-2437: names of the catalog plans that carry the price-alerts entitlement.
-    // Empty until read (or when the catalog cannot be read): the gate then names no plan.
-    const [gatePlanNames, setGatePlanNames] = useState<readonly string[]>([]);
 
     const isMountedRef = useRef(true);
 
@@ -182,25 +189,6 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
     useEffect(() => {
         void fetchAlerts();
     }, [fetchAlerts]);
-
-    const isUpgrade = status.kind === 'upgrade';
-    useEffect(() => {
-        if (!isUpgrade) return;
-        let alive = true;
-        const loadGatePlanNames = async () => {
-            const result = await fetchPublicPlans({ vertical: 'tourist', apiUrl: base });
-            if (!alive || !result.ok) return;
-            setGatePlanNames(
-                result.plans
-                    .filter((plan) => plan.entitlements.includes(EntitlementKeyEnum.PRICE_ALERTS))
-                    .map((plan) => plan.name)
-            );
-        };
-        void loadGatePlanNames();
-        return () => {
-            alive = false;
-        };
-    }, [isUpgrade, base]);
 
     // ── Delete one ────────────────────────────────────────────────────────────
 
