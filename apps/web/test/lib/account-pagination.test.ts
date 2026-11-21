@@ -8,10 +8,11 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     ACCOUNT_LIST_PAGE_SIZE,
     buildAccountPageHref,
+    fetchListTotal,
     parsePageParam,
     resolveAccountPageState
 } from '@/lib/account-pagination';
@@ -110,5 +111,48 @@ describe('AccountPagination.astro', () => {
     it('uses plain links with rel prev/next so it works without JavaScript', () => {
         expect(source).toContain('rel="prev"');
         expect(source).toContain('rel="next"');
+    });
+});
+
+describe('fetchListTotal is non-fatal (HOS-2440)', () => {
+    const call = (fetchImpl: typeof fetch) =>
+        fetchListTotal({ url: 'https://api.test/x', headers: {}, fetchImpl });
+
+    it('returns the total on a good answer', async () => {
+        const ok = vi.fn(async () =>
+            Response.json({ data: { pagination: { total: 7 } } })
+        ) as unknown as typeof fetch;
+        expect(await call(ok)).toBe(7);
+    });
+
+    it('resolves null instead of throwing on a network reject', async () => {
+        const reject = vi.fn(async () => {
+            throw new Error('network down');
+        }) as unknown as typeof fetch;
+        expect(await call(reject)).toBeNull();
+    });
+
+    it('resolves null on a 200 with a non-JSON body', async () => {
+        const html = vi.fn(
+            async () => new Response('<html>', { status: 200 })
+        ) as unknown as typeof fetch;
+        expect(await call(html)).toBeNull();
+    });
+
+    it('resolves null on a non-2xx and on a missing total', async () => {
+        const bad = vi.fn(
+            async () => new Response('{}', { status: 500 })
+        ) as unknown as typeof fetch;
+        const empty = vi.fn(async () => Response.json({ data: {} })) as unknown as typeof fetch;
+        expect(await call(bad)).toBeNull();
+        expect(await call(empty)).toBeNull();
+    });
+
+    it('the page uses it for both counts, outside the list fetch error path', () => {
+        const source = readFileSync(
+            resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/propiedades/index.astro'),
+            'utf8'
+        );
+        expect(source.match(/fetchListTotal\(/g)).toHaveLength(2);
     });
 });

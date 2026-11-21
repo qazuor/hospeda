@@ -81,3 +81,36 @@ export function buildAccountPageHref({
     const base = buildUrl({ locale, path });
     return page <= 1 ? base : `${base}?page=${page}`;
 }
+
+/**
+ * Reads `pagination.total` from a list endpoint, never throwing.
+ *
+ * Used for the owner-wide counts that sit beside a paginated list (HOS-2440).
+ * Those counts are enrichment: a network reject, a non-2xx or a non-JSON body
+ * must leave the list rendering, so every failure resolves to `null` and the
+ * caller falls back to what it can derive from the page itself.
+ *
+ * @param params.url - Absolute URL of a paginated list endpoint.
+ * @param params.headers - Request headers (session cookie).
+ * @param params.fetchImpl - Fetch implementation, injectable for tests.
+ * @returns The total, or `null` on any failure.
+ */
+export async function fetchListTotal({
+    url,
+    headers,
+    fetchImpl = fetch
+}: {
+    readonly url: string;
+    readonly headers: Record<string, string>;
+    readonly fetchImpl?: typeof fetch;
+}): Promise<number | null> {
+    try {
+        const response = await fetchImpl(url, { headers });
+        if (!response.ok) return null;
+        const body = (await response.json()) as { data?: { pagination?: { total?: unknown } } };
+        const total = body.data?.pagination?.total;
+        return typeof total === 'number' ? total : null;
+    } catch {
+        return null;
+    }
+}

@@ -36,6 +36,7 @@ import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge';
 import {
     ACCOUNT_LIST_PAGE_SIZE,
     buildAccountPageHref,
+    fetchListTotal,
     parsePageParam,
     resolveAccountPageState
 } from '@/lib/account-pagination';
@@ -150,21 +151,13 @@ try {
         // load, and serialising it would add its latency to every render.
         const countUrl = (status: PublicationStatusEnum) =>
             `${apiUrl}/api/v1/protected/accommodations?pageSize=1&publicationStatus=${status}`;
-        const readTotal = async (response: Response): Promise<number | null> => {
-            if (!response.ok) return null;
-            const body = (await response.json()) as {
-                data?: { pagination?: { total?: number } };
-            };
-            return body.data?.pagination?.total ?? null;
-        };
-
         const [
             accomResponse,
             usageBadgeResult,
             destinationResult,
             noticesResult,
-            publishedResponse,
-            draftResponse
+            publishedTotalResult,
+            draftTotalResult
         ] = await Promise.all([
             fetch(
                 `${apiUrl}/api/v1/protected/accommodations?page=${requestedPage}&pageSize=${ACCOUNT_LIST_PAGE_SIZE}&sortBy=createdAt&sortOrder=desc`,
@@ -173,8 +166,9 @@ try {
             fetchHostUsageBadge({ cookieHeader }),
             publishApi.subscribeDestination({ vertical: 'accommodation', cookieHeader }),
             publishApi.listingNotices({ vertical: 'accommodation', cookieHeader }),
-            fetch(countUrl(PublicationStatusEnum.PUBLISHED), { headers }),
-            fetch(countUrl(PublicationStatusEnum.DRAFT), { headers })
+            // Non-fatal: a failed count must not mark the whole list as failed.
+            fetchListTotal({ url: countUrl(PublicationStatusEnum.PUBLISHED), headers }),
+            fetchListTotal({ url: countUrl(PublicationStatusEnum.DRAFT), headers })
         ]);
 
         if (accomResponse.ok) {
@@ -191,8 +185,8 @@ try {
             logger.error('[propiedades] API responded with status', accomResponse.status);
         }
 
-        publishedTotal = await readTotal(publishedResponse);
-        draftTotal = await readTotal(draftResponse);
+        publishedTotal = publishedTotalResult;
+        draftTotal = draftTotalResult;
 
         // Owner-wide published count; falls back to this page's count only when
         // the count read failed (the pre-pagination behaviour).
