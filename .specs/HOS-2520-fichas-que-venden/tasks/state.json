@@ -1,0 +1,1706 @@
+{
+  "version": "1.0",
+  "specRef": "HOS-2520",
+  "title": "Listing detail pages that sell",
+  "created": "2026-11-20T12:00:00.000Z",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "[HOS-2521] Add `contact` dock slot to MOBILE_DOCK_SLOTS and MobileDock.astro",
+      "description": "Add \"contact\" to MOBILE_DOCK_SLOTS (lib/mobile-dock/mobile-dock-slots.ts) and a data-mobile-dock-slot=\"contact\" div as FIRST child of .mobile-dock__row in components/shared/dock/MobileDock.astro. Update mobile-dock*.test.ts and mobile-floating-dock.guard.test.ts contracts (single-row, CSS). Covers AC-1.7 (dock side). Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-002",
+        "T-010",
+        "T-015",
+        "T-024"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "dock",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-002",
+      "title": "[HOS-2521] Add contact-slot pin rule to mobile-dock-autohide",
+      "description": "Extend lib/mobile-dock/mobile-dock-autohide.ts: never set data-dock-hidden while a visible [data-mobile-dock-slot=\"contact\"] [data-dock-item] exists; menu/search/filters hide rules still apply. Unit tests incl. 2000px scroll case. Covers AC-1.5. Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-014"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "dock",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-003",
+      "title": "[HOS-2521] Add `sheet` variant to Dialog (bottom sheet at <=767px)",
+      "description": "shared/ui/Dialog.client.tsx + Dialog.module.css (+ Dialog tests): variant \"sheet\": full width, bottom anchored, max-height 90dvh, top radius var(--radius-card), aria-hidden drag handle, reduced-motion disables slide; >=768px renders as centered md. Focus trap, Escape, backdrop, useDialogHistoryBack unchanged. Covers AC-1.8 (primitive). Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [],
+      "blocks": [
+        "T-011",
+        "T-037"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "ui",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-004",
+      "title": "[HOS-2521] Create listing-contact-events bus with Zod payload",
+      "description": "Create lib/listing-contact/listing-contact-events.ts exporting openListingContactPanel({origin,focus}) and onListingContactPanelOpen(handler) over CustomEvent \"hospeda:listing-contact:open\" on window; payload validated with Zod (ContactOrigin, focus whatsapp|form). Unit tests (valid, invalid ignored, unsubscribe). Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-010",
+        "T-011",
+        "T-017",
+        "T-035",
+        "T-041"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "lib",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-005",
+      "title": "[HOS-2521] Add listing-contact i18n keys (es/en/pt)",
+      "description": "Add keys in @repo/i18n locale files for bar, panel title, shortcuts, field labels/errors, trust line, inquiry message templates, summary block, compact units. es/en/pt parity; i18n structure guards green. Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-006",
+        "T-010",
+        "T-011",
+        "T-016",
+        "T-034",
+        "T-037"
+      ],
+      "subtasks": [],
+      "tags": [
+        "i18n",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-006",
+      "title": "[HOS-2521] Create build-inquiry-message pure function",
+      "description": "Create lib/listing-contact/build-inquiry-message.ts (+test): no field -> default greeting; only dates; only guests; both; locale short day/month; checkOut<=checkIn and guests out of 1..capacity -> field errors, message not rebuilt. es/en/pt. RO-RO. Covers AC-1.9. Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-005"
+      ],
+      "blocks": [
+        "T-012"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "lib",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-007",
+      "title": "[HOS-2521] Add listing_contact_clicked event to analytics catalog and web alias",
+      "description": "packages/analytics/src/catalog.ts: listingContactClicked with schema from spec 6.6.1; apps/web/src/lib/analytics/events.ts alias ListingContactClicked; schema tests (valid/invalid channel and origin). Covers AC-1.21 (schema part). Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-009",
+        "T-010",
+        "T-011",
+        "T-013",
+        "T-017",
+        "T-026"
+      ],
+      "subtasks": [],
+      "tags": [
+        "analytics",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-008",
+      "title": "[HOS-2521] Add WhatsappLogo icon to @repo/icons",
+      "description": "Add WhatsappLogo following packages/icons process (sprite/component, export, test/inventory guards). Needed by the bar and panel. Linear: HOS-2521.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [],
+      "blocks": [
+        "T-010"
+      ],
+      "subtasks": [],
+      "tags": [
+        "icons",
+        "phase-1",
+        "HOS-2521"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-009",
+      "title": "[HOS-2522] Add sourcePage and origin optional props to ContactHost",
+      "description": "ContactHost.client.tsx: optional sourcePage (default \"accommodation_detail\") and origin?: ContactOrigin, passed to contact_owner_* events. Backwards compatible; update ContactHost tests. Covers AC-1.21 (form events). Linear: HOS-2522.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-007"
+      ],
+      "blocks": [
+        "T-012"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "contact",
+        "phase-1",
+        "HOS-2522"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-010",
+      "title": "[HOS-2522] Create ListingContactBar island",
+      "description": "components/listing/contact/ListingContactBar.client.tsx + .module.css + test. Renders inside DockPortal slot=\"contact\", data-dock-item, static position, hidden >=768px, 64px + safe-area. Price/\"Consultar precio\", conditional WhatsApp button, primary button; emits listing_contact_clicked and opens panel via bus. Covers AC-1.1, 1.2, 1.3, 1.6. Linear: HOS-2522.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-001",
+        "T-004",
+        "T-005",
+        "T-007",
+        "T-008"
+      ],
+      "blocks": [
+        "T-014",
+        "T-048"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-1",
+        "HOS-2522"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-011",
+      "title": "[HOS-2522] Create ListingContactPanel shell with sheet dialog and shortcuts",
+      "description": "components/listing/contact/ListingContactPanel.client.tsx + css + test. Subscribes to bus, renders Dialog variant sheet (outside dock portal), title, price line, tel:/mailto: shortcuts (absent data not rendered), trust line, focus whatsapp|form. Covers AC-1.8, AC-1.12. Linear: HOS-2522.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-007"
+      ],
+      "blocks": [
+        "T-012",
+        "T-013",
+        "T-049"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-1",
+        "HOS-2522"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-012",
+      "title": "[HOS-2522] Add dates/guests fields and ContactHost wiring to the panel",
+      "description": "ListingContactPanel: Llegada/Salida/Huespedes native inputs, field errors, ContactHost initialMessage via buildInquiryMessage, rebuild only while message not hand-edited; sourcePage/origin props. Tests for AC-1.9 wiring, AC-1.10, AC-1.11 (request body vs CreateConversationAnonSchema). Linear: HOS-2522.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-011",
+        "T-006",
+        "T-009"
+      ],
+      "blocks": [
+        "T-014",
+        "T-045"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-1",
+        "HOS-2522"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-013",
+      "title": "[HOS-2522] Make WhatsAppContact emit tracking and honor panel focus",
+      "description": "WhatsAppContact.client.tsx: emit listing_contact_clicked (channel whatsapp, is_whatsapp_entitled) on direct link click; panel scrolls to WhatsApp row on focus=whatsapp. Anonymous: upsell, no request to /protected/accommodations/:id/whatsapp. Covers AC-1.4. Linear: HOS-2522.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-007",
+        "T-011"
+      ],
+      "blocks": [
+        "T-014"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "contact",
+        "phase-1",
+        "HOS-2522"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-014",
+      "title": "[HOS-2522] Wire bar and panel into alojamientos/[slug].astro",
+      "description": "Mount ListingContactBar (client:idle) and ListingContactPanel (client:idle, outside dock portal, end of default slot) in pages/[lang]/alojamientos/[slug].astro with hasWhatsapp, price, panelId. Update source-order tests; session-blind guard green. Covers AC-1.1 (wiring), AC-1.7, AC-1.22. Linear: HOS-2522.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-010",
+        "T-012",
+        "T-013",
+        "T-002"
+      ],
+      "blocks": [
+        "T-030",
+        "T-041",
+        "T-043",
+        "T-045",
+        "T-047"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "page",
+        "phase-1",
+        "HOS-2522"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-015",
+      "title": "[HOS-2523] Add after-content slot to DetailLayout and move RelatedCarousels",
+      "description": "DetailLayout.astro: new slot after-content rendered after .detail-page__grid, full width. alojamientos/[slug].astro: move four RelatedCarousels to Fragment slot after-content, fix L634 comment. Update alojamientos-slug-compare-bar and whats-nearby source-order tests. Covers AC-1.15. Sequenced after 2521 via a1. Linear: HOS-2523.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-018",
+        "T-054"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "layout",
+        "phase-1",
+        "HOS-2523"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-016",
+      "title": "[HOS-2523] Create MobileBookingSummary.astro",
+      "description": "components/accommodation/MobileBookingSummary.astro + test: price/\"Consultar precio\", min/max nights, owner mini-card, buttons markup, visible only <=1024px, session-blind, public fields only. Covers AC-1.14 (render rule). Linear: HOS-2523.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-005"
+      ],
+      "blocks": [
+        "T-017",
+        "T-018"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-1",
+        "HOS-2523"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-017",
+      "title": "[HOS-2523] Create MobileBookingSummaryActions island with tracking",
+      "description": "components/accommodation/MobileBookingSummaryActions.client.tsx + test: Consultar -> openListingContactPanel({origin:\"summary\",focus:\"form\"}); WhatsApp (only hasWhatsapp) focus whatsapp; emits listing_contact_clicked origin summary. Linear: HOS-2523.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-016",
+        "T-004",
+        "T-007"
+      ],
+      "blocks": [
+        "T-018"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-1",
+        "HOS-2523"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-018",
+      "title": "[HOS-2523] Insert MobileBookingSummary after QuickFacts and hide PricingSidebar <=1024px",
+      "description": "alojamientos/[slug].astro + PricingSidebar css: render summary after QuickFacts, hide PricingSidebar at <=1024px (sidebar otherwise stays). Tests for AC-1.14 and document order; session-blind guard green (AC-1.22). Linear: HOS-2523.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-015",
+        "T-016",
+        "T-017"
+      ],
+      "blocks": [
+        "T-032",
+        "T-053"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "page",
+        "phase-1",
+        "HOS-2523"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-019",
+      "title": "[HOS-2524] Create useSwipe hook",
+      "description": "components/shared/.../useSwipe.ts (or hooks dir next to ImageGallery) + test: pointer events, 40px horizontal threshold, vertical > horizontal cancels. Covers AC-1.18 (hook). Linear: HOS-2524.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-020"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "hook",
+        "phase-1",
+        "HOS-2524"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-020",
+      "title": "[HOS-2524] Add touch swipe to the lightbox in ImageGallery",
+      "description": "ImageGallery.client.tsx lightbox uses useSwipe to change image; existing lightbox tests still green; test horizontal vs vertical drag. Covers AC-1.18. Linear: HOS-2524.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-019"
+      ],
+      "blocks": [
+        "T-023"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "gallery",
+        "phase-1",
+        "HOS-2524"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-021",
+      "title": "[HOS-2524] Create ImageGalleryMobileTrack scroll-snap track",
+      "description": "ImageGalleryMobileTrack.client.tsx + css + test: scroll-snap x mandatory, 4:3 locked, full-bleed, first slide eager rest lazy, same srcset as mosaic, index via IntersectionObserver 0.6, arrow keys when focused, tap opens lightbox at index. Covers AC-1.16, AC-1.17. Linear: HOS-2524.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [],
+      "blocks": [
+        "T-022"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "gallery",
+        "phase-1",
+        "HOS-2524"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-022",
+      "title": "[HOS-2524] Add mobile gallery overlays (back, share, favorite, counter, dots)",
+      "description": "Overlays in ImageGalleryMobileTrack: back (history.back with fallback), ShareButtons icon-overlay appearance (add prop if missing), FavoriteButton, counter 1/8, dots max 8. Update share-buttons-in-detail-pages.test.ts. Covers AC-1.16 counter. Linear: HOS-2524.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-021"
+      ],
+      "blocks": [
+        "T-023"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "gallery",
+        "phase-1",
+        "HOS-2524"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-023",
+      "title": "[HOS-2524] Integrate mobile track into ImageGallery detail variant",
+      "description": "ImageGallery.client.tsx variant detail: SSR both presentations, CSS switch at 767px, mosaic unchanged on desktop; keep file under 500-line growth rule; ImageGallery.cls and existing tests green. Covers AC-1.17. Linear: HOS-2524.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-020",
+        "T-022"
+      ],
+      "blocks": [
+        "T-033",
+        "T-050",
+        "T-051"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "gallery",
+        "phase-1",
+        "HOS-2524"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-024",
+      "title": "[HOS-2525] Compact title block in DetailHeader at <=767px",
+      "description": "DetailHeader.astro + accommodation page breadcrumbs wrapper: hide visual breadcrumbs and back row, 12px single-line badges, hide FavoriteButton in header, 32px DetailCompareButton beside h1; JSON-LD untouched; wave-header-anim-sync green. DetailHeader.test.ts. Covers AC-1.19. Sequenced after 2521 via a1. Linear: HOS-2525.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-001"
+      ],
+      "blocks": [
+        "T-025",
+        "T-050",
+        "T-051"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "header",
+        "phase-1",
+        "HOS-2525"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-025",
+      "title": "[HOS-2525] Render QuickFacts on one line on mobile",
+      "description": "QuickFacts component + css + test: \"7 huespedes . 3 hab . 5 camas . 2 banos\" on one line at <=767px. Covers AC-1.19 (quick facts). Linear: HOS-2525.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-024"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-1",
+        "HOS-2525"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-026",
+      "title": "[HOS-2525] Create track-contact-links delegated click tracker",
+      "description": "lib/listing-contact/track-contact-links.ts + test + include in the detail layout: one delegated listener for [data-contact-channel] anchors emitting listing_contact_clicked. Covers AC-1.21 (server blocks). Linear: HOS-2525.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-007"
+      ],
+      "blocks": [
+        "T-027",
+        "T-028",
+        "T-029"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "analytics",
+        "phase-1",
+        "HOS-2525"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-027",
+      "title": "[HOS-2525] Make partner page phone and email tappable with tracking",
+      "description": "partners/[slug].astro L173-175: tel: (digits normalized via @repo/utils helper or local pure helper with tests) and mailto: with data-contact-channel. Test anchors. Covers AC-1.20. Linear: HOS-2525.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-026"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "partner",
+        "phase-1",
+        "HOS-2525"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-028",
+      "title": "[HOS-2525] Add data-contact-channel to AccommodationContactBlock",
+      "description": "AccommodationContactBlock.astro tel/mailto/website anchors get data-contact-channel + origin contact_block; render test. Linear: HOS-2525.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-026"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-1",
+        "HOS-2525"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-029",
+      "title": "[HOS-2525] Add data-contact-channel to Experience and Venue contact blocks",
+      "description": "ExperienceContactBlock.astro and VenueContactBlock.astro anchors get data-contact-channel (phone/email/website/menu/social) + origin contact_block; render tests. Linear: HOS-2525.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-026"
+      ],
+      "blocks": [
+        "T-048",
+        "T-049"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-1",
+        "HOS-2525"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-030",
+      "title": "[HOS-2526] Write E2E guest-NN-listing-detail-mobile spec: bar and sheet",
+      "description": "apps/e2e/tests/guest/guest-NN-listing-detail-mobile.spec.ts at 390x844: AC-1.1 (bar with price, WhatsApp, Consultar) and AC-1.8 (sheet focus, Escape, backdrop, back, focus return). Linear: HOS-2526.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-014"
+      ],
+      "blocks": [
+        "T-031",
+        "T-032",
+        "T-033"
+      ],
+      "subtasks": [],
+      "tags": [
+        "e2e",
+        "phase-1",
+        "HOS-2526"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-031",
+      "title": "[HOS-2526] Add E2E: panel form submit with dates (AC-1.11)",
+      "description": "Same spec: anonymous submit from panel against local API; body matches CreateConversationAnonSchema and message includes dates text. Linear: HOS-2526.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-030"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "e2e",
+        "phase-1",
+        "HOS-2526"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-032",
+      "title": "[HOS-2526] Add E2E: summary above first carousel (AC-1.13)",
+      "description": "Same spec: compareDocumentPosition MobileBookingSummary before first RelatedCarousel and top < 1400px. Linear: HOS-2526.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-030",
+        "T-018"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "e2e",
+        "phase-1",
+        "HOS-2526"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-033",
+      "title": "[HOS-2526] Add E2E: gallery swipe and lightbox (AC-1.16)",
+      "description": "Same spec: swipe moves one slide, counter 1/8 -> 2/8, tap opens lightbox at index, arrow keys when focused. Linear: HOS-2526.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-030",
+        "T-023"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "e2e",
+        "phase-1",
+        "HOS-2526"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-034",
+      "title": "[HOS-2527] Create ListingSectionTabs island",
+      "description": "components/listing/ListingSectionTabs.client.tsx + css + test: sticky under WaveHeader band, tabs only for present sections, scroll below sticky band, active tab via IntersectionObserver. Covers AC-2.1. Linear: HOS-2527.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-005"
+      ],
+      "blocks": [
+        "T-035"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-2",
+        "HOS-2527"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-035",
+      "title": "[HOS-2527] Add desktop price and Consultar to the section tabs",
+      "description": "ListingSectionTabs: once gallery is out of view on desktop show price + Consultar opening the panel through the bus. Test. Covers AC-2.2. Linear: HOS-2527.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-034",
+        "T-004"
+      ],
+      "blocks": [
+        "T-036"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-2",
+        "HOS-2527"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-036",
+      "title": "[HOS-2527] Wire ListingSectionTabs and section ids into the accommodation page",
+      "description": "alojamientos/[slug].astro: section anchors and tabs mount; session-blind guard green. Linear: HOS-2527.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-035"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "page",
+        "phase-2",
+        "HOS-2527"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-037",
+      "title": "[HOS-2528] Summarize AmenitiesGrid with pills and sheet dialog",
+      "description": "AmenitiesGrid.astro: 6 mobile / 8 desktop pills, \"Ver las N comodidades\" opens sheet with all grouped; remove :nth-child(n+9) and inline expand script; update listing-amenities-render test. Covers AC-2.3. Linear: HOS-2528.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-003",
+        "T-005"
+      ],
+      "blocks": [
+        "T-038"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-2",
+        "HOS-2528"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-038",
+      "title": "[HOS-2528] Apply the summary treatment to FeaturesGrid (>6 items)",
+      "description": "FeaturesGrid.astro + test: same pill/sheet pattern when more than 6 items. Linear: HOS-2528.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-037"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-2",
+        "HOS-2528"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-039",
+      "title": "[HOS-2529] Clamp Description.astro with Leer mas toggle",
+      "description": "Description.astro + client toggle + test: 4 lines mobile / 8 desktop, button aria-expanded, full text always in DOM, no toggle when text fits. Covers AC-2.4. Linear: HOS-2529.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": [
+        "T-040"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-2",
+        "HOS-2529"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-040",
+      "title": "[HOS-2529] Apply the clamp to the rich description on the accommodation page",
+      "description": "alojamientos/[slug].astro rich description block uses the same clamp; test with rich content. Linear: HOS-2529.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-039"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "page",
+        "phase-2",
+        "HOS-2529"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-041",
+      "title": "[HOS-2530] Create HostSection.astro with panel button",
+      "description": "components/accommodation/HostSection.astro + small action island + test: avatar, name, \"Anfitrion desde\", languages if present, Consultar opens the panel; only existing fields. Covers AC-2.5. Linear: HOS-2530.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-014",
+        "T-004"
+      ],
+      "blocks": [
+        "T-042"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-2",
+        "HOS-2530"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-042",
+      "title": "[HOS-2530] Wire HostSection before the location section",
+      "description": "alojamientos/[slug].astro: insert HostSection before LocationSection; session-blind guard green. Linear: HOS-2530.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-041"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "page",
+        "phase-2",
+        "HOS-2530"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-043",
+      "title": "[HOS-2530] Add rating average and review cards track to ReviewPreview",
+      "description": "ReviewPreview: average + scroll-snap track of up to 6 cards when reviews exist; empty state unchanged; no placeholder data. Test. Covers AC-2.6 (track). Linear: HOS-2530.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-014"
+      ],
+      "blocks": [
+        "T-044"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-2",
+        "HOS-2530"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-044",
+      "title": "[HOS-2530] Add \"Ver las N resenas\" opening ReviewsModal",
+      "description": "ReviewPreview: link opens existing ReviewsModal; test with and without reviews. Covers AC-2.6. Linear: HOS-2530.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-043"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "component",
+        "phase-2",
+        "HOS-2530"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-045",
+      "title": "[HOS-2531] Add dates/guests fields to the desktop sidebar card",
+      "description": "Sidebar card (ContactHost sidebar instance) gets Llegada/Salida/Huespedes feeding buildInquiryMessage. Test. Covers AC-2.7. Linear: HOS-2531.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-012",
+        "T-014"
+      ],
+      "blocks": [
+        "T-046"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "sidebar",
+        "phase-2",
+        "HOS-2531"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-046",
+      "title": "[HOS-2531] Add \"o contacta directo\" row to the sidebar card",
+      "description": "Sidebar: WhatsApp and Llamar shortcuts when channels exist, tracked with origin sidebar. Test. Covers AC-2.7. Linear: HOS-2531.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-045"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "sidebar",
+        "phase-2",
+        "HOS-2531"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-047",
+      "title": "[HOS-2531] Add \"Ver las N fotos\" button to the gallery mosaic",
+      "description": "ImageGallery.client.tsx mosaic: button opens lightbox at index 0; test. Linear: HOS-2531.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-014"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "gallery",
+        "phase-2",
+        "HOS-2531"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-048",
+      "title": "[HOS-2532] Add experience price mapping and bar variant",
+      "description": "Pure helper mapping priceFrom/priceUnit/isPriceOnRequest to bar price prop (centavos to major, unit label keys) + bar vertical variants (experience \"Contactar\", venue without price/\"Ver carta\"). Tests. Covers AC-2.8, 2.9 (bar). Linear: HOS-2532.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-010",
+        "T-029"
+      ],
+      "blocks": [
+        "T-050",
+        "T-051"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-2",
+        "HOS-2532"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-049",
+      "title": "[HOS-2532] Add channels-only panel variant for experience and venue",
+      "description": "ListingContactPanel: no form; experience Llamar (mobilePhone then workPhone)/Email/Web; venue social links; absent channels not rendered. Tests. Covers AC-2.8, 2.9 (panel). Linear: HOS-2532.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-011",
+        "T-029"
+      ],
+      "blocks": [
+        "T-050",
+        "T-051"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "island",
+        "phase-2",
+        "HOS-2532"
+      ],
+      "phase": "core",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-050",
+      "title": "[HOS-2532] Wire bar, panel, gallery and compact header on experiencias/[slug].astro",
+      "description": "Mount bar/panel gated by hasPublicContactChannel(), swipeable gallery, compact header. Test. Covers AC-2.8. Linear: HOS-2532.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-048",
+        "T-049",
+        "T-023",
+        "T-024"
+      ],
+      "blocks": [
+        "T-052"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "page",
+        "phase-2",
+        "HOS-2532"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-051",
+      "title": "[HOS-2532] Wire bar, panel, gallery and compact header on comer-y-salir/[slug].astro",
+      "description": "Bar without price, \"Ver carta\" when menuUrl else Contactar panel with social links, no bar when neither; gallery + compact header. Test. Covers AC-2.9. Linear: HOS-2532.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-048",
+        "T-049",
+        "T-023",
+        "T-024"
+      ],
+      "blocks": [
+        "T-052"
+      ],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "page",
+        "phase-2",
+        "HOS-2532"
+      ],
+      "phase": "integration",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-052",
+      "title": "[HOS-2532] Add guard test: no WhatsApp element on experience and venue pages",
+      "description": "Static guard test over both pages and their bar/panel props. Covers AC-2.10. Linear: HOS-2532.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": [
+        "T-050",
+        "T-051"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "guard",
+        "phase-2",
+        "HOS-2532"
+      ],
+      "phase": "testing",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-053",
+      "title": "[HOS-2533] Migrate ad-hoc detail CTA links to GradientButton/IconButton",
+      "description": "Replace ad-hoc CTA anchors in detail page components with GradientButton/IconButton; update affected tests. Linear: HOS-2533.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [
+        "T-018"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "ui",
+        "phase-2",
+        "HOS-2533"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    },
+    {
+      "id": "T-054",
+      "title": "[HOS-2533] Reuse hero wave divider above after-content and align card/map tokens",
+      "description": "after-content wave divider; cards --radius-card/--shadow-card; map --radius-organic; wave-header-anim-sync green. Linear: HOS-2533.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [
+        "T-015"
+      ],
+      "blocks": [],
+      "subtasks": [],
+      "tags": [
+        "web",
+        "ui",
+        "phase-2",
+        "HOS-2533"
+      ],
+      "phase": "cleanup",
+      "qualityGate": {
+        "lint": null,
+        "typecheck": null,
+        "tests": null
+      },
+      "timestamps": {
+        "created": "2026-11-20T12:00:00.000Z",
+        "started": null,
+        "completed": null
+      }
+    }
+  ],
+  "summary": {
+    "total": 54,
+    "pending": 54,
+    "inProgress": 0,
+    "completed": 0,
+    "blocked": 0,
+    "averageComplexity": 2.28
+  }
+}
