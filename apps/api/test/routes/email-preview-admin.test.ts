@@ -24,6 +24,7 @@ vi.mock('@repo/notifications', async (importOriginal) => {
 
 import { initApp } from '../../src/app.js';
 import type { AppOpenAPI } from '../../src/types.js';
+import { getEmailSender } from '../../src/utils/email-sender.js';
 import { apiLogger } from '../../src/utils/logger.js';
 
 const ACTOR_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -119,6 +120,8 @@ describe('admin email preview endpoints (HOS-2519)', () => {
             expect(res.status).toBe(200);
             const parsed = EmailPreviewRenderResponseSchema.parse(body.data);
             expect(parsed).toMatchObject({ key: KEY, scenarioId: SCENARIO, warnings: [] });
+            // AC-5.5: the prefix the inbox of this deploy would show (null when unmarked).
+            expect(parsed.subjectPrefix).toBe(getEmailSender().subjectPrefix ?? null);
             expect(parsed.subject.trim()).not.toBe('');
             expect(parsed.html).toContain('<html');
             expect(parsed.text.trim()).not.toBe('');
@@ -178,7 +181,11 @@ describe('admin email preview endpoints (HOS-2519)', () => {
             expect(body.error?.code).toBe('INTERNAL_ERROR');
             expect(raw).not.toContain(secret);
             expect(errorLog).toHaveBeenCalledWith(
-                expect.objectContaining({ key: KEY, scenarioId: SCENARIO, error: secret }),
+                expect.objectContaining({
+                    key: KEY,
+                    scenarioId: SCENARIO,
+                    error: expect.objectContaining({ message: secret, stack: expect.any(String) })
+                }),
                 'Email preview render failed'
             );
         });

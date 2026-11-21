@@ -147,14 +147,22 @@ export function createEmailPreviewService(
                 warnings: [...rendered.warnings]
             };
         } catch (error) {
-            if (
-                error instanceof EmailCatalogEntryNotFoundError ||
-                error instanceof EmailCatalogScenarioNotFoundError
-            ) {
+            if (error instanceof EmailCatalogEntryNotFoundError) {
                 throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Email catalog entry not found');
             }
+            if (error instanceof EmailCatalogScenarioNotFoundError) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    'Email catalog scenario not found'
+                );
+            }
+            // The whole error (message and stack) goes to the log; the 500 body stays generic (R1b).
             apiLogger.error(
-                { key, scenarioId, error: error instanceof Error ? error.message : String(error) },
+                {
+                    key,
+                    scenarioId,
+                    error: error instanceof Error ? error : new Error(String(error))
+                },
                 'Email preview render failed'
             );
             throw new ServiceError(

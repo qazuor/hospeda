@@ -5,7 +5,11 @@
  */
 
 import type { EmailCatalogRenderDeps, RenderedEmailCatalogScenario } from '@repo/notifications';
-import { EMAIL_CATALOG } from '@repo/notifications';
+import {
+    EMAIL_CATALOG,
+    EmailCatalogEntryNotFoundError,
+    EmailCatalogScenarioNotFoundError
+} from '@repo/notifications';
 import { ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -115,6 +119,35 @@ describe('createEmailPreviewService', () => {
             code: ServiceErrorCode.NOT_FOUND
         });
         expect(renderScenario).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        {
+            label: 'scenario',
+            error: new EmailCatalogScenarioNotFoundError({ key: 'k', scenarioId: 's' }),
+            message: 'Email catalog scenario not found'
+        },
+        {
+            label: 'entry',
+            error: new EmailCatalogEntryNotFoundError('k'),
+            message: 'Email catalog entry not found'
+        }
+    ])('maps a pipeline $label-not-found error to NOT_FOUND with its own message', async ({
+        error,
+        message
+    }) => {
+        // Arrange
+        const service = createEmailPreviewService({
+            buildDeps: () => FAKE_DEPS,
+            renderScenario: async () => {
+                throw error;
+            }
+        });
+
+        // Act / Assert
+        await expect(
+            service.render({ key: FIRST.key, scenarioId: FIRST_SCENARIO })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND, message });
     });
 
     it('maps a render failure to INTERNAL_ERROR with a generic message', async () => {
