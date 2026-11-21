@@ -17,16 +17,16 @@
 import type { HelpAudience } from '@repo/help';
 import {
     HELP_AUDIENCE_CHANGED_EVENT,
+    HELP_AUDIENCE_PARAM,
     HELP_SELECT_AUDIENCE_EVENT,
-    type HelpAudienceEventDetail
-} from './help-audience';
-import { parseHelpAudience } from './help-catalog';
+    type HelpAudienceEventDetail,
+    parseHelpAudience
+} from './help-audience-shared';
 
 /** Class the root gets once the tabs are live. */
 export const HELP_TABS_ENHANCED_CLASS = 'is-enhanced';
 
-/** The query parameter that names the selected audience. */
-export const HELP_AUDIENCE_PARAM = 'para';
+export { HELP_AUDIENCE_PARAM };
 
 /** Arguments for {@link initHelpTabs}. RO-RO. */
 export interface InitHelpTabsArgs {

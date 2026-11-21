@@ -149,6 +149,33 @@ describe('HelpSearch', () => {
         expect(resultIds()).toContain('photos');
     });
 
+    it('starts on the tab the page already shows, whatever the hydration order', () => {
+        // Arrange: the tabs switched to provider before this island hydrated,
+        // so no change event will reach it
+        document.body.innerHTML = '<div data-help-tabs data-selected="provider"></div>';
+
+        // Act
+        renderSearch('host');
+        type('fotos');
+
+        // Assert
+        expect(resultIds()).not.toContain('photos');
+        document.querySelector('[data-help-tabs]')?.remove();
+    });
+
+    it('reads a valid ?para= when there are no tabs on the page', () => {
+        // Arrange
+        window.history.replaceState(null, '', '/es/mi-cuenta/ayuda/?para=provider');
+
+        // Act
+        renderSearch('host');
+        type('fotos');
+
+        // Assert
+        expect(resultIds()).not.toContain('photos');
+        window.history.replaceState(null, '', '/es/mi-cuenta/ayuda/');
+    });
+
     it('searches the initial ?q= on the first render (SSR-first)', () => {
         render(
             <HelpSearch

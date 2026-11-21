@@ -62,22 +62,9 @@ export function pickHelpAudience({
     return ownsPartner ? 'partner' : undefined;
 }
 
-/** Name of the DOM event that asks the audience tabs to select an audience. */
-export const HELP_SELECT_AUDIENCE_EVENT = 'hospeda:help-select-audience';
-
-/** Name of the DOM event the audience tabs fire after the selection changed. */
-export const HELP_AUDIENCE_CHANGED_EVENT = 'hospeda:help-audience-changed';
-
-/** Payload of both help audience events. */
-export interface HelpAudienceEventDetail {
-    readonly audience: HelpAudience;
-}
-
-/** The i18n key of each audience label (tabs, chips, breadcrumb). */
-export const HELP_AUDIENCE_LABEL_KEYS: Readonly<Record<HelpAudience, string>> = {
-    host: 'account.help.audiences.host',
-    venue: 'account.help.audiences.venue',
-    experience: 'account.help.audiences.experience',
-    provider: 'account.help.audiences.provider',
-    partner: 'account.help.audiences.partner'
-};
+export {
+    HELP_AUDIENCE_CHANGED_EVENT,
+    HELP_AUDIENCE_LABEL_KEYS,
+    HELP_SELECT_AUDIENCE_EVENT,
+    type HelpAudienceEventDetail
+} from './help-audience-shared';

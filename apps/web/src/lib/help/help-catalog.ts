@@ -10,7 +10,6 @@
  */
 
 import {
-    HELP_AUDIENCES,
     HELP_INDEX,
     HELP_SOURCE_LOCALE,
     type HelpArticle,
@@ -127,19 +126,4 @@ export function toHelpSearchEntries({
     }));
 }
 
-/**
- * The audience a `?para=` value names, or `undefined` when it names none.
- *
- * @param args.value - The raw query parameter, maybe absent
- * @returns A help audience, or `undefined`
- */
-export function parseHelpAudience({
-    value
-}: {
-    readonly value: string | null | undefined;
-}): HelpAudience | undefined {
-    return HELP_AUDIENCES.find((audience) => audience === value);
-}
-
-/** The tab selected when the URL names no audience (web-ui §2). */
-export const DEFAULT_HELP_AUDIENCE: HelpAudience = 'host';
+export { DEFAULT_HELP_AUDIENCE, parseHelpAudience } from './help-audience-shared';

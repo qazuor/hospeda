@@ -7,8 +7,10 @@
  * shared `searchOwnerHelp` from `@repo/help`, the same tokenizer and ranking
  * `get_help` uses, so it never issues a network request. Results update on
  * every input once the query has two characters. A toggle, on by default,
- * keeps only the articles of the selected audience tab; the tab selection
- * arrives through {@link HELP_AUDIENCE_CHANGED_EVENT}.
+ * keeps only the articles of the selected audience tab. On mount it reads the
+ * tab the page shows (`[data-help-tabs]` `data-selected`, else `?para=`), so
+ * it agrees with the tabs whatever order the two `client:idle` islands
+ * hydrate in; later changes arrive through {@link HELP_AUDIENCE_CHANGED_EVENT}.
  *
  * Hydration: `client:idle`. The server renders the same markup, including the
  * results of an initial `?q=` (SSR-first), so the list never appears only after
@@ -20,9 +22,11 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import {
     HELP_AUDIENCE_CHANGED_EVENT,
     HELP_AUDIENCE_LABEL_KEYS,
-    type HelpAudienceEventDetail
-} from '@/lib/help/help-audience';
-import { type HelpSearchEntry, parseHelpAudience } from '@/lib/help/help-catalog';
+    type HelpAudienceEventDetail,
+    parseHelpAudience,
+    readSelectedHelpAudience
+} from '@/lib/help/help-audience-shared';
+import type { HelpSearchEntry } from '@/lib/help/help-catalog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './HelpSearch.module.css';
@@ -101,6 +105,10 @@ export function HelpSearch({
     const [audience, setAudience] = useState<HelpAudience>(initialAudience);
 
     useEffect(() => {
+        const current = readSelectedHelpAudience();
+        if (current !== undefined) {
+            setAudience(current);
+        }
         const onChange = (event: Event): void => {
             const next = parseHelpAudience({
                 value: (event as CustomEvent<Partial<HelpAudienceEventDetail>>).detail?.audience
