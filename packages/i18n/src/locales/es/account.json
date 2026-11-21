@@ -996,7 +996,6 @@
             "description": "Administrá tu cuenta, favoritos, reseñas y preferencias.",
             "greeting": "Bienvenido",
             "dashboardLabel": "Dashboard",
-            "viewLabel": "Ver",
             "nav": {
                 "editProfile": "Editar perfil",
                 "editProfileDesc": "Actualizá tu información personal y foto de perfil",
@@ -1050,7 +1049,13 @@
                 "listings": "Mis fichas",
                 "listingsDesc": "Fichas publicadas",
                 "listingsHidden_one": "{{count}} ficha sin publicar: no se ve en público.",
-                "listingsHidden_other": "{{count}} fichas sin publicar: no se ven en público."
+                "listingsHidden_other": "{{count}} fichas sin publicar: no se ven en público.",
+                "viewProperties": "Ver mis propiedades",
+                "viewMessages": "Ver mensajes sin leer",
+                "viewListings": "Ver mis fichas",
+                "viewFavorites": "Ver mis favoritos",
+                "viewReviews": "Ver mis reseñas",
+                "viewSubscription": "Ver mi suscripción"
             },
             "sectionsLabel": "Secciones"
         },

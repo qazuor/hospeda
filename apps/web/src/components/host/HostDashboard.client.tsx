@@ -213,9 +213,9 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
             <div className={styles.widgetGrid}>
                 {/* ── Widget 1: Property summary ── */}
                 <div className={styles.widget}>
-                    <h3 className={styles.widgetTitle}>
+                    <h2 className={styles.widgetTitle}>
                         {t('host.dashboard.widgets.properties', 'Tus propiedades')}
-                    </h3>
+                    </h2>
                     <div className={styles.statList}>
                         <div className={styles.statRow}>
                             <span className={styles.statLabel}>
@@ -250,9 +250,9 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
 
                 {/* ── Widget 2: Plan info ── */}
                 <div className={styles.widget}>
-                    <h3 className={styles.widgetTitle}>
+                    <h2 className={styles.widgetTitle}>
                         {t('host.dashboard.widgets.plan', 'Tu suscripción')}
-                    </h3>
+                    </h2>
                     {data.planInfo ? (
                         <>
                             <p className={styles.planName}>{data.planInfo.name}</p>
@@ -298,9 +298,9 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
 
                 {/* ── Widget 3: Unread messages ── */}
                 <div className={styles.widget}>
-                    <h3 className={styles.widgetTitle}>
+                    <h2 className={styles.widgetTitle}>
                         {t('host.dashboard.widgets.messages', 'Mensajes')}
-                    </h3>
+                    </h2>
                     <p className={styles.messageCount}>
                         {data.unreadCount > 0 ? (
                             <>
@@ -329,9 +329,9 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
 
                 {/* ── Widget 4: Quick actions ── */}
                 <div className={styles.widget}>
-                    <h3 className={styles.widgetTitle}>
+                    <h2 className={styles.widgetTitle}>
                         {t('host.dashboard.widgets.quickActions', 'Acciones rápidas')}
-                    </h3>
+                    </h2>
                     <ul className={styles.quickActionList}>
                         {QUICK_ACTIONS.map((action) => {
                             const Icon = action.icon;
