@@ -2254,7 +2254,6 @@
         "account.json:pages.dashboard.nav.editProfile",
         "account.json:pages.dashboard.stats.compStatus",
         "account.json:pages.dashboard.stats.listingsDesc",
-        "account.json:pages.dashboard.viewLabel",
         "account.json:pages.editProfile.extrasSection",
         "account.json:pages.editProfile.locationSection",
         "account.json:pages.editProfile.socialSection",

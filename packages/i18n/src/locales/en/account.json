@@ -1004,7 +1004,6 @@
             "description": "Manage your account, favorites, reviews and preferences.",
             "greeting": "Welcome",
             "dashboardLabel": "Dashboard",
-            "viewLabel": "View",
             "nav": {
                 "editProfile": "Edit Profile",
                 "editProfileDesc": "Update your personal information and profile photo",
@@ -1058,7 +1057,13 @@
                 "listings": "My listings",
                 "listingsDesc": "Published listings",
                 "listingsHidden_one": "{{count}} listing not published: it is not visible to the public.",
-                "listingsHidden_other": "{{count}} listings not published: they are not visible to the public."
+                "listingsHidden_other": "{{count}} listings not published: they are not visible to the public.",
+                "viewProperties": "View my properties",
+                "viewMessages": "View unread messages",
+                "viewListings": "View my listings",
+                "viewFavorites": "View my favorites",
+                "viewReviews": "View my reviews",
+                "viewSubscription": "View my subscription"
             },
             "sectionsLabel": "Sections"
         },

@@ -177,9 +177,9 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
         >
             {/* Identity — admin-managed, display-only (never enters the payload) */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('account.provider.form.identitySection', 'Datos administrados por Hospeda')}
-                </h3>
+                </h2>
                 <p className={styles.hint}>
                     {t(
                         'account.provider.form.identityNote',
@@ -235,9 +235,9 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
 
             {/* Operational — applies immediately */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('account.provider.form.operationalSection', 'Contacto y disponibilidad')}
-                </h3>
+                </h2>
                 <p className={styles.hint}>
                     {t(
                         'account.provider.form.operationalNote',
@@ -301,9 +301,9 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
 
             {/* Benefit — goes to review, live benefit stays published meanwhile */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('account.provider.form.benefitSection', 'Beneficio para hosts')}
-                </h3>
+                </h2>
                 <p className={styles.hint}>
                     {t(
                         'account.provider.form.benefitNote',
