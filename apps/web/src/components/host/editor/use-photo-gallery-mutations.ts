@@ -15,7 +15,7 @@
 import { useCallback } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
-import { visibleApiMessage } from '@/lib/api-errors';
+import { translateApiError } from '@/lib/api-errors';
 import {
     buildReorderPayload,
     mediaRowToItem,
@@ -88,8 +88,14 @@ export function usePhotoGalleryMutations({
             setFeaturedItem(null);
         } else {
             setError(
-                visibleApiMessage({ error: result.error }) ??
-                    t('host.properties.editor.photo.removeFailed', 'No se pudo eliminar la imagen')
+                translateApiError({
+                    error: result.error,
+                    t,
+                    fallback: t(
+                        'host.properties.editor.photo.removeFailed',
+                        'No se pudo eliminar la imagen'
+                    )
+                })
             );
         }
         setOpLoading(false);
@@ -114,11 +120,14 @@ export function usePhotoGalleryMutations({
                 setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
             } else {
                 setError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.removeFailed',
                             'No se pudo eliminar la imagen'
                         )
+                    })
                 );
             }
             setOpLoading(false);
@@ -154,11 +163,14 @@ export function usePhotoGalleryMutations({
 
             if (!result.ok) {
                 reportUploadError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.promoteFailed',
                             'No se pudo usar esta foto como portada'
                         )
+                    })
                 );
                 setOpLoading(false);
                 return;
@@ -234,11 +246,14 @@ export function usePhotoGalleryMutations({
             } else {
                 setGalleryItems(previousGalleryItems);
                 reportUploadError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.reorderFailed',
                             'No se pudo guardar el nuevo orden'
                         )
+                    })
                 );
             }
             setOpLoading(false);
@@ -314,11 +329,14 @@ export function usePhotoGalleryMutations({
 
             if (!result.ok) {
                 reportUploadError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t(
                             'host.properties.editor.photo.metadataSaveFailed',
                             'No se pudieron guardar los datos de la foto'
                         )
+                    })
                 );
                 setOpLoading(false);
                 return false;

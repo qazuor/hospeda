@@ -11,6 +11,7 @@ import { type ApiErrorShape, translateApiError, visibleApiMessage } from '@/lib/
 import {
     type ActiveAddonInstance,
     type AddonSubscriptionTarget,
+    addonPlansPath,
     closedCopyKey,
     eligibleSubscriptionTargets,
     eligibleTargets,
@@ -23,24 +24,18 @@ import {
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
 import styles from './AddonPurchase.module.css';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
+import { type AddonPurchaseView, useAddonPurchaseBack } from './use-addon-purchase-back';
 import { useAddonPurchasePoll } from './use-addon-purchase-poll';
 
 type Offer = AddonOffersResponse['items'][number];
-type View =
-    | 'LOADING'
-    | 'OFFERS'
-    | 'TARGETS'
-    | 'SUBSCRIPTIONS'
-    | 'SUMMARY'
-    | 'PROCESSING'
-    | 'ACTIVE'
-    | 'CLOSED';
+type View = AddonPurchaseView;
 const PUBLISH_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
 /**
@@ -247,6 +242,21 @@ export function AddonPurchase(input: {
         setView('SUMMARY');
     };
 
+    const { backView, goBack } = useAddonPurchaseBack({
+        view,
+        target,
+        subscriptionTarget,
+        subscriptionTargetCount: subscriptionTargets.length,
+        busy,
+        setError,
+        setPurchasesPaused,
+        setOffer,
+        setTarget,
+        setSubscriptionTarget,
+        setOrderRequestId,
+        setView
+    });
+
     /** Known refusal codes and reasons get their localized copy; anything else keeps the API text. */
     const purchaseErrorMessage = (params: { readonly error: ApiErrorShape }): string => {
         const { error } = params;
@@ -346,6 +356,17 @@ export function AddonPurchase(input: {
                     {error}
                 </p>
             )}
+            {backView && (
+                <button
+                    type="button"
+                    className={styles.back}
+                    data-testid="addon-purchase-back"
+                    disabled={busy}
+                    onClick={goBack}
+                >
+                    {t('billing.addonPurchase.back')}
+                </button>
+            )}
             {view === 'LOADING' && <p>{t('billing.addonPurchase.loading')}</p>}
             {view === 'OFFERS' && (
                 <AddonOfferList
@@ -390,6 +411,12 @@ export function AddonPurchase(input: {
                         })
                     }
                     onSelect={selectSubscription}
+                    plansHref={buildUrl({
+                        locale: input.locale,
+                        path: addonPlansPath({
+                            compatibleVerticals: offer?.compatibleVerticals ?? []
+                        })
+                    })}
                     t={t}
                 />
             )}
