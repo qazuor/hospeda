@@ -544,11 +544,21 @@ remainder settlement»):
 | Answer | Why | Next |
 |---|---|---|
 | `REFUND_CALL_UNANSWERED` | A call of this refund was sent 24 hours ago or less (exactly 24 h included) | Use **Retry with Mercado Pago**: it may still post the call under its key |
+| `REFUND_RETRY_IN_PROGRESS` | A **Retry with Mercado Pago** of this refund (or another settlement) is running; its POST may be in flight | Wait for its answer, read it, then settle again only if it did not close the refund |
 | `OTHER_REFUND_CALL_UNANSWERED` | Another refund of the same payment has an unanswered call: the panel refund you cite could be that call's (HOS-2517) | Close that refund first |
 | `UNCITED_PROVIDER_REFUND_ON_CHARGE` | The charge shows a refund for a stale call's amount that nothing of ours records: the lost call may have landed | **Retry with Mercado Pago**, which binds it. Do not refund again |
 | `EXTERNAL_REFERENCE_ALREADY_SETTLED` | The reference is already another refund's panel reference or another call's provider refund | Check the reference; escalate if it is right |
 | `REMAINDER_NOT_FOUND_AT_PROVIDER` (422) | The charge read shows no `approved` refund with that reference for exactly that amount | Check the reference and the amount, or wait until Mercado Pago approves the panel refund |
 | `REMAINDER_AMOUNT_MISMATCH` (422) | The amount is not what is still owed; the message says what is | Use the amount in the message |
+
+**Detecting money the settlement could not count.** If a Mercado Pago answer for a call reaches
+us after this settlement answered it `SETTLED_EXTERNALLY` and names a refund id, that refund is
+money returned on top of the panel refund you recorded. We do not write it (the call keeps its
+`SETTLED_EXTERNALLY` answer), and it raises a Sentry alert: `UncountedRefundAnswerError`, reason
+`ANSWER_FOR_SETTLED_EXTERNALLY_CALL`, with `refundCallKey`, `refundId`, `providerRefundId` (the
+extra Mercado Pago refund) and `panelReference` (the one you cited). Treat it like 8.3: check both
+refunds in the panel, write nothing, and escalate on the Linear issue; recovering a double refund
+from the customer is a person's call.
 
 ## 9. Audit trail
 
