@@ -71,6 +71,23 @@ describe('hops help export', () => {
         expect(jobs).toEqual([]);
     });
 
+    it('points at hops --help when run with no subcommand, and exits 1', async () => {
+        const { runner, jobs } = fakeRunner();
+        const written: string[] = [];
+        const original = process.stderr.write.bind(process.stderr);
+        process.stderr.write = ((chunk: string) => {
+            written.push(String(chunk));
+            return true;
+        }) as typeof process.stderr.write;
+        try {
+            expect(await runHelp({ argv: [], deps: deps({ runner }) })).toBe(1);
+        } finally {
+            process.stderr.write = original;
+        }
+        expect(written.join('')).toContain('hops --help');
+        expect(jobs).toEqual([]);
+    });
+
     it('prints its help for --help and spawns nothing', async () => {
         const { runner, jobs } = fakeRunner();
 

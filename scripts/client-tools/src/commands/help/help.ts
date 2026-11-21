@@ -17,6 +17,8 @@ ${pc.bold('Uso')}
 
   hops help export --audience <a> --site-url <url> [--out <archivo>]
 
+  ${pc.dim('La lista de todos los comandos de hops es')} ${pc.bold('hops --help')}${pc.dim('.')}
+
   ${pc.dim('Arma UN documento Markdown con las guías de una audiencia, para folletos:')}
   ${pc.dim('las cinco secciones y los relacionados de cada guía, links absolutos bajo')}
   ${pc.dim('--site-url y cada tope de plan escrito como «según tu plan».')}
@@ -115,9 +117,16 @@ export async function runHelp({
     const { name: worktreeName, rest } = extractWorktreeFlag({ argv: afterTarget });
     const [subcommand, ...subArgv] = rest;
 
-    if (subcommand === undefined || subcommand === '--help' || subcommand === '-h') {
+    if (subcommand === undefined) {
+        process.stderr.write(
+            `${pc.yellow('hops help necesita un subcomando.')} ${pc.dim('¿Buscabas la lista de comandos? Es')} ${pc.bold('hops --help')}${pc.dim('.')}\n`
+        );
         process.stdout.write(renderHelp());
-        return subcommand === undefined ? 1 : 0;
+        return 1;
+    }
+    if (subcommand === '--help' || subcommand === '-h') {
+        process.stdout.write(renderHelp());
+        return 0;
     }
     if (!SUBCOMMANDS.includes(subcommand as (typeof SUBCOMMANDS)[number])) {
         process.stderr.write(
