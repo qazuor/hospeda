@@ -23,7 +23,27 @@ const { t, tPlural } = createTranslations(lang as SupportedLocale);
 const stayMin = policies.minNights ?? null;
 const stayMax = policies.maxNights ?? null;
 if (!extraInfo && stayMin === null && stayMax === null) return;
+
+const compactFacts = [
+  extraInfo?.capacity != null && tPlural('accommodations.detail.quickFacts.guests', extraInfo.capacity),
+  extraInfo?.bedrooms != null && tPlural('accommodations.detail.quickFacts.compactBedrooms', extraInfo.bedrooms),
+  extraInfo?.beds != null && tPlural('accommodations.detail.quickFacts.compactBeds', extraInfo.beds),
+  extraInfo?.bathrooms != null && tPlural('accommodations.detail.quickFacts.compactBathrooms', extraInfo.bathrooms),
+  stayMin !== null && `${t('accommodations.detail.quickFacts.minNights')}: ${stayMin}`,
+  stayMax !== null && `${t('accommodations.detail.quickFacts.maxNights')}: ${stayMax}`
+].filter(Boolean);
 ---
+
+{compactFacts.length > 0 && (
+  <div
+    class="quick-facts__compact"
+    tabindex="0"
+    role="group"
+    aria-label={t('accommodations.detail.quickFacts.scrollLabel')}
+  >
+    {compactFacts.join(' · ')}
+  </div>
+)}
 
 <div class="quick-facts">
   {extraInfo?.capacity != null && (
@@ -113,5 +133,27 @@ if (!extraInfo && stayMin === null && stayMax === null) return;
     font-family: var(--font-sans);
     font-size: 0.75rem;
     color: var(--core-muted-foreground);
+  }
+
+  .quick-facts__compact {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .quick-facts {
+      display: none;
+    }
+    .quick-facts__compact {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--core-muted-foreground);
+    }
+    .quick-facts__compact:focus-visible {
+      outline: 2px solid var(--brand-primary);
+      outline-offset: -2px;
+    }
   }
 </style>
