@@ -29,6 +29,7 @@
 }
 
 .shift {
+    max-width: 100%;
     display: inline-flex;
     flex-direction: column;
     gap: var(--space-1, 0.25rem);
@@ -37,6 +38,8 @@
 /* The two time inputs plus the remove control, on one line. */
 .shiftRow {
     display: inline-flex;
+    flex-wrap: wrap;
+    max-width: 100%;
     align-items: center;
     gap: var(--space-2);
 }
