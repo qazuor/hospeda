@@ -44,25 +44,31 @@ describe('SwitchRow', () => {
         expect(control.getAttribute('aria-describedby')).toBeTruthy();
     });
 
-    it('is disabled and busy while saving', async () => {
+    it('stays focusable, busy and inert while saving', async () => {
         const user = userEvent.setup();
         let finish: () => void = () => {};
+        const onChange = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
         render(
             <SwitchRow
                 label="Avisos"
                 locale="es"
                 checked={false}
-                onChange={() => new Promise<void>((resolve) => (finish = resolve))}
+                onChange={onChange}
             />
         );
         const control = screen.getByRole('switch');
         await user.click(control);
-        expect(control).toBeDisabled();
+        expect(control).not.toBeDisabled();
+        expect(control).toHaveFocus();
         expect(control).toHaveAttribute('aria-busy', 'true');
+        expect(control).toHaveAttribute('aria-disabled', 'true');
         expect(control).toHaveAttribute('aria-checked', 'true');
+        // A second activation while busy is ignored
+        await user.keyboard(' ');
+        expect(onChange).toHaveBeenCalledTimes(1);
         finish();
-        await waitFor(() => expect(control).not.toBeDisabled());
-        expect(control).not.toHaveAttribute('aria-busy');
+        await waitFor(() => expect(control).not.toHaveAttribute('aria-busy'));
+        expect(control).toHaveFocus();
     });
 
     it('reverts to the previous value and shows a translated error when the save fails', async () => {

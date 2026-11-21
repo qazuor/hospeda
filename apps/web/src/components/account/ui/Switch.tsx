@@ -7,8 +7,8 @@
  * off track uses `control-border` (at least 3:1 on the card).
  *
  * `SwitchRow` is a 64px row with a label and a description. It runs the save
- * itself and saves optimistically: while the promise is pending the switch is
- * disabled and `aria-busy`; if it rejects the switch REVERTS to the previous
+ * itself and saves optimistically: while the promise is pending the switch stays
+ * focusable, is `aria-busy` and ignores activation; if it rejects the switch REVERTS to the previous
  * value and shows a translated error. `locked` shows a plan pill and a link to
  * the locked state, and the switch stays off and disabled. Every
  * `aria-describedby` id points at a node that exists.
@@ -36,7 +36,7 @@ export type SwitchProps = SwitchNameProps & {
     readonly onCheckedChange: (checked: boolean) => void;
     /** Native disabled. */
     readonly disabled?: boolean;
-    /** Marks the switch busy (an in-flight save). */
+    /** Marks the switch busy (an in-flight save): focusable, `aria-busy`, activation ignored. */
     readonly busy?: boolean;
     /** Ids of the nodes that describe the switch. They must exist. */
     readonly 'aria-describedby'?: string;
@@ -71,9 +71,15 @@ export function Switch({
             role="switch"
             aria-checked={checked}
             aria-busy={busy || undefined}
+            aria-disabled={busy || undefined}
             disabled={disabled}
             className={cx(styles.switch, className)}
-            onClick={() => onCheckedChange(!checked)}
+            onClick={() => {
+                // Busy keeps focus on the control (no native `disabled`) and just
+                // ignores the activation, like Button's `loading`.
+                if (busy) return;
+                onCheckedChange(!checked);
+            }}
         >
             <span
                 className={styles.thumb}
@@ -204,7 +210,7 @@ export function SwitchRow({
                 aria-describedby={describedBy}
                 checked={locked ? false : value}
                 busy={saving}
-                disabled={Boolean(locked) || disabled || saving}
+                disabled={Boolean(locked) || disabled}
                 onCheckedChange={handleChange}
             />
         </div>
