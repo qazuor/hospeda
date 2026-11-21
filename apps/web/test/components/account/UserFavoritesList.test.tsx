@@ -948,6 +948,42 @@ describe('UserFavoritesList', () => {
         expect(noCollectionHeadings.length).toBeGreaterThan(0);
     });
 
+    // ── HOS-2420: "Sin colección" must cover every page, not the visible one ──
+
+    it('asks the server for uncollected bookmarks so the filter covers all pages (HOS-2420)', async () => {
+        // 30 favorites in total, page 1 holds only collected ones: the old
+        // client-side filter would have shown an EMPTY "Sin colección".
+        const uncollectedOnPage2 = {
+            ...BOOKMARK_1,
+            id: 'bm-late',
+            name: 'Favorito sin colección tardío',
+            entityName: 'Favorito sin colección tardío'
+        };
+        const fetchMock = makeRoutedFetchMock({
+            bookmarksHandler: (url) => {
+                const params = new URL(url).searchParams;
+                if (params.get('pageSize') === '1') return makeListResponse([], 30);
+                // A server honoring `uncollected=true` returns only those, paginated.
+                return params.get('uncollected') === 'true'
+                    ? makeListResponse([uncollectedOnPage2], 1)
+                    : makeListResponse([COLLECTED_BOOKMARK], 30);
+            }
+        });
+        globalThis.fetch = fetchMock;
+        renderList();
+
+        expect(await screen.findByText('Favorito sin colección tardío')).toBeInTheDocument();
+        const listCalls = fetchMock.mock.calls
+            .map(([url]: [string]) => new URL(url))
+            .filter(
+                (u: URL) =>
+                    u.pathname.endsWith('/user-bookmarks') &&
+                    u.searchParams.get('pageSize') === '12'
+            );
+        expect(listCalls.length).toBeGreaterThan(0);
+        for (const u of listCalls) expect(u.searchParams.get('uncollected')).toBe('true');
+    });
+
     // ── T-049d: Inline note editor integration ────────────────────────────────
 
     it('renders note placeholder on each bookmark card when description is null', async () => {

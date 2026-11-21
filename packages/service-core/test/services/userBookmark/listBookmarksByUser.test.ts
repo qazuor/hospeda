@@ -57,6 +57,35 @@ describe('UserBookmarkService.listBookmarksByUser', () => {
         expect(result.data?.bookmarks?.[0]?.id).toBe(bookmark.id);
     });
 
+    it('filters collectionId IS NULL before pagination when uncollected is set (HOS-2420)', async () => {
+        asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
+        await service.listBookmarksByUser(actor, {
+            page: 2,
+            pageSize: 12,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            userId: bookmark.userId,
+            uncollected: true
+        });
+        expect(modelMock.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: bookmark.userId, collectionId: null }),
+            { page: 2, pageSize: 12 }
+        );
+    });
+
+    it('does not filter by collection when uncollected is omitted', async () => {
+        asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
+        await service.listBookmarksByUser(actor, {
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            userId: bookmark.userId
+        });
+        const filter = asMock(modelMock.findAll).mock.calls[0]?.[0] as Record<string, unknown>;
+        expect('collectionId' in filter).toBe(false);
+    });
+
     it('should return FORBIDDEN if actor is not the owner', async () => {
         asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
         const otherActor = createActor({ id: 'other-id' });

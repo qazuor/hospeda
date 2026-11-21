@@ -295,6 +295,10 @@ export class UserBookmarkService extends BaseCrudService<
                 if (validated.entityType) {
                     filter.entityType = validated.entityType;
                 }
+                if (validated.uncollected) {
+                    // null → `collection_id IS NULL`, applied before pagination (HOS-2420)
+                    filter.collectionId = null;
+                }
                 const { items, total } = await this.model.findAll(filter, { page, pageSize });
                 const enriched = await enrichBookmarksWithEntityInfo(items, ctx?.tx);
                 return { bookmarks: enriched, total };

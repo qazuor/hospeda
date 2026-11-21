@@ -23,6 +23,8 @@ export const listUserBookmarksRoute = createProtectedRoute({
     tags: ['User Bookmarks'],
     requestQuery: {
         entityType: z.nativeEnum(EntityTypeEnum).optional(),
+        /** `true` returns only bookmarks without a collection (HOS-2420). */
+        uncollected: z.enum(['true', 'false']).optional(),
         page: z.coerce.number().int().min(1).default(1),
         pageSize: z.coerce.number().int().min(1).max(100).default(10)
     },
@@ -54,7 +56,8 @@ export const listUserBookmarksRoute = createProtectedRoute({
             userId: actor.id,
             page,
             pageSize,
-            ...(entityType ? { entityType } : {})
+            ...(entityType ? { entityType } : {}),
+            ...(query?.uncollected === 'true' ? { uncollected: true } : {})
         });
 
         if (result.error) {
