@@ -51,7 +51,9 @@ export async function resolveEditorPage({
 
     if (!astro.locals.user) {
         return {
-            redirect: astro.redirect(buildLoginRedirect({ locale, currentUrl: astro.url.pathname }))
+            redirect: astro.redirect(
+                buildLoginRedirect({ locale, currentUrl: astro.url.pathname + astro.url.search })
+            )
         };
     }
 

@@ -45,7 +45,7 @@ covers:
   - "page:planes/experiencias"
   - "file:apps/web/src/components/account/PlanChangeOffer.client.tsx"
 entryFor: []
-reviewedAt: "2026-11-20"
+reviewedAt: "2026-11-21"
 ---
 
 ## Qué podés hacer

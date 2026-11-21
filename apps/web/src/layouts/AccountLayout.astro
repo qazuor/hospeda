@@ -203,7 +203,7 @@ const activeLabel = resolveActiveLabel();
 				</button>
 
 				<!-- Sidebar navigation -->
-				<aside id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
+				<aside id="account-nav" class="account-page__sidebar" aria-label={t('account.navigation')}>
 				<nav class="account-nav">
 					{navGroups.map((group) => {
 						const suppressHeader = group.suppressHeaderWhenSingle && group.items.length === 1;

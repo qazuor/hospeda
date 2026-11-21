@@ -28,8 +28,8 @@ import {
 } from '@/lib/help/help-catalog';
 import { helpArticlePath, helpDestinationPath } from '@/lib/help/help-tokens';
 import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 
 /** Longest `?q=` the landing searches; anything longer is cut. */
 const MAX_QUERY_LENGTH = 200;
@@ -38,7 +38,9 @@ const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
 
 if (!user) {
-	return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+	return Astro.redirect(
+		buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }),
+	);
 }
 
 const { t } = createTranslations(locale);

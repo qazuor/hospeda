@@ -16,6 +16,8 @@ import { useCallback } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
+import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
+import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import {
     buildReorderPayload,
     mediaRowToItem,
@@ -70,12 +72,16 @@ export function usePhotoGalleryMutations({
     setOpLoading,
     reportUploadError
 }: UsePhotoGalleryMutationsParams): UsePhotoGalleryMutationsResult {
+    const runSingleFlight = useSingleFlight();
+
     /**
      * Delete the current featured (portada) row.
      * There is no "unfeature" endpoint — removing is the clear action.
      */
     const handleFeaturedRemove = useCallback(async () => {
         if (!featuredItem?.id) return;
+        // HOS-2429: the delete is immediate and irreversible, so ask first.
+        if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) return;
         setError(null);
         setOpLoading(true);
 
@@ -99,7 +105,15 @@ export function usePhotoGalleryMutations({
             );
         }
         setOpLoading(false);
-    }, [featuredItem, accommodationId, t, setError, setOpLoading, setFeaturedItem]);
+    }, [
+        featuredItem,
+        accommodationId,
+        t,
+        setError,
+        setOpLoading,
+        setFeaturedItem,
+        runSingleFlight
+    ]);
 
     /**
      * Delete a gallery photo by its DB UUID.
@@ -108,6 +122,8 @@ export function usePhotoGalleryMutations({
     const handleGalleryRemove = useCallback(
         async (item: AccommodationMediaItem) => {
             if (!item.id) return;
+            // HOS-2429: the delete is immediate and irreversible, so ask first.
+            if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) return;
             setError(null);
             setOpLoading(true);
 
@@ -132,7 +148,7 @@ export function usePhotoGalleryMutations({
             }
             setOpLoading(false);
         },
-        [accommodationId, t, setError, setOpLoading, setGalleryItems]
+        [accommodationId, t, setError, setOpLoading, setGalleryItems, runSingleFlight]
     );
 
     /**

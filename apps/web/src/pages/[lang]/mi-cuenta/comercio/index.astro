@@ -47,6 +47,7 @@ import {
 } from '@/lib/listing/vertical-usage';
 import { UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { shouldAnchorMenuQrTour } from '@/lib/venue/menu-qr-tour-anchor';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
 import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
@@ -62,7 +63,7 @@ const { t, tPlural } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 // Role gate: only venue/experience owners (and staff) may manage listings.

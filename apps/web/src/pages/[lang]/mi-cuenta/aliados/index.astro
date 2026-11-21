@@ -36,6 +36,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolvePartnerTrafficId } from '@/lib/partner-stats-cards';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getAdminUrl } from '@/lib/env';
 import { isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
 
@@ -46,7 +47,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const door = ACCOUNT_DISCOVERY_DOORS.find((candidate) => candidate.id === 'partner');

@@ -45,6 +45,8 @@ import { type ListingMediaRow, listingMediaApi } from '@/lib/api/endpoints-prote
 import type { ApiError } from '@/lib/api/types';
 import { visibleApiMessage } from '@/lib/api-errors';
 import { getApiUrl } from '@/lib/env';
+import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
+import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
@@ -459,8 +461,13 @@ export function MediaSection({
      * removing is the clear action. `removeMedia` deletes the Cloudinary
      * binary server-side before dropping the row.
      */
+    const runSingleFlight = useSingleFlight();
     const handleFeaturedRemove = useCallback(async () => {
         if (!featuredItem?.id) {
+            return;
+        }
+        // HOS-2429: the delete is immediate and irreversible, so ask first.
+        if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) {
             return;
         }
         setError(null);
@@ -481,7 +488,7 @@ export function MediaSection({
             );
         }
         setOpLoading(false);
-    }, [featuredItem, vertical, listingId, t, reportError]);
+    }, [featuredItem, vertical, listingId, t, reportError, runSingleFlight]);
 
     // --- Gallery handlers ---
 
@@ -627,6 +634,10 @@ export function MediaSection({
             if (!item.id) {
                 return;
             }
+            // HOS-2429: the delete is immediate and irreversible, so ask first.
+            if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) {
+                return;
+            }
             setError(null);
             setOpLoading(true);
 
@@ -646,7 +657,7 @@ export function MediaSection({
             }
             setOpLoading(false);
         },
-        [vertical, listingId, t, reportError]
+        [vertical, listingId, t, reportError, runSingleFlight]
     );
 
     /**

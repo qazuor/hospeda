@@ -4,6 +4,12 @@ import { usePhotoGalleryMutations } from '@/components/host/editor/use-photo-gal
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import { createTranslations } from '@/lib/i18n';
 
+// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
+// `show-confirmation-dialog.test.tsx`; here the user always confirms.
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: vi.fn().mockResolvedValue(true)
+}));
+
 const { removeMediaMock } = vi.hoisted(() => ({ removeMediaMock: vi.fn() }));
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationMediaApi: { removeMedia: removeMediaMock }

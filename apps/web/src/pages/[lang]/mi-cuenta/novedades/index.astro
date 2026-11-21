@@ -9,6 +9,7 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { WhatsNewPageList } from '@/components/account/WhatsNewPageList.client';
@@ -19,7 +20,7 @@ const locale = (Astro.locals.locale ?? (Astro.params.lang as SupportedLocale | u
 const user = Astro.locals.user;
 
 if (!user) {
-    return Astro.redirect(`/${locale}/auth/signin`);
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
 const { t } = createTranslations(locale);
@@ -41,6 +42,34 @@ const description = t('account.pages.whatsNew.desc', 'Novedades y actualizacione
 <style>
     :global(.whats-new-page) {
         max-width: 720px;
+    }
+
+    :global(.whats-new-page__more) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-4) 0;
+    }
+
+    :global(.whats-new-page__count) {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: var(--core-muted-foreground);
+    }
+
+    :global(.whats-new-page__more-btn) {
+        padding: var(--space-2) var(--space-4);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button);
+        background-color: var(--core-card);
+        color: var(--brand-primary);
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+    :global(.whats-new-page__more-btn:hover) {
+        background-color: var(--muted);
     }
 
     :global(.whats-new-page__error) {

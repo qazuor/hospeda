@@ -1,5 +1,5 @@
 {
-  "contentHash": "41a689a5255b681a3275975d5940ced028704a43462512d1a9009cb67ce7efec",
+  "contentHash": "d290ee5a6ecf553f2f70956760eed010f5a442abbe5cb05fce80f20953109159",
   "locales": {
     "es": [
       {
@@ -41,7 +41,7 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Comprar complementos}}.",
           "expect": "- El resumen muestra el importe y la frecuencia antes de confirmar.\n- Si tu beneficio incluye el complemento, aparece «Gratis por tu beneficio».\n- Dar de baja un destaque recurrente corta el cobro y lo apaga ese mismo día.",
@@ -112,7 +112,7 @@
           "amenities",
           "help-center"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
           "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.",
@@ -262,7 +262,7 @@
           "provider-directory",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Registrar un uso desde el proveedor en el {{link:providerDirectory|directorio}} y responder los que te registran en {{link:benefitUsages|Usos del beneficio}}.",
           "expect": "- Un uso queda pendiente hasta que la otra parte lo confirma, y solo cuenta cuando está confirmado.\n- Un rechazo se puede deshacer.\n- El historial se filtra por pendientes, confirmados, rechazados o vencidos.",
@@ -476,7 +476,7 @@
           "publish-requirements",
           "calendar"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
           "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",
@@ -849,7 +849,7 @@
           "ai-assistants",
           "calendar"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Leer y responder las conversaciones de tus alojamientos en {{link:inquiries|Mensajes de huéspedes}}.",
           "expect": "- Las conversaciones con mensajes sin leer tienen una marca.\n- Un asistente redacta la respuesta y te la muestra antes de enviarla (mirá {{article:ai-assistants|cómo conectarlo}}).",
@@ -1072,7 +1072,7 @@
           "benefit-usage",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Buscar proveedores locales de confianza y ver su beneficio para anfitriones en {{link:providerDirectory|Directorio de proveedores}}.",
           "expect": "- Necesitás tener alojamientos registrados para ver el directorio.\n- Cada proveedor muestra su beneficio, su horario y las valoraciones de otros anfitriones.\n- Después de usar un servicio, {{article:benefit-usage|registrás el uso del beneficio}}.",

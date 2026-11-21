@@ -31,8 +31,15 @@ import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { MediaSectionProps } from '../../../../src/components/listing/editor/MediaSection.client';
 import { MediaSection } from '../../../../src/components/listing/editor/MediaSection.client';
+
+// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
+// `show-confirmation-dialog.test.tsx`; here the user always confirms.
+vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: vi.fn().mockResolvedValue(true)
+}));
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)
@@ -344,6 +351,23 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     });
 
     // ── Removing a gallery photo ───────────────────────────────────────
+
+    describe('removing a photo asks first (HOS-2429)', () => {
+        it('deletes nothing when the user cancels the confirmation', async () => {
+            vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
+            mockRemoveMedia.mockReturnValue(makeRemoveOk());
+
+            render(<MediaSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
+
+            fireEvent.click(screen.getAllByLabelText('Eliminar')[0] as HTMLElement);
+
+            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
+            expect(mockRemoveMedia).not.toHaveBeenCalled();
+            expect(screen.getAllByRole('img')).toHaveLength(2);
+        });
+    });
 
     describe('removing a gallery photo', () => {
         it('calls removeMedia immediately and does NOT fire a client-side Cloudinary delete (the server does it)', async () => {

@@ -189,7 +189,22 @@
                 "whatToBringHint": "One item per line. What the person signing up has to bring.",
                 "requirements": "Requirements",
                 "requirementsPlaceholder": "Minimum age 12\nMust know how to swim\nNot suitable during pregnancy",
-                "requirementsHint": "One requirement per line. Age, fitness, health — whatever it takes to join in."
+                "requirementsHint": "One requirement per line. Age, fitness, health — whatever it takes to join in.",
+                "openingHoursDays": {
+                    "mon": "Mon",
+                    "tue": "Tue",
+                    "wed": "Wed",
+                    "thu": "Thu",
+                    "fri": "Fri",
+                    "sat": "Sat",
+                    "sun": "Sun"
+                },
+                "openingHoursClosed": "Closed",
+                "openingHoursClosedAria": "{{day}} closed",
+                "openingHoursOpenAria": "{{day}} opening time {{index}}",
+                "openingHoursCloseAria": "{{day}} closing time {{index}}",
+                "openingHoursRemoveShiftAria": "Remove shift {{day}} {{index}}",
+                "openingHoursAddShiftAria": "Add shift {{day}}"
             },
             "contactField": {
                 "mobilePhone": "Phone",

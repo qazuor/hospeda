@@ -19,6 +19,7 @@
 
 import type { AstroGlobal } from 'astro';
 import type { DestinationOption } from '@/components/listing/destination-option';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { AmenityData } from '@/lib/api/types';
@@ -40,6 +41,7 @@ import {
     type ListingDetail,
     type VenueOrExperience
 } from '@/lib/listing/owner-listings';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasListingNavAccess } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
 
@@ -98,7 +100,11 @@ export async function resolveListingEditorPage({
 
     const user = astro.locals.user;
     if (!user) {
-        return { redirect: astro.redirect(buildUrl({ locale, path: 'auth/signin' })) };
+        return {
+            redirect: astro.redirect(
+                buildLoginRedirect({ locale, currentUrl: astro.url.pathname + astro.url.search })
+            )
+        };
     }
 
     // HOS-296: gate through the shared `nav-gating` predicate over the role SET,
@@ -110,7 +116,9 @@ export async function resolveListingEditorPage({
     const verticalParam = astro.params.vertical;
     const listingId = astro.params.id;
     if (!isListingEditorVertical(verticalParam) || !listingId) {
-        return { redirect: new Response(null, { status: 404 }) };
+        return {
+            redirect: await astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'listings' }))
+        };
     }
     const vertical = verticalParam;
 

@@ -75,7 +75,7 @@ function pageSource(anchor: string): string | undefined {
 describe('help landing (web-ui §2)', () => {
     it('redirects a guest to sign-in and reads no other per-user value (D-H4)', () => {
         expect(LANDING).toMatch(
-            /if \(!user\) \{\s*return Astro\.redirect\(buildUrl\(\{ locale, path: 'auth\/signin' \}\)\);/
+            /if \(!user\) \{\s*return Astro\.redirect\(\s*buildLoginRedirect\(\{ locale, currentUrl: Astro\.url\.pathname \+ Astro\.url\.search \}\),?\s*\);/
         );
         expect(LANDING).not.toMatch(/user\.[a-zA-Z]/);
     });
