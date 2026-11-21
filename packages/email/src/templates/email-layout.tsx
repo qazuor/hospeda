@@ -30,17 +30,15 @@ export const EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar';
  */
 export const EMAIL_LOGO_URL = `${EMAIL_PUBLIC_SITE_URL}/email/hospeda-logo@2x.png`;
 
-/** Rendered logo width in CSS pixels (the asset is 2x: 280px wide). */
-export const EMAIL_LOGO_WIDTH = 140;
+/** Rendered logo width in CSS pixels (the asset is 2x: 360x108). */
+export const EMAIL_LOGO_WIDTH = 180;
 
 /**
- * Rendered logo height in CSS pixels.
- *
- * ASSUMPTION until the owner supplies the PNG: a horizontal lockup with a 7:2
- * aspect ratio (a 280x80 @2x asset). When the real file arrives, set this to
- * `round(140 * assetHeight / assetWidth)`.
+ * Rendered logo height in CSS pixels. Keep it at
+ * `EMAIL_LOGO_WIDTH * assetHeight / assetWidth` (10:3 for the current asset),
+ * since Outlook desktop honours the `height` attribute and would distort it.
  */
-export const EMAIL_LOGO_HEIGHT = 40;
+export const EMAIL_LOGO_HEIGHT = 54;
 
 /** Absolute URL of the logged-in notification preferences page (HOS-2519 OQ-2). */
 export const EMAIL_PREFERENCES_URL = `${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/preferencias/`;
