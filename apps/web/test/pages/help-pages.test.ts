@@ -8,11 +8,17 @@
  * `test/lib/help/*` and the islands in `test/components/account/help/*`.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
 import { HELP_INDEX } from '@repo/help';
+import {
+    EDITOR_NON_SECTION_PAGE_SLUGS,
+    EDITOR_SECTION_SLUGS,
+    EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
+    PORTAL_ROUTE_TEMPLATES
+} from '@repo/portal-routes';
 import { describe, expect, it } from 'vitest';
-import { pageHelpAnchor } from '../../src/lib/help/help-entry';
+import { findHelpEntry, pageHelpAnchor } from '../../src/lib/help/help-entry';
 
 const SRC = resolve(__dirname, '../../src');
 const PAGES = resolve(SRC, 'pages/[lang]');
@@ -23,6 +29,36 @@ const ARTICLE = read('pages/[lang]/mi-cuenta/ayuda/[id].astro');
 const HEADER = read('components/account/AccountPageHeader.astro');
 const SHELL = read('layouts/EditorShellLayout.astro');
 const HELP_LINK = read('components/account/help/HelpLink.astro');
+const LAYOUT = read('layouts/AccountLayout.astro');
+const HELP_ROW = read('components/account/help/PageHelpRow.astro');
+
+/** What gives a page its «?»: the header, an editor layout, the account layout's row, or the row itself. */
+const HELP_PATH =
+    /<AccountPageHeader\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b|<AccountLayout\b|<PageHelpRow\b/;
+
+/**
+ * Account pages with no user surface: they redirect before rendering, so they
+ * need no «?» (web-ui §6, `comercio/nuevo` is a 301 to /publicar).
+ */
+const REDIRECT_ONLY_PAGES = ['comercio/nuevo/[vertical].astro', 'comercio/nuevo/index.astro'];
+
+/** Every `.astro` page under `/mi-cuenta`, relative to that folder. */
+function accountPages(): string[] {
+    const root = resolve(PAGES, 'mi-cuenta');
+    const walk = (dir: string): string[] =>
+        readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+            const path = resolve(dir, entry.name);
+            if (entry.isDirectory()) return walk(path);
+            return entry.name.endsWith('.astro') ? [relative(root, path)] : [];
+        });
+    return walk(root).sort();
+}
+
+/** The `Astro.routePattern` of a page file under `/mi-cuenta`. */
+function routePatternOf(file: string): string {
+    const route = file.replace(/\.astro$/, '').replace(/(^|\/)index$/, '');
+    return `/[lang]/mi-cuenta${route === '' ? '' : `/${route}`}`;
+}
 
 /** The source of the page a `page:mi-cuenta/...` anchor names. */
 function pageSource(anchor: string): string | undefined {
@@ -104,19 +140,82 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
     });
 
     it.each(
-        HELP_INDEX.locales.es
-            .flatMap((article) => article.entryFor)
-            .filter((anchor) => anchor.startsWith('page:mi-cuenta'))
-    )('the page claimed by %s renders the header that carries the «?»', (anchor) => {
+        HELP_INDEX.locales.es.flatMap((article) =>
+            article.entryFor
+                .filter((anchor) => anchor.startsWith('page:mi-cuenta'))
+                .map((anchor) => [anchor, article.id] as const)
+        )
+    )('%s resolves to a «?» that opens %s (web-ui §8)', (anchor, id) => {
         // Arrange
         const source = pageSource(anchor);
+        const file = accountPages().find(
+            (page) => pageHelpAnchor({ routePattern: routePatternOf(page) }) === anchor
+        );
+
+        // Assert: the page exists, has a «?» path, derives this anchor, and it finds the article
+        expect(source, `${anchor} names no page`).toBeDefined();
+        expect(source).toMatch(HELP_PATH);
+        expect(source).not.toMatch(/helpAnchor=\{null\}/);
+        expect(file, `no page derives ${anchor}`).toBeDefined();
+        expect(findHelpEntry({ anchor, locale: 'es' })?.id).toBe(id);
+    });
+
+    it.each(
+        HELP_INDEX.locales.es.flatMap((article) =>
+            article.entryFor.filter((anchor) => anchor.startsWith('section:'))
+        )
+    )('%s names a real editor slug of its vertical, with a page', (anchor) => {
+        // Arrange
+        const [vertical = '', slug = ''] = anchor.replace(/^section:/, '').split('.');
+        const slugs = [
+            ...Object.values(
+                EDITOR_SECTION_SLUGS[vertical as keyof typeof EDITOR_SECTION_SLUGS] ?? {}
+            ),
+            ...Object.values(
+                EDITOR_NON_SECTION_PAGE_SLUGS[
+                    vertical as keyof typeof EDITOR_NON_SECTION_PAGE_SLUGS
+                ] ?? {}
+            )
+        ];
+        const templateKey =
+            EDITOR_SECTION_TEMPLATE_BY_VERTICAL[
+                vertical as keyof typeof EDITOR_SECTION_TEMPLATE_BY_VERTICAL
+            ];
+        const template = templateKey === undefined ? '' : PORTAL_ROUTE_TEMPLATES[templateKey];
+        const page = template.replace('[section]', slug);
 
         // Assert
-        expect(source, `${anchor} names no page`).toBeDefined();
-        expect(source).toMatch(
-            /<AccountPageHeader\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/
+        expect(slugs, `${anchor}: no such slug in ${vertical}`).toContain(slug);
+        expect(
+            existsSync(resolve(PAGES, `${page}.astro`)) ||
+                existsSync(resolve(PAGES, page, 'index.astro')),
+            `${anchor}: no page at ${page}`
+        ).toBe(true);
+        expect(findHelpEntry({ anchor, locale: 'es' })).toBeDefined();
+    });
+
+    it('every /mi-cuenta page has a «?» path, except the redirect-only ones', () => {
+        // Act
+        const missing = accountPages().filter(
+            (page) =>
+                !REDIRECT_ONLY_PAGES.includes(page) &&
+                !HELP_PATH.test(readFileSync(resolve(PAGES, 'mi-cuenta', page), 'utf8'))
         );
-        expect(source).not.toMatch(/helpAnchor=\{null\}/);
+
+        // Assert
+        expect(missing).toEqual([]);
+        for (const page of REDIRECT_ONLY_PAGES) {
+            expect(readFileSync(resolve(PAGES, 'mi-cuenta', page), 'utf8')).toContain('redirect(');
+        }
+    });
+
+    it('the account layout renders the page row, hidden next to a header', () => {
+        expect(LAYOUT).toContain('<PageHelpRow locale={locale} fallback />');
+        expect(LAYOUT).toContain(
+            '.account-page__content:has([data-account-page-header]) > [data-help-fallback]'
+        );
+        expect(HEADER).toContain('data-account-page-header');
+        expect(HELP_ROW).toContain('pageHelpAnchor({ routePattern: Astro.routePattern })');
     });
 
     it('claims outside /mi-cuenta get no «?» from the account header (AC-21)', () => {
