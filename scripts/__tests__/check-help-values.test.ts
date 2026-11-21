@@ -158,7 +158,14 @@ describe('valueFindings (AC-33)', () => {
         ['un máximo de 3', ['d3']],
         ['mínimo 2', ['d3']],
         ['20 publicaciones activas', ['d3']],
-        ['subí 4 de tus fotos', ['d3']]
+        ['subí 4 de tus fotos', ['d3']],
+        ['Cuesta 15USD', ['d1']],
+        ['USD15', ['d1']],
+        ['ARS15000 por mes', ['d1', 'd3']],
+        ['15pesos', ['d1']],
+        ['10 US$', ['d1']],
+        ['durante 3 meses', ['d3']],
+        ['cargá 20fotos', ['d3']]
     ])('"%s" fires %j', (text, expected) => {
         expect(firedBy(text)).toEqual(expected);
     });
@@ -172,7 +179,9 @@ describe('valueFindings (AC-33)', () => {
         'el año 2026 trae novedades',
         'Subí {{limit:max_photos_per_accommodation}} fotos',
         'Mirá {{link:plans:venue|el plan Premium a $ 15.000}}',
-        'subí 4 de tus mejores fotos'
+        'subí 4 de tus mejores fotos',
+        'el formato MP3',
+        'los marsupiales 15'
     ])('"%s" passes', (text) => {
         expect(firedBy(text)).toEqual([]);
     });

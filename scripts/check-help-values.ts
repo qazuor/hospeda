@@ -79,6 +79,7 @@ export const LIMIT_NOUNS = [
     'consulta',
     'consultas',
     'mes',
+    'meses',
     'dia',
     'dias'
 ] as const;
@@ -130,8 +131,12 @@ const TOKEN = /\{\{[^}]*\}\}/g;
 /** A number: digits with optional `.`/`,` groups. */
 const NUMBER = String.raw`\d+(?:[.,]\d+)*`;
 
-/** A currency marker, folded. `u$s` comes before `$` so it is matched whole. */
-const CURRENCY = String.raw`(?:u\$s|\$|(?<![a-z0-9])(?:ars|usd|pesos?|dolar(?:es)?)(?![a-z0-9]))`;
+/**
+ * A currency marker, folded. `u$s` and `us$` come before `$` so they are matched
+ * whole. The word markers are bounded by letters only, so a marker glued to its
+ * number (`15usd`, `usd15`, `15pesos`) still matches.
+ */
+const CURRENCY = String.raw`(?:(?<![a-z])(?:u\$s|us\$)|\$|(?<![a-z])(?:ars|usd|pesos?|dolar(?:es)?)(?![a-z]))`;
 
 /** d1: a number on either side of a currency marker. */
 const CURRENCY_NEAR_NUMBER = new RegExp(
@@ -155,9 +160,13 @@ export function foldHelpText({ text }: { readonly text: string }): string {
         .toLowerCase();
 }
 
-/** d3 on one folded text: the first number that reads as a plan limit, with its context. */
+/**
+ * d3 on one folded text: the first number that reads as a plan limit, with its
+ * context. Numbers and letters are split into separate words, so a number glued
+ * to its noun (`20fotos`) or unit (`10mb`) reads like the spaced form.
+ */
 function limitNumber({ folded }: { readonly folded: string }): string | undefined {
-    const words = [...folded.matchAll(/[a-z0-9$]+(?:[.,]\d+)*/g)].map((match) => match[0]);
+    const words = [...folded.matchAll(/\d+(?:[.,]\d+)*|[a-z$]+/g)].map((match) => match[0]);
     const nouns: ReadonlySet<string> = new Set(LIMIT_NOUNS);
     const units: ReadonlySet<string> = new Set(TECHNICAL_UNITS);
     for (const [index, word] of words.entries()) {
