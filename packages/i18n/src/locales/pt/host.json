@@ -201,6 +201,8 @@
             "needsPlanBanner": {
                 "title": "Você é um anfitrião em preparação",
                 "description": "Suas propriedades ficam salvas como rascunho e ainda não são visíveis no site. Para publicá-las é necessário um plano de anfitrião ativo.",
+                "trialDescription_one": "Suas propriedades ficam salvas como rascunho. Ao publicar a primeira começa seu teste grátis de {{trialDays}} dia, sem cartão.",
+                "trialDescription_other": "Suas propriedades ficam salvas como rascunho. Ao publicar a primeira começa seu teste grátis de {{trialDays}} dias, sem cartão.",
                 "cta": "Escolher plano de anfitrião"
             }
         },

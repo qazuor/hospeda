@@ -201,6 +201,8 @@
             "needsPlanBanner": {
                 "title": "You're a host in preparation",
                 "description": "Your properties are saved as drafts and are not yet visible on the site. To publish them you need an active host plan.",
+                "trialDescription_one": "Your properties are saved as drafts. Publishing the first one starts your {{trialDays}}-day free trial, no card needed.",
+                "trialDescription_other": "Your properties are saved as drafts. Publishing the first one starts your {{trialDays}}-day free trial, no card needed.",
                 "cta": "Choose a host plan"
             }
         },

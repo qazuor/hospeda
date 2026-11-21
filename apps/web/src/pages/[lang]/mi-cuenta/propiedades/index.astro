@@ -33,7 +33,7 @@ import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge';
-import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
+import { resolveNeedsPlanBannerView } from '@/lib/host/needs-plan-banner';
 import { publishApi } from '@/lib/api/endpoints-protected';
 import {
     EMPTY_LISTING_NOTICES_INDEX,
@@ -219,19 +219,27 @@ const isEmpty = properties.length === 0;
 const hasDraftProperty = properties.some(
     (property) => property.publicationStatus === PublicationStatusEnum.DRAFT
 );
-const showNeedsPlanBanner = shouldShowNeedsPlanBanner({
+const needsPlanBanner = resolveNeedsPlanBannerView({
     isEmpty,
     fetchError,
     effectiveSetReadOk,
     hasDraftProperty,
-    hasOwnerPlan
+    hasOwnerPlan,
+    publishAffordance
 });
 
 const needsPlanTitle = t('host.properties.list.needsPlanBanner.title', 'Sos anfitrión en preparación');
-const needsPlanDescription = t(
-    'host.properties.list.needsPlanBanner.description',
-    'Tus propiedades quedan guardadas como borrador y todavía no son visibles en el sitio. Para publicarlas necesitás un plan de anfitrión activo.'
-);
+// HOS-2425: when publishing starts the free trial, the banner says so (with
+// the server's own day count) instead of claiming a plan is required.
+const needsPlanDescription =
+    needsPlanBanner.kind === 'trialAvailable'
+        ? tPlural('host.properties.list.needsPlanBanner.trialDescription', needsPlanBanner.trialDays, {
+              trialDays: needsPlanBanner.trialDays
+          })
+        : t(
+              'host.properties.list.needsPlanBanner.description',
+              'Tus propiedades quedan guardadas como borrador y todavía no son visibles en el sitio. Para publicarlas necesitás un plan de anfitrión activo.'
+          );
 const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan de anfitrión');
 
 ---
@@ -252,7 +260,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     </div>
 
     {/* ── HOS-217: proactive "pick a host plan" banner ── */}
-    {showNeedsPlanBanner && (
+    {needsPlanBanner.kind !== 'hidden' && (
         <aside class="props-page__needs-plan" role="note">
             <div class="props-page__needs-plan-icon" aria-hidden="true">
                 <CreditCardIcon size={20} weight="fill" />
@@ -261,9 +269,11 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
                 <p class="props-page__needs-plan-title">{needsPlanTitle}</p>
                 <p class="props-page__needs-plan-text">{needsPlanDescription}</p>
             </div>
-            <a href={ownerPlansUrl} class:list={['props-page__needs-plan-cta', btn.primary]}>
-                {needsPlanCta}
-            </a>
+            {needsPlanBanner.kind === 'needsPlan' && (
+                <a href={ownerPlansUrl} class:list={['props-page__needs-plan-cta', btn.primary]}>
+                    {needsPlanCta}
+                </a>
+            )}
         </aside>
     )}
 
