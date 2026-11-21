@@ -378,6 +378,13 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         border-color: oklch(0.85 0.10 65);
     }
 
+    /* HOS-2443: reaching the cap is informational (neutral blue), never an error tone. */
+    .props-page__usage--atLimit {
+        background-color: oklch(0.95 0.03 240);
+        color: oklch(0.38 0.10 240);
+        border-color: oklch(0.85 0.06 240);
+    }
+
     .props-page__usage--critical,
     .props-page__usage--exceeded {
         background-color: oklch(0.95 0.04 25);
