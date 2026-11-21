@@ -5,7 +5,12 @@
  * whether the link carries an identifier.
  */
 
-import type { PortalDestination, PortalDestinationKind } from './portal-routes';
+import {
+    PORTAL_PAGE_LABELS,
+    PORTAL_ROUTE_TEMPLATES,
+    type PortalDestination,
+    type PortalDestinationKind
+} from './portal-routes';
 
 /** Spanish label of the link to each kind of destination. */
 export const PORTAL_DESTINATION_LABELS: Readonly<Record<PortalDestinationKind, string>> = {
@@ -23,7 +28,11 @@ export const PORTAL_DESTINATION_LABELS: Readonly<Record<PortalDestinationKind, s
     aiAssistants: 'Administrar mis asistentes de IA',
     aiAssistantsHistory: 'Ver lo que hicieron mis asistentes de IA',
     faq: 'Ver las preguntas frecuentes',
-    contact: 'Contactar a Hospeda'
+    contact: 'Contactar a Hospeda',
+    partnerPanel: 'Abrir mi panel de partner',
+    helpLanding: 'Abrir el centro de ayuda',
+    helpArticle: 'Leer la guía en el centro de ayuda',
+    page: 'Abrir la página'
 };
 
 /**
@@ -37,6 +46,9 @@ export function describePortalDestination({
 }: {
     readonly destination: PortalDestination;
 }): string {
+    if (destination.kind === 'page') {
+        return PORTAL_PAGE_LABELS[destination.page];
+    }
     return PORTAL_DESTINATION_LABELS[destination.kind];
 }
 
@@ -63,6 +75,9 @@ export function isNonIdentifyingDestination({
             return destination.slug === undefined;
         case 'declareBenefitUsage':
             return false;
+        case 'page':
+            // A page names a record exactly when its template has a dynamic segment.
+            return !PORTAL_ROUTE_TEMPLATES[destination.page].includes('[');
         default:
             return true;
     }

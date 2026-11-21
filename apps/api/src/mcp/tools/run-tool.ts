@@ -21,13 +21,13 @@
  *    the generic message: no stack or internal message leaves this module.
  */
 
+import type { PortalLocale } from '@repo/portal-routes';
 import { ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '@repo/service-core';
 import { resolvePersonStateStep } from '@repo/verticals';
 import { z } from 'zod';
 import { isGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
-import type { PortalLocale } from '../portal/build-portal-url';
 import { attachRefusalAction } from './refusal-action';
 import type { ToolContext, ToolDefinition, ToolErrorPayload } from './tool-definition';
 import {

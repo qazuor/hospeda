@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { OWNER_HELP_TOPICS } from '../../apps/api/src/data/owner-help/owner-help';
 import type { OwnerHelpTopic } from '../../apps/api/src/data/owner-help/owner-help.types';
-import { portalDestinationTemplate } from '../../apps/api/src/mcp/portal/build-portal-url';
+import { portalDestinationTemplate } from '../../packages/portal-routes/src/index';
 import { checkOwnerHelp, ES_FAQ_FILE, PREDICATE_MESSAGES, run } from '../check-owner-help';
 import { PORTAL_PAGES_DIR } from '../check-portal-routes';
 

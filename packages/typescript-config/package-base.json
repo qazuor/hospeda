@@ -5,6 +5,7 @@
         "paths": {
             "@repo/content-moderation": ["../content-moderation/src/index.ts"],
             "@repo/content-moderation/*": ["../content-moderation/src/*"],
+            "@repo/portal-routes": ["../portal-routes/src/index.ts"],
             "@repo/config": ["../config/src/index.ts"],
             "@repo/config/*": ["../config/src/*"],
             "@repo/db": ["../db/src/index.ts"],

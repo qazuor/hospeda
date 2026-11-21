@@ -51,11 +51,11 @@ import {
     type OwnerHelpDestination,
     type OwnerHelpTopic
 } from '../apps/api/src/data/owner-help/owner-help.types.js';
-import { portalDestinationTemplate } from '../apps/api/src/mcp/portal/build-portal-url.js';
 import {
     EDITOR_SECTION_SLUGS,
-    PORTAL_SECTION_PLACEHOLDER
-} from '../apps/api/src/mcp/portal/portal-routes.js';
+    PORTAL_SECTION_PLACEHOLDER,
+    portalDestinationTemplate
+} from '../packages/portal-routes/src/index.js';
 import { PORTAL_PAGES_DIR, pageExists } from './check-portal-routes.js';
 
 /** The es FAQ file, relative to the repo root. */

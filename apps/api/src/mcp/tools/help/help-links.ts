@@ -16,15 +16,14 @@
  * is better than none.
  */
 
+import type { PortalDestination, PortalListingVertical } from '@repo/portal-routes';
+import { buildPortalUrl, describePortalDestination, type PortalLocale } from '@repo/portal-routes';
 import { PublicationStatusEnum } from '@repo/schemas';
 import type {
     OwnerHelpCallerAudience,
     OwnerHelpDestination,
     OwnerHelpTopic
 } from '../../../data/owner-help/owner-help.types';
-import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
-import { describePortalDestination } from '../../portal/portal-destination';
-import type { PortalDestination, PortalListingVertical } from '../../portal/portal-routes';
 
 /** A link in a help answer. */
 export interface HelpLink {

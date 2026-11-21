@@ -22,11 +22,11 @@
  * is scoped to the actor by the service, and the tool takes no resource id.
  */
 
+import type { PortalLocale } from '@repo/portal-routes';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { getClock } from '../../../utils/clock';
 import { apiLogger } from '../../../utils/logger';
-import type { PortalLocale } from '../../portal/build-portal-url';
 import { readMyListingRows } from '../listing/list-my-listings';
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from '../listing/listing-services';
 import { readMyPlan } from '../plan/my-plan-reader';

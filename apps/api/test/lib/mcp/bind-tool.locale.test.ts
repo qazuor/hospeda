@@ -20,9 +20,9 @@ vi.mock('../../../src/utils/logger', () => ({
 const { resolveRecipientLocale } = vi.hoisted(() => ({ resolveRecipientLocale: vi.fn() }));
 vi.mock('../../../src/services/notification-recipient-locale', () => ({ resolveRecipientLocale }));
 
+import { buildPortalUrl } from '@repo/portal-routes';
 import { handleMcpToolCall } from '../../../src/lib/mcp/bind-tool';
 import { buildMcpAuthInfo } from '../../../src/lib/mcp/caller';
-import { buildPortalUrl } from '../../../src/mcp/portal/build-portal-url';
 import { defineTool } from '../../../src/mcp/tools/tool-definition';
 import { env, validateApiEnv } from '../../../src/utils/env';
 

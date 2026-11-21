@@ -84,7 +84,7 @@ then flags every one of them when that anchor changes. Every page and section ro
 |---|---|---|---|
 | Account pages | 77 `.astro` | `apps/web/src/pages/[lang]/mi-cuenta/**` | ≈ 62 (minus 9 tourist: `alertas`, `favoritos` ×2, `historial-busquedas`, `ofertas-exclusivas`, `recomendaciones`, `resenas`, `consultas` ×2; minus 6 editorial: `publicaciones` ×3, `eventos` ×3) |
 | Editor pages | 32 of the 77 (accommodation 13 sections + hub; venue/experience 17 section files + hub) | `propiedades/[id]/editar/*`, `comercio/[vertical]/[id]/editar/*` | all |
-| Editor section anchors | ≈ 39 (accommodation 11 catalog + `politicas` + `preguntas-ia`; venue 14 + `preguntas-ia`; experience 10 + `preguntas-ia`) | `apps/api/src/mcp/portal/portal-routes.ts:135-176`, `apps/web/src/lib/editor/accommodation-editor-sections.ts:91,112`, `listing-editor-registry.ts:112` | all |
+| Editor section anchors | ≈ 39 (accommodation 11 catalog + `politicas` + `preguntas-ia`; venue 14 + `preguntas-ia`; experience 10 + `preguntas-ia`) | `packages/portal-routes/src/portal-routes.ts:261-302`, `apps/web/src/lib/editor/accommodation-editor-sections.ts:91,112`, `listing-editor-registry.ts:112` | all |
 | Entitlement keys | 59 | `key-enums.ts:2-62` | ≈ 55 |
 | Limit keys | 23 | `key-enums.ts:65-89` | ≈ 16 (tourist: favorites, collections, search history, alerts, compare, consumer chat, …) |
 | MCP tools | 22 | `registry.ts:33-55` | all |

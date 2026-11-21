@@ -4,7 +4,7 @@
  * every owner-portal page the assistant links to still exists in `apps/web`.
  *
  * The API cannot import the web's route knowledge, so it keeps its own copy at
- * `apps/api/src/mcp/portal/portal-routes.ts` (D-1 chose a copy plus this guard
+ * `packages/portal-routes/src/portal-routes.ts` (D-1 chose a copy plus this guard
  * over a shared module). The copy drifts silently when the web renames or
  * deletes a page: the assistant then sends owners to a 404. This guard is the
  * only thing keeping the copy honest.
@@ -16,6 +16,8 @@
  *   `<path>/index.astro`, every directory on the way matched BY NAME. A dynamic
  *   segment (`[id]`, `[vertical]`, `[slug]`, `[conversationId]`) must be a
  *   directory with that very name, so a rename to `[propertyId]` fails.
+ *   Keys in `PORTAL_UNRELEASED_ROUTE_KEYS` (the help center pages, HOS-2410) are
+ *   skipped until their page ships; that PR empties the list.
  * - (b) Every `EDITOR_SECTION_SLUGS` entry resolves to the section's editor
  *   page of that vertical: the vertical's section template with `[section]`
  *   replaced by the slug, for example `propiedades/[id]/editar/servicios.astro`.
@@ -55,8 +57,9 @@ import {
     EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
     PORTAL_ROUTE_TEMPLATES,
     PORTAL_SECTION_PLACEHOLDER,
+    PORTAL_UNRELEASED_ROUTE_KEYS,
     PORTAL_VERTICAL_SEGMENT_VALUES
-} from '../apps/api/src/mcp/portal/portal-routes.js';
+} from '../packages/portal-routes/src/index.js';
 
 /** Where the pages the map points at live, relative to the repo root. */
 export const PORTAL_PAGES_DIR = 'apps/web/src/pages/[lang]';
@@ -99,6 +102,8 @@ export interface PortalRouteData {
     readonly verticalValues: readonly string[];
     /** The placeholder of a section slug in a template. */
     readonly sectionPlaceholder: string;
+    /** Keys of `templates` whose page has not shipped yet; predicate (a) skips them. */
+    readonly unreleasedRouteKeys?: readonly string[];
 }
 
 /** The route data of the API, as shipped. */
@@ -107,7 +112,8 @@ export const DEFAULT_ROUTE_DATA: PortalRouteData = {
     sectionSlugs: EDITOR_SECTION_SLUGS,
     sectionTemplateByVertical: EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
     verticalValues: PORTAL_VERTICAL_SEGMENT_VALUES,
-    sectionPlaceholder: PORTAL_SECTION_PLACEHOLDER
+    sectionPlaceholder: PORTAL_SECTION_PLACEHOLDER,
+    unreleasedRouteKeys: PORTAL_UNRELEASED_ROUTE_KEYS
 };
 
 function isDirectory(path: string): boolean {
@@ -210,6 +216,9 @@ export function checkPortalRoutes({
             }
             continue;
         }
+        if (data.unreleasedRouteKeys?.includes(key) === true) {
+            continue;
+        }
         if (!pageExists({ pagesRoot, path: template })) {
             violations.push({
                 predicate: 'a',
@@ -281,7 +290,7 @@ export function run({
         const lines = [
             ...predicates.map((predicate) => `FAIL ${PREDICATE_MESSAGES[predicate]}`),
             ...violations.map((violation) => `  - (${violation.predicate}) ${violation.detail}`),
-            'Fix: update apps/api/src/mcp/portal/portal-routes.ts in the same PR as the web change.'
+            'Fix: update packages/portal-routes/src/portal-routes.ts in the same PR as the web change.'
         ];
         return { exitCode: 1, output: lines.join('\n') };
     }
