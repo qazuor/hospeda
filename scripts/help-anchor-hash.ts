@@ -53,7 +53,7 @@ export interface HelpHashSources {
     readonly activations: ReadonlyMap<string, unknown>;
     /** The portal route data: section templates and slugs. */
     readonly routeData: PortalRouteData;
-    /** Tool name → repo-relative file that defines it. */
+    /** Tool name → repo-relative file that defines it (a name defined in two files is absent, so its anchor does not resolve). */
     readonly toolFiles: ReadonlyMap<string, string>;
 }
 
@@ -81,7 +81,7 @@ export function repoHashSources({ root }: { readonly root: string }): HelpHashSo
         enums: repoVocabularies({ root }).enums,
         activations: new Map(Object.entries(VERTICAL_ACTIVATION_EVENT_BY_VERTICAL)),
         routeData: DEFAULT_ROUTE_DATA,
-        toolFiles: mcpToolFiles({ root })
+        toolFiles: mcpToolFiles({ root }).files
     };
 }
 

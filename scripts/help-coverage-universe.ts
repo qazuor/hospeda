@@ -133,25 +133,40 @@ function toolNamesIn({ source }: { readonly source: string }): string[] {
 
 /**
  * Every MCP tool name defined under the tools dir, with the repo-relative file
- * that defines it (the file guard (c) hashes for a `tool:` anchor).
+ * that defines it (the file guard (c) hashes for a `tool:` anchor). A name two
+ * files define is ambiguous: it is left out of `files` and reported in
+ * `problems`, never resolved by picking one of the files.
  *
  * @param args.root - The repo root
- * @returns tool name → defining file
+ * @returns tool name → defining file, and every name defined in more than one file
  */
-export function mcpToolFiles({ root }: { readonly root: string }): ReadonlyMap<string, string> {
-    const files = new Map<string, string>();
+export function mcpToolFiles({ root }: { readonly root: string }): {
+    readonly files: ReadonlyMap<string, string>;
+    readonly problems: readonly string[];
+} {
+    const definedIn = new Map<string, Set<string>>();
     const toolsRoot = join(root, MCP_TOOLS_DIR);
     for (const file of filesUnder({ dir: toolsRoot, base: root })) {
         if (!file.endsWith('.ts') || file.endsWith('.test.ts')) {
             continue;
         }
         for (const name of toolNamesIn({ source: readFileSync(join(root, file), 'utf8') })) {
-            if (!files.has(name)) {
-                files.set(name, file);
-            }
+            definedIn.set(name, (definedIn.get(name) ?? new Set<string>()).add(file));
         }
     }
-    return files;
+    const files = new Map<string, string>();
+    const problems: string[] = [];
+    for (const [name, defining] of [...definedIn].sort(([a], [b]) => a.localeCompare(b))) {
+        const [only, ...others] = [...defining].sort();
+        if (only !== undefined && others.length === 0) {
+            files.set(name, only);
+        } else {
+            problems.push(
+                `MCP tool ${name} is defined in more than one file: ${[...defining].sort().join(', ')}`
+            );
+        }
+    }
+    return { files, problems };
 }
 
 /**
@@ -240,6 +255,7 @@ export function computeCoverageUniverse({
         for (const unit of units) sections.add(unit);
     }
     const tools = registeredToolNames({ root });
+    const toolFiles = mcpToolFiles({ root });
     const sortedUnits = (kind: CoverageSet, values: Iterable<string>) =>
         [...new Set([...values].map((value) => `${kind}:${value}`))].sort();
     return {
@@ -253,6 +269,6 @@ export function computeCoverageUniverse({
             limit: sortedUnits('limit', limits ?? vocabularies?.limits ?? []),
             tool: sortedUnits('tool', tools.names)
         },
-        problems: tools.problems
+        problems: [...tools.problems, ...toolFiles.problems]
     };
 }

@@ -23,7 +23,11 @@ import {
     run
 } from '../check-help-coverage';
 import { PORTAL_PAGES_DIR, type PortalRouteData } from '../check-portal-routes';
-import { computeCoverageUniverse, MCP_REGISTRY_FILE } from '../help-coverage-universe';
+import {
+    computeCoverageUniverse,
+    MCP_REGISTRY_FILE,
+    mcpToolFiles
+} from '../help-coverage-universe';
 
 /**
  * The number of `pending-content` exemptions left. Phase 5 PRs LOWER it by
@@ -411,6 +415,27 @@ describe('checkHelpCoverage on a synthetic repo', () => {
         expect(
             result.violations.some((violation) => violation.detail.startsWith('mysteryTool'))
         ).toBe(true);
+    });
+
+    it('fails b4 when two files define the same MCP tool name', () => {
+        // Arrange
+        const root = syntheticRoot();
+        put(
+            root,
+            'apps/api/src/mcp/tools/other/copy.ts',
+            "export const copyTool = defineTool({\n    name: 'get_help',"
+        );
+
+        // Act
+        const result = check(root);
+        const tools = mcpToolFiles({ root });
+
+        // Assert
+        expect(predicatesOf(result)).toEqual(['b4']);
+        expect(result.violations[0]?.detail).toBe(
+            'MCP tool get_help is defined in more than one file: apps/api/src/mcp/tools/other/copy.ts, apps/api/src/mcp/tools/t/get_help.ts'
+        );
+        expect(tools.files.has('get_help')).toBe(false);
     });
 
     it('fails b4 when the content does not parse', () => {
