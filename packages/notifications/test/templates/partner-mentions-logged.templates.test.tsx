@@ -37,6 +37,18 @@ const single: PartnerMentionsLoggedProps = {
     mentions: [{ channelLabel: 'Instagram', url: 'https://instagram.test/p/abc' }]
 };
 
+/**
+ * Anchors in the email body. The shared layout footer always adds exactly one
+ * link to the site home, marked `data-layout-link="home"` (HOS-2519), which is
+ * chrome, not a channel link. Only that marked anchor is excluded.
+ */
+function bodyAnchors({ html }: { readonly html: string }): readonly string[] {
+    const anchors = html.match(/<a\s[^>]*>/g) ?? [];
+    const layoutAnchors = anchors.filter((anchor) => anchor.includes('data-layout-link="home"'));
+    expect(layoutAnchors).toHaveLength(1);
+    return anchors.filter((anchor) => !anchor.includes('data-layout-link='));
+}
+
 describe('PartnerMentionsLogged — AC-3 copy constraint', () => {
     /**
      * The four words the spec bans outright. Checked case-insensitively and on
@@ -99,7 +111,7 @@ describe('PartnerMentionsLogged — the links are the promise', () => {
         expect(html).not.toContain('href="undefined"');
         expect(html).not.toContain('href="null"');
         // Exactly three anchors for four channels.
-        expect(html.match(/<a\s/g) ?? []).toHaveLength(3);
+        expect(bodyAnchors({ html })).toHaveLength(3);
     });
 
     it('names the partner and the date the promotion happened', () => {
@@ -118,7 +130,7 @@ describe('PartnerMentionsLogged — one email covers the whole submission', () =
         // email per row to say everything.
         const html = renderToStaticMarkup(PartnerMentionsLogged(batch));
 
-        expect(html.match(/<a\s/g) ?? []).toHaveLength(3);
+        expect(bodyAnchors({ html })).toHaveLength(3);
         expect(html).toContain('los siguientes canales');
     });
 

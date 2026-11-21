@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import {
     formatTrialGreeting,
     trialSeriesStyles as styles,
@@ -32,7 +32,7 @@ export function TrialWinBack60Days({
     return (
         <EmailLayout
             previewText="Último mail por tu prueba: tu ficha queda guardada igual"
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Tu ficha sigue disponible cuando quieras</Heading>
 

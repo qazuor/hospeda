@@ -1,7 +1,7 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Locales this notice is written in (owner decision, HOS-2192). */
 export type ListingLocationExceptionLocale = 'es' | 'en' | 'pt';

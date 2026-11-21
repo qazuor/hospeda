@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 
 /**
@@ -35,7 +35,7 @@ export function TrialEndingReminder({
     return (
         <EmailLayout
             previewText={`Tu período de prueba de ${planName} está por finalizar`}
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Tu período de prueba está por finalizar</Heading>
 

@@ -1358,7 +1358,9 @@
         "deleteError": "No se pudo eliminar la alerta",
         "upgrade": {
             "title": "Alertas de precio",
-            "message": "Las alertas de precio están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "message_one": "Las alertas de precio están disponibles en el plan {{plans}}. Actualizá tu plan para acceder.",
+            "message_other": "Las alertas de precio están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
+            "messageNoPlans": "Las alertas de precio no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         },
         "listLabel": "Tus alertas de precio activas",

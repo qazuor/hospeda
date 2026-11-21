@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Resolved copy, base URL and locale of the one-time add-on activated mail (HOS-2405). */
 export interface OneTimeAddonActivatedProps {

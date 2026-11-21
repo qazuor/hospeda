@@ -6,7 +6,7 @@ export const MAX_ACCOMMODATIONS_LIMIT_KEY = 'max_accommodations';
 export interface UsageBadgeData {
     readonly currentUsage: number;
     readonly maxAllowed: number;
-    readonly threshold: 'ok' | 'warning' | 'critical' | 'exceeded';
+    readonly threshold: 'ok' | 'warning' | 'critical' | 'atLimit' | 'exceeded';
 }
 
 export interface HostUsageBadgeLoadResult {
@@ -22,7 +22,10 @@ export function getUsageThreshold(
 ): UsageBadgeData['threshold'] {
     if (maxAllowed <= 0) return 'ok';
     const percentage = (currentUsage / maxAllowed) * 100;
-    if (percentage >= 100) return 'exceeded';
+    // HOS-2443: reaching the cap exactly is a state, not an error. Only going PAST it
+    // (a downgrade, a grant that lapsed) is `exceeded`.
+    if (percentage > 100) return 'exceeded';
+    if (percentage === 100) return 'atLimit';
     if (percentage >= 90) return 'critical';
     if (percentage >= 80) return 'warning';
     return 'ok';

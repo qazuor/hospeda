@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 import {
     formatTrialGreeting,
@@ -25,7 +25,7 @@ export function TrialEnding2Days({
     return (
         <EmailLayout
             previewText="Quedan 2 días de tu prueba gratis"
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Te quedan 2 días de prueba</Heading>
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
