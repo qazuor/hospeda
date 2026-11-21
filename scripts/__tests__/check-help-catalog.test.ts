@@ -99,11 +99,12 @@ function predicatesOf(tree: Tree, now: Date = NOW): string[] {
 
 describe('check-help-catalog on the real repo', () => {
     it('is green, and reads every article', () => {
-        // Act
-        const result = run({ now: NOW });
+        // Act: the real content carries real review dates, so it is checked
+        // against the real clock (a fixed NOW goes stale as articles land).
+        const result = run({ now: new Date() });
 
         // Assert
-        expect(result.output).toMatch(/^OK GUARD:help-catalog: 16 articles/);
+        expect(result.output).toMatch(/^OK GUARD:help-catalog: 17 articles/);
         expect(result.exitCode).toBe(0);
     });
 

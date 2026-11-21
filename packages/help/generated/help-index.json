@@ -1,5 +1,5 @@
 {
-  "contentHash": "95eb9f6bf3935a75d1c3dc4244fcc32c49ffb7cfb7955aa6453146fe32ad7de7",
+  "contentHash": "3fc60740ccae4bb6b910b4944c8aa967de966b016614a877bc0826e8b834c8a9",
   "locales": {
     "es": [
       {
@@ -109,7 +109,8 @@
         "related": [
           "reviews",
           "inquiries",
-          "amenities"
+          "amenities",
+          "help-center"
         ],
         "reviewedAt": "2026-11-20",
         "sections": {
@@ -734,6 +735,79 @@
           "experience",
           "venue"
         ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "partner",
+          "provider",
+          "venue"
+        ],
+        "covers": [
+          "file:apps/web/src/components/account/help/HelpLink.astro",
+          "file:apps/web/src/components/account/help/HelpSearch.client.tsx"
+        ],
+        "destinations": [
+          {
+            "kind": "helpLanding",
+            "label": "Ayuda"
+          },
+          {
+            "kind": "faq",
+            "label": "Preguntas frecuentes"
+          },
+          {
+            "kind": "contact",
+            "label": "Escribinos"
+          }
+        ],
+        "entryFor": [
+          "page:mi-cuenta/ayuda",
+          "page:mi-cuenta/ayuda/[id]"
+        ],
+        "folder": "common",
+        "id": "help-center",
+        "keywords": [
+          "ayuda",
+          "centro de ayuda",
+          "buscar ayuda",
+          "como uso la ayuda",
+          "boton de ayuda",
+          "signo de pregunta",
+          "pestanas",
+          "articulo de ayuda",
+          "no encuentro"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "ai-assistants",
+          "change-plan",
+          "photos"
+        ],
+        "reviewedAt": "2026-11-21",
+        "sections": {
+          "canDo": "Encontrar cómo se hace algo en tu cuenta sin salir de {{link:help|Ayuda}}: buscar por palabras, ver los artículos de lo que publicás y abrir la ayuda de la pantalla en la que estás.",
+          "expect": "- La pestaña que se abre primero es la de lo que publicás. Podés cambiarla cuando quieras.\n- Cada artículo tiene siempre las mismas partes: qué podés hacer, cómo se hace, qué esperar, qué no esperar y problemas comunes. Al final hay artículos relacionados.\n- El botón «?» abre la ayuda en otra pestaña, así no perdés lo que estabas cargando.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Ayuda» desde el menú de tu cuenta.",
+              "Escribí en el buscador lo que querés hacer, con tus palabras. Los resultados aparecen mientras escribís, desde la segunda letra.",
+              "Si dejás marcado «Solo para mi tipo de cuenta», ves solo los artículos de la pestaña elegida. Desmarcalo para buscar en todos.",
+              "Para ver todo lo que hay, elegí la pestaña de lo que publicás: alojamientos, comer y salir, experiencias, proveedores o aliados.",
+              "En las pantallas de tu cuenta, tocá el botón «?» que está al lado del título para abrir en otra pestaña la ayuda de esa pantalla.",
+              "Dentro de un artículo, usá el índice para ir directo a una parte."
+            ]
+          },
+          "notExpect": "- Que todas las pantallas tengan el botón «?»: aparece solo donde ya hay un artículo para esa pantalla.\n- Que la ayuda haga cambios en tu cuenta: solo explica cómo hacerlos. Para que un asistente los haga por vos, mirá {{article:ai-assistants|cómo conectar un asistente de IA}}.",
+          "troubleshooting": "### No encuentro lo que busco {#no-encuentro}\n\nProbá con otras palabras o desmarcá «Solo para mi tipo de cuenta». Si igual no aparece, mirá las {{link:faq|preguntas frecuentes}} o {{link:contact|escribinos}}.\n\n### El artículo está en español {#en-espanol}\n\nAlgunos artículos todavía no están traducidos. Mientras tanto se muestran en español, con un aviso arriba."
+        },
+        "summary": "Buscá una respuesta, elegí la pestaña de lo que publicás, abrí la ayuda de cada pantalla con el botón «?» y leé un artículo por partes.",
+        "title": "Cómo usar la ayuda",
+        "translation": null,
+        "verticals": []
       },
       {
         "audiences": [
