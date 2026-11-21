@@ -40,6 +40,12 @@ export interface AccountSidebarProps {
     readonly benefitUsagesCount?: ReactNode;
     /** Slot after the AI-assistants label (the reveal island). */
     readonly aiAssistantsReveal?: ReactNode;
+    /**
+     * Ids of entries that start `hidden` but must show (the React-side reveal
+     * the mobile drawer uses, where the DOM-querying island cannot target the
+     * drawer's own copy).
+     */
+    readonly revealedItemIds?: ReadonlySet<string>;
     /** Extra class from the caller (layout only). */
     readonly className?: string;
 }
@@ -51,9 +57,11 @@ function SidebarLink({
     Icon,
     after,
     lockedLabel,
-    door
+    door,
+    revealed = false
 }: {
     readonly item: SidebarItemView;
+    readonly revealed?: boolean;
     readonly locked: boolean;
     readonly Icon?: ComponentType<IconProps>;
     readonly after?: ReactNode;
@@ -62,7 +70,7 @@ function SidebarLink({
 }) {
     return (
         <li
-            hidden={item.hidden || undefined}
+            hidden={(item.hidden && !revealed) || undefined}
             data-ai-assistants-entry={item.hidden ? '' : undefined}
             data-door={door ? '' : undefined}
         >
@@ -117,6 +125,7 @@ export function AccountSidebar({
     whatsNewCount,
     benefitUsagesCount,
     aiAssistantsReveal,
+    revealedItemIds,
     className
 }: AccountSidebarProps) {
     const t = createT(locale);
@@ -143,6 +152,7 @@ export function AccountSidebar({
                             <SidebarLink
                                 key={item.id}
                                 item={item}
+                                revealed={revealedItemIds?.has(item.id) ?? false}
                                 locked={lockedItemIds?.has(item.id) ?? false}
                                 Icon={icons?.[item.id]}
                                 after={afterFor(item.id)}

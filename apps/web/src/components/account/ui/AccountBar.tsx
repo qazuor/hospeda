@@ -15,7 +15,11 @@
  */
 
 import { HamburgerIcon } from '@repo/icons';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
+import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
+import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
+import { ACCOUNT_NAV_ICONS } from '@/lib/account-nav-icons';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import styles from './AccountBar.module.css';
 import { AccountSidebar } from './AccountSidebar';
@@ -43,6 +47,13 @@ export function AccountBar({ view, locale }: AccountBarProps) {
     const [stuck, setStuck] = useState(false);
     const sentinel = useRef<HTMLDivElement>(null);
     const drawerId = useId();
+    // The AI-assistants entry renders `hidden` when MCP is off; reveal the
+    // drawer's own copy in React (the DOM-querying island only finds the first).
+    const hasHiddenAi = view.groups.some((group) =>
+        group.items.some((item) => item.id === 'aiAssistants' && item.hidden)
+    );
+    const aiVisible = useAiAssistantsEntry({ mcpEnabled: false, enabled: hasHiddenAi });
+    const revealed = useMemo(() => new Set(aiVisible ? ['aiAssistants'] : []), [aiVisible]);
     const menuLabel = t('account.menu');
     const accountLabel = t('account.title');
 
@@ -75,7 +86,7 @@ export function AccountBar({ view, locale }: AccountBarProps) {
                     type="button"
                     className={styles.toggle}
                     aria-expanded={open}
-                    aria-controls={drawerId}
+                    aria-controls={open ? drawerId : undefined}
                     aria-haspopup="dialog"
                     onClick={() => setOpen(true)}
                 >
@@ -107,6 +118,10 @@ export function AccountBar({ view, locale }: AccountBarProps) {
                     <AccountSidebar
                         view={view}
                         locale={locale}
+                        icons={ACCOUNT_NAV_ICONS}
+                        revealedItemIds={revealed}
+                        whatsNewCount={<WhatsNewCountPill locale={locale} />}
+                        benefitUsagesCount={<BenefitUsagesCountPill locale={locale} />}
                     />
                 </div>
             </Drawer>

@@ -25,6 +25,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { AccountNavModel } from '@/lib/account-nav-model';
 import { AccountBar } from '@/components/account/ui/AccountBar';
 import { AccountSidebar } from '@/components/account/ui/AccountSidebar';
+import { ACCOUNT_NAV_ICONS } from '@/lib/account-nav-icons';
 import { buildSidebarView } from '@/components/account/ui/account-sidebar-view';
 import {
 	type AccountShellTemplate,
@@ -56,11 +57,6 @@ const resolvedTemplate = resolveShellTemplate({ template });
 
 const view = buildSidebarView({ model: navModel, locale });
 
-/** Icons are component references: they stay on the server and never cross an island boundary. */
-const icons = Object.fromEntries([
-	...navModel.groups.flatMap((entry) => entry.items.map(({ item }) => [item.id, item.icon] as const)),
-	...navModel.doors.map(({ door }) => [door.id, door.icon] as const),
-]);
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription} chrome="account">
@@ -80,7 +76,7 @@ const icons = Object.fromEntries([
 		</div>
 
 		<aside class={styles.sidebar}>
-			<AccountSidebar view={view} locale={locale} icons={icons}>
+			<AccountSidebar view={view} locale={locale} icons={ACCOUNT_NAV_ICONS}>
 				<WhatsNewCountPill slot="whatsNewCount" locale={locale} client:idle />
 				<BenefitUsagesCountPill slot="benefitUsagesCount" locale={locale} client:idle />
 				{aiAssistantsHidden && <AiAssistantsNavReveal slot="aiAssistantsReveal" client:idle />}

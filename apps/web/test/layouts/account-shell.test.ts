@@ -66,7 +66,7 @@ describe('AccountShell.astro', () => {
     });
 
     it('caps the form and reading templates with their layout tokens', () => {
-        expect(shellCss).toContain("data-template='form'");
+        expect(shellCss).toContain('data-template="form"');
         expect(shellCss).toContain('var(--form-max)');
         expect(shellCss).toContain('var(--reading-max)');
     });
