@@ -447,6 +447,14 @@ jobs:
       # `pnpm help:review <id>` and commit the article, the lock and the index.
       - name: Check help articles were re-reviewed after the code they explain changed (HOS-2410)
         run: pnpm check:help-lock
+      # HOS-2410 guard (d), values. Its own step, like every guard here. check:commercial-values
+      # only scans billing TS sources; this scans the help content (title, summary, keywords and
+      # every section, every locale, tokens removed, accents folded). Fails on a number next to a
+      # currency marker, a plan-tier word (basico, premium, gold, ...), or a number near a limit
+      # noun or after hasta/maximo/minimo/tope de (a number followed by MB, KB, GB, px or
+      # caracteres is allowed). Fix: write {{limit:<key>}} and {{link:plans:<vertical>}}.
+      - name: Check help content states no price, plan name or plan limit (HOS-2410)
+        run: pnpm check:help-values
       # Drizzle skips, without an error, any migration whose `when` is not above the
       # last applied one. Rule 1 (monotonic journal) always runs; rule 2 (new entries
       # above origin/<base>) only on a PR to staging or main. On `push` base_ref is
