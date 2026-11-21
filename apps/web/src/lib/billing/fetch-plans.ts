@@ -140,11 +140,14 @@ function mapFloor(
  * to `ok: false`.
  */
 export async function fetchPublicPlans({
-    vertical
+    vertical,
+    apiUrl
 }: {
     readonly vertical: PublicPlanCatalogVertical;
+    /** API base URL. Defaults to the server-side env; a browser island passes its own prop. */
+    readonly apiUrl?: string;
 }): Promise<FetchPlansResult> {
-    const url = `${getApiUrl()}/api/v1/public/plan-catalog?vertical=${encodeURIComponent(vertical)}`;
+    const url = `${apiUrl?.replace(/\/$/, '') ?? getApiUrl()}/api/v1/public/plan-catalog?vertical=${encodeURIComponent(vertical)}`;
     try {
         const response = await fetch(url, { headers: { Accept: 'application/json' } });
         if (!response.ok) {

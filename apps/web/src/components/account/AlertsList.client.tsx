@@ -33,10 +33,11 @@
  */
 
 import { BellIcon } from '@repo/icons';
-import type { PriceAlertListItem } from '@repo/schemas';
+import { EntitlementKeyEnum, type PriceAlertListItem } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { visibleApiMessage } from '@/lib/api-errors';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -96,7 +97,7 @@ export interface AlertsListProps {
  * provides a per-item delete action with inline confirmation.
  */
 export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -104,6 +105,9 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
     const [alerts, setAlerts] = useState<PriceAlertListItem[]>([]);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    // HOS-2437: names of the catalog plans that carry the price-alerts entitlement.
+    // Empty until read (or when the catalog cannot be read): the gate then names no plan.
+    const [gatePlanNames, setGatePlanNames] = useState<readonly string[]>([]);
 
     const isMountedRef = useRef(true);
 
@@ -178,6 +182,23 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
     useEffect(() => {
         void fetchAlerts();
     }, [fetchAlerts]);
+
+    const isUpgrade = status.kind === 'upgrade';
+    useEffect(() => {
+        if (!isUpgrade) return;
+        let alive = true;
+        void fetchPublicPlans({ vertical: 'tourist', apiUrl: base }).then((result) => {
+            if (!alive || !result.ok) return;
+            setGatePlanNames(
+                result.plans
+                    .filter((plan) => plan.entitlements.includes(EntitlementKeyEnum.PRICE_ALERTS))
+                    .map((plan) => plan.name)
+            );
+        });
+        return () => {
+            alive = false;
+        };
+    }, [isUpgrade, base]);
 
     // ── Delete one ────────────────────────────────────────────────────────────
 
@@ -279,10 +300,17 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
                     {t('account.alerts.upgrade.title', 'Alertas de precio')}
                 </p>
                 <p className={styles.alertsUpgradeMessage}>
-                    {t(
-                        'account.alerts.upgrade.message',
-                        'Las alertas de precio están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
-                    )}
+                    {gatePlanNames.length > 0
+                        ? tPlural('account.alerts.upgrade.message', gatePlanNames.length, {
+                              plans: new Intl.ListFormat(locale, {
+                                  style: 'long',
+                                  type: 'conjunction'
+                              }).format(gatePlanNames)
+                          })
+                        : t(
+                              'account.alerts.upgrade.messageNoPlans',
+                              'Las alertas de precio no están incluidas en tu plan actual. Actualizá tu plan para acceder.'
+                          )}
                 </p>
                 <a
                     href={upgradeHref}
