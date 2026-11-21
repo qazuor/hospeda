@@ -116,13 +116,15 @@ describe('partnerPanel, helpLanding and helpArticle', () => {
         ).toBe(`${SITE}/pt/mi-cuenta/ayuda/`);
     });
 
-    it('should only leave the help center pages without a web page, and nothing else', () => {
+    it('should leave no route without a web page once the help center shipped (HOS-2410 PR-5)', () => {
         const missing = Object.entries(PORTAL_ROUTE_TEMPLATES)
             .filter(([, template]) => !template.includes('[section]') && !pageExists(template))
             .map(([key]) => key)
             .sort();
         expect(missing).toEqual([...PORTAL_UNRELEASED_ROUTE_KEYS].sort());
-        expect(PORTAL_UNRELEASED_ROUTE_KEYS).toEqual(['helpLanding', 'helpArticle']);
+        expect(PORTAL_UNRELEASED_ROUTE_KEYS).toEqual([]);
+        expect(pageExists(PORTAL_ROUTE_TEMPLATES.helpLanding)).toBe(true);
+        expect(pageExists(PORTAL_ROUTE_TEMPLATES.helpArticle)).toBe(true);
     });
 
     it('should label the new kinds', () => {

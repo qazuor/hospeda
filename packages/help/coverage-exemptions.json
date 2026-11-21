@@ -77,6 +77,8 @@
 {"anchor":"page:mi-cuenta/alertas","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/aliados","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"alliance-apply"},
 {"anchor":"page:mi-cuenta/asistentes-ia/historial","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"ai-assistants-history"},
+{"anchor":"page:mi-cuenta/ayuda","kind":"pending-content","reason":"HOS-2410 PR-5 shipped the help center pages; their help-center article (how to use the help) is planned in docs/web-ui.md §1.","plannedArticle":"help-center"},
+{"anchor":"page:mi-cuenta/ayuda/[id]","kind":"pending-content","reason":"HOS-2410 PR-5 shipped the help center pages; their help-center article (how to use the help) is planned in docs/web-ui.md §1.","plannedArticle":"help-center"},
 {"anchor":"page:mi-cuenta/cambiar-contrasena","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"password"},
 {"anchor":"page:mi-cuenta/comercio","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"listing-states"},
 {"anchor":"page:mi-cuenta/comercio/[vertical]/[id]/editar","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"listing-editor"},

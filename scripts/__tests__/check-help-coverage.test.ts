@@ -34,7 +34,9 @@ import {
  * exactly the entries they remove; raising it is visible in review. The
  * closing PR of HOS-2410 removes the kind entirely (AC-38).
  */
-const MAX_PENDING_CONTENT = 121;
+// +2 in HOS-2410 PR-5: the help center pages themselves enter the universe
+// before their `help-center` article exists (docs/web-ui.md §1).
+const MAX_PENDING_CONTENT = 123;
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 

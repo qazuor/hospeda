@@ -154,12 +154,11 @@ export type PortalRouteKey = keyof typeof PORTAL_ROUTE_TEMPLATES;
  * Route keys whose web page has not shipped yet. `check-portal-routes` does not
  * demand a page for them. The PR that ships the page removes the key here.
  *
- * - `helpLanding` and `helpArticle`: the help center pages (HOS-2410 PR-5).
+ * Empty since HOS-2410 PR-5 shipped the help center pages (`helpLanding`,
+ * `helpArticle`). Kept as the mechanism for the next route that lands before
+ * its page.
  */
-export const PORTAL_UNRELEASED_ROUTE_KEYS = [
-    'helpLanding',
-    'helpArticle'
-] as const satisfies readonly PortalRouteKey[];
+export const PORTAL_UNRELEASED_ROUTE_KEYS: readonly PortalRouteKey[] = [];
 
 /**
  * Route keys reachable through the generic `page` destination, with the Spanish
