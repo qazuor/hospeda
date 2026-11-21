@@ -1945,6 +1945,15 @@
             "saved": "Saved {{time}}",
             "error": "Not saved",
             "retry": "Try again"
+        },
+        "locked": {
+            "planWhy": "Included in:",
+            "roleWhy": "To use it, add this type of account to your profile.",
+            "permissionWhy": "Your account is not allowed to use this.",
+            "seePlans": "See plans",
+            "startTrial": "Start trial",
+            "join": "Join",
+            "permissionLink": "Learn more"
         }
     }
 }

@@ -1945,6 +1945,15 @@
             "saved": "Salvo {{time}}",
             "error": "Não foi salvo",
             "retry": "Tentar novamente"
+        },
+        "locked": {
+            "planWhy": "Incluída em:",
+            "roleWhy": "Para usá-la, adicione este tipo de conta ao seu perfil.",
+            "permissionWhy": "Sua conta não tem permissão para usar isto.",
+            "seePlans": "Ver planos",
+            "startTrial": "Começar teste",
+            "join": "Participar",
+            "permissionLink": "Saiba mais"
         }
     }
 }

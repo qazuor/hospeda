@@ -1945,6 +1945,15 @@
             "saved": "Guardado {{time}}",
             "error": "No se guardó",
             "retry": "Reintentar"
+        },
+        "locked": {
+            "planWhy": "Está incluida en:",
+            "roleWhy": "Para usarla, sumá este tipo de cuenta a tu perfil.",
+            "permissionWhy": "Tu cuenta no tiene permiso para usar esto.",
+            "seePlans": "Ver planes",
+            "startTrial": "Empezar prueba",
+            "join": "Sumarme",
+            "permissionLink": "Saber más"
         }
     }
 }
