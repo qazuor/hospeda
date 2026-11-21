@@ -41,6 +41,32 @@ export type ResendRefundCallsResult = {
     readonly outcomes: readonly ResendRefundCallOutcome[];
 };
 
+/**
+ * HOS-2517: the provider refund ids among `ids` that already settle something of ours, either
+ * as the panel reference of a refund (action 14, `PROVIDER_PANEL`) or as the provider id of a
+ * refund call. Such an id must never be bound to another call.
+ */
+async function readCitedProviderRefundIds(ids: readonly string[]): Promise<ReadonlySet<string>> {
+    if (ids.length === 0) return new Set();
+    const db = getDb();
+    const [called, settled] = await Promise.all([
+        db
+            .select({ id: refundCalls.providerRefundId })
+            .from(refundCalls)
+            .where(inArray(refundCalls.providerRefundId, [...ids])),
+        db
+            .select({ id: refunds.externalRef })
+            .from(refunds)
+            .where(
+                and(
+                    inArray(refunds.externalRef, [...ids]),
+                    eq(refunds.externalChannel, 'PROVIDER_PANEL')
+                )
+            )
+    ]);
+    return new Set([...called, ...settled].flatMap(({ id }) => (id === null ? [] : [id])));
+}
+
 /** AC:B6:10 / TRANS:B:RF2: persisted calls retried with their original body and key; HOS-1636 supplies the production caller. */
 export async function resendUnansweredRefundCalls(
     input: ResendRefundCallsInput,
@@ -98,20 +124,10 @@ export async function resendUnansweredRefundCalls(
                         entry.amount.amountMinor === call.amount &&
                         entry.amount.currency === payment.currency
                 );
-                const named =
-                    matching.length === 0
-                        ? []
-                        : await db
-                              .select({ id: refundCalls.providerRefundId })
-                              .from(refundCalls)
-                              .where(
-                                  inArray(
-                                      refundCalls.providerRefundId,
-                                      matching.map((entry) => entry.refundId)
-                                  )
-                              );
-                const namedIds = new Set(named.map(({ id }) => id));
-                const candidates = matching.filter((entry) => !namedIds.has(entry.refundId));
+                const cited = await readCitedProviderRefundIds(
+                    matching.map((entry) => entry.refundId)
+                );
+                const candidates = matching.filter((entry) => !cited.has(entry.refundId));
                 if (candidates.length !== 1) {
                     const ambiguous = new AmbiguousRefundAnswerError({
                         kind: 'PAYMENT',
@@ -135,6 +151,22 @@ export async function resendUnansweredRefundCalls(
                     continue;
                 }
                 providerRefundId = candidates[0]!.refundId;
+            }
+            if ((await readCitedProviderRefundIds([providerRefundId])).has(providerRefundId)) {
+                const cited = new AmbiguousRefundAnswerError({
+                    kind: 'PAYMENT',
+                    refundId: input.refundId,
+                    refundCallKey: key,
+                    paymentId: payment.id,
+                    providerFactId: payment.providerFactId,
+                    expectedAmountMinor: call.amount,
+                    reason: 'PROVIDER_REFUND_ALREADY_CITED',
+                    candidates: [{ providerRefundId, amountMinor: call.amount }]
+                });
+                // HOS-2517: binding an id already cited would count one provider refund twice.
+                logger.error(cited, cited.message, { capture: true });
+                outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
+                continue;
             }
             await completeCall(
                 key,

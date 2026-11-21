@@ -1,7 +1,13 @@
-/** Why a provider refund answer could not be bound to our refund call (HOS-2007, HOS-1553 Q-5). */
+/**
+ * Why a provider refund answer could not be bound to our refund call (HOS-2007, HOS-1553 Q-5).
+ * `PROVIDER_REFUND_ALREADY_CITED`: the provider refund id the answer names is already the
+ * panel reference of a refund or the provider id of another call (HOS-2517), so binding it
+ * would count one provider refund twice.
+ */
 export const AMBIGUOUS_REFUND_ANSWER_REASONS = [
     'NO_UNNAMED_PAYMENT_REFUND',
-    'SEVERAL_UNNAMED_PAYMENT_REFUNDS'
+    'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
+    'PROVIDER_REFUND_ALREADY_CITED'
 ] as const;
 
 /** One of {@link AMBIGUOUS_REFUND_ANSWER_REASONS}. */
