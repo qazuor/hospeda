@@ -4,7 +4,8 @@
  * Covers: render, popover open/close, copy-to-clipboard, WhatsApp href assertion.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareButtons } from '../../src/components/ShareButtons.client';
 import { addToast } from '../../src/store/toast-store';
@@ -46,6 +47,8 @@ vi.mock('@repo/icons', () => ({
             width={size}
         />
     ),
+    XIcon: () => <svg data-testid="x-icon" />,
+    TelegramIcon: () => <svg data-testid="telegram-icon" />,
     CopyIcon: ({ size }: { size: number }) => (
         <svg
             data-testid="copy-icon"
@@ -140,6 +143,18 @@ describe('ShareButtons', () => {
             expect(screen.getByText('Telegram')).toBeInTheDocument();
             // "Copiar enlace" is the copy button label (from fallback)
             expect(screen.getByText(/copiar enlace/i)).toBeInTheDocument();
+        });
+
+        it('keeps the legacy decorative X glyph in the desktop share menu', () => {
+            renderShareButtons();
+
+            fireEvent.click(screen.getByRole('button', { name: /compartir/i }));
+
+            const row = screen.getByRole('menuitem', { name: /twitter/i });
+            const mark = within(row).getByText('𝕏');
+            expect(mark).toHaveClass('xIcon');
+            expect(mark).toHaveAttribute('aria-hidden', 'true');
+            expect(within(row).queryByTestId('x-icon')).not.toBeInTheDocument();
         });
 
         it('closes the popover when the close button is clicked', () => {
@@ -240,6 +255,159 @@ describe('ShareButtons', () => {
             await waitFor(() => {
                 expect(screen.queryByRole('menu')).not.toBeInTheDocument();
             });
+        });
+    });
+
+    describe('Icon overlay fallback', () => {
+        beforeEach(() => {
+            vi.stubGlobal('innerWidth', 390);
+        });
+
+        function renderOverlay() {
+            const user = userEvent.setup();
+            render(
+                <ShareButtons
+                    {...DEFAULT_PROPS}
+                    appearance="icon-overlay"
+                />
+            );
+            const trigger = screen.getByRole('button', { name: 'Compartir' });
+            trigger.focus();
+            return { user, trigger };
+        }
+
+        it.each([
+            { name: 'NotAllowedError', opensFallback: true },
+            { name: 'AbortError', opensFallback: false }
+        ])('handles native share rejection $name', async ({ name, opensFallback }) => {
+            const share = vi.fn().mockRejectedValue(new DOMException('', name));
+            navigator.share = share;
+            const { user, trigger } = renderOverlay();
+
+            await user.keyboard('{Enter}');
+
+            expect(share).toHaveBeenCalledWith({
+                url: DEFAULT_PROPS.url,
+                title: DEFAULT_PROPS.title
+            });
+            if (opensFallback) {
+                const fallback = await screen.findByRole('group', { name: 'Compartir' });
+                expect(
+                    within(fallback).getByRole('button', { name: 'Copiar enlace' })
+                ).toBeEnabled();
+                expect(within(fallback).getByRole('button', { name: 'Cerrar' })).toHaveFocus();
+            } else {
+                expect(screen.queryByRole('group')).not.toBeInTheDocument();
+                expect(trigger).toHaveFocus();
+            }
+        });
+
+        it('opens a labeled popover with native controls, supports Tab, and returns focus on Escape', async () => {
+            const { user, trigger } = renderOverlay();
+
+            await user.keyboard('{Enter}');
+            const popover = screen.getByRole('group', { name: 'Compartir' });
+            const close = within(popover).getByRole('button', { name: 'Cerrar' });
+            expect(close).toHaveFocus();
+            await user.tab();
+
+            expect(within(popover).getByRole('link', { name: /whatsapp/i })).toHaveFocus();
+            expect(
+                within(popover).getByRole('button', { name: 'Copiar enlace' })
+            ).toBeInTheDocument();
+            expect(trigger).not.toHaveAttribute('aria-haspopup', 'menu');
+            await user.keyboard('{Escape}');
+            expect(popover).not.toBeInTheDocument();
+            expect(trigger).toHaveFocus();
+        });
+
+        it.each([
+            'forward',
+            'backward'
+        ] as const)('dismisses without reclaiming focus when tabbing %s out of the overlay', async (direction) => {
+            const user = userEvent.setup();
+            render(
+                <>
+                    <button type="button">Previous control</button>
+                    <ShareButtons
+                        {...DEFAULT_PROPS}
+                        appearance="icon-overlay"
+                    />
+                    <button type="button">Next control</button>
+                </>
+            );
+            const trigger = screen.getByRole('button', { name: 'Compartir' });
+            const backwards = direction === 'backward';
+            const outside = screen.getByRole('button', {
+                name: backwards ? 'Previous control' : 'Next control'
+            });
+            trigger.focus();
+            await user.keyboard('{Enter}');
+            const popover = screen.getByRole('group');
+            if (backwards) {
+                await user.tab({ shift: true });
+                expect(trigger).toHaveFocus();
+                expect(popover).toBeInTheDocument();
+            } else {
+                within(popover).getByRole('button', { name: 'Copiar enlace' }).focus();
+            }
+
+            await user.tab({ shift: backwards });
+
+            expect(outside).toHaveFocus();
+            expect(popover).not.toBeInTheDocument();
+            await user.keyboard('{Escape}');
+            expect(outside).toHaveFocus();
+        });
+
+        it('ignores Escape dispatched outside the share control while it is open', async () => {
+            const { user, trigger } = renderOverlay();
+            await user.keyboard('{Enter}');
+            const popover = screen.getByRole('group');
+
+            fireEvent.keyDown(document.body, { key: 'Escape' });
+
+            expect(popover).toBeInTheDocument();
+            expect(within(popover).getByRole('button', { name: 'Cerrar' })).toHaveFocus();
+            expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        });
+
+        it.each([
+            'Cerrar',
+            'Copiar enlace',
+            'Compartir en WhatsApp'
+        ])('restores focus after activating %s', async (label) => {
+            const { user, trigger } = renderOverlay();
+            await user.keyboard('{Enter}');
+            const action = screen.getByLabelText(label);
+            // Test the new-tab link's handler without attempting navigation in jsdom.
+            if (action instanceof HTMLAnchorElement) {
+                action.addEventListener('click', (event) => event.preventDefault(), { once: true });
+            }
+            action.focus();
+
+            await user.keyboard('{Enter}');
+
+            await waitFor(() => expect(trigger).toHaveAttribute('aria-expanded', 'false'));
+            expect(trigger).toHaveFocus();
+        });
+
+        it.each([
+            { label: 'X', iconId: 'x-icon', prefix: 'https://twitter.com/intent/tweet?' },
+            { label: 'Telegram', iconId: 'telegram-icon', prefix: 'https://t.me/share/url?' }
+        ])('uses the library $label mark without changing its share URL', ({
+            label,
+            iconId,
+            prefix
+        }) => {
+            const { trigger } = renderOverlay();
+            fireEvent.click(trigger);
+
+            const link = screen.getByText(label).closest('a');
+            expect(link?.getAttribute('href')).toBe(
+                `${prefix}url=${encodeURIComponent(DEFAULT_PROPS.url)}&text=${encodeURIComponent(DEFAULT_PROPS.title)}`
+            );
+            expect(link).toContainElement(screen.getByTestId(iconId));
         });
     });
 

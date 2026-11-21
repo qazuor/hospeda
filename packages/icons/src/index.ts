@@ -456,6 +456,7 @@ export { GithubIcon } from './icons/social/GithubIcon';
 export { GoogleIcon } from './icons/social/GoogleIcon';
 export { InstagramIcon } from './icons/social/InstagramIcon';
 export { LinkedInIcon } from './icons/social/LinkedInIcon';
+export { TelegramIcon } from './icons/social/TelegramIcon';
 export { TiktokIcon } from './icons/social/TiktokIcon';
 export { TwitterIcon, XIcon } from './icons/social/TwitterIcon';
 export { WebIcon } from './icons/social/WebIcon';
