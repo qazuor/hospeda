@@ -10,7 +10,7 @@ import {
     COLLECTION_ENTITY_PATH_SEGMENTS,
     COLLECTION_ENTITY_TYPES,
     COLLECTION_FILTER_LABELS,
-    isCollectionEntityType
+    parseCollectionEntityType
 } from '../../src/lib/collection-entity-types';
 
 const pageSrc = readFileSync(
@@ -39,7 +39,7 @@ describe('collection entity types (HOS-2423)', () => {
         'EVENT',
         'POST'
     ])('accepts %s as a filterable type with a tab label and an entity path', (type) => {
-        expect(isCollectionEntityType({ value: type })).toBe(true);
+        expect(parseCollectionEntityType({ value: type })).toBe(type);
         expect(COLLECTION_ENTITY_TYPES).toContain(type);
         expect(
             COLLECTION_FILTER_LABELS[type as keyof typeof COLLECTION_FILTER_LABELS]
@@ -50,13 +50,13 @@ describe('collection entity types (HOS-2423)', () => {
     });
 
     it('rejects unknown and absent values', () => {
-        expect(isCollectionEntityType({ value: 'USER' })).toBe(false);
-        expect(isCollectionEntityType({ value: null })).toBe(false);
+        expect(parseCollectionEntityType({ value: 'USER' })).toBeUndefined();
+        expect(parseCollectionEntityType({ value: null })).toBeUndefined();
     });
 
     it('builds the page tabs from the shared type list, including ATTRACTION', () => {
         expect(pageSrc).toContain('COLLECTION_ENTITY_TYPES.map');
-        expect(pageSrc).toContain('isCollectionEntityType');
+        expect(pageSrc).toContain('parseCollectionEntityType');
     });
 
     it('reuses the account.favorites.tabs.* keys instead of a duplicate filter set', () => {

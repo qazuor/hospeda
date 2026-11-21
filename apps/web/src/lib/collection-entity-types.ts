@@ -45,15 +45,17 @@ export const COLLECTION_ENTITY_PATH_SEGMENTS: Readonly<Record<CollectionEntityTy
 };
 
 /**
- * Type guard for a raw `entityType` query value.
+ * Narrows a raw `entityType` query value to a supported collection entity type.
+ * Returns the value instead of a type predicate because TypeScript cannot attach
+ * a predicate to a destructured (RO-RO) parameter.
  *
  * @param params - Object receiving the raw value (`null` when absent)
- * @returns `true` when the value is a supported collection entity type
+ * @returns The value when it is a supported type, otherwise `undefined`
  */
-export function isCollectionEntityType({
+export function parseCollectionEntityType({
     value
 }: {
-    readonly value: string | null;
-}): value is CollectionEntityType {
-    return (COLLECTION_ENTITY_TYPES as readonly string[]).includes(value ?? '');
+    readonly value: string | null | undefined;
+}): CollectionEntityType | undefined {
+    return COLLECTION_ENTITY_TYPES.find((type) => type === value);
 }

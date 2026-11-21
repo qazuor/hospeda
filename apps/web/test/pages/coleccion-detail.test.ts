@@ -54,7 +54,7 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
 
         it('validates entityType against an allowed set', () => {
             expect(pageSrc).toContain('COLLECTION_ENTITY_TYPES');
-            expect(pageSrc).toContain('isCollectionEntityType');
+            expect(pageSrc).toContain('parseCollectionEntityType');
         });
 
         it('defaults page to 1 when param is absent', () => {

@@ -27,7 +27,7 @@ import {
 	COLLECTION_ENTITY_PATH_SEGMENTS,
 	COLLECTION_ENTITY_TYPES,
 	COLLECTION_FILTER_LABELS,
-	isCollectionEntityType
+	parseCollectionEntityType
 } from '@/lib/collection-entity-types';
 import type { CollectionEntityType } from '@/lib/collection-entity-types';
 import { createTranslations } from '@/lib/i18n';
@@ -64,11 +64,9 @@ const rawPage = Astro.url.searchParams.get('bookmarksPage');
 
 type ValidEntityType = CollectionEntityType;
 
-const activeEntityType: ValidEntityType | undefined = isCollectionEntityType({
+const activeEntityType: ValidEntityType | undefined = parseCollectionEntityType({
 	value: rawEntityType
-})
-	? rawEntityType
-	: undefined;
+});
 
 const currentPage = rawPage && /^\d+$/.test(rawPage) ? Math.max(1, parseInt(rawPage, 10)) : 1;
 
