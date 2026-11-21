@@ -458,7 +458,7 @@ describe('HOS-2406 remainder settlement route', () => {
         const reference = await refundAtFake(seeded.chargeId, 6000);
 
         // Act
-        const response = await withRefundCallClaim(seeded.refundId, () =>
+        const response = await withRefundCallClaim(seeded.refundId, async () =>
             settle({
                 refundId: seeded.refundId,
                 headers: admin(seeded.adminId),
