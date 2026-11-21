@@ -24,13 +24,13 @@
     padding: var(--space-4);
 }
 
-.content[data-template='form'] > :first-child,
-.content[data-template='form'] {
+.content[data-template="form"] > :first-child,
+.content[data-template="form"] {
     max-inline-size: var(--form-max);
     margin-inline-end: auto;
 }
 
-.content[data-template='reading'] {
+.content[data-template="reading"] {
     max-inline-size: var(--reading-max);
     margin-inline-end: auto;
 }
