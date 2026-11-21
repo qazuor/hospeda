@@ -92,11 +92,16 @@ export interface PlannedHelpTopic {
     readonly tokenDestinations: readonly HelpDestination[];
 }
 
-/** Whether a destination's vertical is one whose plans page exists. */
+/** The verticals that have a public plans page. */
+const PLANS_PAGE_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
+
+/** The plans-page destination for a vertical, or `undefined` when it has no plans page. */
 function plansDestinationFor(vertical: string | undefined): HelpDestination | undefined {
-    return vertical === 'accommodation' || vertical === 'venue' || vertical === 'experience'
-        ? { kind: 'plans', vertical }
-        : undefined;
+    const match = PLANS_PAGE_VERTICALS.find((candidate) => candidate === vertical);
+    if (match === undefined) {
+        return undefined;
+    }
+    return { kind: 'plans', vertical: match };
 }
 
 /** Resolves one text for the agent, collecting the destinations its tokens name. */
