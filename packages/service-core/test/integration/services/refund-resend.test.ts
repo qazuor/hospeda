@@ -34,6 +34,26 @@ function lostResponseProvider(provider: PaymentProvider) {
     return { wrapped, refund };
 }
 
+/**
+ * The provider whose first charge read lags behind and does not show refunds yet, so the resend
+ * finds nothing to bind and posts again (HOS-2516 reads before posting).
+ */
+function laggingFirstRead(provider: PaymentProvider): PaymentProvider {
+    let first = true;
+    return new Proxy(provider, {
+        get(target, property, receiver) {
+            if (property === 'readCharge')
+                return async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+                    const read = await target.readCharge(input);
+                    if (!first) return read;
+                    first = false;
+                    return { ...read, snapshot: { ...read.snapshot, refunds: [] } };
+                };
+            return Reflect.get(target, property, receiver);
+        }
+    });
+}
+
 describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
     it.skipIf(skip)(
         'replays a payment with the same key and amount and binds the empty response by reread',
@@ -59,7 +79,7 @@ describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
             const key = before.calls[0]!.idempotencyKey;
             const replay = await resendUnansweredRefundCalls(
                 { refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider: lost.wrapped }
+                { clock: seeded.fixture.clock, provider: laggingFirstRead(lost.wrapped) }
             );
             expect(replay.outcomes).toEqual([{ idempotencyKey: key, outcome: 'SENT' }]);
             expect(lost.refund).toHaveBeenNthCalledWith(2, {

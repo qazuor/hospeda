@@ -6,6 +6,8 @@ export type RefundCallRow = {
     readonly providerRefundId: string | null;
     readonly addonInstanceId: string | null;
     readonly amount: number;
+    /** When the call was persisted, right before it was sent to the provider. */
+    readonly createdAt: Date;
     readonly completedAt: Date | null;
     readonly result: unknown;
 };
@@ -49,6 +51,7 @@ export async function readRefundCallTally(input: {
             providerRefundId: refundCalls.providerRefundId,
             addonInstanceId: refundCalls.addonInstanceId,
             amount: refundCalls.amount,
+            createdAt: refundCalls.createdAt,
             completedAt: idempotencyKeys.completedAt,
             result: idempotencyKeys.result
         })

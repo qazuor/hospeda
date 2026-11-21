@@ -2345,12 +2345,41 @@
             "success": "Devolución cerrada. MP había aceptado {{accepted}} y se registró el resto de {{remainder}}.",
             "rejections": {
                 "REFUND_NOT_CONFIRMED": "La devolución no está confirmada. Solo se puede asentar el resto de una devolución confirmada.",
-                "REFUND_CALL_UNANSWERED": "Hay un pedido al proveedor sin respuesta. Este caso no se cierra desde acá: seguí la nota de devoluciones trabadas.",
+                "REFUND_CALL_UNANSWERED": "Hay un pedido al proveedor sin respuesta. Primero usá «Reintentar con Mercado Pago» en esta misma pantalla; si no lo cierra, seguí la nota de devoluciones trabadas.",
                 "REFUND_HAS_NO_ACCEPTED_CALL": "El proveedor no aceptó ninguna parte de esta devolución. Rechazala y después asentala con la acción 14.",
                 "REMAINDER_AMOUNT_MISMATCH": "El resto no coincide con lo que falta devolver: monto de la devolución menos lo que el proveedor acreditó.",
                 "ACCEPTED_PART_NOT_ACCREDITED": "El proveedor no muestra acreditada la parte que había aceptado. Revisá el cobro en el panel del proveedor antes de registrar el resto.",
                 "REMAINDER_NOT_FOUND_AT_PROVIDER": "El proveedor no muestra en este cobro una devolución acreditada con esa referencia y ese monto.",
                 "OTHER_REFUND_CALL_UNANSWERED": "Otra devolución de este pago tiene una llamada a MP sin respuesta. Esperá a que se resuelva antes de registrar el resto: el reembolso que ves en el panel puede ser de esa llamada."
+            }
+        },
+        "providerRetry": {
+            "title": "Reintentar con Mercado Pago",
+            "description": "Para una devolución confirmada que quedó trabada porque MP no contestó una llamada (timeout, error o respuesta vacía), o que MP aceptó pero todavía no figura acreditada. Antes de reenviar, se lee el cobro en MP: si la devolución ya está ahí, se la toma y no se reenvía nada. Solo si no aparece se reenvía la llamada, con su misma clave de idempotencia.",
+            "refundId": "ID de la devolución",
+            "review": "Revisar",
+            "confirmText": "Se lee el cobro en Mercado Pago para la devolución {{refundId}}. Si la devolución ya figura, se la toma sin reenviar; si no, se reenvía cada llamada sin respuesta con su misma clave. Si MP la muestra acreditada, la devolución se cierra.",
+            "confirm": "Reintentar con MP",
+            "back": "Volver",
+            "summary": {
+                "EXECUTED": "MP aceptó y acreditó la devolución. Quedó ejecutada.",
+                "WAITING_ACCREDITATION": "MP tiene la devolución pero todavía no figura acreditada. Sigue confirmada: se cierra con el próximo aviso de MP, o tocando de nuevo «Reintentar con MP», que vuelve a leer el cobro.",
+                "FAILED": "MP rechazó la llamada. La devolución quedó fallida: revisá el panel de MP antes de devolver a mano (acción 14).",
+                "STILL_UNANSWERED": "Alguna llamada sigue sin una respuesta que se pueda usar. Reintentá más tarde o seguí el runbook de devoluciones (§8)."
+            },
+            "calls": {
+                "SENT": "aceptada por MP",
+                "FOUND_AT_PROVIDER": "ya estaba en MP: se tomó sin reenviar",
+                "AWAITING_PROVIDER_ANSWER": "sigue sin respuesta",
+                "PROVIDER_KEY_CONFLICT": "MP rechazó la clave por reutilizada: seguí el runbook de devoluciones (§8)",
+                "PROVIDER_REJECTED_FAILED": "rechazada por MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "La devolución no está confirmada. Solo se reintenta una devolución confirmada.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "La devolución no tiene llamadas sin respuesta ni aceptadas pendientes de acreditar: no hay nada que reintentar.",
+                "REFUND_PAST_PROVIDER_WINDOW": "Pasaron más de 180 días del cobro: MP rechazaría cualquier llamada sin decir si la primera salió. Revisá el panel de MP a mano (runbook de devoluciones, §8).",
+                "REFUND_RETRY_IN_PROGRESS": "Ya hay un reintento de esta devolución en curso. Esperá a que termine y mirá el resultado.",
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "El llamado sin respuesta se envió hace más de 24 horas y el cobro no muestra ninguna devolución para atarlo, así que no se reenvía (no se envió ni se registró nada). Seguí el runbook de devoluciones, §8 pasos 1-2: revisá el cobro en el panel de Mercado Pago y registrá la respuesta del llamado a mano (§8.1 o §8.2)."
             }
         }
     },

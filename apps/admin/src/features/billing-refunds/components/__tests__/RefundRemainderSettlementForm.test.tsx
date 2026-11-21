@@ -45,6 +45,10 @@ vi.mock('../../hooks/useProposedRefunds', () => ({
         refetch: vi.fn()
     })
 }));
+// The screen also renders «Retry with MP» (HOS-2516); its mutation is out of this test's scope.
+vi.mock('../../hooks/useRetryRefundProviderCalls', () => ({
+    useRetryRefundProviderCalls: () => ({ mutateAsync: vi.fn(), isPending: false })
+}));
 vi.mock('../../hooks/useSettleRefundRemainder', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     useSettleRefundRemainder: () => ({ mutateAsync: state.settle, isPending: state.pending })
