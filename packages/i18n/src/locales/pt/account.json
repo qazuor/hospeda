@@ -1856,5 +1856,15 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "accountNotice": "Você vai alterar a senha desta conta:"
+    },
+    "notFound": {
+        "title": "Não encontramos o que você procurava",
+        "description": "O link pode estar desatualizado ou o conteúdo pode não existir mais.",
+        "back": {
+            "account": "Voltar para a minha conta",
+            "messages": "Voltar para as minhas consultas",
+            "ownerMessages": "Voltar para as consultas das minhas propriedades",
+            "listings": "Voltar para as minhas publicações"
+        }
     }
 }

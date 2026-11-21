@@ -19,6 +19,7 @@
 
 import type { AstroGlobal } from 'astro';
 import type { DestinationOption } from '@/components/listing/destination-option';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { AmenityData } from '@/lib/api/types';
@@ -115,7 +116,9 @@ export async function resolveListingEditorPage({
     const verticalParam = astro.params.vertical;
     const listingId = astro.params.id;
     if (!isListingEditorVertical(verticalParam) || !listingId) {
-        return { redirect: new Response(null, { status: 404 }) };
+        return {
+            redirect: astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'listings' }))
+        };
     }
     const vertical = verticalParam;
 

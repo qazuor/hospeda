@@ -23,6 +23,7 @@
  * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 
@@ -32,7 +33,7 @@ const locale = Astro.locals.locale;
 
 const verticalParam = Astro.params.vertical;
 if (verticalParam !== 'venue' && verticalParam !== 'experience') {
-    return new Response(null, { status: 404 });
+    return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'listings' }));
 }
 
 return Astro.redirect(

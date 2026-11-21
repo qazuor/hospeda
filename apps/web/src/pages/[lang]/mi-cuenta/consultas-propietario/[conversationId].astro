@@ -14,6 +14,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
 import { getApiUrl } from '@/lib/env';
@@ -37,7 +38,7 @@ if (!hasAccommodationsNavAccess({ roles: user.roles })) {
 }
 
 const { conversationId } = Astro.params;
-if (!conversationId) return new Response(null, { status: 404 });
+if (!conversationId) return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'ownerMessages' }));
 
 // Cursor from URL for older message pagination
 const cursor = Astro.url.searchParams.get('cursor') ?? undefined;
@@ -51,7 +52,7 @@ const result = await ownerConversationsApi.getById({
 });
 
 if (!result.ok) {
-    return new Response(null, { status: 404 });
+    return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'ownerMessages' }));
 }
 
 const { conversation, messages, nextCursor, listingAvailability } = result.data;

@@ -1856,5 +1856,15 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "accountNotice": "You are about to change the password for this account:"
+    },
+    "notFound": {
+        "title": "We could not find what you were looking for",
+        "description": "The link may be out of date or the content may no longer exist.",
+        "back": {
+            "account": "Back to my account",
+            "messages": "Back to my inquiries",
+            "ownerMessages": "Back to my property inquiries",
+            "listings": "Back to my listings"
+        }
     }
 }
