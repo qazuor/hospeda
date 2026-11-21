@@ -283,6 +283,7 @@
                 "photosDescription_other": "Upload up to {{cap}} photos of your property to attract more guests",
                 "photosDescriptionLoading": "Loading your photo limit…",
                 "photosDescriptionNoPlan": "Your current plan does not include uploading photos. Choose a plan to add them.",
+                "photosDescriptionError": "We could not load your photo limit. Try reloading the page.",
                 "photosPlansCta": "See plans",
                 "externalReputation": "External reputation",
                 "calendar": "Calendar",

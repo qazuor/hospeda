@@ -147,7 +147,8 @@ export function PhotoSection({
     const {
         limit: getEntitlementLimit,
         draftLimit: getDraftLimit,
-        isLoading: isEntitlementsLoading
+        isLoading: isEntitlementsLoading,
+        error: entitlementsError
     } = useMyEntitlements({
         vertical: 'accommodation'
     });
@@ -261,6 +262,7 @@ export function PhotoSection({
                 locale={locale}
                 isLoading={isEntitlementsLoading}
                 isResolved={isGalleryCapResolved}
+                readFailed={entitlementsError !== null}
                 cap={galleryCap}
             />
 

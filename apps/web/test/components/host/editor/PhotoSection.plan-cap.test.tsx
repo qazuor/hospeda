@@ -32,6 +32,7 @@ const {
     mockLimit,
     mockDraftLimit,
     mockIsLoading,
+    mockError,
     mockFeaturedOverride,
     mockSubscribeDestination
 } = vi.hoisted(() => ({
@@ -41,6 +42,7 @@ const {
     mockLimit: vi.fn(),
     mockDraftLimit: vi.fn(),
     mockIsLoading: vi.fn(),
+    mockError: { current: null as Error | null },
     mockFeaturedOverride: { current: null as null | Record<string, unknown> },
     mockSubscribeDestination: vi.fn()
 }));
@@ -86,7 +88,7 @@ vi.mock('@/hooks/useMyEntitlements', () => ({
         draftLimit: mockDraftLimit,
         plan: null,
         isLoading: mockIsLoading(),
-        error: null
+        error: mockError.current
     })
 }));
 
@@ -143,6 +145,7 @@ function makeAddOk(i: number) {
 beforeEach(() => {
     vi.clearAllMocks();
     mockFeaturedOverride.current = null;
+    mockError.current = null;
     mockSubscribeDestination.mockResolvedValue({
         ok: true,
         data: { destination: 'PUBLISH', trialDays: 14 }
@@ -249,6 +252,20 @@ describe('HOS-1024 — header + gallery label show the PLAN cap, not the entity 
 });
 
 describe('HOS-2442 — an owner with no plan is told so instead of loading forever', () => {
+    it('never claims the host has no plan when the entitlements read failed', async () => {
+        mockIsLoading.mockReturnValue(false);
+        mockLimit.mockReturnValue(0);
+        mockDraftLimit.mockReturnValue(0);
+        mockError.current = new Error('');
+
+        render(<PhotoSection {...defaultProps} />);
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+        expect(screen.getByText(/No pudimos cargar tu límite de fotos/)).toBeInTheDocument();
+        expect(screen.queryByText(/no incluye subir fotos/)).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Ver planes' })).not.toBeInTheDocument();
+    });
+
     it('stops saying "loading" once entitlements resolved with no cap, and points to the plans', async () => {
         mockIsLoading.mockReturnValue(false);
         mockLimit.mockReturnValue(0);

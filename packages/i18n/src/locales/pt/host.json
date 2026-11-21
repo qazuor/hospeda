@@ -283,6 +283,7 @@
                 "photosDescription_other": "Envie até {{cap}} fotos do seu imóvel para atrair mais hóspedes",
                 "photosDescriptionLoading": "Carregando seu limite de fotos…",
                 "photosDescriptionNoPlan": "Seu plano atual não inclui o envio de fotos. Escolha um plano para adicioná-las.",
+                "photosDescriptionError": "Não foi possível carregar seu limite de fotos. Tente recarregar a página.",
                 "photosPlansCta": "Ver planos",
                 "externalReputation": "Reputação externa",
                 "calendar": "Calendário",
