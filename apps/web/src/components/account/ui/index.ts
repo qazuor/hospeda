@@ -8,6 +8,13 @@
  * @module components/account/ui
  */
 
+export { Alert, type AlertProps, type AlertTone } from './Alert';
+export {
+    AsyncRegion,
+    type AsyncRegionProps,
+    type AsyncResult,
+    settleAsync
+} from './AsyncRegion';
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
@@ -15,11 +22,13 @@ export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './Conf
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
+export type { LockReason, PlanRef } from './lock-reason';
 export { type LoadMoreResult, Pagination, type PaginationProps } from './Pagination';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
 export { buildPageRange, type PageSlot } from './pagination-range';

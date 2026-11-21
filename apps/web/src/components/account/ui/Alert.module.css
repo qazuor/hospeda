@@ -1,0 +1,109 @@
+/* Alert.module.css — inline messages, ErrorState and AsyncRegion pieces
+   (HOS-2413 T-024). Tones use the role status tokens. */
+
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    box-sizing: border-box;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--alert-border);
+    border-radius: var(--radius-surface);
+    background-color: var(--alert-bg);
+    color: var(--alert-fg);
+}
+
+.info {
+    --alert-bg: var(--status-info-bg);
+    --alert-fg: var(--status-info-fg);
+    --alert-border: var(--status-info-border);
+}
+
+.success {
+    --alert-bg: var(--status-success-bg);
+    --alert-fg: var(--status-success-fg);
+    --alert-border: var(--status-success-border);
+}
+
+.warning {
+    --alert-bg: var(--status-warning-bg);
+    --alert-fg: var(--status-warning-fg);
+    --alert-border: var(--status-warning-border);
+}
+
+.danger {
+    --alert-bg: var(--status-danger-bg);
+    --alert-fg: var(--status-danger-fg);
+    --alert-border: var(--status-danger-border);
+}
+
+/* banner: full-bleed strip, no side borders or radius. */
+.banner {
+    border-inline: 0;
+    border-radius: 0;
+}
+
+.icon {
+    flex: none;
+    margin-block-start: var(--space-1);
+}
+
+.body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    font: var(--app-ui);
+}
+
+.title {
+    margin: 0;
+    font: var(--app-control);
+}
+
+.text {
+    margin: 0;
+}
+
+.action {
+    flex: none;
+}
+
+.visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ── ErrorState (block) ─────────────────────────────────────────────── */
+
+.errorBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-6);
+    border: 1px solid var(--status-danger-border);
+    border-radius: var(--radius-surface);
+    background-color: var(--status-danger-bg);
+    color: var(--status-danger-fg);
+    text-align: center;
+}
+
+.errorTitle {
+    margin: 0;
+    font: var(--app-card-title);
+}
+
+.errorDescription {
+    margin: 0;
+    max-inline-size: 28rem;
+    font: var(--app-ui);
+}

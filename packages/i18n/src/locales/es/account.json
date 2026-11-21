@@ -1917,6 +1917,17 @@
             "loadedMore": "Se cargaron {{count}} más"
         },
         "switchSaveError": "No se pudo guardar el cambio. Probá de nuevo.",
-        "switchLockedLink": "Ver cómo activarlo"
+        "switchLockedLink": "Ver cómo activarlo",
+        "alertTone": {
+            "info": "Información:",
+            "success": "Listo:",
+            "warning": "Atención:",
+            "danger": "Error:"
+        },
+        "error": {
+            "title": "No pudimos cargar esto",
+            "description": "Revisá tu conexión y volvé a intentar.",
+            "retry": "Reintentar"
+        }
     }
 }

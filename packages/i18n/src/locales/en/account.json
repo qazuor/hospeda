@@ -1917,6 +1917,17 @@
             "loadedMore": "{{count}} more loaded"
         },
         "switchSaveError": "The change could not be saved. Please try again.",
-        "switchLockedLink": "See how to turn it on"
+        "switchLockedLink": "See how to turn it on",
+        "alertTone": {
+            "info": "Information:",
+            "success": "Done:",
+            "warning": "Warning:",
+            "danger": "Error:"
+        },
+        "error": {
+            "title": "We could not load this",
+            "description": "Check your connection and try again.",
+            "retry": "Try again"
+        }
     }
 }
