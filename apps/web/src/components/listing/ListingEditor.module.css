@@ -2,8 +2,8 @@
  * Listing owner listing editor — orchestrator chrome only.
  *
  * Mirrors the visual language of the accommodation host editor
- * (`components/host/editor/*`): one card per section, a sticky-feeling action
- * bar with a pill primary button, and banner-style feedback. Kept as plain CSS
+ * (`components/host/editor/*`): one card per section, an action bar with a
+ * pill primary button (in normal flow, NOT sticky), and banner-style feedback. Kept as plain CSS
  * modules per web conventions.
  *
  * HOS-258: the field primitives moved to `editor/editor-fields.module.css` and
