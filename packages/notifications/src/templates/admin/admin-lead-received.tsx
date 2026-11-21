@@ -1,6 +1,6 @@
 import { Button, Hr, Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the AdminLeadReceived email template (H-62 / H-148).
@@ -63,10 +63,7 @@ export function AdminLeadReceived({
     submittedAtLabel
 }: AdminLeadReceivedProps) {
     return (
-        <EmailLayout
-            previewText={`${programLabel} — ${contactName}`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`${programLabel} — ${contactName}`}>
             <Heading>Nuevo lead de {programLabel}</Heading>
 
             <Text style={styles.paragraph}>

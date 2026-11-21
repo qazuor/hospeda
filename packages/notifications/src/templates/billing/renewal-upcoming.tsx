@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 
 /** Props for the PLAZO:13 renewal notice. */

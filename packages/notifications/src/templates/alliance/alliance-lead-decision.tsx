@@ -1,6 +1,6 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the AllianceLeadDecision email template (HOS-278 AC-6).
@@ -51,7 +51,6 @@ export function AllianceLeadDecision({
                     ? 'Aprobamos tu postulación en Hospeda'
                     : 'Novedades sobre tu postulación en Hospeda'
             }
-            showUnsubscribe={false}
         >
             <Heading>{approved ? '¡Buenas noticias!' : 'Sobre tu postulación'}</Heading>
 

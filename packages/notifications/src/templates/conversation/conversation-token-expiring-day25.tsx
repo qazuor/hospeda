@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for ConversationTokenExpiringDay25 email template.
@@ -36,7 +36,7 @@ export function ConversationTokenExpiringDay25({
     return (
         <EmailLayout
             previewText={`¡Último aviso! Tu acceso sobre ${accommodationName} vence en 5 días`}
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>¡Tu enlace de acceso vence en 5 días!</Heading>
 

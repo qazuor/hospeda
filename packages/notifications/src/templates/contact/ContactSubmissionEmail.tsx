@@ -1,7 +1,7 @@
 import { Column, Link, Row, Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for ContactSubmissionEmail template.

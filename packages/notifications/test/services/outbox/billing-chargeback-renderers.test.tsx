@@ -42,8 +42,9 @@ describe('TEST:B7:7 AC:B7:10 chargeback outbox renderer', () => {
         expect(result.subject).toBe(CHARGEBACK_SUSPENSION_SUBJECT);
         const withCourtesy = textLines(true);
         const withoutCourtesy = textLines(false);
+        // Layout chrome (HOS-2519): the header logo is an <img>, so only the
+        // tagline is a paragraph; the footer ends with the site-home link.
         const commonStart = [
-            'Hospeda',
             'Turismo en el Litoral',
             'Tu suscripción de Alojamiento se suspendió.',
             'Desconociste el cargo de $100,00 del día 19 de noviembre de 2026 en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá: https://hospeda.test/es/mi-cuenta/suscripcion/'
@@ -52,7 +53,8 @@ describe('TEST:B7:7 AC:B7:10 chargeback outbox renderer', () => {
             'Ya no se te va a cobrar: cancelamos la autorización de cobro.',
             'Una persona de nuestro equipo sigue el caso.',
             'Hospeda - Turismo en el Litoral',
-            'Plataforma de alojamientos turísticos en Concepción del Uruguay y la región del Litoral argentino'
+            'Plataforma de alojamientos turísticos en Concepción del Uruguay y la región del Litoral argentino',
+            'hospeda.com.ar'
         ];
         expect(withCourtesy).toEqual([
             ...commonStart,

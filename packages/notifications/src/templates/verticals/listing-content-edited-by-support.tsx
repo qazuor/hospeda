@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of action 15's support content edit notice (HOS-1675, catalog row 26). */
 export const LISTING_CONTENT_EDITED_BY_SUPPORT_SUBJECT = 'Soporte editó tu ficha';

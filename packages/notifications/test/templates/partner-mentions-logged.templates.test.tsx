@@ -37,6 +37,16 @@ const single: PartnerMentionsLoggedProps = {
     mentions: [{ channelLabel: 'Instagram', url: 'https://instagram.test/p/abc' }]
 };
 
+/**
+ * Anchors in the email body. The shared layout footer always adds one link to
+ * the site home (HOS-2519), which is chrome, not a channel link.
+ */
+function bodyAnchors({ html }: { readonly html: string }): readonly string[] {
+    return (html.match(/<a\s[^>]*>/g) ?? []).filter(
+        (anchor) => !anchor.includes('href="https://hospeda.com.ar"')
+    );
+}
+
 describe('PartnerMentionsLogged — AC-3 copy constraint', () => {
     /**
      * The four words the spec bans outright. Checked case-insensitively and on
@@ -99,7 +109,7 @@ describe('PartnerMentionsLogged — the links are the promise', () => {
         expect(html).not.toContain('href="undefined"');
         expect(html).not.toContain('href="null"');
         // Exactly three anchors for four channels.
-        expect(html.match(/<a\s/g) ?? []).toHaveLength(3);
+        expect(bodyAnchors({ html })).toHaveLength(3);
     });
 
     it('names the partner and the date the promotion happened', () => {
@@ -118,7 +128,7 @@ describe('PartnerMentionsLogged — one email covers the whole submission', () =
         // email per row to say everything.
         const html = renderToStaticMarkup(PartnerMentionsLogged(batch));
 
-        expect(html.match(/<a\s/g) ?? []).toHaveLength(3);
+        expect(bodyAnchors({ html })).toHaveLength(3);
         expect(html).toContain('los siguientes canales');
     });
 

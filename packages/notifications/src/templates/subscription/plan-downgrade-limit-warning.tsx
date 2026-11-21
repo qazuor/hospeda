@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Human-readable label for a resource limit key.
@@ -60,10 +60,7 @@ export function PlanDowngradeLimitWarning({
     const overLimit = currentUsage - newLimit;
 
     return (
-        <EmailLayout
-            previewText={`Cambio de límite en tu plan ${planName} - ${limitLabel}`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Cambio de límite en tu plan ${planName} - ${limitLabel}`}>
             <Heading>Cambio de límite en tu plan</Heading>
 
             <Text style={styles.greeting}>Hola {customerName},</Text>

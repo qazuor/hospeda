@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the notice before cancelling an addon whose listing was purged. */
 export const ADDON_LISTING_PURGED_SUBJECT =

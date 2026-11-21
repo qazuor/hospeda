@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Props for the CourtesyStarted email template (HOS-180). */
 export interface CourtesyStartedProps {
@@ -29,10 +29,7 @@ export function CourtesyStarted({
     baseUrl
 }: CourtesyStartedProps) {
     return (
-        <EmailLayout
-            previewText={`Tu regalo ya está activo: no te cobramos hasta el ${endsAt}`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Tu regalo ya está activo: no te cobramos hasta el ${endsAt}`}>
             <Heading>Tu regalo ya está activo</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
