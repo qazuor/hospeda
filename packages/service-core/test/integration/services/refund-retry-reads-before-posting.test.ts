@@ -5,6 +5,7 @@ import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { AmbiguousRefundAnswerError } from '../../../src/services/billing/refund/ambiguous-refund-answer.error.js';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
+import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import { retryRefundProviderCalls } from '../../../src/services/billing/refund/retry-refund-provider-calls.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { refundConfirmFixture, refundConfirmRows } from './support/refund-confirm-fixtures.js';
@@ -207,6 +208,124 @@ describe('HOS-2516 the retry reads the charge before posting a lost call again',
                   AND ((classid::bigint << 32) | objid::bigint)
                       = hashtext(${'refund-retry:'} || ${seeded.refundId})::bigint`);
             expect(held.rows).toEqual([{ n: 0 }]);
+        }
+    );
+});
+
+/**
+ * Refund A's call landed at the provider with its answer lost (unanswered, its provider refund
+ * uncited); refund B, of the SAME payment and amount, is stuck on a call that never reached the
+ * provider. B's call is the one retried.
+ */
+async function otherRefundInFlight() {
+    const { seeded, provider } = await landedAndStuck({ forgetsKey: false });
+    const other = await requestRefund(
+        { source: { kind: 'PAYMENT', id: seeded.payment.id }, amount: 4000, reason: 'REVOCATION' },
+        { clock: seeded.fixture.clock }
+    );
+    const refund = vi.fn(seeded.fixture.provider.refund.bind(seeded.fixture.provider));
+    let reachable = false;
+    let emptyAnswer = false;
+    let hideRefundsOnce = false;
+    const wrapped = new Proxy(seeded.fixture.provider, {
+        get(target, property, receiver) {
+            if (property === 'refund')
+                return async (input: Parameters<PaymentProvider['refund']>[0]) => {
+                    if (!reachable)
+                        throw new PaymentProviderError({
+                            code: 'UNAVAILABLE',
+                            capability: 'refund',
+                            message: 'network cut'
+                        });
+                    const answer = await refund(input);
+                    return emptyAnswer ? { ...answer, refundId: '' } : answer;
+                };
+            if (property === 'readCharge')
+                return async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+                    const read = await target.readCharge(input);
+                    if (!hideRefundsOnce) return read;
+                    hideRefundsOnce = false;
+                    return { ...read, snapshot: { ...read.snapshot, refunds: [] } };
+                };
+            return Reflect.get(target, property, receiver);
+        }
+    });
+    const confirmed = await confirmRefund(
+        { actor: seeded.actor, refundId: other.refundId },
+        { clock: seeded.fixture.clock, provider: wrapped }
+    );
+    expect(confirmed.outcome).toBe('AWAITING_PROVIDER_ANSWER');
+    return {
+        seeded,
+        landed: provider,
+        stuckRefundId: other.refundId,
+        wrapped,
+        refund,
+        /** From now on the provider is reachable; `empty` answers without an id and the next read lags. */
+        reach(options: { readonly empty: boolean }) {
+            reachable = true;
+            emptyAnswer = options.empty;
+            hideRefundsOnce = options.empty;
+        }
+    };
+}
+
+describe('HOS-2516 the retry never binds a refund another refund of the payment may own', () => {
+    it.skipIf(skip)(
+        'does not bind nor post while another refund has an unanswered call of the same amount',
+        async () => {
+            // Arrange
+            const ctx = await otherRefundInFlight();
+            ctx.reach({ empty: false });
+            const captured = capturing();
+
+            // Act
+            const result = await retryRefundProviderCalls(
+                { actor: ctx.seeded.actor, refundId: ctx.stuckRefundId },
+                { clock: ctx.seeded.fixture.clock, provider: ctx.wrapped }
+            );
+
+            // Assert
+            expect(result.calls.map(({ outcome }) => outcome)).toEqual([
+                'AWAITING_PROVIDER_ANSWER'
+            ]);
+            expect(ctx.refund).not.toHaveBeenCalled();
+            expect(ambiguousReasons(captured, ctx.stuckRefundId)).toEqual([
+                'OTHER_REFUND_CALL_UNANSWERED'
+            ]);
+            const rows = await refundConfirmRows(ctx.stuckRefundId);
+            expect(rows.calls.map((call) => call.providerRefundId)).toEqual([null]);
+            expect(rows.keys[0]?.completedAt).toBeNull();
+            expect(await providerRefunds(ctx.seeded)).toHaveLength(1);
+        }
+    );
+
+    it.skipIf(skip)(
+        'does not bind an answer without id while another refund has an unanswered call',
+        async () => {
+            // Arrange: the read before posting lags (shows nothing), so the call is posted; the
+            // answer carries no id and the read after it shows both refunds of the amount.
+            const ctx = await otherRefundInFlight();
+            ctx.reach({ empty: true });
+            const captured = capturing();
+
+            // Act
+            const result = await retryRefundProviderCalls(
+                { actor: ctx.seeded.actor, refundId: ctx.stuckRefundId },
+                { clock: ctx.seeded.fixture.clock, provider: ctx.wrapped }
+            );
+
+            // Assert
+            expect(result.calls.map(({ outcome }) => outcome)).toEqual([
+                'AWAITING_PROVIDER_ANSWER'
+            ]);
+            expect(ctx.refund).toHaveBeenCalledTimes(1);
+            expect(ambiguousReasons(captured, ctx.stuckRefundId)).toEqual([
+                'OTHER_REFUND_CALL_UNANSWERED'
+            ]);
+            const rows = await refundConfirmRows(ctx.stuckRefundId);
+            expect(rows.calls.map((call) => call.providerRefundId)).toEqual([null]);
+            expect(rows.keys[0]?.completedAt).toBeNull();
         }
     );
 });

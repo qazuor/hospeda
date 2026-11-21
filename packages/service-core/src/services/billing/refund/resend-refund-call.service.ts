@@ -18,6 +18,7 @@ import {
     type AmbiguousRefundAnswerReason,
     type AmbiguousRefundCandidate
 } from './ambiguous-refund-answer.error';
+import { hasOtherUnansweredRefundCall } from './refund-call-tally';
 import { completeCall } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
 
@@ -80,15 +81,31 @@ async function readCitedProviderRefundIds(ids: readonly string[]): Promise<Reado
 }
 
 /**
- * The provider refunds on the charge, read fresh for this decision, that match the call's amount
- * and currency and that nothing of ours cites yet (HOS-2517). Used before the resend (HOS-2516)
- * and again after an answer without an id.
+ * Reads the charge and returns the provider refunds for `amount` (in the payment's currency) that
+ * nothing of ours cites: no refund's panel reference, no call's provider id. Used before posting a
+ * resend and again after an answer without an id.
+ *
+ * `ambiguous` is true when there is such a candidate AND another refund of the same payment has a
+ * call the provider has not answered ({@link hasOtherUnansweredRefundCall}): that call's provider
+ * refund may be the uncited one, with the same amount, and binding it here would count the same
+ * money twice (the HOS-2517 risk seen from the resend side). The read cannot tell them apart:
+ * `ChargeRefund` does not expose the refund's reference (our idempotency key), so there is no
+ * matching by key.
+ *
+ * The check runs AFTER the charge read, and that order is what makes it sound without a payment
+ * lock: `persistCall` commits a call (unanswered) before its provider I/O, so any provider refund
+ * the read shows belongs to a call already committed, which the check then sees (the causal order
+ * documented with {@link hasOtherUnansweredRefundCall}, HOS-2517 / #4645).
  */
 async function readUncitedProviderRefunds(input: {
     readonly ports: ResendRefundCallsPorts;
+    readonly refundId: string;
     readonly payment: ConfirmedPayment;
     readonly amount: number;
-}): Promise<readonly AmbiguousRefundCandidate[]> {
+}): Promise<{
+    readonly candidates: readonly AmbiguousRefundCandidate[];
+    readonly ambiguous: boolean;
+}> {
     const act = { kind: 'decision' as const, startedAt: input.ports.clock.now() };
     actStartInstant({ act });
     const read = await input.ports.provider.readCharge({ chargeId: input.payment.providerFactId });
@@ -99,12 +116,20 @@ async function readUncitedProviderRefunds(input: {
             entry.amount.currency === input.payment.currency
     );
     const cited = await readCitedProviderRefundIds(matching.map((entry) => entry.refundId));
-    return matching
+    const candidates = matching
         .filter((entry) => !cited.has(entry.refundId))
         .map((entry) => ({
             providerRefundId: entry.refundId,
             amountMinor: entry.amount.amountMinor
         }));
+    const ambiguous =
+        candidates.length > 0 &&
+        (await hasOtherUnansweredRefundCall({
+            db: getDb(),
+            paymentId: input.payment.id,
+            exceptRefundId: input.refundId
+        }));
+    return { candidates, ambiguous };
 }
 
 /** Logs the answer that names no single refund of ours (HOS-2007): a Sentry capture, call kept unanswered. */
@@ -179,9 +204,14 @@ export async function resendUnansweredRefundCalls(
             continue;
         }
         const context = { refundId: input.refundId, key, payment, amount: call.amount };
-        let landed: readonly AmbiguousRefundCandidate[];
+        let landed: Awaited<ReturnType<typeof readUncitedProviderRefunds>>;
         try {
-            landed = await readUncitedProviderRefunds({ ports, payment, amount: call.amount });
+            landed = await readUncitedProviderRefunds({
+                ports,
+                refundId: input.refundId,
+                payment,
+                amount: call.amount
+            });
         } catch (error) {
             // Without the read we cannot tell whether the lost call landed, so nothing is posted.
             logger.error(
@@ -191,16 +221,25 @@ export async function resendUnansweredRefundCalls(
             outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
             continue;
         }
-        if (landed.length > 1) {
+        if (landed.ambiguous) {
             alertAmbiguous({
                 ...context,
-                reason: 'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
-                candidates: landed
+                reason: 'OTHER_REFUND_CALL_UNANSWERED',
+                candidates: landed.candidates
             });
             outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
             continue;
         }
-        const found = landed[0];
+        if (landed.candidates.length > 1) {
+            alertAmbiguous({
+                ...context,
+                reason: 'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
+                candidates: landed.candidates
+            });
+            outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
+            continue;
+        }
+        const found = landed.candidates[0];
         if (found) {
             await completeCall(
                 key,
@@ -221,11 +260,21 @@ export async function resendUnansweredRefundCalls(
             providerCallPending = false;
             let providerRefundId = response.refundId;
             if (!providerRefundId) {
-                const candidates = await readUncitedProviderRefunds({
+                const { candidates, ambiguous } = await readUncitedProviderRefunds({
                     ports,
+                    refundId: input.refundId,
                     payment,
                     amount: call.amount
                 });
+                if (ambiguous) {
+                    alertAmbiguous({
+                        ...context,
+                        reason: 'OTHER_REFUND_CALL_UNANSWERED',
+                        candidates
+                    });
+                    outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
+                    continue;
+                }
                 if (candidates.length !== 1) {
                     alertAmbiguous({
                         ...context,
