@@ -214,6 +214,23 @@ describe('retry helpers', () => {
         );
     });
 
+    it('HOS-2538 sends a call too old to retry to action 14, never to the manual §8.1/§8.2 writes', () => {
+        // Arrange
+        const copies = [es, en, pt].map(
+            (locale) => locale.proposedRefunds.providerRetry.rejections.REFUND_CALL_TOO_OLD_TO_RETRY
+        );
+        const remainderTitles = [es, en, pt].map(
+            (locale) => locale.proposedRefunds.remainder.title
+        );
+
+        // Assert: each copy names action 14 and the remainder form of its own locale.
+        for (const [index, copy] of copies.entries()) {
+            expect(copy).not.toMatch(/§8\.1|§8\.2/);
+            expect(copy).toMatch(/14/);
+            expect(copy).toContain(remainderTitles[index]?.split(' ').slice(0, 2).join(' '));
+        }
+    });
+
     it('maps the past-window refusal to its own advice and a 500 to the server error', () => {
         expect(readRetryRejection({ error: rejection('REFUND_PAST_PROVIDER_WINDOW', 422) })).toBe(
             'admin-billing.proposedRefunds.providerRetry.rejections.REFUND_PAST_PROVIDER_WINDOW'

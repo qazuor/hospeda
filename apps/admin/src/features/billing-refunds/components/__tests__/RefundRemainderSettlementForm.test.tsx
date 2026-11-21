@@ -135,6 +135,10 @@ describe('RefundRemainderSettlementForm', () => {
         ['ACCEPTED_PART_NOT_ACCREDITED', remainder.rejections.ACCEPTED_PART_NOT_ACCREDITED],
         ['REMAINDER_NOT_FOUND_AT_PROVIDER', remainder.rejections.REMAINDER_NOT_FOUND_AT_PROVIDER],
         ['OTHER_REFUND_CALL_UNANSWERED', remainder.rejections.OTHER_REFUND_CALL_UNANSWERED],
+        [
+            'UNCITED_PROVIDER_REFUND_ON_CHARGE',
+            remainder.rejections.UNCITED_PROVIDER_REFUND_ON_CHARGE
+        ],
         ['REFUND_CALL_UNANSWERED', remainder.rejections.REFUND_CALL_UNANSWERED],
         ['REFUND_NOT_CONFIRMED', remainder.rejections.REFUND_NOT_CONFIRMED],
         ['REFUND_HAS_NO_ACCEPTED_CALL', remainder.rejections.REFUND_HAS_NO_ACCEPTED_CALL],

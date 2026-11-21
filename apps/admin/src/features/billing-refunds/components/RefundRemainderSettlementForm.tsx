@@ -1,7 +1,8 @@
 /**
  * @file RefundRemainderSettlementForm.tsx
- * Action 14 over a `CONFIRMED` refund the provider accepted only in part (HOS-2406): the person
- * records the remainder they refunded by hand from the MP panel, and the refund closes.
+ * Action 14 over a `CONFIRMED` refund the provider accepted only in part (HOS-2406), or stuck on a
+ * provider call unanswered for more than 24 hours that «Retry with MP» no longer resends (HOS-2538):
+ * the person records what they refunded by hand from the MP panel, and the refund closes.
  */
 
 import type { TranslationKey } from '@repo/i18n';
@@ -35,7 +36,9 @@ const REMAINDER_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
     REMAINDER_NOT_FOUND_AT_PROVIDER:
         'admin-billing.proposedRefunds.remainder.rejections.REMAINDER_NOT_FOUND_AT_PROVIDER',
     OTHER_REFUND_CALL_UNANSWERED:
-        'admin-billing.proposedRefunds.remainder.rejections.OTHER_REFUND_CALL_UNANSWERED'
+        'admin-billing.proposedRefunds.remainder.rejections.OTHER_REFUND_CALL_UNANSWERED',
+    UNCITED_PROVIDER_REFUND_ON_CHARGE:
+        'admin-billing.proposedRefunds.remainder.rejections.UNCITED_PROVIDER_REFUND_ON_CHARGE'
 };
 
 const RefundIdSchema = z.string().uuid();
