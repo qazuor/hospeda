@@ -245,6 +245,7 @@ import { InstagramIcon } from './icons/social/InstagramIcon';
 import { TwitterIcon } from './icons/social/TwitterIcon';
 import { WebIcon } from './icons/social/WebIcon';
 import { WhatsappIcon } from './icons/social/WhatsappIcon';
+import { WhatsappLogo } from './icons/social/WhatsappLogo';
 // System icons (used in homepage features, stats, etc.)
 import { BuildingIcon } from './icons/system/BuildingIcon';
 import { CalendarDotsIcon } from './icons/system/CalendarDotsIcon';
@@ -452,6 +453,7 @@ export const ICON_MAP: Record<string, IconComponent> = {
     TwitterIcon,
     WebIcon,
     WhatsappIcon,
+    WhatsappLogo,
 
     // Communication icons
     ChatIcon,

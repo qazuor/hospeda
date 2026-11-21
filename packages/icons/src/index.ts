@@ -460,6 +460,7 @@ export { TiktokIcon } from './icons/social/TiktokIcon';
 export { TwitterIcon, XIcon } from './icons/social/TwitterIcon';
 export { WebIcon } from './icons/social/WebIcon';
 export { WhatsappIcon } from './icons/social/WhatsappIcon';
+export { WhatsappLogo } from './icons/social/WhatsappLogo';
 export { YoutubeIcon } from './icons/social/YoutubeIcon';
 // Additional system icons (Phosphor-based)
 export { ActivityIcon } from './icons/system/ActivityIcon';
