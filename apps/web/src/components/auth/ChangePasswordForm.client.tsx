@@ -57,6 +57,12 @@ export interface ChangePasswordFormProps {
      * on the server and an island must not re-implement it.
      */
     readonly returnUrl: string;
+    /**
+     * Whether the change is forced by the must-change-password gate (HOS-2431).
+     * `true` (default) keeps the "before continuing" copy; `false` is a
+     * voluntary visit and must not tell the user they are blocked.
+     */
+    readonly forced?: boolean;
 }
 
 interface FormFields {
@@ -89,7 +95,12 @@ const INITIAL_FIELDS: FormFields = {
  *
  * @param props - Component props (see {@link ChangePasswordFormProps})
  */
-export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePasswordFormProps) {
+export function ChangePasswordForm({
+    locale,
+    accountEmail,
+    returnUrl,
+    forced = true
+}: ChangePasswordFormProps) {
     const { t } = createTranslations(locale);
 
     const [fields, setFields] = useState<FormFields>(INITIAL_FIELDS);
@@ -260,10 +271,12 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                     {t('account.changePassword.title', 'Cambiar contraseña')}
                 </h1>
                 <p className={styles.subtitle}>
-                    {t(
-                        'account.changePassword.subtitle',
-                        'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
-                    )}
+                    {forced
+                        ? t(
+                              'account.changePassword.subtitle',
+                              'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
+                          )
+                        : t('account.changePassword.subtitleVoluntary')}
                 </p>
                 {/*
                  * HOS-752: names the account. Not decoration — this is the only

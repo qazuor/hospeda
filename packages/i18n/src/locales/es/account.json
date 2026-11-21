@@ -238,6 +238,10 @@
         "uploading": "Subiendo…"
     },
     "editProfile": {
+        "security": {
+            "description": "Cambiá la contraseña con la que ingresás a Hospeda.",
+            "changePasswordLink": "Cambiar contraseña"
+        },
         "fields": {
             "displayName": "Nombre para mostrar",
             "firstName": "Nombre",
@@ -1055,6 +1059,7 @@
             "personalSection": "Información personal",
             "extrasSection": "Más sobre vos",
             "locationSection": "Ubicación",
+            "securitySection": "Seguridad",
             "socialSection": "Redes sociales"
         },
         "favorites": {
@@ -1853,6 +1858,7 @@
             "weak": "Débil"
         },
         "strengthLabel": "Seguridad de la contraseña",
+        "subtitleVoluntary": "Elegí una contraseña nueva para tu cuenta. Vas a necesitar la actual.",
         "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
     }
 }

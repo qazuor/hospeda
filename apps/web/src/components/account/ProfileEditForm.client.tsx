@@ -40,6 +40,7 @@ import {
 import styles from './ProfileEditForm.module.css';
 import { ProfileEditLocationSection } from './ProfileEditLocationSection';
 import { ProfileEditPersonalSection } from './ProfileEditPersonalSection';
+import { ProfileEditSecuritySection } from './ProfileEditSecuritySection';
 import { ProfileEditSocialSection } from './ProfileEditSocialSection';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -562,6 +563,11 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 onCityChange={bindChange('city', setCity)}
                 onAddressLine1Change={bindChange('addressLine1', setAddressLine1)}
                 onPostalCodeChange={bindChange('postalCode', setPostalCode)}
+            />
+
+            <ProfileEditSecuritySection
+                locale={locale}
+                t={t}
             />
 
             {formError && (

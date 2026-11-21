@@ -39,10 +39,14 @@ if (!user) {
 const t = createT(locale);
 
 const title = t('account.changePassword.title', 'Cambiar contraseña');
-const description = t(
-    'account.changePassword.subtitle',
-    'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
-);
+// HOS-2431: the gate-forced visit and a voluntary one need different copy.
+const forced = user.mustChangePassword === true;
+const description = forced
+    ? t(
+          'account.changePassword.subtitle',
+          'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
+      )
+    : t('account.changePassword.subtitleVoluntary');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
@@ -74,5 +78,6 @@ const returnUrl = resolveSafeReturnPath({ rawReturn: rawReturnUrl, locale });
         locale={locale}
         accountEmail={user.email}
         returnUrl={returnUrl}
+        forced={forced}
     />
 </BaseLayout>
