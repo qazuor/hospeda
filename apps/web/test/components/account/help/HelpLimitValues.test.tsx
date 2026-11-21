@@ -95,8 +95,15 @@ describe('HelpLimitValues', () => {
     });
 
     it('leaves spans of another vertical alone', async () => {
-        // Arrange
+        // Arrange: one accommodation span and one venue span side by side
         const span = mountSpan();
+        span.insertAdjacentHTML(
+            'afterend',
+            `<span data-help-limit="max_photos_per_venue" data-vertical="venue">${NEUTRAL}</span>`
+        );
+        const venueSpan = document.querySelector<HTMLElement>(
+            '[data-vertical="venue"]'
+        ) as HTMLElement;
         mocks.useMyEntitlements.mockReturnValue(entitlements(5));
 
         // Act
@@ -107,8 +114,8 @@ describe('HelpLimitValues', () => {
             />
         );
 
-        // Assert
-        await waitFor(() => expect(mocks.useMyEntitlements).toHaveBeenCalled());
+        // Assert: the effect ran (the venue span changed) and skipped the other vertical
+        await waitFor(() => expect(venueSpan.textContent).toBe('5'));
         expect(span.textContent).toBe(NEUTRAL);
     });
 });
