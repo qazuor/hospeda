@@ -210,9 +210,28 @@ describe('HostDashboard quick actions (HOS-726 → HOS-1637)', () => {
         expect(hrefs).toEqual([
             '/es/mi-cuenta/propiedades/',
             '/es/mi-cuenta/promociones/',
-            '/es/mi-cuenta/consultas/',
+            '/es/mi-cuenta/consultas-propietario/',
             '/es/mi-cuenta/suscripcion/'
         ]);
         expect(document.body.innerHTML).not.toContain('mi-cuenta/addons');
+    });
+});
+
+describe('HostDashboard inbox links (HOS-2418)', () => {
+    it('points every inquiries entry at the owner inbox, never the guest inbox', async () => {
+        mockHostDashboardGet.mockResolvedValue({ ok: true, data: mockDashboardApiResponse });
+
+        const { container } = render(<HostDashboard locale="es" />);
+        await screen.findByText('Owner Pro');
+
+        const inboxHrefs = Array.from(container.querySelectorAll('a[href]'))
+            .map((a) => a.getAttribute('href') ?? '')
+            .filter((href) => href.includes('/mi-cuenta/consultas'));
+
+        // quick action + "Ver todos" widget link
+        expect(inboxHrefs).toHaveLength(2);
+        for (const href of inboxHrefs) {
+            expect(href).toContain('/mi-cuenta/consultas-propietario');
+        }
     });
 });

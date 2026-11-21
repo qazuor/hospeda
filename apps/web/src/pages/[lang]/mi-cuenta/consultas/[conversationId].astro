@@ -9,6 +9,7 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { ConversationReply } from '@/components/account/ConversationReply.client';
 import ListingGoneNotice from '@/components/account/ListingGoneNotice.astro';
+import { resolveConversationBubbleSide } from '@/lib/conversation-bubble-side';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -129,7 +130,7 @@ const olderCursor = nextCursor;
                 <li
                     class:list={[
                         'conv-thread__message',
-                        `conv-thread__message--${msg.senderType?.toLowerCase() ?? 'system'}`
+                        `conv-thread__message--${resolveConversationBubbleSide({ senderType: msg.senderType, viewerRole: 'guest' })}`
                     ]}
                 >
                     <div class="conv-thread__bubble">
@@ -283,11 +284,11 @@ const olderCursor = nextCursor;
         display: flex;
     }
 
-    .conv-thread__message--owner {
+    .conv-thread__message--mine {
         justify-content: flex-end;
     }
 
-    .conv-thread__message--guest,
+    .conv-thread__message--theirs,
     .conv-thread__message--system {
         justify-content: flex-start;
     }
@@ -299,7 +300,7 @@ const olderCursor = nextCursor;
         gap: var(--space-1, 4px);
     }
 
-    .conv-thread__message--owner .conv-thread__bubble {
+    .conv-thread__message--mine .conv-thread__bubble {
         background-color: var(--brand-primary);
         color: white;
         border-radius: var(--radius-card);
@@ -308,7 +309,7 @@ const olderCursor = nextCursor;
         box-shadow: var(--shadow-card);
     }
 
-    .conv-thread__message--guest .conv-thread__bubble {
+    .conv-thread__message--theirs .conv-thread__bubble {
         background-color: var(--core-card);
         border: 1px solid var(--border);
         border-radius: var(--radius-card);
@@ -331,11 +332,11 @@ const olderCursor = nextCursor;
         word-break: break-word;
     }
 
-    .conv-thread__message--owner .conv-thread__body {
+    .conv-thread__message--mine .conv-thread__body {
         color: white;
     }
 
-    .conv-thread__message--guest .conv-thread__body,
+    .conv-thread__message--theirs .conv-thread__body,
     .conv-thread__message--system .conv-thread__body {
         color: var(--core-foreground);
     }
@@ -347,7 +348,7 @@ const olderCursor = nextCursor;
         align-self: flex-end;
     }
 
-    .conv-thread__message--owner .conv-thread__timestamp {
+    .conv-thread__message--mine .conv-thread__timestamp {
         color: var(--white-a75);
     }
 

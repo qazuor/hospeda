@@ -495,7 +495,7 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
             expect(readPurchase).toHaveBeenCalledTimes(2);
         }, 8000);
 
-        it('tells the owner to come back later once the screen stops asking', async () => {
+        it('says the result comes by mail once the screen stops asking', async () => {
             vi.useFakeTimers({ shouldAdvanceTime: true });
             readPurchase.mockResolvedValue({ ok: true, data: pending });
             back();
@@ -505,8 +505,7 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
                 });
             const status = screen.getByTestId('addon-purchase-processing');
             expect(status.getAttribute('data-exhausted')).toBe('true');
-            expect(status.textContent).toContain('Volvé a esta pantalla en unos minutos');
-            expect(status.textContent).not.toContain('correo');
+            expect(status.textContent).toContain('Te avisamos por correo cuando se acredite');
             expect(readPurchase).toHaveBeenCalledTimes(10);
         });
 

@@ -16,6 +16,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { buildUrl } from '@/lib/urls';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -33,7 +34,9 @@ const description = t('host.dashboard.pageDescription', 'Resumen de tus propieda
 // Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(
+        buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search })
+    );
 }
 
 // Role gate: only host-level roles may reach the host dashboard. A plain
