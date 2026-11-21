@@ -360,3 +360,29 @@ export function buildProfilePatch({
 
     return { flatChanged, payload, clearedRequiredNames };
 }
+
+/**
+ * Moves focus to the first invalid field of the profile form, where "first"
+ * means first in document order (HOS-2444). Field ids equal the field names in
+ * this form, so no id table is needed.
+ *
+ * @param params - Object with the invalid field names.
+ * @param params.fieldNames - Names of the fields that failed validation, any order.
+ * @returns `true` when a field was focused, `false` when none resolved to an element.
+ */
+export function focusFirstInvalidProfileField({
+    fieldNames
+}: {
+    readonly fieldNames: ReadonlyArray<string>;
+}): boolean {
+    if (typeof document === 'undefined') return false;
+    const elements = fieldNames
+        .map((name) => document.getElementById(name))
+        .filter((el): el is HTMLElement => el !== null);
+    if (elements.length === 0) return false;
+    const first = elements.reduce((best, el) =>
+        best.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING ? best : el
+    );
+    first.focus();
+    return true;
+}

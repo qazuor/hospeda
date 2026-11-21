@@ -28,12 +28,13 @@ import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
-import { addToast } from '@/store/toast-store';
+import { addToast, clearToasts } from '@/store/toast-store';
 import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
 import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
 import {
     buildInitialProfileSnapshot,
     buildProfilePatch,
+    focusFirstInvalidProfileField,
     ProfileEditFormSchema,
     type ProfileSnapshot
 } from './ProfileEditForm.helpers';
@@ -224,6 +225,9 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
         useZodForm({ schema: ProfileEditFormSchema, t });
     const [submitting, setSubmitting] = useState(false);
+    // HOS-2444: inline success next to the save button, so the result is visible
+    // where the user is looking even when the page is scrolled to the bottom.
+    const [saved, setSaved] = useState(false);
 
     // F6 (HOS-190): the PATCH diff is computed against this MUTABLE baseline,
     // resynced to the persisted values after every successful save (see
@@ -333,6 +337,10 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setFormError(null);
+        setSaved(false);
+        // HOS-2444: one live toast at a time, so a new result replaces the old
+        // one instead of stacking beneath it.
+        clearToasts();
 
         const current = snapshotFromState();
         const {
@@ -361,6 +369,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 type: 'error',
                 message: t('validation.formHasErrors')
             });
+            focusFirstInvalidProfileField({ fieldNames: clearedRequiredNames });
             return;
         }
 
@@ -383,6 +392,9 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         const parsed = validate(omitUndefined(flatChanged));
 
         if (!parsed.success) {
+            focusFirstInvalidProfileField({
+                fieldNames: parsed.error.issues.map((issue) => String(issue.path[0] ?? ''))
+            });
             return;
         }
 
@@ -464,6 +476,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             // snapshot, carrying the uploaded avatar URL) so a subsequent revert
             // of a just-saved field is correctly detected as a change.
             setBaseline({ ...current, avatarUrl: finalAvatarUrl ?? current.avatarUrl });
+            setSaved(true);
             addToast({
                 type: 'success',
                 message: t('account.editProfile.success', 'Perfil actualizado correctamente')
@@ -577,6 +590,15 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                     aria-live="polite"
                 >
                     {formError}
+                </div>
+            )}
+
+            {saved && (
+                <div
+                    className={`${styles.feedbackBanner} ${styles.feedbackBannerSuccess}`}
+                    role="status"
+                >
+                    {t('account.editProfile.success', 'Perfil actualizado correctamente')}
                 </div>
             )}
 
