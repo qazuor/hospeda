@@ -88,13 +88,24 @@ function isUnanswered(call: Pick<RefundCallRow, 'providerRefundId' | 'completedA
  * HOS-2517 — whether another refund of the same payment has a provider call still unanswered. Its
  * provider refund may already be credited on the charge with no id written on our side, so a
  * person could cite it as someone else's panel refund and the same money would count twice once
- * `completeCall` or a resend writes the id. Read it under the payment lock: a call persisted by a
- * transaction that holds the lock is seen once that transaction commits.
+ * `completeCall` or a resend writes the id.
  *
- * @param input.db - The transaction holding the payment lock.
+ * What makes this check sufficient is CAUSAL ORDER, not a lock: `persistCall` locks only its own
+ * refund (never the payment) and commits the call BEFORE any I/O to the provider, and the remainder
+ * settlement reads the charge BEFORE the transaction that runs this check. So every provider refund
+ * in that read comes from a call already committed, which this query sees; a call committed later
+ * has no refund in the read, and citing it answers `REMAINDER_NOT_FOUND_AT_PROVIDER`. Reading the
+ * charge inside or after this check breaks that guarantee.
+ *
+ * Every status counts, FAILED included: a chargeback fails a `CONFIRMED` refund with its call still
+ * unanswered (`refund-chargeback.ts`), and the resend requires `CONFIRMED`, so that call is never
+ * answered and the payment's remainder can no longer be settled through this route. Accepted:
+ * that payment already went through a chargeback, which a person handles by hand.
+ *
+ * @param input.db - The connection or transaction to read with.
  * @param input.paymentId - The payment whose refunds are read.
  * @param input.exceptRefundId - The refund being decided, left out.
- * @returns True when any other refund of the payment has an unanswered call.
+ * @returns True when any other refund of the payment, in any status, has an unanswered call.
  */
 export async function hasOtherUnansweredRefundCall(input: {
     readonly db: DrizzleClient;

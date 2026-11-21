@@ -199,7 +199,10 @@ async function assertSettleable(input: SettleRefundRemainderInput): Promise<void
     });
 }
 
-/** No other refund of the payment may have a call the provider has not answered (HOS-2517). */
+/**
+ * No other refund of the payment may have a call the provider has not answered (HOS-2517). Sound
+ * only because the charge was read before this transaction started; see `hasOtherUnansweredRefundCall`.
+ */
 async function assertNoOtherUnansweredCall(input: {
     readonly tx: DrizzleClient;
     readonly paymentId: string;
@@ -249,8 +252,15 @@ function stateChanged(): ServiceError {
  *
  * The provider is read only after the refund is found and the person is authorized
  * ({@link assertSettleable}, its own short transaction), so 404 and 403 never reach the provider.
- * While another refund of the same payment has an unanswered provider call, nothing is settled:
- * its refund may be the one cited as the remainder (HOS-2517).
+ * While another refund of the same payment, in any status, has an unanswered provider call,
+ * nothing is settled: its refund may be the one cited as the remainder (HOS-2517).
+ *
+ * INVARIANT (HOS-2517): the charge is read BEFORE the transaction that checks the other refunds'
+ * calls. `persistCall` commits a call before its provider I/O, so every provider refund in this read
+ * belongs to a call already committed, which the check sees; one committed after the read cannot be
+ * cited, because the remainder must be a credited refund in this read. The payment lock does NOT
+ * provide this (`persistCall` never takes it). Moving `readChargeRefunds` inside the transaction, or
+ * after the check, reopens the double count.
  *
  * Everything else runs in ONE transaction: the payment is locked `FOR UPDATE` before the refund (RF3's
  * order), step 3 authorizes from ACC_14's own permission (never roles), and the close is a

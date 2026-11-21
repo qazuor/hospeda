@@ -5,11 +5,15 @@
  * or a resend writes the id, so the settlement refuses with OTHER_REFUND_CALL_UNANSWERED. Also:
  * 404 and 403 answer before the provider is read.
  */
-import { eq, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
+import { eq, idempotencyKeys, refundCalls, refunds } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { afterAll, describe, expect, it } from 'vitest';
+import { failRefund } from '../../../src/services/billing/refund/refund-fail.js';
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
-import { settleRefundRemainder } from '../../../src/services/billing/refund/settle-refund-remainder.service.js';
+import {
+    type SettleRefundRemainderInput,
+    settleRefundRemainder
+} from '../../../src/services/billing/refund/settle-refund-remainder.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { paymentRow, refundById, seedAdminActor } from './support/refund-fixtures.js';
 import {
@@ -71,6 +75,63 @@ function countingReads(arranged: Arranged) {
     return { provider, counter };
 }
 
+/**
+ * A provider whose FIRST charge read runs the other refund's confirmation in the middle: the call
+ * is persisted and committed (as `persistCall` does, before its provider I/O) and the provider
+ * credits it, either before the read takes its snapshot or after. That provider refund id does not
+ * exist until the read runs, so the input's `reference` is a getter: the length check before the read
+ * sees a placeholder, and every later use sees the raced refund's id, the one a person would cite.
+ */
+async function duringFirstChargeRead(
+    arranged: Arranged,
+    otherRefundId: string,
+    when: 'BEFORE_SNAPSHOT' | 'AFTER_SNAPSHOT'
+) {
+    const target = arranged.credited.fixture.provider;
+    const state = { fired: false, cited: '' };
+    const confirmOther = async () => {
+        const key = `refund:${otherRefundId}:1`;
+        const db = getServiceTestDb();
+        await db.insert(idempotencyKeys).values({
+            key,
+            operation: 'REFUND_CREATE',
+            subjectId: otherRefundId,
+            result: null,
+            completedAt: null
+        });
+        await db.insert(refundCalls).values({
+            refundId: otherRefundId,
+            idempotencyKey: key,
+            amount: 2000,
+            providerRefundId: null
+        });
+        state.cited = await panelRefund(arranged, 2000);
+    };
+    const provider: PaymentProvider = new Proxy(target, {
+        get(object, property, receiver) {
+            if (property === 'readCharge')
+                return async (input: Parameters<typeof target.readCharge>[0]) => {
+                    const first = !state.fired;
+                    state.fired = true;
+                    if (first && when === 'BEFORE_SNAPSHOT') await confirmOther();
+                    const read = await target.readCharge(input);
+                    if (first && when === 'AFTER_SNAPSHOT') await confirmOther();
+                    return read;
+                };
+            return Reflect.get(object, property, receiver);
+        }
+    });
+    const input: SettleRefundRemainderInput = {
+        actor: arranged.settler,
+        refundId: arranged.refundId,
+        amount: 2000,
+        get reference() {
+            return state.cited || 'mp-panel-not-yet-refunded';
+        }
+    };
+    return { provider, input, citedId: () => state.cited };
+}
+
 describe('HOS-2517 another refund of the payment with an unanswered call', () => {
     it.skipIf(skip)(
         "refuses to cite the other refund's in-flight provider refund as the remainder",
@@ -111,45 +172,76 @@ describe('HOS-2517 another refund of the payment with an unanswered call', () =>
     );
 
     it.skipIf(skip)(
-        'sees a call another transaction persists while holding the payment lock',
+        'a call persisted and credited while the charge is read is never closed as the remainder',
         async () => {
-            // Arrange: a confirmation holds the payment lock and is persisting its call.
+            // Arrange: during the settlement's charge read, a confirmation of the other refund
+            // persists its call (committed, as persistCall does before its provider I/O) and the
+            // provider credits it, then the read takes its snapshot.
             const arranged = await partiallyAcceptedRefund();
             const other = await otherRefund(arranged);
-            const inFlight = await panelRefund(arranged, 2000);
-            let settled: Promise<unknown> | undefined;
-            const db = getServiceTestDb();
+            const raced = await duringFirstChargeRead(arranged, other, 'BEFORE_SNAPSHOT');
 
             // Act
-            await db.transaction(async (tx) => {
-                await tx
-                    .select({ id: payments.id })
-                    .from(payments)
-                    .where(eq(payments.id, arranged.credited.payment.id))
-                    .for('update');
-                const key = `refund:${other}:1`;
-                await tx.insert(idempotencyKeys).values({
-                    key,
-                    operation: 'REFUND_CREATE',
-                    subjectId: other,
-                    result: null,
-                    completedAt: null
-                });
-                await tx.insert(refundCalls).values({
-                    refundId: other,
-                    idempotencyKey: key,
-                    amount: 2000,
-                    providerRefundId: null
-                });
-                settled = settleRemainder(arranged.settler, arranged, {
-                    reference: inFlight
-                }).catch((error: unknown) => error);
-                // The settlement is now waiting on the payment lock this transaction holds.
-                await new Promise((resolve) => setTimeout(resolve, 300));
-            });
+            const settled = await settleRefundRemainder(raced.input, {
+                provider: raced.provider,
+                clock: arranged.credited.fixture.clock
+            }).catch((error: unknown) => error);
+
+            // Assert: never settled; the call is committed before the transaction, so it is seen.
+            expect(raced.citedId()).toMatch(/refund/);
+            expect(settled).toMatchObject({ reason: 'OTHER_REFUND_CALL_UNANSWERED' });
+            await expectUntouched(arranged);
+        }
+    );
+
+    it.skipIf(skip)(
+        'a call persisted and credited after the charge read cannot be cited as the remainder',
+        async () => {
+            // Arrange: the same race, landing after the read returned its snapshot.
+            const arranged = await partiallyAcceptedRefund();
+            const other = await otherRefund(arranged);
+            const raced = await duringFirstChargeRead(arranged, other, 'AFTER_SNAPSHOT');
+
+            // Act
+            const settled = await settleRefundRemainder(raced.input, {
+                provider: raced.provider,
+                clock: arranged.credited.fixture.clock
+            }).catch((error: unknown) => error);
 
             // Assert
-            expect(await settled).toMatchObject({ reason: 'OTHER_REFUND_CALL_UNANSWERED' });
+            expect(settled).toMatchObject({
+                reason: expect.stringMatching(
+                    /^(OTHER_REFUND_CALL_UNANSWERED|REMAINDER_NOT_FOUND_AT_PROVIDER)$/
+                )
+            });
+            await expectUntouched(arranged);
+        }
+    );
+
+    it.skipIf(skip)(
+        'refuses while a FAILED refund of the payment holds an unanswered call',
+        async () => {
+            // Arrange: a chargeback failed the other refund with its call still unanswered.
+            const arranged = await partiallyAcceptedRefund();
+            const other = await otherRefund(arranged, [{ kind: 'UNANSWERED', amount: 2000 }]);
+            const db = getServiceTestDb();
+            await db.transaction(async (tx) => {
+                const [row] = await tx.select().from(refunds).where(eq(refunds.id, other));
+                if (!row) throw new Error('other refund missing');
+                const { failed } = await failRefund({
+                    tx,
+                    refund: row,
+                    at: arranged.credited.fixture.clock.now(),
+                    correlationId: crypto.randomUUID()
+                });
+                expect(failed).toBe(true);
+            });
+
+            // Act
+            const settled = settleRemainder(arranged.settler, arranged);
+
+            // Assert
+            await expect(settled).rejects.toMatchObject({ reason: 'OTHER_REFUND_CALL_UNANSWERED' });
             await expectUntouched(arranged);
         }
     );
