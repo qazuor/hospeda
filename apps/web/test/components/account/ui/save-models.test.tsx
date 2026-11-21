@@ -50,6 +50,12 @@ function Form({
                 aria-label="Nombre"
                 onChange={() => setDirty(true)}
             />
+            <button
+                type="button"
+                onClick={() => setDirty(false)}
+            >
+                externo
+            </button>
             <StickySaveBar
                 status={bar.status}
                 locale="es"
@@ -106,6 +112,18 @@ describe('StickySaveBar + useSaveBar', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron guardar');
         await user.click(screen.getByRole('button', { name: 'Ir al primer error' }));
         expect(screen.getByLabelText('Nombre')).toHaveFocus();
+    });
+
+    it('clears the error status when the form goes back to pristine', async () => {
+        const user = userEvent.setup();
+        render(<Form onSave={async () => ({ ok: false })} />);
+        await user.type(screen.getByLabelText('Nombre'), 'a');
+        await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
+        // Pristine again WITHOUT going through discard (edited back by hand)
+        await user.click(screen.getByRole('button', { name: 'externo' }));
+        expect(screen.queryByRole('region')).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
     });
 
     it('Ctrl+S saves', async () => {

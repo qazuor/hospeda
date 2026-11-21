@@ -1,6 +1,8 @@
 /**
  * Gallery group: buttons, links, status and navigation pieces (HOS-2413 T-029).
  *
+ * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
+ *
  * @module components/account/kit-gallery/KitGalleryActions
  */
 

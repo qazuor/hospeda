@@ -92,6 +92,15 @@ export function useSaveBar({
         if (isDirty && phase === 'saved') setPhase('idle');
     }, [isDirty, phase]);
 
+    // An error belongs to the edits that caused it: once the form is pristine
+    // again (discarded, or edited back) the bar must not keep saying it failed.
+    useEffect(() => {
+        if (!isDirty && phase === 'error') {
+            invalidFields.current = [];
+            setPhase('idle');
+        }
+    }, [isDirty, phase]);
+
     // «Cambios guardados» disappears on its own.
     useEffect(() => {
         if (phase !== 'saved') return;

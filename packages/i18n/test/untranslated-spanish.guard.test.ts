@@ -79,6 +79,7 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     'Página anterior': ['pt'],
     'Página {{page}}': ['pt'],
     Descartar: ['pt'],
+    'Kit de componentes': ['pt'],
     // Same spelling in Brazilian Portuguese / English (HOS-2119 owner traffic panel).
     Países: ['pt'],
     Dispositivos: ['pt'],

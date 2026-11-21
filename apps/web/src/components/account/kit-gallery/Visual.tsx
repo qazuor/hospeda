@@ -5,6 +5,10 @@
  * these. The visual-regression suite finds them by `data-visual` and shoots
  * each in light and dark, at 1280 and 375.
  *
+ * The labels, titles and sample copy in this folder are DEV-ONLY FIXTURES for
+ * review and screenshots: they are exempt from i18n on purpose and never reach
+ * a product page (the route answers 404 unless the gate env var is on).
+ *
  * @module components/account/kit-gallery/Visual
  */
 

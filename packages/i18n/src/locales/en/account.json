@@ -1960,6 +1960,9 @@
             "lockedLabel": "Requires a higher plan",
             "label": "My account navigation"
         },
-        "breadcrumbs": "Breadcrumb"
+        "breadcrumbs": "Breadcrumb",
+        "gallery": {
+            "title": "Component kit"
+        }
     }
 }

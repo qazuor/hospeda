@@ -7,6 +7,8 @@
  * A static guard (`test/components/account/kit-gallery.test.ts`) fails when a
  * component is exported from `ui/index.ts` without an entry here.
  *
+ * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
+ *
  * @module components/account/kit-gallery/KitGallery
  */
 

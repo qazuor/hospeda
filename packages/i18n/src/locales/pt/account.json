@@ -1960,6 +1960,9 @@
             "lockedLabel": "Requer um plano superior",
             "label": "Navegação da Minha conta"
         },
-        "breadcrumbs": "Caminho de navegação"
+        "breadcrumbs": "Caminho de navegação",
+        "gallery": {
+            "title": "Kit de componentes"
+        }
     }
 }

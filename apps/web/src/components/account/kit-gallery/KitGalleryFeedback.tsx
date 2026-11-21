@@ -7,6 +7,8 @@
  * in a static state for the screenshot. Without it they are closed and a
  * trigger button opens them by hand.
  *
+ * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
+ *
  * @module components/account/kit-gallery/KitGalleryFeedback
  */
 

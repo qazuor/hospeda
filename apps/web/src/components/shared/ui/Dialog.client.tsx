@@ -60,6 +60,8 @@ export interface DialogProps {
     readonly ariaLabel?: string;
     /** Element id of a visible title; sets `aria-labelledby`. */
     readonly ariaLabelledBy?: string;
+    /** Element id of the text that describes the dialog; sets `aria-describedby`. */
+    readonly ariaDescribedBy?: string;
     /** Size preset for the panel. Defaults to `md`. */
     readonly size?: DialogSize;
     /** Visual variant. `transparent` removes the panel chrome (used by lightboxes). */
@@ -101,6 +103,7 @@ export function Dialog({
     children,
     ariaLabel,
     ariaLabelledBy,
+    ariaDescribedBy,
     size = 'md',
     variant = 'solid',
     closeOnEscape = true,
@@ -203,6 +206,7 @@ export function Dialog({
                 aria-modal="true"
                 aria-label={ariaLabel}
                 aria-labelledby={ariaLabelledBy}
+                aria-describedby={ariaDescribedBy}
                 tabIndex={-1}
             >
                 {children}

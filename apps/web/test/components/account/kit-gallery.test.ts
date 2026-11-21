@@ -59,6 +59,10 @@ describe('kit gallery page', () => {
         expect(page).toContain('return new Response(null, { status: 404 });');
     });
 
+    it('translates its page title instead of hardcoding it', () => {
+        expect(page).toContain("t('account.ui.gallery.title')");
+    });
+
     it('renders inside the new shell and reads only the locale', () => {
         expect(page).toContain('shell="account"');
         expect(page).not.toContain('Astro.locals.user');

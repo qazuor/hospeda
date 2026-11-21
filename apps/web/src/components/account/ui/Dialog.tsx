@@ -57,6 +57,8 @@ export interface DialogProps {
     readonly hideCloseButton?: boolean;
     /** `alertdialog` for an interrupting confirmation. @default 'dialog' */
     readonly role?: 'dialog' | 'alertdialog';
+    /** Id of the node that describes the dialog (`aria-describedby`). */
+    readonly describedBy?: string;
     /** Optional help anchor rendered as `data-help` on the panel content. */
     readonly helpId?: HelpAnchor;
     /** Dialog body. */
@@ -101,6 +103,7 @@ export function Dialog({
     dismissible = true,
     hideCloseButton = false,
     role = 'dialog',
+    describedBy,
     helpId,
     children
 }: DialogProps) {
@@ -111,6 +114,7 @@ export function Dialog({
             isOpen={open}
             onClose={() => onOpenChange(false)}
             ariaLabelledBy={titleId}
+            ariaDescribedBy={describedBy}
             size={size}
             className={styles.panel}
             overlayClassName={styles.overlay}

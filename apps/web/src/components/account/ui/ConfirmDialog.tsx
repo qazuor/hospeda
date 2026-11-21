@@ -16,7 +16,7 @@
  */
 
 import { AlertCircleIcon, InfoIcon } from '@repo/icons';
-import { type ReactNode, useRef, useState } from 'react';
+import { type ReactNode, useId, useRef, useState } from 'react';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { Button } from './Button';
 import styles from './ConfirmDialog.module.css';
@@ -71,6 +71,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
     const t = createT(locale);
     const cancelRef = useRef<HTMLButtonElement>(null);
+    const descriptionId = useId();
     const [pending, setPending] = useState(false);
     const [failed, setFailed] = useState(false);
     const destructive = tone === 'destructive';
@@ -102,6 +103,7 @@ export function ConfirmDialog({
             size="sm"
             role="alertdialog"
             hideCloseButton
+            describedBy={descriptionId}
             dismissible={!pending}
             claimHistoryEntry={false}
             initialFocus={cancelRef}
@@ -142,7 +144,12 @@ export function ConfirmDialog({
                     />
                 </span>
                 <div>
-                    <p className={styles.message}>{description}</p>
+                    <p
+                        id={descriptionId}
+                        className={styles.message}
+                    >
+                        {description}
+                    </p>
                     {failed ? (
                         <p
                             role="alert"

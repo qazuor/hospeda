@@ -16,6 +16,7 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { KitGallery } from '@/components/account/kit-gallery/KitGallery';
 import { isAccountKitGalleryEnabled } from '@/lib/env';
+import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 if (!isAccountKitGalleryEnabled()) {
@@ -23,8 +24,9 @@ if (!isAccountKitGalleryEnabled()) {
 }
 
 const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
 ---
 
-<AccountLayout locale={locale} title="Kit de componentes" activeSection="mi-cuenta" shell="account">
+<AccountLayout locale={locale} title={t('account.ui.gallery.title')} activeSection="mi-cuenta" shell="account">
 	<KitGallery client:load locale={locale} />
 </AccountLayout>

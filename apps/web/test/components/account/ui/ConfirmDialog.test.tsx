@@ -37,6 +37,13 @@ describe('ConfirmDialog', () => {
         await waitFor(() => expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveFocus());
     });
 
+    it('links its description with aria-describedby', async () => {
+        renderConfirm();
+        const dialog = await screen.findByRole('alertdialog');
+        const id = dialog.getAttribute('aria-describedby') ?? '';
+        expect(document.getElementById(id)).toHaveTextContent('Se pierden los platos.');
+    });
+
     it('Escape cancels', async () => {
         const { onCancel, onConfirm } = renderConfirm();
         await screen.findByRole('alertdialog');
