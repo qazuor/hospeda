@@ -7,7 +7,7 @@
 import { eq, getDb, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import { PermissionEnum } from '@repo/schemas';
-import { REFUND_CALL_RETRY_LIMIT_MS } from '@repo/service-core';
+import { REFUND_CALL_RETRY_LIMIT_MS, withRefundCallClaim } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { AuditEventType } from '../../../src/utils/audit-logger';
@@ -448,6 +448,29 @@ describe('HOS-2406 remainder settlement route', () => {
         expect((await response.json()).error).toMatchObject({
             code: 'ALREADY_EXISTS',
             reason: 'UNCITED_PROVIDER_REFUND_ON_CHARGE'
+        });
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
+    });
+
+    it('HOS-2538 answers 409 REFUND_RETRY_IN_PROGRESS while a retry of the refund holds the claim', async () => {
+        // Arrange
+        const seeded = await seedStaleCall(6000, PAST_LIMIT);
+        const reference = await refundAtFake(seeded.chargeId, 6000);
+
+        // Act
+        const response = await withRefundCallClaim(seeded.refundId, () =>
+            settle({
+                refundId: seeded.refundId,
+                headers: admin(seeded.adminId),
+                body: { amount: 6000, reference }
+            })
+        );
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect((await response.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'REFUND_RETRY_IN_PROGRESS'
         });
         expect((await confirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
     });

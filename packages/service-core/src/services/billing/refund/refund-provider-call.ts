@@ -1,5 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import type { SelectPayment, SelectRefund } from '@repo/db';
+import type { DrizzleClient, SelectPayment, SelectRefund } from '@repo/db';
 import { and, eq, getDb, idempotencyKeys, refundCalls, refunds, sql } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { type PaymentProvider, PaymentProviderError } from '@repo/payments';
@@ -9,6 +9,7 @@ import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import { SETTLED_EXTERNALLY } from './refund-call-tally';
 import { describeProviderRejection } from './refund-provider-rejection-reason';
 import { claimedRefundAmount } from './refund-source';
+import { UncountedRefundAnswerError } from './uncounted-refund-answer.error';
 
 const logger = createLogger('refund-provider-call');
 
@@ -81,11 +82,48 @@ export async function persistCall(
 }
 
 /**
+ * A late answer for a call action 14 already settled from the panel (HOS-2538). An answer that
+ * names a provider refund is money returned that nothing counts: it is captured as
+ * {@link UncountedRefundAnswerError} (a Sentry alert). One without an id moved nothing we can name,
+ * and is only logged.
+ */
+async function reportAnswerForSettledCall(input: {
+    readonly tx: DrizzleClient;
+    readonly key: string;
+    readonly providerRefundId: string | undefined;
+}): Promise<void> {
+    const { tx, key, providerRefundId } = input;
+    if (!providerRefundId) {
+        logger.warn({ key }, 'Late answer without a refund id for a call settled by action 14');
+        return;
+    }
+    const [call] = await tx
+        .select({
+            refundId: refundCalls.refundId,
+            panelReference: sql<string | null>`${idempotencyKeys.result}->>'panelReference'`
+        })
+        .from(refundCalls)
+        .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
+        .where(eq(refundCalls.idempotencyKey, key))
+        .limit(1);
+    const uncounted = new UncountedRefundAnswerError({
+        reason: 'ANSWER_FOR_SETTLED_EXTERNALLY_CALL',
+        refundCallKey: key,
+        refundId: call?.refundId ?? null,
+        providerRefundId,
+        panelReference: call?.panelReference ?? null
+    });
+    // Captured so the API's logger hook raises a Sentry alert (refunds runbook §8.4).
+    logger.error(uncounted, uncounted.message, { capture: true });
+}
+
+/**
  * Completes one persisted RF2 call (AC:B6:8, TRANS:B:RF2).
  *
  * A call action 14 already answered by hand (`SETTLED_EXTERNALLY`, HOS-2538) is left as it is:
  * its refund was settled from the provider panel, so a late answer (a resend in flight, a lagging
- * response) must neither overwrite that answer nor bind a provider refund to the call.
+ * response) must neither overwrite that answer nor bind a provider refund to the call. An answer
+ * naming a provider refund raises the {@link UncountedRefundAnswerError} alert instead.
  */
 export async function completeCall(
     key: string,
@@ -101,7 +139,7 @@ export async function completeCall(
     clock: Clock,
     providerRefundId?: string
 ): Promise<void> {
-    await getDb().transaction(async (tx) => {
+    await getDb().transaction(async (tx: DrizzleClient) => {
         const [completed] = await tx
             .update(idempotencyKeys)
             .set({ result, completedAt: clock.now() })
@@ -113,7 +151,13 @@ export async function completeCall(
             )
             .returning({ key: idempotencyKeys.key });
         if (!completed) {
-            logger.warn({ key }, 'Late answer for a refund call already settled by action 14');
+            await reportAnswerForSettledCall({
+                tx,
+                key,
+                providerRefundId:
+                    providerRefundId ??
+                    (result.outcome === 'ACCEPTED' ? result.providerRefundId : undefined)
+            });
             return;
         }
         if (providerRefundId) {

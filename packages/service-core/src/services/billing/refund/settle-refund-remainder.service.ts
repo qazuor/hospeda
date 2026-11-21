@@ -26,6 +26,7 @@ import {
     creditedAcceptedAmount,
     readChargeRefunds
 } from './refund-remainder-provider';
+import { withRefundCallClaim } from './refund-retry-claim';
 import { assertRefundAmount, lockRefundSource } from './refund-source';
 import {
     assertNoUncitedRefundForStaleCalls,
@@ -77,7 +78,9 @@ export const SETTLE_REFUND_REMAINDER_REJECTIONS = [
     'EXTERNAL_REFERENCE_ALREADY_SETTLED',
     'REMAINDER_NOT_FOUND_AT_PROVIDER',
     'UNCITED_PROVIDER_REFUND_ON_CHARGE',
-    'REFUND_STATE_CHANGED'
+    'REFUND_STATE_CHANGED',
+    // Thrown by withRefundCallClaim: a retry (or another settlement) of this refund is running.
+    'REFUND_RETRY_IN_PROGRESS'
 ] as const;
 
 /** A rejection reason of `settleRefundRemainder`. */
@@ -254,7 +257,9 @@ function stateChanged(): ServiceError {
  * (`REFUND_CALL_UNANSWERED`, the retry still owns it). A charge refund nobody cites, for a stale
  * call's amount, refuses too (`UNCITED_PROVIDER_REFUND_ON_CHARGE`: the lost call may have landed,
  * and the retry binds it). On success every stale call is answered `SETTLED_EXTERNALLY` in the same
- * transaction ({@link markStaleCallsSettledExternally}): never resent, never bound afterwards.
+ * transaction ({@link markStaleCallsSettledExternally}): never resent, never bound afterwards. The
+ * whole read-and-settle runs under the retry's claim ({@link withRefundCallClaim}): while a retry of
+ * the same refund runs (its POST may be in flight), this answers `REFUND_RETRY_IN_PROGRESS`.
  *
  * The refund row closes `EXECUTED` for its full amount: its accepted `refund_call` rows keep the provider part,
  * and the row records the remainder the way action 14 records a panel refund
@@ -306,6 +311,15 @@ export async function settleRefundRemainder(
             'EXTERNAL_REFERENCE_INVALID'
         );
     await assertSettleable(input);
+    // HOS-2538: the retry's own claim, taken after 404/403 (contract order), held across the charge
+    // read and the transaction, so a retry POST in flight can never race the panel settlement.
+    return withRefundCallClaim(input.refundId, () => settleUnderClaim(input, ports));
+}
+
+async function settleUnderClaim(
+    input: SettleRefundRemainderInput,
+    ports: { readonly provider: PaymentProvider; readonly clock: Clock }
+): Promise<SettleRefundRemainderResult> {
     const view = await readProviderView({
         refundId: input.refundId,
         provider: ports.provider,

@@ -6,8 +6,8 @@
  * a cited panel refund and a charge refund that may be the lost call's.
  */
 import { eq, getDb, idempotencyKeys, refundCalls } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
-import { afterAll, describe, expect, it } from 'vitest';
+import { registerCaptureHook, unregisterCaptureHook } from '@repo/logger';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import {
     REFUND_CALL_RETRY_LIMIT_MS,
     readCitedProviderRefundIds
@@ -16,102 +16,22 @@ import { completeCall } from '../../../src/services/billing/refund/refund-provid
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import { resendUnansweredRefundCalls } from '../../../src/services/billing/refund/resend-refund-call.service.js';
 import { retryRefundProviderCalls } from '../../../src/services/billing/refund/retry-refund-provider-calls.service.js';
-import { settleRefundRemainder } from '../../../src/services/billing/refund/settle-refund-remainder.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
-import { paymentRow, refundById, seedAdminActor } from './support/refund-fixtures.js';
+import { paymentRow, refundById } from './support/refund-fixtures.js';
+import { seedProviderCalls } from './support/refund-remainder-fixtures.js';
 import {
-    chargedCreditedPayment,
-    refundAcceptedAtFake,
-    refundAtFake,
-    type SeededCall,
-    seedProviderCalls
-} from './support/refund-remainder-fixtures.js';
+    callRows,
+    expectUntouched,
+    PAST_LIMIT,
+    panelRefund,
+    settle,
+    stuckRefund
+} from './support/refund-stale-call-fixtures.js';
 
 afterAll(closeServiceTestPool);
+afterEach(unregisterCaptureHook);
 
 const skip = !isServiceTestDbAvailable();
-
-/**
- * A credited 10000 payment on a real fake charge with a `CONFIRMED` refund of `amount` whose calls
- * are `calls`; every unanswered call was sent `ageMs` before the clock's now.
- */
-async function stuckRefund(input: {
-    readonly amount?: number;
-    readonly calls?: readonly SeededCall[];
-    readonly ageMs: number;
-}) {
-    const amount = input.amount ?? 6000;
-    const credited = await chargedCreditedPayment(10000);
-    const confirmer = await seedAdminActor([PermissionEnum.BILLING_REFUND]);
-    const { refundId } = await requestRefund(
-        { source: { kind: 'PAYMENT', id: credited.payment.id }, amount, reason: 'REVOCATION' },
-        { clock: credited.fixture.clock }
-    );
-    await seedProviderCalls({
-        refundId,
-        confirmedBy: confirmer.id,
-        calls: await refundAcceptedAtFake({
-            provider: credited.fixture.provider,
-            chargeId: credited.payment.providerFactId,
-            calls: input.calls ?? [{ kind: 'UNANSWERED', amount }]
-        }),
-        at: credited.fixture.clock.now()
-    });
-    // The calls were persisted `ageMs` ago, on the injected clock (`persistCall` writes `sentAt`).
-    await getServiceTestDb()
-        .update(refundCalls)
-        .set({ createdAt: new Date(credited.fixture.clock.now().getTime() - input.ageMs) })
-        .where(eq(refundCalls.refundId, refundId));
-    const settler = await seedAdminActor([PermissionEnum.BILLING_SETTLE_EXTERNAL]);
-    return { credited, confirmer, settler, refundId, amount };
-}
-
-type Stuck = Awaited<ReturnType<typeof stuckRefund>>;
-
-/** A refund made by hand from the provider panel: a real refund at the fake. */
-function panelRefund(stuck: Stuck, amount = stuck.amount) {
-    return refundAtFake({
-        provider: stuck.credited.fixture.provider,
-        chargeId: stuck.credited.payment.providerFactId,
-        amount
-    });
-}
-
-function settle(stuck: Stuck, reference: string, amount = stuck.amount) {
-    return settleRefundRemainder(
-        { actor: stuck.settler, refundId: stuck.refundId, amount, reference },
-        { provider: stuck.credited.fixture.provider, clock: stuck.credited.fixture.clock }
-    );
-}
-
-async function callRows(refundId: string) {
-    const db = getServiceTestDb();
-    return db
-        .select({
-            key: refundCalls.idempotencyKey,
-            providerRefundId: refundCalls.providerRefundId,
-            completedAt: idempotencyKeys.completedAt,
-            result: idempotencyKeys.result
-        })
-        .from(refundCalls)
-        .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
-        .where(eq(refundCalls.refundId, refundId));
-}
-
-async function expectUntouched(stuck: Stuck) {
-    expect(await refundById(stuck.refundId)).toMatchObject({
-        status: 'CONFIRMED',
-        externalRef: null,
-        settledBy: null
-    });
-    expect((await paymentRow(stuck.credited.payment.id))?.refundedAmount).toBe(0);
-    for (const call of await callRows(stuck.refundId)) {
-        expect(call.providerRefundId).toBeNull();
-        if (call.completedAt === null) expect(call.result).toBeNull();
-    }
-}
-
-const PAST_LIMIT = REFUND_CALL_RETRY_LIMIT_MS + 1;
 
 describe('HOS-2538 action 14 settles a refund stuck on a call older than 24 hours', () => {
     it.skipIf(skip)(
@@ -164,6 +84,9 @@ describe('HOS-2538 action 14 settles a refund stuck on a call older than 24 hour
         const [before] = await callRows(stuck.refundId);
         if (!before) throw new Error('call missing');
 
+        const captured: unknown[] = [];
+        registerCaptureHook((error) => captured.push(error));
+
         // Act: a retry, a resend and a late answer naming a provider refund.
         const retried = retryRefundProviderCalls(
             { actor: stuck.confirmer, refundId: stuck.refundId },
@@ -184,6 +107,37 @@ describe('HOS-2538 action 14 settles a refund stuck on a call older than 24 hour
         await expect(retried).rejects.toMatchObject({ reason: 'REFUND_NOT_CONFIRMED' });
         expect(resent.outcomes).toEqual([]);
         expect(await callRows(stuck.refundId)).toEqual([before]);
+        // The late answer named real money that nothing counts: it raises the Sentry alert.
+        expect(captured).toContainEqual(
+            expect.objectContaining({
+                name: 'UncountedRefundAnswerError',
+                reason: 'ANSWER_FOR_SETTLED_EXTERNALLY_CALL',
+                refundCallKey: before.key,
+                refundId: stuck.refundId,
+                providerRefundId: 'mp-late-answer',
+                panelReference: reference
+            })
+        );
+    });
+
+    it.skipIf(skip)('a late answer without a refund id raises no alert', async () => {
+        // Arrange
+        const stuck = await stuckRefund({ ageMs: PAST_LIMIT });
+        await settle(stuck, await panelRefund(stuck));
+        const [call] = await callRows(stuck.refundId);
+        const captured: unknown[] = [];
+        registerCaptureHook((error) => captured.push(error));
+
+        // Act
+        await completeCall(
+            call?.key ?? '',
+            { outcome: 'REJECTED', code: 'REJECTED' },
+            stuck.credited.fixture.clock
+        );
+
+        // Assert
+        expect(captured).toEqual([]);
+        expect(await callRows(stuck.refundId)).toEqual([call]);
     });
 
     it.skipIf(skip)(
