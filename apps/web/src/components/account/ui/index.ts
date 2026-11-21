@@ -12,6 +12,7 @@ export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
+export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { Field, type FieldProps } from './Field';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
