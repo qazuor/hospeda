@@ -1,9 +1,9 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 import {
     formatTrialGreeting,
@@ -41,7 +41,7 @@ export function TrialEnding5Days({
                     ? `Tu prueba del plan ${plan} termina en 5 días`
                     : 'Tu prueba termina en 5 días'
             }
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Te quedan 5 días de prueba</Heading>
 

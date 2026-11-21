@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 
 /**
@@ -49,7 +49,6 @@ export function SubscriptionAccessEndingSoon({
     return (
         <EmailLayout
             previewText={`Your ${planName} access ends in ${daysRemaining} days — reactivate now`}
-            showUnsubscribe={false}
         >
             <Heading>Your access is ending soon</Heading>
 

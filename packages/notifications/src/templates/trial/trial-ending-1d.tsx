@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 import {
     formatTrialGreeting,
@@ -42,7 +42,7 @@ export function TrialEnding1Day({
     return (
         <EmailLayout
             previewText="Mañana tu publicación deja de verse en Hospeda"
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Mañana tu publicación sale del sitio</Heading>
 
