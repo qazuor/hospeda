@@ -990,7 +990,6 @@
             "description": "Gerencie sua conta, favoritos, avaliações e preferencias.",
             "greeting": "Bem-vindo",
             "dashboardLabel": "Painel",
-            "viewLabel": "Ver",
             "nav": {
                 "editProfile": "Editar perfil",
                 "editProfileDesc": "Atualize suas informações pessoais e foto de perfil",
@@ -1044,7 +1043,13 @@
                 "listings": "Minhas fichas",
                 "listingsDesc": "Fichas publicadas",
                 "listingsHidden_one": "{{count}} ficha não publicada: não aparece para o público.",
-                "listingsHidden_other": "{{count}} fichas não publicadas: não aparecem para o público."
+                "listingsHidden_other": "{{count}} fichas não publicadas: não aparecem para o público.",
+                "viewProperties": "Ver meus imóveis",
+                "viewMessages": "Ver mensagens não lidas",
+                "viewListings": "Ver minhas fichas",
+                "viewFavorites": "Ver meus favoritos",
+                "viewReviews": "Ver minhas avaliações",
+                "viewSubscription": "Ver minha assinatura"
             },
             "sectionsLabel": "Seções"
         },
