@@ -8,4 +8,8 @@
  * @module components/account/ui
  */
 
+export { Button, type ButtonContentProps, type ButtonProps } from './Button';
+export type { ButtonSize, ButtonVariant } from './button-class';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
+export { LinkButton, type LinkButtonProps } from './LinkButton';
+export { TextLink, type TextLinkProps, type TextLinkTone } from './TextLink';
