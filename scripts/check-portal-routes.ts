@@ -23,6 +23,16 @@
  *   replaced by the slug, for example `propiedades/[id]/editar/servicios.astro`.
  *   So does every `EDITOR_NON_SECTION_PAGE_SLUGS` entry, the editor pages that
  *   are not catalog sections (`politicas`, `preguntas-ia`, HOS-2410).
+ * - (b2) The reverse: every page under an editor section folder
+ *   (`propiedades/[id]/editar/`, `comercio/[vertical]/[id]/editar/`), as
+ *   `<slug>.astro` or `<slug>/index.astro`, is a slug of `EDITOR_SECTION_SLUGS`
+ *   or `EDITOR_NON_SECTION_PAGE_SLUGS` of a vertical that folder serves. The
+ *   folder's own `index.astro` (the editor hub) is exempt. Venue and
+ *   experience share the `comercio` folder, so a page there passes when either
+ *   vertical lists it. Without this a new editor page the API does not know
+ *   would be unlinkable, and the help guard could not anchor it.
+ * - (b3) No non-section page reuses the id or the slug of a catalog section of
+ *   the same vertical: the slug lookup would silently pick one of the two.
  * - (c) A section template that no vertical's slugs are expanded over is never
  *   checked, so it is a violation (it would look verified and not be).
  * - (d) Where a template has a `[vertical]` segment, both values the API fills it
@@ -43,7 +53,11 @@
  * - Whether the section SLUG still belongs to the section id it is mapped from:
  *   a page exists for the slug, nothing more. Swapping two slugs passes.
  * - Which verticals a given editor page serves: `[vertical]` pages are shared by
- *   venue and experience, so a section that exists for one is found for both.
+ *   venue and experience, so a section that exists for one is found for both,
+ *   and (b2) accepts a `comercio` page that only one of them lists. A page
+ *   meant for venue only that experience also lists passes.
+ * - Editor pages outside the section folders, or nested deeper than
+ *   `<slug>/index.astro` under them (b2 lists one level).
  * - Anything outside `apps/web/src/pages/[lang]/` (locale-specific pages).
  *
  * Fixing a failure means updating the API map in the same PR as the web change.
@@ -74,7 +88,7 @@ export const LISTING_EDITOR_VERTICALS_FILE = 'apps/web/src/lib/editor/listing-ed
 export const MIN_PORTAL_PAGES = 1;
 
 /** Predicate letters, as listed in the file header. */
-export type Predicate = 'a' | 'b' | 'c' | 'd' | 'e';
+export type Predicate = 'a' | 'b' | 'b2' | 'b3' | 'c' | 'd' | 'e';
 
 /** One offending entry. */
 export interface Violation {
@@ -88,6 +102,8 @@ export interface Violation {
 export const PREDICATE_MESSAGES: Readonly<Record<Predicate, string>> = {
     a: 'GUARD:portal-routes (a): a PORTAL_ROUTE_TEMPLATES entry has no page in apps/web (dynamic segments are matched by name).',
     b: 'GUARD:portal-routes (b): an EDITOR_SECTION_SLUGS or EDITOR_NON_SECTION_PAGE_SLUGS entry has no editor page for its vertical.',
+    b2: 'GUARD:portal-routes (b2): an editor page in apps/web has a slug the API does not know: add it to EDITOR_NON_SECTION_PAGE_SLUGS or EDITOR_SECTION_SLUGS.',
+    b3: 'GUARD:portal-routes (b3): a non-section editor page reuses the id or the slug of a catalog section of the same vertical.',
     c: 'GUARD:portal-routes (c): a section template is not expanded over any vertical, so it is never checked.',
     d: 'GUARD:portal-routes (d): the web no longer serves a [vertical] value the API links with.',
     e: 'GUARD:portal-routes (e): the pages folder is missing or has no pages, so nothing was checked.'
@@ -99,8 +115,11 @@ export interface PortalRouteData {
     readonly templates: Readonly<Record<string, string>>;
     /** Per vertical, the editor slug of each section id. */
     readonly sectionSlugs: Readonly<Record<string, Readonly<Record<string, string>>>>;
-    /** Per vertical, the editor slug of each page that is not a catalog section. */
-    readonly editorPageSlugs?: Readonly<Record<string, Readonly<Record<string, string>>>>;
+    /**
+     * Per vertical, the editor slug of each page that is not a catalog section.
+     * Required, so injected data cannot leave these pages unchecked.
+     */
+    readonly editorPageSlugs: Readonly<Record<string, Readonly<Record<string, string>>>>;
     /** Per vertical, the key of the template its sections live under. */
     readonly sectionTemplateByVertical: Readonly<Record<string, string>>;
     /** The `[vertical]` segment values the API fills in. */
@@ -117,7 +136,7 @@ export function editorSlugsByVertical({
 }: {
     readonly data: PortalRouteData;
 }): Readonly<Record<string, Readonly<Record<string, string>>>> {
-    const pages = data.editorPageSlugs ?? {};
+    const pages = data.editorPageSlugs;
     const verticals = new Set([...Object.keys(data.sectionSlugs), ...Object.keys(pages)]);
     return Object.fromEntries(
         [...verticals].map((vertical) => [
@@ -191,6 +210,83 @@ function countPages(dir: string): number {
     }, 0);
 }
 
+/** The page slugs directly under an editor folder: `<slug>.astro` or `<slug>/index.astro`, hub excluded. */
+function editorPageSlugsIn(dir: string): string[] {
+    if (!isDirectory(dir)) {
+        return [];
+    }
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        if (entry.isDirectory()) {
+            return isFile(join(dir, entry.name, 'index.astro')) ? [entry.name] : [];
+        }
+        if (!entry.name.endsWith('.astro') || entry.name === 'index.astro') {
+            return [];
+        }
+        return [entry.name.slice(0, -'.astro'.length)];
+    });
+}
+
+/** (b2): editor pages in the web whose slug no vertical served by their folder lists. */
+function unknownEditorPages({
+    data,
+    pagesRoot
+}: {
+    readonly data: PortalRouteData;
+    readonly pagesRoot: string;
+}): Violation[] {
+    const slugs = editorSlugsByVertical({ data });
+    const verticalsByTemplate = new Map<string, string[]>();
+    for (const [vertical, key] of Object.entries(data.sectionTemplateByVertical)) {
+        const template = data.templates[key];
+        if (template === undefined || !template.includes(data.sectionPlaceholder)) {
+            continue;
+        }
+        verticalsByTemplate.set(template, [...(verticalsByTemplate.get(template) ?? []), vertical]);
+    }
+    const violations: Violation[] = [];
+    for (const [template, verticals] of verticalsByTemplate) {
+        const folder = template.slice(0, template.indexOf(data.sectionPlaceholder));
+        const known = new Set(
+            verticals.flatMap((vertical) => Object.values(slugs[vertical] ?? {}))
+        );
+        for (const slug of editorPageSlugsIn(join(pagesRoot, folder)).sort()) {
+            if (!known.has(slug)) {
+                violations.push({
+                    predicate: 'b2',
+                    detail: `${folder}${slug} (${verticals.join(', ')}) is an editor page no vertical lists: add it to EDITOR_NON_SECTION_PAGE_SLUGS or EDITOR_SECTION_SLUGS`
+                });
+            }
+        }
+    }
+    return violations;
+}
+
+/** (b3): a non-section page id or slug that is also a catalog section's, per vertical. */
+function editorPageCollisions({ data }: { readonly data: PortalRouteData }): Violation[] {
+    return Object.entries(data.editorPageSlugs).flatMap(([vertical, pages]) => {
+        const sections = data.sectionSlugs[vertical] ?? {};
+        const sectionSlugValues = new Set(Object.values(sections));
+        return Object.entries(pages).flatMap(([id, slug]) => [
+            ...(Object.hasOwn(sections, id)
+                ? [
+                      {
+                          predicate: 'b3' as const,
+                          detail: `${vertical}/${id}: the id is also a catalog section id`
+                      }
+                  ]
+                : []),
+            ...(sectionSlugValues.has(slug)
+                ? [
+                      {
+                          predicate: 'b3' as const,
+                          detail: `${vertical}/${id}: the slug "${slug}" is also a catalog section slug`
+                      }
+                  ]
+                : [])
+        ]);
+    });
+}
+
 /** Whether `LISTING_EDITOR_VERTICALS` in the web file lists `value` as a key. */
 function webServesVertical({ source, value }: { readonly source: string; readonly value: string }) {
     const block = /LISTING_EDITOR_VERTICALS[^=]*=\s*\{([^}]*)\}/.exec(source)?.[1] ?? '';
@@ -215,6 +311,16 @@ export function checkPortalRoutes({
     readonly minPages?: number;
 }): readonly Violation[] {
     const pagesRoot = join(root, PORTAL_PAGES_DIR);
+    // Required by the type; checked again for a JS caller, so a missing list is
+    // a violation and never "no non-section page to check".
+    if (!Object.hasOwn(data, 'editorPageSlugs') || data.editorPageSlugs === undefined) {
+        return [
+            {
+                predicate: 'b',
+                detail: 'the route data has no editorPageSlugs, so its pages cannot be checked'
+            }
+        ];
+    }
     if (countPages(pagesRoot) < minPages) {
         return [
             {
@@ -269,6 +375,8 @@ export function checkPortalRoutes({
             }
         }
     }
+
+    violations.push(...unknownEditorPages({ data, pagesRoot }), ...editorPageCollisions({ data }));
 
     if (Object.values(data.templates).some((template) => template.includes('[vertical]'))) {
         const file = join(root, LISTING_EDITOR_VERTICALS_FILE);

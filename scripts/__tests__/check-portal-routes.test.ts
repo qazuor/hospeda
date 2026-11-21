@@ -9,6 +9,7 @@
  * names, and nothing else), and the REAL web page tree reproduced as empty files.
  */
 import {
+    existsSync,
     mkdirSync,
     mkdtempSync,
     readdirSync,
@@ -345,6 +346,137 @@ describe('GUARD portal-routes', () => {
 
             expect(result.exitCode).toBe(1);
             expect(result.output).toContain(PREDICATE_MESSAGES.b);
+        });
+    });
+
+    describe('(b2) an editor page the API does not know turns it red', () => {
+        it('a new accommodation editor page', () => {
+            const root = realShapedTree();
+            touch({
+                root,
+                file: path.join(
+                    PORTAL_PAGES_DIR,
+                    'mi-cuenta/propiedades/[id]/editar/descuentos.astro'
+                )
+            });
+
+            const result = run({ root });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain(PREDICATE_MESSAGES.b2);
+            expect(result.output).toContain(
+                'mi-cuenta/propiedades/[id]/editar/descuentos (accommodation)'
+            );
+            expect(result.output).toContain(
+                'add it to EDITOR_NON_SECTION_PAGE_SLUGS or EDITOR_SECTION_SLUGS'
+            );
+        });
+
+        it('a new comercio editor page, in its <slug>/index.astro form', () => {
+            const root = realShapedTree();
+            touch({
+                root,
+                file: path.join(
+                    PORTAL_PAGES_DIR,
+                    'mi-cuenta/comercio/[vertical]/[id]/editar/reservas/index.astro'
+                )
+            });
+
+            const result = run({ root });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain('editar/reservas (venue, experience)');
+        });
+
+        it('accepts a comercio page only one of the two verticals lists, and the hub', () => {
+            // Arrange: carta is venue-only, punto-de-encuentro experience-only, index is the hub.
+            const root = realShapedTree();
+
+            // Act / Assert
+            expect(
+                existsSync(PAGES(root, 'mi-cuenta/comercio/[vertical]/[id]/editar/carta.astro'))
+            ).toBe(true);
+            expect(
+                existsSync(PAGES(root, 'mi-cuenta/comercio/[vertical]/[id]/editar/index.astro'))
+            ).toBe(true);
+            expect(run({ root }).exitCode).toBe(0);
+        });
+
+        it('a page dropped from the non-section list while the web keeps it', () => {
+            const root = realShapedTree();
+
+            const result = run({
+                root,
+                data: {
+                    ...DEFAULT_ROUTE_DATA,
+                    editorPageSlugs: {
+                        ...DEFAULT_ROUTE_DATA.editorPageSlugs,
+                        accommodation: { aiQuestions: 'preguntas-ia' }
+                    }
+                }
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain(PREDICATE_MESSAGES.b2);
+            expect(result.output).toContain('editar/politicas (accommodation)');
+        });
+    });
+
+    describe('(b3) a non-section page that collides with a catalog section', () => {
+        it('reusing a catalog section id', () => {
+            const root = syntheticTree();
+
+            const result = run({
+                root,
+                data: {
+                    ...DEFAULT_ROUTE_DATA,
+                    editorPageSlugs: {
+                        ...DEFAULT_ROUTE_DATA.editorPageSlugs,
+                        venue: { menu: 'preguntas-ia' }
+                    }
+                }
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain(PREDICATE_MESSAGES.b3);
+            expect(result.output).toContain('venue/menu: the id is also a catalog section id');
+        });
+
+        it('reusing a catalog section slug', () => {
+            const root = syntheticTree();
+
+            const result = run({
+                root,
+                data: {
+                    ...DEFAULT_ROUTE_DATA,
+                    editorPageSlugs: {
+                        ...DEFAULT_ROUTE_DATA.editorPageSlugs,
+                        experience: { aiQuestions: 'fotos' }
+                    }
+                }
+            });
+
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain(
+                'experience/aiQuestions: the slug "fotos" is also a catalog section slug'
+            );
+        });
+    });
+
+    describe('(b) fails closed on the non-section list', () => {
+        it('requires editorPageSlugs in the injected data', () => {
+            // Arrange: the type makes the list mandatory, so leaving it out is a compile error.
+            const { editorPageSlugs: _omitted, ...rest } = DEFAULT_ROUTE_DATA;
+
+            // @ts-expect-error editorPageSlugs is required
+            const data: PortalRouteData = rest;
+
+            // Act
+            const result = run({ root: syntheticTree(), data });
+
+            // Assert: at runtime the missing list is a violation, not "nothing to check".
+            expect(result.exitCode).toBe(1);
+            expect(result.output).toContain('has no editorPageSlugs');
         });
     });
 
