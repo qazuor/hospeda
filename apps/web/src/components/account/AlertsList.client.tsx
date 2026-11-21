@@ -187,14 +187,16 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
     useEffect(() => {
         if (!isUpgrade) return;
         let alive = true;
-        void fetchPublicPlans({ vertical: 'tourist', apiUrl: base }).then((result) => {
+        const loadGatePlanNames = async () => {
+            const result = await fetchPublicPlans({ vertical: 'tourist', apiUrl: base });
             if (!alive || !result.ok) return;
             setGatePlanNames(
                 result.plans
                     .filter((plan) => plan.entitlements.includes(EntitlementKeyEnum.PRICE_ALERTS))
                     .map((plan) => plan.name)
             );
-        });
+        };
+        void loadGatePlanNames();
         return () => {
             alive = false;
         };
