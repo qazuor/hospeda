@@ -230,38 +230,45 @@ describe('get_help body (HOS-2410 PR-12)', () => {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 }))
             );
-            const depths: readonly HelpTopicDepth[] = ['full', 'brief', 'brief'];
             const articles = HELP_ARTICLES;
-            let combinations = 0;
-            let largest = 0;
+            const topicOf = (article: HelpArticle, depth: HelpTopicDepth) =>
+                finishHelpTopic({
+                    plan: planHelpTopic({ article, depth }),
+                    ownListings,
+                    siteUrl: site()
+                });
+            const sizeOf = (value: unknown) => measureResultChars({ value });
 
-            // Act
-            for (let a = 0; a < articles.length; a += 1) {
-                for (let b = 0; b < articles.length; b += 1) {
-                    for (let c = 0; c < articles.length; c += 1) {
-                        if (a === b || b === c || a === c) continue;
-                        const picked = [articles[a], articles[b], articles[c]];
-                        const topics = picked.map((entry, index) =>
-                            finishHelpTopic({
-                                plan: planHelpTopic({
-                                    article: entry as HelpArticle,
-                                    depth: depths[index] ?? 'brief'
-                                }),
-                                ownListings,
-                                siteUrl: site()
-                            })
-                        );
-                        largest = Math.max(largest, measureResultChars({ value: { topics } }));
-                        combinations += 1;
-                    }
+            // Act: the serialized answer is `{"topics":[a,b,c]}`, so its size is the
+            // empty wrapper, plus each topic, plus two commas. The largest answer is
+            // therefore the largest full topic with the two largest briefs of OTHER
+            // articles: exact over every triple, in O(N) instead of O(N³).
+            const full = articles.map((article) => topicOf(article, 'full'));
+            const brief = articles.map((article) => topicOf(article, 'brief'));
+            const fullSize = full.map(sizeOf);
+            const briefSize = brief.map(sizeOf);
+            const byBrief = briefSize
+                .map((size, index) => ({ size, index }))
+                .sort((left, right) => right.size - left.size)
+                .slice(0, 3);
+            const wrapper = sizeOf({ topics: [] }) + 2;
+            let largest = 0;
+            let worst: readonly number[] = [];
+            for (const [index, size] of fullSize.entries()) {
+                const others = byBrief.filter((entry) => entry.index !== index).slice(0, 2);
+                const total = wrapper + size + others.reduce((sum, entry) => sum + entry.size, 0);
+                if (total > largest) {
+                    largest = total;
+                    worst = [index, ...others.map((entry) => entry.index)];
                 }
             }
 
-            // Assert: every ordered triple, so each article is tried as the full one.
-            expect(combinations).toBe(
-                articles.length * (articles.length - 1) * (articles.length - 2)
-            );
-            expect(combinations).toBeGreaterThan(0);
+            // Assert: the formula matches the real serialization of the worst triple.
+            expect(articles.length).toBeGreaterThanOrEqual(3);
+            expect(worst).toHaveLength(3);
+            expect(new Set(worst).size).toBe(3);
+            const [f, b1, b2] = worst as [number, number, number];
+            expect(sizeOf({ topics: [full[f], brief[b1], brief[b2]] })).toBe(largest);
             expect(largest).toBeLessThanOrEqual(MCP_RESULT_MAX_CHARS);
         });
     });
