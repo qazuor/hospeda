@@ -29,7 +29,7 @@
     overflow: auto hidden;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    background: var(--core-muted);
+    background: var(--core-background);
 }
 
 .track:focus-visible {
@@ -74,8 +74,8 @@
     inset-inline-start: var(--space-3);
     display: grid;
     place-items: center;
-    width: var(--space-11, 2.75rem);
-    height: var(--space-11, 2.75rem);
+    width: 2.75rem;
+    height: 2.75rem;
     color: var(--core-foreground);
     background: var(--core-card);
     border-radius: var(--radius-pill);

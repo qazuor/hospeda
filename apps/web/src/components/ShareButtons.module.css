@@ -192,8 +192,8 @@
 .iconOverlay .trigger {
     display: grid;
     place-items: center;
-    width: var(--space-11, 2.75rem);
-    height: var(--space-11, 2.75rem);
+    width: 2.75rem;
+    height: 2.75rem;
     padding: 0;
     border: 0;
     border-radius: var(--radius-pill);
