@@ -139,7 +139,7 @@ hashing. A value hash is taken over canonical JSON (sorted keys).
 | Anchor | Hashed input | Why this and not more |
 |---|---|---|
 | `page:` | the page `.astro` file only | Components are not followed; a change three imports deep does not flag every article. Use `file:` for a component that matters |
-| `section:` | the section page file + the catalog entry for that section in `LISTING_SECTIONS` (`packages/schemas/src/catalog/listing-sections.ts:5`) when one exists | A field added to the section is a real change; a change to another section is not |
+| `section:` | the section page file + the catalog entry for that section in `LISTING_SECTIONS` (`packages/schemas/src/catalog/listing-sections.ts:5`) when one exists, without its `order` field (`SECTION_PRESENTATION_FIELDS`, `scripts/help-anchor-hash.ts`) | A field added to the section is a real change; a change to another section is not. `order` is excluded because it is the section's place in the editor menu: presentation, not what the article explains, so renumbering the menu flags nothing (owner decision, 2026-11-21). Every other field of the entry stays hashed |
 | `entitlement:` / `limit:` | the key's definition row (`[key, scope, aggregation, enforcement, class]`, `entitlement-keys.ts:12`) | Not the whole catalog file. Values are DB rows and never hashed |
 | `enum:` | the full value set of the vocabulary | A new state should prompt a review of the articles that explain states |
 | `tool:` | the source file that defines the tool | Description and input schema live there |
