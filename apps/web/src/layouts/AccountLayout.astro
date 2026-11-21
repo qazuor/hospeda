@@ -33,9 +33,10 @@ interface Props {
 	readonly description?: string;
 	readonly activeSection?: string;
 	/**
-	 * HOS-2413 (OD-1): the frame to render. `legacy` is the current layout and the
-	 * DEFAULT, so no page changes. `account` renders the new `AccountShell`; it is
-	 * a short-lived switch that the flip PR removes together with the legacy markup.
+	 * HOS-2413 (OD-1): the frame to render. `account` renders the new
+	 * `AccountShell` and is the DEFAULT since the owner turned the new UI on
+	 * (T-031, 2026-11-21). `legacy` keeps the previous layout one prop away as a
+	 * rollback; a later PR removes it together with the legacy markup.
 	 */
 	readonly shell?: 'legacy' | 'account';
 	/** Page template for the new shell (`list`, `form`, `dashboard`, `reading`, `editor`). */
@@ -47,7 +48,7 @@ const {
 	title,
 	description,
 	activeSection = 'mi-cuenta',
-	shell = 'legacy',
+	shell = 'account',
 	template,
 } = Astro.props;
 
