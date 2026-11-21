@@ -1928,6 +1928,23 @@
             "title": "No pudimos cargar esto",
             "description": "Revisá tu conexión y volvé a intentar.",
             "retry": "Reintentar"
+        },
+        "saveBar": {
+            "region": "Guardar cambios",
+            "dirty": "Tenés cambios sin guardar",
+            "saving": "Guardando…",
+            "saved": "Cambios guardados",
+            "error": "No se pudieron guardar los cambios",
+            "save": "Guardar cambios",
+            "discard": "Descartar",
+            "goToError": "Ir al primer error",
+            "leaveMessage": "Tenés cambios sin guardar. Si salís ahora, se pierden."
+        },
+        "autoSave": {
+            "saving": "Guardando…",
+            "saved": "Guardado {{time}}",
+            "error": "No se guardó",
+            "retry": "Reintentar"
         }
     }
 }

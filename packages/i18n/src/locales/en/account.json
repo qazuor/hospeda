@@ -1928,6 +1928,23 @@
             "title": "We could not load this",
             "description": "Check your connection and try again.",
             "retry": "Try again"
+        },
+        "saveBar": {
+            "region": "Save changes",
+            "dirty": "You have unsaved changes",
+            "saving": "Saving…",
+            "saved": "Changes saved",
+            "error": "The changes could not be saved",
+            "save": "Save changes",
+            "discard": "Discard",
+            "goToError": "Go to first error",
+            "leaveMessage": "You have unsaved changes. If you leave now, they are lost."
+        },
+        "autoSave": {
+            "saving": "Saving…",
+            "saved": "Saved {{time}}",
+            "error": "Not saved",
+            "retry": "Try again"
         }
     }
 }

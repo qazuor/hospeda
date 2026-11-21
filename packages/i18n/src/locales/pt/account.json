@@ -1928,6 +1928,23 @@
             "title": "Não conseguimos carregar isto",
             "description": "Verifique sua conexão e tente novamente.",
             "retry": "Tentar novamente"
+        },
+        "saveBar": {
+            "region": "Salvar alterações",
+            "dirty": "Você tem alterações não salvas",
+            "saving": "Salvando…",
+            "saved": "Alterações salvas",
+            "error": "Não foi possível salvar as alterações",
+            "save": "Salvar alterações",
+            "discard": "Descartar",
+            "goToError": "Ir ao primeiro erro",
+            "leaveMessage": "Você tem alterações não salvas. Se sair agora, elas serão perdidas."
+        },
+        "autoSave": {
+            "saving": "Salvando…",
+            "saved": "Salvo {{time}}",
+            "error": "Não foi salvo",
+            "retry": "Tentar novamente"
         }
     }
 }

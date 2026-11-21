@@ -15,6 +15,12 @@ export {
     type AsyncResult,
     settleAsync
 } from './AsyncRegion';
+export {
+    AutoSaveChip,
+    type AutoSaveChipProps,
+    type AutoSaveStatus,
+    formatSavedTime
+} from './AutoSaveChip';
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
@@ -37,6 +43,7 @@ export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton';
 export { CountPill, type CountPillProps, StatusPill, type StatusPillProps } from './StatusPill';
+export { StickySaveBar, type StickySaveBarProps } from './StickySaveBar';
 export {
     Switch,
     type SwitchProps,
@@ -66,3 +73,11 @@ export { counterLevel, Textarea, type TextareaProps } from './Textarea';
 export { TextInput, type TextInputProps } from './TextInput';
 export { TextLink, type TextLinkProps, type TextLinkTone } from './TextLink';
 export { type ConfirmRequest, type UseConfirmResult, useConfirm } from './use-confirm';
+export {
+    SAVED_VISIBLE_MS,
+    type SaveBarStatus,
+    type SaveOutcome,
+    type UseSaveBarOptions,
+    type UseSaveBarResult,
+    useSaveBar
+} from './use-save-bar';
