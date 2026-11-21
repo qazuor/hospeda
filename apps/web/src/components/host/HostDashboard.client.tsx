@@ -84,7 +84,7 @@ const QUICK_ACTIONS: ReadonlyArray<QuickAction> = [
     {
         key: 'messages',
         labelKey: 'host.dashboard.quickActions.messages',
-        href: 'mi-cuenta/consultas',
+        href: 'mi-cuenta/consultas-propietario',
         icon: ChatIcon
     },
     {
@@ -320,7 +320,7 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                         )}
                     </p>
                     <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/consultas' })}
+                        href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })}
                         className={styles.widgetLink}
                     >
                         {t('host.dashboard.widgets.viewAll', 'Ver todos')}

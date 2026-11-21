@@ -19,8 +19,8 @@
 /**
  * Props every send in the trial series receives.
  *
- * The shape is identical across the nine so the dispatch switch in
- * `notification.service.ts` stays a flat mapping with no per-send argument
+ * The shape is identical across the nine so the template selectors in
+ * `services/notification-templates/trial.ts` stay a flat mapping with no per-send argument
  * assembly. `trialEndDate` is the same instant in all of them — the moment the
  * trial ends — and each template frames it for its own position in the series
  * (still ahead, today, already past).

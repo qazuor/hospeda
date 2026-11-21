@@ -113,7 +113,12 @@
         "ownerInboxTitle": "Guest messages",
         "status": "Status",
         "title": "Inbox",
-        "unreadCount": "{count} unread"
+        "unreadCount": "{count} unread",
+        "loadError": {
+            "title": "We couldn't load your inquiries",
+            "body": "There was a problem reading your inbox. Your inquiries are still there: please try again in a moment.",
+            "retry": "Try again"
+        }
     },
     "notifications": {
         "conversationArchived": "Conversation archived.",

@@ -2330,7 +2330,29 @@
             "REFUND_CLOSES_HELD_CHARGE": "Este reembolso não pode ser recusado: ele devolve uma cobrança retida por uma marca."
         },
         "genericError": "Não foi possível concluir a ação. Tente novamente.",
-        "serverError": "O servidor não conseguiu concluir a ação. Tente novamente mais tarde."
+        "serverError": "O servidor não conseguiu concluir a ação. Tente novamente mais tarde.",
+        "remainder": {
+            "title": "Registrar o restante de um reembolso aceito em parte",
+            "description": "Para um reembolso confirmado que o Mercado Pago aceitou só em parte. Reembolse o restante pelo painel do MP e registre aqui: o reembolso é fechado e o saldo do pagamento confere.",
+            "refundId": "ID do reembolso",
+            "amount": "Restante reembolsado manualmente (em pesos)",
+            "reference": "ID do reembolso no painel do MP",
+            "note": "Observação (opcional)",
+            "review": "Conferir",
+            "confirmText": "Será registrado que você reembolsou {{amount}} manualmente pelo painel do MP (referência {{reference}}) para o reembolso {{refundId}}. O reembolso é fechado em seu nome.",
+            "confirm": "Registrar o restante",
+            "back": "Voltar",
+            "success": "Reembolso fechado. O MP tinha aceitado {{accepted}} e o restante de {{remainder}} foi registrado.",
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "O reembolso não está confirmado. Só é possível registrar o restante de um reembolso confirmado.",
+                "REFUND_CALL_UNANSWERED": "Há uma chamada ao provedor sem resposta. Este caso não é fechado aqui: siga o guia de reembolsos travados.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "O provedor não aceitou nenhuma parte deste reembolso. Recuse-o e depois registre-o com a ação 14.",
+                "REMAINDER_AMOUNT_MISMATCH": "O restante não confere com o que falta reembolsar: o valor do reembolso menos o que o provedor creditou.",
+                "ACCEPTED_PART_NOT_ACCREDITED": "O provedor não mostra como creditada a parte que tinha aceitado. Confira a cobrança no painel do provedor antes de registrar o restante.",
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "O provedor não mostra nesta cobrança um reembolso creditado com essa referência e esse valor.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Outro reembolso deste pagamento tem uma chamada ao provedor ainda sem resposta. Aguarde a resolução antes de registrar o restante: o reembolso que você vê no painel pode ser dessa chamada."
+            }
+        }
     },
     "subscriptionCancellation": {
         "title": "Cancelar uma assinatura (sem reembolso)",

@@ -63,6 +63,7 @@ const ADDON_WRITER_FIXTURES = [
     'complement',
     'courtesy',
     'coverage',
+    'held-charge-refund',
     'next-charge-sync',
     'paid-order',
     'pause',
@@ -94,8 +95,11 @@ const ADDON_WRITER_FIXTURES = [
 /** Every serial group, one advisory key per global service. */
 export const SERIAL_GROUPS: readonly SerialGroup[] = [
     {
+        // A4 (`expireAddonInstances`) also drives this key: it expires EVERY active addon whose
+        // end passed on the caller's clock, so its file's clock (days ahead) expired an add-on a
+        // parallel writer file had just activated and counted it as its own (HOS-2518 CI).
         key: 1_999_001,
-        drives: /billing\/reconciliation\/sweep\/|runReconciliationSweep|reconciliation-sweep-fixtures|reconciliation-exit-game-fixtures|(?:paid-order|credited-payments)-fixtures/,
+        drives: /\bexpireAddonInstances\b|billing\/reconciliation\/sweep\/|runReconciliationSweep|reconciliation-sweep-fixtures|reconciliation-exit-game-fixtures|(?:paid-order|credited-payments)-fixtures/,
         shares: new RegExp(
             [
                 `/(?:${ADDON_WRITER_FIXTURES.join('|')})-fixtures(?:-2)?['.]`,
@@ -115,6 +119,14 @@ export const SERIAL_GROUPS: readonly SerialGroup[] = [
         // mid-case through a fake that never saw its page. Files that drive A3 run one at a time.
         key: 1_999_003,
         drives: /\bexpireAddonAuthorizationWindows\b/
+    },
+    {
+        // HOS-2406: `listProposedRefunds` pages over EVERY `MARK_PROPOSAL` refund in the database.
+        // A file that commits, confirms or closes one while the list file pages shifts the offsets
+        // (an id listed twice, another skipped). The list file runs alone; the writers share.
+        key: 1_999_004,
+        drives: /\blistProposedRefunds\(/,
+        shares: /held-charge-refund-fixtures|\bMARK_PROPOSAL\b/
     }
 ];
 

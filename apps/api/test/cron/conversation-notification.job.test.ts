@@ -106,7 +106,8 @@ vi.mock('@repo/email', () => ({
     sendEmail: mockSendEmail
 }));
 
-vi.mock('@repo/notifications', () => ({
+vi.mock('@repo/notifications', async () => ({
+    ...(await import('../../../../packages/notifications/src/templates/conversation/subjects.ts')),
     ConversationNewMessage: vi.fn().mockReturnValue({ type: 'mock-email-template' }),
     ConversationNewMessageAnon: vi.fn().mockReturnValue({ type: 'mock-email-anon-template' })
 }));

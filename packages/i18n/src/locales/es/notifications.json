@@ -54,5 +54,14 @@
         "refunded": "Te devolvimos {{amount}}.",
         "timing": "Según tu medio de pago, puede tardar unos días en verse reflejado.",
         "closing": "Si todavía querés el complemento, podés volver a comprarlo desde tu cuenta."
+    },
+    "oneTimeAddonActivated": {
+        "subject": "Tu destaque está activo",
+        "heading": "Tu destaque está activo",
+        "intro": "Ya está activo {{product}} en {{listing}}.",
+        "introWithoutListing": "Ya está activo {{product}}.",
+        "endsAt": "Vence el {{date}}.",
+        "closing": "Podés ver tus complementos y su estado desde tu cuenta.",
+        "cta": "Ver mis complementos"
     }
 }

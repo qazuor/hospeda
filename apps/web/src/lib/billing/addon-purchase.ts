@@ -37,8 +37,8 @@ export function hiddenListingNoticeKind(input: {
 
 /**
  * The copy of a purchase still being confirmed (HOS-2179 P-1): a one-time payment is
- * "being confirmed" and, once the screen stops asking, "come back in a few minutes"; a recurring
- * checkout keeps its generic copy.
+ * "being confirmed" and, once the screen stops asking, "we will email you" (the activation mail
+ * of HOS-2405); a recurring checkout keeps its generic copy.
  */
 export function processingCopyKey(input: {
     readonly chargeKind: 'UNA_VEZ' | 'PERIODICO' | null;
@@ -46,7 +46,7 @@ export function processingCopyKey(input: {
 }): string {
     if (input.chargeKind !== 'UNA_VEZ') return 'billing.addonPurchase.processing';
     return input.exhausted
-        ? 'billing.addonPurchase.waitingPaymentLong'
+        ? 'billing.addonPurchase.waitingPaymentMail'
         : 'billing.addonPurchase.waitingPayment';
 }
 

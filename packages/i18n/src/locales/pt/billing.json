@@ -97,7 +97,8 @@
         "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo.",
         "pageRejected": "O Mercado Pago não conseguiu abrir a página de pagamento. Tente de novo em alguns minutos.",
         "providerBusy": "O Mercado Pago está com muita demanda neste momento. Aguarde um minuto e tente de novo.",
-        "providerUnavailable": "O provedor de pagamentos não respondeu. Tente novamente em alguns minutos."
+        "providerUnavailable": "O provedor de pagamentos não respondeu. Tente novamente em alguns minutos.",
+        "identityBusy": "Outra compra deste complemento estava sendo atualizada agora. Tente novamente em alguns segundos."
     },
     "payment": {
         "title": "Métodos de pagamento",
@@ -897,6 +898,7 @@
         "processing": "Sua compra está sendo processada.",
         "waitingPayment": "Estamos confirmando seu pagamento.",
         "waitingPaymentLong": "Ainda não temos a confirmação do Mercado Pago. Volte a esta tela em alguns minutos para ver o resultado.",
+        "waitingPaymentMail": "Ainda não temos a confirmação do Mercado Pago. Avisaremos você por e-mail quando for creditado.",
         "active": "Ativo",
         "closed": "A compra terminou sem ativação.",
         "pageExpired": "A página de pagamento expirou sem um pagamento aprovado. Você pode comprar de novo.",

@@ -9,7 +9,7 @@ type PurchaseRead = z.infer<typeof AddonPurchaseReadResponseSchema>;
 
 /** Time between two reads of a waiting purchase. */
 export const POLL_INTERVAL_MS = 3000;
-/** Reads before the screen stops asking and tells the owner to come back later (P-1). */
+/** Reads before the screen stops asking and says the result will come by mail (P-1, HOS-2405). */
 export const POLL_MAX_ATTEMPTS = 10;
 
 /**

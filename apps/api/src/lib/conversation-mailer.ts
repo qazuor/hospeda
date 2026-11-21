@@ -27,7 +27,11 @@
  */
 
 import { createEmailClient } from '@repo/email';
-import { ConversationVerify } from '@repo/notifications';
+import {
+    CONVERSATION_ACCESS_LINK_SUBJECT,
+    CONVERSATION_VERIFY_SUBJECT,
+    ConversationVerify
+} from '@repo/notifications';
 import type {
     AccessLinkEmailPayload,
     ConversationMailer,
@@ -78,7 +82,7 @@ export function createConversationMailer(): ConversationMailer | undefined {
             const result = await sendAppEmail({
                 client,
                 to: payload.recipientEmail,
-                subject: 'Verificá tu email para continuar la conversación — Hospeda',
+                subject: CONVERSATION_VERIFY_SUBJECT,
                 react: ConversationVerify({
                     accommodationName: payload.accommodationName,
                     verificationUrl: payload.verificationUrl,
@@ -111,7 +115,7 @@ export function createConversationMailer(): ConversationMailer | undefined {
             const result = await sendAppEmail({
                 client,
                 to: payload.recipientEmail,
-                subject: 'Tu enlace de acceso a la conversación — Hospeda',
+                subject: CONVERSATION_ACCESS_LINK_SUBJECT,
                 react: ConversationVerify({
                     accommodationName: payload.accommodationName,
                     verificationUrl: payload.accessUrl,

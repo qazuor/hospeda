@@ -1,10 +1,12 @@
 import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { translateApiError } from '@/lib/api-errors';
 import {
     closedCopyKey,
     eligibleTargets,
     hiddenListingNoticeKind,
     mintOrderRequestId,
+    orderIdentityReleased,
     processingCopyKey,
     purchasableOffers,
     purchaseStateFrom
@@ -78,7 +80,7 @@ describe('HOS-2179 one-time copy decisions', () => {
         ],
         [
             { chargeKind: 'UNA_VEZ' as const, exhausted: true },
-            'billing.addonPurchase.waitingPaymentLong'
+            'billing.addonPurchase.waitingPaymentMail'
         ],
         [{ chargeKind: 'PERIODICO' as const, exhausted: true }, 'billing.addonPurchase.processing'],
         [{ chargeKind: null, exhausted: false }, 'billing.addonPurchase.processing']
@@ -165,5 +167,28 @@ describe('purchase identity and states', () => {
                 }
             })
         ).toBe(expected);
+    });
+});
+
+describe('HOS-2518 the purchase identity was busy', () => {
+    const busy = {
+        status: 503,
+        code: 'SERVICE_UNAVAILABLE',
+        reason: 'PURCHASE_IDENTITY_BUSY',
+        message: 'Another purchase of this addon was changing; try again'
+    };
+
+    it.each([
+        ['es', 'Justo se estaba actualizando otra compra de este complemento.'],
+        ['en', 'Another purchase of this add-on was being updated just now.'],
+        ['pt', 'Outra compra deste complemento estava sendo atualizada agora.']
+    ] as const)('shows its own %s copy, not the generic 503 text', (locale, start) => {
+        const message = translateApiError({ error: busy, locale, fallback: 'generic' });
+
+        expect(message.startsWith(start)).toBe(true);
+    });
+
+    it('keeps the order id: that request created nothing', () => {
+        expect(orderIdentityReleased({ error: busy })).toBe(false);
     });
 });

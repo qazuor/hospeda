@@ -2330,7 +2330,29 @@
             "REFUND_CLOSES_HELD_CHARGE": "Esta devolución no se puede rechazar: devuelve un cobro retenido por una marca."
         },
         "genericError": "No se pudo completar la acción. Intentá de nuevo.",
-        "serverError": "El servidor no pudo completar la acción. Intentá de nuevo más tarde."
+        "serverError": "El servidor no pudo completar la acción. Intentá de nuevo más tarde.",
+        "remainder": {
+            "title": "Asentar el resto de una devolución aceptada en parte",
+            "description": "Para una devolución confirmada que Mercado Pago aceptó solo en parte. Devolvé el resto desde el panel de MP y registralo acá: la devolución se cierra y el saldo del pago cuadra.",
+            "refundId": "ID de la devolución",
+            "amount": "Resto devuelto a mano (en pesos)",
+            "reference": "ID de la devolución en el panel de MP",
+            "note": "Nota (opcional)",
+            "review": "Revisar",
+            "confirmText": "Se registra que devolviste {{amount}} a mano desde el panel de MP (referencia {{reference}}) para la devolución {{refundId}}. La devolución se cierra a tu nombre.",
+            "confirm": "Registrar el resto",
+            "back": "Volver",
+            "success": "Devolución cerrada. MP había aceptado {{accepted}} y se registró el resto de {{remainder}}.",
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "La devolución no está confirmada. Solo se puede asentar el resto de una devolución confirmada.",
+                "REFUND_CALL_UNANSWERED": "Hay un pedido al proveedor sin respuesta. Este caso no se cierra desde acá: seguí la nota de devoluciones trabadas.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "El proveedor no aceptó ninguna parte de esta devolución. Rechazala y después asentala con la acción 14.",
+                "REMAINDER_AMOUNT_MISMATCH": "El resto no coincide con lo que falta devolver: monto de la devolución menos lo que el proveedor acreditó.",
+                "ACCEPTED_PART_NOT_ACCREDITED": "El proveedor no muestra acreditada la parte que había aceptado. Revisá el cobro en el panel del proveedor antes de registrar el resto.",
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "El proveedor no muestra en este cobro una devolución acreditada con esa referencia y ese monto.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Otra devolución de este pago tiene una llamada a MP sin respuesta. Esperá a que se resuelva antes de registrar el resto: el reembolso que ves en el panel puede ser de esa llamada."
+            }
+        }
     },
     "subscriptionCancellation": {
         "title": "Dar de baja una suscripción (sin devolución)",

@@ -543,6 +543,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/settle-remainder"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {

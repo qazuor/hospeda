@@ -363,6 +363,9 @@ jobs:
         run: pnpm check:approval-url-sanitized
       - name: Check no trial is asked of the provider (GUARD:G11)
         run: pnpm check:no-provider-trial
+      # HOS-2179 §6.2: a one-time addon is paid on the provider page and never touches card data.
+      - name: Check a one-time addon never touches card data (HOS-2179)
+        run: pnpm check:one-time-addon-no-card-data
       # GUARD:G20 ensures catalog declarations retain a production mention.
       - name: Check analytics catalog emitters (GUARD:G20)
         run: pnpm check:analytics-catalog-emitters
