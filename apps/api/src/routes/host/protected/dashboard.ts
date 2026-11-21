@@ -40,7 +40,13 @@ export const HostDashboardResponseSchema = z.object({
             isTrial: z.boolean()
         })
         .nullable(),
-    unreadConversations: z.number().int().min(0)
+    unreadConversations: z.number().int().min(0),
+    /**
+     * Sections whose numbers are a zero FALLBACK because their read failed
+     * (HOS-2424). The numeric fields stay present for contract compatibility,
+     * but a client must show these as "not available", never as a real 0.
+     */
+    unavailable: z.array(z.enum(['properties', 'unreadConversations']))
 });
 
 export type HostDashboardResponse = z.infer<typeof HostDashboardResponseSchema>;
@@ -71,9 +77,11 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * @param input - `{ actor }` whose `id` is the ownerId to scope by.
  * @returns `{ properties, accommodationIds }`.
  */
-async function resolveProperties(input: {
-    actor: Actor;
-}): Promise<{ properties: HostDashboardProperties; accommodationIds: string[] }> {
+async function resolveProperties(input: { actor: Actor }): Promise<{
+    properties: HostDashboardProperties;
+    accommodationIds: string[];
+    degraded: boolean;
+}> {
     const { actor } = input;
     try {
         const result = await accommodationService.getByOwner({ ownerId: actor.id }, actor);
@@ -83,7 +91,7 @@ async function resolveProperties(input: {
                 { actorId: actor.id, error: result.error?.code },
                 'Host dashboard: getByOwner returned an error — degrading properties to zero'
             );
-            return { properties: ZERO_PROPERTIES, accommodationIds: [] };
+            return { properties: ZERO_PROPERTIES, accommodationIds: [], degraded: true };
         }
 
         const list = result.data.accommodations;
@@ -100,14 +108,15 @@ async function resolveProperties(input: {
             // UNPUBLISHED_BY_BILLING, MODERATED and PURGED are counted in `total`
             // but have no dedicated field.
             properties: { total: list.length, published, draft, archived },
-            accommodationIds
+            accommodationIds,
+            degraded: false
         };
     } catch (error) {
         apiLogger.warn(
             { actorId: actor.id, error: String(error) },
             'Host dashboard: getByOwner threw — degrading properties to zero'
         );
-        return { properties: ZERO_PROPERTIES, accommodationIds: [] };
+        return { properties: ZERO_PROPERTIES, accommodationIds: [], degraded: true };
     }
 }
 
@@ -121,7 +130,8 @@ const DASHBOARD_PLAN: HostDashboardPlan | null = null;
 /**
  * Resolve the coarse unread-conversations count for the owner.
  *
- * FAIL-SAFE: any failure or an empty accommodation set resolves to `0`.
+ * FAIL-SAFE: any failure or an empty accommodation set resolves to `0`; a failure
+ * is flagged with `degraded: true` so the client can say "not available" (HOS-2424).
  *
  * NOTE: `getUnreadCount` is a documented "coarse" count — it counts
  * conversations with any activity, not strictly conversations where
@@ -129,15 +139,15 @@ const DASHBOARD_PLAN: HostDashboardPlan | null = null;
  * the dashboard badge (see ConversationService.getUnreadCount JSDoc).
  *
  * @param input - `{ actor, accommodationIds }`.
- * @returns The unread conversation count (>= 0).
+ * @returns `{ count, degraded }`: the unread count (>= 0) and whether it is a failure fallback.
  */
 async function resolveUnreadConversations(input: {
     actor: Actor;
     accommodationIds: string[];
-}): Promise<number> {
+}): Promise<{ count: number; degraded: boolean }> {
     const { actor, accommodationIds } = input;
     if (accommodationIds.length === 0) {
-        return 0;
+        return { count: 0, degraded: false };
     }
     try {
         const conversationService = new ConversationService(
@@ -159,16 +169,16 @@ async function resolveUnreadConversations(input: {
                 { actorId: actor.id, error: result.error?.code },
                 'Host dashboard: getUnreadCount returned an error — degrading to zero'
             );
-            return 0;
+            return { count: 0, degraded: true };
         }
 
-        return result.data.count;
+        return { count: result.data.count, degraded: false };
     } catch (error) {
         apiLogger.warn(
             { actorId: actor.id, error: String(error) },
             'Host dashboard: getUnreadCount threw — degrading to zero'
         );
-        return 0;
+        return { count: 0, degraded: true };
     }
 }
 
@@ -204,19 +214,28 @@ export const hostDashboardRoute = createProtectedRoute({
 
             // Section 1: property counts (owns its degradation, also yields the
             // accommodation IDs the conversations count needs).
-            const { properties, accommodationIds } = await resolveProperties({ actor });
+            const {
+                properties,
+                accommodationIds,
+                degraded: propertiesDegraded
+            } = await resolveProperties({ actor });
 
             // Section 2 (plan) was removed with the legacy billing system
             // (HOS-1416); the field always reads null now.
-            const unreadConversations = await resolveUnreadConversations({
+            const unread = await resolveUnreadConversations({
                 actor,
                 accommodationIds
             });
+            const unavailable: HostDashboardResponse['unavailable'] = [
+                ...(propertiesDegraded ? (['properties'] as const) : []),
+                ...(unread.degraded ? (['unreadConversations'] as const) : [])
+            ];
 
             const response: HostDashboardResponse = {
                 properties,
                 plan: DASHBOARD_PLAN,
-                unreadConversations
+                unreadConversations: unread.count,
+                unavailable
             };
 
             return response;

@@ -1029,6 +1029,7 @@
                 "reviews": "My Reviews",
                 "subscription": "My Subscription",
                 "favoritesDesc": "Saved accommodations",
+                "unavailable": "Not available",
                 "reviewsDesc": "Published reviews",
                 "subscriptionDesc": "Current plan",
                 "subscriptionStatus": "Subscription status",
