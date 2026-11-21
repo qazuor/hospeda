@@ -32,7 +32,7 @@ covers:
   - "tool:reply_inquiry"
 entryFor:
   - "page:mi-cuenta/consultas-propietario"
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

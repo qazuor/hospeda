@@ -26,7 +26,7 @@ covers:
   - "tool:search_providers"
 entryFor:
   - "page:mi-cuenta/directorio-proveedores"
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

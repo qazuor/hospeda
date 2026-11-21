@@ -32,7 +32,7 @@ covers:
   - "tool:undo_benefit_rejection"
 entryFor:
   - "page:mi-cuenta/usos-de-beneficio"
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

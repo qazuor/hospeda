@@ -44,7 +44,7 @@ covers:
   - "limit:max_photos_per_accommodation"
 entryFor:
   - "section:accommodation.fotos"
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

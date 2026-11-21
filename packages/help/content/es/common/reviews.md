@@ -31,7 +31,7 @@ covers:
   - "entitlement:read_reviews"
   - "entitlement:respond_reviews"
 entryFor: []
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

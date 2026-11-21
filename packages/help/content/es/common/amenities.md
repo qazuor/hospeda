@@ -46,7 +46,7 @@ covers:
   - "tool:list_amenities_and_features"
 entryFor:
   - "section:accommodation.servicios"
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

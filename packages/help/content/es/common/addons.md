@@ -33,7 +33,7 @@ covers:
   - "entitlement:featured_listing"
 entryFor:
   - "page:mi-cuenta/complementos"
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

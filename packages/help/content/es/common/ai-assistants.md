@@ -33,7 +33,7 @@ covers:
   - "file:apps/web/src/components/account/AiAssistantsPanel.client.tsx"
 entryFor:
   - "page:mi-cuenta/asistentes-ia"
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer

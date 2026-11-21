@@ -44,7 +44,7 @@ covers:
   - "tool:create_listing"
   - "tool:get_listing_creation_guide"
 entryFor: []
-reviewedAt: "2026-11-17"
+reviewedAt: "2026-11-20"
 ---
 
 ## Qué podés hacer
