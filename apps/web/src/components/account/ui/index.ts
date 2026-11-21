@@ -10,13 +10,17 @@
 
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
+export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
 export { Field, type FieldProps } from './Field';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
+export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
 export { Section, type SectionProps, type SectionVariant } from './Section';
+export { Select, type SelectProps } from './Select';
 export { KitNestingError } from './section-depth-context';
+export { counterLevel, Textarea, type TextareaProps } from './Textarea';
 export { TextInput, type TextInputProps } from './TextInput';
 export { TextLink, type TextLinkProps, type TextLinkTone } from './TextLink';
