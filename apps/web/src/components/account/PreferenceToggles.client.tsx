@@ -343,12 +343,12 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 className={styles.section}
                 aria-labelledby="appearance-title"
             >
-                <h3
+                <h2
                     className={styles.sectionTitle}
                     id="appearance-title"
                 >
                     {t('account.preferences.sections.appearance', 'Apariencia')}
-                </h3>
+                </h2>
 
                 {/* themeWeb */}
                 <div className={styles.prefRow}>
@@ -424,12 +424,12 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 className={styles.section}
                 aria-labelledby="notifications-title"
             >
-                <h3
+                <h2
                     className={styles.sectionTitle}
                     id="notifications-title"
                 >
                     {t('account.preferences.sections.notifications', 'Notificaciones')}
-                </h3>
+                </h2>
 
                 {/* allowEmails */}
                 <ToggleRow
@@ -470,12 +470,12 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 className={styles.section}
                 aria-labelledby="newsletter-title"
             >
-                <h3
+                <h2
                     className={styles.sectionTitle}
                     id="newsletter-title"
                 >
                     {t('account.preferences.sections.newsletter', 'Boletín de novedades')}
-                </h3>
+                </h2>
 
                 <ToggleRow
                     label={t(
@@ -496,7 +496,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 className={styles.section}
                 aria-labelledby="ai-questions-digest-title"
             >
-                <h3
+                <h2
                     className={styles.sectionTitle}
                     id="ai-questions-digest-title"
                 >
@@ -504,7 +504,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                         'account.preferences.aiQuestionsDigest.title',
                         'Resumen semanal de preguntas a la IA'
                     )}
-                </h3>
+                </h2>
 
                 <ToggleRow
                     label={t(

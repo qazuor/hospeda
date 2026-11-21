@@ -56,12 +56,12 @@ export function ProfileEditAvatarSection({
             className={styles.section}
             aria-labelledby="avatar-section-title"
         >
-            <h3
+            <h2
                 className={styles.sectionTitle}
                 id="avatar-section-title"
             >
                 {t('account.pages.editProfile.avatarSection', 'Foto de perfil')}
-            </h3>
+            </h2>
             <div className={styles.avatarRow}>
                 <div
                     className={styles.avatarPreviewWrap}
