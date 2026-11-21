@@ -154,7 +154,7 @@ test.describe('E2E-04c: collection actions via UI @p0 @favorites @collections @u
         await expect(deleteBtn, `delete action not rendered on ${page.url()}`).toHaveCount(1);
         await deleteBtn.first().click();
         await page
-            .getByRole('dialog')
+            .getByRole('alertdialog')
             .getByRole('button', { name: 'Borrar colección', exact: true })
             .click();
 
