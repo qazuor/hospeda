@@ -77,6 +77,22 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Dom: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
     '{{count}} de {{max}} caracteres': ['pt'],
+    // Same word in Brazilian Portuguese / English (HOS-2413 Mi Cuenta kit: status words, counter, error prefix).
+    'Error:': ['en'],
+    Abandonada: ['pt'],
+    Cancelada: ['pt'],
+    Confirmado: ['pt'],
+    Pausada: ['pt'],
+    Pausado: ['pt'],
+    Publicado: ['pt'],
+    Vencida: ['pt'],
+    Vencido: ['pt'],
+    Vigente: ['pt'],
+    '{{current}} de {{max}} caracteres': ['pt'],
+    'Página anterior': ['pt'],
+    'Página {{page}}': ['pt'],
+    Descartar: ['pt'],
+    'Kit de componentes': ['pt'],
     // Same spelling in Brazilian Portuguese / English (HOS-2119 owner traffic panel).
     Países: ['pt'],
     Dispositivos: ['pt'],
@@ -96,7 +112,9 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Partners: ['en'],
     Outbox: ['en', 'pt'],
     Alertas: ['pt'],
-    '{{shown}} de {{total}}': ['pt']
+    '{{shown}} de {{total}}': ['pt'],
+    // Same word in Brazilian Portuguese (HOS-2413 account kit field hint).
+    '(opcional)': ['pt']
 };
 
 /** Flattens a nested JSON object to dot-notation leaf entries. */

@@ -1,8 +1,9 @@
 /**
  * @file show-confirmation-dialog.tsx
  * @description Imperative, product-styled replacement for `window.confirm()`
- * (HOS-783 B8). Mounts a throwaway React root, renders the shared `Dialog`, and
- * resolves with the user's choice.
+ * (HOS-783 B8). Mounts a throwaway React root, renders the kit `ConfirmDialog`
+ * (HOS-2413: the single confirmation implementation) and resolves with the
+ * user's choice.
  *
  * Three things here are load-bearing and easy to undo by accident:
  *
@@ -30,15 +31,8 @@
  * @module lib/forms/show-confirmation-dialog
  */
 
-import {
-    Dialog,
-    DialogBody,
-    DialogFooter,
-    DialogHeader
-} from '@/components/shared/ui/Dialog.client';
-import styles from './show-confirmation-dialog.module.css';
-
-const TITLE_ID = 'confirmation-dialog-title';
+import { ConfirmDialog } from '@/components/account/ui/ConfirmDialog';
+import type { SupportedLocale } from '@/lib/i18n';
 
 /** Options accepted by {@link showConfirmationDialog}. */
 export interface ConfirmationDialogOptions {
@@ -50,6 +44,8 @@ export interface ConfirmationDialogOptions {
     readonly confirmLabel: string;
     /** Label of the dismissing CTA. */
     readonly cancelLabel: string;
+    /** Locale for the dialog's own fixed copy (error text). @default 'es' */
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -74,7 +70,8 @@ export function showConfirmationDialog({
     message,
     title,
     confirmLabel,
-    cancelLabel
+    cancelLabel,
+    locale = 'es'
 }: ConfirmationDialogOptions): Promise<boolean> {
     if (typeof document === 'undefined') {
         return Promise.resolve(false);
@@ -103,35 +100,21 @@ export function showConfirmationDialog({
                 });
             }
 
+            // HOS-2413 (owner decision): the confirmation UI is the kit's
+            // `ConfirmDialog`, so there is ONE visual and behavioral
+            // implementation. It never claims a history entry and focuses
+            // Cancel first, which is what a leave warning needs.
             root.render(
-                <Dialog
-                    isOpen={true}
-                    onClose={() => finish(false)}
-                    ariaLabelledBy={TITLE_ID}
-                    size="sm"
-                    claimHistoryEntry={false}
-                >
-                    <DialogHeader titleId={TITLE_ID}>{title}</DialogHeader>
-                    <DialogBody>
-                        <p className={styles.body}>{message}</p>
-                    </DialogBody>
-                    <DialogFooter>
-                        <button
-                            type="button"
-                            className={styles.cancelButton}
-                            onClick={() => finish(false)}
-                        >
-                            {cancelLabel}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.confirmButton}
-                            onClick={() => finish(true)}
-                        >
-                            {confirmLabel}
-                        </button>
-                    </DialogFooter>
-                </Dialog>
+                <ConfirmDialog
+                    open
+                    title={title}
+                    description={message}
+                    confirmLabel={confirmLabel}
+                    cancelLabel={cancelLabel}
+                    locale={locale}
+                    onConfirm={() => finish(true)}
+                    onCancel={() => finish(false)}
+                />
             );
         }
 

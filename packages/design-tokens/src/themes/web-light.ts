@@ -68,6 +68,7 @@ import { fontFamily, semanticTypography } from '../tokens/typography.js';
 import { userRoleTokens } from '../tokens/user-roles.js';
 import { zIndex } from '../tokens/z-index.js';
 import type { Theme } from './types.js';
+import { webAccountLight } from './web-account.js';
 
 /**
  * Helper: a hand-tuned OKLCH that isn't part of any palette. We still
@@ -404,5 +405,7 @@ export const webLight: Theme = {
     // Per-amenity-type tokens — same layered model; declared once and shared with admin.
     ...amenityTypeTokens,
     // Per-sponsor-type tokens — same layered model; declared once and shared with admin.
-    ...sponsorTypeTokens
+    ...sponsorTypeTokens,
+    // Mi Cuenta app tokens (HOS-2413 PR-1: HOS-2454 + the kit delta).
+    ...webAccountLight
 };

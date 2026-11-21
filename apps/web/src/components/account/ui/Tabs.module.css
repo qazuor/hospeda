@@ -1,0 +1,73 @@
+/* Tabs.module.css — Tabs and NavTabs (HOS-2413 T-015). The bar scrolls
+   horizontally INSIDE its own container so the page never overflows. */
+
+.bar {
+    display: flex;
+    gap: var(--space-1);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    border-block-end: 1px solid var(--border);
+}
+
+.bar::-webkit-scrollbar {
+    display: none;
+}
+
+.tab {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-4);
+    border: 0;
+    border-block-end: 2px solid transparent;
+    background-color: transparent;
+    color: var(--core-muted-foreground);
+    font: var(--app-control);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tab:hover {
+    color: var(--core-foreground);
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+
+.tab[aria-selected="true"],
+.tab[aria-current="page"] {
+    border-block-end-color: var(--brand-primary-link);
+    color: var(--nav-active-fg);
+}
+
+/* segmented: a pill track with a filled active segment. */
+.segmented {
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background-color: var(--muted);
+}
+
+.segmented .tab {
+    border: 0;
+    border-radius: var(--radius-control);
+}
+
+.segmented .tab[aria-selected="true"],
+.segmented .tab[aria-current="page"] {
+    background-color: var(--core-card);
+    color: var(--nav-active-fg);
+}
+
+.panel:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}

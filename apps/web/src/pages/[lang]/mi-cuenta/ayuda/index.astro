@@ -176,7 +176,7 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 		min-height: 44px;
 		padding: var(--space-2) var(--space-4);
 		font-family: var(--font-sans);
-		font-size: 0.9375rem;
+		font-size: var(--text-body-md);
 		font-weight: 500;
 		color: var(--core-muted-foreground);
 		background: none;
@@ -207,7 +207,7 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 	.help-tabs__heading {
 		margin: 0 0 var(--space-3);
 		font-family: var(--font-heading);
-		font-size: 1.25rem;
+		font-size: var(--text-lg);
 		color: var(--core-foreground);
 	}
 
@@ -225,7 +225,7 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 		gap: var(--space-3);
 	}
 
-	@media (min-width: 900px) {
+	@media (min-width: 64rem) {
 		.help-cards {
 			grid-template-columns: repeat(2, 1fr);
 		}
@@ -248,7 +248,7 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 	.help-card__summary {
 		margin: var(--space-1) 0 0;
 		font-family: var(--font-sans);
-		font-size: 0.9375rem;
+		font-size: var(--text-body-md);
 		color: var(--core-muted-foreground);
 	}
 
@@ -268,7 +268,7 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 	.help-fallback__title {
 		margin: 0 0 var(--space-2);
 		font-family: var(--font-heading);
-		font-size: 1.125rem;
+		font-size: var(--text-body-lg);
 		color: var(--core-foreground);
 	}
 

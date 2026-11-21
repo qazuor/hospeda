@@ -10,10 +10,10 @@
     text-align: left;
     background: none;
     border: 1px solid transparent;
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     line-height: 1.5;
     color: var(--core-foreground);
     cursor: pointer;
@@ -42,10 +42,10 @@
     text-align: left;
     background: none;
     border: 1px dashed var(--border);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     line-height: 1.5;
     color: var(--core-muted-foreground);
     cursor: pointer;
@@ -80,10 +80,10 @@
     width: 100%;
     resize: vertical;
     border: 1px solid var(--brand-primary);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     line-height: 1.5;
     color: var(--core-foreground);
     background-color: var(--core-card);
@@ -110,15 +110,15 @@
 
 .charCount {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--text-caption);
     color: var(--core-muted-foreground);
     flex-shrink: 0;
 }
 
 .charCountOver {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: var(--destructive, oklch(0.6 0.2 25));
+    font-size: var(--text-caption);
+    color: var(--destructive);
     font-weight: 600;
     flex-shrink: 0;
 }
@@ -135,9 +135,9 @@
     background-color: var(--brand-primary);
     color: oklch(1 0 0);
     border: 1px solid var(--brand-primary);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     font-weight: 500;
     cursor: pointer;
     transition: opacity var(--duration-normal, 0.4s) ease;
@@ -164,9 +164,9 @@
     background-color: transparent;
     color: var(--core-muted-foreground);
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     font-weight: 500;
     cursor: pointer;
     transition:
@@ -197,6 +197,6 @@
     display: block;
     margin-top: var(--space-1, 4px);
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--text-caption);
     color: var(--core-muted-foreground);
 }

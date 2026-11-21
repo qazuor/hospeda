@@ -1,0 +1,40 @@
+/* ConfirmDialog.module.css — the confirmation body (HOS-2413 T-013). The panel
+   skin comes from Dialog.module.css. */
+
+.content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--control-h-md);
+    block-size: var(--control-h-md);
+    border-radius: var(--radius-pill);
+}
+
+.iconDestructive {
+    background-color: var(--status-danger-bg);
+    color: var(--status-danger-fg);
+}
+
+.iconNeutral {
+    background-color: var(--status-info-bg);
+    color: var(--status-info-fg);
+}
+
+.message {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--popover-foreground);
+}
+
+.error {
+    margin: var(--space-3) 0 0;
+    font: var(--app-meta);
+    color: var(--status-danger-fg);
+}

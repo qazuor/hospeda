@@ -78,6 +78,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.exclusiveDeals',
     'account.favorites',
     'account.help',
+    // HOS-2413 — the account kit (`components/account/ui/`) renders these in islands.
+    'account.menu',
     'account.myContent',
     'account.nav',
     'account.newsletter',
@@ -95,6 +97,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.setPassword',
     'account.status',
     'account.subscription',
+    'account.title',
+    'account.ui',
     'account.welcomeTour',
     'account.whatsNewBadge',
     'account.whatsNewModal',
@@ -264,7 +268,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'external-reputation.refresh',
     'external-reputation.reviews',
     'external-reputation.status',
+    // HOS-2413 — `AccountFooter.tsx` (account kit) names the legal links and bottom line.
+    'footer.bottom',
+    'footer.cookies',
     'footer.newsletter',
+    'footer.privacy',
+    'footer.terms',
     // HOS-1077: venue half of the permission-value pair described at
     // `experience.editOwn` above. Not an i18n key.
     // HOS-1264 — venue half of `experience.aiChat` above.

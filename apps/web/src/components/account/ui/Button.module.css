@@ -1,0 +1,182 @@
+/* Button.module.css — the one button recipe of the Mi Cuenta kit (HOS-2413 T-004).
+   Shared by Button and LinkButton. Tokens only, no literal size/radius/shadow/color.
+   `accent` is reserved for upsell, sumarse and the header «Publicar». */
+
+.root {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    min-inline-size: var(--control-h-md);
+    padding-inline: var(--space-4);
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    font: var(--app-control);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background-color var(--duration-fast),
+        border-color var(--duration-fast);
+}
+
+.root:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+/* Sizes come from the control-height tokens. */
+.sm {
+    block-size: var(--control-h-sm);
+    min-inline-size: var(--control-h-sm);
+    padding-inline: var(--space-3);
+}
+
+.md {
+    block-size: var(--control-h-md);
+}
+
+.lg {
+    block-size: var(--control-h-lg);
+    min-inline-size: var(--control-h-lg);
+    padding-inline: var(--space-5);
+}
+
+.fullWidth {
+    display: flex;
+    inline-size: 100%;
+}
+
+.iconOnly {
+    padding-inline: 0;
+    inline-size: var(--control-h-md);
+}
+
+.iconOnly.sm {
+    inline-size: var(--control-h-sm);
+}
+
+.iconOnly.lg {
+    inline-size: var(--control-h-lg);
+}
+
+/* ── Variants ─────────────────────────────────────────────────────────── */
+
+.primary {
+    background-color: var(--action-primary);
+    color: var(--on-action-primary);
+}
+
+.primary:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--action-primary-hover);
+}
+
+.secondary {
+    background-color: var(--control-bg);
+    border-color: var(--control-border);
+    color: var(--core-foreground);
+}
+
+.secondary:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--muted);
+}
+
+.ghost {
+    background-color: transparent;
+    color: var(--brand-primary-link);
+}
+
+.ghost:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--nav-active-bg);
+}
+
+.quiet {
+    background-color: transparent;
+    color: var(--core-muted-foreground);
+}
+
+.quiet:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--muted);
+    color: var(--core-foreground);
+}
+
+.danger {
+    background-color: var(--action-danger);
+    color: var(--on-action-danger);
+}
+
+.danger:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--status-danger-fg);
+}
+
+.dangerGhost {
+    background-color: transparent;
+    color: var(--destructive-text);
+}
+
+.dangerGhost:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--status-danger-bg);
+}
+
+.accent {
+    background-color: var(--action-accent);
+    color: var(--on-action-accent);
+}
+
+.accent:hover:not(:disabled, [aria-disabled="true"]) {
+    background-color: var(--action-accent-hover);
+}
+
+/* ── States ───────────────────────────────────────────────────────────── */
+
+.root:disabled,
+.root[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+/* `loading` keeps the width: the label stays in flow, only hidden. */
+.loading {
+    cursor: progress;
+}
+
+.loading .content {
+    visibility: hidden;
+}
+
+.spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner svg {
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .root {
+        transition: none;
+    }
+
+    .spinner svg {
+        animation: none;
+    }
+}

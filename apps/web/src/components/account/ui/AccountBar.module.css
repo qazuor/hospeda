@@ -1,0 +1,54 @@
+/* AccountBar.module.css — the mobile account bar (HOS-2413 T-021, D3).
+   A sticky 48px bar under the header. It only exists below 64rem: the island
+   hydrates with client:media and the shell hides it from 64rem. */
+
+.sentinel {
+    block-size: 1px;
+    margin-block-end: -1px;
+}
+
+.bar {
+    position: sticky;
+    inset-block-start: 3.5rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    block-size: 3rem;
+    padding-inline: var(--space-4);
+    background-color: var(--core-card);
+    border-block-end: 1px solid var(--border);
+}
+
+.stuck {
+    box-shadow: var(--shadow-sticky);
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    inline-size: 100%;
+    min-block-size: var(--control-h-md);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--core-foreground);
+    font: var(--app-control);
+    text-align: start;
+    cursor: pointer;
+}
+
+.toggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-control);
+}
+
+.current {
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+}
+
+.drawerBody {
+    padding-block-end: var(--space-4);
+}

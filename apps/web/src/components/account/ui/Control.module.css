@@ -1,0 +1,95 @@
+/* Control.module.css — the shared look of every single-line control of the
+   Mi Cuenta kit: TextInput, InputGroup, PhoneField, Select, Textarea
+   (HOS-2413 T-006/T-007). 44px tall, 16px text, control-bg and control-border;
+   the invalid edge is status-danger-solid. */
+
+.control {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-3);
+    background-color: var(--control-bg);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-control);
+    color: var(--core-foreground);
+    font: var(--app-body);
+}
+
+.control::placeholder {
+    color: var(--core-muted-foreground);
+}
+
+.control:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.control[aria-invalid="true"] {
+    border-color: var(--status-danger-solid);
+}
+
+.control:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Select: native arrow kept, a little room on the end side. */
+.select {
+    padding-inline-end: var(--space-2);
+}
+
+/* Textarea: padded vertically, resizable on the block axis only. */
+.textarea {
+    padding-block: var(--space-3);
+    resize: vertical;
+}
+
+/* InputGroup: the border moves to the wrapper, the input goes bare. */
+.group {
+    display: flex;
+    align-items: stretch;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--control-h-lg);
+    background-color: var(--control-bg);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-control);
+    overflow: hidden;
+}
+
+.group:focus-within {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.groupInvalid {
+    border-color: var(--status-danger-solid);
+}
+
+.groupDisabled {
+    opacity: 0.5;
+}
+
+.addon {
+    display: inline-flex;
+    align-items: center;
+    padding-inline: var(--space-3);
+    background-color: var(--muted);
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+    white-space: nowrap;
+}
+
+.bare {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    padding-inline: var(--space-3);
+    background: transparent;
+    border: 0;
+    color: var(--core-foreground);
+    font: var(--app-body);
+}
+
+.bare:focus-visible {
+    outline: none;
+}

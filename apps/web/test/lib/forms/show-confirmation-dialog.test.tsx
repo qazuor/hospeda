@@ -55,7 +55,7 @@ const COPY = {
  */
 async function openDialog(): Promise<{ readonly answer: Promise<boolean> }> {
     const answer = showConfirmationDialog(COPY);
-    await screen.findByRole('dialog');
+    await screen.findByRole('alertdialog');
     await waitFor(() => {
         expect(document.documentElement.style.overflow).toBe('hidden');
     });
@@ -70,7 +70,7 @@ describe('showConfirmationDialog', () => {
     afterEach(async () => {
         // The helper owns throwaway roots outside React Testing Library's
         // registry, so its auto-cleanup does not reach them. A test that leaves
-        // a dialog open would otherwise make every later `getByRole('dialog')`
+        // a dialog open would otherwise make every later `getByRole('alertdialog')`
         // ambiguous.
         //
         // `showConfirmationDialog`'s `finish()` defers `root.unmount()` to a
@@ -95,7 +95,7 @@ describe('showConfirmationDialog', () => {
         // (HOS-1384) rebuilt inside its fix.
         try {
             await waitFor(() => {
-                expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+                expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
             });
         } finally {
             document.body.innerHTML = '';
@@ -109,7 +109,7 @@ describe('showConfirmationDialog', () => {
         const { answer } = await openDialog();
 
         // Assert
-        const dialog = screen.getByRole('dialog');
+        const dialog = screen.getByRole('alertdialog');
         expect(dialog).toHaveAttribute('aria-modal', 'true');
         expect(dialog).toHaveAccessibleName(COPY.title);
         expect(screen.getByText(COPY.message)).toBeInTheDocument();
@@ -177,7 +177,7 @@ describe('showConfirmationDialog', () => {
         const { answer } = await openDialog();
         let dialogStillMounted: boolean | null = null;
         const observed = answer.then((value) => {
-            dialogStillMounted = screen.queryByRole('dialog') !== null;
+            dialogStillMounted = screen.queryByRole('alertdialog') !== null;
             return value;
         });
 
@@ -208,7 +208,7 @@ describe('showConfirmationDialog', () => {
 
         // Assert
         await waitFor(() => {
-            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+            expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
         });
         await waitFor(() => {
             expect(document.documentElement.style.overflow).not.toBe('hidden');
@@ -265,6 +265,6 @@ describe('showConfirmationDialog — mount failure', () => {
         // Assert
         expect(confirmSpy).toHaveBeenCalledWith(COPY.message);
         expect(answer).toBe(true);
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     });
 });

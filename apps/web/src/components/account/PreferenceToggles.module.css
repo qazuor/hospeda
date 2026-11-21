@@ -24,9 +24,9 @@
     border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-card);
     padding: var(--space-5, 20px);
-    color: var(--destructive, oklch(0.6 0.2 25));
+    color: var(--destructive);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--text-body-md);
     text-align: center;
 }
 
@@ -66,14 +66,14 @@
 
 .prefLabel {
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--text-body-md);
     font-weight: 500;
     color: var(--core-foreground);
 }
 
 .prefDescription {
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--text-meta);
     color: var(--core-muted-foreground);
 }
 
@@ -105,7 +105,7 @@
     position: absolute;
     inset: 0;
     background-color: var(--border);
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     transition: background-color var(--duration-normal, 0.4s) ease;
 }
 
@@ -116,7 +116,6 @@
 .toggle input:focus-visible + .toggleTrack {
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
-    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .toggleThumb {
@@ -128,7 +127,7 @@
     background-color: var(--core-card);
     border-radius: 50%;
     transition: transform var(--duration-normal, 0.4s) ease;
-    box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+    box-shadow: var(--shadow-nav);
 }
 
 .toggle input:checked ~ .toggleThumb {
@@ -137,7 +136,7 @@
 
 .toggleSaving {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--text-caption);
     color: var(--core-muted-foreground);
 }
 
@@ -148,9 +147,9 @@
     background-color: var(--core-background);
     color: var(--core-foreground);
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--text-body-sm);
     cursor: pointer;
     transition: border-color var(--duration-normal, 0.4s) ease;
     min-width: 120px;
@@ -160,7 +159,6 @@
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .select:disabled {

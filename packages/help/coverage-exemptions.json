@@ -96,6 +96,7 @@
 {"anchor":"page:mi-cuenta/favoritos/colecciones/[id]","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/historial-busquedas","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/host-dashboard","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"host-dashboard"},
+{"anchor":"page:mi-cuenta/kit","kind":"no-user-surface","reason":"Internal component gallery (HOS-2413), behind HOSPEDA_ACCOUNT_KIT_GALLERY; 404 when the flag is off."},
 {"anchor":"page:mi-cuenta/newsletter","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"newsletter"},
 {"anchor":"page:mi-cuenta/no-encontrado","kind":"no-user-surface","reason":"Rewrite target for a missing account resource (HOS-2434): a 404 inside the account layout, not a feature."},
 {"anchor":"page:mi-cuenta/novedades","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"whats-new"},

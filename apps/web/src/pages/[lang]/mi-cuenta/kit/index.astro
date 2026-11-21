@@ -1,0 +1,32 @@
+---
+/**
+ * @file mi-cuenta/kit/index.astro
+ * @description The Mi Cuenta component kit gallery (HOS-2413 T-029, OD-6).
+ * One page with every kit component in every state, for review and for the
+ * visual-regression suite. It answers 404 unless `HOSPEDA_ACCOUNT_KIT_GALLERY`
+ * is `'true'` (local development and the E2E environment only).
+ *
+ * It renders inside the NEW shell (`shell="account"`) and reads no session of
+ * its own: only the locale.
+ *
+ * @route /{lang}/mi-cuenta/kit/
+ * @rendering SSR
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { KitGallery } from '@/components/account/kit-gallery/KitGallery';
+import { isAccountKitGalleryEnabled } from '@/lib/env';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+if (!isAccountKitGalleryEnabled()) {
+	return new Response(null, { status: 404 });
+}
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+---
+
+<AccountLayout locale={locale} title={t('account.ui.gallery.title')} activeSection="mi-cuenta" shell="account">
+	<KitGallery client:load locale={locale} />
+</AccountLayout>

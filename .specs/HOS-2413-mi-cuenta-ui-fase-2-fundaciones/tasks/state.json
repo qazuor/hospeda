@@ -1,0 +1,795 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-2413",
+    "title": "Mi Cuenta UI · Phase 2 · Foundations",
+    "created": "2026-11-20T22:51:39.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "App tokens in full (HOS-2454): role status, focus ring, radius scale, control heights, app typography, AA link + contrast tests",
+            "description": "See docs/tasks.md §T-001 for goal, files, AC and tests (authoritative).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [],
+            "tags": ["tokens"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Kit token delta + D4 owner-decision contrast test",
+            "description": "See docs/tasks.md §T-002 for goal, files, AC and tests (authoritative).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005", "T-006", "T-010", "T-016"],
+            "subtasks": [],
+            "tags": ["tokens"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Kit scaffold, HelpAnchor, account.ui i18n namespace, kit README",
+            "description": "See docs/tasks.md §T-003 for goal, files, AC and tests (authoritative).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005", "T-006", "T-010", "T-016", "T-018", "T-023"],
+            "subtasks": [],
+            "tags": ["web", "i18n"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Button, LinkButton, TextLink",
+            "description": "See docs/tasks.md §T-004 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": [
+                "T-011",
+                "T-013",
+                "T-014",
+                "T-022",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029"
+            ],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Section with gradient bar + nesting refusal",
+            "description": "See docs/tasks.md §T-005 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Field, TextInput, InputGroup, PhoneField",
+            "description": "See docs/tasks.md §T-006 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-007", "T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Select, Textarea (counter), Checkbox(Group), Radio(Group/OptionCard)",
+            "description": "See docs/tasks.md §T-007 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Account CSS scope + breakpoint guard (frozen, shrink-only exceptions)",
+            "description": "See docs/tasks.md §T-008 for goal, files, AC and tests (authoritative).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["guards", "ci"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "CSS literals guard (frozen, shrink-only exceptions)",
+            "description": "See docs/tasks.md §T-009 for goal, files, AC and tests (authoritative).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["guards", "ci"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "StatusPill, CountPill, status-tone.ts",
+            "description": "See docs/tasks.md §T-010 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-015", "T-019", "T-022", "T-028", "T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Dialog (skin over the shared Dialog)",
+            "description": "See docs/tasks.md §T-011 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-012", "T-013", "T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Drawer (bottom / right)",
+            "description": "See docs/tasks.md §T-012 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-021", "T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "ConfirmDialog + useConfirm()",
+            "description": "See docs/tasks.md §T-013 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-004"],
+            "blocks": ["T-026", "T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Pagination (numbered / prevNext / loadMore)",
+            "description": "See docs/tasks.md §T-014 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Tabs + NavTabs",
+            "description": "See docs/tasks.md §T-015 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Switch + SwitchRow",
+            "description": "See docs/tasks.md §T-016 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Extract account-nav-model.ts from AccountLayout",
+            "description": "See docs/tasks.md §T-017 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["web", "shell"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "BaseLayout chrome, AccountHeader, AccountFooter, no dock",
+            "description": "See docs/tasks.md §T-018 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-020", "T-025"],
+            "subtasks": [],
+            "tags": ["web", "shell"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "AccountSidebar",
+            "description": "See docs/tasks.md §T-019 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-017"],
+            "blocks": ["T-020", "T-021"],
+            "subtasks": [],
+            "tags": ["web", "shell"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "AccountShell.astro + templates + AccountLayout shell switch (default legacy)",
+            "description": "See docs/tasks.md §T-020 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-019"],
+            "blocks": ["T-021", "T-031"],
+            "subtasks": [],
+            "tags": ["web", "shell"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "AccountBar + AccountDrawer",
+            "description": "See docs/tasks.md §T-021 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-019", "T-020"],
+            "blocks": ["T-031"],
+            "subtasks": [],
+            "tags": ["web", "shell"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "PageHeader",
+            "description": "See docs/tasks.md §T-022 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-010"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Skeleton + EmptyState",
+            "description": "See docs/tasks.md §T-023 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-024", "T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "ErrorState + Alert + AsyncRegion (+ regression test)",
+            "description": "See docs/tasks.md §T-024 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Toast + AccountToastRegion on toast-store",
+            "description": "See docs/tasks.md §T-025 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-018"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "StickySaveBar + useSaveBar",
+            "description": "See docs/tasks.md §T-026 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-013"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "AutoSaveChip",
+            "description": "See docs/tasks.md §T-027 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "LockedState",
+            "description": "See docs/tasks.md §T-028 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-010"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "kit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Kit gallery page + HOSPEDA_ACCOUNT_KIT_GALLERY env workflow",
+            "description": "See docs/tasks.md §T-029 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026",
+                "T-027",
+                "T-028"
+            ],
+            "blocks": ["T-030"],
+            "subtasks": [],
+            "tags": ["web", "env"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Visual regression suite + CI step + approval docs + retire SPEC-153 web config",
+            "description": "See docs/tasks.md §T-030 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-031"],
+            "subtasks": [],
+            "tags": ["e2e", "ci"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Flip the shell default, delete legacy + switch, structural sweep, page baselines",
+            "description": "See docs/tasks.md §T-031 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020", "T-021", "T-030"],
+            "blocks": ["T-032"],
+            "subtasks": [],
+            "tags": ["web", "shell", "e2e"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Docs: kit README, loading-states.md, apps/web/CLAUDE.md pointer",
+            "description": "See docs/tasks.md §T-032 for goal, files, AC and tests (authoritative).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-20T22:51:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 32,
+        "pending": 27,
+        "inProgress": 0,
+        "completed": 5,
+        "blocked": 0,
+        "averageComplexity": 3
+    }
+}

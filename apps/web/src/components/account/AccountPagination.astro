@@ -70,12 +70,12 @@ const hasNext = page < totalPages;
 
     .account-pager__link {
         font-family: var(--font-sans);
-        font-size: 0.875rem;
+        font-size: var(--text-body-sm);
         color: var(--brand-primary);
         text-decoration: none;
         padding: var(--space-2, 8px) var(--space-3, 12px);
         border: 1px solid var(--border);
-        border-radius: var(--radius-button, 8px);
+        border-radius: var(--radius-button);
         transition: background-color var(--duration-fast, 0.2s) ease;
     }
 
@@ -85,7 +85,7 @@ const hasNext = page < totalPages;
 
     .account-pager__info {
         font-family: var(--font-sans);
-        font-size: 0.875rem;
+        font-size: var(--text-body-sm);
         color: var(--core-muted-foreground);
     }
 </style>
