@@ -2,7 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
 
-const { offers, listMine } = vi.hoisted(() => ({ offers: vi.fn(), listMine: vi.fn() }));
+const { offers, listMine, listingNotices } = vi.hoisted(() => ({
+    offers: vi.fn(),
+    listMine: vi.fn(),
+    listingNotices: vi.fn()
+}));
 vi.mock('@/lib/api/endpoints-protected-addons', () => ({
     billingAddonApi: {
         offers,
@@ -13,7 +17,7 @@ vi.mock('@/lib/api/endpoints-protected-addons', () => ({
     }
 }));
 vi.mock('@/lib/api/endpoints-protected', () => ({
-    publishApi: { listingNotices: vi.fn() },
+    publishApi: { listingNotices },
     billingSubscriptionApi: { listMine }
 }));
 
@@ -62,6 +66,35 @@ async function pickOffer() {
 beforeEach(() => {
     vi.clearAllMocks();
     offers.mockResolvedValue({ ok: true, data: { items: [offer] } });
+});
+
+describe('HOS-2441 listing-scoped addon back navigation', () => {
+    it('goes summary -> targets -> offers', async () => {
+        const listingId = '123e4567-e89b-42d3-a456-426614174099';
+        offers.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [{ ...offer, scopeType: 'LISTING', compatibleVerticals: ['accommodation'] }]
+            }
+        });
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: [{ listingId, name: 'Cabaña', publicationStatus: 'PUBLISHED' }]
+            }
+        });
+        await pickOffer();
+        fireEvent.click(await screen.findByTestId(`addon-target-${listingId}`));
+        await screen.findByTestId('addon-purchase-summary');
+
+        fireEvent.click(screen.getByTestId('addon-purchase-back'));
+        await screen.findByTestId(`addon-target-${listingId}`);
+
+        fireEvent.click(screen.getByTestId('addon-purchase-back'));
+        await screen.findByTestId(`addon-offer-${productId}`);
+        expect(screen.queryByTestId('addon-purchase-back')).toBeNull();
+    });
 });
 
 describe('HOS-2441 addon purchase has a way back at every step', () => {

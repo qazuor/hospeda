@@ -11,6 +11,7 @@ import { type ApiErrorShape, translateApiError, visibleApiMessage } from '@/lib/
 import {
     type ActiveAddonInstance,
     type AddonSubscriptionTarget,
+    addonPlansPath,
     closedCopyKey,
     eligibleSubscriptionTargets,
     eligibleTargets,
@@ -23,7 +24,6 @@ import {
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
@@ -31,18 +31,11 @@ import styles from './AddonPurchase.module.css';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
+import { type AddonPurchaseView, useAddonPurchaseBack } from './use-addon-purchase-back';
 import { useAddonPurchasePoll } from './use-addon-purchase-poll';
 
 type Offer = AddonOffersResponse['items'][number];
-type View =
-    | 'LOADING'
-    | 'OFFERS'
-    | 'TARGETS'
-    | 'SUBSCRIPTIONS'
-    | 'SUMMARY'
-    | 'PROCESSING'
-    | 'ACTIVE'
-    | 'CLOSED';
+type View = AddonPurchaseView;
 const PUBLISH_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
 /**
@@ -249,36 +242,20 @@ export function AddonPurchase(input: {
         setView('SUMMARY');
     };
 
-    /**
-     * HOS-2441: the step a "Back" from the current one returns to. A single eligible
-     * subscription is auto-selected (no picker was shown), so the summary goes back to the offers.
-     */
-    const backView = ((): View | null => {
-        if (view === 'TARGETS' || view === 'SUBSCRIPTIONS') return 'OFFERS';
-        if (view !== 'SUMMARY') return null;
-        if (target) return 'TARGETS';
-        if (subscriptionTarget && subscriptionTargets.length > 1) return 'SUBSCRIPTIONS';
-        return 'OFFERS';
-    })();
-
-    const goBack = () => {
-        if (!backView || busy) return;
-        setError(null);
-        setPurchasesPaused(false);
-        if (backView === 'OFFERS') {
-            setOffer(null);
-            setTarget(null);
-            setSubscriptionTarget(null);
-            setOrderRequestId(null);
-        } else if (backView === 'TARGETS') {
-            setTarget(null);
-            setOrderRequestId(null);
-        } else if (backView === 'SUBSCRIPTIONS') {
-            setSubscriptionTarget(null);
-            setOrderRequestId(null);
-        }
-        setView(backView);
-    };
+    const { backView, goBack } = useAddonPurchaseBack({
+        view,
+        target,
+        subscriptionTarget,
+        subscriptionTargetCount: subscriptionTargets.length,
+        busy,
+        setError,
+        setPurchasesPaused,
+        setOffer,
+        setTarget,
+        setSubscriptionTarget,
+        setOrderRequestId,
+        setView
+    });
 
     /** Known refusal codes and reasons get their localized copy; anything else keeps the API text. */
     const purchaseErrorMessage = (params: { readonly error: ApiErrorShape }): string => {
@@ -436,7 +413,9 @@ export function AddonPurchase(input: {
                     onSelect={selectSubscription}
                     plansHref={buildUrl({
                         locale: input.locale,
-                        path: PRICING_PAGE_PATH_BY_AUDIENCE.owner
+                        path: addonPlansPath({
+                            compatibleVerticals: offer?.compatibleVerticals ?? []
+                        })
                     })}
                     t={t}
                 />

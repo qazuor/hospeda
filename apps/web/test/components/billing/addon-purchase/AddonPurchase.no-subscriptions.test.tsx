@@ -44,6 +44,32 @@ beforeEach(() => {
     });
 });
 
+async function plansHrefFor(compatibleVerticals: readonly string[]) {
+    offers.mockResolvedValue({ ok: true, data: { items: [{ ...offer, compatibleVerticals }] } });
+    render(
+        <AddonPurchase
+            locale="es"
+            returnOrderRequestId={null}
+            accountEmail="payer@example.test"
+        />
+    );
+    fireEvent.click(await screen.findByTestId(`addon-offer-${productId}`));
+    await screen.findByTestId('addon-no-subscriptions');
+    return screen.getByTestId('addon-no-subscriptions-plans').getAttribute('href');
+}
+
+describe('HOS-2426 plans link follows the addon audience', () => {
+    it('links a venue-only addon to the venue pricing page', async () => {
+        expect(await plansHrefFor(['venue'])).toBe('/es/planes/comer-y-salir/precios/');
+    });
+    it('links an accommodation-only addon to the owner pricing page', async () => {
+        expect(await plansHrefFor(['accommodation'])).toBe('/es/planes/anfitriones/precios/');
+    });
+    it('links a multi-vertical addon to the neutral plans index', async () => {
+        expect(await plansHrefFor(['accommodation', 'venue'])).toBe('/es/suscriptores/planes/');
+    });
+});
+
 describe('HOS-2426 addon with no eligible subscription', () => {
     it('explains why and offers the plans page instead of a bare dead end', async () => {
         render(
