@@ -63,6 +63,13 @@ with an optional `label` (1–80 chars). The types are now imported from
 `@repo/portal-routes`. The new kinds `partnerPanel`, `helpLanding` and
 `helpArticle {id}` are allowed (`helpArticle.id` must exist).
 
+`ownEditorSection.section` is a catalog section id of the vertical
+(`EDITOR_SECTION_SLUGS`) or the id of an editor page that is not a catalog
+section (`EDITOR_NON_SECTION_PAGE_SLUGS` in `@repo/portal-routes`: `policies`
+for accommodation, `aiQuestions` for every vertical). Owner decision
+2026-11-21 (PR-3 deviation 4): the portal's `listingEditor` destination takes
+the same ids, so the MCP can link those pages too.
+
 ### 2.2 `Anchor` grammar
 
 ```text
@@ -73,7 +80,7 @@ kind     = "page" | "section" | "entitlement" | "limit" | "enum" | "tool" | "act
 | Kind | Target | Example | Resolves when |
 |---|---|---|---|
 | `page` | route template under `apps/web/src/pages/[lang]/`, no locale, no slashes at the ends, web segment names | `page:mi-cuenta/suscripcion` | `<path>.astro` or `<path>/index.astro` exists (same lookup as `pageExists`, `scripts/check-portal-routes.ts`) |
-| `section` | `<vertical>.<sectionSlug>`, the web editor slug | `section:venue.carta`, `section:accommodation.politicas` | The vertical's editor page `…/editar/<slug>.astro` exists, and the slug is in that vertical's web editor registry (`apps/web/src/lib/editor/accommodation-editor-sections.ts`, `listing-editor-registry.ts`) |
+| `section` | `<vertical>.<sectionSlug>`, the web editor slug | `section:venue.carta`, `section:accommodation.politicas` | The slug is in that vertical's `EDITOR_SECTION_SLUGS` or `EDITOR_NON_SECTION_PAGE_SLUGS` (`packages/portal-routes/src/portal-routes.ts`), and the editor page `…/editar/<slug>.astro` exists. These are the same lists a `{{link:section:…}}` token resolves from (§5.1), so every anchor guard (a) accepts can satisfy IL-1. A web editor page in neither list is added to `EDITOR_NON_SECTION_PAGE_SLUGS`, where `check-portal-routes` checks its page |
 | `entitlement` | entitlement key | `entitlement:manage_venue_menu` | Value of `EntitlementKeyEnum` (`packages/schemas/src/catalog/key-enums.ts:2`) |
 | `limit` | limit key | `limit:max_photos_per_accommodation` | Value of `LimitKeyEnum` (`key-enums.ts:65`) |
 | `enum` | `<Vocabulary>.<VALUE>` from a closed list | `enum:PublicationStatus.MODERATED` | `PublicationStatus` → `PublicationStatusEnum` (`packages/schemas/src/enums/publication-status.enum.ts:21`), `SubscriptionStatus` → `SUBSCRIPTION_STATUSES` (`packages/db/src/schemas/vertical/subscription.dbschema.ts:22`), `TrialStatus` → `TrialStatusEnum` (`packages/schemas/src/enums/trial-status.enum.ts:14`). Adding a vocabulary is a guard change |
@@ -85,7 +92,9 @@ Why `section` uses the **web slug**, not the catalog section id: the editor has
 pages that are not catalog sections, e.g. `politicas` (`accommodation-editor-sections.ts:112`)
 and `preguntas-ia` (`:91`, `listing-editor-registry.ts:112`). The slug is what
 the owner sees in the URL. The catalog entry is still hashed when one exists
-(`docs/guards.md` §4.2).
+(`docs/guards.md` §4.2). Those pages are listed per vertical in
+`EDITOR_NON_SECTION_PAGE_SLUGS`, next to `EDITOR_SECTION_SLUGS`, instead of
+being scraped from the web registries.
 
 ## 3. Body
 
@@ -120,7 +129,9 @@ articles it mentions and to the exact portal part it explains. Guard (a) enforce
 - **IL-1 Portal parts are linked.** Every `page:` and `section:` anchor in an
   article's `covers` or `entryFor` appears in its body at least once as a
   `{{link:…}}` token pointing to that page or section. An article never explains
-  a screen without a link to it.
+  a screen without a link to it. A page with no dedicated target is linked
+  with `{{link:page:<key>}}` (§5.1). A token inside a «Cómo se hace» step does
+  not count and fails a1 until `get_help` resolves tokens (PR-12).
 - **IL-2 Mentions are links.** Inside the body, a reference to another article's
   topic is an `{{article:…}}` token, never plain text. Not machine-checkable in
   general; reviewers check it. The guard checks the reverse case it can see: an
@@ -195,20 +206,34 @@ articles it mentions and to the exact portal part it explains. Guard (a) enforce
 ```text
 token  = "{{" kind ":" args [ "|" label ] "}}"
 kind   = "limit" | "link" | "article"
-args   = arg *( ":" arg )          ; arg = [a-z0-9_.-]+
+args   = arg *( ":" arg )          ; arg = [A-Za-z0-9_.-]+
 label  = 1*80 chars, no "{", "}", "|"
 ```
 
 | Token | Args | Example |
 |---|---|---|
 | `limit` | `<limitKey>[:<vertical>]` (vertical defaults to the article's single `verticals` value; required when it has several) | `{{limit:max_photos_per_accommodation}}` |
-| `link` | `<target>[:<arg>…]` where target ∈ `plans:<vertical>`, `subscription`, `addons`, `list:<vertical>`, `create:<vertical>`, `section:<vertical>:<sectionSlug>`, `inquiries`, `providerDirectory`, `benefitUsages`, `providerPanel`, `partnerPanel`, `aiAssistants`, `faq`, `contact`, `help` | `{{link:plans:venue\|ver los planes}}` |
+| `link` | `<target>[:<arg>…]` where target ∈ `plans:<vertical>`, `subscription`, `addons`, `list:<vertical>`, `create:<vertical>`, `section:<vertical>:<editorSlug>` (a slug of `EDITOR_SECTION_SLUGS` or `EDITOR_NON_SECTION_PAGE_SLUGS` of that vertical), `inquiries`, `providerDirectory`, `benefitUsages`, `providerPanel`, `partnerPanel`, `aiAssistants`, `faq`, `contact`, `help`, `page:<pageKey>` | `{{link:plans:venue\|ver los planes}}`, `{{link:page:accountHome}}` |
 | `article` | `<id>[:<anchor>]`, where anchor is a section key anchor (§3) or a `###` anchor of that article (IL-3) | `{{article:pause-resume\|cómo pausar}}`, `{{article:photos:problemas-comunes\|si tus fotos no se ven}}` |
 
 Each `link` target maps 1:1 to a `PortalDestination` (a closed table in
 `@repo/help`, typed `satisfies Record<…>`). Without a label, the link uses the
 destination's default label (`portal-destination.ts`). Tokens are forbidden in
 `title`, `summary` and `keywords`.
+
+`arg` allows uppercase because several link targets and page keys are
+camelCase (`providerDirectory`, `accountHome`); limit keys, verticals, article
+ids and anchors stay lowercase by their own grammars.
+
+`page:<pageKey>` reaches the generic `page` destination of `@repo/portal-routes`
+(owner decision 2026-11-21, PR-3 deviation 3). `<pageKey>` is a key of
+`PORTAL_PAGE_LABELS` whose template in `PORTAL_ROUTE_TEMPLATES` has no
+`[dynamic]` segment (`HELP_STATIC_PAGE_KEYS`). Keys that name a record
+(`promotionEdit`, the public pages by slug) are rejected, like every
+destination that names a record. The route → page-key map
+(`HELP_PAGE_KEYS_BY_ROUTE`) is derived from `PORTAL_ROUTE_TEMPLATES`, never kept
+by hand: a `page:<route>` anchor (IL-1) is satisfied by `{{link:page:<key>}}`
+when `<key>` maps to that route, and the IL-1 failure names the token to add.
 
 ### 5.2 Who resolves what
 

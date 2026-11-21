@@ -27,11 +27,12 @@
  * use it.
  */
 
+import { contentWordsOf, tokenizeHelpText } from '@repo/help';
 import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
 import { HostTradeCatalogSlugSchema, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { contentWordsOf, tokenizeHelpText } from '../help/help-search';
+
 import { listCreationDestinations } from '../listing/listing-creation-catalog';
 import { excerptText, MCP_LIST_MAX_PAGE_SIZE, MCP_TEXT_EXCERPT_CHARS } from '../response-budget';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';

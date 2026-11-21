@@ -16,14 +16,14 @@
  * is better than none.
  */
 
+import type { HelpArticle, HelpDestination } from '@repo/help';
 import type { PortalDestination, PortalListingVertical } from '@repo/portal-routes';
 import { buildPortalUrl, describePortalDestination, type PortalLocale } from '@repo/portal-routes';
 import { PublicationStatusEnum } from '@repo/schemas';
-import type {
-    OwnerHelpCallerAudience,
-    OwnerHelpDestination,
-    OwnerHelpTopic
-} from '../../../data/owner-help/owner-help.types';
+import type { OwnerHelpCallerAudience } from './help-audience';
+
+/** The part of a help article its links are built from. */
+export type HelpLinkSource = Pick<HelpArticle, 'destinations' | 'faqKey'>;
 
 /** A link in a help answer. */
 export interface HelpLink {
@@ -64,7 +64,7 @@ const AUDIENCE_VERTICAL: Readonly<
 };
 
 /** The vertical a destination is about, when it is about one. */
-function verticalOf(destination: OwnerHelpDestination): PortalListingVertical | undefined {
+function verticalOf(destination: HelpDestination): PortalListingVertical | undefined {
     return 'vertical' in destination ? destination.vertical : undefined;
 }
 
@@ -73,7 +73,7 @@ function destinationFitsAudience({
     destination,
     audience
 }: {
-    readonly destination: OwnerHelpDestination;
+    readonly destination: HelpDestination;
     readonly audience?: OwnerHelpCallerAudience;
 }): boolean {
     const vertical = verticalOf(destination);
@@ -108,7 +108,7 @@ function toLink({
 /** Arguments for {@link buildHelpLinks}. RO-RO. */
 export interface BuildHelpLinksArgs {
     /** The topic. */
-    readonly topic: OwnerHelpTopic;
+    readonly topic: HelpLinkSource;
     /** The kind of owner asking; omit for every vertical. */
     readonly audience?: OwnerHelpCallerAudience;
     /**
@@ -133,7 +133,7 @@ export function topicNeedsOwnListings({
     topic,
     audience
 }: {
-    readonly topic: OwnerHelpTopic;
+    readonly topic: HelpLinkSource;
     readonly audience?: OwnerHelpCallerAudience;
 }): boolean {
     return topic.destinations.some(

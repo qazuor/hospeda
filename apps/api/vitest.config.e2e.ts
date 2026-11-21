@@ -133,6 +133,7 @@ export default defineConfig({
             '@repo/ai-core': resolve(__dirname, '../../packages/ai-core/src'),
             '@repo/feedback': resolve(__dirname, '../../packages/feedback/src'),
             '@repo/portal-routes': resolve(__dirname, '../../packages/portal-routes/src'),
+            '@repo/help': resolve(__dirname, '../../packages/help/src'),
             '@repo/content-moderation': resolve(__dirname, '../../packages/content-moderation/src'),
             // Workaround for pnpm hoisting issue: the better-auth instance installed in
             // apps/api/node_modules does not carry @better-auth/core as a local sub-dependency.

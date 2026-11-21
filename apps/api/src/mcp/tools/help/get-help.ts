@@ -3,13 +3,14 @@
  * @description Tool `get_help` (HOS-2333, spec HOS-2335 §6.8, AC-C40 to AC-C43):
  * "how do I do X in Hospeda" for the people who run a listing.
  *
- * It answers from the curated owner help catalog (`data/owner-help`), never from
- * the model's memory: each topic carries the real steps and the portal pages to
- * do them in. It is a read with no resource of its own, so there is nothing to
+ * It answers from the curated help catalog (`@repo/help`, Markdown articles
+ * compiled to a committed index, HOS-2410), never from the model's memory: each
+ * article carries the real steps («Cómo se hace») and the portal pages to do
+ * them in. It is a read with no resource of its own, so there is nothing to
  * own (`READ_OWN`, like the other owner reads).
  *
  * - **Search.** A normalized keyword match over the catalog, best three topics
- *   (`help-search.ts`). `topicId` fetches one topic directly.
+ *   (the shared search of `@repo/help`, which the web help center also uses). `topicId` fetches one topic directly.
  * - **Links.** Built by `help-links.ts` through the portal route map. The editor
  *   links are filled in from the caller's own listings, which `list_my_listings`
  *   already exposes, so no new access is involved. A listing list that cannot be
@@ -20,21 +21,26 @@
  *   is never echoed in the result, in a link or in a log.
  * - **Tourists.** The catalog holds no tourist topic, so a traveler's question
  *   finds nothing (NG-4).
+ * - **Audience.** An article lists its audiences; a caller only gets the ones
+ *   listing theirs (HOS-2410 data-model §7: a provider no longer gets the
+ *   listing topics the old `any` audience gave it).
  */
 
+import {
+    findHelpArticle,
+    HELP_ARTICLES,
+    HELP_MAX_TOPICS,
+    type HelpArticle,
+    searchOwnerHelp
+} from '@repo/help';
 import type { PortalLocale } from '@repo/portal-routes';
 import type { Actor } from '@repo/service-core';
 import { z } from 'zod';
-import { OWNER_HELP_TOPICS } from '../../../data/owner-help/owner-help';
-import {
-    OWNER_HELP_CALLER_AUDIENCES,
-    type OwnerHelpCallerAudience,
-    type OwnerHelpTopic
-} from '../../../data/owner-help/owner-help.types';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { readMyListings } from '../listing/list-my-listings';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
+import { OWNER_HELP_CALLER_AUDIENCES, type OwnerHelpCallerAudience } from './help-audience';
 import {
     buildFallbackHelpLinks,
     buildHelpLinks,
@@ -42,7 +48,6 @@ import {
     type HelpOwnListing,
     topicNeedsOwnListings
 } from './help-links';
-import { findOwnerHelpTopic, HELP_MAX_TOPICS, searchOwnerHelp } from './help-search';
 
 /** Longest question the tool accepts. */
 export const GET_HELP_QUESTION_MAX_CHARS = 300;
@@ -146,8 +151,8 @@ async function readHelpOwnListings({
 }
 
 /** The topic with this id as a list: empty when the catalog has none. */
-function topicById({ id }: { readonly id: string }): readonly OwnerHelpTopic[] {
-    const topic = findOwnerHelpTopic({ topics: OWNER_HELP_TOPICS, id });
+function topicById({ id }: { readonly id: string }): readonly HelpArticle[] {
+    const topic = findHelpArticle({ id });
     return topic === undefined ? [] : [topic];
 }
 
@@ -158,7 +163,7 @@ function toAnswer({
     ownListings,
     locale
 }: {
-    readonly topics: readonly OwnerHelpTopic[];
+    readonly topics: readonly HelpArticle[];
     readonly audience?: OwnerHelpCallerAudience;
     readonly ownListings: readonly HelpOwnListing[] | undefined;
     readonly locale?: PortalLocale;
@@ -175,7 +180,7 @@ function toAnswer({
         topics: topics.map((topic) => ({
             id: topic.id,
             title: topic.title,
-            steps: topic.steps,
+            steps: topic.sections.howTo.steps,
             links: buildHelpLinks({ topic, audience, ownListings, siteUrl, locale })
         }))
     };
@@ -197,7 +202,7 @@ export const getHelpTool = defineTool({
 
         const topics =
             topicId === undefined
-                ? searchOwnerHelp({ topics: OWNER_HELP_TOPICS, question: question ?? '', audience })
+                ? searchOwnerHelp({ topics: HELP_ARTICLES, question: question ?? '', audience })
                 : topicById({ id: topicId });
 
         const ownListings = topics.some((topic) => topicNeedsOwnListings({ topic, audience }))

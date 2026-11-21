@@ -11,6 +11,7 @@
 
 import {
     CREATE_LISTING_ROUTE_BY_VERTICAL,
+    EDITOR_NON_SECTION_PAGE_SLUGS,
     EDITOR_SECTION_SLUGS,
     EDITOR_SECTION_TEMPLATE_BY_VERTICAL,
     OWNER_LISTINGS_ROUTE_BY_VERTICAL,
@@ -19,9 +20,9 @@ import {
     PORTAL_ROUTE_TEMPLATES,
     PORTAL_SECTION_PLACEHOLDER,
     type PortalDestination,
+    type PortalEditorTarget,
     type PortalListingVertical,
-    type PortalRouteKey,
-    type PortalSectionId
+    type PortalRouteKey
 } from './portal-routes';
 
 /** Locales the web serves. */
@@ -58,13 +59,31 @@ function fillTemplate(input: {
     });
 }
 
-/** The editor section slug of a vertical, or `undefined` when it has no such section. */
-function sectionSlugOf(input: {
+/**
+ * The editor slug of a catalog section or of another editor page of a vertical
+ * ({@link EDITOR_NON_SECTION_PAGE_SLUGS}), or `undefined` when the vertical has
+ * neither with that id.
+ *
+ * @param input.vertical - The listing vertical
+ * @param input.section - A catalog section id or a non-section editor page id
+ * @returns The URL slug, for example `servicios` or `politicas`
+ *
+ * @example
+ * ```ts
+ * editorSlugOf({ vertical: 'accommodation', section: 'policies' }); // 'politicas'
+ * editorSlugOf({ vertical: 'venue', section: 'policies' }); // undefined
+ * ```
+ */
+export function editorSlugOf(input: {
     readonly vertical: PortalListingVertical;
-    readonly section: PortalSectionId;
+    readonly section: PortalEditorTarget;
 }): string | undefined {
-    const slugs: Readonly<Record<string, string>> = EDITOR_SECTION_SLUGS[input.vertical];
-    return Object.hasOwn(slugs, input.section) ? slugs[input.section] : undefined;
+    const sections: Readonly<Record<string, string>> = EDITOR_SECTION_SLUGS[input.vertical];
+    const pages: Readonly<Record<string, string>> = EDITOR_NON_SECTION_PAGE_SLUGS[input.vertical];
+    if (Object.hasOwn(sections, input.section)) {
+        return sections[input.section];
+    }
+    return Object.hasOwn(pages, input.section) ? pages[input.section] : undefined;
 }
 
 /** A destination's path template (dynamic segments left in place) and the values that fill them. */
@@ -77,10 +96,10 @@ interface ResolvedPath {
 function editorPath(input: {
     readonly vertical: PortalListingVertical;
     readonly id: string;
-    readonly section?: PortalSectionId;
+    readonly section?: PortalEditorTarget;
 }): ResolvedPath {
     const { vertical, id, section } = input;
-    const slug = section === undefined ? undefined : sectionSlugOf({ vertical, section });
+    const slug = section === undefined ? undefined : editorSlugOf({ vertical, section });
     const isAccommodation = vertical === 'accommodation';
     const params: Readonly<Record<string, string>> = isAccommodation ? { id } : { id, vertical };
     if (slug === undefined) {

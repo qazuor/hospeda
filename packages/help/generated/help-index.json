@@ -1,0 +1,1188 @@
+{
+  "contentHash": "95eb9f6bf3935a75d1c3dc4244fcc32c49ffb7cfb7955aa6453146fe32ad7de7",
+  "locales": {
+    "es": [
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "entitlement:featured_listing"
+        ],
+        "destinations": [
+          {
+            "kind": "addons",
+            "label": "Comprar complementos"
+          }
+        ],
+        "entryFor": [
+          "page:mi-cuenta/complementos"
+        ],
+        "faqKey": "owners.featured",
+        "folder": "common",
+        "id": "addons",
+        "keywords": [
+          "complemento",
+          "complementos",
+          "addon",
+          "add-on",
+          "destaque",
+          "destacar",
+          "destacado",
+          "promocionar",
+          "comprar complemento"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "change-plan",
+          "delete-listing",
+          "pause-resume"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Comprar complementos}}.",
+          "expect": "- El resumen muestra el importe y la frecuencia antes de confirmar.\n- Si tu beneficio incluye el complemento, aparece «Gratis por tu beneficio».\n- Dar de baja un destaque recurrente corta el cobro y lo apaga ese mismo día.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Comprar complementos».",
+              "Elegí un complemento de la lista.",
+              "Elegí la ficha (o la suscripción) a la que se aplica.",
+              "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
+              "Ingresá el correo con el que pagás en Mercado Pago y tocá «Confirmar compra».",
+              "Los complementos recurrentes (destaques) se dan de baja en la misma página, en «Tus destaques recurrentes»: al confirmar, se corta el cobro y el destaque se apaga hoy, sin reembolso.",
+              "Si ves «Compras pausadas», por ahora no se pueden comprar complementos: probá más tarde."
+            ]
+          },
+          "notExpect": "- Un reembolso al dar de baja un complemento recurrente.\n- Conservar los complementos de una ficha que eliminás: mirá {{article:delete-listing|qué se pierde al eliminar}}.",
+          "troubleshooting": "### Dice «Compras pausadas» {#compras-pausadas}\n\nPor ahora no se pueden comprar complementos. Probá más tarde.\n\n### Quiero más de lo que da mi plan {#mas-que-el-plan}\n\nUn complemento suma algo puntual; para cambiar lo que incluye tu plan, mirá {{article:change-plan|cómo cambiar tu plan}}."
+        },
+        "summary": "Cómo comprar un complemento para una ficha y cómo dar de baja uno recurrente.",
+        "title": "Comprar o dar de baja un complemento",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "partner",
+          "provider",
+          "venue"
+        ],
+        "covers": [
+          "file:apps/web/src/components/account/AiAssistantsPanel.client.tsx"
+        ],
+        "destinations": [
+          {
+            "kind": "aiAssistants",
+            "label": "Asistentes de IA"
+          }
+        ],
+        "entryFor": [
+          "page:mi-cuenta/asistentes-ia"
+        ],
+        "folder": "common",
+        "id": "ai-assistants",
+        "keywords": [
+          "asistente",
+          "asistentes",
+          "asistente de ia",
+          "conectar asistente",
+          "desconectar asistente",
+          "claude",
+          "chatgpt",
+          "gemini",
+          "mcp",
+          "conector",
+          "inteligencia artificial"
+        ],
+        "locale": "es",
+        "public": true,
+        "related": [
+          "reviews",
+          "inquiries",
+          "amenities"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
+          "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Asistentes de IA» en tu cuenta.",
+              "En «Cómo conectar un asistente», copiá la dirección del servidor MCP.",
+              "En Claude, ChatGPT, Gemini u otro asistente compatible con MCP, agregá un conector personalizado y pegá esa dirección.",
+              "Iniciá sesión en Hospeda y aprobá el acceso. La pantalla te muestra qué puede hacer el asistente.",
+              "Para desconectar uno, buscalo en «Asistentes conectados», tocá «Desconectar» y confirmá: pierde el acceso de inmediato y podés volver a conectarlo cuando quieras.",
+              "Si cambiás la contraseña, el sitio te pregunta si querés desconectar también los asistentes conectados.",
+              "Si ves el aviso de que la conexión de nuevos asistentes está pausada, por ahora no se pueden conectar más, pero sí desconectar los que ya tenés."
+            ]
+          },
+          "notExpect": "- Conectar asistentes nuevos mientras la conexión está pausada; los que ya tenés se pueden desconectar igual.\n- Que el asistente haga cambios sin pedirte confirmación en las acciones que la piden.",
+          "troubleshooting": "### Cambié la contraseña {#cambie-contrasena}\n\nEl sitio te pregunta si querés desconectar también los asistentes conectados.\n\n### El asistente no encuentra la dirección {#direccion}\n\nCopiá de nuevo la dirección del servidor MCP desde {{link:aiAssistants|Asistentes de IA}} y pegala completa."
+        },
+        "summary": "Cómo conectar Claude, ChatGPT, Gemini u otro asistente compatible con MCP, y cómo desconectarlo.",
+        "title": "Conectar o desconectar un asistente de IA",
+        "translation": null,
+        "verticals": []
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "section:experience.servicios",
+          "section:venue.servicios",
+          "tool:get_listing_amenities",
+          "tool:list_amenities_and_features",
+          "tool:update_listing_amenities"
+        ],
+        "destinations": [
+          {
+            "kind": "ownEditorSection",
+            "label": "Servicios y comodidades",
+            "section": "amenities",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "ownEditorSection",
+            "label": "Servicios",
+            "section": "amenities",
+            "vertical": "venue"
+          },
+          {
+            "kind": "ownEditorSection",
+            "label": "Servicios",
+            "section": "amenities",
+            "vertical": "experience"
+          }
+        ],
+        "entryFor": [
+          "section:accommodation.servicios"
+        ],
+        "folder": "common",
+        "id": "amenities",
+        "keywords": [
+          "servicios y comodidades",
+          "comodidades",
+          "comodidad",
+          "amenities",
+          "wifi",
+          "pileta",
+          "caracteristicas",
+          "agregar servicio",
+          "quitar servicio"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "photos",
+          "publish-requirements",
+          "ai-assistants"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Tildar los servicios que ofrecés en {{link:section:accommodation:servicios|Servicios y comodidades}} (alojamientos) o en {{link:section:venue:servicios|Servicios del comercio}} y {{link:section:experience:servicios|Servicios de la experiencia}}.",
+          "expect": "- En alojamientos el catálogo está agrupado por categorías y cada comodidad tiene su detalle.\n- Un asistente agrega o quita servicios de una categoría por vez (mirá {{article:ai-assistants|cómo conectarlo}}).",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Abrí el editor de la publicación con «Editar» en su tarjeta.",
+              "Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).",
+              "Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.",
+              "En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.",
+              "Tocá «Guardar».",
+              "También podés pedirle a este asistente que agregue o quite servicios de una categoría."
+            ]
+          },
+          "notExpect": "- Crear un servicio que no está en el catálogo.\n- Que los cambios se guarden sin tocar «Guardar».",
+          "troubleshooting": "### No encuentro un servicio {#no-esta}\n\nSolo se pueden elegir los del catálogo. Si falta algo importante, contalo en la descripción de tu publicación."
+        },
+        "summary": "Cómo marcar los servicios y comodidades de tu publicación, desde el editor o con un asistente.",
+        "title": "Editar los servicios y comodidades",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "host"
+        ],
+        "covers": [
+          "page:mi-cuenta/directorio-proveedores",
+          "tool:confirm_benefit_usage",
+          "tool:list_benefit_usages",
+          "tool:reject_benefit_usage",
+          "tool:undo_benefit_rejection"
+        ],
+        "destinations": [
+          {
+            "kind": "benefitUsages",
+            "label": "Usos del beneficio"
+          },
+          {
+            "kind": "providerDirectory",
+            "label": "Directorio de proveedores"
+          }
+        ],
+        "entryFor": [
+          "page:mi-cuenta/usos-de-beneficio"
+        ],
+        "folder": "host",
+        "id": "benefit-usage",
+        "keywords": [
+          "beneficio",
+          "uso del beneficio",
+          "usos",
+          "registrar uso",
+          "confirmar uso",
+          "rechazar uso",
+          "descuento de proveedor",
+          "qr del proveedor",
+          "escanear qr"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "provider-directory",
+          "benefit-usage-provider"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Registrar un uso desde el proveedor en el {{link:providerDirectory|directorio}} y responder los que te registran en {{link:benefitUsages|Usos del beneficio}}.",
+          "expect": "- Un uso queda pendiente hasta que la otra parte lo confirma, y solo cuenta cuando está confirmado.\n- Un rechazo se puede deshacer.\n- El historial se filtra por pendientes, confirmados, rechazados o vencidos.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Para registrar un uso, abrí el proveedor en el directorio y tocá «Registrar uso del beneficio». Si el proveedor tiene un código QR, escanearlo lleva a la misma página.",
+              "Elegí el día del servicio (viene con la fecha de hoy y no puede ser futuro) y, si querés, escribí una nota.",
+              "Tocá «Registrar el uso». Queda pendiente hasta que el proveedor lo confirme.",
+              "Si el que registró el uso fue el proveedor, aparece en «Usos del beneficio», en «Esperan tu confirmación»: tocá «Confirmar» o «Rechazar» (con un motivo opcional). El rechazo se puede deshacer.",
+              "En el historial de esa misma página ves todos los usos y podés filtrarlos por pendientes, confirmados, rechazados o vencidos."
+            ]
+          },
+          "notExpect": "- Registrar un uso con fecha futura.\n- Que tu propio registro se confirme solo.",
+          "troubleshooting": "### No encuentro al proveedor {#no-encuentro}\n\nBuscalo en {{article:provider-directory|el directorio de proveedores}}.\n\n### El proveedor dice que no le llega mi uso {#no-le-llega}\n\nLo que registrás aparece en su panel, como explica {{article:benefit-usage-provider|la ayuda para proveedores}}."
+        },
+        "summary": "Cómo registrás el uso de un beneficio de un proveedor y cómo confirmás o rechazás los que él registra.",
+        "title": "Registrar y confirmar usos de un beneficio",
+        "translation": null,
+        "verticals": []
+      },
+      {
+        "audiences": [
+          "provider"
+        ],
+        "covers": [
+          "page:mi-cuenta/proveedor",
+          "tool:confirm_benefit_usage",
+          "tool:list_benefit_usages",
+          "tool:reject_benefit_usage",
+          "tool:undo_benefit_rejection"
+        ],
+        "destinations": [
+          {
+            "kind": "providerPanel",
+            "label": "Mi ficha de proveedor"
+          },
+          {
+            "kind": "contact"
+          }
+        ],
+        "entryFor": [],
+        "folder": "provider",
+        "id": "benefit-usage-provider",
+        "keywords": [
+          "proveedor",
+          "soy proveedor",
+          "mi ficha",
+          "registrar uso",
+          "confirmar uso",
+          "codigo qr",
+          "qr",
+          "usos pendientes",
+          "anfitrion"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "benefit-usage",
+          "provider-directory"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
+          "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Mi ficha de proveedor».",
+              "Para registrar un uso, elegí a quién atendiste: un anfitrión que ya te confirmó un uso o alguien nuevo, por su email (tiene que ser el email con el que se registró en Hospeda). Indicá el día del servicio y una nota opcional.",
+              "El uso queda pendiente hasta que el anfitrión lo confirme y no suma a tus números hasta entonces.",
+              "Descargá tu código QR, imprimilo o mostralo en el celular: el anfitrión lo escanea y registra el uso él mismo.",
+              "Los usos que registró un anfitrión aparecen en «Esperan tu confirmación»: confirmalos para que cuenten.",
+              "Si ves que no podés registrar usos por ahora, escribinos para revisarlo; tus usos ya confirmados siguen contando."
+            ]
+          },
+          "notExpect": "- Registrar un uso con un email distinto del que el anfitrión usa en Hospeda.\n- Que un uso pendiente cuente antes de la confirmación.",
+          "troubleshooting": "### No puedo registrar usos {#no-puedo-registrar}\n\n{{link:contact|Escribinos}} para revisarlo; tus usos confirmados siguen contando.\n\n### Un anfitrión no te encuentra {#no-te-encuentra}\n\nLos anfitriones te buscan en {{article:provider-directory|el directorio de proveedores}}."
+        },
+        "summary": "Cómo registra usos un proveedor, cómo comparte su código QR y cómo confirma los que registran los anfitriones.",
+        "title": "Soy proveedor: registrar usos y compartir mi QR",
+        "translation": null,
+        "verticals": []
+      },
+      {
+        "audiences": [
+          "host"
+        ],
+        "covers": [
+          "entitlement:can_sync_external_calendar",
+          "entitlement:can_use_calendar",
+          "page:planes/anfitriones"
+        ],
+        "destinations": [
+          {
+            "kind": "ownEditorSection",
+            "label": "Calendario",
+            "section": "calendar",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para alojamientos",
+            "vertical": "accommodation"
+          }
+        ],
+        "entryFor": [
+          "section:accommodation.calendario"
+        ],
+        "folder": "host",
+        "id": "calendar",
+        "keywords": [
+          "calendario",
+          "disponibilidad",
+          "bloquear",
+          "fechas ocupadas",
+          "ocupado",
+          "sincronizar",
+          "google calendar",
+          "airbnb",
+          "booking",
+          "ical",
+          "reservas superpuestas"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "change-plan",
+          "publish-requirements",
+          "inquiries"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Bloquear y liberar fechas, y conectar calendarios externos, desde {{link:section:accommodation:calendario|Calendario}}.",
+          "expect": "- Las fechas bloqueadas no aparecen disponibles en las búsquedas.\n- Un calendario conectado muestra su estado y se puede sincronizar a mano o desconectar.\n- El calendario y la sincronización dependen de tu plan: compará {{link:plans:accommodation|los planes para alojamientos}}.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Abrí el editor de tu alojamiento («Mis propiedades» → «Editar») y entrá a «Calendario». Es una sección de alojamientos.",
+              "En el calendario de ocupación, hacé clic en un día y en otro para elegir un rango, sumá una nota si querés y tocá «Bloquear». Con «Liberar» desbloqueás. Esas fechas no aparecen disponibles en las búsquedas.",
+              "Para sincronizar con otro calendario, tocá «Conectar calendarios externos».",
+              "Con Google Calendar, tocá «Conectar Google Calendar» y aprobá el acceso de solo lectura. Con Airbnb, Booking.com u otro, pegá la URL de exportación en formato iCal (.ics) y tocá «Conectar».",
+              "Una vez conectado ves su estado y podés usar «Sincronizar ahora» o «Desconectar». Lo ya sincronizado queda como está al desconectar.",
+              "Los bloqueos que llegan de un calendario conectado no se editan desde Hospeda: para liberar esos días, cambiá el evento en el calendario de origen o desconectalo.",
+              "El calendario y la sincronización dependen de tu plan: si no los incluye, el editor lo avisa y te lleva a mejorar el plan."
+            ]
+          },
+          "notExpect": "- Editar desde Hospeda los bloqueos que llegan de un calendario conectado.\n- Que desconectar un calendario borre lo que ya se sincronizó.",
+          "troubleshooting": "### El editor dice que mi plan no incluye el calendario {#sin-plan}\n\nMirá {{article:change-plan|cómo cambiar tu plan}}.\n\n### Un día sincronizado no se puede liberar {#sincronizado}\n\nCambiá el evento en el calendario de origen o desconectalo."
+        },
+        "summary": "Cómo bloquear fechas de tu alojamiento y sincronizarlo con Google, Airbnb, Booking.com u otro calendario.",
+        "title": "Bloquear fechas y conectar un calendario externo",
+        "translation": null,
+        "verticals": [
+          "accommodation"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "file:apps/web/src/components/account/PlanChangeOffer.client.tsx",
+          "page:mi-cuenta/suscripcion",
+          "page:planes/anfitriones",
+          "page:planes/comer-y-salir",
+          "page:planes/experiencias"
+        ],
+        "destinations": [
+          {
+            "kind": "subscription",
+            "label": "Suscripción"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para alojamientos",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para comercios",
+            "vertical": "venue"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para experiencias",
+            "vertical": "experience"
+          }
+        ],
+        "entryFor": [],
+        "folder": "common",
+        "id": "change-plan",
+        "keywords": [
+          "mi plan",
+          "cambiar de plan",
+          "cambiar plan",
+          "planes y precios",
+          "suscripcion",
+          "upgrade",
+          "mejorar plan",
+          "bajar de plan",
+          "cancelar suscripcion",
+          "dar de baja la suscripcion"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "addons",
+          "publish-requirements",
+          "calendar"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
+          "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Suscripción». Ahí ves tus suscripciones, el estado de cada una y el resumen de tu prueba gratis.",
+              "En la suscripción activa, tocá «Cambiar de plan».",
+              "Elegí otro plan u otra frecuencia de cobro entre las opciones que se listan. Los importes los ves en esa lista y en la página de planes.",
+              "Leé cómo funciona el cambio: si requiere autorización, vas al checkout de Mercado Pago y tu plan actual sigue hasta que autorices; si se programa, ves la fecha exacta desde la que rige el plan nuevo.",
+              "Ingresá el correo con el que vas a pagar en Mercado Pago y tocá «Confirmar cambio».",
+              "Si «Cambiar de plan» no aparece o el sitio dice que no se puede, te explica el motivo: un pago pendiente, la suscripción pausada, un cambio ya programado o que todavía no llegó la fecha en que podés cambiar.",
+              "Para dejar de pagar, usá «Dar de baja» en la misma suscripción: se corta el cobro automático y seguís con el servicio hasta el final del período pago."
+            ]
+          },
+          "notExpect": "- Cambiar de plan con un pago pendiente, con la suscripción pausada o con otro cambio ya programado.\n- Que dar de baja la suscripción corte el servicio en el acto: seguís hasta el final del período pago.",
+          "troubleshooting": "### No aparece el botón para cambiar {#no-aparece}\n\nEl sitio te explica el motivo. Si lo que querés es sumar algo puntual, quizás te sirva {{article:addons|un complemento}}.\n\n### Mi plan no incluye el calendario {#sin-calendario}\n\nMirá {{article:calendar|el calendario de ocupación}} para saber qué depende del plan."
+        },
+        "summary": "Cómo pasar a otro plan o frecuencia de cobro, cuándo rige el cambio y por qué a veces no se puede.",
+        "title": "Cambiar de plan",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "page:publicar",
+          "page:publicar/comer-y-salir",
+          "page:publicar/experiencias",
+          "tool:create_listing",
+          "tool:get_listing_creation_guide"
+        ],
+        "destinations": [
+          {
+            "kind": "createListing",
+            "label": "Publicar un alojamiento",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "createListing",
+            "label": "Publicar un comercio",
+            "vertical": "venue"
+          },
+          {
+            "kind": "createListing",
+            "label": "Publicar una experiencia",
+            "vertical": "experience"
+          }
+        ],
+        "entryFor": [],
+        "faqKey": "owners.ready",
+        "folder": "common",
+        "id": "create-listing",
+        "keywords": [
+          "crear publicacion",
+          "crear alojamiento",
+          "nueva publicacion",
+          "publicar",
+          "dar de alta",
+          "agregar alojamiento",
+          "agregar comercio",
+          "agregar experiencia",
+          "empezar a publicar",
+          "borrador"
+        ],
+        "locale": "es",
+        "public": true,
+        "related": [
+          "publish-requirements",
+          "photos",
+          "pause-resume"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Crear una publicación nueva del rubro que elijas: {{link:create:accommodation|publicar un alojamiento}}, {{link:create:venue|publicar un comercio}} o {{link:create:experience|publicar una experiencia}}.\n\nUn asistente de IA conectado también puede crear el borrador por vos.",
+          "expect": "- La publicación nace como borrador y no se ve en el sitio hasta que la publiques.\n- Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.\n- Después completás las secciones en el editor; las fotos se cargan como explica {{article:photos|la ayuda de fotos}}.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.",
+              "Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.",
+              "La publicación se crea como borrador: todavía no se ve en el sitio.",
+              "Abrila desde «Mis propiedades» o «Mi comercio» con «Editar» y completá sus secciones. El editor marca lo que falta.",
+              "Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta."
+            ]
+          },
+          "notExpect": "- Que la publicación se publique sola al crearla.\n- Que se pueda publicar sin cumplir {{article:publish-requirements|los requisitos}}.",
+          "troubleshooting": "### Creé la publicación y no aparece en el sitio {#no-aparece}\n\nEs un borrador. Completala y publicala; si después querés sacarla un tiempo, mirá {{article:pause-resume|cómo despublicar}}."
+        },
+        "summary": "Dónde se crea una publicación de alojamiento, comercio o experiencia y en qué estado queda.",
+        "title": "Crear una publicación nueva",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "enum:PublicationStatus.PURGED",
+          "page:mi-cuenta/propiedades"
+        ],
+        "destinations": [
+          {
+            "kind": "ownerListings",
+            "label": "Mis propiedades",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "ownerListings",
+            "label": "Mi comercio",
+            "vertical": "venue"
+          },
+          {
+            "kind": "ownerListings",
+            "label": "Mi comercio",
+            "vertical": "experience"
+          },
+          {
+            "kind": "contact"
+          }
+        ],
+        "entryFor": [],
+        "folder": "common",
+        "id": "delete-listing",
+        "keywords": [
+          "eliminar",
+          "borrar",
+          "dar de baja una publicacion",
+          "quitar publicacion",
+          "eliminar propiedad",
+          "eliminar alojamiento"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "pause-resume",
+          "addons",
+          "fix-request"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis propiedades}}.\n\nPara un comercio o una experiencia, {{link:contact|escribinos}}.",
+          "expect": "- Antes de confirmar ves los complementos que se pierden con la publicación, sin devolución (mirá {{article:addons|los complementos}}).\n- El borrado es definitivo: textos, fotos y preguntas se borran.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
+              "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+              "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
+              "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
+              "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
+            ]
+          },
+          "notExpect": "- Recuperar una publicación eliminada.\n- Un botón «Eliminar» en comercios y experiencias.",
+          "troubleshooting": "### Solo quiero sacarla un tiempo {#por-un-tiempo}\n\nNo la elimines: {{article:pause-resume|despublicala}}.\n\n### Está moderada y no sé si borrarla {#moderada}\n\nPrimero mirá {{article:fix-request|qué significa la moderación}}."
+        },
+        "summary": "Cómo se elimina una propiedad, qué se pierde y qué pasa en comercios y experiencias.",
+        "title": "Eliminar una publicación",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "enum:PublicationStatus.MODERATED",
+          "file:apps/web/src/lib/listing/listing-notices.ts",
+          "page:mi-cuenta/comercio",
+          "page:mi-cuenta/propiedades"
+        ],
+        "destinations": [
+          {
+            "kind": "ownerListings",
+            "label": "Mis propiedades",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "ownerListings",
+            "label": "Mi comercio",
+            "vertical": "venue"
+          },
+          {
+            "kind": "ownerListings",
+            "label": "Mi comercio",
+            "vertical": "experience"
+          },
+          {
+            "kind": "contact"
+          }
+        ],
+        "entryFor": [],
+        "folder": "common",
+        "id": "fix-request",
+        "keywords": [
+          "arreglo",
+          "pedido de arreglo",
+          "corregir",
+          "ya lo corregi",
+          "moderada",
+          "moderacion",
+          "moderaron",
+          "no se ve",
+          "rechazada"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "publish-requirements",
+          "delete-listing",
+          "pause-resume"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}, corregir desde el editor y avisar a Hospeda.",
+          "expect": "- Con un pedido de arreglo la publicación sigue a la vista mientras corregís.\n- «Ya lo corregí» avisa al equipo; el pedido lo cierra Hospeda.\n- Una publicación moderada se puede ver, exportar y editar, pero no publicar.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Si Hospeda te pidió un arreglo, vas a ver el aviso «Te pidieron un arreglo en esta ficha» en «Mis propiedades» o «Mi comercio» y en el editor de esa publicación.",
+              "El aviso puede traer una fecha sugerida para corregirlo. Tu publicación sigue a la vista mientras tanto.",
+              "Corregí lo que se pidió desde el editor.",
+              "Tocá «Ya lo corregí» para avisar a Hospeda. Eso no cierra el pedido ni publica nada: lo revisa el equipo.",
+              "Si la publicación quedó moderada («Ficha moderada»), no se ve en el sitio hasta que un administrador levante la moderación. Mientras tanto podés verla, exportarla y editarla, pero no publicarla. En alojamientos también podés borrarla; en comercios y experiencias el portal no tiene el botón «Eliminar»."
+            ]
+          },
+          "notExpect": "- Levantar la moderación vos mismo.\n- Que «Ya lo corregí» publique la ficha o cierre el pedido.",
+          "troubleshooting": "### Corregí y el aviso sigue {#aviso-sigue}\n\nEl pedido queda abierto hasta que Hospeda lo revise. Mientras tanto, revisá {{article:publish-requirements|los requisitos para publicar}}.\n\n### Prefiero borrar la publicación moderada {#borrar}\n\nEn alojamientos podés hacerlo: mirá {{article:delete-listing|cómo eliminarla}}."
+        },
+        "summary": "Qué significan un pedido de arreglo y una moderación, y qué podés hacer en cada caso.",
+        "title": "Me pidieron un arreglo o moderaron mi publicación",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "host"
+        ],
+        "covers": [
+          "tool:get_inquiry",
+          "tool:list_inquiries",
+          "tool:reply_inquiry"
+        ],
+        "destinations": [
+          {
+            "kind": "inquiry",
+            "label": "Mensajes de huéspedes"
+          }
+        ],
+        "entryFor": [
+          "page:mi-cuenta/consultas-propietario"
+        ],
+        "folder": "host",
+        "id": "inquiries",
+        "keywords": [
+          "consulta",
+          "consultas",
+          "mensaje",
+          "mensajes",
+          "responder",
+          "contestar",
+          "huesped",
+          "huespedes",
+          "bandeja",
+          "inbox",
+          "no leidos"
+        ],
+        "locale": "es",
+        "public": true,
+        "related": [
+          "reviews",
+          "ai-assistants",
+          "calendar"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Leer y responder las conversaciones de tus alojamientos en {{link:inquiries|Mensajes de huéspedes}}.",
+          "expect": "- Las conversaciones con mensajes sin leer tienen una marca.\n- Un asistente redacta la respuesta y te la muestra antes de enviarla (mirá {{article:ai-assistants|cómo conectarlo}}).",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Mensajes de huéspedes». Ahí están las conversaciones de tus alojamientos, con una marca en las que tienen mensajes sin leer.",
+              "Abrí la conversación que querés responder.",
+              "Escribí tu respuesta en el cuadro (hasta 5000 caracteres) y tocá «Enviar».",
+              "También podés pedirle a este asistente que liste tus consultas y redacte una respuesta: te muestra el texto antes de enviarlo y solo se envía si lo confirmás."
+            ]
+          },
+          "notExpect": "- Mensajes de huéspedes en comercios o experiencias.\n- Responder reseñas desde esta bandeja: mirá {{article:reviews|las reseñas}}.",
+          "troubleshooting": "### No puedo escribir en una conversación {#no-puedo-responder}\n\nLa conversación puede estar cerrada o la publicación ya no existir.\n\n### Los huéspedes preguntan por fechas ocupadas {#fechas}\n\nMantené al día {{article:calendar|tu calendario}}."
+        },
+        "summary": "Dónde llegan los mensajes de tus huéspedes y cómo se responden, también con un asistente.",
+        "title": "Responder las consultas de los huéspedes",
+        "translation": null,
+        "verticals": [
+          "accommodation"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "page:mi-cuenta/comercio",
+          "page:mi-cuenta/complementos",
+          "page:mi-cuenta/propiedades",
+          "tool:set_listing_publication"
+        ],
+        "destinations": [
+          {
+            "kind": "ownerListings",
+            "label": "Mis propiedades",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "ownerListings",
+            "label": "Mi comercio",
+            "vertical": "venue"
+          },
+          {
+            "kind": "ownerListings",
+            "label": "Mi comercio",
+            "vertical": "experience"
+          },
+          {
+            "kind": "addons",
+            "label": "Complementos"
+          }
+        ],
+        "entryFor": [],
+        "faqKey": "owners.pause",
+        "folder": "common",
+        "id": "pause-resume",
+        "keywords": [
+          "pausar",
+          "pausa",
+          "despublicar",
+          "sacar del sitio",
+          "ocultar",
+          "reanudar",
+          "volver a publicar",
+          "publicar de nuevo",
+          "pausar por temporada"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "delete-listing",
+          "publish-requirements",
+          "addons",
+          "change-plan"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mi comercio}} se pausan y reanudan con un asistente de IA.",
+          "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
+              "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+              "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
+              "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
+              "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
+              "En comercios y experiencias el portal no tiene botón de pausa: podés pedirle a este asistente que pause o reanude la publicación."
+            ]
+          },
+          "notExpect": "- Que despublicar frene la prueba gratis o el cobro de tu suscripción.\n- Un botón de pausa en el portal para comercios y experiencias.",
+          "troubleshooting": "### La tarjeta dice que no está publicada por mi plan {#sin-plan}\n\nEl sitio la despublicó por tu plan. Usá «Publicar de nuevo» o revisá {{article:change-plan|cómo cambiar tu plan}}.\n\n### Quiero sacarla para siempre {#para-siempre}\n\nEso es {{article:delete-listing|eliminar la publicación}}, y no tiene vuelta atrás."
+        },
+        "summary": "Cómo sacar una publicación del sitio sin borrarla y cómo volver a publicarla.",
+        "title": "Pausar y volver a publicar una publicación",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "limit:max_photos_per_accommodation",
+          "section:experience.fotos",
+          "section:venue.fotos"
+        ],
+        "destinations": [
+          {
+            "kind": "ownEditorSection",
+            "label": "Fotos",
+            "section": "photos",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "ownEditorSection",
+            "label": "Fotos",
+            "section": "media",
+            "vertical": "venue"
+          },
+          {
+            "kind": "ownEditorSection",
+            "label": "Fotos",
+            "section": "media",
+            "vertical": "experience"
+          }
+        ],
+        "entryFor": [
+          "section:accommodation.fotos"
+        ],
+        "folder": "common",
+        "id": "photos",
+        "keywords": [
+          "foto",
+          "fotos",
+          "imagen",
+          "imagenes",
+          "subir foto",
+          "subo",
+          "portada",
+          "imagen principal",
+          "galeria"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "publish-requirements",
+          "create-listing",
+          "change-plan"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
+          "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- En alojamientos la galería tiene {{limit:max_photos_per_accommodation:accommodation}}, y el editor te avisa cuántas fotos te quedan.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Abrí el editor de la publicación: desde «Mis propiedades» (alojamientos) o «Mi comercio» (comercios y experiencias), tocá «Editar» en su tarjeta.",
+              "Entrá a la sección «Fotos».",
+              "Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.",
+              "Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.",
+              "El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.",
+              "No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.",
+              "En alojamientos también podés reordenar la galería y elegir cuál es la portada."
+            ]
+          },
+          "notExpect": "- Subir más fotos que el tope de tu plan: para ampliarlo hay que {{article:change-plan|cambiar a otro plan}}.\n- Archivos de otros formatos o de más de 10 MB: el editor los rechaza.",
+          "troubleshooting": "### No me deja subir más fotos {#tope-de-fotos}\n\nLlegaste al tope de la galería. Quitá una foto o revisá {{link:plans:accommodation|los planes para alojamientos}}.\n\n### No encuentro dónde cargar las fotos {#donde-cargar}\n\nSi todavía no creaste la publicación, empezá por {{article:create-listing:como-se-hace|crear la publicación}}."
+        },
+        "summary": "Cómo cargar la foto principal y la galería de tu publicación, y qué fotos acepta el editor.",
+        "title": "Subir o cambiar las fotos de una publicación",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "host"
+        ],
+        "covers": [
+          "tool:search_providers"
+        ],
+        "destinations": [
+          {
+            "kind": "providerDirectory",
+            "label": "Directorio de proveedores"
+          }
+        ],
+        "entryFor": [
+          "page:mi-cuenta/directorio-proveedores"
+        ],
+        "folder": "host",
+        "id": "provider-directory",
+        "keywords": [
+          "directorio",
+          "proveedor",
+          "proveedores",
+          "plomero",
+          "electricista",
+          "cerrajero",
+          "oficios",
+          "servicio tecnico",
+          "beneficio para anfitriones"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "benefit-usage",
+          "benefit-usage-provider"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Buscar proveedores locales de confianza y ver su beneficio para anfitriones en {{link:providerDirectory|Directorio de proveedores}}.",
+          "expect": "- Necesitás tener alojamientos registrados para ver el directorio.\n- Cada proveedor muestra su beneficio, su horario y las valoraciones de otros anfitriones.\n- Después de usar un servicio, {{article:benefit-usage|registrás el uso del beneficio}}.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Entrá a «Directorio de proveedores»: son proveedores locales de confianza para tu alojamiento. Necesitás tener alojamientos registrados para verlo.",
+              "Elegí un proveedor para ver su beneficio para anfitriones, su horario y las valoraciones de otros anfitriones.",
+              "Después de usar su servicio, registrá el uso del beneficio (mirá «Registrar y confirmar usos de un beneficio»).",
+              "Cuando el proveedor confirma un uso, vas a poder valorarlo. Las valoraciones las escriben anfitriones con un uso confirmado."
+            ]
+          },
+          "notExpect": "- Valorar a un proveedor sin un uso confirmado.\n- Que un asistente registre usos por vos.",
+          "troubleshooting": "### El directorio está vacío {#vacio}\n\nRevisá que tengas un alojamiento registrado.\n\n### Soy proveedor y quiero aparecer {#soy-proveedor}\n\nMirá {{article:benefit-usage-provider|la ayuda para proveedores}}."
+        },
+        "summary": "Qué proveedores locales ves en el directorio, qué beneficio ofrecen y cómo se valoran.",
+        "title": "Usar el directorio de proveedores",
+        "translation": null,
+        "verticals": []
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "entitlement:publish_accommodations",
+          "entitlement:publish_experience",
+          "entitlement:publish_venue",
+          "page:mi-cuenta/comercio",
+          "page:mi-cuenta/propiedades",
+          "section:accommodation.ubicacion",
+          "section:venue.ubicacion"
+        ],
+        "destinations": [
+          {
+            "kind": "ownerListings",
+            "label": "Mis propiedades",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "ownerListings",
+            "label": "Mi comercio",
+            "vertical": "venue"
+          },
+          {
+            "kind": "ownEditorSection",
+            "label": "Ubicación",
+            "section": "location",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "ownEditorSection",
+            "label": "Ubicación",
+            "section": "location",
+            "vertical": "venue"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para alojamientos",
+            "vertical": "accommodation"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para comercios",
+            "vertical": "venue"
+          },
+          {
+            "kind": "plans",
+            "label": "Planes para experiencias",
+            "vertical": "experience"
+          }
+        ],
+        "entryFor": [],
+        "folder": "common",
+        "id": "publish-requirements",
+        "keywords": [
+          "requisitos",
+          "no puedo publicar",
+          "no me deja publicar",
+          "faltan datos",
+          "falta completar",
+          "publicar",
+          "incompleta",
+          "incompleto",
+          "excepcion",
+          "misma direccion"
+        ],
+        "locale": "es",
+        "public": true,
+        "related": [
+          "create-listing",
+          "photos",
+          "change-plan",
+          "fix-request"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
+          "expect": "- El editor marca cada sección incompleta y la tarjeta de la publicación también.\n- Publicar pide un plan activo o la prueba gratis; si no te corresponde la prueba, te lleva a elegir un plan.\n- Un pedido de excepción lo revisa Hospeda y te responde por email.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "Alojamientos: hace falta la descripción, la cantidad de huéspedes, las noches mínimas, las habitaciones, los baños y la foto principal.",
+              "Comercios y experiencias: nombre, resumen (mínimo 10 caracteres), descripción (mínimo 20), ciudad o destino, categoría, foto principal y un canal de contacto. En comercios cuenta cualquier teléfono, WhatsApp o email; en experiencias solo el teléfono de trabajo, el celular o el email de trabajo (el WhatsApp no cuenta).",
+              "Los comercios además necesitan horarios (al menos un día con un turno) y un rango de precios. Las experiencias, un precio «desde» mayor a cero o marcar «Precio a consultar».",
+              "Lo que falta se ve en el editor, que marca cada sección, y en la tarjeta de la publicación. Si publicás con datos faltantes, el sitio te lista cuáles y el botón «Completar en el editor» te lleva a arreglarlos.",
+              "Publicar también requiere un plan activo. Si te corresponde la prueba gratis, arranca al publicar; si no, el botón te lleva a elegir un plan.",
+              "Una dirección por publicación (alojamientos y comercios): si ya tenés otra publicada en la misma dirección, el sitio no te deja publicar. Podés pedir una excepción desde la sección «Ubicación» del editor o desde el botón de publicar; el pedido lo revisa Hospeda y te responde por email.",
+              "Cuando esté lista, tocá «Publicar» en la tarjeta y confirmá."
+            ]
+          },
+          "notExpect": "- Que una publicación incompleta salga publicada.\n- Publicar dos alojamientos o comercios en la misma dirección sin una excepción aprobada.",
+          "troubleshooting": "### El botón de publicar me lleva a los planes {#sin-plan}\n\nNo tenés un plan activo ni prueba disponible. Revisá {{link:plans:accommodation|los planes}} o {{article:change-plan|cómo cambiar tu plan}}.\n\n### Me falta la foto principal {#falta-foto}\n\nCargala como explica {{article:photos:como-se-hace|la ayuda de fotos}}.\n\n### Hospeda moderó mi publicación {#moderada}\n\nMirá {{article:fix-request|qué hacer ante una moderación}}."
+        },
+        "summary": "Los datos obligatorios de cada rubro, la cobertura de plan y la regla de una dirección por publicación.",
+        "title": "Qué hace falta para publicar y por qué no me deja",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      },
+      {
+        "audiences": [
+          "experience",
+          "host",
+          "venue"
+        ],
+        "covers": [
+          "entitlement:read_reviews",
+          "entitlement:respond_reviews",
+          "tool:list_reviews"
+        ],
+        "destinations": [],
+        "entryFor": [],
+        "folder": "common",
+        "id": "reviews",
+        "keywords": [
+          "reseña",
+          "reseñas",
+          "resena",
+          "resenas",
+          "opinion",
+          "opiniones",
+          "valoracion",
+          "calificacion",
+          "responder reseña",
+          "comentarios de huespedes"
+        ],
+        "locale": "es",
+        "public": false,
+        "related": [
+          "ai-assistants",
+          "inquiries"
+        ],
+        "reviewedAt": "2026-11-20",
+        "sections": {
+          "canDo": "Leer las reseñas de tus publicaciones con un asistente de IA conectado (mirá {{article:ai-assistants|cómo conectarlo}}), filtradas por publicación, rubro, puntaje, fecha o estado.",
+          "expect": "- Cada reseña muestra su estado: publicada, pendiente de aprobación o rechazada.\n- Solo las aprobadas se ven en el sitio.",
+          "howTo": {
+            "after": "",
+            "steps": [
+              "El portal no tiene una pantalla con las reseñas que recibieron tus publicaciones: «Mis reseñas» muestra las que escribiste vos como usuario.",
+              "Pedile a este asistente que te muestre las reseñas de tus publicaciones. Puede filtrar por publicación, rubro, puntaje, fecha y estado.",
+              "Cada reseña indica su estado: publicada, pendiente de aprobación o rechazada. Solo las aprobadas se ven en el sitio.",
+              "Hospeda no permite que el propietario responda las reseñas de sus publicaciones, ni desde el portal ni desde el asistente."
+            ]
+          },
+          "notExpect": "- Una pantalla del portal con las reseñas de tus publicaciones.\n- Responder reseñas, ni desde el portal ni desde el asistente.",
+          "troubleshooting": "### «Mis reseñas» no muestra las de mis huéspedes {#mis-resenas}\n\nEsa pantalla lista las reseñas que escribiste vos. Para hablar con un huésped, usá {{article:inquiries|los mensajes de huéspedes}}."
+        },
+        "summary": "Cómo ver hoy las reseñas de tus publicaciones y por qué todavía no se pueden responder.",
+        "title": "Ver las reseñas de mis publicaciones",
+        "translation": null,
+        "verticals": [
+          "accommodation",
+          "experience",
+          "venue"
+        ]
+      }
+    ]
+  },
+  "version": 1
+}
