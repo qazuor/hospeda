@@ -241,6 +241,10 @@ export default defineConfig({
                 '@repo/logger': resolve(rootDir, 'packages/logger/src'),
                 '@repo/i18n': resolve(rootDir, 'packages/i18n/src'),
                 '@repo/schemas': resolve(rootDir, 'packages/schemas/src'),
+                // HOS-2410: the help center reads the help index and the portal
+                // route map from source, like the packages above.
+                '@repo/help': resolve(rootDir, 'packages/help/src'),
+                '@repo/portal-routes': resolve(rootDir, 'packages/portal-routes/src'),
                 '@repo/service-core': resolve(rootDir, 'packages/service-core/src')
             }
         },

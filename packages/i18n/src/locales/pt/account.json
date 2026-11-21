@@ -157,7 +157,8 @@
         "myEvents": "Meus eventos",
         "provider": "Minha ficha de fornecedor",
         "repeatTour": "Repetir tour",
-        "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta"
+        "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
+        "help": "Ajuda"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -1886,6 +1887,52 @@
             "messages": "Voltar para as minhas consultas",
             "ownerMessages": "Voltar para as consultas das minhas propriedades",
             "listings": "Voltar para as minhas publicações"
+        }
+    },
+    "help": {
+        "landing": {
+            "title": "Ajuda para publicar no Hospeda",
+            "description": "Tudo o que você pode fazer, como fazer e o que esperar.",
+            "tabsLabel": "Tipo de conta",
+            "emptyAudience": "Ainda estamos escrevendo a ajuda para este tipo de conta."
+        },
+        "audiences": {
+            "host": "Hospedagens",
+            "venue": "Comer e sair",
+            "experience": "Experiências",
+            "provider": "Fornecedores",
+            "partner": "Parceiros"
+        },
+        "audiencesLabel": "Para quem",
+        "search": {
+            "label": "Buscar na ajuda",
+            "placeholder": "Por exemplo: como envio fotos",
+            "onlyMine": "Só para o meu tipo de conta",
+            "results_one": "{{count}} resultado encontrado",
+            "results_other": "{{count}} resultados encontrados",
+            "noMatch": "Não encontramos ajuda para isso",
+            "submit": "Pesquisar"
+        },
+        "fallback": {
+            "title": "Não encontrou o que procurava?",
+            "faq": "Ver as perguntas frequentes",
+            "contact": "Escreva para nós"
+        },
+        "article": {
+            "breadcrumbRoot": "Ajuda",
+            "breadcrumbLabel": "Caminho da ajuda",
+            "reviewedAt": "Revisado em {{date}}",
+            "tocLabel": "Neste artigo",
+            "tocToggle": "Índice do artigo",
+            "pagesTitle": "Telas do app",
+            "faqLink": "Veja também nas perguntas frequentes",
+            "onlySpanish": "Este artigo por enquanto está disponível só em espanhol.",
+            "limitNeutral": "o limite do seu plano",
+            "unlimited": "sem limite",
+            "title": "Ajuda: {{title}}"
+        },
+        "link": {
+            "ariaLabel": "Ajuda: {{title}} (abre em uma nova aba)"
         }
     }
 }

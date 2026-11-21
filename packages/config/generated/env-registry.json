@@ -4677,6 +4677,22 @@
       "howToObtainEs": "Lo setean automáticamente GitHub Actions y la mayoría de los runners de CI. NO lo seteés a mano. El código lo usa para apagar prompts interactivos en scripts."
     },
     {
+      "name": "INIT_CWD",
+      "description": "Directory pnpm was invoked from; the @repo/help export CLI resolves its relative output path against it",
+      "descriptionEs": "Directorio desde el que se invocó pnpm; el CLI de export de @repo/help resuelve su ruta de salida relativa contra él",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "platformInjected": true,
+      "exampleValue": "/home/user/projects/hospeda",
+      "apps": [
+        "docker"
+      ],
+      "category": "system",
+      "howToObtain": "Set automatically by pnpm/npm when running a package script. Do NOT set manually. Falls back to process.cwd() when absent.",
+      "howToObtainEs": "Lo setea pnpm/npm automáticamente al correr un script de paquete. NO lo seteés a mano. Si falta, se usa process.cwd()."
+    },
+    {
       "name": "TEST_DB_URL",
       "description": "PostgreSQL connection string for E2E test database setup scripts",
       "descriptionEs": "Connection string de PostgreSQL para los scripts de setup de la DB de tests E2E",

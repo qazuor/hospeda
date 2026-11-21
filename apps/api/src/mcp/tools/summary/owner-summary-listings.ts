@@ -10,10 +10,10 @@
  * one per listing (AC-C32).
  */
 
+import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { evaluateListingsPublishCompleteness } from '../../../services/listing-publication/listing-publish-completeness-batch';
 import { env } from '../../../utils/env';
-import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import type { MyListingRows } from '../listing/list-my-listings';
 import { editorLink, firstMissingSection } from '../listing/listing-refusal-actions';
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from '../listing/listing-services';

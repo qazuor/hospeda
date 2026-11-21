@@ -17,26 +17,53 @@
  * Do NOT also render a bespoke page-level `<h1>`/`<h2>` — this component owns
  * that role. Sub-section headings inside islands/cards stay at `<h2>`/`<h3>`
  * and are unaffected.
+ *
+ * HOS-2410 (`docs/web-ui.md` §6): the title row carries the «?» `HelpLink`. Its
+ * anchor defaults to the page's own `page:` anchor, derived from
+ * `Astro.routePattern`; the editor shell passes a `section:` anchor instead, and
+ * `null` turns it off. `HelpLink` renders nothing when no article claims the
+ * anchor, so exempt pages and pages outside `/mi-cuenta` get no «?».
  */
+
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
     /** The page's single canonical heading text. */
     readonly title: string;
     /** Optional muted subtitle/description rendered below the title. */
     readonly description?: string;
+    /**
+     * The «?» anchor. `undefined` derives the page anchor from the route;
+     * `null` renders no «?».
+     */
+    readonly helpAnchor?: string | null;
 }
 
-const { title, description } = Astro.props;
+const { title, description, helpAnchor } = Astro.props;
+const locale = Astro.locals.locale as SupportedLocale;
+const anchor =
+    helpAnchor === undefined ? pageHelpAnchor({ routePattern: Astro.routePattern }) : helpAnchor;
 ---
 
-<header class="account-page-header">
-    <h1 class="account-page-header__title">{title}</h1>
+<header class="account-page-header" data-account-page-header>
+    <div class="account-page-header__row">
+        <h1 class="account-page-header__title">{title}</h1>
+        <HelpLink anchor={anchor} locale={locale} />
+    </div>
     {description && <p class="account-page-header__description">{description}</p>}
 </header>
 
 <style>
     .account-page-header {
         margin: 0 0 var(--space-6);
+    }
+
+    .account-page-header__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
     }
 
     .account-page-header__title {

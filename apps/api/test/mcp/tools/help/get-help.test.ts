@@ -208,27 +208,45 @@ describe('get_help', () => {
             // Act
             const result = await answer({ question: 'cómo subo fotos' });
 
-            // Assert
+            // Assert: the editor links first, then the plans page the body's
+            // tokens name (HOS-2410 PR-12, AC-20).
             expect(result.topics[0]?.id).toBe('photos');
             expect(result.topics[0]?.links.map((link) => link.url)).toEqual([
                 `${site()}/es/mi-cuenta/propiedades/${ACC_ID}/editar/fotos/`,
                 `${site()}/es/mi-cuenta/comercio/venue/${VEN_ID}/editar/fotos/`,
-                `${site()}/es/mi-cuenta/comercio/experience/${EXP_ID}/editar/fotos/`
+                `${site()}/es/mi-cuenta/comercio/experience/${EXP_ID}/editar/fotos/`,
+                `${site()}/es/planes/anfitriones/`
             ]);
             expect(result.topics[0]?.steps.length).toBeGreaterThan(0);
             expect(result.fallbackLinks).toBeUndefined();
             expect(result.note).toBeUndefined();
         });
 
-        it('returns at most three topics, with id, title, steps and links', async () => {
+        it('returns at most three topics: the first with the body, the others brief (AC-18)', async () => {
             // Act
             const result = await answer({ question: 'quiero publicar mi alojamiento' });
 
             // Assert
-            expect(result.topics.length).toBeGreaterThan(0);
+            expect(result.topics.length).toBeGreaterThan(1);
             expect(result.topics.length).toBeLessThanOrEqual(3);
-            for (const topic of result.topics) {
-                expect(Object.keys(topic).sort()).toEqual(['id', 'links', 'steps', 'title']);
+            const [first, ...others] = result.topics;
+            expect(Object.keys(first ?? {}).sort()).toEqual([
+                'id',
+                'links',
+                'related',
+                'sections',
+                'steps',
+                'summary',
+                'title'
+            ]);
+            for (const topic of others) {
+                expect(Object.keys(topic).sort()).toEqual([
+                    'id',
+                    'links',
+                    'steps',
+                    'summary',
+                    'title'
+                ]);
             }
         });
 
@@ -259,7 +277,8 @@ describe('get_help', () => {
 
             // Assert: the other user owns only the "Hotel Ajeno" accommodation.
             expect(result.topics[0]?.links.map((link) => link.url)).toEqual([
-                `${site()}/es/mi-cuenta/propiedades/${FOREIGN_ACC_ID}/editar/fotos/`
+                `${site()}/es/mi-cuenta/propiedades/${FOREIGN_ACC_ID}/editar/fotos/`,
+                `${site()}/es/planes/anfitriones/`
             ]);
             expect(JSON.stringify(result)).not.toContain(ACC_ID);
         });
@@ -276,7 +295,8 @@ describe('get_help', () => {
             expect(result.topics[0]?.links.map((link) => link.url)).toEqual([
                 `${site()}/es/publicar/`,
                 `${site()}/es/publicar/comer-y-salir/`,
-                `${site()}/es/publicar/experiencias/`
+                `${site()}/es/publicar/experiencias/`,
+                `${site()}/es/planes/anfitriones/`
             ]);
         });
 
@@ -311,7 +331,8 @@ describe('get_help', () => {
             expect(result.topics[0]?.id).toBe('photos');
             expect(result.topics[0]?.links.map((link) => link.url)).toEqual([
                 `${site()}/es/mi-cuenta/propiedades/`,
-                `${site()}/es/mi-cuenta/comercio/`
+                `${site()}/es/mi-cuenta/comercio/`,
+                `${site()}/es/planes/anfitriones/`
             ]);
         });
 

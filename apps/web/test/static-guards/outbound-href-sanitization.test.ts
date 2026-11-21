@@ -112,6 +112,8 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`buildAdminPanelItem` over the same admin origin',
     'components/host/PropertyCard.astro#{viewOnSiteUrl}':
         '`buildUrl` — an internal accommodation page opened in a new tab',
+    'components/account/help/HelpLink.astro#{helpArticlePath({ id: entry.id, locale })}':
+        '`helpArticlePath` (lib/help/help-tokens.ts) composes an internal `mi-cuenta/ayuda/<id>` path with `buildUrl`; outbound only because the "?" opens the article in a new tab (HOS-2410)',
     'components/host/host-trades/TradeCard.tsx#{contactHref}':
         '`resolveContactHref` in this same file: it asks the sanitizer first and degrades everything else to `tel:`',
     'components/destination/DestinationPOIFilter.client.tsx#{href}':

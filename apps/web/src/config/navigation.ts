@@ -28,6 +28,7 @@ import {
     CreditCardIcon,
     DashboardIcon,
     EventIcon,
+    FaqsIcon,
     FavoriteIcon,
     HomeIcon,
     MegaphoneIcon,
@@ -175,6 +176,16 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.whatsNew',
                 href: 'mi-cuenta/novedades',
                 icon: SparkleIcon,
+                surfaces: FULL_SURFACES
+            },
+            {
+                // HOS-2410 web-ui §5. No `requiredPermission`: provider and
+                // partner status is row-based, so the server cannot gate it. A
+                // tourist who opens it lands on a page that says who it is for.
+                id: 'help',
+                i18nKey: 'account.nav.help',
+                href: 'mi-cuenta/ayuda',
+                icon: FaqsIcon,
                 surfaces: FULL_SURFACES
             },
             {

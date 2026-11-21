@@ -16,15 +16,14 @@
  * is better than none.
  */
 
+import type { HelpArticle, HelpDestination } from '@repo/help';
+import type { PortalDestination, PortalListingVertical } from '@repo/portal-routes';
+import { buildPortalUrl, describePortalDestination, type PortalLocale } from '@repo/portal-routes';
 import { PublicationStatusEnum } from '@repo/schemas';
-import type {
-    OwnerHelpCallerAudience,
-    OwnerHelpDestination,
-    OwnerHelpTopic
-} from '../../../data/owner-help/owner-help.types';
-import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
-import { describePortalDestination } from '../../portal/portal-destination';
-import type { PortalDestination, PortalListingVertical } from '../../portal/portal-routes';
+import type { OwnerHelpCallerAudience } from './help-audience';
+
+/** The part of a help article its links are built from. */
+export type HelpLinkSource = Pick<HelpArticle, 'destinations' | 'faqKey'>;
 
 /** A link in a help answer. */
 export interface HelpLink {
@@ -54,18 +53,19 @@ const VERTICAL_NOUN: Readonly<Record<PortalListingVertical, string>> = {
     experience: 'experiencia'
 };
 
-/** The vertical a kind of owner works in. A provider has none. */
+/** The listing vertical a kind of owner works in. A provider and a partner have none. */
 const AUDIENCE_VERTICAL: Readonly<
     Record<OwnerHelpCallerAudience, PortalListingVertical | undefined>
 > = {
     host: 'accommodation',
     venue: 'venue',
     experience: 'experience',
-    provider: undefined
+    provider: undefined,
+    partner: undefined
 };
 
 /** The vertical a destination is about, when it is about one. */
-function verticalOf(destination: OwnerHelpDestination): PortalListingVertical | undefined {
+function verticalOf(destination: HelpDestination): PortalListingVertical | undefined {
     return 'vertical' in destination ? destination.vertical : undefined;
 }
 
@@ -74,7 +74,7 @@ function destinationFitsAudience({
     destination,
     audience
 }: {
-    readonly destination: OwnerHelpDestination;
+    readonly destination: HelpDestination;
     readonly audience?: OwnerHelpCallerAudience;
 }): boolean {
     const vertical = verticalOf(destination);
@@ -109,7 +109,7 @@ function toLink({
 /** Arguments for {@link buildHelpLinks}. RO-RO. */
 export interface BuildHelpLinksArgs {
     /** The topic. */
-    readonly topic: OwnerHelpTopic;
+    readonly topic: HelpLinkSource;
     /** The kind of owner asking; omit for every vertical. */
     readonly audience?: OwnerHelpCallerAudience;
     /**
@@ -134,7 +134,7 @@ export function topicNeedsOwnListings({
     topic,
     audience
 }: {
-    readonly topic: OwnerHelpTopic;
+    readonly topic: HelpLinkSource;
     readonly audience?: OwnerHelpCallerAudience;
 }): boolean {
     return topic.destinations.some(
@@ -144,32 +144,37 @@ export function topicNeedsOwnListings({
     );
 }
 
+/** What {@link collectDestinationLinks} found. */
+interface CollectedLinks {
+    /** The links, in destination order, not yet deduplicated. */
+    readonly links: readonly HelpLink[];
+    /** The vertical of every editor-section destination that applied. */
+    readonly editorVerticals: readonly PortalListingVertical[];
+}
+
 /**
- * The links of one topic.
- *
- * - A portal page becomes one link.
- * - An editor section becomes one link per listing the caller owns in that
- *   vertical (at most {@link HELP_LINKS_MAX_LISTINGS_PER_VERTICAL}). When the
- *   listings could not be read it becomes the list of listings of the vertical.
- *   When the caller has none, it is left out, and if that leaves the topic with
- *   no link at all the publish page of those verticals is offered instead.
- * - A topic that extends a FAQ item ends with the FAQ page.
- * - Links to the same page are listed once.
- *
- * @param args - The topic, the audience, the caller's listings and the site URL
- * @returns The links, in the topic's order
+ * Expands destinations into links: a portal page becomes one link, an editor
+ * section one link per editable listing of the caller in that vertical (or the
+ * list of listings when the listings could not be read). Destinations of
+ * another audience are skipped.
  */
-export function buildHelpLinks({
-    topic,
+function collectDestinationLinks({
+    destinations,
     audience,
     ownListings,
     siteUrl,
     locale
-}: BuildHelpLinksArgs): readonly HelpLink[] {
+}: {
+    readonly destinations: readonly HelpDestination[];
+    readonly audience?: OwnerHelpCallerAudience;
+    readonly ownListings?: readonly HelpOwnListing[];
+    readonly siteUrl: string;
+    readonly locale?: PortalLocale;
+}): CollectedLinks {
     const links: HelpLink[] = [];
     const editorVerticals: PortalListingVertical[] = [];
 
-    for (const destination of topic.destinations) {
+    for (const destination of destinations) {
         if (!destinationFitsAudience({ destination, audience })) {
             continue;
         }
@@ -216,9 +221,54 @@ export function buildHelpLinks({
             }
         }
     }
+    return { links, editorVerticals };
+}
+
+/** The links with every URL listed once, first occurrence kept. */
+function dedupeLinks(links: readonly HelpLink[]): readonly HelpLink[] {
+    const seen = new Set<string>();
+    return links.filter((link) => {
+        if (seen.has(link.url)) {
+            return false;
+        }
+        seen.add(link.url);
+        return true;
+    });
+}
+
+/**
+ * The links of one topic.
+ *
+ * - A portal page becomes one link.
+ * - An editor section becomes one link per listing the caller owns in that
+ *   vertical (at most {@link HELP_LINKS_MAX_LISTINGS_PER_VERTICAL}). When the
+ *   listings could not be read it becomes the list of listings of the vertical.
+ *   When the caller has none, it is left out, and if that leaves the topic with
+ *   no link at all the publish page of those verticals is offered instead.
+ * - A topic that extends a FAQ item ends with the FAQ page.
+ * - Links to the same page are listed once.
+ *
+ * @param args - The topic, the audience, the caller's listings and the site URL
+ * @returns The links, in the topic's order
+ */
+export function buildHelpLinks({
+    topic,
+    audience,
+    ownListings,
+    siteUrl,
+    locale
+}: BuildHelpLinksArgs): readonly HelpLink[] {
+    const collected = collectDestinationLinks({
+        destinations: topic.destinations,
+        audience,
+        ownListings,
+        siteUrl,
+        locale
+    });
+    const links = [...collected.links];
 
     if (links.length === 0) {
-        for (const vertical of new Set(editorVerticals)) {
+        for (const vertical of new Set(collected.editorVerticals)) {
             const link = toLink({
                 destination: { kind: 'createListing', vertical },
                 siteUrl,
@@ -237,14 +287,55 @@ export function buildHelpLinks({
         }
     }
 
-    const seen = new Set<string>();
-    return links.filter((link) => {
-        if (seen.has(link.url)) {
-            return false;
-        }
-        seen.add(link.url);
-        return true;
+    return dedupeLinks(links);
+}
+
+/** Arguments for {@link appendTokenHelpLinks}. RO-RO. */
+export interface AppendTokenHelpLinksArgs {
+    /** The topic's own links, from {@link buildHelpLinks}. They stay first and unchanged. */
+    readonly links: readonly HelpLink[];
+    /** The destinations the topic's returned text names through its tokens. */
+    readonly tokenDestinations: readonly HelpDestination[];
+    /** The kind of owner asking; omit for every vertical. */
+    readonly audience?: OwnerHelpCallerAudience;
+    /** The caller's own listings, as for {@link buildHelpLinks}. */
+    readonly ownListings?: readonly HelpOwnListing[];
+    /** Public base URL of the web app. */
+    readonly siteUrl: string;
+    /** Locale prefix of the links. Defaults to `es`. */
+    readonly locale?: PortalLocale;
+}
+
+/**
+ * Appends the destinations a topic's tokens name to its links (HOS-2410
+ * `docs/data-model.md` §5.2): the text of a resolved `{{link}}` token keeps
+ * only its label, so its URL travels here. They expand like the topic's own
+ * destinations (an editor section is filled in from the caller's listings) but
+ * never add the publish-page fallback or the FAQ page, and a URL already in
+ * `links` is not repeated. The existing links keep their order and come first,
+ * so a caller that read the old answer reads the same links at the same
+ * positions.
+ *
+ * @param args - The topic's links, its token destinations, the audience, the
+ *   caller's listings and the site URL
+ * @returns The links with the token links appended
+ */
+export function appendTokenHelpLinks({
+    links,
+    tokenDestinations,
+    audience,
+    ownListings,
+    siteUrl,
+    locale
+}: AppendTokenHelpLinksArgs): readonly HelpLink[] {
+    const collected = collectDestinationLinks({
+        destinations: tokenDestinations,
+        audience,
+        ownListings,
+        siteUrl,
+        locale
     });
+    return dedupeLinks([...links, ...collected.links]);
 }
 
 /**
