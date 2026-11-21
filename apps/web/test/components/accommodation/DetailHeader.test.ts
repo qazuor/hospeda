@@ -82,7 +82,15 @@ describe('accommodation mobile title block (AC-1.19)', () => {
     it('only puts badges in the tab sequence on mobile, including after client navigation', () => {
         const page = document.implementation.createHTMLDocument();
         const breakpoint = Object.assign(new EventTarget(), { matches: false });
-        const script = src.match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? '';
+        // Slice the component's own inline script out of its source. This reads a
+        // trusted repo file, not untrusted HTML, so plain index lookups suffice.
+        const scriptOpen = '<script>';
+        const scriptStart = src.indexOf(scriptOpen);
+        const scriptEnd = src.indexOf('</script>', scriptStart);
+        const script =
+            scriptStart >= 0 && scriptEnd > scriptStart
+                ? src.slice(scriptStart + scriptOpen.length, scriptEnd)
+                : '';
         const badgeMarkup = `${badges ?? ''}</div>`;
         const tabIndex = () =>
             page.querySelector('.detail-header__badges')?.getAttribute('tabindex');
