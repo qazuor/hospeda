@@ -1,7 +1,11 @@
 import { trans } from '@repo/i18n';
 import { PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
-import type { PurchaseAddonRefusalReason } from '@repo/service-core';
+import {
+    PURCHASE_IDENTITY_BUSY_REASON,
+    type PurchaseAddonRefusalReason,
+    ServiceError
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { resolveReturnUrlLocale } from '../../utils/return-url-locale';
@@ -19,7 +23,8 @@ type AddonPurchaseCopyKey =
     | 'providerRejected'
     | 'pageRejected'
     | 'providerBusy'
-    | 'providerUnavailable';
+    | 'providerUnavailable'
+    | 'identityBusy';
 
 /** Reads API copy in the request locale, failing if a catalog entry is missing. */
 export function readAddonPurchaseCopy(ctx: Context, key: AddonPurchaseCopyKey): string {
@@ -66,12 +71,26 @@ export function answerPurchaseRefusal(input: {
  * Mirrors S1's provider rejection and transient failure contract, for the recurring checkout
  * (`authorize`) and the one-time payment page (`charge`, HOS-2179). A refused page creation
  * has already released the purchase, so the screen mints a new order id (HOS-2321).
+ *
+ * It also answers A1's purchase-identity wait that ran out (HOS-2518): a 503 with its own reason
+ * and localized copy, never the service's English message. That request created nothing, so the
+ * screen keeps its order id.
  */
 export function answerAddonProviderError(input: {
     readonly error: unknown;
     readonly ctx: Context;
 }): Response {
     const { error, ctx } = input;
+    if (error instanceof ServiceError && error.reason === PURCHASE_IDENTITY_BUSY_REASON)
+        return createErrorResponse(
+            {
+                code: ServiceErrorCode.SERVICE_UNAVAILABLE,
+                message: readAddonPurchaseCopy(ctx, 'identityBusy'),
+                reason: PURCHASE_IDENTITY_BUSY_REASON
+            },
+            ctx,
+            503
+        );
     if (
         error instanceof PaymentProviderError &&
         (error.capability === 'authorize' || error.capability === 'charge')

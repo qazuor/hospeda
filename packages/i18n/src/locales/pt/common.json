@@ -150,7 +150,8 @@
         "NO_TRIAL": "Não encontramos um período de teste ativo para estender.",
         "TRIAL_ENDED": "Seu período de teste terminou.",
         "CEILING_REACHED": "Este código ultrapassa o limite de extensão do seu período de teste.",
-        "REDEMPTION_KEY_CONFLICT": "Esta extensão conflita com um resgate anterior."
+        "REDEMPTION_KEY_CONFLICT": "Esta extensão conflita com um resgate anterior.",
+        "PURCHASE_IDENTITY_BUSY": "Outra compra deste complemento estava sendo atualizada agora. Tente novamente em alguns segundos."
     },
     "filters": "Filtros",
     "filterChips": {
