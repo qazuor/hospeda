@@ -40,8 +40,13 @@ import type { OwnListingRow } from './get-listing';
 import { findCreationDestination, listingTypeLabel } from './listing-creation-catalog';
 import type { ListingToolVertical } from './listing-services';
 
-/** Tool name, also the binding's `tool`. */
-export const SET_LISTING_PUBLICATION_TOOL_NAME = 'set_listing_publication';
+/**
+ * Tool name, also the binding's `tool`. The type annotation is deliberate: the
+ * help-coverage guard (b4) takes the name from the file that calls `defineTool`
+ * (`set-listing-publication.ts`) and would otherwise find it defined twice.
+ */
+export const SET_LISTING_PUBLICATION_TOOL_NAME: 'set_listing_publication' =
+    'set_listing_publication';
 
 /** Reason of the refusal of a token that cannot be used. */
 export const PUBLISH_CONFIRMATION_INVALID_REASON = 'CONFIRMATION_INVALID';

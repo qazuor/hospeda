@@ -292,9 +292,12 @@ function summarize(input: {
  * `set_listing_publication`: a write that can hide a listing (`pause`), so it
  * is destructive for the client. Not idempotent: `resume` on an archived
  * listing first returns it to draft, and repeating it then publishes it.
+ *
+ * The name is a literal because the help-coverage guard (b4) reads it from this
+ * file's source; `satisfies` keeps it equal to the shared constant.
  */
 export const setListingPublicationTool = defineTool({
-    name: SET_LISTING_PUBLICATION_TOOL_NAME,
+    name: 'set_listing_publication' satisfies typeof SET_LISTING_PUBLICATION_TOOL_NAME,
     title: 'Pausar o reanudar una publicación',
     description:
         "Pauses or resumes one listing the connected Hospeda user owns. pause hides a published listing from the public site (it becomes a draft); pausing a listing that is not online changes nothing. resume puts a draft listing, or one paused for lack of payment, back online; resuming a listing that is already online changes nothing. Putting a listing online is two steps: the first resume publishes nothing and answers a preview with a confirmationToken; tell the user it will become public and, only after they explicitly approve, call again with the same vertical, id and action plus the confirmationToken (some apps instead show the user their own confirmation form: then there is no token, and it goes online only if the user confirms there). Never confirm on the user's behalf. pause runs in one step. An archived listing returns to draft on the first resume (one step) and goes online on a second one. Going online needs an active plan or the free trial and a free slot in the plan; when Hospeda refuses, the answer explains why. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings. Answers with the state before and after and the public URL when the listing is online.",
