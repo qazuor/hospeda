@@ -249,6 +249,37 @@ export function AddonPurchase(input: {
         setView('SUMMARY');
     };
 
+    /**
+     * HOS-2441: the step a "Back" from the current one returns to. A single eligible
+     * subscription is auto-selected (no picker was shown), so the summary goes back to the offers.
+     */
+    const backView = ((): View | null => {
+        if (view === 'TARGETS' || view === 'SUBSCRIPTIONS') return 'OFFERS';
+        if (view !== 'SUMMARY') return null;
+        if (target) return 'TARGETS';
+        if (subscriptionTarget && subscriptionTargets.length > 1) return 'SUBSCRIPTIONS';
+        return 'OFFERS';
+    })();
+
+    const goBack = () => {
+        if (!backView || busy) return;
+        setError(null);
+        setPurchasesPaused(false);
+        if (backView === 'OFFERS') {
+            setOffer(null);
+            setTarget(null);
+            setSubscriptionTarget(null);
+            setOrderRequestId(null);
+        } else if (backView === 'TARGETS') {
+            setTarget(null);
+            setOrderRequestId(null);
+        } else if (backView === 'SUBSCRIPTIONS') {
+            setSubscriptionTarget(null);
+            setOrderRequestId(null);
+        }
+        setView(backView);
+    };
+
     /** Known refusal codes and reasons get their localized copy; anything else keeps the API text. */
     const purchaseErrorMessage = (params: { readonly error: ApiErrorShape }): string => {
         const { error } = params;
@@ -347,6 +378,17 @@ export function AddonPurchase(input: {
                 >
                     {error}
                 </p>
+            )}
+            {backView && (
+                <button
+                    type="button"
+                    className={styles.back}
+                    data-testid="addon-purchase-back"
+                    disabled={busy}
+                    onClick={goBack}
+                >
+                    {t('billing.addonPurchase.back')}
+                </button>
             )}
             {view === 'LOADING' && <p>{t('billing.addonPurchase.loading')}</p>}
             {view === 'OFFERS' && (

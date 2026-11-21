@@ -873,6 +873,7 @@
     "addonPurchase": {
         "title": "Buy add-ons",
         "chooseOffer": "Choose an add-on",
+        "back": "Back",
         "noOffers": "No add-ons are available.",
         "chooseTarget": "Choose a listing",
         "noTargets": "No listings are available for this add-on.",

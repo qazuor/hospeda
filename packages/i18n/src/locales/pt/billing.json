@@ -873,6 +873,7 @@
     "addonPurchase": {
         "title": "Comprar complementos",
         "chooseOffer": "Escolha um complemento",
+        "back": "Voltar",
         "noOffers": "Não há complementos disponíveis.",
         "chooseTarget": "Escolha um anúncio",
         "noTargets": "Não há anúncios disponíveis para este complemento.",
