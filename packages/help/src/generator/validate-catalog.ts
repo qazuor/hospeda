@@ -19,6 +19,7 @@ import {
     type HelpFolder,
     type HelpLocale
 } from '../constants';
+import type { HelpDestination } from '../destination.schema';
 import {
     helpDestinationTemplate,
     helpEditorSectionSlug,
@@ -167,12 +168,21 @@ function tokenIssues({
 /** IL-1: every page and section the article covers is linked from its body. */
 function linkCoverageIssues({ entry }: { readonly entry: ParsedHelpEntry }): HelpCatalogIssue[] {
     const { file, frontmatter: article } = entry;
-    const destinations = tokensOf({ body: entry.body })
-        .tokens.filter((token) => token.kind === 'link')
-        .flatMap((token) => {
-            const resolved = resolveHelpLinkTarget({ args: token.args });
-            return resolved.ok ? [resolved.destination] : [];
-        });
+    const destinations = tokensOf({ body: entry.body }).tokens.flatMap(
+        (token): HelpDestination[] => {
+            if (token.kind === 'link') {
+                const resolved = resolveHelpLinkTarget({ args: token.args });
+                return resolved.ok ? [resolved.destination] : [];
+            }
+            // An {{article}} token is a link to the help article page, so it
+            // links `page:mi-cuenta/ayuda/[id]` (no {{link}} target names an
+            // article id).
+            const [id] = token.args;
+            return token.kind === 'article' && id !== undefined
+                ? [{ kind: 'helpArticle', id }]
+                : [];
+        }
+    );
     const issues: HelpCatalogIssue[] = [];
     for (const anchor of new Set([...article.covers, ...article.entryFor])) {
         const [kind, target = ''] = [
