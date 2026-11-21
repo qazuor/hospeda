@@ -27,6 +27,13 @@ describe('sweep serial lock planning', () => {
             ]
         );
     });
+    it('runs the A4 expiry pass alone against every addon writer (HOS-2518)', () => {
+        expect(planSerialLocks({ source: source('addon-a4-expiry.test.ts') })).toContainEqual({
+            key: 1_999_001,
+            mode: 'exclusive'
+        });
+        expect(planSerialLocks({ source: 'expireAddonInstancesX(' })).toEqual([]);
+    });
     it('serializes every file that drives the A3 window pass (HOS-2179)', () => {
         for (const file of ['addon-a3-window.test.ts', 'addon-one-time-page.test.ts'])
             expect(
