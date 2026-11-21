@@ -150,7 +150,8 @@
         "NO_TRIAL": "We couldn't find an active trial to extend.",
         "TRIAL_ENDED": "Your trial has ended.",
         "CEILING_REACHED": "This code exceeds your trial's extension limit.",
-        "REDEMPTION_KEY_CONFLICT": "This extension conflicts with an earlier redemption."
+        "REDEMPTION_KEY_CONFLICT": "This extension conflicts with an earlier redemption.",
+        "PURCHASE_IDENTITY_BUSY": "Another purchase of this add-on was being updated just now. Please try again in a few seconds."
     },
     "filters": "Filters",
     "filterChips": {
