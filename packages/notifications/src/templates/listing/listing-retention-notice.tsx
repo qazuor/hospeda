@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import type { ReactNode } from 'react';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Props of the notice sent before PB4 or PB5 archives a listing. */
 export interface ListingRetentionBeforeArchiveProps {

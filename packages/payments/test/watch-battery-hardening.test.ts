@@ -147,10 +147,9 @@ describe('N1: an id-targeted write acts only on an object THIS RUN created', () 
         expect(writes()).toEqual([]);
     });
 
-    it('refuses a payment refund and an order refund on a foreign id', async () => {
+    it('refuses a payment refund on a foreign id', async () => {
         for (const [path, body] of [
-            ['/v1/payments/real-payment-1/refunds', { amount: 1 }],
-            ['/v1/orders/real-order-1/refund', { transactions: [{ id: 't', amount: '1.00' }] }]
+            ['/v1/payments/real-payment-1/refunds', { amount: 1 }]
         ] as const) {
             const { transport, writes } = provider();
             const result = await run({
@@ -250,42 +249,6 @@ describe('N1: an id-targeted write acts only on an object THIS RUN created', () 
         });
         expect(over.run.reason).toContain('BUDGET_EXCEEDED');
     });
-
-    it('refunds an order only up to what the run charged on that order', async () => {
-        const { transport } = provider();
-        const result = await run({
-            catalog: [
-                money('M1', async (ctx): Promise<JsonValue> => {
-                    const made = await ctx.send({
-                        label: 'order',
-                        request: {
-                            method: 'POST',
-                            path: '/v1/orders',
-                            body: {
-                                type: 'online',
-                                total_amount: '1500.00',
-                                processing_mode: 'automatic',
-                                transactions: { payments: [{ amount: '1500.00' }] }
-                            }
-                        },
-                        chargeMinor: CAP
-                    });
-                    await ctx.send({
-                        label: 'refund',
-                        request: {
-                            method: 'POST',
-                            path: `/v1/orders/${idOf(made)}/refund`,
-                            body: { transactions: [{ id: 't1', amount: '1500.01' }] }
-                        },
-                        refundMinor: 150001
-                    });
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.reason).toContain('BUDGET_EXCEEDED');
-    });
 });
 
 describe('N2: a charge carries exactly the keys its rule allows', () => {
@@ -371,45 +334,6 @@ describe('N2: a charge carries exactly the keys its rule allows', () => {
             payer: { email: 'a@b.test' }
         });
         expect(result.run.outcome).toBe('completed');
-    });
-
-    it.each([
-        [
-            'an extra key',
-            {
-                total_amount: '1500.00',
-                transactions: { payments: [{ amount: '1500.00' }] },
-                expiration_time: 'P1D'
-            }
-        ],
-        [
-            'an extra payment key',
-            {
-                total_amount: '1500.00',
-                transactions: { payments: [{ amount: '1500.00', capture: false }] }
-            }
-        ],
-        [
-            'installments: 12',
-            {
-                total_amount: '1500.00',
-                transactions: {
-                    payments: [{ amount: '1500.00', payment_method: { installments: 12 } }]
-                }
-            }
-        ],
-        [
-            'a manual processing mode',
-            {
-                total_amount: '1500.00',
-                processing_mode: 'manual',
-                transactions: { payments: [{ amount: '1500.00' }] }
-            }
-        ]
-    ])('refuses an order with %s', async (_name, body) => {
-        const { result, writes } = await attempt('/v1/orders', body);
-        expect(result.run.outcome).toBe('aborted');
-        expect(writes()).toEqual([]);
     });
 
     it('refuses a change of amount that carries anything else', async () => {
@@ -923,26 +847,6 @@ describe('n6: amounts in pesos have at most two decimals, as numbers and as stri
     });
 
     it.each([
-        '1.005',
-        '10.123',
-        '1500.',
-        '.5',
-        '1e3',
-        '-1',
-        '1,50',
-        ' 1.00',
-        '0x10'
-    ])('refuses the string %j', async (amount) => {
-        const { result, writes } = await attempt(
-            '/v1/orders',
-            { total_amount: amount, transactions: { payments: [{ amount }] } },
-            100
-        );
-        expect(result.run.outcome).toBe('aborted');
-        expect(writes()).toEqual([]);
-    });
-
-    it.each([
         [1500, 150000],
         [1500.1, 150010],
         [0.01, 1],
@@ -950,20 +854,6 @@ describe('n6: amounts in pesos have at most two decimals, as numbers and as stri
         [0.07, 7]
     ])('accepts the number %s as %s minor units', async (amount, minor) => {
         const { result } = await attempt('/v1/payments', payment(amount), minor);
-        expect(result.run.outcome).toBe('completed');
-    });
-
-    it.each([
-        ['10.5', 1050],
-        ['10.50', 1050],
-        ['0.01', 1],
-        ['1500', 150000]
-    ])('accepts the string %j as %s minor units', async (amount, minor) => {
-        const { result } = await attempt(
-            '/v1/orders',
-            { total_amount: amount, transactions: { payments: [{ amount }] } },
-            minor
-        );
         expect(result.run.outcome).toBe('completed');
     });
 });
@@ -1127,59 +1017,5 @@ describe('F3: every progress record carries the ledger as it stands', () => {
         ]);
         expect(store.progress[0]?.writeKeys).toHaveLength(1);
         expect(store.progress[1]?.writeKeys).toBeUndefined();
-    });
-});
-
-describe('NIT 2: orders.create carries exactly one payment worth the total', () => {
-    it('refuses several payments even when their amounts are equal', async () => {
-        const { transport, writes } = provider();
-        const result = await run({
-            catalog: [
-                money('M1', async (ctx): Promise<JsonValue> => {
-                    await ctx.send({
-                        label: 'order',
-                        request: {
-                            method: 'POST',
-                            path: '/v1/orders',
-                            body: {
-                                total_amount: '1500.00',
-                                transactions: {
-                                    payments: [{ amount: '1500.00' }, { amount: '1500.00' }]
-                                }
-                            }
-                        },
-                        chargeMinor: CAP
-                    });
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.outcome).toBe('aborted');
-        expect(result.run.reason).toContain('OPERATION_NOT_ALLOWED');
-        expect(writes()).toEqual([]);
-    });
-
-    it('refuses an order with no payment', async () => {
-        const { transport, writes } = provider();
-        const result = await run({
-            catalog: [
-                money('M1', async (ctx): Promise<JsonValue> => {
-                    await ctx.send({
-                        label: 'order',
-                        request: {
-                            method: 'POST',
-                            path: '/v1/orders',
-                            body: { total_amount: '1500.00', transactions: { payments: [] } }
-                        },
-                        chargeMinor: CAP
-                    });
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.outcome).toBe('aborted');
-        expect(writes()).toEqual([]);
     });
 });

@@ -1,6 +1,6 @@
 import { Hr, Link, Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for NewsletterCampaign template (wrapper)

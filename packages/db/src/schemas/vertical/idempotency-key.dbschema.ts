@@ -4,6 +4,7 @@ import { quotedList } from './quoted-list.ts';
 
 export const IDEMPOTENCY_OPERATIONS = [
     'PREAPPROVAL_CREATE',
+    /** No writers since HOS-2179 T-7 (the one-time order path is gone); removed from the CHECK in N+1. */
     'ORDER_CREATE',
     'REFUND_CREATE',
     'PAYMENT_PAGE_CREATE'

@@ -8,7 +8,7 @@ const DAY_MS = 86_400_000;
 
 /**
  * The lower bound of the window of the credited-payments check, and of the
- * paid-orders check (PLAZO:18, HOS-1605 H1 and H15): now minus the 18th
+ * page-payments check (PLAZO:18, HOS-1605 H1 and H15): now minus the 18th
  * deadline's days, read from the deadline version in force (the payment keeps
  * no version of its own). Millisecond arithmetic only.
  *

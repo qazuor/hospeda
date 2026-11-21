@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Props for the CompGranted email template (HOS-1171). */
 export interface CompGrantedProps {
@@ -38,10 +38,7 @@ export function CompGranted({
     baseUrl
 }: CompGrantedProps) {
     return (
-        <EmailLayout
-            previewText={`Tu plan ${planName} queda sin cargo`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Tu plan ${planName} queda sin cargo`}>
             <Heading>Tu plan queda sin cargo</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

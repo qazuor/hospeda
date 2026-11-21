@@ -272,13 +272,12 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
                     provider: fake,
                     clock: reconciliationClock,
                     creditedPayments: {},
-                    paidOrders: {},
                     pauseGifts: {}
                 }
             )
         );
         expect(summary.stoppedOnBudget).toBe(true);
-        expect(summary.skippedPasses).toEqual(['creditedPayments', 'paidOrders', 'pauseGifts']);
+        expect(summary.skippedPasses).toEqual(['creditedPayments', 'pauseGifts']);
     });
 
     it('closes before one successful ping', async () => {

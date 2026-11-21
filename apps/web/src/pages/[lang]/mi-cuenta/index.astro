@@ -518,6 +518,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         resolveDashboardFreeCard,
         resolveDashboardPlanStat
     } from '@/lib/billing/dashboard-plan-stat';
+    import {
+        markStatsUnavailable,
+        resolveHostStatValues,
+        setStatValue
+    } from '@/lib/dashboard-stat-state';
     import { formatNoticeInstant } from '@/lib/listing/listing-notices';
     import { TrialSummaryResponseSchema, type TrialSummaryResponse } from '@repo/schemas';
     import type { SupportedLocale } from '@/lib/i18n';
@@ -525,21 +530,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         summarizeListingVisibility,
         type ListingWithPublicationStatus
     } from '@/lib/listing/dashboard-listing-counts';
-
-    /**
-     * Fetch user stats from the protected API and update the dashboard counters.
-     * Runs client-side to avoid SSR cookie-forwarding complexity.
-     * Falls back gracefully — default zeros are already rendered server-side.
-     */
-    /**
-     * Clears the `stat-value--loading` shimmer from a list of element IDs.
-     * Mirrors the defensive cleanup used throughout this script.
-     */
-    function clearLoadingState(ids: readonly string[]): void {
-        for (const id of ids) {
-            document.getElementById(id)?.classList.remove('stat-value--loading');
-        }
-    }
 
     /**
      * Reads the owner's trial in every vertical that can hold one
@@ -570,6 +560,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         return reads.flat();
     }
 
+    /**
+     * Fetch user stats from the protected API and update the dashboard counters.
+     * Runs client-side to avoid SSR cookie-forwarding complexity.
+     * A stat whose read fails shows "not available" — never a fabricated 0 (HOS-2424).
+     */
     async function loadStats(): Promise<void> {
         const base = `${getApiUrl()}/api/v1/protected`;
 
@@ -609,8 +604,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 // Tourist-only: favorites counter.
                 const favEl = document.getElementById('stat-favorites');
                 if (favEl && statsData.data?.bookmarkCount !== undefined) {
-                    favEl.textContent = String(statsData.data.bookmarkCount);
-                    favEl.classList.remove('stat-value--loading');
+                    setStatValue({ id: 'stat-favorites', value: String(statsData.data.bookmarkCount) });
                 }
 
                 const subEl = document.getElementById('stat-subscription');
@@ -693,19 +687,24 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 };
                 const revEl = document.getElementById('stat-reviews');
                 if (revEl && reviewsData.data?.totals?.total !== undefined) {
-                    revEl.textContent = String(reviewsData.data.totals.total);
-                    revEl.classList.remove('stat-value--loading');
+                    setStatValue({ id: 'stat-reviews', value: String(reviewsData.data.totals.total) });
                 }
             }
 
             // Defensive: a non-2xx response (e.g. 401/500) runs neither the
             // ok-branches above nor the catch below, which used to leave the
-            // widgets shimmering forever. Clear any remaining loading state so
-            // no stat stays stuck (BETA-32).
-            clearLoadingState(['stat-favorites', 'stat-reviews', 'stat-subscription']);
+            // widgets shimmering forever (BETA-32). Any stat still loading here
+            // has no value: show it as unavailable, never as a made-up 0 (HOS-2424).
+            markStatsUnavailable({
+                ids: ['stat-favorites', 'stat-reviews', 'stat-subscription'],
+                onlyIfLoading: true
+            });
         } catch (error) {
             console.error('[account] Failed to load stats:', error);
-            clearLoadingState(['stat-favorites', 'stat-reviews', 'stat-subscription']);
+            markStatsUnavailable({
+                ids: ['stat-favorites', 'stat-reviews', 'stat-subscription'],
+                onlyIfLoading: true
+            });
         }
 
         // ── Host view: properties + messages counters ────────────────────────
@@ -722,27 +721,29 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                         data?: {
                             properties?: { total?: number };
                             unreadConversations?: number;
+                            unavailable?: string[];
                         };
                     };
 
-                    const propEl = document.getElementById('stat-properties');
-                    if (propEl) {
-                        propEl.textContent = String(hostData.data?.properties?.total ?? 0);
-                        propEl.classList.remove('stat-value--loading');
-                    }
-
-                    const msgEl = document.getElementById('stat-messages');
-                    if (msgEl) {
-                        msgEl.textContent = String(hostData.data?.unreadConversations ?? 0);
-                        msgEl.classList.remove('stat-value--loading');
+                    // A section the API flagged as a failure fallback, or a value
+                    // missing from the payload, is "not available" — never 0.
+                    const hostStats = resolveHostStatValues({ data: hostData.data });
+                    for (const [id, value] of [
+                        ['stat-properties', hostStats.properties],
+                        ['stat-messages', hostStats.messages]
+                    ] as const) {
+                        if (value === null) {
+                            markStatsUnavailable({ ids: [id] });
+                        } else {
+                            setStatValue({ id, value: String(value) });
+                        }
                     }
                 } else {
-                    // Non-2xx: clear shimmer so widgets don't stay stuck.
-                    clearLoadingState(['stat-properties', 'stat-messages']);
+                    markStatsUnavailable({ ids: ['stat-properties', 'stat-messages'] });
                 }
             } catch (error) {
                 console.error('[account] Failed to load host dashboard stats:', error);
-                clearLoadingState(['stat-properties', 'stat-messages']);
+                markStatsUnavailable({ ids: ['stat-properties', 'stat-messages'] });
             }
             return;
         }
@@ -759,37 +760,32 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     fetch(`${base}/experiences/mine`, { credentials: 'include' }),
                 ]);
 
-                // Combine both verticals' listing counts. One vertical's
-                // request failing does not zero the other's count — only both
-                // failing (or a thrown error) falls back to the SSR-rendered
-                // "0" default via the outer catch below.
+                // Combine both verticals' listing counts. If EITHER request
+                // fails the sum is an undercount, so the card shows "not
+                // available" instead of a number that reads as real (HOS-2424).
                 const listings: ListingWithPublicationStatus[] = [];
-                let listingsFetchOk = false;
+                let listingsFetchOk = venueRes.ok && experienceRes.ok;
                 if (venueRes.ok) {
                     const venueData = (await venueRes.json()) as {
                         data?: { listings?: ListingWithPublicationStatus[] };
                     };
                     listings.push(...(venueData.data?.listings ?? []));
-                    listingsFetchOk = true;
                 }
                 if (experienceRes.ok) {
                     const experienceData = (await experienceRes.json()) as {
                         data?: { listings?: ListingWithPublicationStatus[] };
                     };
                     listings.push(...(experienceData.data?.listings ?? []));
-                    listingsFetchOk = true;
                 }
 
                 // HOS-1948: the card says "published", so count only PUBLISHED
                 // listings, and tell the owner how many are not visible yet.
                 const { published, hidden } = summarizeListingVisibility({ listings });
 
-                const listingsEl = document.getElementById('stat-listings');
-                if (listingsEl) {
-                    if (listingsFetchOk) {
-                        listingsEl.textContent = String(published);
-                    }
-                    listingsEl.classList.remove('stat-value--loading');
+                if (listingsFetchOk) {
+                    setStatValue({ id: 'stat-listings', value: String(published) });
+                } else {
+                    markStatsUnavailable({ ids: ['stat-listings'] });
                 }
 
                 const hiddenEl = document.getElementById('stat-listings-hidden');
@@ -803,7 +799,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 }
             } catch (error) {
                 console.error('[account] Failed to load listing dashboard stats:', error);
-                clearLoadingState(['stat-listings']);
+                markStatsUnavailable({ ids: ['stat-listings'] });
             }
         }
     }

@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Resolved copy, base URL and locale of the manual installment opened mail (HOS-2130). */
 export interface ManualInstallmentOpenedProps {

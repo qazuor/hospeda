@@ -42,7 +42,7 @@ export const MERCADOPAGO_CAPABILITY_SUPPORT: CapabilitySupportMap = Object.freez
     },
     refund: {
         level: 'full',
-        note: 'Payment and order refunds, total and partial, cumulative and idempotent (RF-1, RF-2, RF-6, EX-58).'
+        note: 'Payment refunds, total and partial, cumulative and idempotent (RF-1, RF-2, RF-6).'
     },
     read: {
         level: 'partial',
@@ -63,7 +63,7 @@ export const MERCADOPAGO_CAPABILITY_SUPPORT: CapabilitySupportMap = Object.freez
         level: 'partial',
         gaps: [
             {
-                gap: 'No notice for an amount change (EX-15), for its own cancellation after a rejected first charge, for a reason change, nor for /v1/orders and their refunds (WH-5, EX-15).',
+                gap: 'No notice for an amount change (EX-15), for its own cancellation after a rejected first charge, nor for a reason change (WH-5, EX-15).',
                 handling: 'emulate',
                 how: 'Every mutation is confirmed by re-reading by id (INV:D5), and the sweep re-reads the inventory (B/09 §3).'
             },

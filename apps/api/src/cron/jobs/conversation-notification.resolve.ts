@@ -18,7 +18,11 @@ import {
     type SelectConversationNotificationSchedule,
     type UserModel
 } from '@repo/db';
-import { ConversationNewMessage, ConversationNewMessageAnon } from '@repo/notifications';
+import {
+    buildConversationNewMessageSubject,
+    ConversationNewMessage,
+    ConversationNewMessageAnon
+} from '@repo/notifications';
 import { NotificationRecipientSideEnum } from '@repo/schemas';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { env } from '../../utils/env.js';
@@ -187,7 +191,7 @@ export async function resolveNotification(
         streakCount: schedule.streakCount,
         recipientSide: schedule.recipientSide,
         recipientEmail,
-        subject: `Nuevo mensaje sobre ${accommodationName}`,
+        subject: buildConversationNewMessageSubject({ accommodationName }),
         emailTemplate
     };
 }

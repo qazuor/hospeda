@@ -1,13 +1,12 @@
 import { addonInstances, domainEventModel, eq } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import { confirmOneTimeOrder } from '../../../src/services/billing/addon/addon-instance-a2-one-time';
 import { expireAddonInstances } from '../../../src/services/billing/addon/expire-addon-instances.service';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
-import { sendOneTimeOrder } from '../../../src/services/billing/addon/send-one-time-order.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { payingPrincipal } from './support/addon-a2-fixtures';
 import { purchaseFixture, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
+import { activatePagePurchase } from './support/one-time-page-fixtures';
 
 afterEach(async () => {
     vi.restoreAllMocks();
@@ -22,17 +21,7 @@ async function active(f: Fixture, listingId: string) {
     const input = f.input(crypto.randomUUID(), listingId);
     const bought = await purchaseAddon(input, f.ports);
     if (bought.outcome !== 'CREATED') throw new Error(`Purchase returned ${bought.outcome}`);
-    const sent = await sendOneTimeOrder(
-        {
-            orderRequestId: input.orderRequestId,
-            payerEmail: 'payer@example.test',
-            payment: { token: `card-${crypto.randomUUID()}`, brand: 'visa', kind: 'credit' }
-        },
-        f.ports
-    );
-    if (sent.outcome !== 'ORDER_PLACED') throw new Error(`Order returned ${sent.outcome}`);
-    const confirmed = await confirmOneTimeOrder({ instanceId: bought.instanceId }, f.ports);
-    if (confirmed.outcome !== 'ACTIVATED') throw new Error(`Confirm returned ${confirmed.outcome}`);
+    await activatePagePurchase({ f, instanceId: bought.instanceId });
     const [instance] = await getServiceTestDb()
         .select()
         .from(addonInstances)

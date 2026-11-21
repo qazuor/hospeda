@@ -11,6 +11,7 @@
 
 import type { JSX } from 'react';
 import type { MarketComparisonData } from '@/lib/api/types';
+import { formatPrice as formatMoney } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './MarketComparisonWidget.module.css';
@@ -117,8 +118,10 @@ export function MarketComparisonWidget({
     const formatRating = (rating: number | null): string =>
         rating == null ? 'N/A' : rating.toFixed(1);
 
+    // The destination average is a fractional AVG(); the shared formatter rounds
+    // to whole pesos so it never renders `$59.333,333` (HOS-2427).
     const formatPrice = (price: number | null): string =>
-        price == null ? 'N/A' : `$${price.toLocaleString('es-AR')}`;
+        price == null ? 'N/A' : formatMoney({ amount: price, locale });
 
     const getComparisonClass = (
         value: number | null,

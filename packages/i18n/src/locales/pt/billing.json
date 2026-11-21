@@ -97,7 +97,8 @@
         "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo.",
         "pageRejected": "O Mercado Pago não conseguiu abrir a página de pagamento. Tente de novo em alguns minutos.",
         "providerBusy": "O Mercado Pago está com muita demanda neste momento. Aguarde um minuto e tente de novo.",
-        "providerUnavailable": "O provedor de pagamentos não respondeu. Tente novamente em alguns minutos."
+        "providerUnavailable": "O provedor de pagamentos não respondeu. Tente novamente em alguns minutos.",
+        "identityBusy": "Outra compra deste complemento estava sendo atualizada agora. Tente novamente em alguns segundos."
     },
     "payment": {
         "title": "Métodos de pagamento",
@@ -872,11 +873,14 @@
     "addonPurchase": {
         "title": "Comprar complementos",
         "chooseOffer": "Escolha um complemento",
+        "back": "Voltar",
         "noOffers": "Não há complementos disponíveis.",
         "chooseTarget": "Escolha um anúncio",
         "noTargets": "Não há anúncios disponíveis para este complemento.",
         "chooseSubscription": "Escolha uma assinatura",
         "noSubscriptions": "Não há assinaturas disponíveis para este complemento.",
+        "noSubscriptionsBody": "Os complementos são adicionados a um plano pago ativo. Se você ainda está no teste grátis ou não tem plano, escolha um e volte aqui para adicioná-lo.",
+        "noSubscriptionsCta": "Ver planos",
         "summary": "Confirmar complemento",
         "freeUnderGrant": "Grátis pelo seu benefício",
         "days_one": "{{count}} dia",

@@ -97,7 +97,8 @@
         "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
         "pageRejected": "Mercado Pago could not open the payment page. Try again in a few minutes.",
         "providerBusy": "Mercado Pago is very busy right now. Wait a minute and try again.",
-        "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes."
+        "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes.",
+        "identityBusy": "Another purchase of this add-on was being updated just now. Please try again in a few seconds."
     },
     "payment": {
         "title": "Payment methods",
@@ -872,11 +873,14 @@
     "addonPurchase": {
         "title": "Buy add-ons",
         "chooseOffer": "Choose an add-on",
+        "back": "Back",
         "noOffers": "No add-ons are available.",
         "chooseTarget": "Choose a listing",
         "noTargets": "No listings are available for this add-on.",
         "chooseSubscription": "Choose a subscription",
         "noSubscriptions": "No subscriptions are available for this add-on.",
+        "noSubscriptionsBody": "Add-ons are attached to an active paid plan. If you are still on the free trial or have no plan, choose one and come back here to add it.",
+        "noSubscriptionsCta": "See plans",
         "summary": "Confirm add-on",
         "freeUnderGrant": "Free with your benefit",
         "days_one": "{{count}} day",

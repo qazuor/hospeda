@@ -1,8 +1,8 @@
 import { Hr, Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import type { AlertDigestPayload } from '../../types/alert.types.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { ALERT_DIGEST_SITE_BASE_URL } from './constants.js';
 import { PriceDropItem } from './PriceDropItem.js';
 import { PromoOfferItem } from './PromoOfferItem.js';

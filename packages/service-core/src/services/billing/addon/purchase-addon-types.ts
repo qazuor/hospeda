@@ -9,14 +9,7 @@ export const PurchaseAddonInputSchema = z.strictObject({
     expectedAddonVersionId: z.uuid(),
     payerEmail: z.email().optional(),
     returnUrl: z.url(),
-    reason: z.string().min(1).optional(),
-    /**
-     * How a one-time (`UNA_VEZ`) purchase is paid (HOS-2179): `PAGE`, a provider payment page the
-     * customer is redirected to (the default), or `ORDER`, the card-token order, which must be
-     * asked for by name and is kept only until T-7 removes it; no route sends it since T-6.
-     * Ignored for recurring products.
-     */
-    oneTimeChannel: z.enum(['ORDER', 'PAGE']).optional()
+    reason: z.string().min(1).optional()
 });
 
 /** Input for the addon purchase service. */
@@ -36,6 +29,13 @@ export const PURCHASE_ADDON_REFUSAL_REASONS = [
 
 /** One closed A1 refusal reason. */
 export type PurchaseAddonRefusalReason = (typeof PURCHASE_ADDON_REFUSAL_REASONS)[number];
+
+/**
+ * HOS-2518: the `ServiceError` reason (`SERVICE_UNAVAILABLE`) A1 throws when it collided on the
+ * purchase identity and no purchase took the identity within the wait. Nothing was created, so
+ * the owner retries with the same order id; the API answers it with its own localized copy.
+ */
+export const PURCHASE_IDENTITY_BUSY_REASON = 'PURCHASE_IDENTITY_BUSY' as const;
 
 /** Result of A1, including conflict and replay outcomes. */
 export type PurchaseAddonResult =

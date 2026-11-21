@@ -5,6 +5,7 @@
 export * from './alert-delivery.service.js';
 export * from './channels/email-alert.channel.js';
 export * from './notification.service.js';
+export * from './notification-render.js';
 export * from './outbox/index.js';
 export * from './preference.service.js';
 export * from './retry.service.js';

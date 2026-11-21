@@ -20,6 +20,7 @@ const { locale } = Astro.props;
 <div class="mobile-dock" data-mobile-dock data-empty data-row-empty>
 	<div class="mobile-dock__above" data-mobile-dock-slot="above"></div>
 	<div class="mobile-dock__row">
+		<div data-mobile-dock-slot="contact"></div>
 		<div class="mobile-dock__start">
 			<div data-mobile-dock-slot="filters"></div>
 			<div data-mobile-dock-slot="start" data-listing-swap="dock-start"><slot name="start" /></div>

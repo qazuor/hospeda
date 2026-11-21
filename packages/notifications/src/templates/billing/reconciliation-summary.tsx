@@ -1,6 +1,6 @@
 import { Link, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatCurrency, formatDate } from '../utils/format-helpers.js';
 import {
     openMarkKey,

@@ -222,6 +222,53 @@
     flex-shrink: 0;
 }
 
+.sheetHandle {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .overlay:has(.panel[data-variant="sheet"]) {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .panel[data-variant="sheet"] {
+        --dialog-max-height: 90dvh;
+        max-width: none;
+        border-radius: var(--radius-card) var(--radius-card) 0 0;
+        padding-bottom: calc(var(--space-5, 20px) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .panel[data-variant="sheet"]:has(.header, .body, .bodyBare, .footer) {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .sheetHandle {
+        display: block;
+        flex-shrink: 0;
+        width: var(--space-10);
+        height: var(--space-1);
+        margin: var(--space-3) auto;
+        border-radius: var(--radius-pill);
+        background: var(--border);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .panel[data-variant="sheet"] {
+            animation: dialogSheetIn var(--duration-normal) ease-out;
+        }
+    }
+}
+
+@keyframes dialogSheetIn {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .overlay,
     .panel {

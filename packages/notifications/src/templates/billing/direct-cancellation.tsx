@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the notice sent before S23 or S24 cancels a subscription authorization. */
 export const DIRECT_CANCELLATION_SUBJECT = 'Tu suscripción quedó cancelada';

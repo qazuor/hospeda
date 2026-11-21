@@ -71,13 +71,16 @@ describe('TEST:1768:18 resolveDockHidden', () => {
 });
 
 describe('TEST:1768:19 initDockAutoHide', () => {
+    const cleanups: Array<() => void> = [];
     afterEach(() => {
+        for (const cleanup of cleanups.splice(0)) cleanup();
         vi.restoreAllMocks();
     });
 
     function setup(matches = true) {
         const dock = document.createElement('div');
-        dock.innerHTML = '<div data-mobile-dock-slot="above"></div>';
+        dock.innerHTML =
+            '<div data-mobile-dock-slot="above"></div><div data-mobile-dock-slot="contact"></div>';
         document.body.append(dock);
         let mediaMatches = matches;
         let changeListener: ((event: MediaQueryListEvent) => void) | undefined;
@@ -97,7 +100,7 @@ describe('TEST:1768:19 initDockAutoHide', () => {
         const win = {
             scrollY: 200,
             innerHeight: 700,
-            document: { documentElement: { scrollHeight: 2000 } },
+            document: { documentElement: { scrollHeight: 4000 } },
             addEventListener: window.addEventListener.bind(window),
             removeEventListener: window.removeEventListener.bind(window),
             dispatchEvent: window.dispatchEvent.bind(window),
@@ -125,6 +128,10 @@ describe('TEST:1768:19 initDockAutoHide', () => {
             changeListener?.({ matches: value } as MediaQueryListEvent);
         };
         const result = initDockAutoHide({ dock, win, matchMedia: () => media });
+        cleanups.push(() => {
+            result.cleanup();
+            dock.remove();
+        });
         return { dock, win, flush, setY, setMatches, rafCallbacks, result };
     }
 
@@ -159,12 +166,86 @@ describe('TEST:1768:19 initDockAutoHide', () => {
         expect(dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR)).toBe(false);
     });
 
+    it('pins the dock during a 2000px scroll only while contact has a visible item', () => {
+        const { dock, setY } = setup();
+        const item = document.createElement('button');
+        item.setAttribute('data-dock-item', '');
+        const rects = vi
+            .spyOn(item, 'getClientRects')
+            .mockReturnValue({ length: 1 } as DOMRectList);
+        dock.querySelector('[data-mobile-dock-slot="contact"]')?.append(item);
+
+        setY(2000);
+        expect(dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR)).toBe(false);
+
+        rects.mockReturnValue({ length: 0 } as DOMRectList);
+        setY(2100);
+        expect(dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR)).toBe(true);
+
+        rects.mockReturnValue({ length: 1 } as DOMRectList);
+        setY(2200);
+        expect(dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR)).toBe(false);
+    });
+
     it('reveals when the media query stops matching', () => {
         const { dock, setY, setMatches } = setup();
         setY(400);
         setMatches(false);
         expect(dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR)).toBe(false);
     });
+
+    it.each([
+        'mount',
+        'unhide'
+    ] as const)('reveals without scrolling only for contact on %s', async (change) => {
+        await expectLatePinBehavior({ slotName: 'contact', change });
+    });
+
+    it.each([
+        'mount',
+        'unhide'
+    ] as const)('waits for scroll when comparison becomes visible on %s', async (change) => {
+        await expectLatePinBehavior({ slotName: 'above', change });
+    });
+
+    async function expectLatePinBehavior({
+        slotName,
+        change
+    }: {
+        readonly slotName: 'contact' | 'above';
+        readonly change: 'mount' | 'unhide';
+    }): Promise<void> {
+        const { dock, setY, flush } = setup();
+        const item = document.createElement('button');
+        item.setAttribute('data-dock-item', '');
+        vi.spyOn(item, 'getClientRects').mockImplementation(
+            () => ({ length: item.hidden ? 0 : 1 }) as DOMRectList
+        );
+        const slot = dock.querySelector(`[data-mobile-dock-slot="${slotName}"]`);
+        if (change === 'unhide') {
+            item.hidden = true;
+            slot?.append(item);
+        }
+        setY(400);
+        expect(dock).toHaveAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+
+        if (change === 'mount') slot?.append(item);
+        else item.hidden = false;
+        await Promise.resolve();
+        flush();
+        if (slotName === 'above') {
+            expect(dock).toHaveAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+            setY(500);
+            expect(dock).not.toHaveAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+            return;
+        }
+        expect(dock).not.toHaveAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+
+        // Losing the pin must not restore the old hidden state on a tiny scroll.
+        item.remove();
+        setY(401);
+        expect(dock).not.toHaveAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+    }
 
     it('removes listeners, cancels pending work, and reveals on cleanup', () => {
         const { dock, win, setY, result, rafCallbacks } = setup();

@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the S31 notice sent before cancelling the successor authorization. */
 export const SUCCESSOR_CUT_CANCEL_SUBJECT = 'Cortamos el cambio de plan que tenías en curso';

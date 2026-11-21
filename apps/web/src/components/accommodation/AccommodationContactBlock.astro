@@ -31,13 +31,22 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
+import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
+
 interface Props {
+    readonly listingId: string;
     readonly contactInfo?: AccommodationContactInfo;
     readonly socialNetworks?: AccommodationSocialNetworks;
     readonly locale: SupportedLocale;
 }
 
-const { contactInfo, socialNetworks, locale } = Astro.props;
+const { contactInfo, socialNetworks, locale, listingId } = Astro.props;
+const contactOrigin: ContactOrigin = 'contact_block';
+const trackingAttributes = {
+    'data-listing-id': listingId,
+    'data-vertical': 'accommodation',
+    'data-contact-origin': contactOrigin
+};
 const { t } = createTranslations(locale);
 
 // Every outbound URL here is authored by the host in the editor and published
@@ -69,6 +78,8 @@ if (!hasContact && !hasSocial) {
             {contactInfo?.phone && (
                 <a
                     href={`tel:${contactInfo.phone}`}
+                    data-contact-channel="phone"
+                    {...trackingAttributes}
                     class="acc-contact__link"
                 >
                     <PhoneIcon size={16} aria-hidden="true" />
@@ -79,6 +90,8 @@ if (!hasContact && !hasSocial) {
             {contactInfo?.landlinePhone && (
                 <a
                     href={`tel:${contactInfo.landlinePhone}`}
+                    data-contact-channel="phone"
+                    {...trackingAttributes}
                     class="acc-contact__link"
                 >
                     <PhoneIcon size={16} aria-hidden="true" />
@@ -89,6 +102,8 @@ if (!hasContact && !hasSocial) {
             {contactInfo?.email && (
                 <a
                     href={`mailto:${contactInfo.email}`}
+                    data-contact-channel="email"
+                    {...trackingAttributes}
                     class="acc-contact__link"
                 >
                     <EmailIcon size={16} aria-hidden="true" />
@@ -99,6 +114,8 @@ if (!hasContact && !hasSocial) {
             {websiteHref && (
                 <a
                     href={websiteHref}
+                    data-contact-channel="website"
+                    {...trackingAttributes}
                     class="acc-contact__link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -116,6 +133,8 @@ if (!hasContact && !hasSocial) {
             {facebookHref && (
                 <a
                     href={facebookHref}
+                    data-contact-channel="social"
+                    {...trackingAttributes}
                     class="acc-contact__social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -127,6 +146,8 @@ if (!hasContact && !hasSocial) {
             {instagramHref && (
                 <a
                     href={instagramHref}
+                    data-contact-channel="social"
+                    {...trackingAttributes}
                     class="acc-contact__social-link"
                     target="_blank"
                     rel="noopener noreferrer"

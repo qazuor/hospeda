@@ -25,14 +25,23 @@ import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { hasVenuePublicContact, VENUE_CONTACT_ANCHOR_ID } from '@/lib/venue-contact';
 import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 
+import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
+
 interface Props {
+    readonly listingId: string;
     readonly contactInfo?: VenueContactInfo | null;
     readonly socialNetworks: VenueSocialNetworks | null;
     readonly menuUrl?: string | null;
     readonly locale: SupportedLocale;
 }
 
-const { contactInfo, socialNetworks, menuUrl, locale } = Astro.props;
+const { contactInfo, socialNetworks, menuUrl, locale, listingId } = Astro.props;
+const contactOrigin: ContactOrigin = 'contact_block';
+const trackingAttributes = {
+    'data-listing-id': listingId,
+    'data-vertical': 'venue',
+    'data-contact-origin': contactOrigin
+};
 const { t } = createTranslations(locale);
 
 // Both the menu link and the social profiles are authored by the listing
@@ -131,7 +140,13 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
             <h3 class="venue-contact__social-title">{contactTitle}</h3>
             <div class="venue-contact__channels">
                 {phones.map(({ value, ariaLabel }) => (
-                    <a href={toTelHref(value)} class="venue-contact__link" data-interaction-kind="PHONE_CLICK">
+                    <a
+                        href={toTelHref(value)}
+                        class="venue-contact__link"
+                        data-interaction-kind="PHONE_CLICK"
+                        data-contact-channel="phone"
+                        {...trackingAttributes}
+                    >
                         <PhoneIcon size={16} aria-hidden="true" />
                         <span>{value}</span>
                         <span class="sr-only">, {ariaLabel}</span>
@@ -140,6 +155,8 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
                 {workEmail && (
                     <a
                         href={`mailto:${workEmail}`}
+                        data-contact-channel="email"
+                        {...trackingAttributes}
                         class="venue-contact__link"
                     >
                         <EmailIcon size={16} aria-hidden="true" />
@@ -150,6 +167,8 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
                 {websiteHref && (
                     <a
                         href={websiteHref}
+                        data-contact-channel="website"
+                        {...trackingAttributes}
                         class="venue-contact__link"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -168,6 +187,8 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
         <div class="venue-contact__menu">
             <a
                 href={menuHref}
+                data-contact-channel="menu"
+                {...trackingAttributes}
                 class="venue-contact__menu-btn"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -188,6 +209,8 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
                         <li class="venue-contact__social-item">
                             <a
                                 href={href}
+                                data-contact-channel="social"
+                                {...trackingAttributes}
                                 class="venue-contact__social-link"
                                 target="_blank"
                                 rel="noopener noreferrer"

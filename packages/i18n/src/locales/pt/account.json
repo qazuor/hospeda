@@ -840,7 +840,8 @@
             "event": "Eventos",
             "experience": "Experiências",
             "venue": "Comer e sair",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Atrações"
         },
         "collections": {
             "create": "Criar coleção",
@@ -863,6 +864,7 @@
             "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
             "errorTitle": "Não conseguimos carregar a coleção",
             "backToList": "Voltar para meus favoritos",
+            "bookmarksLabel": "favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -902,10 +904,6 @@
         },
         "filter": {
             "all": "Todos",
-            "accommodations": "Acomodações",
-            "destinations": "Destinos",
-            "events": "Eventos",
-            "posts": "Posts",
             "label": "Filtrar por tipo"
         },
         "bookmarks": {
@@ -925,7 +923,8 @@
         "notes": {
             "cancel": "Cancelar",
             "placeholder": "Adicione uma nota pessoal...",
-            "save": "Salvar nota"
+            "save": "Salvar nota",
+            "saved": "Nota salva"
         },
         "removeBtn": "Remover",
         "removeLabel": "Remover dos favoritos",
@@ -1024,6 +1023,7 @@
                 "reviews": "Minhas avaliações",
                 "subscription": "Minha assinatura",
                 "favoritesDesc": "Acomodações salvas",
+                "unavailable": "Indisponível",
                 "reviewsDesc": "Avaliações publicadas",
                 "subscriptionDesc": "Plano atual",
                 "subscriptionStatus": "Estado da assinatura",
@@ -1358,7 +1358,9 @@
         "deleteError": "Não foi possível excluir o alerta",
         "upgrade": {
             "title": "Alertas de preço",
-            "message": "Alertas de preço estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+            "message_one": "Os alertas de preço estão disponíveis no plano {{plans}}. Atualize seu plano para acessar.",
+            "message_other": "Os alertas de preço estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
+            "messageNoPlans": "Os alertas de preço não estão incluídos no seu plano atual. Atualize seu plano para acessar.",
             "cta": "Ver planos"
         },
         "listLabel": "Seus alertas de preço ativos",
