@@ -15,6 +15,8 @@ import { ACCOUNT_DISCOVERY_DOORS, type DiscoveryDoor } from '../../src/config/di
 import { isDoorVisible, isVisibleByRoles } from '../../src/lib/nav-gating';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
+// HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
+const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
 
 /** Computes the doors visible in the sidebar exactly as `AccountLayout.astro` does for a given role. */
 function visibleDoorsForRole(role: string | null): readonly DiscoveryDoor[] {
@@ -36,15 +38,14 @@ describe('venue discovery door icon', () => {
 
 describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => {
     it('renders doors from the single-source config via ACCOUNT_DISCOVERY_DOORS + isDoorVisible', () => {
-        expect(source).toContain(
+        expect(modelSource).toContain(
             "import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';"
         );
-        expect(source).toContain(
+        expect(modelSource).toContain(
             "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
-        expect(source).toContain(
-            'isDoorVisible({ door, visibility: (node) => isVisibleByRoles(node, userRoles) })'
-        );
+        expect(modelSource).toContain('isDoorVisible({ door, visibility })');
+        expect(source).toContain('navModel.doors');
     });
 
     it('renders the doors block AFTER the nav groups, inside the same sidebar aside (visually below management)', () => {
@@ -66,19 +67,20 @@ describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => 
     });
 
     it('computes the door active-state via the same getActiveSectionKey helper nav items use, and marks it with aria-current', () => {
-        expect(source).toContain('const doorSectionKey = getActiveSectionKey(door.href);');
-        expect(source).toContain('const isActiveDoor = doorSectionKey === activeSection;');
+        expect(modelSource).toContain(
+            'const sectionKey = getActiveSectionKey({ href: door.href });'
+        );
+        expect(modelSource).toContain('active: sectionKey === activeSection');
         expect(source).toContain("{ 'account-nav__door-link--active': isActiveDoor }");
         expect(source).toContain("aria-current={isActiveDoor ? 'page' : undefined}");
     });
 
     it('renders the door CTA label via resolveDoorLabelKey (HOS-134 stateful label), not a bare t(door.i18nKey)', () => {
-        expect(source).toContain(
+        expect(modelSource).toContain(
             "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
-        expect(source).toContain('resolveDoorLabelKey({');
-        expect(source).toContain('door,');
-        expect(source).toContain('visibility: (node) => isVisibleByRoles(node, userRoles),');
+        expect(modelSource).toContain('labelKey: resolveDoorLabelKey({ door, visibility })');
+        expect(source).toContain('{t(labelKey)}');
         expect(source).not.toContain('{t(door.i18nKey)}');
     });
 });

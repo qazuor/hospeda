@@ -2260,6 +2260,22 @@
       "howToObtainEs": "Registros permitidos por IP por ventana. Por defecto 100. Debe ser un entero positivo."
     },
     {
+      "name": "HOSPEDA_ACCOUNT_KIT_GALLERY",
+      "description": "Gate for the Mi Cuenta component kit gallery page (/mi-cuenta/kit/). When false (default) the page answers 404. Turn it on only for local development and the E2E visual-regression suite.",
+      "descriptionEs": "Compuerta de la página galería del kit de componentes de Mi Cuenta (/mi-cuenta/kit/). En false (por defecto) la página responde 404. Activala sólo en desarrollo local y en la suite E2E de regresión visual.",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "false",
+      "exampleValue": "false",
+      "apps": [
+        "web"
+      ],
+      "category": "features",
+      "howToObtain": "Leave unset (or \"false\") everywhere except local development and the E2E environment, which set it to \"true\". Nothing to set in Coolify: the default keeps staging and production answering 404 (HOS-2413, owner decision OD-6).",
+      "howToObtainEs": "Dejala sin setear (o en \"false\") en todos lados salvo en desarrollo local y en el entorno E2E, que la ponen en \"true\". No hay nada que setear en Coolify: el default mantiene staging y producción respondiendo 404 (HOS-2413, decisión del dueño OD-6)."
+    },
+    {
       "name": "HOSPEDA_NOINDEX_HOSTS",
       "description": "Comma-separated hostnames that must receive a restrictive robots policy (Disallow: /) and X-Robots-Tag: noindex, nofollow header. Used to keep staging hostnames out of search engines.",
       "descriptionEs": "Lista de hostnames separados por coma que deben recibir una policy restrictiva de robots (Disallow: /) y el header X-Robots-Tag: noindex, nofollow. Sirve para mantener los hostnames de staging fuera de los buscadores.",

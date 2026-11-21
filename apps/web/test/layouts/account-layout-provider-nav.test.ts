@@ -31,11 +31,13 @@ import { describe, expect, it } from 'vitest';
 import { PROVIDER_NAV_GROUP } from '../../src/config/navigation';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
+// HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
+const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
 
 describe('AccountLayout — provider nav door (H-158)', () => {
     it('imports PROVIDER_NAV_GROUP from the single-source nav config', () => {
-        expect(source).toContain('PROVIDER_NAV_GROUP');
-        expect(source).toMatch(/from '@\/config\/navigation'/);
+        expect(modelSource).toContain('PROVIDER_NAV_GROUP');
+        expect(modelSource).toMatch(/from '@\/config\/navigation'/);
     });
 
     it('reads ownership OFF THE SESSION, never by asking the API from the layout', () => {
@@ -69,7 +71,9 @@ describe('AccountLayout — provider nav door (H-158)', () => {
 
     it('splices PROVIDER_NAV_GROUP into navGroups only when ownership is confirmed', () => {
         // HOS-2124: placed before Tourist via `placeProviderGroup` (null = no door).
-        expect(source).toContain('providerGroup: isProvider ? PROVIDER_NAV_GROUP : null');
+        expect(modelSource).toContain(
+            'providerGroup: ownsHostTradeListing ? PROVIDER_NAV_GROUP : null'
+        );
     });
 
     it('reads the flag through optional chaining, so a guest never trips it', () => {

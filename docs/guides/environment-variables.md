@@ -158,6 +158,7 @@ pnpm env:check
 | `HOSPEDA_DEBUG_TESTS` | boolean | no | no | `false` | Verbose test logging |
 | `HOSPEDA_API_DEBUG_ERRORS` | boolean | no | no | `false` | Show error details in responses |
 | `HOSPEDA_COMMIT_SHA` | string | no | no | - | Build commit SHA |
+| `HOSPEDA_ACCOUNT_KIT_GALLERY` | boolean | no | no | `false` | Web only. Gates the Mi Cuenta kit gallery page `/mi-cuenta/kit/` (HOS-2413): `false` answers 404. Off everywhere except local development and the E2E environment; nothing to set in Coolify |
 
 ### API Server Config (API_)
 

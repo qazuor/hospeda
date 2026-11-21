@@ -10,6 +10,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
+// HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
+const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
 
 describe('AccountLayout collapsible groups (HOS-2124)', () => {
     it('renders headed areas as native <details> with a <summary> label', () => {
@@ -19,8 +21,9 @@ describe('AccountLayout collapsible groups (HOS-2124)', () => {
     });
 
     it('derives the server default from the shared pure predicate', () => {
-        expect(source).toContain('resolveGroupDefaultOpen');
-        expect(source).toContain('placeProviderGroup');
+        expect(modelSource).toContain('resolveGroupDefaultOpen');
+        expect(modelSource).toContain('placeProviderGroup');
+        expect(source).toContain('buildAccountNavModel');
     });
 
     it('marks the area holding the current page so the script never closes it', () => {

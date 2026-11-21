@@ -249,15 +249,23 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<body>
 		<NavigationProgress locale={locale} />
 		<SkipToContent locale={locale} />
-		<Header locale={locale} />
+		<!--
+			HOS-2413: the page chrome is overridable through named slots whose FALLBACK
+			is the public site chrome. `AccountShell` fills them with the compact account
+			chrome. The account pieces are imported by the shell, NOT here, so public
+			pages never ship their CSS or JS.
+		-->
+		<slot name="chrome-header"><Header locale={locale} /></slot>
 		<GlobalAnnouncements locale={locale} />
 
 		<main id="main-content">
 			<slot />
 		</main>
 
-		<Footer locale={locale} />
-		<MobileDock locale={locale}><slot name="dock-start" slot="start" /></MobileDock>
+		<slot name="chrome-footer">
+			<Footer locale={locale} />
+			<MobileDock locale={locale}><slot name="dock-start" slot="start" /></MobileDock>
+		</slot>
 		<CookieConsentBanner
 			client:idle
 			transition:persist="cookie-consent-banner"
@@ -265,7 +273,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			cookiesPolicyUrl={cookiesPolicyUrl}
 		/>
 
-		<ToastViewport client:idle locale={locale} />
+		<slot name="chrome-toasts"><ToastViewport client:idle locale={locale} /></slot>
 		<GuestPreferenceNudge client:idle />
 		<AuthedPreferenceSync client:idle />
 		<AiResetReviewPrompt client:idle locale={locale} apiUrl={apiUrl} />

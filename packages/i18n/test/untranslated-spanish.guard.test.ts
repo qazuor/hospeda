@@ -64,6 +64,22 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Anterior: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
     '{{count}} de {{max}} caracteres': ['pt'],
+    // Same word in Brazilian Portuguese / English (HOS-2413 Mi Cuenta kit: status words, counter, error prefix).
+    'Error:': ['en'],
+    Abandonada: ['pt'],
+    Cancelada: ['pt'],
+    Confirmado: ['pt'],
+    Pausada: ['pt'],
+    Pausado: ['pt'],
+    Publicado: ['pt'],
+    Vencida: ['pt'],
+    Vencido: ['pt'],
+    Vigente: ['pt'],
+    '{{current}} de {{max}} caracteres': ['pt'],
+    'Página anterior': ['pt'],
+    'Página {{page}}': ['pt'],
+    Descartar: ['pt'],
+    'Kit de componentes': ['pt'],
     // Same spelling in Brazilian Portuguese / English (HOS-2119 owner traffic panel).
     Países: ['pt'],
     Dispositivos: ['pt'],

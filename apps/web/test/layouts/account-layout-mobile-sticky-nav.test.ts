@@ -13,6 +13,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
+// HOS-2413 T-017: the nav DATA moved into the model; the layout only renders it.
+const modelSource = readFileSync(resolve(__dirname, '../../src/lib/account-nav-model.ts'), 'utf8');
 
 describe('AccountLayout — mobile sticky nav markup', () => {
     it('wraps the toggle + sidebar in a single .account-page__nav sticky wrapper', () => {
@@ -32,15 +34,15 @@ describe('AccountLayout — mobile sticky nav markup', () => {
         // HOS-616 moved the literal into the locale catalog, so the generic
         // label is no longer an inline fallback — the assertion tracks the key,
         // which is what "only as the resolveActiveLabel fallback" is about.
-        expect(source).toContain("return t('account.menu');");
+        expect(modelSource).toContain("export const ACCOUNT_MENU_LABEL_KEY = 'account.menu';");
         expect(source).toContain('aria-label={`${t(');
         expect(source).toContain('${activeLabel}`}');
     });
 
     it('derives the active label by matching the active nav item / door via getActiveSectionKey', () => {
-        expect(source).toContain('function resolveActiveLabel(): string {');
-        expect(source).toContain('if (getActiveSectionKey(item.href) === activeSection) {');
-        expect(source).toContain('const activeLabel = resolveActiveLabel();');
+        expect(modelSource).toContain('active: sectionKey === activeSection');
+        expect(modelSource).toContain('const activeLabelKey =');
+        expect(source).toContain('const activeLabel = t(navModel.activeLabelKey);');
     });
 });
 

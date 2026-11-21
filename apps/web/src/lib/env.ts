@@ -206,6 +206,18 @@ export function isFeedbackEnabled(): boolean {
 }
 
 /**
+ * Whether the Mi Cuenta kit gallery page is enabled (HOS-2413 OD-6).
+ *
+ * Server-only. `false` unless `HOSPEDA_ACCOUNT_KIT_GALLERY` is the literal
+ * string `'true'`, so staging and production answer 404 by default.
+ *
+ * @returns `true` only in local development and the E2E environment.
+ */
+export function isAccountKitGalleryEnabled(): boolean {
+    return getEnv().HOSPEDA_ACCOUNT_KIT_GALLERY === true;
+}
+
+/**
  * Get the raw `HOSPEDA_NOINDEX_HOSTS` env var value.
  *
  * Server-only. Returns the comma-separated string as configured, or undefined

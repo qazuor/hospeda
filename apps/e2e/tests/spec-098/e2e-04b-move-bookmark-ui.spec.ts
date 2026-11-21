@@ -259,7 +259,10 @@ test.describe('E2E-04b: move bookmark via UI @p0 @favorites @collections @move @
         // before asserting the DELETE request.
         const deleteUrlFragment = `/user-bookmark-collections/${collectionId}/bookmarks/${bookmarkId}`;
         await removeBtn.click();
-        await page.getByRole('dialog').getByRole('button', { name: 'Quitar', exact: true }).click();
+        await page
+            .getByRole('alertdialog')
+            .getByRole('button', { name: 'Quitar', exact: true })
+            .click();
         await page.waitForResponse(
             (res) => res.url().includes(deleteUrlFragment) && res.request().method() === 'DELETE'
         );

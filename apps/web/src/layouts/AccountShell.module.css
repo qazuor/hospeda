@@ -1,0 +1,64 @@
+/* AccountShell.module.css — the account page frame (HOS-2413 T-020, D1/D2/D3).
+   Below 64rem: the mobile bar (an island) over a single column. From 64rem: a
+   sticky sidebar column plus the content column. Only the four closed
+   breakpoints; the content column answers to its own container. */
+
+.shell {
+    display: block;
+    max-inline-size: 90rem;
+    margin-inline: auto;
+}
+
+.bar {
+    display: block;
+}
+
+.sidebar {
+    display: none;
+}
+
+.content {
+    container-type: inline-size;
+    container-name: account-content;
+    min-inline-size: 0;
+    padding: var(--space-4);
+}
+
+.content[data-template="form"] > :first-child,
+.content[data-template="form"] {
+    max-inline-size: var(--form-max);
+    margin-inline-end: auto;
+}
+
+.content[data-template="reading"] {
+    max-inline-size: var(--reading-max);
+    margin-inline-end: auto;
+}
+
+@media (min-width: 48rem) {
+    .content {
+        padding: var(--space-6);
+    }
+}
+
+@media (min-width: 64rem) {
+    .shell {
+        display: grid;
+        grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .bar {
+        display: none;
+    }
+
+    .sidebar {
+        position: sticky;
+        inset-block-start: 3.5rem;
+        display: block;
+        max-block-size: calc(100dvh - 3.5rem);
+        overflow-y: auto;
+        padding: var(--space-6) var(--space-3);
+        border-inline-end: 1px solid var(--border);
+    }
+}

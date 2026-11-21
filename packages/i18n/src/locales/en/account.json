@@ -1861,6 +1861,108 @@
         "close": "Close",
         "required": "required",
         "optional": "(optional)",
-        "opensInNewTab": "(opens in a new tab)"
+        "opensInNewTab": "(opens in a new tab)",
+        "errorPrefix": "Error:",
+        "charCount": "{{current}} of {{max}} characters",
+        "charNearLimit": "{{remaining}} characters left",
+        "charAtLimit": "You reached the limit of {{max}} characters",
+        "charOverLimit": "You are over the limit of {{max}} characters by {{over}}",
+        "dialogClose": "Close dialog",
+        "status": {
+            "publication": {
+                "DRAFT": "Draft",
+                "ACTIVE": "Published",
+                "INACTIVE": "Paused",
+                "ARCHIVED": "Archived"
+            },
+            "moderation": {
+                "PENDING": "In review",
+                "APPROVED": "Approved",
+                "REJECTED": "Rejected"
+            },
+            "subscription": {
+                "PENDING_AUTHORIZATION": "Awaiting authorization",
+                "ABANDONED": "Abandoned",
+                "ACTIVE": "Active",
+                "GRACE_PERIOD": "Grace period",
+                "PAUSED": "Paused",
+                "SUSPENDED": "Suspended",
+                "CANCEL_SCHEDULED": "Cancellation scheduled",
+                "CANCELLED": "Cancelled",
+                "CHARGE_DECLINED": "Charge declined"
+            },
+            "promotion": {
+                "DRAFT": "Draft",
+                "SCHEDULED": "Scheduled",
+                "ACTIVE": "Live",
+                "PAUSED": "Paused",
+                "EXPIRED": "Expired"
+            },
+            "benefitUsage": {
+                "PENDING": "Pending",
+                "CONFIRMED": "Confirmed",
+                "REJECTED": "Rejected",
+                "EXPIRED": "Expired"
+            }
+        },
+        "cancel": "Cancel",
+        "confirmError": "We could not complete the action. Please try again.",
+        "drawerClose": "Close panel",
+        "pagination": {
+            "label": "Pagination",
+            "previous": "Previous page",
+            "next": "Next page",
+            "page": "Page {{page}}",
+            "loadMore": "Show more",
+            "loadedMore": "{{count}} more loaded",
+            "loadError": "We could not load more. Please try again."
+        },
+        "switchSaveError": "The change could not be saved. Please try again.",
+        "switchLockedLink": "See how to turn it on",
+        "alertTone": {
+            "info": "Information:",
+            "success": "Done:",
+            "warning": "Warning:",
+            "danger": "Error:"
+        },
+        "error": {
+            "title": "We could not load this",
+            "description": "Check your connection and try again.",
+            "retry": "Try again"
+        },
+        "saveBar": {
+            "region": "Save changes",
+            "dirty": "You have unsaved changes",
+            "saving": "Saving…",
+            "saved": "Changes saved",
+            "error": "The changes could not be saved",
+            "save": "Save changes",
+            "discard": "Discard",
+            "goToError": "Go to first error",
+            "leaveMessage": "You have unsaved changes. If you leave now, they are lost."
+        },
+        "autoSave": {
+            "saving": "Saving…",
+            "saved": "Saved {{time}}",
+            "error": "Not saved",
+            "retry": "Try again"
+        },
+        "locked": {
+            "planWhy": "Included in:",
+            "roleWhy": "To use it, add this type of account to your profile.",
+            "permissionWhy": "Your account is not allowed to use this.",
+            "seePlans": "See plans",
+            "startTrial": "Start trial",
+            "join": "Join",
+            "permissionLink": "Learn more"
+        },
+        "sidebar": {
+            "lockedLabel": "Requires a higher plan",
+            "label": "My account navigation"
+        },
+        "breadcrumbs": "Breadcrumb",
+        "gallery": {
+            "title": "Component kit"
+        }
     }
 }

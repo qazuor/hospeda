@@ -1861,6 +1861,108 @@
         "close": "Cerrar",
         "required": "obligatorio",
         "optional": "(opcional)",
-        "opensInNewTab": "(se abre en otra pestaña)"
+        "opensInNewTab": "(se abre en otra pestaña)",
+        "errorPrefix": "Error:",
+        "charCount": "{{current}} de {{max}} caracteres",
+        "charNearLimit": "Quedan {{remaining}} caracteres",
+        "charAtLimit": "Llegaste al límite de {{max}} caracteres",
+        "charOverLimit": "Superaste el límite de {{max}} caracteres en {{over}}",
+        "dialogClose": "Cerrar diálogo",
+        "status": {
+            "publication": {
+                "DRAFT": "Borrador",
+                "ACTIVE": "Publicado",
+                "INACTIVE": "Pausado",
+                "ARCHIVED": "Archivado"
+            },
+            "moderation": {
+                "PENDING": "En revisión",
+                "APPROVED": "Aprobado",
+                "REJECTED": "Rechazado"
+            },
+            "subscription": {
+                "PENDING_AUTHORIZATION": "Esperando autorización",
+                "ABANDONED": "Abandonada",
+                "ACTIVE": "Activa",
+                "GRACE_PERIOD": "Período de gracia",
+                "PAUSED": "Pausada",
+                "SUSPENDED": "Suspendida",
+                "CANCEL_SCHEDULED": "Baja programada",
+                "CANCELLED": "Cancelada",
+                "CHARGE_DECLINED": "Cobro rechazado"
+            },
+            "promotion": {
+                "DRAFT": "Borrador",
+                "SCHEDULED": "Programada",
+                "ACTIVE": "Vigente",
+                "PAUSED": "Pausada",
+                "EXPIRED": "Vencida"
+            },
+            "benefitUsage": {
+                "PENDING": "Pendiente",
+                "CONFIRMED": "Confirmado",
+                "REJECTED": "Rechazado",
+                "EXPIRED": "Vencido"
+            }
+        },
+        "cancel": "Cancelar",
+        "confirmError": "No pudimos completar la acción. Probá de nuevo.",
+        "drawerClose": "Cerrar panel",
+        "pagination": {
+            "label": "Paginación",
+            "previous": "Página anterior",
+            "next": "Página siguiente",
+            "page": "Página {{page}}",
+            "loadMore": "Ver más",
+            "loadedMore": "Se cargaron {{count}} más",
+            "loadError": "No pudimos cargar más. Probá de nuevo."
+        },
+        "switchSaveError": "No se pudo guardar el cambio. Probá de nuevo.",
+        "switchLockedLink": "Ver cómo activarlo",
+        "alertTone": {
+            "info": "Información:",
+            "success": "Listo:",
+            "warning": "Atención:",
+            "danger": "Error:"
+        },
+        "error": {
+            "title": "No pudimos cargar esto",
+            "description": "Revisá tu conexión y volvé a intentar.",
+            "retry": "Reintentar"
+        },
+        "saveBar": {
+            "region": "Guardar cambios",
+            "dirty": "Tenés cambios sin guardar",
+            "saving": "Guardando…",
+            "saved": "Cambios guardados",
+            "error": "No se pudieron guardar los cambios",
+            "save": "Guardar cambios",
+            "discard": "Descartar",
+            "goToError": "Ir al primer error",
+            "leaveMessage": "Tenés cambios sin guardar. Si salís ahora, se pierden."
+        },
+        "autoSave": {
+            "saving": "Guardando…",
+            "saved": "Guardado {{time}}",
+            "error": "No se guardó",
+            "retry": "Reintentar"
+        },
+        "locked": {
+            "planWhy": "Está incluida en:",
+            "roleWhy": "Para usarla, sumá este tipo de cuenta a tu perfil.",
+            "permissionWhy": "Tu cuenta no tiene permiso para usar esto.",
+            "seePlans": "Ver planes",
+            "startTrial": "Empezar prueba",
+            "join": "Sumarme",
+            "permissionLink": "Saber más"
+        },
+        "sidebar": {
+            "lockedLabel": "Requiere un plan superior",
+            "label": "Navegación de Mi cuenta"
+        },
+        "breadcrumbs": "Ruta de navegación",
+        "gallery": {
+            "title": "Kit de componentes"
+        }
     }
 }
