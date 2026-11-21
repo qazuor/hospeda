@@ -147,6 +147,30 @@ describe('EmailLayout', () => {
         expect(html).toContain('max-width:600px');
     });
 
+    it('caps the card at 600px in Outlook desktop and pads on table cells (R-2)', async () => {
+        // Arrange & Act
+        const { html, text } = await renderEmailBodies({
+            react: (
+                <EmailLayout>
+                    <p>x</p>
+                </EmailLayout>
+            )
+        });
+
+        // Assert
+        expect(html).toContain(
+            '<!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->'
+        );
+        expect(html).toContain('<!--[if mso]></td></tr></table><![endif]-->');
+        expect(html.indexOf('<!--[if mso]><table')).toBeLessThan(html.indexOf('max-width:600px'));
+        expect(html.lastIndexOf('<!--[if mso]></td>')).toBeGreaterThan(
+            html.indexOf('hospeda.com.ar</a>')
+        );
+        expect(html).toMatch(/<td[^>]*style="[^"]*padding:32px 24px/);
+        expect(html).toMatch(/<td[^>]*style="[^"]*border-bottom:4px solid #3885f9/);
+        expect(text).not.toContain('[if mso]');
+    });
+
     it('keeps the logo URL and tagline out of the text part (AC-3.2)', async () => {
         // Arrange & Act
         const { text } = await renderEmailBodies({

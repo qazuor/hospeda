@@ -1,5 +1,6 @@
 import {
     Body,
+    Column,
     Container,
     Head,
     Hr,
@@ -7,7 +8,7 @@ import {
     Img,
     Link,
     Preview,
-    Section,
+    Row,
     Text
 } from '@react-email/components';
 import { emailPalette } from '@repo/design-tokens';
@@ -105,57 +106,85 @@ export function EmailLayout({ previewText, children, footerLink = 'none' }: Emai
             </Head>
             {previewText ? <Preview>{previewText}</Preview> : null}
             <Body style={styles.body}>
+                {/* Outlook desktop (Word) ignores max-width: a fixed 600px ghost table caps the card there. */}
+                <div
+                    style={styles.msoHost}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: module constant (an MSO conditional comment), never user input; React has no other way to emit a comment.
+                    dangerouslySetInnerHTML={{ __html: MSO_GHOST_TABLE_OPEN }}
+                />
                 <Container
                     width="100%"
                     style={styles.container}
                 >
-                    <Section
-                        style={styles.header}
-                        data-skip-in-text="true"
-                    >
-                        <Img
-                            src={EMAIL_LOGO_URL}
-                            width={EMAIL_LOGO_WIDTH}
-                            height={EMAIL_LOGO_HEIGHT}
-                            alt="Hospeda"
-                            style={styles.logo}
-                        />
-                        <Text style={styles.tagline}>Turismo en el Litoral</Text>
-                    </Section>
+                    <Row data-skip-in-text="true">
+                        <Column style={styles.header}>
+                            <Img
+                                src={EMAIL_LOGO_URL}
+                                width={EMAIL_LOGO_WIDTH}
+                                height={EMAIL_LOGO_HEIGHT}
+                                alt="Hospeda"
+                                style={styles.logo}
+                            />
+                            <Text style={styles.tagline}>Turismo en el Litoral</Text>
+                        </Column>
+                    </Row>
 
-                    <Section style={styles.content}>{children}</Section>
+                    <Row>
+                        <Column style={styles.content}>{children}</Column>
+                    </Row>
 
-                    <Section style={styles.footer}>
-                        <Hr style={styles.divider} />
-                        <Text style={styles.footerText}>Hospeda - Turismo en el Litoral</Text>
-                        <Text style={styles.footerSubtext}>
-                            Plataforma de alojamientos turísticos en Concepción del Uruguay y la
-                            región del Litoral argentino
-                        </Text>
-                        <Text style={styles.footerSubtext}>
-                            <Link
-                                href={EMAIL_PUBLIC_SITE_URL}
-                                style={styles.footerLink}
-                            >
-                                hospeda.com.ar
-                            </Link>
-                        </Text>
-                        {footerLink === 'preferences' ? (
+                    <Row>
+                        <Column style={styles.footer}>
+                            <Hr style={styles.divider} />
+                            <Text style={styles.footerText}>Hospeda - Turismo en el Litoral</Text>
+                            <Text style={styles.footerSubtext}>
+                                Plataforma de alojamientos turísticos en Concepción del Uruguay y la
+                                región del Litoral argentino
+                            </Text>
                             <Text style={styles.footerSubtext}>
                                 <Link
-                                    href={EMAIL_PREFERENCES_URL}
+                                    href={EMAIL_PUBLIC_SITE_URL}
                                     style={styles.footerLink}
+                                    data-layout-link="home"
                                 >
-                                    Administrar preferencias de notificaciones
+                                    hospeda.com.ar
                                 </Link>
                             </Text>
-                        ) : null}
-                    </Section>
+                            {footerLink === 'preferences' ? (
+                                <Text style={styles.footerSubtext}>
+                                    <Link
+                                        href={EMAIL_PREFERENCES_URL}
+                                        style={styles.footerLink}
+                                        data-layout-link="preferences"
+                                    >
+                                        Administrar preferencias de notificaciones
+                                    </Link>
+                                </Text>
+                            ) : null}
+                        </Column>
+                    </Row>
                 </Container>
+                <div
+                    style={styles.msoHost}
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: module constant (an MSO conditional comment), never user input; React has no other way to emit a comment.
+                    dangerouslySetInnerHTML={{ __html: MSO_GHOST_TABLE_CLOSE }}
+                />
             </Body>
         </Html>
     );
 }
+
+/** Card width Outlook desktop gets through the ghost table (every other client is fluid). */
+const EMAIL_CARD_WIDTH = 600;
+
+/**
+ * MSO-only "ghost table" around the card. Word ignores `max-width`, so without
+ * it the card stretches to the full window in Outlook desktop. Every other
+ * client sees only an HTML comment. React cannot emit a bare comment, so each
+ * half lives in an empty wrapper `<div>` (see {@link EmailLayout}).
+ */
+const MSO_GHOST_TABLE_OPEN = `<!--[if mso]><table role="presentation" width="${EMAIL_CARD_WIDTH}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->`;
+const MSO_GHOST_TABLE_CLOSE = '<!--[if mso]></td></tr></table><![endif]-->';
 
 const FONT_STACK =
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
@@ -164,6 +193,10 @@ const styles = {
     body: {
         backgroundColor: emailPalette.pageBackground,
         fontFamily: FONT_STACK,
+        margin: '0',
+        padding: '0'
+    },
+    msoHost: {
         margin: '0',
         padding: '0'
     },
@@ -201,9 +234,11 @@ const styles = {
         margin: '8px 0 0'
     },
     content: {
+        backgroundColor: emailPalette.surface,
         padding: '32px 24px'
     },
     footer: {
+        backgroundColor: emailPalette.surface,
         padding: '0 24px 24px',
         textAlign: 'center' as const
     },
