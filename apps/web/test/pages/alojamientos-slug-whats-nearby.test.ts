@@ -78,4 +78,21 @@ describe('[slug].astro — WhatsNearbySection wiring (HOS-145 T-009)', () => {
         expect(whatsNearbyIndex).toBeGreaterThan(layoutOpenIndex);
         expect(whatsNearbyIndex).toBeLessThan(layoutCloseIndex);
     });
+
+    it('renders all four carousels in an optional slot after the article and sidebar grid', () => {
+        const layout = readFileSync(
+            resolve(__dirname, '../../src/layouts/DetailLayout.astro'),
+            'utf8'
+        );
+        const related = slugPageSrc.match(
+            /<Fragment slot="after-content">([\s\S]*?)<\/Fragment>/
+        )?.[1];
+
+        expect(related?.match(/<RelatedCarousel\b/g)).toHaveLength(4);
+        expect(slugPageSrc.match(/<RelatedCarousel\b/g)).toHaveLength(4);
+        expect(related).not.toContain('<WhatsNearbySection');
+        expect(layout).toMatch(
+            /<\/aside>\s*\)\}\s*<\/div>\s*<slot name="after-content" \/>\s*<\/div>/
+        );
+    });
 });

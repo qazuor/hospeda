@@ -121,6 +121,16 @@ declare namespace App {
              * server-side by row ownership regardless.
              */
             readonly ownsHostTradeListing: boolean;
+            /**
+             * Force-password-change flag (SPEC-239), from the same
+             * `/api/v1/public/auth/me` payload (`actor.mustChangePassword`).
+             *
+             * The middleware's step 7.2 gate redirects to
+             * `/mi-cuenta/cambiar-contrasena/` while it is `true`, and that page
+             * reads it to pick forced vs voluntary copy (HOS-2431). `false` on a
+             * malformed payload.
+             */
+            readonly mustChangePassword: boolean;
         } | null;
 
         /**

@@ -1,10 +1,11 @@
 /**
  * Named destinations in visual order: comparison sits above the row, then
- * filters and listing controls start at the left, followed by map and AI
+ * contact, filters and listing controls start at the left, followed by map and AI
  * actions at the right. Keeping the order here gives every portal one contract.
  */
 export const MOBILE_DOCK_SLOTS = [
     'above',
+    'contact',
     'filters',
     'start',
     'map-cards',

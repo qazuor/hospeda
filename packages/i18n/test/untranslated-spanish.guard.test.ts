@@ -33,6 +33,12 @@ type TargetLocale = (typeof TARGET_LOCALES)[number];
 const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = {
     Email: ['en', 'pt'],
     WhatsApp: ['en', 'pt'],
+    // Correct in both Spanish and Brazilian Portuguese (HOS-2521 contact copy).
+    '/hora': ['pt'],
+    '/grupo': ['pt'],
+    // Bed/beds share the same spelling in Spanish and Brazilian Portuguese.
+    '{{count}} cama': ['pt'],
+    '{{count}} camas': ['pt'],
     Facebook: ['en', 'pt'],
     Instagram: ['en', 'pt'],
     YouTube: ['en', 'pt'],

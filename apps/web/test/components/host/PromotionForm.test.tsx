@@ -11,6 +11,8 @@
  * - Edit mode pre-fills fields from initialData
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -100,6 +102,65 @@ afterEach(() => {
 });
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
+
+describe('PromotionForm — feedback and action styling (HOS-2451)', () => {
+    it('queues a success toast for the list page when a promotion is created', async () => {
+        sessionStorage.removeItem('hospeda.pendingToast');
+        mockCreate.mockResolvedValueOnce({ ok: true, data: { id: 'new-promo-id' } });
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+        fillCreateFields();
+
+        fireEvent.click(getSubmitButton());
+
+        await waitFor(() => expect(window.location.href).toBe('/es/mi-cuenta/promociones/'));
+        const queued = JSON.parse(sessionStorage.getItem('hospeda.pendingToast') ?? 'null');
+        expect(queued).toMatchObject({ type: 'success', message: 'Promoción creada' });
+    });
+
+    it('gives Cancelar its own action style instead of an undefined global class', () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        const cancel = screen.getByRole('link', { name: /cancelar/i });
+        expect(cancel.className).toContain('cancelLink');
+        expect(cancel.className).not.toContain('btn-secondary');
+    });
+
+    it('styles the "Ver planes" link as an action', async () => {
+        mockCreate.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'x' }
+        });
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+        fillCreateFields();
+
+        fireEvent.click(getSubmitButton());
+
+        const plansLink = await screen.findByRole('link', { name: /ver planes/i });
+        expect(plansLink.className).toContain('upgradeLink');
+    });
+
+    it('spaces the action buttons so Cancelar cannot sit on top of Guardar', () => {
+        const css = readFileSync(resolve(__dirname, '../../../src/styles/components.css'), 'utf8');
+        const block = css.match(/\.form-actions\s*\{([^}]*)\}/)?.[1] ?? '';
+        expect(block).toMatch(/gap:/);
+        expect(block).toMatch(/align-items:\s*center/);
+    });
+});
 
 describe('PromotionForm — create mode', () => {
     it('renders all expected fields', () => {

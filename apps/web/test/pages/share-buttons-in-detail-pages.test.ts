@@ -1,10 +1,9 @@
 /**
  * @file share-buttons-in-detail-pages.test.ts
- * @description Source-based assertions for T-050: ShareButtons rendered in
- * eventos/[slug].astro and publicaciones/[slug].astro.
+ * @description Source-based assertions for sharing on event, post, and accommodation detail pages.
  *
- * Verifies that the ShareButtons island is imported, hydrated with client:visible,
- * and receives the canonical URL and page title.
+ * Verifies that sharing receives canonical metadata and is hydrated via the
+ * standalone island or the accommodation gallery.
  *
  * Astro components cannot be rendered in Vitest — we assert against source text.
  */
@@ -20,6 +19,31 @@ function readPage(relativePath: string): string {
 }
 
 describe('T-050 — ShareButtons in detail pages', () => {
+    describe('alojamientos/[slug].astro — gallery overlays (T-022)', () => {
+        const src = readPage('alojamientos/[slug].astro');
+        const gallery = src.match(/<ImageGallery\b[\s\S]*?\/>/)?.[0];
+
+        it('hydrates the detail gallery with the page locale', () => {
+            expect(gallery).toMatch(/\bvariant="detail"/);
+            expect(gallery).toMatch(/\blocale=\{locale\}/);
+            expect(gallery).toMatch(/\sclient:load\s/);
+        });
+
+        it('wires canonical URL, accommodation title, and Favorite identity through mobile props', () => {
+            const mobile = gallery?.match(/\bmobile\s*=\s*\{\{([\s\S]*?)\}\s*\}/)?.[1];
+
+            expect(src).toMatch(
+                /const siteOrigin\s*=\s*Astro\.site\?\.href[^\n]*Astro\.url\.origin/
+            );
+            expect(mobile).toMatch(
+                /\bshare:\s*\{\s*url:\s*`\$\{siteOrigin\}\$\{Astro\.url\.pathname\}`\s*,\s*title:\s*accommodation\.name\b/
+            );
+            expect(mobile).toMatch(
+                /\bfavorite:\s*\{\s*entityId:\s*accommodation\.id\s*,\s*entityType:\s*'ACCOMMODATION'\s*,\s*variant:\s*'standalone'/
+            );
+        });
+    });
+
     describe('eventos/[slug].astro', () => {
         const src = readPage('eventos/[slug].astro');
 
@@ -107,7 +131,7 @@ describe('T-050 — ShareButtons in detail pages', () => {
             expect(authorCardSrc).toContain('post-author-card__name--link');
             // HOS-375 moved the author page to `/autores/`. Linked directly, so
             // this must NOT fall back to the old path and lean on the redirect.
-            expect(authorCardSrc).toContain('autores/${author.slug}');
+            expect(authorCardSrc).toContain(`autores/\${author.slug}`);
             expect(authorCardSrc).not.toContain('publicaciones/autor/');
         });
     });

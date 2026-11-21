@@ -9,6 +9,9 @@ export const MOBILE_DOCK_BOTTOM_TOLERANCE = 2 as const;
 /** Attribute applied to the dock while it is translated out of view. */
 export const MOBILE_DOCK_HIDDEN_ATTR = 'data-dock-hidden' as const;
 
+const CONTACT_PIN_SELECTOR = '[data-mobile-dock-slot="contact"] [data-dock-item]';
+const SCROLL_PIN_SELECTOR = `[data-mobile-dock-slot="above"] [data-dock-item], ${CONTACT_PIN_SELECTOR}`;
+
 /** Inputs used to decide whether scroll movement should hide the dock. */
 export interface ResolveDockHiddenInput {
     readonly isHidden: boolean;
@@ -43,7 +46,7 @@ export function resolveDockHidden({
 }: ResolveDockHiddenInput): ResolveDockHiddenResult {
     // Focused controls must remain visible for keyboard and screen-reader users.
     if (hasFocusWithin) return { hidden: false };
-    // A selected comparison bar contains user choices that must stay in view.
+    // Comparison selections and listing contact controls must stay in view.
     if (isPinned) return { hidden: false };
     // Keep navigation available near the top of the page.
     if (currentY <= MOBILE_DOCK_HIDE_MIN_SCROLL_Y) return { hidden: false };
@@ -73,7 +76,7 @@ export interface DockAutoHideCleanup {
 
 /**
  * Attaches passive, frame-batched scroll handling while the mobile breakpoint
- * matches. Focus and a visible comparison item keep the dock available; media
+ * matches. Focus and visible comparison or contact items keep the dock available; media
  * changes clear stale hidden state and reset the scroll baseline on return.
  */
 export function initDockAutoHide({
@@ -93,17 +96,16 @@ export function initDockAutoHide({
     let isHidden = dock.hasAttribute(MOBILE_DOCK_HIDDEN_ATTR);
     let cleanedUp = false;
 
+    const hasVisiblePin = (selector: string): boolean => {
+        const pinItems = dock.querySelectorAll<HTMLElement>(selector);
+        return Array.from(pinItems).some((item) => item.getClientRects().length > 0);
+    };
+
     const update = (): void => {
         frameId = null;
         if (cleanedUp || !media.matches) return;
 
         const currentY = win.scrollY;
-        const aboveSlot = dock.querySelector<HTMLElement>('[data-mobile-dock-slot="above"]');
-        const isPinned =
-            aboveSlot !== null &&
-            [...aboveSlot.querySelectorAll<HTMLElement>('[data-dock-item]')].some(
-                (item) => item.getClientRects().length > 0
-            );
         const result = resolveDockHidden({
             isHidden,
             previousY,
@@ -111,7 +113,7 @@ export function initDockAutoHide({
             viewportHeight: win.innerHeight,
             documentHeight: win.document.documentElement.scrollHeight,
             hasFocusWithin: dock.matches(':focus-within'),
-            isPinned
+            isPinned: hasVisiblePin(SCROLL_PIN_SELECTOR)
         });
 
         isHidden = result.hidden;
@@ -124,15 +126,27 @@ export function initDockAutoHide({
         frameId = requestFrame(update);
     };
 
-    const onFocusIn = (): void => {
+    const reveal = (): void => {
         isHidden = false;
         dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
     };
 
+    // Reveal for late contact changes without changing comparison's scroll-only behavior.
+    const reconcileContactPin = (): void => {
+        if (media.matches && isHidden && hasVisiblePin(CONTACT_PIN_SELECTOR)) reveal();
+    };
+    const observer =
+        typeof MutationObserver === 'undefined' ? null : new MutationObserver(reconcileContactPin);
+    observer?.observe(dock, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['class', 'hidden', 'style', 'data-dock-item']
+    });
+
     const onMediaChange = (event: MediaQueryListEvent): void => {
         if (!event.matches) {
-            isHidden = false;
-            dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+            reveal();
             if (frameId !== null) {
                 cancelFrame?.(frameId);
                 frameId = null;
@@ -143,20 +157,21 @@ export function initDockAutoHide({
     };
 
     win.addEventListener('scroll', onScroll, { passive: true });
-    dock.addEventListener('focusin', onFocusIn);
+    dock.addEventListener('focusin', reveal);
     media.addEventListener('change', onMediaChange);
-    if (!media.matches) dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+    if (media.matches) reconcileContactPin();
+    else reveal();
 
     return {
         cleanup: () => {
             cleanedUp = true;
             win.removeEventListener('scroll', onScroll);
-            dock.removeEventListener('focusin', onFocusIn);
+            dock.removeEventListener('focusin', reveal);
             media.removeEventListener('change', onMediaChange);
+            observer?.disconnect();
             if (frameId !== null) cancelFrame?.(frameId);
             frameId = null;
-            isHidden = false;
-            dock.removeAttribute(MOBILE_DOCK_HIDDEN_ATTR);
+            reveal();
         }
     };
 }

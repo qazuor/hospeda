@@ -71,3 +71,42 @@
     padding: var(--space-8, 2rem) 0;
     text-align: center;
 }
+
+/*
+ * HOS-2451: "Cancelar" and "Ver planes" were links with class names no
+ * stylesheet defines (`btn-secondary`), so they rendered as bare text. They
+ * borrow the tokens of the account forms' secondary actions.
+ */
+.cancelLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    background: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.2s) ease;
+}
+
+.cancelLink:hover {
+    background-color: var(--muted);
+}
+
+.cancelLink:focus-visible,
+.upgradeLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.upgradeLink {
+    color: var(--brand-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}

@@ -238,6 +238,12 @@
         "uploading": "Subiendo…"
     },
     "editProfile": {
+        "security": {
+            "description": "Change the password you use to sign in to Hospeda.",
+            "changePasswordLink": "Change password",
+            "noPasswordDescription": "You sign in with Google or Facebook and do not have a password yet. Add one to also sign in with your email.",
+            "addPasswordLink": "Add password"
+        },
         "fields": {
             "displayName": "Display name",
             "firstName": "First name",
@@ -1060,6 +1066,7 @@
             "personalSection": "Personal information",
             "extrasSection": "Más sobre vos",
             "locationSection": "Ubicación",
+            "securitySection": "Security",
             "socialSection": "Redes sociales"
         },
         "favorites": {
@@ -1860,6 +1867,7 @@
             "weak": "Débil"
         },
         "strengthLabel": "Seguridad de la contraseña",
+        "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
         "accountNotice": "You are about to change the password for this account:"
     }
 }

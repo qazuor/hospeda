@@ -24,12 +24,17 @@ import { getApiUrl } from '@/lib/env';
 
 // ─── Module mocks ──────────────────────────────────────────────────────────
 
+// Records every key the component asks for, so a test can tell whether the
+// busy and idle states of one control resolve to DIFFERENT keys (HOS-2438).
+const { requestedKeys } = vi.hoisted(() => ({ requestedKeys: [] as string[] }));
+
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         // Mirrors the real signature: `(key, fallback?, params?)`. Placeholders
         // are interpolated from `params` so assertions can name the platform a
         // message is about (`{{platform}}`) instead of matching the raw key.
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+            requestedKeys.push(_key);
             const template = fallback ?? _key;
             if (!params) {
                 return template;
@@ -551,6 +556,31 @@ describe('ExternalReputationSection', () => {
                 expect(body.url).toBe('https://maps.google.com/?cid=999');
                 expect(body.platform).toBe('GOOGLE');
             });
+        });
+
+        it('uses a distinct i18n key for the busy state of the add button (HOS-2438)', async () => {
+            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
+                if ((opts as RequestInit)?.method === 'POST') {
+                    return new Promise<Response>(() => {
+                        // never resolves: the button stays in its busy state
+                    });
+                }
+                return Promise.resolve(makeListingsOkResponse([]));
+            });
+            renderSection();
+            await waitFor(() => {
+                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
+            });
+            fireEvent.change(screen.getByPlaceholderText('https://...'), {
+                target: { value: 'https://maps.google.com/?cid=999' }
+            });
+            requestedKeys.length = 0;
+
+            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
+
+            const busyButton = await screen.findByRole('button', { name: /Agregando/i });
+            expect(busyButton).toBeDisabled();
+            expect(requestedKeys).toContain('external-reputation.ownerConfig.addingListing');
         });
 
         it('disables the add button when URL is empty', async () => {

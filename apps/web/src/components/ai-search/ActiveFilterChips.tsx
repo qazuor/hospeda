@@ -151,6 +151,19 @@ const NUMERIC_CHIP_KEYS: Partial<Record<keyof SearchIntentEntities, string>> = {
     maxBathrooms: 'aiSearch.chips.maxBathrooms'
 };
 
+/**
+ * Numeric chip keys whose label counts a noun, so their i18n entries are
+ * `_one`/`_other` pairs resolved through `tPlural`.
+ */
+const PLURAL_NUMERIC_CHIP_KEYS: ReadonlySet<keyof SearchIntentEntities> = new Set([
+    'minGuests',
+    'maxGuests',
+    'minBedrooms',
+    'maxBedrooms',
+    'minBathrooms',
+    'maxBathrooms'
+]);
+
 // ─── Label resolution ──────────────────────────────────────────────────────────
 
 /**
@@ -246,13 +259,13 @@ function resolveChipLabel(
         };
     }
 
-    // Numeric ranges. `minGuests`/`maxGuests` carry a real countable noun
-    // ("huésped(es)") and pluralize; the rest (price, rating, bedrooms,
-    // bathrooms) are bare numeric labels with no noun to agree with.
+    // Numeric ranges. Guests, bedrooms and bathrooms carry a real countable
+    // noun ("huésped(es)", "dormitorio(s)", "baño(s)") and pluralize; price
+    // and rating are bare numeric labels with no noun to agree with.
     if (key in NUMERIC_CHIP_KEYS) {
         const i18nKey = NUMERIC_CHIP_KEYS[key] as string;
         const numericValue = Number(value);
-        if (key === 'minGuests' || key === 'maxGuests') {
+        if (PLURAL_NUMERIC_CHIP_KEYS.has(key)) {
             return {
                 label: tPlural(i18nKey, numericValue, { value: numericValue }),
                 visible: true

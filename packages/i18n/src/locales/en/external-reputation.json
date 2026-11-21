@@ -37,6 +37,7 @@
     "ownerConfig": {
         "title": "External reputation settings",
         "addListing": "Add platform link",
+        "addingListing": "Adding...",
         "showLink": "Show link to platform",
         "showReviews": "Show text reviews",
         "masterToggle": "Show external reputation section",
