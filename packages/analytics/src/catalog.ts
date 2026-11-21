@@ -218,7 +218,8 @@ export const AnalyticsEventSchemas = {
             contact_method: z.string().min(1),
             is_authenticated: z.boolean(),
             locale: localeSchema,
-            source_page: z.string().min(1).optional()
+            source_page: z.string().min(1).optional(),
+            origin: ContactOriginSchema.optional()
         })
         .refine(entityPairRefinement.check, entityPairRefinement.params),
     [AnalyticsEvents.contactOwnerCompleted]: z
@@ -230,7 +231,9 @@ export const AnalyticsEventSchemas = {
             contact_method: z.string().min(1),
             conversation_flow: z.string().min(1),
             is_authenticated: z.boolean(),
-            locale: localeSchema
+            locale: localeSchema,
+            source_page: z.string().min(1).optional(),
+            origin: ContactOriginSchema.optional()
         })
         .refine(entityPairRefinement.check, entityPairRefinement.params),
     [AnalyticsEvents.contactOwnerFailed]: z
@@ -242,7 +245,9 @@ export const AnalyticsEventSchemas = {
             contact_method: z.string().min(1).optional(),
             failure_reason: z.string().min(1),
             is_authenticated: z.boolean().optional(),
-            locale: localeSchema
+            locale: localeSchema,
+            source_page: z.string().min(1).optional(),
+            origin: ContactOriginSchema.optional()
         })
         .refine(entityPairRefinement.check, entityPairRefinement.params),
     [AnalyticsEvents.signUpStarted]: z.object({
