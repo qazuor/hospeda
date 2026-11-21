@@ -139,6 +139,7 @@ describe('RefundRemainderSettlementForm', () => {
             'UNCITED_PROVIDER_REFUND_ON_CHARGE',
             remainder.rejections.UNCITED_PROVIDER_REFUND_ON_CHARGE
         ],
+        ['REFUND_RETRY_IN_PROGRESS', remainder.rejections.REFUND_RETRY_IN_PROGRESS],
         ['REFUND_CALL_UNANSWERED', remainder.rejections.REFUND_CALL_UNANSWERED],
         ['REFUND_NOT_CONFIRMED', remainder.rejections.REFUND_NOT_CONFIRMED],
         ['REFUND_HAS_NO_ACCEPTED_CALL', remainder.rejections.REFUND_HAS_NO_ACCEPTED_CALL],

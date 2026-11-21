@@ -38,7 +38,9 @@ const REMAINDER_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
     OTHER_REFUND_CALL_UNANSWERED:
         'admin-billing.proposedRefunds.remainder.rejections.OTHER_REFUND_CALL_UNANSWERED',
     UNCITED_PROVIDER_REFUND_ON_CHARGE:
-        'admin-billing.proposedRefunds.remainder.rejections.UNCITED_PROVIDER_REFUND_ON_CHARGE'
+        'admin-billing.proposedRefunds.remainder.rejections.UNCITED_PROVIDER_REFUND_ON_CHARGE',
+    REFUND_RETRY_IN_PROGRESS:
+        'admin-billing.proposedRefunds.remainder.rejections.REFUND_RETRY_IN_PROGRESS'
 };
 
 const RefundIdSchema = z.string().uuid();

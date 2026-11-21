@@ -2351,7 +2351,8 @@
                 "ACCEPTED_PART_NOT_ACCREDITED": "O provedor não mostra como creditada a parte que tinha aceitado. Confira a cobrança no painel do provedor antes de registrar o restante.",
                 "REMAINDER_NOT_FOUND_AT_PROVIDER": "O provedor não mostra nesta cobrança um reembolso creditado com essa referência e esse valor.",
                 "OTHER_REFUND_CALL_UNANSWERED": "Outro reembolso deste pagamento tem uma chamada ao provedor ainda sem resposta. Aguarde a resolução antes de registrar o restante: o reembolso que você vê no painel pode ser dessa chamada.",
-                "UNCITED_PROVIDER_REFUND_ON_CHARGE": "A cobrança mostra no Mercado Pago um reembolso no valor da chamada sem resposta que não está registrado em lugar nenhum: pode ser essa chamada, que chegou. Use «Tentar novamente com o Mercado Pago», que o vincula, em vez de registrar aqui."
+                "UNCITED_PROVIDER_REFUND_ON_CHARGE": "A cobrança mostra no Mercado Pago um reembolso no valor da chamada sem resposta que não está registrado em lugar nenhum: pode ser essa chamada, que chegou. Use «Tentar novamente com o Mercado Pago», que o vincula, em vez de registrar aqui.",
+                "REFUND_RETRY_IN_PROGRESS": "Há um «Tentar novamente com o Mercado Pago» deste reembolso em andamento, e o envio pode estar a caminho. Aguarde o resultado e registre o restante só se ele não fechar o reembolso."
             }
         },
         "providerRetry": {

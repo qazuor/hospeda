@@ -2351,7 +2351,8 @@
                 "ACCEPTED_PART_NOT_ACCREDITED": "El proveedor no muestra acreditada la parte que había aceptado. Revisá el cobro en el panel del proveedor antes de registrar el resto.",
                 "REMAINDER_NOT_FOUND_AT_PROVIDER": "El proveedor no muestra en este cobro una devolución acreditada con esa referencia y ese monto.",
                 "OTHER_REFUND_CALL_UNANSWERED": "Otra devolución de este pago tiene una llamada a MP sin respuesta. Esperá a que se resuelva antes de registrar el resto: el reembolso que ves en el panel puede ser de esa llamada.",
-                "UNCITED_PROVIDER_REFUND_ON_CHARGE": "El cobro muestra en Mercado Pago una devolución por el monto del llamado sin respuesta que no está registrada en ningún lado: puede ser ese llamado, que llegó. Usá «Reintentar con Mercado Pago», que la toma, en vez de asentarla acá."
+                "UNCITED_PROVIDER_REFUND_ON_CHARGE": "El cobro muestra en Mercado Pago una devolución por el monto del llamado sin respuesta que no está registrada en ningún lado: puede ser ese llamado, que llegó. Usá «Reintentar con Mercado Pago», que la toma, en vez de asentarla acá.",
+                "REFUND_RETRY_IN_PROGRESS": "Hay un «Reintentar con Mercado Pago» de esta devolución en curso, y su envío puede estar viajando. Esperá su resultado y asentá el resto solo si no cerró la devolución."
             }
         },
         "providerRetry": {
