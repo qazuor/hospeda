@@ -46,12 +46,12 @@ export function ProfileEditSecuritySection({
             className={styles.section}
             aria-labelledby="security-section-title"
         >
-            <h3
+            <h2
                 className={styles.sectionTitle}
                 id="security-section-title"
             >
                 {t('account.pages.editProfile.securitySection')}
-            </h3>
+            </h2>
             <p>
                 {hasPassword
                     ? t('account.editProfile.security.description')

@@ -60,12 +60,12 @@ export function ProfileEditPersonalSection({
             className={styles.section}
             aria-labelledby="personal-section-title"
         >
-            <h3
+            <h2
                 className={styles.sectionTitle}
                 id="personal-section-title"
             >
                 {t('account.pages.editProfile.personalSection', 'Información personal')}
-            </h3>
+            </h2>
             <div className={styles.grid}>
                 {/* displayName */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>

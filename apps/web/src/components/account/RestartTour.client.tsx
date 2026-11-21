@@ -90,7 +90,7 @@ export function RestartTour({ locale, userRoles }: RestartTourProps) {
 
     return (
         <div className="restart-tour">
-            <h3 className="restart-tour__title">{t('account.nav.repeatTour')}</h3>
+            <h2 className="restart-tour__title">{t('account.nav.repeatTour')}</h2>
             <p className="restart-tour__desc">{t('account.nav.repeatTourDesc')}</p>
             <ul className="restart-tour__list">
                 {tours.map((tour) => {

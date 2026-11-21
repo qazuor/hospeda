@@ -3,7 +3,8 @@
  * @description Regression for HOS-2453: the partner and provider account pages
  * mount these islands directly under the page `<h1>` (their wrapping
  * `AccountSectionCard` carries no title), so their section headings must be
- * `<h2>`. An `<h3>` here skips a level in the document outline.
+ * `<h2>`. The profile-edit sections, preference toggles and restart-tour
+ * follow the same rule. An `<h3>` here skips a level in the document outline.
  *
  * @module test/static-guards/account-panel-heading-levels
  */
@@ -19,7 +20,15 @@ const FILES = [
     'account/HostTradeEditForm.client.tsx',
     'host/host-trades/ProviderUsagesPanel.client.tsx',
     'host/host-trades/ProviderReviewsPanel.client.tsx',
-    'host/host-trades/ProviderQrPanel.client.tsx'
+    'host/host-trades/ProviderQrPanel.client.tsx',
+    'account/ProfileEditAvatarSection.tsx',
+    'account/ProfileEditExtrasSection.tsx',
+    'account/ProfileEditLocationSection.tsx',
+    'account/ProfileEditPersonalSection.tsx',
+    'account/ProfileEditSecuritySection.tsx',
+    'account/ProfileEditSocialSection.tsx',
+    'account/PreferenceToggles.client.tsx',
+    'account/RestartTour.client.tsx'
 ] as const;
 
 describe('account panels sit directly under the page h1 (HOS-2453)', () => {

@@ -42,12 +42,12 @@ export function ProfileEditExtrasSection({
             className={styles.section}
             aria-labelledby="extras-section-title"
         >
-            <h3
+            <h2
                 className={styles.sectionTitle}
                 id="extras-section-title"
             >
                 {t('account.pages.editProfile.extrasSection')}
-            </h3>
+            </h2>
             <div className={styles.grid}>
                 {/* website */}
                 <div className={styles.field}>
