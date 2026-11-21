@@ -1,5 +1,5 @@
 {
-  "contentHash": "3fc60740ccae4bb6b910b4944c8aa967de966b016614a877bc0826e8b834c8a9",
+  "contentHash": "70671e7f67cba835d4908a6753dcf25901c1ba6f564fffb104e2ce0de355afe9",
   "locales": {
     "es": [
       {
@@ -710,7 +710,7 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}, corregir desde el editor y avisar a Hospeda.",
           "expect": "- Con un pedido de arreglo la publicación sigue a la vista mientras corregís.\n- «Ya lo corregí» avisa al equipo; el pedido lo cierra Hospeda.\n- Una publicación moderada se puede ver, exportar y editar, pero no publicar.",
@@ -928,7 +928,7 @@
           "addons",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mi comercio}} se pausan y reanudan con un asistente de IA.",
           "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
@@ -1170,7 +1170,7 @@
           "change-plan",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
           "expect": "- El editor marca cada sección incompleta y la tarjeta de la publicación también.\n- Publicar pide un plan activo o la prueba gratis; si no te corresponde la prueba, te lleva a elegir un plan.\n- Un pedido de excepción lo revisa Hospeda y te responde por email.",
