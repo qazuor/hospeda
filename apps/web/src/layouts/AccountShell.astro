@@ -2,8 +2,8 @@
 /**
  * @file AccountShell.astro
  * @description The new account page frame (HOS-2413 T-020, OD-1/OD-2). An Astro
- * LAYOUT composing React pieces: `BaseLayout chrome="account"` (compact header,
- * one-line footer, no dock), the `AccountBar` island below 64rem and the
+ * LAYOUT composing React pieces: `BaseLayout` with the account chrome slots (compact
+ * header, one-line footer, no dock, account toast region), the `AccountBar` island below 64rem and the
  * `AccountSidebar` from 64rem.
  *
  * It is LANDED OFF: `AccountLayout` only renders it for `shell="account"`, and
@@ -34,6 +34,9 @@ import {
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
 import { AiAssistantsNavReveal } from '@/components/account/AiAssistantsNavReveal.client';
+import { AccountFooter } from '@/components/account/ui/AccountFooter';
+import { AccountToastRegion } from '@/components/account/ui/AccountToastRegion';
+import AccountHeader from './AccountHeader.astro';
 import BaseLayout from './BaseLayout.astro';
 import styles from './AccountShell.module.css';
 
@@ -59,7 +62,10 @@ const view = buildSidebarView({ model: navModel, locale });
 
 ---
 
-<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription} chrome="account">
+<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+	<AccountHeader slot="chrome-header" locale={locale} />
+	<AccountFooter slot="chrome-footer" locale={locale} year={new Date().getFullYear()} />
+	<AccountToastRegion slot="chrome-toasts" client:idle locale={locale} />
 	<slot name="head-early" slot="head-early" />
 	<SEOHead
 		slot="head"

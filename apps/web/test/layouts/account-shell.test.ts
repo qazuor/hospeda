@@ -43,7 +43,7 @@ describe('resolveShellTemplate', () => {
 
 describe('AccountShell.astro', () => {
     it('uses the account chrome and composes the kit pieces', () => {
-        expect(shell).toContain('chrome="account"');
+        expect(shell).toContain('slot="chrome-header"');
         expect(shell).toContain('<AccountBar client:media="(max-width: 63.99rem)"');
         expect(shell).toContain('<AccountSidebar');
         expect(shell).toContain('data-account-shell');
