@@ -21,12 +21,22 @@ import type { HelpAudience } from '@repo/help';
 import { useEffect } from 'react';
 import { hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import { fetchAuthMe, readCachedAuthMe } from '@/lib/auth-cache';
+import { pickHelpAudience } from '@/lib/help/help-audience';
 import {
+    HELP_AUDIENCE_PARAM,
     HELP_SELECT_AUDIENCE_EVENT,
     type HelpAudienceEventDetail,
-    pickHelpAudience
-} from '@/lib/help/help-audience';
-import { HELP_AUDIENCE_PARAM } from '@/lib/help/help-tabs';
+    parseHelpAudience
+} from '@/lib/help/help-audience-shared';
+
+/**
+ * Whether the URL already names a valid audience. An invalid `?para=garbage`
+ * counts as absent, the same way the server falls back to the default tab.
+ */
+function urlNamesAudience(): boolean {
+    const value = new URL(window.location.href).searchParams.get(HELP_AUDIENCE_PARAM);
+    return parseHelpAudience({ value }) !== undefined;
+}
 
 /**
  * Works out the audience to preselect. Row reads run only when no permission
@@ -69,7 +79,7 @@ function writeAudienceParam({ audience }: { readonly audience: HelpAudience }): 
  */
 export function HelpAudiencePreselect() {
     useEffect(() => {
-        if (new URL(window.location.href).searchParams.has(HELP_AUDIENCE_PARAM)) {
+        if (urlNamesAudience()) {
             return;
         }
         let cancelled = false;
@@ -77,9 +87,7 @@ export function HelpAudiencePreselect() {
             try {
                 const audience = await resolvePreselectedHelpAudience();
                 // The reader may have picked a tab meanwhile: their choice wins.
-                const pickedMeanwhile = new URL(window.location.href).searchParams.has(
-                    HELP_AUDIENCE_PARAM
-                );
+                const pickedMeanwhile = urlNamesAudience();
                 if (cancelled || audience === undefined || pickedMeanwhile) {
                     return;
                 }

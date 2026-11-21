@@ -111,6 +111,19 @@ describe('HelpAudiencePreselect', () => {
         expect(new URL(window.location.href).searchParams.get('para')).toBe('partner');
     });
 
+    it('treats an invalid ?para= as absent, like the server (falls back, then preselects)', async () => {
+        // Arrange
+        window.history.replaceState(null, '', '/es/mi-cuenta/ayuda/?para=garbage');
+        mocks.readCachedAuthMe.mockReturnValue(session([PermissionEnum.VENUE_EDIT_OWN]));
+
+        // Act
+        render(<HelpAudiencePreselect />);
+
+        // Assert
+        await waitFor(() => expect(selected).toHaveBeenCalledWith('venue'));
+        expect(new URL(window.location.href).searchParams.get('para')).toBe('venue');
+    });
+
     it('keeps the default on a failed read, with no error', async () => {
         // Arrange
         mocks.readCachedAuthMe.mockReturnValue(null);
