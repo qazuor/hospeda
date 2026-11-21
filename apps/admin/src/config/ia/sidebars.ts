@@ -746,7 +746,7 @@ const plataformaSidebar: SidebarInput = {
             },
             icon: 'SettingsIcon',
             defaultOpen: true,
-            permissions: ['SETTINGS_MANAGE', 'SEO_MANAGE'],
+            permissions: ['SETTINGS_MANAGE', 'SEO_MANAGE', 'NOTIFICATION_TEMPLATE_PREVIEW'],
             items: [
                 {
                     type: 'link',
@@ -767,6 +767,18 @@ const plataformaSidebar: SidebarInput = {
                     // permission than its route enforces is an entry shown to
                     // somebody who then eats a 403.
                     permissions: ['QR_CODE_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'email-previews',
+                    label: { es: 'Emails', en: 'Emails', pt: 'E-mails' },
+                    icon: 'MailIcon',
+                    route: '/platform/emails',
+                    // Same gate as the route's RoutePermissionGuard (HOS-2519,
+                    // the HOS-981 rule: menu gate === route gate).
+                    permissions: ['NOTIFICATION_TEMPLATE_PREVIEW'],
+                    // AC-7.1: hidden, not disabled, without the permission.
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
