@@ -1,7 +1,7 @@
 import { Link, Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Locales this digest is written in (owner decision, HOS-2101). */
 export type AiQuestionsDigestLocale = 'es' | 'en' | 'pt';

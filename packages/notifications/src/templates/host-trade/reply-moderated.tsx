@@ -1,7 +1,7 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the ReplyModerated email template (HOS-376 AC-24).
@@ -45,7 +45,6 @@ export function ReplyModerated({ recipientName, outcome, reason, actionUrl }: Re
             previewText={
                 approved ? 'Tu respuesta ya está publicada' : 'Tu respuesta necesita un ajuste'
             }
-            showUnsubscribe={false}
         >
             <Heading>{approved ? 'Tu respuesta ya se ve' : 'Sobre tu respuesta'}</Heading>
 

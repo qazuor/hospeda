@@ -13,7 +13,7 @@
 
 import type { CreateConversationAnon } from '@repo/schemas';
 import { CreateConversationAnonSchema } from '@repo/schemas';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useId, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
@@ -25,9 +25,15 @@ import { translateApiError } from '@/lib/api-errors';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { buildUrl } from '@/lib/urls';
 import { useAccommodationConversation } from '@/store/accommodation-conversation-store';
 import styles from './ContactHost.module.css';
+import {
+    ContactPanelDraftContext,
+    emptyContactDraft,
+    useContactSubmission
+} from './contact-panel-draft';
 
 /**
  * Resolve the API base URL for client-side fetches. Astro injects
@@ -72,16 +78,14 @@ interface ContactHostProps {
      * Ignored in Mode C (existing conversation), since no form is rendered.
      */
     readonly initialMessage?: string;
+    /** Panel coordination: block the generated draft while its booking fields are invalid.
+     * Defaults to no extra submission block. */
+    readonly initialMessageInvalid?: boolean;
+    /** Panel coordination: notify on the visitor's first message edit. Defaults to no notification. */
+    readonly onMessageEdited?: () => void;
+    readonly sourcePage?: string;
+    readonly origin?: ContactOrigin;
 }
-
-type SubmitState =
-    | { readonly phase: 'idle' }
-    | { readonly phase: 'submitting' }
-    | { readonly phase: 'success'; readonly message: string }
-    | { readonly phase: 'duplicate' }
-    | { readonly phase: 'error'; readonly message: string }
-    | { readonly phase: 'fieldError'; readonly field: 'message'; readonly message: string }
-    | { readonly phase: 'rateLimit'; readonly retryAfter: number };
 
 const MAX_MESSAGE_LENGTH = 5000;
 
@@ -154,7 +158,15 @@ function resolveInitiateFailureMessage({
 /**
  * ContactHost island — renders a contact form or link depending on auth state.
  */
-export function ContactHost({ accommodation, locale, initialMessage }: ContactHostProps) {
+export function ContactHost({
+    accommodation,
+    locale,
+    initialMessage,
+    initialMessageInvalid,
+    onMessageEdited,
+    sourcePage = 'accommodation_detail',
+    origin
+}: ContactHostProps) {
     const { t } = createTranslations(locale);
 
     // Session resolved client-side (HOS-369 WB0-4). Until it resolves the form
@@ -207,6 +219,10 @@ export function ContactHost({ accommodation, locale, initialMessage }: ContactHo
             locale={locale}
             t={t}
             initialMessage={initialMessage}
+            initialMessageInvalid={initialMessageInvalid}
+            onMessageEdited={onMessageEdited}
+            sourcePage={sourcePage}
+            origin={origin}
         />
     );
 }
@@ -215,27 +231,41 @@ export function ContactHost({ accommodation, locale, initialMessage }: ContactHo
 // Internal form component
 // ---------------------------------------------------------------------------
 
-interface ContactFormProps {
-    readonly accommodation: ContactHostAccommodation;
+interface ContactFormProps extends ContactHostProps {
     readonly currentUser: ContactHostUser | null;
-    readonly locale: SupportedLocale;
     readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
-    readonly initialMessage?: string;
+    readonly sourcePage: string;
 }
 
-function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: ContactFormProps) {
+function ContactForm({
+    accommodation,
+    currentUser,
+    locale,
+    t,
+    initialMessage,
+    initialMessageInvalid,
+    onMessageEdited,
+    sourcePage,
+    origin
+}: ContactFormProps) {
     const isAuthenticated = Boolean(currentUser);
 
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [message, setMessage] = useState(initialMessage ?? '');
-    const [submitState, setSubmitState] = useState<SubmitState>({ phase: 'idle' });
+    const panelDraft = useContext(ContactPanelDraftContext);
+    const [localDraft, setLocalDraft] = useState(emptyContactDraft);
+    const { name, email, phone, editedMessage } = panelDraft?.draft ?? localDraft;
+    const setDraft = panelDraft?.setDraft ?? setLocalDraft;
+    const message = editedMessage ?? initialMessage ?? '';
+    const formId = useId();
+    const nameId = `${formId}-name`;
+    const emailId = `${formId}-email`;
+    const phoneId = `${formId}-phone`;
+    const messageId = `${formId}-message`;
+    const scopedErrorId = (field: string) => `${formId}-${fieldErrorId(field)}`;
+    const localSubmission = useContactSubmission();
+    const { submitState, setSubmitState, retryCountdown } =
+        panelDraft?.submission ?? localSubmission;
     const [requestAccessSent, setRequestAccessSent] = useState(false);
     const [requestAccessLoading, setRequestAccessLoading] = useState(false);
-
-    const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const [retryCountdown, setRetryCountdown] = useState(0);
 
     // Client-side validation for the anonymous (Mode A) fields — guestName,
     // guestEmail (format, not just non-empty), guestPhone, message — against
@@ -245,32 +275,13 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         t
     });
 
-    // Countdown tick for rate-limit state
-    useEffect(() => {
-        if (submitState.phase === 'rateLimit') {
-            setRetryCountdown(submitState.retryAfter);
-            retryTimerRef.current = setInterval(() => {
-                setRetryCountdown((prev) => {
-                    if (prev <= 1) {
-                        if (retryTimerRef.current) clearInterval(retryTimerRef.current);
-                        setSubmitState({ phase: 'idle' });
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        }
-        return () => {
-            if (retryTimerRef.current) clearInterval(retryTimerRef.current);
-        };
-    }, [submitState]);
-
     const _remaining = MAX_MESSAGE_LENGTH - message.length;
     const isOverLimit = message.length > MAX_MESSAGE_LENGTH;
     const isRequiredEmpty = isAuthenticated
         ? message.trim().length === 0
         : name.trim().length === 0 || email.trim().length === 0 || message.trim().length === 0;
     const isSubmitDisabled =
+        (initialMessageInvalid && editedMessage === undefined) ||
         isOverLimit ||
         isRequiredEmpty ||
         submitState.phase === 'submitting' ||
@@ -291,8 +302,8 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         //
         // Safe to run unconditionally here: `isSubmitDisabled` already returned
         // above for `submitting` and `rateLimit` (so the countdown this would
-        // otherwise cancel is unreachable), and the form is not rendered at all
-        // once the phase is `success`.
+        // otherwise cancel is unreachable). After success, only a newer panel draft
+        // can be submitted without dismissing the confirmation first.
         setSubmitState({ phase: 'idle' });
 
         // Mode A (anonymous): validate against the same schema the API
@@ -311,6 +322,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
             anonPayload = { accommodationId: accommodation.id, ...parsed.data };
         }
 
+        const resetSubmittedDraft = panelDraft?.captureDraftReset();
         setSubmitState({ phase: 'submitting' });
         // Shared analytics props for the booking funnel — enriched with type,
         // destination and price so funnels can segment inquiries by them.
@@ -323,7 +335,8 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
             contact_method: 'platform_message' as const,
             is_authenticated: isAuthenticated,
             locale,
-            source_page: 'accommodation_detail'
+            source_page: sourcePage,
+            ...(origin ? { origin } : {})
         };
         trackEvent(WebEvents.BookingInitiated, bookingProps);
 
@@ -373,9 +386,15 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                         ...bookingProps,
                         conversation_flow: 'authenticated'
                     });
+                    resetSubmittedDraft?.();
                     window.location.href = buildUrl({
                         locale,
                         path: `mi-cuenta/consultas/${conversationId}`
+                    });
+                } else {
+                    setSubmitState({
+                        phase: 'error',
+                        message: t('conversations.errors.messageSendFailed')
                     });
                 }
             } else {
@@ -439,7 +458,8 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                 });
                 setSubmitState({
                     phase: 'success',
-                    message: t('conversations.notifications.verificationSent')
+                    message: t('conversations.notifications.verificationSent'),
+                    keepForm: resetSubmittedDraft?.() === false
                 });
             }
         } catch {
@@ -470,8 +490,8 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         }
     }
 
-    const messageDescId = 'contact-host-message-desc';
-    const messageErrorId = 'contact-host-message-error';
+    const messageDescId = `${formId}-message-desc`;
+    const messageErrorId = `${formId}-message-error`;
 
     return (
         <div
@@ -549,7 +569,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
             )}
 
             {/* --- Form (hidden on terminal success) --- */}
-            {submitState.phase !== 'success' && (
+            {(submitState.phase !== 'success' || submitState.keepForm) && (
                 <form
                     onSubmit={handleSubmit}
                     noValidate
@@ -560,7 +580,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                         <>
                             <div className={styles.field}>
                                 <label
-                                    htmlFor="contact-name"
+                                    htmlFor={nameId}
                                     className={styles.label}
                                 >
                                     {t('conversations.form.name')}
@@ -573,12 +593,13 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     </span>
                                 </label>
                                 <input
-                                    id="contact-name"
+                                    id={nameId}
                                     type="text"
                                     required
                                     value={name}
                                     onChange={(e) => {
-                                        setName(e.target.value);
+                                        const name = e.currentTarget.value;
+                                        setDraft((draft) => ({ ...draft, name }));
                                         clearError('guestName');
                                     }}
                                     placeholder={t('conversations.form.namePlaceholder')}
@@ -587,19 +608,19 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     aria-invalid={!!fieldErrors.guestName}
                                     aria-describedby={
                                         fieldErrors.guestName
-                                            ? fieldErrorId('guestName')
+                                            ? scopedErrorId('guestName')
                                             : undefined
                                     }
                                 />
                                 <FieldError
-                                    id={fieldErrorId('guestName')}
+                                    id={scopedErrorId('guestName')}
                                     message={fieldErrors.guestName}
                                 />
                             </div>
 
                             <div className={styles.field}>
                                 <label
-                                    htmlFor="contact-email"
+                                    htmlFor={emailId}
                                     className={styles.label}
                                 >
                                     {t('conversations.form.email')}
@@ -612,12 +633,13 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     </span>
                                 </label>
                                 <input
-                                    id="contact-email"
+                                    id={emailId}
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => {
-                                        setEmail(e.target.value);
+                                        const email = e.currentTarget.value;
+                                        setDraft((draft) => ({ ...draft, email }));
                                         clearError('guestEmail');
                                     }}
                                     placeholder={t('conversations.form.emailPlaceholder')}
@@ -626,29 +648,30 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     aria-invalid={!!fieldErrors.guestEmail}
                                     aria-describedby={
                                         fieldErrors.guestEmail
-                                            ? fieldErrorId('guestEmail')
+                                            ? scopedErrorId('guestEmail')
                                             : undefined
                                     }
                                 />
                                 <FieldError
-                                    id={fieldErrorId('guestEmail')}
+                                    id={scopedErrorId('guestEmail')}
                                     message={fieldErrors.guestEmail}
                                 />
                             </div>
 
                             <div className={styles.field}>
                                 <label
-                                    htmlFor="contact-phone"
+                                    htmlFor={phoneId}
                                     className={styles.label}
                                 >
                                     {t('conversations.form.phone')}
                                 </label>
                                 <input
-                                    id="contact-phone"
+                                    id={phoneId}
                                     type="tel"
                                     value={phone}
                                     onChange={(e) => {
-                                        setPhone(e.target.value);
+                                        const phone = e.currentTarget.value;
+                                        setDraft((draft) => ({ ...draft, phone }));
                                         clearError('guestPhone');
                                     }}
                                     placeholder={t('conversations.form.phonePlaceholder')}
@@ -657,12 +680,12 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     aria-invalid={!!fieldErrors.guestPhone}
                                     aria-describedby={
                                         fieldErrors.guestPhone
-                                            ? fieldErrorId('guestPhone')
+                                            ? scopedErrorId('guestPhone')
                                             : undefined
                                     }
                                 />
                                 <FieldError
-                                    id={fieldErrorId('guestPhone')}
+                                    id={scopedErrorId('guestPhone')}
                                     message={fieldErrors.guestPhone}
                                 />
                             </div>
@@ -672,7 +695,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     {/* Message field — always visible */}
                     <div className={styles.field}>
                         <label
-                            htmlFor="contact-message"
+                            htmlFor={messageId}
                             className={styles.label}
                         >
                             {t('conversations.form.message')}
@@ -685,11 +708,13 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                             </span>
                         </label>
                         <textarea
-                            id="contact-message"
+                            id={messageId}
                             required
                             value={message}
                             onChange={(e) => {
-                                setMessage(e.target.value);
+                                if (editedMessage === undefined) onMessageEdited?.();
+                                const value = e.currentTarget.value;
+                                setDraft((draft) => ({ ...draft, editedMessage: value }));
                                 clearError('message');
                             }}
                             placeholder={t('conversations.form.messagePlaceholder')}
@@ -706,7 +731,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                 submitState.phase === 'fieldError'
                                     ? messageErrorId
                                     : fieldErrors.message
-                                      ? fieldErrorId('message')
+                                      ? scopedErrorId('message')
                                       : ''
                             }`}
                         />
@@ -730,7 +755,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                             </p>
                         )}
                         <FieldError
-                            id={fieldErrorId('message')}
+                            id={scopedErrorId('message')}
                             message={fieldErrors.message}
                         />
                     </div>

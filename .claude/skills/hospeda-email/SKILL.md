@@ -17,7 +17,18 @@ verificación, reset de password o previews de correo.
 
 ## Reglas
 
-- Reutilizá `BaseLayout` y las plantillas existentes.
+- Toda plantilla va dentro de `EmailLayout` de `@repo/email` (el único layout;
+  `BaseLayout` y el layout de `@repo/notifications` ya no existen). Props:
+  `previewText?`, `children`, `footerLink?: 'preferences' | 'none'` (default
+  `'none'`).
+- `footerLink="preferences"` sólo si el destinatario tiene cuenta Y la página
+  de preferencias web controla ese correo de verdad (hoy ninguno: HOS-2519
+  OQ-2). Nunca un href `{{placeholder}}`: nadie lo sustituye.
+- Estilos inline y colores de `emailPalette` (`@repo/design-tokens`); nada de
+  flexbox, grid, variables CSS, `oklch()`, fuentes web ni SVG.
+- Renderizá con `renderEmailBodies` (HTML + texto); el envío es Brevo.
+- Cada plantilla nueva lleva entrada y escenarios en el catálogo
+  (`packages/notifications/src/catalog/`).
 - Mantené URLs, locale, branding y fallback de texto coherentes.
 - No pongas API keys, tokens ni datos reales en previews o fixtures.
 - Los enlaces de autenticación deben conservar expiración y propósito.

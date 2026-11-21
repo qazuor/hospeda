@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/format-helpers.js';
 
 /** Payload for an immediate duplicate-charge notice to billing staff. */

@@ -30,7 +30,12 @@ export const refundCalls = pgTable(
         providerRefundId: varchar('provider_refund_id', { length: 255 }),
         /** monto de esta llamada */
         amount: integer('amount').notNull(),
-        /** instancia de addon / orden */
+        /**
+         * instancia de addon / orden. Retired by HOS-2179 T-7: the order refund channel is gone and
+         * nothing writes this column any more (every new call leaves it null). It stays in this
+         * release (expand/contract) and is dropped in N+1, together with
+         * `uq_refund_call_order_awaiting_id`.
+         */
         addonInstanceId: uuid('addon_instance_id').references(() => addonInstances.id),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
     },
@@ -38,6 +43,7 @@ export const refundCalls = pgTable(
         amountPositive: check('ck_refund_call_amount_positive', sql`${t.amount} > 0`),
         idempotencyKeyUnique: unique('uq_refund_call_idempotency_key').on(t.idempotencyKey),
         providerRefundIdUnique: unique('uq_refund_call_provider_refund_id').on(t.providerRefundId),
+        /** No writers since HOS-2179 T-7 (see `addonInstanceId`); dropped in N+1. */
         orderAwaitingId: uniqueIndex('uq_refund_call_order_awaiting_id')
             .on(t.addonInstanceId)
             .where(sql`${t.addonInstanceId} IS NOT NULL AND ${t.providerRefundId} IS NULL`)

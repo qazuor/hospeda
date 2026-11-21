@@ -796,7 +796,7 @@
                 "withGuests": "Hola, ¿está disponible {{guests}}?",
                 "withDatesAndGuests": "Hola, ¿está disponible {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Precio y contacto" },
+            "summary": { "title": "Precio y contacto", "hostSince": "Anfitrión desde {{date}}" },
             "units": {
                 "perNight": "/noche",
                 "perDay": "/día",
@@ -838,6 +838,7 @@
         "reviewsLabel": "reseñas",
         "bookNow": "Reservar ahora",
         "quickFacts": {
+            "scrollLabel": "Datos del alojamiento",
             "capacity": "Capacidad",
             "bedrooms": "Habitaciones",
             "beds": "Camas",
@@ -846,6 +847,12 @@
             "maxNights": "Máximo de noches",
             "guests_one": "{{count}} huésped",
             "guests_other": "{{count}} huéspedes",
+            "compactBedrooms_one": "{{count}} hab",
+            "compactBedrooms_other": "{{count}} hab",
+            "compactBeds_one": "{{count}} cama",
+            "compactBeds_other": "{{count}} camas",
+            "compactBathrooms_one": "{{count}} baño",
+            "compactBathrooms_other": "{{count}} baños",
             "nights_one": "{{count}} noche",
             "nights_other": "{{count}} noches"
         },
@@ -967,6 +974,7 @@
             "nextSlide": "Slide siguiente"
         },
         "badges": {
+            "scrollLabel": "Distintivos del alojamiento",
             "new": "Nuevo",
             "featured": "Destacado",
             "verified": "Verificado"

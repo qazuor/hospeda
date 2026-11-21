@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject and heading of the arrears suspension notice. */
 export const ARREARS_SUSPENSION_SUBJECT = 'Tu suscripción se suspendió';

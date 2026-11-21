@@ -36,7 +36,7 @@ describe('listingContact copy', () => {
                 guests_one: ['count'],
                 guests_other: ['count']
             },
-            summary: { title: [] },
+            summary: { title: [], hostSince: ['date'] },
             units: { perNight: [], perDay: [], perHour: [], perPerson: [], perGroup: [] }
         });
         expect(structure(en.detail.listingContact)).toEqual(spanish);

@@ -33,7 +33,7 @@ function recordingProvider(provider: PaymentProvider) {
     return { wrapped, calls };
 }
 
-describe('HOS-2179 T-7 TEST:B6:6 AC:B6:8 the order refund channel is retired', () => {
+describe('HOS-2179 T-7 the order refund channel is retired', () => {
     it.skipIf(skip)(
         'refuses to confirm the refund of an order-bought instance and calls no provider method',
         async () => {
@@ -124,7 +124,7 @@ describe('HOS-2179 T-7 TEST:B6:6 AC:B6:8 the order refund channel is retired', (
     );
 
     it.skipIf(skip)(
-        'TEST:B6:7 AC:B6:9 ties no refund call to an instance, so the order hold index holds nothing',
+        'ties no refund call to an instance, so the order hold index holds nothing',
         async () => {
             // Arrange
             const seeded = await refundConfirmFixture(10000, 4000);

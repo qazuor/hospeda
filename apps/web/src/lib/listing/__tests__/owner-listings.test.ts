@@ -7,7 +7,11 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../../api/client';
-import { fetchOwnerListingDetail, fetchOwnerListings } from '../owner-listings';
+import {
+    fetchOwnerListingDetail,
+    fetchOwnerListings,
+    OwnerListingsUnavailableError
+} from '../owner-listings';
 
 vi.mock('../../api/client', () => ({
     apiClient: { getProtected: vi.fn() }
@@ -55,6 +59,26 @@ describe('fetchOwnerListings', () => {
 
         expect(result).toHaveLength(1);
         expect(result[0]?.vertical).toBe('venue');
+    });
+
+    it('throws instead of returning an empty list when both verticals fail (HOS-2421)', async () => {
+        mockGetProtected
+            .mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'boom' } })
+            .mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'boom' } });
+
+        await expect(fetchOwnerListings({ cookieHeader: 'session=x' })).rejects.toBeInstanceOf(
+            OwnerListingsUnavailableError
+        );
+    });
+
+    it('throws when one vertical fails and the other is genuinely empty (HOS-2421)', async () => {
+        mockGetProtected
+            .mockResolvedValueOnce({ ok: true, data: { listings: [] } })
+            .mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'boom' } });
+
+        await expect(fetchOwnerListings({ cookieHeader: 'session=x' })).rejects.toBeInstanceOf(
+            OwnerListingsUnavailableError
+        );
     });
 
     it('returns an empty list when the owner has none', async () => {

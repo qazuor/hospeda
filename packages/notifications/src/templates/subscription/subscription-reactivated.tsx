@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatDate } from '../utils/index.js';
 
 /**
@@ -34,10 +34,7 @@ export function SubscriptionReactivated({
         : undefined;
 
     return (
-        <EmailLayout
-            previewText={`Tu suscripcion al plan ${planName} esta activa nuevamente`}
-            showUnsubscribe={false}
-        >
+        <EmailLayout previewText={`Tu suscripcion al plan ${planName} esta activa nuevamente`}>
             <Heading>Tu suscripcion ha sido reactivada</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

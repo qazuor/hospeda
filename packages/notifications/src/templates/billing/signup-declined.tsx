@@ -1,11 +1,11 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import type {
     SignupDeclinedCause,
     SignupDeclinedRetry
 } from '../../services/outbox/signup-declined-reason.js';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of S16's generic first-charge decline notice (HOS-1675, catalog row 19). */
 export const SIGNUP_DECLINED_SUBJECT = 'No pudimos cobrar el primer pago de tu suscripción';

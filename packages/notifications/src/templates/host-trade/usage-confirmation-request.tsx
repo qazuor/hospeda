@@ -1,7 +1,7 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for the UsageConfirmationRequest email template (HOS-376 §6.6).
@@ -47,7 +47,6 @@ export function UsageConfirmationRequest({
     return (
         <EmailLayout
             previewText={`${counterpartName} registró un uso del beneficio y necesita tu confirmación`}
-            showUnsubscribe={false}
         >
             <Heading>¿Nos confirmás que esto pasó?</Heading>
 

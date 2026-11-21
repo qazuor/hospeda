@@ -458,7 +458,7 @@
                 "withGuests": "Hello, is it available {{guests}}?",
                 "withDatesAndGuests": "Hello, is it available {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Price and contact" },
+            "summary": { "title": "Price and contact", "hostSince": "Host since {{date}}" },
             "units": {
                 "perNight": "/night",
                 "perDay": "/day",
@@ -500,6 +500,7 @@
         "reviewsLabel": "reviews",
         "bookNow": "Book now",
         "quickFacts": {
+            "scrollLabel": "Accommodation facts",
             "capacity": "Capacity",
             "bedrooms": "Bedrooms",
             "beds": "Beds",
@@ -508,6 +509,12 @@
             "maxNights": "Maximum nights",
             "guests_one": "{{count}} guest",
             "guests_other": "{{count}} guests",
+            "compactBedrooms_one": "{{count}} room",
+            "compactBedrooms_other": "{{count}} rooms",
+            "compactBeds_one": "{{count}} bed",
+            "compactBeds_other": "{{count}} beds",
+            "compactBathrooms_one": "{{count}} bath",
+            "compactBathrooms_other": "{{count}} baths",
             "nights_one": "{{count}} night",
             "nights_other": "{{count}} nights"
         },
@@ -629,6 +636,7 @@
             "nextSlide": "Next slide"
         },
         "badges": {
+            "scrollLabel": "Accommodation badges",
             "new": "New",
             "featured": "Featured",
             "verified": "Verified"

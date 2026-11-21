@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import {
     formatTrialGreeting,
     trialSeriesStyles as styles,
@@ -32,7 +32,7 @@ export function TrialWinBack5Days({
     return (
         <EmailLayout
             previewText={`Hay gente buscando ${copy.searchIntent} en tu zona ahora mismo`}
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Volvé a aparecer en Hospeda</Heading>
 

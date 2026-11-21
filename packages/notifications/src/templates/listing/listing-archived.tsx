@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import type { ReactNode } from 'react';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Props of the on-archive listing notice (AC:V6:28). */
 export interface ListingArchivedProps {

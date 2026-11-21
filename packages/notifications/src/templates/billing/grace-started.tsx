@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of S4's grace-started notice (HOS-1675, catalog row 4). */
 export const GRACE_STARTED_SUBJECT = 'No pudimos cobrar tu suscripción';

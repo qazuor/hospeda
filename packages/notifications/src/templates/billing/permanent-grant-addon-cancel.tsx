@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the notice sent before S20 cancels a permanent-grant addon charge. */
 export const PERMANENT_GRANT_ADDON_CANCEL_SUBJECT = 'Tu addon ya no se cobra';

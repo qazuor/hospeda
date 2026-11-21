@@ -1374,6 +1374,9 @@ importers:
       '@react-email/render':
         specifier: ^2.1.0
         version: 2.1.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@repo/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger
@@ -1638,15 +1641,15 @@ importers:
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@react-email/render':
-        specifier: ^2.1.0
-        version: 2.1.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
       '@repo/db':
         specifier: workspace:*
         version: link:../db
+      '@repo/email':
+        specifier: workspace:*
+        version: link:../email
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger
@@ -1663,6 +1666,9 @@ importers:
         specifier: ^2.17.7
         version: 2.17.7
     devDependencies:
+      '@react-email/render':
+        specifier: ^2.1.0
+        version: 2.1.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config

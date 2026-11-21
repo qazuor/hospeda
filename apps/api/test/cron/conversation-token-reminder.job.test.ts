@@ -86,7 +86,8 @@ vi.mock('@repo/email', () => ({
     sendEmail: mockSendEmail
 }));
 
-vi.mock('@repo/notifications', () => ({
+vi.mock('@repo/notifications', async () => ({
+    ...(await import('../../../../packages/notifications/src/templates/conversation/subjects.ts')),
     ConversationTokenExpiringDay15: vi.fn().mockReturnValue({ type: 'mock-day15-template' }),
     ConversationTokenExpiringDay25: vi.fn().mockReturnValue({ type: 'mock-day25-template' })
 }));

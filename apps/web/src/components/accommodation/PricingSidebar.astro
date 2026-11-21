@@ -8,6 +8,7 @@
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { DEFAULT_ACCOMMODATION_CURRENCY } from '@/lib/listing-contact/listing-contact-price';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { UsersIcon, MoonIcon, CalendarIcon, ChevronDownIcon } from '@repo/icons';
 
@@ -23,7 +24,7 @@ const { price, extraInfo, policies, lang } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 const hasPrice = price?.price != null && price.price > 0;
-const currency = price?.currency ?? 'ARS';
+const currency = price?.currency ?? DEFAULT_ACCOMMODATION_CURRENCY;
 
 function formatPrice(amount: number): string {
   return new Intl.NumberFormat(lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR', {
@@ -206,6 +207,10 @@ const hasDiscounts = discountEntries.length > 0;
 </div>
 
 <style>
+  @media (max-width: 1024px) {
+    .pricing-sidebar { display: none; }
+  }
+
   .pricing-sidebar {
     position: relative;
     background-color: var(--core-card);

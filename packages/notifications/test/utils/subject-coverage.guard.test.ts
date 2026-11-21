@@ -29,7 +29,7 @@
  * Note on optional fields: a declared-but-optional field satisfies this guard
  * by name and can still be `undefined` at run time. That residual case is
  * covered at run time instead, by the fallback in
- * `NotificationService.generateSubject`, which refuses to hand a subject
+ * `resolveNotificationSubject`, which refuses to hand a subject
  * carrying template syntax to a transport.
  *
  * @module test/utils/subject-coverage.guard.test
@@ -38,13 +38,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { NOTIFICATION_TYPES_WITH_TEMPLATE } from '../../src/services/notification-render';
 import { NotificationType } from '../../src/types/notification.types';
 import { getSubjectPlaceholders } from '../../src/utils/subject-builder';
 import { DERIVED_SUBJECT_KEYS } from '../../src/utils/subject-data';
 
 const SRC = join(__dirname, '..', '..', 'src');
 const TYPES_FILE = join(SRC, 'types', 'notification.types.ts');
-const SERVICE_FILE = join(SRC, 'services', 'notification.service.ts');
 
 /**
  * Notification types deliberately exempt from payload-field coverage.
@@ -199,19 +199,20 @@ describe('Subject placeholder coverage guard (H-64 / H-75)', () => {
             // It has no payload interface AND no template branch, so
             // NotificationService.send() throws before any subject is built.
             // The day either appears, the exemption must be withdrawn.
-            const service = readFileSync(SERVICE_FILE, 'utf8');
-
+            // HOS-2519 moved the template switch into a selector map, so this
+            // asks the map at run time instead of grepping for a `case` label.
             expect(fieldsByType.has('NEWSLETTER_CAMPAIGN')).toBe(false);
-            expect(service).not.toContain("case 'newsletter_campaign'");
+            expect(NOTIFICATION_TYPES_WITH_TEMPLATE).not.toContain(
+                NotificationType.NEWSLETTER_CAMPAIGN
+            );
         });
 
         it('lists nothing that is actually reachable', () => {
-            const service = readFileSync(SERVICE_FILE, 'utf8');
-
             for (const type of UNREACHABLE_TYPES) {
-                expect(service, `${type} is exempt but has a template branch`).not.toContain(
-                    `case '${type}'`
-                );
+                expect(
+                    NOTIFICATION_TYPES_WITH_TEMPLATE,
+                    `${type} is exempt but has a template selector`
+                ).not.toContain(type);
             }
         });
     });

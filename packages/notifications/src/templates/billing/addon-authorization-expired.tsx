@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of the notice sent before cancelling an expired addon authorization. */
 export const ADDON_AUTHORIZATION_EXPIRED_SUBJECT = 'Venció la autorización de tu addon';
