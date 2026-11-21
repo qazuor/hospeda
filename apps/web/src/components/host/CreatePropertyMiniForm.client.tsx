@@ -274,7 +274,7 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
     // 4 of ~15 payload fields were checked client-side (name/summary/type/
     // destinationId); the rest (description, maxGuests, bathrooms, street,
     // number, website, ...) reached the API unvalidated.
-    const { fieldErrors, validate } = useZodForm({
+    const { fieldErrors, validate, clearError } = useZodForm({
         schema: AccommodationCreateDraftHttpSchema,
         t
     });
@@ -972,7 +972,12 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
                     inputId={typeId}
                     label={t('host.miniForm.fields.type', 'Tipo de alojamiento')}
                     value={typeItem}
-                    onChange={(item) => setTypeItem(item)}
+                    onChange={(item) => {
+                        setTypeItem(item);
+                        // HOS-2447: the stale "pick a valid type" error stayed on
+                        // screen after a valid pick and blocked the flow.
+                        clearError('type');
+                    }}
                     items={typeItems}
                     placeholder={t('host.miniForm.fields.typePlaceholder', 'Elegí una opción')}
                     emptyLabel={t('host.miniForm.fields.typeEmpty', 'No hay tipos que coincidan')}
@@ -988,7 +993,10 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
                     locale={locale}
                     label={t('host.form.sections.ubicacion.cityPicker.label')}
                     value={city}
-                    onChange={(item) => setCity(item)}
+                    onChange={(item) => {
+                        setCity(item);
+                        clearError('destinationId');
+                    }}
                     loadItems={loadCityItems}
                     minQueryLength={2}
                     placeholder={t('host.form.sections.ubicacion.cityPicker.placeholder')}
