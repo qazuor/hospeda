@@ -84,15 +84,15 @@ describe('VerifyEmailTemplate', () => {
         expect(html).toContain('O copia y pega este enlace en tu navegador:');
     });
 
-    it('should use BaseLayout with Hospeda branding', async () => {
+    it('should render inside EmailLayout with footerLink none (HOS-2519 AC-1.3)', async () => {
         // Arrange & Act
         const html = await render(<VerifyEmailTemplate {...defaultProps} />);
 
         // Assert
-        expect(html).toContain('Hospeda');
-        expect(html).toContain(
-            'Hospeda - Alojamientos turísticos en Concepción del Uruguay y el Litoral'
-        );
+        expect(html.match(/<html[^>]*lang="es"/g)).toHaveLength(1);
+        expect(html).toContain('alt="Hospeda"');
+        expect(html).toContain('Hospeda - Turismo en el Litoral');
+        expect(html).not.toContain('Administrar preferencias de notificaciones');
     });
 
     it('should not crash when name is empty string', async () => {
@@ -157,9 +157,14 @@ describe('VerifyEmailTemplate', () => {
             );
 
             // Assert
+            // The layout footer adds its own site-home link (HOS-2519), so only
+            // the anchors that point at the action URL are counted.
             const anchors = html.match(/<a\b[^>]*>[\s\S]*?<\/a>/g) ?? [];
-            expect(anchors).toHaveLength(1);
-            expect(anchors[0]).not.toContain(`>${url}`);
+            const actionAnchors = anchors.filter((anchor) => anchor.includes(`href="${url}"`));
+            expect(actionAnchors).toHaveLength(1);
+            for (const anchor of anchors) {
+                expect(anchor).not.toContain(`>${url}`);
+            }
             expect(html).toContain(url);
         });
     });
