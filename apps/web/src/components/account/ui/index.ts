@@ -21,7 +21,16 @@ export { PhoneField, type PhoneFieldProps } from './PhoneField';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
+export { CountPill, type CountPillProps, StatusPill, type StatusPillProps } from './StatusPill';
 export { KitNestingError } from './section-depth-context';
+export {
+    STATUS_TONES,
+    type StatusDomain,
+    type StatusOf,
+    type StatusTone,
+    statusLabelKey,
+    toneFor
+} from './status-tone';
 export { counterLevel, Textarea, type TextareaProps } from './Textarea';
 export { TextInput, type TextInputProps } from './TextInput';
 export { TextLink, type TextLinkProps, type TextLinkTone } from './TextLink';

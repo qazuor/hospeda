@@ -1867,6 +1867,43 @@
         "charNearLimit": "Restam {{remaining}} caracteres",
         "charAtLimit": "Você atingiu o limite de {{max}} caracteres",
         "charOverLimit": "Você passou do limite de {{max}} caracteres em {{over}}",
-        "dialogClose": "Fechar diálogo"
+        "dialogClose": "Fechar diálogo",
+        "status": {
+            "publication": {
+                "DRAFT": "Rascunho",
+                "ACTIVE": "Publicado",
+                "INACTIVE": "Pausado",
+                "ARCHIVED": "Arquivado"
+            },
+            "moderation": {
+                "PENDING": "Em revisão",
+                "APPROVED": "Aprovado",
+                "REJECTED": "Rejeitado"
+            },
+            "subscription": {
+                "PENDING_AUTHORIZATION": "Aguardando autorização",
+                "ABANDONED": "Abandonada",
+                "ACTIVE": "Ativa",
+                "GRACE_PERIOD": "Período de carência",
+                "PAUSED": "Pausada",
+                "SUSPENDED": "Suspensa",
+                "CANCEL_SCHEDULED": "Cancelamento agendado",
+                "CANCELLED": "Cancelada",
+                "CHARGE_DECLINED": "Cobrança recusada"
+            },
+            "promotion": {
+                "DRAFT": "Rascunho",
+                "SCHEDULED": "Agendada",
+                "ACTIVE": "Vigente",
+                "PAUSED": "Pausada",
+                "EXPIRED": "Vencida"
+            },
+            "benefitUsage": {
+                "PENDING": "Pendente",
+                "CONFIRMED": "Confirmado",
+                "REJECTED": "Rejeitado",
+                "EXPIRED": "Vencido"
+            }
+        }
     }
 }

@@ -1867,6 +1867,43 @@
         "charNearLimit": "{{remaining}} characters left",
         "charAtLimit": "You reached the limit of {{max}} characters",
         "charOverLimit": "You are over the limit of {{max}} characters by {{over}}",
-        "dialogClose": "Close dialog"
+        "dialogClose": "Close dialog",
+        "status": {
+            "publication": {
+                "DRAFT": "Draft",
+                "ACTIVE": "Published",
+                "INACTIVE": "Paused",
+                "ARCHIVED": "Archived"
+            },
+            "moderation": {
+                "PENDING": "In review",
+                "APPROVED": "Approved",
+                "REJECTED": "Rejected"
+            },
+            "subscription": {
+                "PENDING_AUTHORIZATION": "Awaiting authorization",
+                "ABANDONED": "Abandoned",
+                "ACTIVE": "Active",
+                "GRACE_PERIOD": "Grace period",
+                "PAUSED": "Paused",
+                "SUSPENDED": "Suspended",
+                "CANCEL_SCHEDULED": "Cancellation scheduled",
+                "CANCELLED": "Cancelled",
+                "CHARGE_DECLINED": "Charge declined"
+            },
+            "promotion": {
+                "DRAFT": "Draft",
+                "SCHEDULED": "Scheduled",
+                "ACTIVE": "Live",
+                "PAUSED": "Paused",
+                "EXPIRED": "Expired"
+            },
+            "benefitUsage": {
+                "PENDING": "Pending",
+                "CONFIRMED": "Confirmed",
+                "REJECTED": "Rejected",
+                "EXPIRED": "Expired"
+            }
+        }
     }
 }

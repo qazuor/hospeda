@@ -1,0 +1,89 @@
+/* StatusPill.module.css — status and count pills (HOS-2413 T-010).
+   Each tone is a bg/fg/border triple from the role status tokens; `plan`
+   uses the upsell tokens. The word is always rendered: color is never alone. */
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    box-sizing: border-box;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--pill-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--pill-bg);
+    color: var(--pill-fg);
+    font: var(--app-caption);
+    white-space: nowrap;
+}
+
+.success {
+    --pill-bg: var(--status-success-bg);
+    --pill-fg: var(--status-success-fg);
+    --pill-border: var(--status-success-border);
+    --pill-solid: var(--status-success-solid);
+}
+
+.warning {
+    --pill-bg: var(--status-warning-bg);
+    --pill-fg: var(--status-warning-fg);
+    --pill-border: var(--status-warning-border);
+    --pill-solid: var(--status-warning-solid);
+}
+
+.danger {
+    --pill-bg: var(--status-danger-bg);
+    --pill-fg: var(--status-danger-fg);
+    --pill-border: var(--status-danger-border);
+    --pill-solid: var(--status-danger-solid);
+}
+
+.info {
+    --pill-bg: var(--status-info-bg);
+    --pill-fg: var(--status-info-fg);
+    --pill-border: var(--status-info-border);
+    --pill-solid: var(--status-info-solid);
+}
+
+.neutral {
+    --pill-bg: var(--status-neutral-bg);
+    --pill-fg: var(--status-neutral-fg);
+    --pill-border: var(--status-neutral-border);
+    --pill-solid: var(--status-neutral-solid);
+}
+
+.plan {
+    --pill-bg: var(--upsell-bg);
+    --pill-fg: var(--upsell-fg);
+    --pill-border: var(--upsell-border);
+    --pill-solid: var(--upsell-fg);
+}
+
+.dot {
+    flex: none;
+    inline-size: var(--space-2);
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--pill-solid);
+}
+
+/* ── CountPill ────────────────────────────────────────────────────────── */
+
+.count {
+    justify-content: center;
+    min-inline-size: var(--space-5);
+    padding-inline: var(--space-1);
+    font: var(--app-caption);
+    font-variant-numeric: tabular-nums;
+}
+
+.countMuted {
+    background-color: var(--muted);
+    border-color: var(--border);
+    color: var(--core-muted-foreground);
+}
+
+.countSolid {
+    background-color: var(--action-primary);
+    border-color: var(--action-primary);
+    color: var(--on-action-primary);
+}
