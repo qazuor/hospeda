@@ -198,6 +198,18 @@
             "hint": "Dejá el campo vacío para quitar el enlace.",
             "placeholder": "https://ejemplo.com",
             "submit": "Aplicar"
+        },
+        "toolbar": {
+            "label": "Formato",
+            "bold": "Negrita",
+            "italic": "Cursiva",
+            "underline": "Subrayado",
+            "heading2": "Encabezado 2",
+            "heading3": "Encabezado 3",
+            "bulletList": "Lista",
+            "orderedList": "Lista numerada",
+            "quote": "Cita",
+            "link": "Enlace"
         }
     },
     "retry": "Reintentar",

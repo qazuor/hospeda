@@ -54,15 +54,22 @@ const DEFAULT_TZ = 'America/Argentina/Buenos_Aires';
  */
 const OPENING_HOURS_FIELD = { prefix: LISTING_FIELD_PREFIX, name: 'openingHours' } as const;
 
+/**
+ * ISO weekday keys with their Spanish fallback labels. The visible label is
+ * resolved through `@repo/i18n` (`listing.owner.editor.sections.openingHoursDays.<key>`)
+ * at render time (HOS-2436); the fallback only covers a missing key.
+ */
 const DAYS = [
-    { key: 'mon', label: 'Lun' },
-    { key: 'tue', label: 'Mar' },
-    { key: 'wed', label: 'Mié' },
-    { key: 'thu', label: 'Jue' },
-    { key: 'fri', label: 'Vie' },
-    { key: 'sat', label: 'Sáb' },
-    { key: 'sun', label: 'Dom' }
+    { key: 'mon', fallback: 'Lun' },
+    { key: 'tue', fallback: 'Mar' },
+    { key: 'wed', fallback: 'Mié' },
+    { key: 'thu', fallback: 'Jue' },
+    { key: 'fri', fallback: 'Vie' },
+    { key: 'sat', fallback: 'Sáb' },
+    { key: 'sun', fallback: 'Dom' }
 ] as const;
+
+const HOURS_KEY = 'listing.owner.editor.sections';
 
 type DayKey = (typeof DAYS)[number]['key'];
 type DaySchedule = { closed: boolean; shifts: Array<{ open: string; close: string }> };
@@ -208,7 +215,8 @@ export function OpeningHoursSection({
                 )}
             </p>
             <div className={styles.days}>
-                {DAYS.map(({ key, label }, dayIndex) => {
+                {DAYS.map(({ key, fallback }, dayIndex) => {
+                    const label = t(`${HOURS_KEY}.openingHoursDays.${key}`, fallback);
                     const schedule = dayOf(value, key);
                     return (
                         <div
@@ -232,7 +240,13 @@ export function OpeningHoursSection({
                                     }
                                     type="checkbox"
                                     checked={schedule.closed}
-                                    aria-label={`${label} cerrado`}
+                                    aria-label={t(
+                                        `${HOURS_KEY}.openingHoursClosedAria`,
+                                        '{{day}} cerrado',
+                                        {
+                                            day: label
+                                        }
+                                    )}
                                     // The group's aggregate error is announced
                                     // from the control that carries the derived
                                     // id, which is also where focus lands.
@@ -249,7 +263,7 @@ export function OpeningHoursSection({
                                         )
                                     }
                                 />
-                                Cerrado
+                                {t(`${HOURS_KEY}.openingHoursClosed`, 'Cerrado')}
                             </label>
 
                             {!schedule.closed &&
@@ -277,7 +291,14 @@ export function OpeningHoursSection({
                                                 <input
                                                     type="time"
                                                     className={fieldStyles.input}
-                                                    aria-label={`${label} apertura ${index + 1}`}
+                                                    aria-label={t(
+                                                        `${HOURS_KEY}.openingHoursOpenAria`,
+                                                        '{{day}} apertura {{index}}',
+                                                        {
+                                                            day: label,
+                                                            index: index + 1
+                                                        }
+                                                    )}
                                                     aria-invalid={openError ? true : undefined}
                                                     aria-describedby={
                                                         openError ? messageId : undefined
@@ -300,7 +321,14 @@ export function OpeningHoursSection({
                                                 <input
                                                     type="time"
                                                     className={fieldStyles.input}
-                                                    aria-label={`${label} cierre ${index + 1}`}
+                                                    aria-label={t(
+                                                        `${HOURS_KEY}.openingHoursCloseAria`,
+                                                        '{{day}} cierre {{index}}',
+                                                        {
+                                                            day: label,
+                                                            index: index + 1
+                                                        }
+                                                    )}
                                                     aria-invalid={closeError ? true : undefined}
                                                     aria-describedby={
                                                         closeError ? messageId : undefined
@@ -323,7 +351,11 @@ export function OpeningHoursSection({
                                                 <button
                                                     type="button"
                                                     className={styles.shiftButton}
-                                                    aria-label={`Quitar turno ${label} ${index + 1}`}
+                                                    aria-label={t(
+                                                        `${HOURS_KEY}.openingHoursRemoveShiftAria`,
+                                                        'Quitar turno {{day}} {{index}}',
+                                                        { day: label, index: index + 1 }
+                                                    )}
                                                     onClick={() =>
                                                         onChange(
                                                             withDay(value, key, {
@@ -350,7 +382,13 @@ export function OpeningHoursSection({
                                 <button
                                     type="button"
                                     className={styles.addShiftButton}
-                                    aria-label={`Agregar turno ${label}`}
+                                    aria-label={t(
+                                        `${HOURS_KEY}.openingHoursAddShiftAria`,
+                                        'Agregar turno {{day}}',
+                                        {
+                                            day: label
+                                        }
+                                    )}
                                     onClick={() =>
                                         onChange(
                                             withDay(value, key, {

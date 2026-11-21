@@ -563,7 +563,9 @@
                 "geolocationDenied": "Permission denied. You can type the address manually.",
                 "geolocationError": "Could not get location. Try typing the address.",
                 "searching": "Searching…",
-                "addressHint": "Exact address. Tourists only ever see an approximate location on the public map."
+                "addressHint": "Exact address. Tourists only ever see an approximate location on the public map.",
+                "mapAriaLabel": "Location map",
+                "mapLoading": "Loading map..."
             },
             "translation": {
                 "sectionTitle": "Translations",

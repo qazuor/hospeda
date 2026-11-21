@@ -563,7 +563,9 @@
                 "geolocationDenied": "Permiso denegado. Podés escribir la dirección manualmente.",
                 "geolocationError": "No se pudo obtener la ubicación. Probá escribir la dirección.",
                 "searching": "Buscando…",
-                "addressHint": "Dirección exacta. Los turistas solo ven una ubicación aproximada en el mapa público."
+                "addressHint": "Dirección exacta. Los turistas solo ven una ubicación aproximada en el mapa público.",
+                "mapAriaLabel": "Mapa de ubicación",
+                "mapLoading": "Cargando mapa..."
             },
             "translation": {
                 "sectionTitle": "Traducciones",

@@ -16,7 +16,10 @@ import { OpeningHoursSection } from '../../../../src/components/listing/editor/O
 
 vi.mock('../../../../src/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`
+        t: (key: string, fallback?: string, params?: Record<string, unknown>) =>
+            (fallback ?? `[MISSING:${key}]`).replace(/\{\{(\w+)\}\}/g, (_m, name: string) =>
+                String(params?.[name] ?? '')
+            )
     })
 }));
 
