@@ -19,7 +19,9 @@ export { type FieldContextValue, joinDescribedBy, useFieldControl } from './fiel
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
+export { type LoadMoreResult, Pagination, type PaginationProps } from './Pagination';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
+export { buildPageRange, type PageSlot } from './pagination-range';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';

@@ -76,6 +76,8 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Vencido: ['pt'],
     Vigente: ['pt'],
     '{{current}} de {{max}} caracteres': ['pt'],
+    'Página anterior': ['pt'],
+    'Página {{page}}': ['pt'],
     // Same spelling in Brazilian Portuguese / English (HOS-2119 owner traffic panel).
     Países: ['pt'],
     Dispositivos: ['pt'],

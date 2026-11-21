@@ -1907,6 +1907,14 @@
         },
         "cancel": "Cancelar",
         "confirmError": "Não conseguimos concluir a ação. Tente novamente.",
-        "drawerClose": "Fechar painel"
+        "drawerClose": "Fechar painel",
+        "pagination": {
+            "label": "Paginação",
+            "previous": "Página anterior",
+            "next": "Próxima página",
+            "page": "Página {{page}}",
+            "loadMore": "Ver mais",
+            "loadedMore": "{{count}} carregados"
+        }
     }
 }
