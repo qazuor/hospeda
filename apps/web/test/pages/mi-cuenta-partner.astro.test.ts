@@ -9,7 +9,7 @@
  * created by administrative action 6 and paid by bank transfer.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import en from '../../../../packages/i18n/src/locales/en/account.json';
@@ -166,7 +166,17 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
         expect(source).toContain('partner === null');
         expect(source).toContain('account.partner.empty.text');
         expect(source).toContain('account.partner.empty.cta');
-        expect(source).toContain("path: 'mi-cuenta/aliados'");
+    });
+
+    it('empty-state CTA points at the public /sumate/partner landing, not at its own section (HOS-2450)', () => {
+        const emptyState = source.slice(source.indexOf('partner === null'));
+        const ctaHref = emptyState.match(/<a href=\{buildUrl\(\{ locale, path: '([^']+)' \}\)\}>/);
+        expect(ctaHref?.[1]).toBe('sumate/partner');
+        expect(ctaHref?.[1]).not.toBe('mi-cuenta/aliados');
+        // The target page really exists.
+        expect(
+            existsSync(resolve(__dirname, '../../src/pages/[lang]/sumate/partner/index.astro'))
+        ).toBe(true);
     });
 
     it('renders a revoked state (no edit form) when the listing was taken down', () => {

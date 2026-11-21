@@ -840,7 +840,8 @@
             "event": "Events",
             "experience": "Experiences",
             "venue": "Food & nightlife",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Attractions"
         },
         "collections": {
             "create": "Create collection",
@@ -863,6 +864,7 @@
             "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
             "errorTitle": "We couldn't load the collection",
             "backToList": "Back to my favorites",
+            "bookmarksLabel": "favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
             "pageInfo": "Page {{page}} of {{total}}",
@@ -902,10 +904,6 @@
         },
         "filter": {
             "all": "All",
-            "accommodations": "Accommodations",
-            "destinations": "Destinations",
-            "events": "Events",
-            "posts": "Posts",
             "label": "Filter by type"
         },
         "bookmarks": {
@@ -925,7 +923,8 @@
         "notes": {
             "cancel": "Cancel",
             "placeholder": "Add a personal note...",
-            "save": "Save note"
+            "save": "Save note",
+            "saved": "Note saved"
         },
         "removeBtn": "Remove",
         "removeLabel": "Remove from favorites",
@@ -1024,6 +1023,7 @@
                 "reviews": "My Reviews",
                 "subscription": "My Subscription",
                 "favoritesDesc": "Saved accommodations",
+                "unavailable": "Not available",
                 "reviewsDesc": "Published reviews",
                 "subscriptionDesc": "Current plan",
                 "subscriptionStatus": "Subscription status",

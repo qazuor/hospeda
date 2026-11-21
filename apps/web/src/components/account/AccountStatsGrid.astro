@@ -38,6 +38,7 @@ const { t } = createTranslations(locale);
 const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
 const statFavoritesLabel = t('account.pages.dashboard.stats.favorites', 'Favoritos');
 const statReviewsLabel = t('account.pages.dashboard.stats.reviews', 'Reseñas');
+const statUnavailable = t('account.pages.dashboard.stats.unavailable', 'No disponible');
 const statSubscriptionLabel = t('account.pages.dashboard.stats.subscription', 'Suscripción');
 const statFavoritesDesc = t('account.pages.dashboard.stats.favoritesDesc', 'Alojamientos guardados');
 const statReviewsDesc = t('account.pages.dashboard.stats.reviewsDesc', 'Reseñas escritas');
@@ -110,7 +111,7 @@ const statListingsHiddenOther = t(
                         <BuildingIcon size={20} weight="fill" aria-hidden="true" />
                     </span>
                 </div>
-                <p id="stat-properties" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p id="stat-properties" class="account__stat-value stat-value--loading" data-label-unavailable={statUnavailable} aria-live="polite">—</p>
                 <p class="account__stat-desc">{statPropertiesDesc}</p>
                 <a href={buildUrl({ locale, path: 'mi-cuenta/propiedades' })} class="account__stat-link">
                     {viewLabel} {statPropertiesLabel.toLowerCase()}
@@ -125,7 +126,7 @@ const statListingsHiddenOther = t(
                         <ChatIcon size={20} weight="fill" aria-hidden="true" />
                     </span>
                 </div>
-                <p id="stat-messages" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p id="stat-messages" class="account__stat-value stat-value--loading" data-label-unavailable={statUnavailable} aria-live="polite">—</p>
                 <p class="account__stat-desc">{statMessagesDesc}</p>
                 <a href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })} class="account__stat-link">
                     {viewLabel} {statMessagesLabel.toLowerCase()}
@@ -151,7 +152,7 @@ const statListingsHiddenOther = t(
                         <BriefcaseIcon size={20} weight="fill" aria-hidden="true" />
                     </span>
                 </div>
-                <p id="stat-listings" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p id="stat-listings" class="account__stat-value stat-value--loading" data-label-unavailable={statUnavailable} aria-live="polite">—</p>
                 <p class="account__stat-desc">{statListingsDesc}</p>
                 <p
                     id="stat-listings-hidden"
@@ -176,7 +177,7 @@ const statListingsHiddenOther = t(
                         <FavoriteIcon size={20} weight="fill" aria-hidden="true" />
                     </span>
                 </div>
-                <p id="stat-favorites" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p id="stat-favorites" class="account__stat-value stat-value--loading" data-label-unavailable={statUnavailable} aria-live="polite">—</p>
                 <p class="account__stat-desc">{statFavoritesDesc}</p>
                 <a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="account__stat-link">
                     {viewLabel} {statFavoritesLabel.toLowerCase()}
@@ -191,7 +192,7 @@ const statListingsHiddenOther = t(
                         <StarIcon size={20} weight="fill" aria-hidden="true" />
                     </span>
                 </div>
-                <p id="stat-reviews" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p id="stat-reviews" class="account__stat-value stat-value--loading" data-label-unavailable={statUnavailable} aria-live="polite">—</p>
                 <p class="account__stat-desc">{statReviewsDesc}</p>
                 <a href={buildUrl({ locale, path: 'mi-cuenta/resenas' })} class="account__stat-link">
                     {viewLabel} {statReviewsLabel.toLowerCase()}
@@ -211,6 +212,7 @@ const statListingsHiddenOther = t(
         <p
             id="stat-subscription"
             class="account__stat-value stat-value--loading"
+            data-label-unavailable={statUnavailable}
             data-label-free={statFreeStatus}
             data-label-multiple-one={statMultipleSubscriptionsOne}
             data-label-multiple-other={statMultipleSubscriptionsOther}

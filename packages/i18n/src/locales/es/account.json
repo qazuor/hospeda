@@ -840,7 +840,8 @@
             "event": "Eventos",
             "experience": "Experiencias",
             "venue": "Comer y salir",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Atracciones"
         },
         "collections": {
             "create": "Crear colección",
@@ -863,6 +864,7 @@
             "fetchError": "Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.",
             "errorTitle": "No pudimos cargar la colección",
             "backToList": "Volver a mis favoritos",
+            "bookmarksLabel": "favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Página siguiente",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -902,10 +904,6 @@
         },
         "filter": {
             "all": "Todos",
-            "accommodations": "Alojamientos",
-            "destinations": "Destinos",
-            "events": "Eventos",
-            "posts": "Posts",
             "label": "Filtrar por tipo"
         },
         "bookmarks": {
@@ -925,7 +923,8 @@
         "notes": {
             "cancel": "Cancelar",
             "placeholder": "Agregá una nota personal...",
-            "save": "Guardar nota"
+            "save": "Guardar nota",
+            "saved": "Nota guardada"
         },
         "removeBtn": "Quitar",
         "removeLabel": "Quitar de favoritos",
@@ -1024,6 +1023,7 @@
                 "reviews": "Mis reseñas",
                 "subscription": "Mi suscripción",
                 "favoritesDesc": "Alojamientos guardados",
+                "unavailable": "No disponible",
                 "reviewsDesc": "Reseñas publicadas",
                 "subscriptionDesc": "Plan actual",
                 "subscriptionStatus": "Estado de la suscripción",

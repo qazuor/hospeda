@@ -364,6 +364,31 @@ describe('UserBookmarkCollectionService.getCollectionById', () => {
         expect(asMock(dbChain.limit as Mock)).toHaveBeenCalledWith(5);
         expect(asMock(dbChain.offset as Mock)).toHaveBeenCalledWith(5); // (2-1)*5
     });
+
+    it.each([
+        'VENUE',
+        'EXPERIENCE',
+        'ATTRACTION'
+    ] as const)('accepts the %s entityType filter (HOS-2423)', async (entityType) => {
+        // Arrange
+        const actor = makeOwnerActor();
+        asMock(collectionModelMock.findById).mockResolvedValue(makeCollection());
+        asMock(dbChain.offset as Mock).mockResolvedValue([]);
+        Object.defineProperty(dbChain, 'then', {
+            configurable: true,
+            value: (resolve: (v: unknown) => void) => resolve([])
+        });
+
+        // Act
+        const result = await service.getCollectionById(actor, {
+            collectionId: COLLECTION_ID,
+            includeBookmarks: true,
+            entityType
+        });
+
+        // Assert — used to fail input validation (enum lacked VENUE/EXPERIENCE)
+        expect(result.error).toBeUndefined();
+    });
 });
 
 // ===========================================================================
