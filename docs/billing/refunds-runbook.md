@@ -283,13 +283,21 @@ you do not race a call still in flight. Then read each call's answer:
 | `SENT` and `execution: "NOT_ACCREDITED_KEPT_CONFIRMED"` | Accepted, not accredited yet (accepted is not accredited) | Nothing to write: the next charge notice executes it. If it does not within a day, it is case A (section 7) |
 | `SENT` and `execution: null` | Accepted, but the charge read after it failed | Nothing to write: the next charge notice executes it |
 | `PROVIDER_REJECTED_FAILED` | Mercado Pago rejected the call. The refund is `FAILED` (RF5) | Section 8.1 from step 5 (check Mercado Pago, then action 14 if still owed) |
-| `AWAITING_PROVIDER_ANSWER` | Still no answer, or an answer without id that matched no single refund (a Sentry alert names it) | Retry later. If it persists, steps 1-2 below |
+| `AWAITING_PROVIDER_ANSWER` | Still no answer; an answer without id that matched no single uncited refund; or an answer naming a Mercado Pago refund id that is already the panel reference of a refund or the id of another call (HOS-2517). The last two raise a Sentry alert (`AmbiguousRefundAnswerError`, with its `reason`) | Retry later. If it persists, or the alert says `PROVIDER_REFUND_ALREADY_CITED`, steps 1-2 below |
 | `PROVIDER_KEY_CONFLICT` | Mercado Pago refused the key as reused | Steps 1-2 below |
 
 A 422 `REFUND_PAST_PROVIDER_WINDOW` means the charge is more than 180 days old: a refusal from
 Mercado Pago would not tell whether the lost call moved money, so the retry refuses to send. Go to
 steps 1-2 below. A call of the retired order channel (`refund_call.addon_instance_id` set) is never
 resent (section 2).
+
+**How long Mercado Pago remembers the key is NOT measured** (matrix row `EX-73` in
+`.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md`). `RF-6` measured
+an immediate replay: same key and body, `200` with an empty body and no new refund. Nobody
+measured a replay days later. If Mercado Pago has forgotten the key, the retry creates a SECOND
+refund and the money goes back twice. So for a call older than about a day, do step 1 first:
+look in the Mercado Pago panel for a refund of that charge and amount. If one exists, do not
+retry; go to step 2. Retry only when the panel shows none.
 
 Only when the retry cannot close it does this case need one direct write, and only that write.
 Everything after it goes through the existing actions.
