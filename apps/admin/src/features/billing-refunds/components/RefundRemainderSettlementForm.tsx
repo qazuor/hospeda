@@ -33,7 +33,9 @@ const REMAINDER_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
     ACCEPTED_PART_NOT_ACCREDITED:
         'admin-billing.proposedRefunds.remainder.rejections.ACCEPTED_PART_NOT_ACCREDITED',
     REMAINDER_NOT_FOUND_AT_PROVIDER:
-        'admin-billing.proposedRefunds.remainder.rejections.REMAINDER_NOT_FOUND_AT_PROVIDER'
+        'admin-billing.proposedRefunds.remainder.rejections.REMAINDER_NOT_FOUND_AT_PROVIDER',
+    OTHER_REFUND_CALL_UNANSWERED:
+        'admin-billing.proposedRefunds.remainder.rejections.OTHER_REFUND_CALL_UNANSWERED'
 };
 
 const RefundIdSchema = z.string().uuid();
