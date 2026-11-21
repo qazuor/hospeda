@@ -152,6 +152,58 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4634
+    {
+        id: '2026-11-20-unlimited-favorites-shown-as-unlimited',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tus favoritos sin límite ahora se muestran como «ilimitado»',
+            en: 'Your unlimited favorites now show as «unlimited»',
+            pt: 'Seus favoritos sem limite agora aparecem como «ilimitado»'
+        },
+        body: {
+            es: 'Si tu plan de propietario te da los beneficios de Turista VIP, tu plan y el asistente muestran los favoritos y las alertas de precio como «ilimitado», en lugar de un número enorme sin sentido.',
+            en: 'If your owner plan gives you Tourist VIP benefits, your plan and the assistant now show favorites and price alerts as «unlimited» instead of a huge meaningless number.',
+            pt: 'Se o seu plano de proprietário dá os benefícios do Turista VIP, o seu plano e o assistente mostram os favoritos e os alertas de preço como «ilimitado», em vez de um número enorme sem sentido.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4629
+    {
+        id: '2026-11-20-screens-translated-on-first-load',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las pantallas se ven traducidas desde la primera carga',
+            en: 'Screens now show translated from the first load',
+            pt: 'As telas aparecem traduzidas desde o primeiro carregamento'
+        },
+        body: {
+            es: 'Al abrir Hospeda por primera vez en inglés o en portugués, las pantallas y el aviso de cookies ya aparecen en tu idioma, sin textos sueltos ni español de por medio. Además, la hora del aviso de suscripción pendiente se muestra con un solo punto.',
+            en: 'When you open Hospeda for the first time in English or Portuguese, screens and the cookie notice now appear in your language, with no stray text or Spanish in between. Also, the time in the pending subscription notice now shows a single period.',
+            pt: 'Ao abrir o Hospeda pela primeira vez em inglês ou em português, as telas e o aviso de cookies já aparecem no seu idioma, sem textos soltos nem espanhol no meio. Além disso, o horário do aviso de assinatura pendente aparece com um único ponto.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4631, #4632, #4620
+    {
+        id: '2026-11-20-owner-plans-show-tourist-vip-benefits',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los planes para propietarios muestran los beneficios de Turista VIP',
+            en: 'Owner plans now show their Tourist VIP benefits',
+            pt: 'Os planos para proprietários mostram os benefícios do Turista VIP'
+        },
+        body: {
+            es: 'En la comparativa de planes de alojamiento, locales y experiencias, cada plan para propietarios muestra los beneficios de Turista VIP que incluye, como favoritos sin límite, colecciones de viaje y más consultas con IA.',
+            en: 'In the plan comparison for accommodations, venues and experiences, each owner plan now shows the Tourist VIP benefits it includes, such as unlimited favorites, travel collections and more AI queries.',
+            pt: 'Na comparação de planos de hospedagens, locais e experiências, cada plano para proprietários mostra os benefícios do Turista VIP que inclui, como favoritos sem limite, coleções de viagem e mais consultas de IA.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4594, #4543, #4550, #4607, #4609
     {
         id: '2026-11-19-venue-pro-premium-promotions',

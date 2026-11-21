@@ -1,10 +1,8 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient, SelectRefund } from '@repo/db';
 import { and, eq, getDb, refunds } from '@repo/db';
-import { applyExecutedRefund } from '../payment/apply-executed-refund.service';
-import { resolveHungPaymentsBySettlement } from '../reconciliation/hung-payment-resolution';
 import type { ExecuteRefundInput, ExecuteRefundResult } from './execute-refund.service';
-import { enqueueLatePaymentRefundNotice } from './late-payment-refund-notice';
+import { closeExecutedPaymentRefund } from './refund-closure';
 import { canRefundTransition } from './refund-machine';
 import { lockRefundSource } from './refund-source';
 
@@ -61,14 +59,12 @@ export async function executeAccreditedRefund(input: {
             )
             .returning({ id: refunds.id });
         if (!updated) return result(input.input, 'REFUND_STATE_CHANGED');
-        await resolveHungPaymentsBySettlement({
+        const paymentEffect = await closeExecutedPaymentRefund({
             tx,
-            payment: { source: 'PAYMENT', id: locked.payment.id },
+            paymentId: locked.payment.id,
             refundId: refund.id,
-            at: clock.now()
+            clock
         });
-        await enqueueLatePaymentRefundNotice({ tx, refundId: refund.id, paymentId });
-        const paymentEffect = await applyExecutedRefund({ refundId: refund.id }, { clock, tx });
         return result(input.input, 'EXECUTED', paymentEffect);
     });
 }

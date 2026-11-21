@@ -71,6 +71,16 @@ Lo que cambia es cómo se define *favorable* —más alto, más bajo, o un orden
 una propiedad del significado de la clave, no de cada plan. **La misma favorabilidad es la que
 usa `direcciónDeCambio` para decidir qué es bajar** (`B/10` §3.5; FASE 9 vuelta 1, `F-8V1C1-002`).
 
+> **Aclaración (HOS-2403, 2026-11-20): «ilimitado» es absorbente bajo `SUMA`.** Un limit sin tope
+> se guarda en el catálogo como el centinela `2147483647` (el máximo de `integer`, porque
+> `plan_version_limit.value` tiene `CHECK (value >= 0)`; Coord-41, migración 0144). Si **alguna**
+> fuente del conjunto plegable declara el centinela, el resultado de `SUMA` **es el centinela**, no
+> centinela + n: ilimitado más cualquier cosa sigue siendo ilimitado. Ninguna vista muestra jamás
+> un número igual o mayor al centinela: lo muestra como «ilimitado». `MÁXIMO` y `MÍNIMO` no
+> necesitan la regla porque ya eligen un solo valor. Entre fuentes finitas `SUMA` no cambia:
+> Turista Free 10 + VIP heredado 200 = 210 (`DEC-ENT-003`). Constante y chequeo:
+> `UNLIMITED_LIMIT_VALUE` / `isUnlimitedLimit` en `@repo/schemas`.
+
 ### 2.3 Por qué la estrategia vive con la clave y no con el plan
 
 **Si la declarara el plan, dos planes de la misma vertical podrían declarar estrategias distintas

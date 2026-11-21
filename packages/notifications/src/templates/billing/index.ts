@@ -19,6 +19,7 @@ export * from './late-payment-refunded.js';
 export * from './manual-installment-opened.js';
 export * from './manual-installment-unpaid.js';
 export * from './mark-escalated.js';
+export * from './one-time-addon-activated.js';
 export * from './paid-after-cancellation.js';
 export * from './payment-credited.js';
 export * from './payment-failure.js';

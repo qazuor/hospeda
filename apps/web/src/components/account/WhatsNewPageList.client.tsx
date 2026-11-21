@@ -78,8 +78,10 @@ function WhatsNewCard({ item, locale }: WhatsNewCardProps) {
         [item.publishedAt, locale]
     );
 
+    const cardClassName = item.seen ? 'whats-new-card whats-new-card--seen' : 'whats-new-card';
+
     return (
-        <article className={`whats-new-card${item.seen ? 'whats-new-card--seen' : ''}`}>
+        <article className={cardClassName}>
             {item.image && (
                 <img
                     src={item.image}

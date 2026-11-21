@@ -130,3 +130,59 @@ describe('TEST:V3:1 — each key folds with the strategy its catalog declares', 
         ).toThrow(ContradictoryStrategyError);
     });
 });
+
+/**
+ * HOS-2403 (clarification of M-ENT-01): the catalog stores "unlimited" for a
+ * limit as the int4 max sentinel 2147483647 (migration 0144). Under `SUM` the
+ * sentinel is ABSORBING: one unlimited source makes the aggregate unlimited,
+ * and the sum never grows past the sentinel. Before the fix an inherited
+ * Tourist VIP (sentinel) plus the base Turista Free (5) folded
+ * `max_favorites` to 2147483652.
+ */
+describe('HOS-2403 — the unlimited sentinel is absorbing under SUM', () => {
+    const FAVORITES = 'max_favorites';
+    const AI_CHAT = 'max_ai_chat_consumer_per_month';
+    const SENTINEL = 2147483647;
+
+    it('sentinel + a finite value folds to the sentinel, not 2147483652', () => {
+        const folded = foldPlegableSet({
+            sources: [
+                subscription([grant({ key: FAVORITES, value: 5, strategy: 'SUM' })]),
+                addon({
+                    scope: 'USER',
+                    grants: [grant({ key: FAVORITES, value: SENTINEL, strategy: 'SUM' })]
+                })
+            ]
+        });
+
+        expect(folded.get(FAVORITES)).toBe(SENTINEL);
+    });
+
+    it('sentinel + sentinel folds to the sentinel', () => {
+        const folded = foldPlegableSet({
+            sources: [
+                subscription([grant({ key: FAVORITES, value: SENTINEL, strategy: 'SUM' })]),
+                addon({
+                    scope: 'USER',
+                    grants: [grant({ key: FAVORITES, value: SENTINEL, strategy: 'SUM' })]
+                })
+            ]
+        });
+
+        expect(folded.get(FAVORITES)).toBe(SENTINEL);
+    });
+
+    it('finite + finite is still the plain sum: 200 + 10 = 210 (M-ENT-01)', () => {
+        const folded = foldPlegableSet({
+            sources: [
+                subscription([grant({ key: AI_CHAT, value: 10, strategy: 'SUM' })]),
+                addon({
+                    scope: 'USER',
+                    grants: [grant({ key: AI_CHAT, value: 200, strategy: 'SUM' })]
+                })
+            ]
+        });
+
+        expect(folded.get(AI_CHAT)).toBe(210);
+    });
+});

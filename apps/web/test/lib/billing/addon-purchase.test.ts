@@ -78,7 +78,7 @@ describe('HOS-2179 one-time copy decisions', () => {
         ],
         [
             { chargeKind: 'UNA_VEZ' as const, exhausted: true },
-            'billing.addonPurchase.waitingPaymentLong'
+            'billing.addonPurchase.waitingPaymentMail'
         ],
         [{ chargeKind: 'PERIODICO' as const, exhausted: true }, 'billing.addonPurchase.processing'],
         [{ chargeKind: null, exhausted: false }, 'billing.addonPurchase.processing']
