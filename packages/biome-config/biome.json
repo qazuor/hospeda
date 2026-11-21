@@ -24,6 +24,7 @@
             "!**/docs/examples",
             "!**/mappings/id-mappings.json",
             "!**/config/generated",
+            "!**/packages/help/generated",
             "!**/migrations/meta",
             "!**/.remember",
             "!**/test/**/fixtures",

@@ -1,0 +1,54 @@
+{
+    "name": "@repo/help",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "sideEffects": false,
+    "license": "MIT",
+    "description": "Owner help center content: Markdown articles, their Zod schemas, the generator of the committed help index, and the shared keyword search. Read by apps/api (get_help) and the web help pages. HOS-2410 PR-3.",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "build:ts": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "generate": "tsx src/generator/cli.ts",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "@repo/portal-routes": "workspace:*",
+        "@repo/schemas": "workspace:*",
+        "zod": "^4.0.8"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^26.6.6",
+        "@vitest/coverage-v8": "^5.1.0",
+        "marked": "^18.0.9",
+        "tsup": "^8.5.1",
+        "typescript": "6.0.3",
+        "vitest": "^5.1.0",
+        "yaml": "^2.8.3"
+    }
+}

@@ -134,6 +134,7 @@
         "db:migrate:prod": "bash scripts/migrate-production.sh",
         "db:generate": "pnpm --filter @repo/db db:generate",
         "db:studio": "pnpm --filter @repo/db db:studio",
+        "help:build": "pnpm --filter @repo/help generate",
         "db:seed": "pnpm --filter @repo/seed seed --reset --required --example --poi-catalog",
         "db:seed:test-users": "pnpm --filter @repo/seed seed:test-users",
         "db:seed:ready-user": "pnpm --filter @repo/seed seed:ready-user",
