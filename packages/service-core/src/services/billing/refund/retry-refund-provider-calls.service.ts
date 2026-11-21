@@ -7,7 +7,7 @@ import type { Pool } from 'pg';
 import { type Actor, ServiceError } from '../../../types';
 import { type ExecuteRefundResult, executeRefundFromProviderRead } from './execute-refund.service';
 import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
-import { readRefundCallTally } from './refund-call-tally';
+import { readRefundCallTally, refundCallRetryCutoff } from './refund-call-tally';
 import { settleRefundRejectedAfterAcceptance } from './refund-rejected-after-acceptance';
 import { providerRefundWindow } from './refund-window';
 import {
@@ -18,15 +18,10 @@ import {
 const logger = createLogger('retry-refund-provider-calls');
 
 /**
- * How long after a call was sent "Retry with MP" may still POST it again (owner decision on
- * #4643, HOS-2516). The resend reads the charge first, but a provider read that lags behind a
- * refund it already made, combined with a provider that has forgotten the idempotency key, could
- * still post a second refund (matrix row EX-73, `UNKNOWN`). Inside 24 hours the key is the cover.
- * Past it, only the POST is refused (`REFUND_CALL_TOO_OLD_TO_RETRY`): reading the charge, binding
- * a refund found there, the accepted-then-rejected check and RF3 still run, and the operator
- * follows the refunds runbook §8.1/§8.2. This limit can be relaxed once EX-73 is measured.
+ * Re-exported from its single home, `refund-call-tally.ts` (HOS-2538): the retry's POST limit and
+ * the panel settlement's eligibility are the same instant.
  */
-export const REFUND_CALL_RETRY_LIMIT_MS = 24 * 60 * 60 * 1000;
+export { REFUND_CALL_RETRY_LIMIT_MS } from './refund-call-tally';
 
 /** Every `reason` a rejection of `retryRefundProviderCalls` carries, for an exhaustive HTTP mapping. */
 export const RETRY_REFUND_PROVIDER_CALLS_REJECTIONS = [
@@ -321,9 +316,7 @@ async function runRetry(
                       {
                           refundId: input.refundId,
                           ...(input.correlationId ? { correlationId: input.correlationId } : {}),
-                          postCutoff: new Date(
-                              ports.clock.now().getTime() - REFUND_CALL_RETRY_LIMIT_MS
-                          )
+                          postCutoff: refundCallRetryCutoff({ now: ports.clock.now() })
                       },
                       ports
                   )

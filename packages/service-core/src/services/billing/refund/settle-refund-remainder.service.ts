@@ -13,7 +13,11 @@ import {
     PANEL_REFERENCE_CONSTRAINT,
     readRefundSubject
 } from './refund-action14';
-import { hasOtherUnansweredRefundCall, readRefundCallTally } from './refund-call-tally';
+import {
+    hasOtherUnansweredRefundCall,
+    type RefundCallRow,
+    readRefundCallTally
+} from './refund-call-tally';
 import { closeExecutedPaymentRefund } from './refund-closure';
 import { canRefundTransition, type RefundStatus } from './refund-machine';
 import {
@@ -23,6 +27,11 @@ import {
     readChargeRefunds
 } from './refund-remainder-provider';
 import { assertRefundAmount, lockRefundSource } from './refund-source';
+import {
+    assertNoUncitedRefundForStaleCalls,
+    assertUnansweredCallsPastRetryLimit,
+    markStaleCallsSettledExternally
+} from './refund-stale-calls';
 
 /** Input of the remainder settlement (HOS-2406). */
 export type SettleRefundRemainderInput = {
@@ -45,6 +54,11 @@ export type SettleRefundRemainderResult = {
     readonly remainderAmount: number;
     readonly paymentOutcome: ApplyExecutedRefundResult['outcome'];
     readonly coverageReleased: boolean;
+    /**
+     * Idempotency keys of the unanswered calls past the retry limit this settlement answered as
+     * `SETTLED_EXTERNALLY` (HOS-2538); empty when every call had an answer.
+     */
+    readonly settledStaleCallKeys: readonly string[];
 };
 
 /** Every `reason` a rejection of `settleRefundRemainder` carries, for an exhaustive HTTP mapping. */
@@ -62,6 +76,7 @@ export const SETTLE_REFUND_REMAINDER_REJECTIONS = [
     'REMAINDER_AMOUNT_MISMATCH',
     'EXTERNAL_REFERENCE_ALREADY_SETTLED',
     'REMAINDER_NOT_FOUND_AT_PROVIDER',
+    'UNCITED_PROVIDER_REFUND_ON_CHARGE',
     'REFUND_STATE_CHANGED'
 ] as const;
 
@@ -91,9 +106,11 @@ function assertConfirmed(status: string): void {
 }
 
 /**
- * The provider answered every call, accepted at least one, every accepted call is credited on the
- * charge (accepted is not credited), and the remainder is exactly what the credited part left
- * unpaid. Returns the credited sum, as the provider reports it.
+ * The provider answered every call, or (HOS-2538) every call it did not answer is past the retry
+ * limit; at least one call was accepted or is such a stale call; every accepted call is credited on
+ * the charge (accepted is not credited), and the remainder is exactly what the credited part left
+ * unpaid (the whole refund when nothing was accepted). Returns the credited sum, as the provider
+ * reports it, and the stale calls this settlement answers.
  */
 async function assertPartiallyCredited(input: {
     readonly tx: DrizzleClient;
@@ -102,15 +119,11 @@ async function assertPartiallyCredited(input: {
     readonly remainder: number;
     readonly read: ChargeRefundsRead;
     readonly currency: string;
-}): Promise<number> {
+    readonly now: Date;
+}): Promise<{ readonly credited: number; readonly stale: readonly RefundCallRow[] }> {
     const tally = await readRefundCallTally({ db: input.tx, refundId: input.refundId });
-    if (tally.awaitingProviderAnswer)
-        throw reject(
-            ServiceErrorCode.ALREADY_EXISTS,
-            'A provider call of this refund is still unanswered',
-            'REFUND_CALL_UNANSWERED'
-        );
-    if (tally.acceptedIds.length === 0)
+    const stale = assertUnansweredCallsPastRetryLimit({ tally, now: input.now });
+    if (tally.acceptedIds.length === 0 && stale.length === 0)
         throw reject(
             ServiceErrorCode.ALREADY_EXISTS,
             'The provider accepted no part of this refund',
@@ -128,7 +141,7 @@ async function assertPartiallyCredited(input: {
             `The remainder must be ${owed}: the refund is ${input.refundAmount} and the provider credited ${credited}`,
             'REMAINDER_AMOUNT_MISMATCH'
         );
-    return credited;
+    return { credited, stale };
 }
 
 /** What the decision reads from the provider before its transaction; null when there is nothing to read. */
@@ -232,8 +245,18 @@ function stateChanged(): ServiceError {
 
 /**
  * HOS-2406 — administrative action 14 over a `CONFIRMED` payment refund the provider accepted
- * only in part, once a person refunded the rest by hand from the provider panel. The refund row
- * closes `EXECUTED` for its full amount: its accepted `refund_call` rows keep the provider part,
+ * only in part, once a person refunded the rest by hand from the provider panel.
+ *
+ * HOS-2538 — also over a `CONFIRMED` refund stuck on provider calls left unanswered for more than
+ * 24 hours (`REFUND_CALL_RETRY_LIMIT_MS`, the limit past which "Retry with MP" refuses to post,
+ * `REFUND_CALL_TOO_OLD_TO_RETRY`). The remainder is then whatever the accepted calls did not
+ * credit: the whole refund when none was accepted. Any unanswered call inside the limit refuses
+ * (`REFUND_CALL_UNANSWERED`, the retry still owns it). A charge refund nobody cites, for a stale
+ * call's amount, refuses too (`UNCITED_PROVIDER_REFUND_ON_CHARGE`: the lost call may have landed,
+ * and the retry binds it). On success every stale call is answered `SETTLED_EXTERNALLY` in the same
+ * transaction ({@link markStaleCallsSettledExternally}): never resent, never bound afterwards.
+ *
+ * The refund row closes `EXECUTED` for its full amount: its accepted `refund_call` rows keep the provider part,
  * and the row records the remainder the way action 14 records a panel refund
  * (`executed_via = 'EXTERNAL'`, `external_channel = 'PROVIDER_PANEL'`, `external_ref` the panel
  * refund id, `settled_by` the person; `confirmed_by` keeps whoever confirmed it). Accepted part +
@@ -321,13 +344,14 @@ export async function settleRefundRemainder(
                 paymentId: locked.payment.id,
                 refundId: refund.id
             });
-            const acceptedAmount = await assertPartiallyCredited({
+            const { credited: acceptedAmount, stale } = await assertPartiallyCredited({
                 tx,
                 refundId: refund.id,
                 refundAmount: refund.amount,
                 remainder: input.amount,
                 read: view.read,
-                currency: locked.payment.currency
+                currency: locked.payment.currency,
+                now: ports.clock.now()
             });
             await assertPanelReferenceUnused({ tx, reference: input.reference });
             assertRemainderAtProvider({
@@ -335,6 +359,20 @@ export async function settleRefundRemainder(
                 reference: input.reference,
                 remainder: input.amount,
                 currency: locked.payment.currency
+            });
+            await assertNoUncitedRefundForStaleCalls({
+                tx,
+                read: view.read,
+                stale,
+                reference: input.reference,
+                currency: locked.payment.currency
+            });
+            await markStaleCallsSettledExternally({
+                tx,
+                refundId: refund.id,
+                stale,
+                reference: input.reference,
+                now: ports.clock.now()
             });
             const [closed] = await tx
                 .update(refunds)
@@ -368,7 +406,8 @@ export async function settleRefundRemainder(
                 acceptedAmount,
                 remainderAmount: input.amount,
                 paymentOutcome: applied.outcome,
-                coverageReleased: 'coverageReleased' in applied ? applied.coverageReleased : false
+                coverageReleased: 'coverageReleased' in applied ? applied.coverageReleased : false,
+                settledStaleCallKeys: stale.map((call) => call.idempotencyKey)
             };
         });
     } catch (error) {

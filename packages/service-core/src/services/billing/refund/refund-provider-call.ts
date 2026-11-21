@@ -1,11 +1,12 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { SelectPayment, SelectRefund } from '@repo/db';
-import { eq, getDb, idempotencyKeys, refundCalls, refunds } from '@repo/db';
+import { and, eq, getDb, idempotencyKeys, refundCalls, refunds, sql } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { type PaymentProvider, PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import { SETTLED_EXTERNALLY } from './refund-call-tally';
 import { describeProviderRejection } from './refund-provider-rejection-reason';
 import { claimedRefundAmount } from './refund-source';
 
@@ -79,7 +80,13 @@ export async function persistCall(
     });
 }
 
-/** Completes one persisted RF2 call (AC:B6:8, TRANS:B:RF2). */
+/**
+ * Completes one persisted RF2 call (AC:B6:8, TRANS:B:RF2).
+ *
+ * A call action 14 already answered by hand (`SETTLED_EXTERNALLY`, HOS-2538) is left as it is:
+ * its refund was settled from the provider panel, so a late answer (a resend in flight, a lagging
+ * response) must neither overwrite that answer nor bind a provider refund to the call.
+ */
 export async function completeCall(
     key: string,
     result:
@@ -95,16 +102,26 @@ export async function completeCall(
     providerRefundId?: string
 ): Promise<void> {
     await getDb().transaction(async (tx) => {
+        const [completed] = await tx
+            .update(idempotencyKeys)
+            .set({ result, completedAt: clock.now() })
+            .where(
+                and(
+                    eq(idempotencyKeys.key, key),
+                    sql`(${idempotencyKeys.result} IS NULL OR ${idempotencyKeys.result}->>'outcome' IS DISTINCT FROM ${SETTLED_EXTERNALLY})`
+                )
+            )
+            .returning({ key: idempotencyKeys.key });
+        if (!completed) {
+            logger.warn({ key }, 'Late answer for a refund call already settled by action 14');
+            return;
+        }
         if (providerRefundId) {
             await tx
                 .update(refundCalls)
                 .set({ providerRefundId })
                 .where(eq(refundCalls.idempotencyKey, key));
         }
-        await tx
-            .update(idempotencyKeys)
-            .set({ result, completedAt: clock.now() })
-            .where(eq(idempotencyKeys.key, key));
     });
 }
 

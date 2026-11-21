@@ -2,10 +2,12 @@
  * HOS-2406: POST /api/v1/admin/billing-refunds/{refundId}/settle-remainder. Records the remainder
  * of a CONFIRMED refund the provider accepted only in part, refunded by hand from the provider
  * panel. Covers the error-contract order (401 → 403 → 400 → 404 → 409/422) and the audit record.
+ * HOS-2538: also a CONFIRMED refund whose only unanswered call is older than 24 hours.
  */
 import { eq, getDb, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import { PermissionEnum } from '@repo/schemas';
+import { REFUND_CALL_RETRY_LIMIT_MS } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { AuditEventType } from '../../../src/utils/audit-logger';
@@ -109,6 +111,30 @@ async function seedPartiallyAccepted(
     return seeded;
 }
 
+/** HOS-2538: a CONFIRMED refund of `amount` whose only call went unanswered `ageMs` ago. */
+async function seedStaleCall(amount: number, ageMs: number) {
+    const seeded = await seedConfirmRefund(10000, amount);
+    const db = getDb();
+    await db
+        .update(refunds)
+        .set({ status: 'CONFIRMED', confirmedBy: seeded.adminId })
+        .where(eq(refunds.id, seeded.refundId));
+    const key = `refund:${seeded.refundId}:1`;
+    await db
+        .insert(idempotencyKeys)
+        .values({ key, operation: 'REFUND_CREATE', subjectId: seeded.refundId });
+    await db.insert(refundCalls).values({
+        refundId: seeded.refundId,
+        idempotencyKey: key,
+        amount,
+        providerRefundId: null,
+        createdAt: new Date(confirmClock.now().getTime() - ageMs)
+    });
+    return { ...seeded, key };
+}
+
+const PAST_LIMIT = REFUND_CALL_RETRY_LIMIT_MS + 1;
+
 const paymentState = async (paymentId: string) => {
     const [row] = await getDb()
         .select({ status: payments.status, refundedAmount: payments.refundedAmount })
@@ -192,6 +218,7 @@ describe('HOS-2406 remainder settlement route', () => {
                         amount: 2000,
                         channel: 'PROVIDER_PANEL',
                         reference,
+                        settledStaleCallKeys: [],
                         paymentOutcome: 'P4',
                         coverageReleased: false,
                         note: 'refunded from the panel'
@@ -351,5 +378,77 @@ describe('HOS-2406 remainder settlement route', () => {
             reason: 'REMAINDER_NOT_FOUND_AT_PROVIDER'
         });
         expect(await paymentState(seeded.paymentId)).toMatchObject({ refundedAmount: 0 });
+    });
+
+    it('HOS-2538 closes a refund stuck on a call older than 24 hours and audits it', async () => {
+        // Arrange
+        const seeded = await seedStaleCall(6000, PAST_LIMIT);
+        const reference = await refundAtFake(seeded.chargeId, 6000);
+
+        // Act
+        const response = await settle({
+            refundId: seeded.refundId,
+            headers: admin(seeded.adminId),
+            body: { amount: 6000, reference }
+        });
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toMatchObject({
+            status: 'EXECUTED',
+            acceptedAmount: 0,
+            remainderAmount: 6000
+        });
+        const rows = await confirmRows(seeded.refundId);
+        expect(rows.refund).toMatchObject({ status: 'EXECUTED', externalRef: reference });
+        expect(audit.mock.calls.map(([entry]) => entry.metadata)).toContainEqual(
+            expect.objectContaining({
+                settlement: 'STALE_PROVIDER_CALL',
+                settledStaleCallKeys: [seeded.key],
+                amount: 6000
+            })
+        );
+    });
+
+    it('HOS-2538 answers 409 REFUND_CALL_UNANSWERED for a call inside the 24 hours', async () => {
+        // Arrange: a second inside the limit (this clock ticks 1 ms on every read, so the exact
+        // boundary is pinned by the service-core suite instead).
+        const seeded = await seedStaleCall(6000, REFUND_CALL_RETRY_LIMIT_MS - 1000);
+
+        // Act
+        const response = await settle({
+            refundId: seeded.refundId,
+            headers: admin(seeded.adminId),
+            body: { amount: 6000, reference: await refundAtFake(seeded.chargeId, 6000) }
+        });
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect((await response.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'REFUND_CALL_UNANSWERED'
+        });
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
+    });
+
+    it('HOS-2538 answers 409 UNCITED_PROVIDER_REFUND_ON_CHARGE when the lost call may have landed', async () => {
+        // Arrange
+        const seeded = await seedStaleCall(4000, PAST_LIMIT);
+        await refundAtFake(seeded.chargeId, 4000);
+
+        // Act
+        const response = await settle({
+            refundId: seeded.refundId,
+            headers: admin(seeded.adminId),
+            body: { amount: 4000, reference: await refundAtFake(seeded.chargeId, 4000) }
+        });
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect((await response.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'UNCITED_PROVIDER_REFUND_ON_CHARGE'
+        });
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
     });
 });
