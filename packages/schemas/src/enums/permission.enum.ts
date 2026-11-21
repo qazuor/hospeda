@@ -753,6 +753,7 @@ export enum PermissionEnum {
     NOTIFICATION_SOFT_DELETE_VIEW = 'notification.softDelete.view', // Allows viewing soft-deleted notifications.
     NOTIFICATION_SEND = 'notification.send', // Allows sending notifications.
     NOTIFICATION_STATUS_MANAGE = 'notification.status.manage', // Allows managing notification status.
+    NOTIFICATION_TEMPLATE_PREVIEW = 'notification.template.preview', // Allows previewing every email template in the admin email previewer (HOS-2519). Read-only, fictional sample data.
 
     // PROFESSIONAL_SERVICE: Permissions related to professional service management
     PROFESSIONAL_SERVICE_CREATE = 'professionalService.create', // Allows creating a new professional service.
