@@ -14,7 +14,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+import { resolveOwnerInboxGate } from '@/lib/owner-inbox-gate';
 import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
 import { ChatIcon } from '@repo/icons';
 
@@ -33,8 +33,9 @@ if (!user) {
 // this inbox lives in the host group gated on ACCOMMODATION_CREATE, so the page
 // applies the same predicate and the two can never disagree. A user without it
 // is sent back to the account home instead of seeing an empty owner inbox.
-if (!hasAccommodationsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+const gate = resolveOwnerInboxGate({ roles: user.roles, locale });
+if (gate.action === 'redirect') {
+    return Astro.redirect(gate.location);
 }
 
 // Pagination from URL search params

@@ -54,7 +54,7 @@ describe('consultas-propietario pages gate by permission (HOS-2433)', () => {
     it.each(
         owner.map((p) => [p.rel, p.source] as const)
     )('%s redirects users without host-tier permission', (_rel, source) => {
-        expect(source).toContain('hasAccommodationsNavAccess({ roles: user.roles })');
+        expect(source).toContain('resolveOwnerInboxGate({ roles: user.roles, locale })');
         expect(source).not.toMatch(/user\.role\s*===/);
     });
 });
