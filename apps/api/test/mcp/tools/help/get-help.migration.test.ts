@@ -9,11 +9,23 @@
  * them, with the configured site URL replaced by `{SITE}`. This test runs the
  * tool again and compares the serialized answers byte for byte.
  *
+ * HOS-2410 PR-12 made the answer richer, and the fixture is NOT rewritten for it:
+ *
+ * - The topic gained `summary`, `sections` and `related` (AC-17). AC-15 is about
+ *   `id`, `title`, `steps` and `links` only, so the comparison projects the topic
+ *   to those four fields, in the fixture's key order.
+ * - `get_help` now resolves body tokens, and the pages a `{{link}}` or
+ *   `{{limit}}` token names are APPENDED to the links (`docs/data-model.md`
+ *   §5.2, AC-20). The links of the fixture must still be the first links, byte
+ *   for byte and in order; anything after them must come from a token of the
+ *   article. A link removed, reordered or relabelled still fails.
+ *
  * @module test/mcp/tools/help/get-help.migration
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { findHelpArticle, parseHelpTokens } from '@repo/help';
 import { PublicationStatusEnum } from '@repo/schemas';
 import {
     AccommodationService,
@@ -54,7 +66,15 @@ const LEGACY_IDS = [
     'benefit-usage-provider'
 ] as const;
 
-type Fixture = Record<string, Record<(typeof AUDIENCES)[number], unknown>>;
+/** One topic as the fixture holds it. */
+interface FixtureTopic {
+    readonly id: string;
+    readonly title: string;
+    readonly steps: readonly string[];
+    readonly links: readonly { readonly label: string; readonly url: string }[];
+}
+
+type Fixture = Record<string, Record<(typeof AUDIENCES)[number], FixtureTopic>>;
 
 const FIXTURE: Fixture = JSON.parse(
     readFileSync(resolve(import.meta.dirname, 'fixtures/get-help-pre-migration.json'), 'utf8')
@@ -120,8 +140,51 @@ describe('get_help after the migration to @repo/help (HOS-2410 AC-15)', () => {
             expect(outcome.ok).toBe(true);
             const data = (outcome as { readonly data: GetHelpResult }).data;
             expect(data.topics).toHaveLength(1);
-            const actual = JSON.stringify(data.topics[0]).split(site).join('{SITE}');
-            expect(actual).toBe(JSON.stringify(FIXTURE[id]?.[audience]));
+            const topic = data.topics[0];
+            const expected = FIXTURE[id]?.[audience];
+            if (topic === undefined || expected === undefined) {
+                throw new Error(`no topic or fixture for ${id}/${audience}`);
+            }
+            const unsited = (text: string) => text.split(site).join('{SITE}');
+            const legacy = {
+                id: topic.id,
+                title: topic.title,
+                steps: topic.steps,
+                links: topic.links.slice(0, expected.links.length)
+            };
+            expect(unsited(JSON.stringify(legacy))).toBe(JSON.stringify(expected));
+
+            // The links after the legacy ones come from the article's tokens: with
+            // one listing per vertical, each link or limit token adds one link at most.
+            const article = findHelpArticle({ id });
+            const {
+                canDo,
+                howTo,
+                expect: toExpect,
+                notExpect,
+                troubleshooting
+            } = article?.sections ?? {
+                canDo: '',
+                howTo: { steps: [], after: '' },
+                expect: '',
+                notExpect: '',
+                troubleshooting: ''
+            };
+            const linkTokens = [
+                canDo,
+                ...howTo.steps,
+                howTo.after,
+                toExpect,
+                notExpect,
+                troubleshooting
+            ]
+                .flatMap((text) => parseHelpTokens({ text }).tokens)
+                .filter((token) => token.kind !== 'article');
+            const extras = topic.links.slice(expected.links.length);
+            expect(extras.length).toBeLessThanOrEqual(linkTokens.length);
+            for (const extra of extras) {
+                expect(extra.url.startsWith(`${site}/es/`)).toBe(true);
+            }
         });
     });
 });
