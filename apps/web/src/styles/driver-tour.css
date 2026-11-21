@@ -54,6 +54,8 @@
     font-weight: 600;
     line-height: 1.4;
     margin-bottom: var(--space-2);
+    /* HOS-2448: room for the absolutely positioned close icon. */
+    padding-inline-end: var(--space-8, 2rem);
 }
 
 .driver-popover-description {
@@ -76,8 +78,7 @@
 }
 
 .driver-popover-prev-btn,
-.driver-popover-next-btn,
-.driver-popover-close-btn {
+.driver-popover-next-btn {
     background-color: var(--brand-accent);
     color: var(--accent-foreground);
     border: none;
@@ -98,9 +99,34 @@
     background-color: var(--core-muted-foreground-a20);
 }
 
-.driver-popover-next-btn:hover,
-.driver-popover-close-btn:hover {
+.driver-popover-next-btn:hover {
     background-color: var(--accent-hover);
+}
+
+/*
+ * HOS-2448: the close "×" is the corner icon driver.js positions absolutely at
+ * the top-right. It used to share the filled-button rules above, which turned
+ * it into an orange block with button padding that covered the popover title.
+ * Keep it a small, quiet icon button and reserve room for it beside the title.
+ */
+.driver-popover-close-btn {
+    background-color: transparent;
+    color: var(--core-muted-foreground);
+    border: none;
+    border-radius: var(--radius-button);
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus-visible {
+    background-color: var(--muted);
+    color: var(--core-foreground);
 }
 
 .driver-overlay {
