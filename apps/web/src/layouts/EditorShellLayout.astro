@@ -25,6 +25,7 @@
  */
 
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { sectionHelpAnchor } from '@/lib/help/help-entry';
 import EditorRouteNav from '@/components/host/editor/EditorRouteNav.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -69,6 +70,14 @@ const {
 
 const { t } = createTranslations(locale);
 
+// HOS-2410 web-ui §6: a section page's «?» opens the article that claims
+// `section:<vertical>.<slug>` (the registry id IS the vertical). On the hub
+// (no slug) the header falls back to the route's own `page:` anchor.
+const helpAnchor =
+	currentSectionSlug === null
+		? undefined
+		: sectionHelpAnchor({ vertical: registry.id, slug: currentSectionSlug });
+
 // The shared Breadcrumbs component takes the FULL trail (current page last),
 // drops the current page itself — it is already the <h1> — and prepends Inicio.
 const breadcrumbItems = buildEditorBreadcrumbItems({
@@ -84,7 +93,7 @@ const breadcrumbItems = buildEditorBreadcrumbItems({
 <AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
 	<Breadcrumbs locale={locale} items={breadcrumbItems} class="editor-shell__crumbs" />
 
-	<AccountPageHeader title={title} description={subtitle} />
+	<AccountPageHeader title={title} description={subtitle} helpAnchor={helpAnchor} />
 
 	<div class="editor-shell">
 		<div class="editor-shell__nav">

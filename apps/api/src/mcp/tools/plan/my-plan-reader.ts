@@ -39,6 +39,8 @@
 
 import type { CoverageSource } from '@repo/billing-verticals-contract';
 import type { Locale } from '@repo/i18n';
+import type { PortalDestination } from '@repo/portal-routes';
+import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
 import { OwnSubscriptionsResponseSchema, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
 import { readOwnPlanState } from '@repo/service-core';
 import {
@@ -55,8 +57,6 @@ import { env } from '../../../utils/env';
 import { toEffectiveSetView } from '../../../utils/listing-access/effective-set-view';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports';
 import { apiLogger } from '../../../utils/logger';
-import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
-import type { PortalDestination } from '../../portal/portal-routes';
 import { label, labelView } from './my-plan-labels';
 import { readInheritedTouristVip, readTouristVipOnUpgrade } from './my-plan-tourist-vip';
 import {

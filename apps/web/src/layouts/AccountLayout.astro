@@ -20,6 +20,7 @@ import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPi
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import PageHelpRow from '@/components/account/help/PageHelpRow.astro';
 import { getNavForSurface, PROVIDER_NAV_GROUP } from '@/config/navigation';
 import { AI_ASSISTANTS_NAV_ITEM_ID } from '@/config/navigation';
 import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
@@ -316,6 +317,9 @@ const activeLabel = resolveActiveLabel();
 
 			<!-- Content area -->
 			<div class="account-page__content">
+				<!-- HOS-2410 web-ui §6: the «?» of a page without AccountPageHeader.
+				     Hidden by the global rule below when the page has the header. -->
+				<PageHelpRow locale={locale} fallback />
 				<slot />
 			</div>
 		</div>
@@ -437,6 +441,17 @@ const activeLabel = resolveActiveLabel();
 
 	document.addEventListener('astro:page-load', initAccountNav);
 </script>
+
+<style is:global>
+	/*
+	 * HOS-2410 web-ui §6: AccountPageHeader carries the page's «?» in its title
+	 * row, so the layout's fallback copy steps aside (display: none also takes
+	 * it out of the accessibility tree).
+	 */
+	.account-page__content:has([data-account-page-header]) > [data-help-fallback] {
+		display: none;
+	}
+</style>
 
 <style>
 	.account-page {

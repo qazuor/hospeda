@@ -55,7 +55,7 @@
 - [ ] CHANGELOG.md updated (if user-facing changes)
 - [ ] README updated (if setup changes)
 - [ ] API documentation updated (if API changes)
-- [ ] Changed a portal flow (a page, a button or a step in `apps/web`)? Updated its help topic in `apps/api/src/data/owner-help` and bumped its `reviewedAt`
+- [ ] Changed a portal flow (a page, a button or a step in `apps/web`)? Updated its help article in `packages/help/content`, bumped its `reviewedAt` and ran `pnpm help:build`
 
 ## Workflow Compliance
 

@@ -140,6 +140,7 @@
         "preferences": "Preferences",
         "newsletter": "Newsletter",
         "whatsNew": "What's new",
+        "help": "Help",
         "aiAssistants": "AI assistants",
         "favorites": "Favorites",
         "searchHistory": "Search history",
@@ -1869,5 +1870,51 @@
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
         "accountNotice": "You are about to change the password for this account:"
+    },
+    "help": {
+        "landing": {
+            "title": "Help for publishing on Hospeda",
+            "description": "Everything you can do, how to do it and what to expect.",
+            "tabsLabel": "Account type",
+            "emptyAudience": "We are still writing the help for this account type."
+        },
+        "audiences": {
+            "host": "Accommodations",
+            "venue": "Food and nightlife",
+            "experience": "Experiences",
+            "provider": "Providers",
+            "partner": "Partners"
+        },
+        "audiencesLabel": "For",
+        "search": {
+            "label": "Search the help",
+            "placeholder": "For example: how do I upload photos",
+            "onlyMine": "Only for my account type",
+            "results_one": "{{count}} result",
+            "results_other": "{{count}} results",
+            "noMatch": "We could not find help for that",
+            "submit": "Search"
+        },
+        "fallback": {
+            "title": "Did not find what you were looking for?",
+            "faq": "See the frequently asked questions",
+            "contact": "Write to us"
+        },
+        "article": {
+            "breadcrumbRoot": "Help",
+            "breadcrumbLabel": "Help path",
+            "reviewedAt": "Reviewed on {{date}}",
+            "tocLabel": "In this article",
+            "tocToggle": "Article contents",
+            "pagesTitle": "Pages",
+            "faqLink": "See also in the frequently asked questions",
+            "onlySpanish": "This article is only available in Spanish for now.",
+            "limitNeutral": "your plan limit",
+            "unlimited": "no limit",
+            "title": "Help: {{title}}"
+        },
+        "link": {
+            "ariaLabel": "Help: {{title}} (opens in a new tab)"
+        }
     }
 }
