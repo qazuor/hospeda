@@ -16,6 +16,7 @@ import { renderWithProviders } from '../../../helpers/render-with-providers';
 
 const mocks = vi.hoisted(() => ({
     fetchApi: vi.fn(),
+    navigate: vi.fn(),
     permissions: [] as string[]
 }));
 
@@ -25,6 +26,15 @@ vi.mock('@/lib/api/client', () => ({ fetchApi: mocks.fetchApi }));
 vi.mock('@/components/auth/RoutePermissionGuard', async () =>
     vi.importActual('@/components/auth/RoutePermissionGuard')
 );
+// Same shape as the global router mock, with an observable `navigate`.
+vi.mock('@tanstack/react-router', () => ({
+    useNavigate: () => mocks.navigate,
+    useRouter: () => ({ navigate: mocks.navigate }),
+    useLocation: () => ({ pathname: '/platform/emails', search: '', hash: '' }),
+    Link: ({ children }: { children: React.ReactNode }) => <a href="/">{children}</a>,
+    Outlet: () => null,
+    createFileRoute: () => (options: Record<string, unknown>) => ({ options })
+}));
 vi.mock('@/hooks/use-user-permissions', () => ({
     useUserPermissions: () => mocks.permissions
 }));
@@ -145,8 +155,59 @@ describe('/platform/emails (HOS-2519)', () => {
 
         renderPage();
 
+        // The guard's no-access state: its sr-only placeholder heading and a redirect.
+        expect(
+            screen.getByRole('heading', { level: 1, name: 'admin-common.states.loading' })
+        ).toBeInTheDocument();
+        expect(mocks.navigate).toHaveBeenCalledWith({ to: '/dashboard' });
         expect(screen.queryByText('Aviso de renovación')).not.toBeInTheDocument();
+        expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
         expect(mocks.fetchApi).not.toHaveBeenCalled();
+    });
+
+    it('AC-7.1: with the permission, the guard does not redirect', async () => {
+        renderPage();
+
+        expect(await screen.findByRole('searchbox')).toBeInTheDocument();
+        expect(mocks.navigate).not.toHaveBeenCalled();
+    });
+
+    it('shows the loading state, not the error, while a failed catalog load is retried', async () => {
+        // Arrange: the first list load fails, the retry hangs until released
+        let release: (() => void) | undefined;
+        const base = mocks.fetchApi.getMockImplementation();
+        let listCalls = 0;
+        mocks.fetchApi.mockImplementation(async (input: { path: string }) => {
+            if (input.path === LIST_PATH) {
+                listCalls += 1;
+                if (listCalls === 1) {
+                    throw new Error('list failed');
+                }
+                await new Promise<void>((resolve) => {
+                    release = resolve;
+                });
+            }
+            return base?.(input);
+        });
+        renderPage();
+        const retry = await screen.findByRole('button', {
+            name: 'admin-pages.emailPreviews.retry'
+        });
+        expect(screen.getByText('admin-pages.emailPreviews.loadError')).toBeInTheDocument();
+
+        // Act
+        fireEvent.click(retry);
+
+        // Assert: busy feedback replaces the error and its button while fetching
+        const loading = await screen.findByText('admin-pages.emailPreviews.loading');
+        expect(loading).toHaveAttribute('aria-busy', 'true');
+        expect(screen.queryByText('admin-pages.emailPreviews.loadError')).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('button', { name: 'admin-pages.emailPreviews.retry' })
+        ).not.toBeInTheDocument();
+        release?.();
+        expect(await screen.findByRole('searchbox')).toBeInTheDocument();
+        expect(listCalls).toBe(2);
     });
 
     it('AC-7.2: searches name, key and id ignoring case and accents', async () => {
@@ -195,9 +256,13 @@ describe('/platform/emails (HOS-2519)', () => {
 
     it('AC-7.3: shows the scenario selector for 2+ scenarios and re-renders on change', async () => {
         renderPage();
-        const select = await screen.findByRole('combobox');
+        const trigger = await screen.findByRole('combobox', {
+            name: 'admin-pages.emailPreviews.scenarioLabel'
+        });
+        expect(trigger).toHaveTextContent('Mensual');
 
-        fireEvent.change(select, { target: { value: 'annual' } });
+        fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+        fireEvent.click(await screen.findByRole('option', { name: 'Anual' }));
 
         await waitFor(() =>
             expect(screen.getByTestId('email-preview-subject')).toHaveTextContent(

@@ -1,8 +1,8 @@
 /**
  * @file EmailPreviewPane.tsx
  * @description Right column of the email previewer (HOS-2519 §6.4, §8): the
- * subject with its environment prefix, the scenario selector (2+ scenarios
- * only), the desktop/mobile width toggle, the sandboxed iframe and the
+ * subject with its environment prefix, the Shadcn scenario selector (2+
+ * scenarios only), the desktop/mobile width toggle, the sandboxed iframe and the
  * plain-text panel.
  *
  * Security (R-12, AC-7.5): the HTML goes in through `srcDoc` into an iframe
@@ -12,8 +12,15 @@
  */
 
 import type { EmailPreviewEntrySummary } from '@repo/schemas';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
 import { useEmailPreviewRender } from '@/hooks/use-email-previews';
 import { useTranslations } from '@/hooks/use-translations';
 import { EmailPlainTextPanel } from './EmailPlainTextPanel';
@@ -42,6 +49,7 @@ export function EmailPreviewPane({ entry }: EmailPreviewPaneProps) {
     const { t } = useTranslations();
     const [scenarioId, setScenarioId] = useState<string>(entry.scenarios[0]?.id ?? '');
     const [width, setWidth] = useState<EmailPreviewWidth>('desktop');
+    const scenarioLabelId = useId();
     const { data, isError, refetch, isFetching } = useEmailPreviewRender({
         key: entry.key,
         scenarioId
@@ -56,25 +64,35 @@ export function EmailPreviewPane({ entry }: EmailPreviewPaneProps) {
 
             <div className="flex flex-wrap items-end gap-4">
                 {entry.scenarios.length > 1 && (
-                    <label className="flex flex-col gap-1 text-sm">
-                        <span className="text-muted-foreground text-xs">
+                    <div className="flex flex-col gap-1 text-sm">
+                        <span
+                            id={scenarioLabelId}
+                            className="text-muted-foreground text-xs"
+                        >
                             {t('admin-pages.emailPreviews.scenarioLabel')}
                         </span>
-                        <select
+                        <Select
                             value={scenarioId}
-                            onChange={(event) => setScenarioId(event.target.value)}
-                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                            onValueChange={setScenarioId}
                         >
-                            {entry.scenarios.map((scenario) => (
-                                <option
-                                    key={scenario.id}
-                                    value={scenario.id}
-                                >
-                                    {scenario.label}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
+                            <SelectTrigger
+                                aria-labelledby={scenarioLabelId}
+                                className="h-9 w-64"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {entry.scenarios.map((scenario) => (
+                                    <SelectItem
+                                        key={scenario.id}
+                                        value={scenario.id}
+                                    >
+                                        {scenario.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 )}
                 <fieldset className="flex flex-col gap-1">
                     <legend className="mb-1 text-muted-foreground text-xs">
