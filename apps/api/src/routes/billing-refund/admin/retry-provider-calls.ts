@@ -41,7 +41,9 @@ const REJECTION_ANSWERS: Readonly<Record<RetryRefundProviderCallsRejection, Reje
     REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE: CONFLICT,
     REFUND_HAS_NO_UNANSWERED_CALL: CONFLICT,
     REFUND_PAST_PROVIDER_WINDOW: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
-    REFUND_STATE_CHANGED: CONFLICT
+    REFUND_CALL_TOO_OLD_TO_RETRY: CONFLICT,
+    REFUND_STATE_CHANGED: CONFLICT,
+    REFUND_RETRY_IN_PROGRESS: CONFLICT
 };
 
 function isRetryRejection(reason: string | undefined): reason is RetryRefundProviderCallsRejection {

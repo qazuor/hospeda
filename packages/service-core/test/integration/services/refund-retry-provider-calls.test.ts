@@ -39,6 +39,30 @@ function lossyProvider(provider: PaymentProvider, lostCalls = 1) {
     return { wrapped, refund };
 }
 
+/** A provider whose first `cutCalls` refund calls never reach the fake (the network is cut). */
+function cutProvider(provider: PaymentProvider, cutCalls: number) {
+    const refund = vi.fn(provider.refund.bind(provider));
+    let cut = 0;
+    const wrapped = new Proxy(provider, {
+        get(target, property, receiver) {
+            if (property === 'refund')
+                return async (input: Parameters<PaymentProvider['refund']>[0]) => {
+                    if (cut < cutCalls) {
+                        cut += 1;
+                        throw new PaymentProviderError({
+                            code: 'UNAVAILABLE',
+                            capability: 'refund',
+                            message: 'network cut'
+                        });
+                    }
+                    return refund(input);
+                };
+            return Reflect.get(target, property, receiver);
+        }
+    });
+    return { wrapped, refund };
+}
+
 /** Confirms a refund through a provider that loses the first answer: one call stays unanswered. */
 async function stuckRefund() {
     const seeded = await refundConfirmFixture();
@@ -53,7 +77,7 @@ async function stuckRefund() {
 
 describe('HOS-2516 retry the unanswered provider calls of a confirmed refund', () => {
     it.skipIf(skip)(
-        'resends with the same key and amount, then RF3 executes what the read reports accredited',
+        'binds a lost call that landed from the charge read, posts nothing, then RF3 executes',
         async () => {
             // Arrange
             const { seeded, lossy } = await stuckRefund();
@@ -70,18 +94,13 @@ describe('HOS-2516 retry the unanswered provider calls of a confirmed refund', (
             expect(result).toMatchObject({
                 refundId: seeded.refundId,
                 status: 'EXECUTED',
-                calls: [{ idempotencyKey: key, outcome: 'SENT' }],
+                calls: [{ idempotencyKey: key, outcome: 'FOUND_AT_PROVIDER' }],
                 execution: 'EXECUTED'
             });
-            expect(lossy.refund).toHaveBeenCalledTimes(2);
-            expect(lossy.refund).toHaveBeenNthCalledWith(2, {
-                chargeId: seeded.charge.chargeId,
-                amount: { amountMinor: before.calls[0]!.amount, currency: 'ARS' },
-                reference: key
-            });
+            expect(lossy.refund).toHaveBeenCalledTimes(1);
             const after = await refundConfirmRows(seeded.refundId);
             expect(after.calls).toHaveLength(1);
-            expect(after.keys).toHaveLength(1);
+            expect(after.calls[0]?.providerRefundId).toEqual(expect.any(String));
             expect(after.keys[0]?.completedAt).not.toBeNull();
             expect(after.refund?.status).toBe('EXECUTED');
             const charge = await seeded.fixture.provider.readCharge({
@@ -92,69 +111,150 @@ describe('HOS-2516 retry the unanswered provider calls of a confirmed refund', (
     );
 
     it.skipIf(skip)(
-        'keeps the refund CONFIRMED when the provider accepted the call but has not accredited it',
+        'posts again with the same key and amount when the lost call never reached the provider',
         async () => {
-            // Arrange: the lost call landed, then the provider reports it not accredited.
-            const { seeded, lossy } = await stuckRefund();
-            const [landed] = (
-                await seeded.fixture.provider.readCharge({ chargeId: seeded.charge.chargeId })
-            ).snapshot.refunds;
-            await seeded.fixture.provider.rejectRefund({
+            // Arrange: the network was cut before the first call reached the provider.
+            const seeded = await refundConfirmFixture();
+            const cut = cutProvider(seeded.fixture.provider, 1);
+            await confirmRefund(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: cut.wrapped }
+            );
+            const before = await refundConfirmRows(seeded.refundId);
+            const key = before.calls[0]!.idempotencyKey;
+
+            // Act
+            const result = await retryRefundProviderCalls(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: cut.wrapped }
+            );
+
+            // Assert
+            expect(result).toMatchObject({
+                status: 'EXECUTED',
+                calls: [{ idempotencyKey: key, outcome: 'SENT' }],
+                execution: 'EXECUTED'
+            });
+            expect(cut.refund).toHaveBeenCalledTimes(1);
+            expect(cut.refund).toHaveBeenCalledWith({
                 chargeId: seeded.charge.chargeId,
-                refundId: landed!.refundId
+                amount: { amountMinor: before.calls[0]!.amount, currency: 'ARS' },
+                reference: key
+            });
+            const charge = await seeded.fixture.provider.readCharge({
+                chargeId: seeded.charge.chargeId
+            });
+            expect(charge.snapshot.refunds).toHaveLength(1);
+        }
+    );
+
+    it.skipIf(skip)(
+        'keeps the refund CONFIRMED when the provider has the refund but has not accredited it',
+        async () => {
+            // Arrange: the lost call landed, and the provider reads it still in process: neither
+            // accredited nor rejected. Only a named rejection may fail the refund.
+            const { seeded, lossy } = await stuckRefund();
+            const inProcess = new Proxy(lossy.wrapped, {
+                get(target, property, receiver) {
+                    if (property === 'readCharge')
+                        return async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+                            const read = await target.readCharge(input);
+                            return {
+                                ...read,
+                                snapshot: {
+                                    ...read.snapshot,
+                                    refunds: read.snapshot.refunds.map((entry) => ({
+                                        ...entry,
+                                        accredited: false
+                                    }))
+                                }
+                            };
+                        };
+                    return Reflect.get(target, property, receiver);
+                }
             });
 
             // Act
             const result = await retryRefundProviderCalls(
                 { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider: lossy.wrapped }
+                { clock: seeded.fixture.clock, provider: inProcess }
             );
 
-            // Assert: accepted is not accredited, so nothing is marked executed.
-            expect(result.calls.map((call) => call.outcome)).toEqual(['SENT']);
+            // Assert: accepted is not accredited, so nothing is marked executed nor failed.
+            expect(result.calls.map((call) => call.outcome)).toEqual(['FOUND_AT_PROVIDER']);
             expect(result.execution).toBe('NOT_ACCREDITED_KEPT_CONFIRMED');
             expect(result.status).toBe('CONFIRMED');
-            expect((await refundConfirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
+            const rows = await refundConfirmRows(seeded.refundId);
+            expect(rows.refund?.status).toBe('CONFIRMED');
+            expect(rows.calls[0]?.providerRefundId).toEqual(expect.any(String));
         }
     );
 
     it.skipIf(skip)(
         'does not run RF3 while the provider still does not answer the resent call',
         async () => {
-            // Arrange
+            // Arrange: neither the first call nor the resend reaches the provider.
             const seeded = await refundConfirmFixture();
-            const silent = lossyProvider(seeded.fixture.provider, 2);
+            const cut = cutProvider(seeded.fixture.provider, 2);
             await confirmRefund(
                 { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider: silent.wrapped }
+                { clock: seeded.fixture.clock, provider: cut.wrapped }
             );
             const readCharge = vi.spyOn(seeded.fixture.provider, 'readCharge');
 
             // Act
             const result = await retryRefundProviderCalls(
                 { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider: silent.wrapped }
+                { clock: seeded.fixture.clock, provider: cut.wrapped }
             );
 
-            // Assert
+            // Assert: the only read is the one before posting; RF3 never read the charge.
             expect(result.calls.map((call) => call.outcome)).toEqual(['AWAITING_PROVIDER_ANSWER']);
             expect(result.execution).toBeNull();
             expect(result.status).toBe('CONFIRMED');
-            expect(readCharge).not.toHaveBeenCalled();
+            expect(readCharge).toHaveBeenCalledTimes(1);
             const rows = await refundConfirmRows(seeded.refundId);
             expect(rows.keys[0]?.completedAt).toBeNull();
         }
     );
 
     it.skipIf(skip)(
-        'refuses a refund whose calls were all answered and sends nothing',
+        'runs RF3 again, posting nothing, when every call is accepted and nothing is unanswered',
         async () => {
-            // Arrange: a clean confirmation answers its only call.
+            // Arrange: a clean confirmation leaves its only call accepted and the refund
+            // CONFIRMED until a notice or a retry runs RF3.
             const seeded = await refundConfirmFixture();
             await confirmRefund(
                 { actor: seeded.actor, refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
             );
+            expect((await refundConfirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
+            const refund = vi.spyOn(seeded.fixture.provider, 'refund');
+
+            // Act
+            const result = await retryRefundProviderCalls(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
+            );
+
+            // Assert
+            expect(result).toMatchObject({ status: 'EXECUTED', calls: [], execution: 'EXECUTED' });
+            expect(refund).not.toHaveBeenCalled();
+            expect((await refundConfirmRows(seeded.refundId)).refund?.status).toBe('EXECUTED');
+        }
+    );
+
+    it.skipIf(skip)(
+        'refuses a CONFIRMED refund with no accepted call and nothing unanswered, sending nothing',
+        async () => {
+            // Arrange: a 1-cent partial refund is refused (lie M13) and is not retried, so it
+            // stays CONFIRMED with its only call answered as a refusal (NOT_ACCEPTED_KEPT_CONFIRMED).
+            const seeded = await refundConfirmFixture(10000, 1);
+            const confirmed = await confirmRefund(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
+            );
+            expect(confirmed.outcome).toBe('NOT_ACCEPTED_KEPT_CONFIRMED');
             const refund = vi.spyOn(seeded.fixture.provider, 'refund');
 
             // Act + Assert
@@ -168,7 +268,6 @@ describe('HOS-2516 retry the unanswered provider calls of a confirmed refund', (
                 reason: 'REFUND_HAS_NO_UNANSWERED_CALL'
             });
             expect(refund).not.toHaveBeenCalled();
-            expect((await refundConfirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
         }
     );
 

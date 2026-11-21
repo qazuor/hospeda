@@ -31,6 +31,7 @@ describe('refund provider call retry schemas (HOS-2516)', () => {
 
     it.each([
         'SENT',
+        'FOUND_AT_PROVIDER',
         'AWAITING_PROVIDER_ANSWER',
         'PROVIDER_KEY_CONFLICT',
         'PROVIDER_REJECTED_FAILED'

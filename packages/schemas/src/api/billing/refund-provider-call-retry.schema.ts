@@ -11,6 +11,7 @@ export const RefundProviderCallRetryRequestSchema = z
 /** What the provider answered to one resent call, under the call's original idempotency key. */
 export const RefundProviderCallRetryCallOutcomeSchema = z.enum([
     'SENT',
+    'FOUND_AT_PROVIDER',
     'AWAITING_PROVIDER_ANSWER',
     'PROVIDER_KEY_CONFLICT',
     'PROVIDER_REJECTED_FAILED'

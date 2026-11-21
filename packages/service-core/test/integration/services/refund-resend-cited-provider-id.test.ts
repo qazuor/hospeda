@@ -20,14 +20,21 @@ function capturing(): unknown[] {
     return captured;
 }
 
-/** The provider with its first refund answer lost (UNAVAILABLE) and later answers optionally replaced. */
-function lossyProvider(provider: PaymentProvider, answerAfterLoss?: { refundId: string }) {
+/**
+ * The provider with its first refund call failing UNAVAILABLE, later answers optionally replaced.
+ * `landed`: the first call reached the provider and only its answer was lost; otherwise the
+ * network was cut before it reached the provider.
+ */
+function lossyProvider(
+    provider: PaymentProvider,
+    options: { readonly landed: boolean; readonly answerAfterLoss?: { refundId: string } }
+) {
     let first = true;
     return new Proxy(provider, {
         get(target, property, receiver) {
             if (property === 'refund')
                 return async (input: Parameters<PaymentProvider['refund']>[0]) => {
-                    const answer = await target.refund(input);
+                    const answer = !first || options.landed ? await target.refund(input) : null;
                     if (first) {
                         first = false;
                         throw new PaymentProviderError({
@@ -36,7 +43,7 @@ function lossyProvider(provider: PaymentProvider, answerAfterLoss?: { refundId: 
                             message: 'lost response'
                         });
                     }
-                    return answerAfterLoss ?? answer;
+                    return options.answerAfterLoss ?? answer!;
                 };
             return Reflect.get(target, property, receiver);
         }
@@ -63,6 +70,14 @@ async function panelSettledRefund(input: {
 /** Confirms a refund through `provider`, leaving its single call unanswered. */
 async function stuck(provider: (base: PaymentProvider) => PaymentProvider) {
     const seeded = await refundConfirmFixture(10000, 4000);
+    // Spend lie M13 (the first partial refund is refused) so the call under test is accepted.
+    await seeded.fixture.provider
+        .refund({
+            chargeId: seeded.charge.chargeId,
+            amount: { amountMinor: 1, currency: 'ARS' },
+            reference: `m13-${crypto.randomUUID()}`
+        })
+        .catch(() => undefined);
     const wrapped = provider(seeded.fixture.provider);
     const confirmed = await confirmRefund(
         { actor: seeded.actor, refundId: seeded.refundId },
@@ -95,7 +110,7 @@ describe('HOS-2517 a resend never binds a provider refund id that already settle
             // Arrange
             const citedId = `panel-${crypto.randomUUID()}`;
             const { seeded, wrapped } = await stuck((base) =>
-                lossyProvider(base, { refundId: citedId })
+                lossyProvider(base, { landed: false, answerAfterLoss: { refundId: citedId } })
             );
             await panelSettledRefund({
                 paymentId: seeded.payment.id,
@@ -141,7 +156,10 @@ describe('HOS-2517 a resend never binds a provider refund id that already settle
             )?.providerRefundId;
             expect(otherCallId).toEqual(expect.any(String));
             const { seeded, wrapped } = await stuck((base) =>
-                lossyProvider(base, { refundId: otherCallId ?? '' })
+                lossyProvider(base, {
+                    landed: false,
+                    answerAfterLoss: { refundId: otherCallId ?? '' }
+                })
             );
             const captured = capturing();
 
@@ -166,8 +184,11 @@ describe('HOS-2517 a resend never binds a provider refund id that already settle
     it.skipIf(skip)(
         'an empty answer never reassigns the call to a refund already cited as a panel reference',
         async () => {
-            // Arrange: the lost first call landed; the replay answers 200 with an empty body (RF-6).
-            const { seeded, wrapped } = await stuck((base) => lossyProvider(base));
+            // Arrange: the lost first call landed and a panel settlement cites it, so the read before
+            // the resend finds nothing uncited; the replay answers 200 with an empty body (RF-6).
+            const { seeded, wrapped } = await stuck((base) =>
+                lossyProvider(base, { landed: true })
+            );
             const read = await seeded.fixture.provider.readCharge({
                 chargeId: seeded.charge.chargeId
             });
@@ -202,8 +223,8 @@ describe('HOS-2517 a resend never binds a provider refund id that already settle
     );
 
     it.skipIf(skip)('an uncited answer is still bound and the call completes', async () => {
-        // Arrange
-        const { seeded, wrapped } = await stuck((base) => lossyProvider(base));
+        // Arrange: the first call never reached the provider, so the resend posts it.
+        const { seeded, wrapped } = await stuck((base) => lossyProvider(base, { landed: false }));
 
         // Act
         const result = await resendUnansweredRefundCalls(

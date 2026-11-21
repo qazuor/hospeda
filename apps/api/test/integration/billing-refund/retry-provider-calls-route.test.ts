@@ -1,4 +1,4 @@
-import { eq, getDb, payments } from '@repo/db';
+import { eq, getDb, payments, refundCalls } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
@@ -102,7 +102,7 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
         await testDb.teardown();
     });
 
-    it('resends with the same key, executes the accredited refund and audits it', async () => {
+    it('binds the lost call from the charge read, executes the accredited refund and audits it', async () => {
         // Arrange
         const { seeded, lossy } = await seedStuckRefund();
         const key = (await confirmRows(seeded.refundId)).calls[0]!.idempotencyKey;
@@ -119,10 +119,11 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
         expect((await response.json()).data).toEqual({
             refundId: seeded.refundId,
             status: 'EXECUTED',
-            calls: [{ idempotencyKey: key, outcome: 'SENT' }],
+            calls: [{ idempotencyKey: key, outcome: 'FOUND_AT_PROVIDER' }],
             execution: 'EXECUTED'
         });
-        expect(lossy.refund).toHaveBeenLastCalledWith(expect.objectContaining({ reference: key }));
+        // The lost call landed: the read before the resend finds it, so nothing is posted again.
+        expect(lossy.refund).toHaveBeenCalledTimes(1);
         expect((await confirmRows(seeded.refundId)).refund?.status).toBe('EXECUTED');
         expect(audit).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -136,7 +137,7 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
                     transition: 'RF3',
                     status: 'EXECUTED',
                     execution: 'EXECUTED',
-                    calls: [{ idempotencyKey: key, outcome: 'SENT' }]
+                    calls: [{ idempotencyKey: key, outcome: 'FOUND_AT_PROVIDER' }]
                 })
             })
         );
@@ -223,7 +224,7 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
         });
     });
 
-    it('answers 409 REFUND_HAS_NO_UNANSWERED_CALL to a CONFIRMED refund whose call was answered', async () => {
+    it('re-runs RF3 for a CONFIRMED refund whose calls were all accepted, posting nothing', async () => {
         // Arrange: a clean confirmation answers its only call and stays CONFIRMED until RF3.
         const seeded = await seedConfirmRefund();
         await confirmRefund(
@@ -243,13 +244,20 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
         });
 
         // Assert
-        expect(response.status).toBe(409);
-        expect((await response.json()).error).toMatchObject({
-            code: 'ALREADY_EXISTS',
-            reason: 'REFUND_HAS_NO_UNANSWERED_CALL'
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toEqual({
+            refundId: seeded.refundId,
+            status: 'EXECUTED',
+            calls: [],
+            execution: 'EXECUTED'
         });
         expect(refundSpy).not.toHaveBeenCalled();
-        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('EXECUTED');
+        expect(audit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                metadata: expect.objectContaining({ transition: 'RF3', calls: [] })
+            })
+        );
     });
 
     it('answers 422 REFUND_PAST_PROVIDER_WINDOW and leaves the call unanswered', async () => {
@@ -270,5 +278,27 @@ describe('HOS-2516 admin route retries the unanswered provider calls of a refund
         });
         expect(lossy.refund).toHaveBeenCalledTimes(1);
         expect((await confirmRows(seeded.refundId)).keys[0]?.completedAt).toBeNull();
+    });
+
+    it('answers 409 REFUND_CALL_TOO_OLD_TO_RETRY past 24 hours, before any provider call', async () => {
+        const { seeded, lossy } = await seedStuckRefund();
+        await getDb()
+            .update(refundCalls)
+            .set({ createdAt: new Date(confirmClock.now().getTime() - 25 * 3600000) })
+            .where(eq(refundCalls.refundId, seeded.refundId));
+        const readCharge = vi.spyOn(lossy.provider, 'readCharge');
+        const response = await retryRequest({
+            refundId: seeded.refundId,
+            provider: lossy.provider,
+            actor: { id: seeded.adminId, role: 'SUPER_ADMIN', permissions }
+        });
+        expect(response.status).toBe(409);
+        expect((await response.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'REFUND_CALL_TOO_OLD_TO_RETRY'
+        });
+        expect(readCharge).not.toHaveBeenCalled();
+        expect(lossy.refund).toHaveBeenCalledTimes(1);
+        expect(audit).not.toHaveBeenCalled();
     });
 });

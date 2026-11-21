@@ -43,7 +43,9 @@ function stateChanged(): ServiceError {
 export async function persistCall(
     refundId: string,
     payment: SelectPayment,
-    amount: number
+    amount: number,
+    /** When the call is sent, from the injected clock (HOS-2516: the retry's 24-hour limit reads it). */
+    sentAt?: Date
 ): Promise<{ readonly key: string; readonly balance: number }> {
     return getDb().transaction(async (tx) => {
         const [refund] = await tx
@@ -70,7 +72,8 @@ export async function persistCall(
             refundId,
             idempotencyKey: key,
             amount,
-            providerRefundId: null
+            providerRefundId: null,
+            ...(sentAt ? { createdAt: sentAt } : {})
         });
         return { key, balance: payment.amount - claimed };
     });
@@ -112,7 +115,12 @@ async function callOnce(input: {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
 }): Promise<Attempt & { readonly balance: number }> {
-    const persisted = await persistCall(input.refund.id, input.payment, input.amount);
+    const persisted = await persistCall(
+        input.refund.id,
+        input.payment,
+        input.amount,
+        input.clock.now()
+    );
     const { key, balance } = persisted;
     if (input.amount > input.refund.amount) throw new Error('Refund call exceeds confirmed amount');
     try {
