@@ -12,6 +12,7 @@ export * from './destination.schema';
 export * from './destination-template';
 export * from './help-index';
 export * from './link-targets';
+export * from './resolve-tokens';
 export * from './retired-ids';
 export * from './search';
 export * from './tokens';
