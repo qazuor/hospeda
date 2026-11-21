@@ -9,6 +9,7 @@
  */
 
 export { AccountFooter, type AccountFooterProps } from './AccountFooter';
+export { AccountSidebar, type AccountSidebarProps } from './AccountSidebar';
 export { Alert, type AlertProps, type AlertTone } from './Alert';
 export {
     AsyncRegion,
@@ -22,6 +23,12 @@ export {
     type AutoSaveStatus,
     formatSavedTime
 } from './AutoSaveChip';
+export {
+    buildSidebarView,
+    type SidebarGroupView,
+    type SidebarItemView,
+    type SidebarView
+} from './account-sidebar-view';
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';

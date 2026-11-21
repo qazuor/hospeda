@@ -1954,6 +1954,10 @@
             "startTrial": "Empezar prueba",
             "join": "Sumarme",
             "permissionLink": "Saber más"
+        },
+        "sidebar": {
+            "lockedLabel": "Requiere un plan superior",
+            "label": "Navegación de Mi cuenta"
         }
     }
 }
