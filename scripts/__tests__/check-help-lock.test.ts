@@ -5,9 +5,10 @@
  * then asserts the predicate that must fail.
  */
 
-import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { HELP_CONTENT_PATH } from '../check-help-catalog';
 import { PREDICATE_MESSAGES, run } from '../check-help-lock';
 import { PORTAL_PAGES_DIR } from '../check-portal-routes';
 import { formatHelpLock, HELP_LOCK_PATH, parseHelpLock } from '../help-lock';
@@ -235,7 +236,22 @@ describe('checkHelpLock on a synthetic repo', () => {
 
         // Assert
         expect(predicatesOf(result)).toEqual(['c4']);
+        expect(result.violations[0]?.detail).toContain('no article under');
         expect(run({ root, sources: sources() }).exitCode).toBe(1);
+    });
+
+    it('fails c4 on an empty catalog even when the lock has entries', () => {
+        // Arrange
+        const root = syntheticRoot();
+        reviewAll(root);
+        rmSync(path.join(root, HELP_CONTENT_PATH), { recursive: true });
+        mkdirSync(path.join(root, HELP_CONTENT_PATH), { recursive: true });
+
+        // Act
+        const result = check(root);
+
+        // Assert
+        expect(predicatesOf(result)).toContain('c4');
     });
 
     it('fails c4 when the content does not parse', () => {
