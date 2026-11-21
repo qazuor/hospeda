@@ -117,7 +117,7 @@ export async function resolveListingEditorPage({
     const listingId = astro.params.id;
     if (!isListingEditorVertical(verticalParam) || !listingId) {
         return {
-            redirect: astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'listings' }))
+            redirect: await astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'listings' }))
         };
     }
     const vertical = verticalParam;
