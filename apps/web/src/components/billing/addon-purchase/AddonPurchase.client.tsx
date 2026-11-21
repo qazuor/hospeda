@@ -23,6 +23,8 @@ import {
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
 import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
 import styles from './AddonPurchase.module.css';
@@ -390,6 +392,10 @@ export function AddonPurchase(input: {
                         })
                     }
                     onSelect={selectSubscription}
+                    plansHref={buildUrl({
+                        locale: input.locale,
+                        path: PRICING_PAGE_PATH_BY_AUDIENCE.owner
+                    })}
                     t={t}
                 />
             )}

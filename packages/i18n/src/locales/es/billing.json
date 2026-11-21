@@ -878,6 +878,8 @@
         "noTargets": "No hay fichas disponibles para este complemento.",
         "chooseSubscription": "Elegí una suscripción",
         "noSubscriptions": "No hay suscripciones disponibles para este complemento.",
+        "noSubscriptionsBody": "Los complementos se suman a un plan de pago activo. Si todavía estás en la prueba gratis o no tenés plan, elegí uno y volvé acá para sumarlo.",
+        "noSubscriptionsCta": "Ver planes",
         "summary": "Confirmar complemento",
         "freeUnderGrant": "Gratis por tu beneficio",
         "days_one": "{{count}} día",

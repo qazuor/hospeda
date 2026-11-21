@@ -878,6 +878,8 @@
         "noTargets": "Não há anúncios disponíveis para este complemento.",
         "chooseSubscription": "Escolha uma assinatura",
         "noSubscriptions": "Não há assinaturas disponíveis para este complemento.",
+        "noSubscriptionsBody": "Os complementos são adicionados a um plano pago ativo. Se você ainda está no teste grátis ou não tem plano, escolha um e volte aqui para adicioná-lo.",
+        "noSubscriptionsCta": "Ver planos",
         "summary": "Confirmar complemento",
         "freeUnderGrant": "Grátis pelo seu benefício",
         "days_one": "{{count}} dia",

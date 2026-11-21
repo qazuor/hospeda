@@ -878,6 +878,8 @@
         "noTargets": "No listings are available for this add-on.",
         "chooseSubscription": "Choose a subscription",
         "noSubscriptions": "No subscriptions are available for this add-on.",
+        "noSubscriptionsBody": "Add-ons are attached to an active paid plan. If you are still on the free trial or have no plan, choose one and come back here to add it.",
+        "noSubscriptionsCta": "See plans",
         "summary": "Confirm add-on",
         "freeUnderGrant": "Free with your benefit",
         "days_one": "{{count}} day",
