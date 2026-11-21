@@ -58,3 +58,15 @@ describe('consultas-propietario pages gate by permission (HOS-2433)', () => {
         expect(source).not.toMatch(/user\.role\s*===/);
     });
 });
+
+describe('editor resolvers keep the return URL (HOS-2433)', () => {
+    it.each([
+        'src/lib/editor/resolve-editor-page.ts',
+        'src/lib/editor/resolve-listing-editor-page.ts'
+    ])('%s builds the login redirect from path and query string', (rel) => {
+        const source = readFileSync(resolve(__dirname, '../..', rel), 'utf8');
+        expect(source).toContain('buildLoginRedirect');
+        expect(source).toContain('astro.url.pathname + astro.url.search');
+        expect(source).not.toMatch(/path:\s*['"`]auth\/signin['"`]/);
+    });
+});

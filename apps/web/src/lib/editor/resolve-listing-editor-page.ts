@@ -40,6 +40,7 @@ import {
     type ListingDetail,
     type VenueOrExperience
 } from '@/lib/listing/owner-listings';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasListingNavAccess } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
 
@@ -98,7 +99,11 @@ export async function resolveListingEditorPage({
 
     const user = astro.locals.user;
     if (!user) {
-        return { redirect: astro.redirect(buildUrl({ locale, path: 'auth/signin' })) };
+        return {
+            redirect: astro.redirect(
+                buildLoginRedirect({ locale, currentUrl: astro.url.pathname + astro.url.search })
+            )
+        };
     }
 
     // HOS-296: gate through the shared `nav-gating` predicate over the role SET,
