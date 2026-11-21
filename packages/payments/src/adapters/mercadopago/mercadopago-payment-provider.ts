@@ -4,8 +4,7 @@
  *
  * It declares, gap by gap, what the provider offers of each capability
  * (`MERCADOPAGO_CAPABILITY_SUPPORT`). Authorization creation, authorization
- * reads, charge reads, listings, order operations and one-time payment pages use
- * native fetch. The
+ * reads, charge reads, listings and one-time payment pages use native fetch. The
  * provider runs recurring charges itself, so an on-demand charge is rejected.
  * No SDK is imported here or elsewhere (GUARD:G12).
  */
@@ -30,16 +29,8 @@ import type {
     ChargeSnapshot,
     MutationAcknowledgement,
     NoticeDelivery,
-    OneTimeChargeInput,
-    OneTimeChargeResult,
     OneTimePaymentInput,
     OneTimePaymentResult,
-    OrderRef,
-    OrderRefundInput,
-    OrderRefundResult,
-    OrderSearchInput,
-    OrderSearchResult,
-    OrderSnapshot,
     PaymentPageRef,
     PaymentPageSnapshot,
     PaymentProvider,
@@ -58,10 +49,6 @@ import {
     ChargeRefSchema,
     ChargeSearchInputSchema,
     NoticeDeliverySchema,
-    OneTimeChargeInputSchema,
-    OrderRefSchema,
-    OrderRefundInputSchema,
-    OrderSearchInputSchema,
     oneTimePaymentInputSchemaFor,
     PaymentPageRefSchema,
     PaymentProviderOptionsSchema,
@@ -86,9 +73,6 @@ import {
     setMercadoPagoStatus
 } from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
-import { chargeMercadoPagoOrder } from './mercadopago-order-charge';
-import { refundMercadoPagoOrder } from './mercadopago-order-refund';
-import { readMercadoPagoOrder, searchMercadoPagoOrders } from './mercadopago-orders';
 import {
     closeMercadoPagoPaymentPage,
     createMercadoPagoPaymentPage,
@@ -316,13 +300,6 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         });
     }
 
-    /** Creates one order with its persisted key (AC:B6:11/12, MP:EX-41/EX-30). */
-    async chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult> {
-        const ref = { schema: OneTimeChargeInputSchema, input, capability: 'charge' } as const;
-        const { value } = parseProviderInput(ref);
-        return chargeMercadoPagoOrder({ input: value, send: (args) => this.send(args) });
-    }
-
     /** Capability 2 · open a one-time payment page (HOS-2179 §5.1); moves no money. */
     async requestOneTimePayment(input: OneTimePaymentInput): Promise<OneTimePaymentResult> {
         const ref = { schema: this.oneTimePaymentSchema, input, capability: 'charge' } as const;
@@ -384,12 +361,6 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         return refundMercadoPagoPayment({ ...input, send: (args) => this.send(args) });
     }
 
-    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-    async refundOrder(input: OrderRefundInput): Promise<OrderRefundResult> {
-        parseProviderInput({ schema: OrderRefundInputSchema, input, capability: 'refund' });
-        return refundMercadoPagoOrder({ ...input, send: (args) => this.send(args) });
-    }
-
     /** Capability 7 · read an authorization by id. */
     async readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>> {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'read' });
@@ -429,22 +400,6 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             send: (args) => this.send(args),
             sleep: this.sleep
         });
-    }
-
-    /** Capability 7 · read an order by id. */
-    async readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>> {
-        parseProviderInput({ schema: OrderRefSchema, input, capability: 'read' });
-        const snapshot = await readMercadoPagoOrder({
-            orderId: input.orderId,
-            send: (args) => this.send(args)
-        });
-        return stampProviderRead({ clock: this.clock, snapshot });
-    }
-
-    /** Capability 7 · search orders (EX-57). */
-    async searchOrders(input: OrderSearchInput): Promise<OrderSearchResult> {
-        parseProviderInput({ schema: OrderSearchInputSchema, input, capability: 'read' });
-        return searchMercadoPagoOrders({ input, send: (args) => this.send(args) });
     }
 
     /** Capability 7 · read a payment page by id; it carries no expired flag (RP19). */

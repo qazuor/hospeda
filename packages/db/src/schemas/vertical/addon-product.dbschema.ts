@@ -119,7 +119,11 @@ export const addonInstances = pgTable(
         titleAnchorId: uuid('title_anchor_id').references(() => permanentGrantVerticals.id),
         /** pedido */
         orderRequestId: varchar('order_request_id', { length: 64 }),
-        /** id de la orden */
+        /**
+         * id de la orden. No writers since HOS-2179 T-7 retired the one-time order path: a one-time
+         * addon is paid on a payment page (`paymentPageId`). Kept in this release (expand/contract);
+         * dropped in N+1 with `uq_addon_instance_provider_order`.
+         */
         providerOrderId: varchar('provider_order_id', { length: 64 }),
         /** The one-time payment page (HOS-2179 §7.1); a domain name, not the provider's. */
         paymentPageId: varchar('payment_page_id', { length: 64 }),

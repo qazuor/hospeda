@@ -108,8 +108,7 @@ describe('HOS-2179 T-6 review: a retry over the same owner pending page purchase
                 {
                     ...other.input(),
                     productId: s.request.productId,
-                    expectedAddonVersionId: s.request.expectedAddonVersionId,
-                    oneTimeChannel: 'PAGE'
+                    expectedAddonVersionId: s.request.expectedAddonVersionId
                 },
                 s.f.ports
             );
@@ -124,14 +123,11 @@ describe('HOS-2179 T-6 review: a retry over the same owner pending page purchase
         }
     );
 
-    it.skipIf(skip)('a caller that names no channel gets a page, never an order', async () => {
+    it.skipIf(skip)('a one-time purchase is always paid on a page', async () => {
         const s = await pageSetup();
-        const { oneTimeChannel: _channel, ...unnamed } = s.request;
-        const order = vi.spyOn(s.f.fake, 'chargeOnce');
         const page = vi.spyOn(s.f.fake, 'requestOneTimePayment');
-        const answer = await purchaseAddon(unnamed, s.f.ports);
+        const answer = await purchaseAddon(s.request, s.f.ports);
         expect(answer).toMatchObject({ outcome: 'CREATED', checkoutUrl: expect.any(String) });
         expect(page).toHaveBeenCalledTimes(1);
-        expect(order).not.toHaveBeenCalled();
     });
 });

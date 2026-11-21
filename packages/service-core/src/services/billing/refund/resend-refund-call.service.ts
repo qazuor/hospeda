@@ -168,8 +168,9 @@ export async function resendUnansweredRefundCalls(
         const key = call.idempotencyKey;
         if (call.addonInstanceId) {
             // A call tied to an instance was an order refund call. The order channel was
-            // retired (HOS-2179 T-7) with none left unanswered, so it is never replayed: a
-            // person settles it outside our flow (action 14).
+            // retired (HOS-2179 T-7) with none left unanswered, so it is never replayed. Only a
+            // REQUESTED refund can be declined, via action 14; a CONFIRMED refund with a live
+            // call like this one has no exit in our flow.
             logger.error(
                 { refundId: input.refundId, key, addonInstanceId: call.addonInstanceId },
                 'Order refund call left unanswered after the order channel was retired'

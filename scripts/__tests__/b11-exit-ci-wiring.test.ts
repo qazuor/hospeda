@@ -51,15 +51,23 @@ function testTitles({ source }: { readonly source: string }): readonly string[] 
     return [...source.matchAll(call)].map((match) => match[2] ?? '');
 }
 function gameSources() {
-    return readdirSync(path.join(repoRoot, 'packages/service-core/test/integration/services'))
-        .filter((file) => /^reconciliation-exit-game.*\.test\.ts$/.test(file))
-        .map((file) => ({
-            file,
-            source: readFileSync(
-                path.join(repoRoot, 'packages/service-core/test/integration/services', file),
-                'utf8'
+    return (
+        readdirSync(path.join(repoRoot, 'packages/service-core/test/integration/services'))
+            // HOS-2179 T-7 retired the paid-orders pass; clause 7 (mark 23 on a paid purchase with no
+            // live instance) is now proven by the page-payments check that replaced it.
+            .filter(
+                (file) =>
+                    /^reconciliation-exit-game.*\.test\.ts$/.test(file) ||
+                    file === 'reconciliation-page-payments.test.ts'
             )
-        }));
+            .map((file) => ({
+                file,
+                source: readFileSync(
+                    path.join(repoRoot, 'packages/service-core/test/integration/services', file),
+                    'utf8'
+                )
+            }))
+    );
 }
 function deepIds(value: unknown): string[] {
     if (Array.isArray(value)) return value.flatMap(deepIds);

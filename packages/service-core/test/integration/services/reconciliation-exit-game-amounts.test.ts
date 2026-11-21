@@ -10,7 +10,6 @@ import {
     subscriptions,
     users
 } from '@repo/db';
-import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { buildReconciliationSummaryPayload } from '../../../src/services/billing/reconciliation/summary/build-summary-payload.js';
 import { createPersistedReconciliationDailySummary } from '../../../src/services/billing/reconciliation/sweep/comparisons/persisted-daily-summary.js';
@@ -24,14 +23,6 @@ import {
     seedChargedExitGameRow
 } from './reconciliation-exit-game-fixtures.js';
 import { hungRows, resolveHungPayments } from './support/mark-payment-fixtures.js';
-import {
-    instanceStatus,
-    paidOrderClock,
-    paidOrderMarks,
-    retirePaidOrderFixtures,
-    seedOrderInstance,
-    sweepPaidOrders
-} from './support/paid-order-fixtures.js';
 import { seedAdminActor } from './support/refund-fixtures.js';
 
 const adminIds: string[] = [];
@@ -39,7 +30,6 @@ const adminIds: string[] = [];
 afterEach(async () => {
     vi.restoreAllMocks();
     await retireExitGameRows();
-    await retirePaidOrderFixtures();
     for (const id of adminIds.splice(0))
         await getServiceTestDb().delete(users).where(eq(users.id, id));
 });
@@ -66,25 +56,7 @@ async function liftMark(input: {
     });
 }
 
-function spiedOrderFake() {
-    const fake = new FakePaymentProvider({
-        clock: paidOrderClock,
-        idNamespace: crypto.randomUUID()
-    });
-    return {
-        fake,
-        calls: {
-            readOrder: vi.spyOn(fake, 'readOrder'),
-            authorize: vi.spyOn(fake, 'authorize'),
-            charge: vi.spyOn(fake, 'charge'),
-            refund: vi.spyOn(fake, 'refund'),
-            cancel: vi.spyOn(fake, 'cancel'),
-            changeAmount: vi.spyOn(fake, 'changeAmount')
-        }
-    };
-}
-
-describe('TEST:B11:20 el juego de salida contra el falso — importes y órdenes', () => {
+describe('TEST:B11:20 el juego de salida contra el falso — importes', () => {
     it('LISTA:B11 cláusula 12: abre el motivo 24 por la diferencia aunque cambie el preapproval, y no marca un importe igual', async () => {
         const { clock } = exitGameClock();
         const provider = exitGameFake({
@@ -328,27 +300,5 @@ describe('TEST:B11:20 el juego de salida contra el falso — importes y órdenes
             }
         ]);
         expect(payload.marks).toEqual([]);
-    });
-
-    it('LISTA:B11 cláusula 7: una orden pagada de instancia ABANDONED abre el 23 sin llamar operaciones de proveedor', async () => {
-        const { fake, calls } = spiedOrderFake();
-        const { orderId } = fake.placeOrder({ reference: 'abandoned-instance-order', paid: true });
-        const { instanceId } = await seedOrderInstance({ providerOrderId: orderId });
-
-        const summary = await sweepPaidOrders({ provider: fake });
-
-        const marks = await paidOrderMarks(instanceId);
-        expect(marks).toHaveLength(1);
-        expect(marks[0]).toMatchObject({
-            reason: 'ORDEN_PAGADA_SIN_INSTANCIA',
-            addonInstanceId: instanceId,
-            subscriptionId: null
-        });
-        expect(marks[0] ? await hungRows({ markId: marks[0].id }) : []).toEqual([]);
-        expect(await instanceStatus(instanceId)).toBe('ABANDONED');
-        expect(calls.readOrder).toHaveBeenCalledWith({ orderId });
-        for (const method of ['authorize', 'charge', 'refund', 'cancel', 'changeAmount'] as const)
-            expect(calls[method], method).not.toHaveBeenCalled();
-        expect(summary.paidOrders).toMatchObject({ examined: 1, marked: 1, failures: [] });
     });
 });

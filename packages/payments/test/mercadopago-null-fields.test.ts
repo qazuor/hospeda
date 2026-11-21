@@ -229,26 +229,7 @@ describe('HOS-1724 optional payment fields sent as null', () => {
     });
 });
 
-describe('HOS-1724 optional order and notice fields sent as null', () => {
-    it('falls back to date_created when created_date is null', async () => {
-        // Arrange
-        const provider = adapterAnswering({
-            route: () => ({
-                id: 'ORD-1',
-                status: 'processed',
-                external_reference: 'ref-1',
-                created_date: null,
-                date_created: '2026-10-20T19:12:00.000-04:00'
-            })
-        });
-
-        // Act
-        const read = await provider.readOrder({ orderId: 'ORD-1' });
-
-        // Assert
-        expect(read.snapshot.createdAt).toBe('2026-10-20T19:12:00.000-04:00');
-    });
-
+describe('HOS-1724 optional notice fields sent as null', () => {
     it('reads a null notice version like an absent one', async () => {
         // Arrange
         const provider = adapterAnswering({ route: () => ({}) });

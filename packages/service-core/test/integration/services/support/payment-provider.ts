@@ -14,14 +14,12 @@ export function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
         },
         charge: (input) =>
             fake.charge({ ...input, authorizationId: internal(input.authorizationId) }),
-        chargeOnce: (input) => fake.chargeOnce(input),
         changeAmount: (input) =>
             fake.changeAmount({ ...input, authorizationId: internal(input.authorizationId) }),
         pause: (input) => fake.pause({ authorizationId: internal(input.authorizationId) }),
         resume: (input) => fake.resume({ authorizationId: internal(input.authorizationId) }),
         cancel: (input) => fake.cancel({ authorizationId: internal(input.authorizationId) }),
         refund: (input) => fake.refund(input),
-        refundOrder: (input) => fake.refundOrder(input),
         readAuthorization: (input) =>
             fake.readAuthorization({ authorizationId: internal(input.authorizationId) }),
         searchAuthorizations: async (input) => {
@@ -36,8 +34,6 @@ export function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
         listCharges: (input) =>
             fake.listCharges({ authorizationId: internal(input.authorizationId) }),
         readCharge: (input) => fake.readCharge(input),
-        readOrder: (input) => fake.readOrder(input),
-        searchOrders: (input) => fake.searchOrders(input),
         requestOneTimePayment: (input) => fake.requestOneTimePayment(input),
         closeOneTimePayment: (input) => fake.closeOneTimePayment(input),
         readOneTimePayment: (input) => fake.readOneTimePayment(input),

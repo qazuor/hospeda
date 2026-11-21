@@ -339,7 +339,7 @@
         "table": "addonInstances",
         "effect": "turns-on",
         "via": "notice",
-        "reason": "A2 activates an approved one-time addon (order or payment page, HOS-2179); emitAddonCoverageAdded sends coverage after commit."
+        "reason": "A2 activates an approved one-time addon (payment page, HOS-2179); emitAddonCoverageAdded sends coverage after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows-one-time.ts",
@@ -372,14 +372,6 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-2179: records the re-read expiry of a closed payment page; status is untouched, so no coverage source changes."
-    },
-    {
-        "file": "packages/service-core/src/services/billing/addon/addon-instance-a7.ts",
-        "symbol": "rejectOneTimeOrder",
-        "table": "addonInstances",
-        "effect": "neutral",
-        "via": null,
-        "reason": "A7 abandons a declined one-time addon still in PENDING_AUTHORIZATION; pending instances emit no ADDON coverage source."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",
@@ -628,14 +620,6 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
-    },
-    {
-        "file": "packages/service-core/src/services/billing/addon/send-one-time-order.service.ts",
-        "symbol": "sendOneTimeOrder",
-        "table": "addonInstances",
-        "effect": "neutral",
-        "via": null,
-        "reason": "B6 records the provider order id of a one-time add-on charge; status is untouched, so no coverage source turns off here (AC:B6:12)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/apply-scheduled-change.service.ts",

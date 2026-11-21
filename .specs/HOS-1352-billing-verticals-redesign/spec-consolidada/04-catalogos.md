@@ -5633,18 +5633,7 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 
 <a id="trans-b-a7"></a>
 
-### `TRANS:B:A7` · `A7` — `PENDING_AUTHORIZATION`, **sólo `UNA_VEZ`** → `ABANDONED`
-
-- **Pieza dueña** (su AC vive en el archivo de la pieza): [B10](20-fase-3/B10.md#pieza-b10)
-- **Fuente de la asignación**: `B/descomposicion.md:148`
-- **Traslado a pieza** (instancia de addon → pieza, `D/16` §4.6, [AV](01-decisiones-vigentes.md#own-41-corte-del-mvp-t4-av)): [APZ:A7](20-fase-3/B10.md#apz-a7) → [B10](20-fase-3/B10.md#pieza-b10)
-- **Test mínimo** ([AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)): integración con DB, en la pieza dueña.
-- **desde** (estado origen): `PENDING_AUTHORIZATION`, **sólo `UNA_VEZ`**
-- **evento** (disparador): **la orden vuelve rechazada**: `402` con la orden `failed` y su id en el cuerpo del error, **leído releyendo por id la orden cuyo id vino en el cuerpo del error** (`EX-30`; verificación corta, 2026-09-29, VC-cobro-05: la respuesta de una creación no es una lectura por id, y `D17` no la admite; si la relectura no responde, `A7` no ocurre en esa corrida)
-- **hacia** (estado destino): `ABANDONED`
-- **nota** (guardas y efectos): (mediciones del 2026-09-29, lote L-C.) **Un rechazo cierra la compra en el acto**, sin esperar la ventana de `A3`: el id de la orden `failed` queda guardado en la instancia (`B/16` §1.4). **El segundo intento es otro pedido**: la pantalla de compra acuña un identificador nuevo y `A1` crea otra instancia, con otra clave, porque reusar la del pedido rechazado devuelve la orden `failed` y otra tarjeta con la misma clave es otro cuerpo, que el proveedor contesta `409` (`EX-41`). **Y si el `402` no llegó**, el segundo pedido reenvía la misma orden y el rechazo llega por ahí (`B/16` §1.4; verificación corta, 2026-09-29, lote N-B). **No manda nada al proveedor**: no hay preapproval que cancelar ni orden que reenviar. **Sólo `UNA_VEZ`**: el complemento recurrente se autoriza en el checkout del proveedor, donde el rechazo no llega como una orden, y sigue con `A2` o `A3`. **Su par, `(PENDING_AUTHORIZATION, la orden vuelve rechazada)`, tiene una sola fila**: comparte el `desde` con `A2`, `A3`, `A5` y `A6`, no el evento, así que no suma a la tabla de la regla 7 del `NUCLEO/03` §1
-
-Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2541, .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148
+**`A7` retirada** (HOS-2179 T-7, `.specs/HOS-2179-addons-pago-unico-checkout-pro/spec.md` §6.3): su evento —«la orden vuelve rechazada»— no existe con el pago por página del proveedor, así que la fila sale de esta tabla y de `scripts/guards/transition-tables.json`. `A3` sigue siendo la salida de una compra de única vez sin pago.
 
 ## Motivos de la marca de conciliación (`B/02` §2.5)
 

@@ -315,7 +315,7 @@ describe('HOS-2179 T-6 one-time purchase through a payment page', () => {
         });
     });
 
-    describe('the order channel is closed at the API (prod starts with zero order purchases)', () => {
+    describe('there is no order channel: a one-time purchase always opens a page (HOS-2179 T-7)', () => {
         const keysOf = async (instanceId: string) =>
             (
                 await getDb()
@@ -326,14 +326,12 @@ describe('HOS-2179 T-6 one-time purchase through a payment page', () => {
 
         it('opens a page, never an order, for a request that names no channel', async () => {
             const { fixture, app, fake } = await payingOwner();
-            const order = vi.spyOn(fake, 'chargeOnce');
             const page = vi.spyOn(fake, 'requestOneTimePayment');
             const created = await post(app, fixture.ownerId, fixture.request());
             expect(created.status).toBe(201);
             const { instanceId } = (await created.json()).data;
             expect(await keysOf(instanceId)).toEqual(['PAYMENT_PAGE_CREATE']);
             expect(page).toHaveBeenCalledTimes(1);
-            expect(order).not.toHaveBeenCalled();
         });
 
         it.each([
@@ -341,12 +339,10 @@ describe('HOS-2179 T-6 one-time purchase through a payment page', () => {
             ['channel', { channel: 'ORDER' }]
         ])('refuses a request that asks for the order channel (%s) with 400 and no purchase', async (_field, extra) => {
             const { fixture, app, fake } = await payingOwner();
-            const order = vi.spyOn(fake, 'chargeOnce');
             const page = vi.spyOn(fake, 'requestOneTimePayment');
             const refused = await post(app, fixture.ownerId, { ...fixture.request(), ...extra });
             expect(refused.status).toBe(400);
             expect(await ownerInstances(fixture.ownerId)).toEqual([]);
-            expect(order).not.toHaveBeenCalled();
             expect(page).not.toHaveBeenCalled();
         });
     });

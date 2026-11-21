@@ -9,8 +9,9 @@ import { addonInstances, eq } from '@repo/db';
  *   charge, exactly like a subscription payment.
  * - `NONE`: anything else. An instance with a provider order was bought through `/v1/orders`;
  *   the order refund channel was retired with the order path (HOS-2179 T-7, zero such
- *   instances in staging and production when it was retired), so its refund is not sent and
- *   a person settles it outside our flow (action 14). An instance with neither, or both,
+ *   instances in staging and production when it was retired), so its refund is not sent. A
+ *   REQUESTED refund is declined via action 14; a CONFIRMED one with a live call has no exit.
+ *   An instance with neither, or both,
  *   proves no channel at all. Both fail closed.
  */
 export type AddonRefundChannel = 'PAYMENT' | 'NONE';
