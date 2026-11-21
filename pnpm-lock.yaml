@@ -852,6 +852,9 @@ importers:
       '@repo/feedback':
         specifier: workspace:*
         version: link:../../packages/feedback
+      '@repo/help':
+        specifier: workspace:*
+        version: link:../../packages/help
       '@repo/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -864,6 +867,9 @@ importers:
       '@repo/media':
         specifier: workspace:*
         version: link:../../packages/media
+      '@repo/portal-routes':
+        specifier: workspace:*
+        version: link:../../packages/portal-routes
       '@repo/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
