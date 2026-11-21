@@ -20,8 +20,15 @@
  * Same stance `VenueMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
  * by the API projection — withheld entirely
  * when the owner's CURRENT plan does not grant `manage_venue_events`, and
- * with `isActive: false` entries already dropped. This component has no gate
- * of its own to apply and does not re-derive either filter.
+ * with `isActive: false` entries and one-off events that already ended
+ * (`isVenueEventPast`, venue zone, HOS-2254) already dropped. This component
+ * has no gate of its own to apply and does not re-derive any of these filters.
+ *
+ * ## Ticket link (HOS-2255)
+ *
+ * An entry with `ticketUrl` gets a «Comprar entrada» button. The click is
+ * recorded by the shared `VenueInteractionTracker`, which reads the
+ * `data-interaction-*` attributes; this component adds no script of its own.
  *
  * ## Recurrence rendering
  *
@@ -43,6 +50,7 @@ import type { VenueEvent } from '@/data/types';
 import { formatDate } from '@/lib/format-utils';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
 interface Props {
     readonly venueEvents?: readonly VenueEvent[];
@@ -122,9 +130,14 @@ function resolveSchedule(event: VenueEvent): string {
 }
 
 const title = t('venue.detail.venueEvents.title', 'Agenda del local');
+const buyTicketLabel = t('venue.detail.venueEvents.buyTicket', 'Comprar entrada');
+
 const entries = venueEvents.map((event) => ({
     event,
-    schedule: resolveSchedule(event)
+    schedule: resolveSchedule(event),
+    // https-only is the write contract (`VenueEventTicketUrlSchema`); the render
+    // side applies the shared scheme allow-list and omits the button on `undefined`.
+    ticketHref: resolveSafeExternalUrl(event.ticketUrl)
 }));
 ---
 
@@ -132,7 +145,7 @@ const entries = venueEvents.map((event) => ({
     <h2 class="venue-venue-events__title">{title}</h2>
 
     <ul class="venue-venue-events__list">
-        {entries.map(({ event, schedule }) => (
+        {entries.map(({ event, schedule, ticketHref }) => (
             <li class="venue-venue-events__item">
                 <div class="venue-venue-events__item-main">
                     <span class="venue-venue-events__item-title">{event.title}</span>
@@ -140,6 +153,19 @@ const entries = venueEvents.map((event) => ({
                 </div>
                 {event.description && (
                     <p class="venue-venue-events__item-description">{event.description}</p>
+                )}
+                {ticketHref && (
+                    <a
+                        class="venue-venue-events__ticket"
+                        href={ticketHref}
+                        target="_blank"
+                        rel="noopener nofollow"
+                        data-venue-event-ticket
+                        data-interaction-kind="TICKET_CLICK"
+                        data-interaction-event-id={event.id}
+                    >
+                        {buyTicketLabel}
+                    </a>
                 )}
             </li>
         ))}
@@ -207,5 +233,33 @@ const entries = venueEvents.map((event) => ({
         font-size: 0.85rem;
         color: var(--core-muted-foreground);
         margin: 4px 0 0;
+    }
+
+    .venue-venue-events__ticket {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: var(--space-2, 8px);
+        padding: 8px 16px;
+        border: 1px solid var(--brand-primary);
+        border-radius: var(--radius-md, 8px);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--brand-primary);
+        text-decoration: none;
+    }
+
+    .venue-venue-events__ticket:hover,
+    .venue-venue-events__ticket:focus-visible {
+        background: var(--brand-primary);
+        color: var(--core-background, #fff);
+    }
+
+    @media (max-width: 640px) {
+        .venue-venue-events__ticket {
+            display: flex;
+            width: 100%;
+        }
     }
 </style>

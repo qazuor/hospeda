@@ -26,6 +26,7 @@
  */
 
 import {
+    ACCOMMODATION_PROMOTION_DISCOUNT_TYPES,
     OwnerPromotionCreateRequestSchema,
     OwnerPromotionDiscountTypeEnum,
     OwnerPromotionUpdateInputSchema
@@ -39,6 +40,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
+import { queueToastForNextPage } from '@/store/toast-store';
 import styles from './PromotionForm.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -96,7 +98,9 @@ function buildInitialFields(data?: OwnerPromotionData): FormFields {
     };
 }
 
-const DISCOUNT_TYPE_VALUES = Object.values(OwnerPromotionDiscountTypeEnum);
+// HOS-2270: the accommodation form offers ITS benefit types only; `special_offer` is
+// a venue benefit and must never appear here (AC-21).
+const DISCOUNT_TYPE_VALUES = ACCOMMODATION_PROMOTION_DISCOUNT_TYPES;
 
 // ─── Data-load state (edit mode without initialData) ─────────────────────────
 
@@ -429,6 +433,15 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 return;
             }
 
+            // HOS-2451: the redirect is a hard navigation, so queue the toast for
+            // the list page instead of leaving the user with no confirmation.
+            queueToastForNextPage({
+                type: 'success',
+                message:
+                    mode === 'create'
+                        ? t('host.promotions.success.created', 'Promoción creada')
+                        : t('host.promotions.success.updated', 'Promoción actualizada')
+            });
             window.location.href = promotionsListUrl;
         } catch {
             setFormError(
@@ -468,7 +481,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 <p className="form-error">{dataLoad.message}</p>
                 <a
                     href={promotionsListUrl}
-                    className="btn-secondary"
+                    className={styles.cancelLink}
                 >
                     {t('host.promotions.actions.cancel', 'Cancelar')}
                 </a>
@@ -911,7 +924,10 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                                 'host.promotions.errors.entitlementRequiredHint',
                                 'Mejorá tu plan para crear promociones.'
                             )}{' '}
-                            <a href={upgradeUrl}>
+                            <a
+                                href={upgradeUrl}
+                                className={styles.upgradeLink}
+                            >
                                 {t('host.promotions.actions.upgradePlan', 'Ver planes')}
                             </a>
                         </p>
@@ -923,7 +939,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             <div className="form-actions">
                 <a
                     href={promotionsListUrl}
-                    className="btn-secondary"
+                    className={styles.cancelLink}
                 >
                     {t('host.promotions.actions.cancel', 'Cancelar')}
                 </a>

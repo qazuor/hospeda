@@ -16,7 +16,12 @@
 
 import type { JSX } from 'react';
 import type { TranslationFn } from '@/lib/i18n';
-import { type EventDraft, WEEKDAY_I18N_KEYS } from '@/lib/venue/venue-event-draft';
+import {
+    type EventDraft,
+    isTicketUrlValid,
+    todayInVenueZone,
+    WEEKDAY_I18N_KEYS
+} from '@/lib/venue/venue-event-draft';
 import styles from './VenueEventsManager.module.css';
 
 export interface VenueEventEntryCardProps {
@@ -59,6 +64,7 @@ export function VenueEventEntryCard({
     onRemove,
     onSetRecurrence
 }: VenueEventEntryCardProps): JSX.Element {
+    const ticketUrlInvalid = !isTicketUrlValid(entry.ticketUrl);
     return (
         <fieldset className={styles.card}>
             <legend className={styles.srOnly}>
@@ -133,6 +139,38 @@ export function VenueEventEntryCard({
             />
 
             <div className={styles.row}>
+                <input
+                    className={styles.input}
+                    type="url"
+                    inputMode="url"
+                    value={entry.ticketUrl}
+                    placeholder="https://"
+                    aria-label={t(
+                        'venue.owner.editor.venueEventsManager.ticketUrl',
+                        'Link de entradas (opcional)'
+                    )}
+                    aria-invalid={ticketUrlInvalid}
+                    onChange={(event) => {
+                        onPatch(index, { ticketUrl: event.target.value });
+                    }}
+                />
+            </div>
+            <p
+                className={ticketUrlInvalid ? styles.fieldError : styles.fieldHint}
+                role={ticketUrlInvalid ? 'alert' : undefined}
+            >
+                {ticketUrlInvalid
+                    ? t(
+                          'venue.owner.editor.venueEventsManager.ticketUrlInvalid',
+                          'El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.'
+                      )
+                    : t(
+                          'venue.owner.editor.venueEventsManager.ticketUrlHelp',
+                          'Si vendés entradas por Passline, Venti u otra, pegá el link acá.'
+                      )}
+            </p>
+
+            <div className={styles.row}>
                 <label className={styles.radioLabel}>
                     <input
                         type="radio"
@@ -186,6 +224,10 @@ export function VenueEventEntryCard({
                     <input
                         className={styles.input}
                         type="date"
+                        // Lets the editor focus the date of a freshly duplicated event (HOS-2254).
+                        id={`venue-event-date-${index}`}
+                        // A new event cannot be dated in the past (hint; the API enforces it).
+                        min={entry.id ? undefined : todayInVenueZone()}
                         value={entry.date}
                         aria-label={t('venue.owner.editor.venueEventsManager.date', 'Fecha')}
                         onChange={(event) => {

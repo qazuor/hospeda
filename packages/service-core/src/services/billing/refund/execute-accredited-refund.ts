@@ -1,0 +1,70 @@
+import type { Clock } from '@repo/billing-verticals-contract';
+import type { DrizzleClient, SelectRefund } from '@repo/db';
+import { and, eq, getDb, refunds } from '@repo/db';
+import type { ExecuteRefundInput, ExecuteRefundResult } from './execute-refund.service';
+import { closeExecutedPaymentRefund } from './refund-closure';
+import { canRefundTransition } from './refund-machine';
+import { lockRefundSource } from './refund-source';
+
+type Result = (
+    input: ExecuteRefundInput,
+    outcome: ExecuteRefundResult['outcome'],
+    paymentEffect?: ExecuteRefundResult['paymentEffect']
+) => ExecuteRefundResult;
+
+/**
+ * Complete TRANS:B:RF3 for an accredited row, preserving the payment transaction. A late
+ * one-time charge a mark 23 holds also mails its buyer, in the same transaction (HOS-2179 D3).
+ */
+export async function executeAccreditedRefund(input: {
+    readonly input: ExecuteRefundInput;
+    readonly candidate: SelectRefund;
+    readonly paymentId: string;
+    readonly clock: Clock;
+    readonly result: Result;
+}): Promise<ExecuteRefundResult> {
+    const { candidate, paymentId, clock, result } = input;
+    return getDb().transaction(async (tx: DrizzleClient) => {
+        const locked = await lockRefundSource({ tx, source: { kind: 'PAYMENT', id: paymentId } });
+        if (locked.kind !== 'PAYMENT') throw new Error('Expected a payment source');
+        const [refund] = await tx
+            .select()
+            .from(refunds)
+            .where(eq(refunds.id, input.input.refundId))
+            .limit(1)
+            .for('update');
+        if (
+            !refund ||
+            refund.status !== 'CONFIRMED' ||
+            refund.version !== candidate.version ||
+            refund.paymentId !== paymentId
+        )
+            return result(input.input, 'REFUND_STATE_CHANGED');
+        if (!canRefundTransition({ transition: 'RF3', from: refund.status }).allowed)
+            return result(input.input, 'REFUND_STATE_CHANGED');
+        const [updated] = await tx
+            .update(refunds)
+            .set({
+                status: 'EXECUTED',
+                executedVia: 'PROVIDER',
+                settledBy: null,
+                version: refund.version + 1
+            })
+            .where(
+                and(
+                    eq(refunds.id, refund.id),
+                    eq(refunds.status, 'CONFIRMED'),
+                    eq(refunds.version, refund.version)
+                )
+            )
+            .returning({ id: refunds.id });
+        if (!updated) return result(input.input, 'REFUND_STATE_CHANGED');
+        const paymentEffect = await closeExecutedPaymentRefund({
+            tx,
+            paymentId: locked.payment.id,
+            refundId: refund.id,
+            clock
+        });
+        return result(input.input, 'EXECUTED', paymentEffect);
+    });
+}

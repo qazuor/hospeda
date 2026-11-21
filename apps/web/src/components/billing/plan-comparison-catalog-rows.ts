@@ -55,10 +55,18 @@ interface CatalogRowPresentation {
     readonly descKey: string;
     /** Decorative icon, resolved from the shared icon table. */
     readonly icon: ComponentType<IconProps> | undefined;
+    /** Omit the row while no plan column grants its entitlement (HOS-2258). */
+    readonly hideUntilGranted?: boolean | undefined;
 }
 
 /** Presentation of one section and its optional traits. */
 interface SectionCatalogPresentation {
+    /**
+     * The section is in the catalog but its comparison row is not designed yet: the
+     * table skips it instead of showing a row with a raw i18n key (HOS-2270; the row
+     * itself is HOS-2262).
+     */
+    readonly unreleased?: boolean;
     readonly section?: CatalogRowPresentation;
     readonly traits?: Readonly<Record<string, CatalogRowPresentation>>;
 }
@@ -74,7 +82,19 @@ const VENUE_CATALOG_PRESENTATION = {
     openingHours: {},
     price: {},
     amenities: {},
-    media: {},
+    media: {
+        traits: {
+            videos: {
+                rowId: 'venueVideos',
+                labelKey: 'billing.comparison.row.venueVideos',
+                descKey: 'billing.comparison.rowDesc.venueVideos',
+                icon: COMPARISON_ROW_ICONS.venueVideos,
+                // HOS-2258: no venue plan grants `can_embed_video` yet
+                // (HOS-2280), so the row stays out of the table until one does.
+                hideUntilGranted: true
+            }
+        }
+    },
     contact: {},
     menu: {
         section: {
@@ -126,6 +146,8 @@ const VENUE_CATALOG_PRESENTATION = {
             icon: COMPARISON_ROW_ICONS.venueEvents
         }
     },
+    // HOS-2262 owns the plan-table row. Keep it out until that issue designs it.
+    promotions: { unreleased: true },
     faqs: {},
     nightInfo: {},
     translations: {}
@@ -190,6 +212,7 @@ function buildRow({
         cell: { kind: 'entitlement', key: entitlementKey },
         status: 'available',
         icon: presentation?.icon,
+        ...(presentation?.hideUntilGranted ? { hideUntilGranted: true } : {}),
         ...(lineMarks.length > 0 ? { lineMarks } : {})
     };
 }
@@ -220,6 +243,7 @@ export function buildCatalogComparisonGroup<V extends CatalogComparisonVertical>
     const rows: RowConfig[] = [];
 
     for (const section of catalog) {
+        if (presentation[section.id]?.unreleased) continue;
         const lineMarks = resolveSectionBusinessLines({
             vertical,
             sectionId: section.id as ListingSectionId<V>

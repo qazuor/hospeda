@@ -108,6 +108,26 @@ describe('resolveListingEditorPage — an absent section slug fails to the hub',
         );
         expect(result.detail).toBeUndefined();
     });
+
+    it('renders the direct URL for a locked section and keeps it in the registry', async () => {
+        getListingSectionStates.mockResolvedValue({
+            ok: true,
+            data: { sections: { promotions: { state: 'locked' } } }
+        });
+        findEditorSectionBySlug.mockReturnValue({ id: 'promotions' });
+
+        const result = await resolveListingEditorPage({
+            astro: createAstro({ sectionSlug: 'promociones' }) as never,
+            sectionSlug: 'promociones'
+        });
+
+        expect(buildListingEditorRegistry).toHaveBeenCalledWith({
+            vertical: 'venue',
+            sectionStates: { promotions: { state: 'locked' } }
+        });
+        expect(result.redirect).toBeUndefined();
+        expect(result.sectionId).toBe('promotions');
+    });
 });
 
 describe('resolveListingEditorPage — a failed section-state read fails closed', () => {

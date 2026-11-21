@@ -1618,6 +1618,111 @@
       "when": 1794978870610,
       "tag": "0230_hos1512_provider_watch",
       "breakpoints": true
+    },
+    {
+      "idx": 231,
+      "version": "7",
+      "when": 1794987220228,
+      "tag": "0231_hos2347_session_recording_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 232,
+      "version": "7",
+      "when": 1794996122220,
+      "tag": "0232_hos2256_entity_interactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 233,
+      "version": "7",
+      "when": 1795013865711,
+      "tag": "0233_hos2349_mcp_activity_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 234,
+      "version": "7",
+      "when": 1795019853854,
+      "tag": "0234_hos2256_venue_whatsapp_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 235,
+      "version": "7",
+      "when": 1795023775360,
+      "tag": "0235_hos2270_special_offer_discount_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 236,
+      "version": "7",
+      "when": 1795023790143,
+      "tag": "0236_hos2270_owner_promotions_entity",
+      "breakpoints": true
+    },
+    {
+      "idx": 237,
+      "version": "7",
+      "when": 1795034446162,
+      "tag": "0237_hos2336_partner_types_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 238,
+      "version": "7",
+      "when": 1795041949646,
+      "tag": "0238_hos2255_venue_event_ticket_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 239,
+      "version": "7",
+      "when": 1795048579974,
+      "tag": "0239_hos2272_promotion_window",
+      "breakpoints": true
+    },
+    {
+      "idx": 240,
+      "version": "7",
+      "when": 1795059224505,
+      "tag": "0240_hos2352_promo_redemption_charge_ledger",
+      "breakpoints": true
+    },
+    {
+      "idx": 241,
+      "version": "7",
+      "when": 1795085998580,
+      "tag": "0241_hos2179_one_time_payment_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 242,
+      "version": "7",
+      "when": 1795103481566,
+      "tag": "0242_hos2179_addon_instance_mark_reasons",
+      "breakpoints": true
+    },
+    {
+      "idx": 243,
+      "version": "7",
+      "when": 1795114753689,
+      "tag": "0243_hos2179_idempotency_key_request",
+      "breakpoints": true
+    },
+    {
+      "idx": 244,
+      "version": "7",
+      "when": 1795152635401,
+      "tag": "0244_hos2391_addon_instance_chargeback_reason",
+      "breakpoints": true
+    },
+    {
+      "idx": 245,
+      "version": "7",
+      "when": 1795237318594,
+      "tag": "0245_hos2519_email_template_preview",
+      "breakpoints": true
     }
   ]
 }

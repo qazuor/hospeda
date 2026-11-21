@@ -1,9 +1,13 @@
 import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { translateApiError } from '@/lib/api-errors';
 import {
+    closedCopyKey,
     eligibleTargets,
     hiddenListingNoticeKind,
     mintOrderRequestId,
+    orderIdentityReleased,
+    processingCopyKey,
     purchasableOffers,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
@@ -26,9 +30,11 @@ describe('AC:B10:11 TEST:B10:13 hidden listing notice decision', () => {
         )
     )('$publicationStatus $chargeKind free=$free', ({ publicationStatus, chargeKind, free }) => {
         const expected =
-            free || publicationStatus === 'PUBLISHED' || chargeKind === 'UNA_VEZ'
+            free || publicationStatus === 'PUBLISHED'
                 ? null
-                : 'RECURRING';
+                : chargeKind === 'UNA_VEZ'
+                  ? 'ONE_TIME'
+                  : 'RECURRING';
         expect(
             hiddenListingNoticeKind({
                 scopeType: 'LISTING',
@@ -55,12 +61,49 @@ describe('purchasableOffers', () => {
     const recurring = { productId: 'recurring', chargeKind: 'PERIODICO' } as const;
     const oneTime = { productId: 'one-time', chargeKind: 'UNA_VEZ' } as const;
 
-    it('keeps recurring offers and excludes one-time offers', () => {
-        expect(purchasableOffers([oneTime, recurring, oneTime] as const)).toEqual([recurring]);
+    it('sells recurring and one-time offers alike (HOS-2179 D-4)', () => {
+        expect(purchasableOffers([oneTime, recurring] as const)).toEqual([oneTime, recurring]);
+        expect(purchasableOffers([oneTime] as const)).toEqual([oneTime]);
     });
 
-    it('returns an empty list when only one-time offers are returned', () => {
-        expect(purchasableOffers([oneTime] as const)).toEqual([]);
+    it('leaves out a charge kind the screen does not know how to sell', () => {
+        const unknown = { productId: 'other', chargeKind: 'OTRO' } as unknown as typeof oneTime;
+        expect(purchasableOffers([unknown, recurring])).toEqual([recurring]);
+    });
+});
+
+describe('HOS-2179 one-time copy decisions', () => {
+    it.each([
+        [
+            { chargeKind: 'UNA_VEZ' as const, exhausted: false },
+            'billing.addonPurchase.waitingPayment'
+        ],
+        [
+            { chargeKind: 'UNA_VEZ' as const, exhausted: true },
+            'billing.addonPurchase.waitingPaymentMail'
+        ],
+        [{ chargeKind: 'PERIODICO' as const, exhausted: true }, 'billing.addonPurchase.processing'],
+        [{ chargeKind: null, exhausted: false }, 'billing.addonPurchase.processing']
+    ])('processing copy for %o is %s', (input, expected) => {
+        expect(processingCopyKey(input)).toBe(expected);
+    });
+
+    it.each([
+        [
+            { status: 'ABANDONED' as const, chargeKind: 'UNA_VEZ' as const },
+            'billing.addonPurchase.pageExpired'
+        ],
+        [
+            { status: 'CANCELLED' as const, chargeKind: 'UNA_VEZ' as const },
+            'billing.addonPurchase.paymentNotConfirmed'
+        ],
+        [
+            { status: 'ABANDONED' as const, chargeKind: 'PERIODICO' as const },
+            'billing.addonPurchase.closed'
+        ],
+        [null, 'billing.addonPurchase.closed']
+    ])('closed copy for %o is %s', (read, expected) => {
+        expect(closedCopyKey({ read })).toBe(expected);
     });
 });
 
@@ -97,41 +140,13 @@ describe('purchase identity and states', () => {
     };
     it.each([
         [{ ...base, checkoutUrl: 'https://example.test/checkout' }, 'REDIRECT'],
+        [
+            { ...base, chargeKind: 'UNA_VEZ' as const, checkoutUrl: 'https://example.test/page' },
+            'REDIRECT'
+        ],
         [{ ...base, outcome: 'PENDING_ELSEWHERE' as const, processing: true }, 'PROCESSING'],
-        [
-            { ...base, processing: true, order: { outcome: 'AWAITING_PROVIDER_ANSWER' as const } },
-            'PROCESSING'
-        ],
-        [{ ...base, order: { outcome: 'ACTIVATED' as const } }, 'ACTIVE'],
-        [
-            {
-                ...base,
-                chargeKind: 'UNA_VEZ' as const,
-                order: { outcome: 'ORDER_ALREADY_PLACED' as const }
-            },
-            'ACTIVE'
-        ],
-        [{ ...base, order: { outcome: 'ORDER_DECLINED' as const } }, 'REFUSED'],
-        [{ ...base, order: { outcome: 'ORDER_REJECTED' as const } }, 'REFUSED'],
-        [{ ...base, order: { outcome: 'NOT_APPROVED' as const } }, 'REFUSED'],
-        [
-            {
-                ...base,
-                processing: true,
-                order: { outcome: 'PREVIOUS_PAYMENT_PROCESSING' as const }
-            },
-            'PROCESSING'
-        ],
-        [{ ...base, processing: true, order: { outcome: 'ORDER_PLACED' as const } }, 'PROCESSING'],
-        [
-            { ...base, processing: true, order: { outcome: 'ORDER_ALREADY_PLACED' as const } },
-            'PROCESSING'
-        ],
-        [
-            { ...base, processing: true, order: { outcome: 'NOT_APPLICABLE' as const } },
-            'PROCESSING'
-        ],
-        [{ ...base, processing: true, order: { outcome: 'UNKNOWN' as const } }, 'PROCESSING']
+        [{ ...base, chargeKind: 'UNA_VEZ' as const, processing: true }, 'PROCESSING'],
+        [{ ...base, outcome: 'EXISTING' as const, chargeKind: 'UNA_VEZ' as const }, 'SETTLED']
     ] as const)('maps purchase response to %s', (response, expected) => {
         expect(purchaseStateFrom({ response })).toBe(expected);
     });
@@ -152,5 +167,28 @@ describe('purchase identity and states', () => {
                 }
             })
         ).toBe(expected);
+    });
+});
+
+describe('HOS-2518 the purchase identity was busy', () => {
+    const busy = {
+        status: 503,
+        code: 'SERVICE_UNAVAILABLE',
+        reason: 'PURCHASE_IDENTITY_BUSY',
+        message: 'Another purchase of this addon was changing; try again'
+    };
+
+    it.each([
+        ['es', 'Justo se estaba actualizando otra compra de este complemento.'],
+        ['en', 'Another purchase of this add-on was being updated just now.'],
+        ['pt', 'Outra compra deste complemento estava sendo atualizada agora.']
+    ] as const)('shows its own %s copy, not the generic 503 text', (locale, start) => {
+        const message = translateApiError({ error: busy, locale, fallback: 'generic' });
+
+        expect(message.startsWith(start)).toBe(true);
+    });
+
+    it('keeps the order id: that request created nothing', () => {
+        expect(orderIdentityReleased({ error: busy })).toBe(false);
     });
 });

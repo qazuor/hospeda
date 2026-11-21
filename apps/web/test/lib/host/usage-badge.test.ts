@@ -13,7 +13,7 @@ describe('TEST:B13a:25 usage badge on the effective set', () => {
     it('shows different usage against different effective quotas', () => {
         expect(buildUsageBadge({ effectiveSet: effective(2), currentUsage: 2 })).toMatchObject({
             maxAllowed: 2,
-            threshold: 'exceeded'
+            threshold: 'atLimit'
         });
         expect(buildUsageBadge({ effectiveSet: effective(15), currentUsage: 2 })).toMatchObject({
             maxAllowed: 15,
@@ -22,6 +22,10 @@ describe('TEST:B13a:25 usage badge on the effective set', () => {
     });
     it('omits unlimited, absent, and failed capacity reads', () => {
         expect(buildUsageBadge({ effectiveSet: effective(Infinity), currentUsage: 2 })).toBeNull();
+        // HOS-2403: the catalog's unlimited sentinel is unlimited too, never "2 / 2147483647".
+        expect(
+            buildUsageBadge({ effectiveSet: effective(2147483647), currentUsage: 2 })
+        ).toBeNull();
         expect(
             buildUsageBadge({ effectiveSet: { ...effective(3), limits: {} }, currentUsage: 2 })
         ).toBeNull();
@@ -35,7 +39,8 @@ describe('TEST:B13a:25 usage badge on the effective set', () => {
         [89, 'warning'],
         [90, 'critical'],
         [99, 'critical'],
-        [100, 'exceeded']
+        [100, 'atLimit'],
+        [101, 'exceeded']
     ] as const)('uses %i percent as %s', (pct, expected) => {
         expect(getUsageThreshold(pct, 100)).toBe(expected);
     });

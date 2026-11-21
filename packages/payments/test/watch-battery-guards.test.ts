@@ -95,7 +95,7 @@ async function run(args: {
             ? [
                   ...args.catalog,
                   entry({
-                      id: 'RP13',
+                      id: 'RP12',
                       effect: 'moves-money',
                       maxChargeMinor: authorization.maxChargeMinor,
                       expected: 'idle',
@@ -520,26 +520,6 @@ describe('the budget guard reads the charge from the request, not from the decla
         expect(mutatingRequests(server)).toHaveLength(1);
     });
 
-    it('aborts when an order states several different amounts', async () => {
-        const { transport, clock } = await fakeAs('sandbox');
-        const result = await run({
-            account: 'sandbox',
-            catalog: [
-                money({
-                    body: {
-                        total_amount: '1.00',
-                        transactions: { payments: [{ amount: '2.00' }] }
-                    },
-                    chargeMinor: 100,
-                    path: '/v1/orders'
-                })
-            ],
-            transport,
-            clock
-        });
-        expect(result.run.reason).toContain('CHARGE_MISMATCH');
-    });
-
     it('aborts an amount that is not a finite non-negative number', async () => {
         const { transport, clock } = stubAs('sandbox');
         const result = await run({
@@ -757,7 +737,15 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
         ['an advanced payment', 'POST', '/v1/advanced_payments', { payments: [] }],
         ['an authorized payment', 'POST', '/authorized_payments/1', {}],
         ['an unknown write', 'POST', '/v1/something', {}],
-        ['a refund of a non-existent shape', 'POST', '/v1/payments/1/refunds/2', {}]
+        ['a refund of a non-existent shape', 'POST', '/v1/payments/1/refunds/2', {}],
+        // HOS-2179 T-7 (owner decision 2026-11-20): the Orders rules were retired.
+        ['an order creation', 'POST', '/v1/orders', { total_amount: '1500.00' }],
+        [
+            'an order refund',
+            'POST',
+            '/v1/orders/9/refund',
+            { transactions: [{ id: 't', amount: '1.00' }] }
+        ]
     ] as const)('refuses %s even from a money-moving measurement, sending nothing', async (_name, method, path, body) => {
         const { result, server } = await send({
             effect: 'moves-money',
@@ -795,31 +783,6 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
             });
             expect(result.run.outcome).toBe('completed');
         }
-    });
-
-    it('requires a charge to state its amount: an Order total_amount is read as pesos strings', async () => {
-        const { result } = await send({
-            effect: 'moves-money',
-            method: 'POST',
-            path: '/v1/orders',
-            body: {
-                total_amount: '1500.00',
-                transactions: { payments: [{ amount: '1500.00' }] }
-            },
-            chargeMinor: 150000
-        });
-        expect(result.run.outcome).toBe('completed');
-    });
-
-    it('does not read the singular `transaction.payments` an Order never has', async () => {
-        const { result } = await send({
-            effect: 'moves-money',
-            method: 'POST',
-            path: '/v1/orders',
-            body: { transaction: { payments: [{ amount: '1500.00' }] } },
-            chargeMinor: 150000
-        });
-        expect(result.run.reason).toMatch(/OPERATION_NOT_ALLOWED|CHARGE_MISMATCH/);
     });
 
     it('books a refund apart from charges and requires its stated amount', async () => {

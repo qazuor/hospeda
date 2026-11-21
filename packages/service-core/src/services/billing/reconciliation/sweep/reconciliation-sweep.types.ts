@@ -10,7 +10,7 @@ import type {
 } from './credited-payments-check.js';
 import type { MarkEscalationPorts, MarkEscalationSummary } from './mark-escalation.js';
 import type { OurCancellationRetryCounts } from './our-cancellation-retry.js';
-import type { PaidOrdersCheckPorts, PaidOrdersCheckSummary } from './paid-orders-check.js';
+import type { PagePaymentsCheckPorts, PagePaymentsCheckSummary } from './page-payments-check.js';
 import type { PauseGiftSummary } from './pause-gift-check.js';
 import type {
     ReconciliationComparison,
@@ -65,8 +65,8 @@ export interface ReconciliationSweepPorts {
     readonly terminalReturn?: TerminalReturnPorts;
     /** Optional credited-payments pass. */
     readonly creditedPayments?: CreditedPaymentsCheckPorts;
-    /** Optional paid-orders pass. */
-    readonly paidOrders?: PaidOrdersCheckPorts;
+    /** Optional page-payments pass (HOS-2179 §5.10); provider and clock come from the sweep. */
+    readonly pagePayments?: PagePaymentsCheckPorts;
     /** Optional escalation pass. */
     readonly markEscalation?: Omit<MarkEscalationPorts, 'clock'>;
     readonly pauseGifts?: { readonly tx?: DrizzleClient };
@@ -89,7 +89,7 @@ export type ReconciliationSweepPass =
     | 'cancellationRetry'
     | 'terminalReturn'
     | 'creditedPayments'
-    | 'paidOrders'
+    | 'pagePayments'
     | 'markEscalation'
     | 'pauseGifts'
     | 'zeroCallChecks';
@@ -116,7 +116,7 @@ export interface ReconciliationSweepSummary {
     };
     readonly terminalReturn?: TerminalReturnSummary;
     readonly creditedPayments?: CreditedPaymentsCheckSummary;
-    readonly paidOrders?: PaidOrdersCheckSummary;
+    readonly pagePayments?: PagePaymentsCheckSummary;
     readonly markEscalation?: MarkEscalationSummary;
     readonly pauseGifts?: PauseGiftSummary;
     /** Absent for a `lease_held` skip: this call opened no run of its own. */

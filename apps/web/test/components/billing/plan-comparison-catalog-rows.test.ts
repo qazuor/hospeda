@@ -23,7 +23,11 @@ import {
     getLineMarkText
 } from '@/components/billing/plan-comparison-catalog-rows';
 import { resolveCell } from '@/components/billing/plan-comparison-rows';
-import { getComparisonGroups } from '@/components/billing/plan-comparison-table.helpers';
+import {
+    getComparisonGroups,
+    getVisibleRows
+} from '@/components/billing/plan-comparison-table.helpers';
+import { PRODUCTION_PLAN_CATALOG } from '../../../../../scripts/production-catalog/catalog.js';
 
 const venueGroup = buildCatalogComparisonGroup({ vertical: 'venue' });
 const experienceGroup = buildCatalogComparisonGroup({ vertical: 'experience' });
@@ -51,6 +55,7 @@ function findRow<T extends { readonly id: string }>(rows: readonly T[], id: stri
 describe('TEST:6.5:1 — the catalog is the source of truth', () => {
     it('generates the venue rows from the catalog entitlement keys in catalog order', () => {
         expect(entitlementKeys(venueGroup.rows)).toEqual([
+            EntitlementKeyEnum.CAN_EMBED_VIDEO,
             EntitlementKeyEnum.MANAGE_VENUE_MENU,
             EntitlementKeyEnum.MENU_ITEM_PHOTOS,
             EntitlementKeyEnum.MULTILINGUAL_VENUE_MENU,
@@ -253,5 +258,97 @@ describe('TEST:6.5:6 — the venue table still renders', () => {
         const ids = groups.map((group) => group.id);
         expect(ids).toContain('catalogSections');
         expect(groups.flatMap((group) => group.rows).map((row) => row.id)).toContain('venueMenu');
+    });
+});
+
+describe('HOS-2271 venue promotions plans row (HOS-2262)', () => {
+    it('skips the venue promotions section: no venue plan grants create_promotions yet', () => {
+        const promotions = LISTING_SECTIONS.venue.find((section) => section.id === 'promotions');
+
+        expect(promotions?.entitlementKey).toBe(EntitlementKeyEnum.CREATE_PROMOTIONS);
+        expect(
+            venueGroup.rows.some(
+                (row) => row.cell.kind === 'entitlement' && row.cell.key === 'create_promotions'
+            )
+        ).toBe(false);
+        expect(venueGroup.rows.map((row) => row.id)).not.toContain('promotions');
+    });
+});
+
+describe('HOS-2271 venue promotions plan safety', () => {
+    it('keeps every venue plan without create_promotions while the plans row belongs to HOS-2262', () => {
+        const granting = PRODUCTION_PLAN_CATALOG.filter(
+            (plan) =>
+                plan.vertical === 'venue' &&
+                plan.version.entitlements.some((entry) => entry.key === 'create_promotions')
+        ).map((plan) => plan.slug);
+
+        expect(granting).toEqual([]);
+    });
+});
+
+describe('HOS-2258 — the venue videos row stays hidden until a plan grants it', () => {
+    const videosRow = findRow(venueGroup.rows, 'venueVideos');
+    const plan = (entitlements: string[]) => ({
+        id: 'p',
+        vertical: 'venue',
+        slug: 'venue-pro',
+        name: 'Pro',
+        description: '',
+        category: 'owner',
+        monthlyPriceArs: 0,
+        annualPriceArs: null,
+        hasTrial: false,
+        trialDays: 0,
+        sortOrder: 1,
+        isActive: true,
+        inheritsTouristVip: false,
+        entitlements,
+        limits: {}
+    });
+
+    it('is generated from the catalog trait and flagged hideUntilGranted', () => {
+        expect(videosRow.cell).toEqual({
+            kind: 'entitlement',
+            key: EntitlementKeyEnum.CAN_EMBED_VIDEO
+        });
+        expect(videosRow.hideUntilGranted).toBe(true);
+        expect(videosRow.status).toBe('available');
+        expect(videosRow.icon).toBe(COMPARISON_ROW_ICONS.venueVideos);
+    });
+
+    it('is omitted while no plan column grants the key, as "no incluido" nor "próximamente"', () => {
+        const visible = getVisibleRows({
+            rows: venueGroup.rows,
+            plans: [plan([]), plan([EntitlementKeyEnum.MANAGE_VENUE_MENU])] as never
+        });
+
+        expect(visible.map((row) => row.id)).not.toContain('venueVideos');
+        expect(visible.map((row) => row.id)).toContain('venueMenu');
+    });
+
+    it('appears by itself once a plan grants the key', () => {
+        const visible = getVisibleRows({
+            rows: venueGroup.rows,
+            plans: [plan([]), plan([EntitlementKeyEnum.CAN_EMBED_VIDEO])] as never
+        });
+
+        expect(visible.map((row) => row.id)).toContain('venueVideos');
+    });
+
+    it('never hides a row that does not carry the flag', () => {
+        const visible = getVisibleRows({ rows: venueGroup.rows, plans: [plan([])] as never });
+
+        expect(visible.map((row) => row.id)).toContain('venueMenu');
+    });
+
+    it('has a label and description in every locale', () => {
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            const billing = LOCALES[locale].billing as unknown as {
+                comparison: { row: Record<string, string>; rowDesc: Record<string, string> };
+            };
+            expect(billing.comparison.row.venueVideos, locale).toBeTruthy();
+            expect(billing.comparison.rowDesc.venueVideos, locale).toBeTruthy();
+        }
     });
 });

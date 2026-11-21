@@ -81,6 +81,36 @@
                 "seePlans": "See plans",
                 "error": "We couldn't load the QR scans. Please try again later.",
                 "empty": "No scans yet in this period."
+            },
+            "venueStats": {
+                "title": "Listing metrics",
+                "venue": "Venue",
+                "loading": "Loading metrics…",
+                "error": "We couldn't load the metrics. Please try again later.",
+                "lockedPreTrial": "Advanced metrics will be available when you publish your listing.",
+                "lockedWithPlan": "Unlock the daily chart, clicks by channel, click rate and {{history}} of data with {{plan}}.",
+                "lockedWithoutPlan": "Advanced metrics include a daily chart, clicks by channel, click rate and {{history}} of data.",
+                "historyDays_one": "{{count}} day",
+                "historyDays_other": "{{count}} days",
+                "seePlans": "See plans",
+                "views": "visits",
+                "clicks": "contact clicks",
+                "clickRate": "click rate",
+                "clickRateHelp": "Out of every 100 visits, how many tapped a contact option.",
+                "empty": "There are no visits in this period yet.",
+                "channel": {
+                    "phone": "Phone",
+                    "map": "Map",
+                    "website": "Website",
+                    "instagram": "Instagram",
+                    "tickets": "Tickets",
+                    "whatsapp": "WhatsApp"
+                }
+            },
+            "loadError": {
+                "title": "We couldn't load your listings",
+                "body": "There was a problem reading your listings. They haven't gone anywhere: please try again in a moment.",
+                "retry": "Try again"
             }
         },
         "editor": {
@@ -101,6 +131,7 @@
                 "menu": "Menu",
                 "dailySpecials": "Today's menu",
                 "venueEvents": "Events",
+                "venuePromotions": "Promotions",
                 "nightInfo": "Night out info",
                 "aiQuestions": "AI questions"
             },
@@ -164,7 +195,16 @@
                 "mobilePhone": "Phone",
                 "landlinePhone": "Landline",
                 "publicHint": "These contact details are shown publicly on your listing.",
-                "workEmail": "Email"
+                "workEmail": "Email",
+                "whatsapp": "WhatsApp",
+                "whatsappVisibility": {
+                    "legend": "Who sees the WhatsApp button",
+                    "loggedInOnly": "Signed-in users only",
+                    "public": "Public",
+                    "undecided": "Until you pick an option, the WhatsApp button is not shown on your listing.",
+                    "publicWarning": "Your number will be visible on the page and anyone can copy it, including automated programs.",
+                    "loggedInHint": "The number does not appear on the page: only signed-in people can see it."
+                }
             },
             "validation": {
                 "summaryMin": "Minimum 10 characters.",
@@ -336,6 +376,28 @@
                 "description": "We could not read your listing section states. Please try again in a few minutes.",
                 "retry": "Try again",
                 "back": "Back to my listings"
+            },
+            "video": {
+                "sectionTitle": "Videos",
+                "sectionDescription": "Add links to YouTube, Vimeo or Dailymotion videos that show your venue.",
+                "empty": "You haven't added any videos yet.",
+                "urlLabel": "Video link",
+                "urlPlaceholder": "https://youtu.be/...",
+                "captionLabel": "Title (optional)",
+                "addButton": "Add video",
+                "saveButton": "Save videos",
+                "removeAria": "Remove video {{index}}",
+                "urlInvalid": "Enter a valid video URL",
+                "captionInvalid": "The title must be between 3 and 100 characters, or leave it empty",
+                "saveSuccess": "Videos saved",
+                "saveFailed": "The videos could not be saved",
+                "forbidden": "Your plan does not include videos. Nothing was saved.",
+                "tooMany": "You can add up to 6 videos.",
+                "network": "Connection error",
+                "noChanges": "There are no changes to save",
+                "saving": "Saving...",
+                "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+                "locked": "Videos for your venue are included in the {{plan}} plan."
             }
         },
         "checklist": {

@@ -27,9 +27,15 @@ function render(condition: SQL): string {
 const guestActor = createActor({ permissions: [PermissionEnum.ACCESS_API_PUBLIC] });
 
 describe('buildAccommodationVisibilityCondition (HOS-21 T-006)', () => {
-    it('allows a null accommodationId (owner-wide promo) unconditionally', () => {
+    it('allows an owner-wide promo (accommodation type, no target) unconditionally', () => {
         const rendered = render(buildAccommodationVisibilityCondition());
+        expect(rendered).toMatch(/"owner_promotions"\."entity_id" is null/i);
         expect(rendered).toMatch(/"owner_promotions"\."accommodation_id" is null/i);
+    });
+
+    it('never lets a venue promotion through (HOS-2270)', () => {
+        const rendered = render(buildAccommodationVisibilityCondition());
+        expect(rendered).toMatch(/"owner_promotions"\."entity_type" = 'accommodation'/i);
     });
 
     it('requires the accommodation to be PUBLISHED (HOS-1641)', () => {
@@ -43,11 +49,11 @@ describe('buildAccommodationVisibilityCondition (HOS-21 T-006)', () => {
         expect(rendered).not.toMatch(/"accommodations"\."(visibility|lifecycle_state)"/i);
     });
 
-    it('joins on accommodations.id = ownerPromotions.accommodationId via EXISTS', () => {
+    it('joins on accommodations.id = the dual-read target via EXISTS', () => {
         const rendered = render(buildAccommodationVisibilityCondition());
         expect(rendered).toMatch(/exists/i);
         expect(rendered).toMatch(
-            /"accommodations"\."id" = "owner_promotions"\."accommodation_id"/i
+            /"accommodations"\."id" = COALESCE\("owner_promotions"\."entity_id", "owner_promotions"\."accommodation_id"\)/i
         );
     });
 });

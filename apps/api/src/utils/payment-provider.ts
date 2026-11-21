@@ -25,6 +25,11 @@ export function defaultPaymentProvider(input: { readonly clock: Clock }): Paymen
         baseUrl: env.HOSPEDA_MERCADO_PAGO_API_BASE_URL,
         accessToken: env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN,
         timeoutMs: env.HOSPEDA_MERCADO_PAGO_TIMEOUT,
+        // HOS-2179 (owner): a plain-http return URL on localhost is for local development
+        // only. The env schema defaults an unset NODE_ENV to `development`, so this check
+        // alone does not keep production on https: the API image does, by pinning
+        // `ENV NODE_ENV=production` in its runner stage (apps/api/Dockerfile).
+        allowLocalHttpReturnUrl: env.NODE_ENV === 'development' || env.NODE_ENV === 'test',
         ...(governor ? { governor } : {})
     });
 }

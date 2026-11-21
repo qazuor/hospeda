@@ -18,22 +18,26 @@
  *   they are filtered out inside this component).
  * @prop audience - `'owner'` or `'tourist'`.
  * @prop intlLocale - BCP-47 locale string for Intl.NumberFormat.
+ * @prop touristVipPlan - The sellable Tourist VIP plan; the `asTourist` group
+ *   resolves an inheriting plan's cells against it (HOS-2398).
  */
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
 import { getLineMarkText } from '@/components/billing/plan-comparison-catalog-rows';
-import { resolveCell } from '@/components/billing/plan-comparison-rows';
+import { resolveGroupCell } from '@/components/billing/plan-comparison-source';
 import {
 	formatPriceArs,
 	getActivePlans,
-	getComparisonGroups
+	getComparisonGroups,
+	getVisibleRows
 } from '@/components/billing/plan-comparison-table.helpers';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import type { TouristVipPlanCells } from '@/lib/billing/tourist-vip-benefits';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -59,9 +63,16 @@ interface Props {
 	 * pricing adds one. Omitted renders no CTA at all rather than a dead link.
 	 */
 	readonly ctaHref?: string;
+	/**
+	 * The sellable Tourist VIP plan, read from the tourist catalog. An owner plan
+	 * that inherits Tourist VIP gets its "as tourist" cells from THIS plan, not
+	 * from its own rows (HOS-2398). `null` when the read failed or the audience
+	 * has no inherited group.
+	 */
+	readonly touristVipPlan?: TouristVipPlanCells | null;
 }
 
-const { locale, plans, audience, intlLocale, ctaHref } = Astro.props;
+const { locale, plans, audience, intlLocale, ctaHref, touristVipPlan = null } = Astro.props;
 const { t } = createTranslations(locale);
 
 const unlimitedLabel = t('billing.comparison.unlimited', 'Ilimitado');
@@ -124,7 +135,7 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 						{getComparisonGroupLabel({ group: group.id, t })}
 					</th>
 				</tr>
-				{group.rows.map((row) => {
+				{getVisibleRows({ rows: group.rows, plans: activePlans, group, touristVipPlan }).map((row) => {
 					const RowIcon = row.icon ?? COMPARISON_ROW_ICONS[row.id];
 					// Per-row descriptive text (SPEC-299). Empty fallback → not rendered.
 					const rowDesc = t(`billing.comparison.rowDesc.${row.id}`, '');
@@ -155,7 +166,7 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 							)}
 						</th>
 						{activePlans.map((plan) => {
-							const result = resolveCell({ cell: row.cell, plan });
+							const result = resolveGroupCell({ group, cell: row.cell, plan, touristVipPlan });
 							const isNumeric = typeof result === 'number' || result === 'unlimited';
 							return (
 								<td class:list={['comparison-table__cell', { 'comparison-table__cell--limit': isNumeric }]}>

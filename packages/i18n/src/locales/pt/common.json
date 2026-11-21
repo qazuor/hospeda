@@ -90,6 +90,7 @@
         "BAD_REQUEST": "A solicitação não é válida.",
         "CONFLICT": "O recurso entra em conflito com o estado atual.",
         "CATEGORY_IN_USE": "Esta categoria é usada por prestadores. Desative-a em vez de excluí-la.",
+        "PARTNER_TYPE_IN_USE": "Este tipo é usado por parceiros. Atribua outro tipo a eles antes de desativá-lo ou excluí-lo.",
         "SERVICE_UNAVAILABLE": "Este serviço está temporariamente indisponível. Tente novamente em alguns minutos.",
         "NEWSLETTER_NOT_CONFIGURED": "A newsletter não está disponível no momento. Estamos trabalhando para restabelecê-la.",
         "ACCOUNT_DELETED": "Esta conta foi excluída e não está mais disponível.",
@@ -128,6 +129,12 @@
         "EMPTY_FILE": "O arquivo está vazio. Escolha outra imagem.",
         "NEW_PAID_SIGNUPS_FROZEN": "Pausamos temporariamente novas assinaturas. Se você já tem uma assinatura, ela continua funcionando normalmente.",
         "ADDON_PURCHASES_FROZEN": "Pausamos temporariamente a compra de complementos. O que você já comprou continua funcionando normalmente.",
+        "ADDON_ALREADY_ACTIVE": "Você já tem este complemento ativo. Não é preciso comprá-lo de novo.",
+        "ADDON_PRODUCT_NOT_FOUND": "Este complemento não está mais disponível. Recarregue a página para ver os disponíveis.",
+        "ADDON_TARGET_NOT_FOUND": "Não encontramos a assinatura ou o anúncio que você escolheu. Recarregue a página e escolha de novo.",
+        "ADDON_NO_VALID_TITLE": "Para comprar este complemento você precisa de um plano ativo que o permita.",
+        "ADDON_VERSION_NOT_CURRENT": "O preço ou as condições deste complemento mudaram. Recarregue a página para ver a versão atual.",
+        "ADDON_ORDER_REQUEST_REUSED": "Esta compra já foi enviada. Recarregue a página para ver o status antes de tentar de novo.",
         "FIRST_PUBLISH_PAUSED": "Pausamos temporariamente a publicação de novos anúncios. Seu anúncio fica salvo como rascunho e você poderá publicá-lo quando retomarmos.",
         "PROMO_CODE_NOT_FOUND": "Não encontramos esse código.",
         "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "Este código não estende um período de teste.",
@@ -143,7 +150,8 @@
         "NO_TRIAL": "Não encontramos um período de teste ativo para estender.",
         "TRIAL_ENDED": "Seu período de teste terminou.",
         "CEILING_REACHED": "Este código ultrapassa o limite de extensão do seu período de teste.",
-        "REDEMPTION_KEY_CONFLICT": "Esta extensão conflita com um resgate anterior."
+        "REDEMPTION_KEY_CONFLICT": "Esta extensão conflita com um resgate anterior.",
+        "PURCHASE_IDENTITY_BUSY": "Outra compra deste complemento estava sendo atualizada agora. Tente novamente em alguns segundos."
     },
     "filters": "Filtros",
     "filterChips": {

@@ -1884,6 +1884,9 @@
                     "min": "La descripción debe tener al menos {{min}} caracteres",
                     "required": "La descripción es obligatoria"
                 },
+                "list": {
+                    "max": "You can add up to 6 videos"
+                },
                 "url": {
                     "invalid": "La URL no es válida"
                 }
@@ -2470,6 +2473,9 @@
         "ownerPromotionDiscountType": {
             "invalid": "El owner promotion discount type no es válido"
         },
+        "ownerPromotionEntityType": {
+            "invalid": "The promotion target type is not valid"
+        },
         "partnerMentionChannel": {
             "invalid": "The mention channel is not valid"
         },
@@ -2602,6 +2608,12 @@
         },
         "partnerLogoClickDestination": {
             "invalid": "The logo click destination is not valid"
+        },
+        "entityInteractionKind": {
+            "invalid": "The interaction kind is not valid"
+        },
+        "venueWhatsappVisibility": {
+            "invalid": "The WhatsApp visibility is not valid"
         },
         "featureCategory": {
             "invalid": "Choose a valid feature category"
@@ -3311,7 +3323,13 @@
             "dateForbiddenForWeekly": "A weekly event takes no date: it repeats every week",
             "weekdayRequiredForWeekly": "A weekly event needs a day of the week",
             "weekdayForbiddenForOnce": "A one-off event takes no day of the week",
-            "endTimeEqualsStart": "The end time cannot be the same as the start time"
+            "endTimeEqualsStart": "The end time cannot be the same as the start time",
+            "ticketUrl": {
+                "max": "The ticket link cannot exceed {{max}} characters",
+                "invalid": "The ticket link is not a valid URL",
+                "httpsRequired": "The ticket link must start with https://",
+                "credentials": "The ticket link cannot contain a username or password"
+            }
         },
         "eventDate": {
             "invalid": "The event date is not valid (YYYY-MM-DD format)"
@@ -3329,7 +3347,9 @@
         "events": {
             "max": "The schedule cannot have more than {{max}} events",
             "max_one": "The schedule cannot have more than {{max}} event",
-            "max_other": "The schedule cannot have more than {{max}} events"
+            "max_other": "The schedule cannot have more than {{max}} events",
+            "maxTotal": "Limit of events in total: {{max}}",
+            "newPast": "A new event cannot have a date in the past"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
@@ -3684,9 +3704,19 @@
         "description": {
             "max": "La descripción no puede superar los {{max}} caracteres"
         },
+        "discountType": {
+            "notForAccommodation": "This benefit type is not available for accommodations",
+            "notForVenue": "This benefit type is not available for venues"
+        },
         "discountValue": {
+            "int": "The discount value must be a whole number",
+            "maxPercentage": "The percentage cannot exceed 100",
             "min": "El valor del descuento no puede ser negativo",
+            "notForSpecialOffer": "A special offer has no discount value",
             "required": "El valor del descuento es obligatorio"
+        },
+        "entityId": {
+            "requiredForVenue": "A venue promotion needs the venue id"
         },
         "maxRedemptions": {
             "int": "Los usos máximos deben ser un número entero",
@@ -3694,22 +3724,41 @@
         },
         "minNights": {
             "int": "La cantidad mínima de noches debe ser un número entero",
-            "min": "La cantidad mínima de noches debe tener al menos {{min}} caracteres"
+            "min": "La cantidad mínima de noches debe tener al menos {{min}} caracteres",
+            "notForVenue": "Venue promotions have no minimum nights"
         },
         "slug": {
             "min": "El identificador debe tener al menos {{min}} caracteres",
             "required": "El identificador es obligatorio"
+        },
+        "specialOfferText": {
+            "max": "The offer text cannot exceed 1000 characters",
+            "min": "The offer text cannot be empty",
+            "noDescription": "In a special offer the text goes in the offer field, not in the description",
+            "onlyForSpecialOffer": "The offer text only applies to the special offer type",
+            "rejected": "The offer text does not meet the content rules",
+            "required": "Describe what the special offer is"
         },
         "title": {
             "max": "El título no puede superar los {{max}} caracteres",
             "min": "El título debe tener al menos {{min}} caracteres",
             "required": "El título es obligatorio"
         },
+        "touristAudience": {
+            "venuePlusOnly": "Venue promotions only accept the general audience"
+        },
         "validFrom": {
             "required": "La fecha de inicio es obligatoria"
         },
         "validUntil": {
+            "beforeValidFrom": "The end date must be after the start date",
             "invalid": "La fecha de fin no es válida"
+        },
+        "window": {
+            "duplicateWeekday": "Do not repeat days in the weekly window",
+            "incomplete": "Choose the days and complete time range for the window",
+            "invalid": "Check the days and time range for the window",
+            "sameTime": "The end time must differ from the start time"
         }
     },
     "pagination": {
@@ -3832,6 +3881,23 @@
                 "required": "Enter a moderation reason",
                 "max": "The moderation reason cannot exceed {{max}} characters"
             }
+        }
+    },
+    "partnerType": {
+        "slug": {
+            "required": "The slug is required",
+            "min": "The slug must be at least {{min}} characters",
+            "max": "The slug cannot exceed {{max}} characters",
+            "pattern": "The slug only allows lowercase letters, numbers and hyphens"
+        },
+        "nameI18n": {
+            "esRequired": "The Spanish name is required"
+        },
+        "displayWeight": {
+            "required": "The order is required",
+            "int": "The order must be a whole number",
+            "min": "The order must be at least {{min}}",
+            "max": "The order cannot exceed {{max}}"
         }
     },
     "poiCategory": {
@@ -5199,6 +5265,28 @@
         "partnerId": {
             "invalidUuid": "Partner ID must be a valid UUID",
             "required": "Partner ID is required"
+        }
+    },
+    "entityInteraction": {
+        "entityType": {
+            "invalid": "This entity type does not support interaction tracking"
+        },
+        "entityId": {
+            "invalidUuid": "The venue ID must be a valid UUID",
+            "required": "The venue ID is required"
+        },
+        "eventId": {
+            "forbidden": "The event ID does not apply to this interaction kind",
+            "invalidUuid": "The event ID must be a valid UUID",
+            "required": "The event ID is required for this interaction kind"
+        },
+        "kind": {
+            "notForEntityType": "This interaction kind does not apply to the entity"
+        },
+        "venueStats": {
+            "window": {
+                "invalid": "The window must be 7, 30 or 90 days"
+            }
         }
     },
     "partnerStats": {

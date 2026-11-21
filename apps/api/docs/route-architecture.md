@@ -521,6 +521,18 @@ Request body: `{ entityType: 'ACCOMMODATION' | 'POST' | 'EVENT', entityId: uuid 
 `visitorHash` is computed **server-side** (daily-salted SHA-256 of truncated IP + UA); raw IPs
 are never stored. See the privacy note in `docs/guides/view-tracking-privacy.md`.
 
+### Interaction capture (HOS-2256)
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| `POST` | `/api/v1/public/interactions` | None (`skipAuth: true`) | Records a tap on a venue page element (`PHONE_CLICK`, `MAP_CLICK`, `WEBSITE_CLICK`, `INSTAGRAM_CLICK`, `TICKET_CLICK`, `WHATSAPP_CLICK`). Same contract as the view beacon: bot UA gets a fake 202, **30 requests/min per IP**, always 202. The only non-2xx is **400 `VALIDATION_ERROR`** for a malformed body. |
+
+Request body: `{ entityType: 'VENUE', entityId: uuid, kind, eventId?: uuid }`. `eventId` is required
+for `TICKET_CLICK` / `EVENT_IMPRESSION` and forbidden for the rest. A listing that does not exist or
+is not published, an `eventId` of another listing, the owner's own tap and a DB error all answer
+202 without inserting (no existence oracle). The visitor hash never uses the user id.
+Rows live in `entity_interactions`, never in `entity_views`.
+
 ### Protected reads
 
 | Method | Path | Permission | Response |
@@ -751,6 +763,56 @@ Rules worth knowing before touching them:
   is no longer read or written.
 - The alliance lead form sends `categorySlugs`; the slugs are validated against the
   active catalog on submit and resolved to ACTIVE categories at approval.
+- **Approving a `service_provider` lead can skip provisioning** (HOS-2339). When none
+  of the chosen categories is ACTIVE (`no-active-category`) or the lead predates the
+  typed fields (`legacy-lead-without-typed-fields`), the lead is still `approved`.
+  `POST /api/v1/admin/alliance/leads/{id}/mark-handled` then answers the lead plus an
+  optional `provisioning: { provisioned, reason?, hostTradeId? }` (absent for
+  rejections and other kinds). The dedicated retry is
+  `POST /api/v1/admin/alliance/leads/{id}/provision` (`ALLIANCE_LEAD_MANAGE`, no
+  body): idempotent, re-runs provisioning only, never sends the approval email, and
+  mints and sends a claim invite only when it newly creates the listing for a lead
+  with no applicant user. A skip is a 200 outcome, not an error; a non-provider lead
+  answers 422 `NOT_A_SERVICE_PROVIDER`, a lead that is not `approved` answers 409
+  `LEAD_NOT_APPROVED`.
+
+---
+
+## Partner Type Catalog Routes (HOS-2336)
+
+A partner's type is a row of the admin-managed `partner_types` catalog, referenced
+by `partners.type_id` (FK `RESTRICT`). Release N dual-writes the legacy
+`partners.type` enum (the value when the slug has one, `NULL` otherwise); release
+N+1 makes `type_id` NOT NULL and drops the enum.
+
+| Tier | Method | Path | `requiredPermissions` | Notes |
+|------|--------|------|-----------------------|-------|
+| Public | `GET` | `/api/v1/public/partner-types` | none | ACTIVE types ordered by weight, then Spanish name, with `nameI18n`. Feeds the partner forms. |
+| Admin | `GET`, `POST` | `/api/v1/admin/partner-types` | `PARTNER_TYPE_VIEW` / `_CREATE` | List rows carry `partnerCount`. `slug` is immutable and stays reserved after a soft delete (409 `ALREADY_EXISTS`). |
+| Admin | `GET`, `PATCH`, `DELETE` | `/api/v1/admin/partner-types/{id}` | `_VIEW` / `_UPDATE` / `_DELETE` | A body with `slug` answers 400. |
+| Admin | `POST` | `/api/v1/admin/partner-types/{id}/restore` | `_RESTORE` | |
+
+Rules worth knowing before touching them:
+
+- **`PARTNER_TYPE_IN_USE` is a 409 with a public `details.count`.** Deactivating or
+  soft-deleting a type that a non-deleted partner uses is refused. The check locks
+  the type `FOR UPDATE`; every partner write reads its type `FOR SHARE`, so the two
+  serialize.
+- **Partner writes take `typeId`.** It must be ACTIVE, unless it is the partner's
+  current type (saving other fields of a partner whose type was deactivated never
+  forces a change). Partner-application approval sends `typeId` too.
+- **Reads carry the type.** Admin reads embed `partnerType` (`id`, `slug`,
+  `nameI18n`, `lifecycleState`); public partner reads carry
+  `type: { slug, name, nameI18n } | null`. `?type=` filters take a catalog slug.
+- **Every catalog write purges the `catalog-partner-types` cache tag**
+  (`CACHE_TAG_PARTNER_TYPES`, `purgePartnerTypesCache`). The public partner page
+  carries the tag, so a rename reaches it. Admin and protected partner writes
+  and admin partner-type writes also evict the API's in-process cache for
+  `/api/v1/public/partners` (`mountPartnerCacheInvalidation`, HOS-2368), so the
+  re-render after the edge purge does not refetch a stale `type.name`.
+- Approve-and-provision of a partner alliance lead re-validates the lead's slug
+  against ACTIVE types and answers `201` with `reason: 'no-active-partner-type'`
+  when it is not.
 
 ---
 
@@ -1043,6 +1105,7 @@ remove a connection while the feature is switched off.
 | `GET` | `/api/v1/protected/ai-connections` | Session | Lists the caller's connections, oldest first, with connection date and an approximate last use. `name`, `uri` and `logoUri` are client-declared and untrusted. Also carries `pendingResetReview` (`{ resetAt, connectionsBeforeReset }` or `null`), see below. |
 | `DELETE` | `/api/v1/protected/ai-connections?clientId=<encoded>` | Session | Deletes the caller's consent, refresh tokens and stored access tokens for that client. 204 on success, 404 when the caller has no such connection, 400 without `clientId`. The id is a query parameter, not a path segment: CIMD client ids are URLs and a `%2F` in a path is rejected by some proxies. Audits `mcp.connection.revoked`. |
 | `POST` | `/api/v1/protected/ai-connections/reset-review` | Session | Body `{ action: 'revoke_previous' \| 'keep' }`. Answers the post-password-reset question: `revoke_previous` disconnects exactly the connections made before the reset (a client connected after it is untouched) and audits each as `mcp.connection.revoked` with `reason: PASSWORD_RESET_REVIEW`; `keep` revokes nothing. Both clear the question. 200 with `{ action, revokedClientIds }`. 409 `ALREADY_EXISTS` with `reason: NO_PENDING_RESET_REVIEW` when there is nothing to answer, which is also what a repeated call gets (nothing changes), 400 for a bad body. |
+| `GET` | `/api/v1/protected/ai-connections/activity` | Session | The caller's assistant history (HOS-2348): what their assistants did, newest first, from the shared `McpActivityService` reader with the scope forced to `own`. Query `page`, `pageSize` (≤ 20), `clientId`, `outcome`, `includeReads` (default `false`: writes only), `fromDate`, `toDate`, `locale` (`es`, `en` or `pt`; the page language the target links are built in; absent = `es`). Any other param (`userId`, `actorId`, `scope`, `limit`) is a 400. Items are strict-allowlisted: a listing name and link only while the caller still owns it. |
 
 - **404, never 403.** A client the caller has not connected answers 404, whether it
   is unknown or connected only by someone else. The response never confirms that

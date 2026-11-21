@@ -174,7 +174,8 @@ describe('HOS-2218 succession payer email', () => {
             .from(subscriptions)
             .where(eq(subscriptions.id, seeded.predecessor.id));
         expect(predecessor?.status).toBe('ACTIVE');
-        expect(predecessor?.succeededById).toBe(result.subscriptionId);
+        // HOS-2351: S1 leaves the pointer to S18.
+        expect(predecessor?.succeededById).toBeNull();
     });
 
     it('keeps SUCCESSION_IN_PROGRESS when the rejected successor was for another option', async () => {

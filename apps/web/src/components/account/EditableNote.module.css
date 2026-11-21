@@ -192,3 +192,11 @@
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
 }
+
+.savedStatus {
+    display: block;
+    margin-top: var(--space-1, 4px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}

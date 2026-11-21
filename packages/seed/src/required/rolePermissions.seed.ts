@@ -229,6 +229,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+        // EMAIL PREVIEWER (HOS-2519 OQ-3): read-only, fictional sample data.
+        PermissionEnum.NOTIFICATION_TEMPLATE_PREVIEW,
 
         // NEWSLETTER: All permissions (SPEC-101)
         PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
@@ -257,6 +259,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.LOGS_VIEW_ALL,
         PermissionEnum.ERRORS_VIEW,
         PermissionEnum.ANALYTICS_VIEW,
+        // HOS-2347: the web session recording switch (Umami replays + heatmaps) — SUPER_ADMIN-only.
+        PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE,
 
         // DEBUG & DEPLOY: All permissions
         PermissionEnum.DEBUG_TOOLS_ACCESS,
@@ -389,6 +393,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.AI_SETTINGS_MANAGE,
         // HOS-2075: read the listing AI chat conversations (anonymised, redacted) — SUPER_ADMIN-only.
         PermissionEnum.AI_CONVERSATION_VIEW_ANY,
+        // HOS-2349 (D-15): the admin log of every assistant (MCP) tool call — SUPER_ADMIN-only,
+        // NOT granted to ADMIN. Live envs get it from data-migration 0183.
+        PermissionEnum.MCP_ACTIVITY_VIEW,
 
         // MODERATION: Content auto-moderation management (SPEC-195)
         PermissionEnum.MODERATION_TERM_VIEW,
@@ -421,6 +428,14 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.PARTNER_MANAGE,
         PermissionEnum.PARTNER_RESOLVE_APPLICATION,
         PermissionEnum.PARTNER_EMPTY_PRESENCE,
+
+        // PARTNER_TYPE (HOS-2336): admin-managed partner type catalog.
+        // Staff-only; the public catalog read needs no permission.
+        PermissionEnum.PARTNER_TYPE_VIEW,
+        PermissionEnum.PARTNER_TYPE_CREATE,
+        PermissionEnum.PARTNER_TYPE_UPDATE,
+        PermissionEnum.PARTNER_TYPE_DELETE,
+        PermissionEnum.PARTNER_TYPE_RESTORE,
 
         // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
         PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
@@ -685,6 +700,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+        // EMAIL PREVIEWER (HOS-2519 OQ-3): read-only, fictional sample data.
+        PermissionEnum.NOTIFICATION_TEMPLATE_PREVIEW,
 
         // NEWSLETTER: All permissions (SPEC-101)
         PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
@@ -804,6 +821,14 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.PARTNER_MANAGE,
         PermissionEnum.PARTNER_RESOLVE_APPLICATION,
         PermissionEnum.PARTNER_EMPTY_PRESENCE,
+
+        // PARTNER_TYPE (HOS-2336): admin-managed partner type catalog.
+        // Staff-only; the public catalog read needs no permission.
+        PermissionEnum.PARTNER_TYPE_VIEW,
+        PermissionEnum.PARTNER_TYPE_CREATE,
+        PermissionEnum.PARTNER_TYPE_UPDATE,
+        PermissionEnum.PARTNER_TYPE_DELETE,
+        PermissionEnum.PARTNER_TYPE_RESTORE,
 
         // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
         PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
@@ -1232,7 +1257,18 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // Mi cuenta self-edit (mirrors HOST)
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // OWNER_PROMOTION: the same six own-scoped permissions HOST holds, so a
+        // venue owner can manage the promotions of their venues (HOS-2270). They
+        // only gate the route; whether the plan includes promotions is the
+        // `create_promotions` entitlement, checked by the listing-access pipeline.
+        PermissionEnum.OWNER_PROMOTION_CREATE,
+        PermissionEnum.OWNER_PROMOTION_VIEW_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_OWN,
+        PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_OWN,
+        PermissionEnum.OWNER_PROMOTION_RESTORE_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN
     ],
 
     [RoleEnum.EXPERIENCE_OWNER]: [

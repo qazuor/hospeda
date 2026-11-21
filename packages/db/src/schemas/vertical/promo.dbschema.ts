@@ -17,6 +17,15 @@ import { subscriptions } from './subscription.dbschema.ts';
 export const PROMO_DISCOUNT_KINDS = ['PERCENTAGE', 'FIXED'] as const;
 export const PROMO_DURATION_KINDS = ['FIRST_CHARGE', 'N_CHARGES', 'FOREVER'] as const;
 export const PROMO_EFFECT_KINDS = ['DISCOUNT', 'TRIAL_EXTENSION'] as const;
+/**
+ * Why a writer ended a redemption before its charges ran out (HOS-2352):
+ * `DOWNGRADE` is a queued customer downgrade, `PLAN_RETIREMENT` is the S37
+ * retirement migration. Exhaustion by charges is not an end reason: it is
+ * derived from `initial_charges` and the per-charge ledger.
+ */
+export const PROMO_REDEMPTION_END_REASONS = ['DOWNGRADE', 'PLAN_RETIREMENT'] as const;
+/** One value of {@link PROMO_REDEMPTION_END_REASONS}. */
+export type PromoRedemptionEndReason = (typeof PROMO_REDEMPTION_END_REASONS)[number];
 
 /**
  * Promotion code with a unique code, positive quota, valid time window and
@@ -107,6 +116,10 @@ export const promoCodes = pgTable(
  * A user's redemption of a promotion on a subscription (AC:B3:29; ESQ:6).
  * Each promo/user pair is unique; remaining charges are nonnegative or null
  * for an unlimited duration. FKs link the code, user and subscription.
+ *
+ * HOS-2352: `initial_charges`, `ended_at` and `ended_reason` let the
+ * reconciliation rebuild which promos were in force when a past charge was made,
+ * because `remaining_charges` only holds today's counter.
  */
 export const promoRedemptions = pgTable(
     'promo_redemption',
@@ -125,7 +138,18 @@ export const promoRedemptions = pgTable(
         /** suscripción */
         subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
         /** cobros_restantes */
-        remainingCharges: integer('remaining_charges')
+        remainingCharges: integer('remaining_charges'),
+        /**
+         * Charges the redemption had available when the per-charge ledger
+         * (`promo_redemption_charge`) started covering it: the code's duration at
+         * redeem time, or, for a redemption that predates the ledger, its counter
+         * when the ledger was created (HOS-2352). NULL = unlimited.
+         */
+        initialCharges: integer('initial_charges'),
+        /** Instant a writer ended the redemption before its charges ran out (HOS-2352). */
+        endedAt: timestamp('ended_at', { withTimezone: true }),
+        /** Why it was ended; one of PROMO_REDEMPTION_END_REASONS (HOS-2352). */
+        endedReason: varchar('ended_reason', { length: 32 })
     },
     (t) => ({
         codeUserUnique: unique('uq_promo_redemption_code_user').on(t.promoCodeId, t.userId),
@@ -136,6 +160,18 @@ export const promoRedemptions = pgTable(
         subscriptionOrUnlimitedCheck: check(
             'ck_promo_redemption_subscription_or_unlimited',
             sql`${t.subscriptionId} IS NOT NULL OR ${t.remainingCharges} IS NULL`
+        ),
+        initialChargesCheck: check(
+            'ck_promo_redemption_initial_charges',
+            sql`${t.initialCharges} IS NULL OR ${t.initialCharges} >= 0`
+        ),
+        endedTogetherCheck: check(
+            'ck_promo_redemption_ended_together',
+            sql`(${t.endedAt} IS NULL) = (${t.endedReason} IS NULL)`
+        ),
+        endedReasonCheck: check(
+            'ck_promo_redemption_ended_reason',
+            sql`${t.endedReason} IS NULL OR ${t.endedReason} IN (${quotedList(PROMO_REDEMPTION_END_REASONS)})`
         )
     })
 );

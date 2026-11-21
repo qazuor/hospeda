@@ -1,0 +1,29 @@
+.actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex: none;
+}
+
+.primary,
+.whatsapp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 44px;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.whatsapp {
+    inline-size: 44px;
+    background: var(--channel-whatsapp);
+    color: var(--channel-whatsapp-foreground);
+}
+
+.whatsapp:hover {
+    background: var(--channel-whatsapp-hover);
+}

@@ -81,7 +81,18 @@ describe('TEST:B6:2 AC:B6:2 a chargeback resolves the hung payment without refun
                 .select({ key: idempotencyKeys.key })
                 .from(idempotencyKeys)
                 .where(eq(idempotencyKeys.subjectId, seeded.refundId));
-            const actionable = await listActionableReconciliationMarks({ page: 1, pageSize: 100 });
+            // The integration files share one database: page through every actionable mark,
+            // since other files' open marks can push this one past the first page.
+            const actionable: {
+                items: Awaited<
+                    ReturnType<typeof listActionableReconciliationMarks>
+                >['items'][number][];
+            } = { items: [] };
+            for (let page = 1; ; page++) {
+                const batch = await listActionableReconciliationMarks({ page, pageSize: 100 });
+                actionable.items.push(...batch.items);
+                if (batch.items.length < 100) break;
+            }
             expect(result).toMatchObject({ status: 'FAILED', outcome: 'CHARGED_BACK', calls: [] });
             expect(refund?.status).toBe('FAILED');
             expect(calls).toBeUndefined();

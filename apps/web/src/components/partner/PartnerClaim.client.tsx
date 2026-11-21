@@ -35,6 +35,7 @@ type ClaimState =
     | 'already-claimed'
     | 'account-already-owns'
     | 'email-mismatch'
+    | 'wrong-account'
     | 'error';
 
 interface ClaimLink {
@@ -53,6 +54,7 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
     const [state, setState] = useState<ClaimState>('loading');
     const [needsSignInLink, setNeedsSignInLink] = useState(false);
     const claimStartedRef = useRef(false);
+    const accountCheckedRef = useRef(false);
     const accountEmail = user?.email ?? null;
 
     useEffect(() => {
@@ -81,12 +83,31 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
 
     useEffect(() => {
         if (!claimLink || permissions === null) return;
+        if (user && accountCheckedRef.current) return;
+        setState('loading');
         if (user) {
-            setState('confirm');
+            // The check runs once per page: a later session refresh (e.g. after the claim
+            // itself) must not send a finished claim back through it.
+            accountCheckedRef.current = true;
+            // HOS-2353: warn about a different account BEFORE the claim click. The 403 on
+            // the claim itself stays as the safety net.
+            void partnersApi
+                .checkClaim(claimLink)
+                .then((result) => {
+                    if (result.ok) {
+                        setState(result.data.emailMatches ? 'confirm' : 'wrong-account');
+                        return;
+                    }
+                    const { status, reason } = result.error;
+                    if (status === 404 || status === 400) setState('not-found');
+                    else if (status === 409 && reason === 'PARTNER_ALREADY_CLAIMED')
+                        setState('already-claimed');
+                    else setState('error');
+                })
+                .catch(() => setState('error'));
             return;
         }
         let active = true;
-        setState('loading');
         void partnerClaimsPublicApi
             .lookup(claimLink)
             .then((result) => {
@@ -179,6 +200,7 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
         'already-claimed': t('partners.claim.alreadyClaimed'),
         'account-already-owns': t('partners.claim.accountAlreadyOwns'),
         'email-mismatch': t('partners.claim.emailMismatch'),
+        'wrong-account': t('partners.claim.wrongAccount'),
         error: t('partners.claim.genericError')
     };
     const supportState =
@@ -245,7 +267,7 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                     {t('partners.claim.confirmCta')}
                 </button>
             )}
-            {state === 'email-mismatch' && accountEmail !== null && (
+            {(state === 'email-mismatch' || state === 'wrong-account') && accountEmail !== null && (
                 <>
                     <p className={styles.message}>
                         {t('partners.claim.emailMismatchSignedInAs', undefined, {

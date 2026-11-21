@@ -5,21 +5,18 @@
  * @module test/mcp/portal/build-portal-url
  */
 
-import { LISTING_SECTIONS, LISTING_VERTICALS } from '@repo/schemas';
-import { describe, expect, it } from 'vitest';
 import {
     buildPortalUrl,
-    portalDestinationTemplate
-} from '../../../src/mcp/portal/build-portal-url';
-import {
-    isNonIdentifyingDestination,
-    PORTAL_DESTINATION_LABELS
-} from '../../../src/mcp/portal/portal-destination';
-import {
     EDITOR_SECTION_SLUGS,
+    isNonIdentifyingDestination,
+    PORTAL_DESTINATION_LABELS,
     PORTAL_ROUTE_TEMPLATES,
-    type PortalDestination
-} from '../../../src/mcp/portal/portal-routes';
+    type PortalDestination,
+    portalDestinationTemplate,
+    UNRELEASED_EDITOR_SECTIONS
+} from '@repo/portal-routes';
+import { LISTING_SECTIONS, LISTING_VERTICALS } from '@repo/schemas';
+import { describe, expect, it } from 'vitest';
 
 const SITE = 'https://hospeda.test';
 const ID = '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7';
@@ -148,6 +145,11 @@ describe('buildPortalUrl', () => {
             ['benefit usages', { kind: 'benefitUsages' }, 'mi-cuenta/usos-de-beneficio'],
             ['provider panel', { kind: 'providerPanel' }, 'mi-cuenta/proveedor'],
             ['AI assistants', { kind: 'aiAssistants' }, 'mi-cuenta/asistentes-ia'],
+            [
+                'AI assistants history',
+                { kind: 'aiAssistantsHistory' },
+                'mi-cuenta/asistentes-ia/historial'
+            ],
             ['FAQ', { kind: 'faq' }, 'preguntas-frecuentes'],
             ['contact', { kind: 'contact' }, 'contacto']
         ];
@@ -176,6 +178,22 @@ describe('buildPortalUrl', () => {
             ).toBe(`${SITE}/pt/mi-cuenta/complementos/`);
         });
 
+        it.each(['es', 'en', 'pt'] as const)('prefixes the %s locale', (locale) => {
+            expect(buildPortalUrl({ destination: { kind: 'addons' }, siteUrl: SITE, locale })).toBe(
+                `${SITE}/${locale}/mi-cuenta/complementos/`
+            );
+        });
+
+        it('falls back to es when no locale is given', () => {
+            expect(
+                buildPortalUrl({
+                    destination: { kind: 'addons' },
+                    siteUrl: SITE,
+                    locale: undefined
+                })
+            ).toBe(`${SITE}/es/mi-cuenta/complementos/`);
+        });
+
         it('refuses an empty site URL', () => {
             expect(() => urlOf({ kind: 'addons' }, '  ')).toThrow();
         });
@@ -185,7 +203,11 @@ describe('buildPortalUrl', () => {
 describe('the route map', () => {
     it('has a slug for every catalog section of every vertical, and no stale one', () => {
         for (const vertical of LISTING_VERTICALS) {
-            const catalogIds = LISTING_SECTIONS[vertical].map((section) => section.id).sort();
+            const unreleased: readonly string[] = UNRELEASED_EDITOR_SECTIONS[vertical];
+            const catalogIds = LISTING_SECTIONS[vertical]
+                .map((section) => section.id)
+                .filter((id) => !unreleased.includes(id))
+                .sort();
             expect(Object.keys(EDITOR_SECTION_SLUGS[vertical]).sort()).toEqual(catalogIds);
         }
     });
@@ -212,8 +234,13 @@ describe('the route map', () => {
                 'benefitUsages',
                 'providerPanel',
                 'aiAssistants',
+                'aiAssistantsHistory',
                 'faq',
-                'contact'
+                'contact',
+                'partnerPanel',
+                'helpLanding',
+                'helpArticle',
+                'page'
             ].sort()
         );
     });

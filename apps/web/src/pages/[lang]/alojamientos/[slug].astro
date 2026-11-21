@@ -18,8 +18,9 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import { formatPhotoCredit } from '@/lib/photo-credit';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
+import MobileBookingSummary from '@/components/accommodation/MobileBookingSummary.astro';
 import Description from '@/components/accommodation/Description.astro';
-import VideoSection from '@/components/accommodation/VideoSection.astro';
+import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
 import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
@@ -37,6 +38,8 @@ import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
 import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
+import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
+import { ListingContactPanel } from '@/components/listing/contact/ListingContactPanel.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
@@ -357,6 +360,23 @@ if (bookmarkCountResult.status === 'fulfilled') {
 // inherits, so the WhatsApp upsell audience is always a free-tier tourist — point
 // at the tourist pricing page, not the owner one (BETA-201).
 const whatsappPlansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
+const panelId = 'listing-contact-panel';
+const contactPrice = {
+    amount: accommodation.price?.price ?? null,
+    currency: accommodation.price?.currency ?? null,
+    unitLabelKey: 'accommodations.detail.listingContact.units.perNight',
+    onRequest: (accommodation.price?.price ?? 0) <= 0,
+};
+const contactAccommodation = {
+    id: accommodation.id,
+    deletedAt: accommodationDeletedAt,
+    type: accommodation.type,
+    destinationId: accommodation.destination.id,
+    destinationName: accommodation.destination.name,
+    price: contactPrice.amount,
+    currency: contactPrice.currency,
+    ownerId: accommodation.owner.id,
+};
 
 // --- Gallery images for ImageGallery island ---
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
@@ -555,14 +575,15 @@ const faqSections = accommodation.faqs.map((faq) => ({
         <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqSetInLanguage(accommodation.faqs, locale)} />
     )}
 
-    <Breadcrumbs
-        slot="breadcrumbs"
-        locale={locale}
-        items={[
-            { label: t('accommodations.title'), path: 'alojamientos' },
-            { label: accommodation.name }
-        ]}
-    />
+    <div slot="breadcrumbs" class="acc-detail-breadcrumbs">
+        <Breadcrumbs
+            locale={locale}
+            items={[
+                { label: t('accommodations.title'), path: 'alojamientos' },
+                { label: accommodation.name }
+            ]}
+        />
+    </div>
 
     <Fragment slot="page-header">
         <DetailHeader
@@ -570,6 +591,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             lang={locale}
             accommodationId={accommodation.id}
             bookmarkCount={bookmarkCount}
+            hasMobileGalleryControls
         />
     </Fragment>
 
@@ -580,9 +602,25 @@ const faqSections = accommodation.faqs.map((faq) => ({
             variant="detail"
             locale={locale}
             viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
+            mobile={{
+                backHref: buildUrl({ locale, path: 'alojamientos' }),
+                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name },
+                favorite: { entityId: accommodation.id, entityType: 'ACCOMMODATION', variant: 'standalone' }
+            }}
             client:load
         />
         <QuickFacts extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
+        <MobileBookingSummary
+            listingId={accommodation.id}
+            panelId={panelId}
+            locale={locale}
+            price={contactPrice}
+            minNights={accommodation.policies?.minNights}
+            maxNights={accommodation.policies?.maxNights}
+            owner={accommodation.owner}
+            ownerJoinedAt={result.data.owner?.createdAt ?? null}
+            hasWhatsapp={accommodation.hasWhatsapp}
+        />
         {accommodation.richDescription ? (
             <section class="description-rich">
                 {accommodation.summary && (
@@ -600,13 +638,14 @@ const faqSections = accommodation.faqs.map((faq) => ({
              photo mosaic above — mixing videos into ImageGallery/`/fotos` is
              exactly where they went unnoticed before this ticket. Renders
              nothing when there are no APPROVED, provider-recognized videos. -->
-        <VideoSection videos={accommodation.media.videos} locale={locale} />
+        <ListingVideoSection videos={accommodation.media.videos} locale={locale} scope="accommodation" />
 
         <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram
              the host filled in via the editor's contact form, previously captured
              but never shown on the public page). The existing WhatsApp button
              (sidebar, OwnerCard) is untouched — this block never carries that number. -->
         <AccommodationContactBlock
+            listingId={accommodation.id}
             contactInfo={accommodation.contactInfo}
             socialNetworks={accommodation.socialNetworks}
             locale={locale}
@@ -646,7 +685,8 @@ const faqSections = accommodation.faqs.map((faq) => ({
         <WhatsNearbySection pointsOfInterest={nearbyPois} locale={locale} />
     </div>
 
-    <!-- Related content carousels (outside two-column grid, full width) -->
+    <Fragment slot="after-content">
+    <!-- Full-width related content after the main article and host sidebar. -->
     {similarCards.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.similar')} ariaLabel={t('accommodations.detail.related.similar')} lang={locale} count={similarCards.length}>
             {similarCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
@@ -682,6 +722,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item, locale })} locale={locale} />)}
         </RelatedCarousel>
     )}
+    </Fragment>
 
     <!-- Internal-entry analytics event (HOS-2119 T-076): same-origin referrer only. -->
     <InternalEntryTracker
@@ -722,6 +763,30 @@ const faqSections = accommodation.faqs.map((faq) => ({
          persists across /alojamientos/* per clearCompareModeIfOutsideSection),
          and is fixed-position so its place in the DOM tree doesn't matter. -->
     <CompareBar locale={locale} client:idle />
+    <ListingContactBar
+        client:idle
+        vertical="accommodation"
+        listingId={accommodation.id}
+        locale={locale}
+        price={contactPrice}
+        hasWhatsapp={accommodation.hasWhatsapp}
+        primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
+        panelId={panelId}
+    />
+    <ListingContactPanel
+        client:idle
+        panelId={panelId}
+        accommodation={contactAccommodation}
+        accommodationName={accommodation.name}
+        ownerName={accommodation.owner.name}
+        price={contactPrice}
+        hasWhatsapp={accommodation.hasWhatsapp}
+        whatsappPlansHref={whatsappPlansHref}
+        phone={accommodation.contactInfo?.phone}
+        email={accommodation.contactInfo?.email}
+        capacity={accommodation.extraInfo?.capacity}
+        locale={locale}
+    />
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">
@@ -745,18 +810,10 @@ const faqSections = accommodation.faqs.map((faq) => ({
             <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} lang={locale}>
                 <ContactHost
                     client:idle
-                    accommodation={{
-                        id: accommodation.id,
-                        deletedAt: accommodationDeletedAt,
-                        type: accommodation.type,
-                        destinationId: accommodation.destination.id,
-                        destinationName: accommodation.destination.name,
-                        price: accommodation.price?.price ?? null,
-                        currency: accommodation.price?.currency ?? null,
-                        ownerId: accommodation.owner.id
-                    }}
+                    accommodation={contactAccommodation}
                     locale={locale}
                     initialMessage={prefilledMessage}
+                    origin="sidebar"
                 />
                 {accommodation.hasWhatsapp && (
                     <WhatsAppContact
@@ -793,7 +850,17 @@ const faqSections = accommodation.faqs.map((faq) => ({
     </Fragment>
 </DetailLayout>
 
+<script>
+    import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-links';
+    initContactLinkTracking({ document });
+</script>
+
 <style>
+    @media (max-width: 767px) {
+        :global(.wave-header__breadcrumbs:has(.acc-detail-breadcrumbs)) {
+            display: none;
+        }
+    }
     .acc-detail {
         display: flex;
         flex-direction: column;

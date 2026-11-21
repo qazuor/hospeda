@@ -82,13 +82,12 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
             const mutations = [
                 vi.spyOn(fixture.provider, 'authorize'),
                 vi.spyOn(fixture.provider, 'charge'),
-                vi.spyOn(fixture.provider, 'chargeOnce'),
+                vi.spyOn(fixture.provider, 'requestOneTimePayment'),
                 vi.spyOn(fixture.provider, 'changeAmount'),
                 vi.spyOn(fixture.provider, 'pause'),
                 vi.spyOn(fixture.provider, 'resume'),
                 vi.spyOn(fixture.provider, 'cancel'),
-                vi.spyOn(fixture.provider, 'refund'),
-                vi.spyOn(fixture.provider, 'refundOrder')
+                vi.spyOn(fixture.provider, 'refund')
             ];
             const authorizationBefore = await fixture.provider.readAuthorization({
                 authorizationId: fixture.started.authorizationId
@@ -244,7 +243,8 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, seeded.fixture.started.subscriptionId));
             expect(predecessor?.status).toBe('CANCELLED');
-            expect(predecessor?.succeededById).toBe(successor.subscriptionId);
+            // HOS-2351: S31 drops the succession like S3, without S18, so no pointer is written.
+            expect(predecessor?.succeededById).toBeNull();
         }
     );
 
@@ -307,7 +307,8 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, seeded.fixture.started.subscriptionId));
             expect(before?.status).toBe('CANCEL_SCHEDULED');
-            expect(before?.succeededById).toBe(successor.subscriptionId);
+            // HOS-2351: an open succession carries no predecessor pointer.
+            expect(before?.succeededById).toBeNull();
             await seeded.fixture.provider.chargeBack({ chargeId: seeded.chargeId });
             const result = await scheduledChargebackDetection({ fixture: seeded.fixture }).detect({
                 payment: seeded.payment,

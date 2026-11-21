@@ -30,6 +30,24 @@
     background-color: color-mix(in oklab, var(--destructive) 85%, black);
 }
 
+/* HOS-2252/2257 "opens later today" state. Solid amber, darkened toward black
+ * so the constant white text clears 4.5:1 (AA) in both themes; the accent
+ * orange does not reach it. Measured (OKLab mix, WCAG vs oklch(0.98)): ~6.3:1 light
+ * (--warning L0.75), ~5.7:1 dark (L0.78). */
+.opensSoon {
+    background-color: color-mix(in oklab, var(--warning) 65%, black);
+}
+
+/* Detail-page header: flows in the badges row instead of overlaying a photo,
+ * matching the 13px size of the sibling header badges. */
+.inline {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 14px;
+    font-size: 13px;
+}
+
 @media (max-width: 767px) {
     /* On mobile the featured badge takes bottom-left, so the open/closed
        badge moves to bottom-right to stay opposite it (BETA-117). */

@@ -11,6 +11,42 @@ import {
 import type { DrizzleClient } from '../../types.ts';
 import { platformSettingsModel } from '../platform/platform-settings.model.ts';
 
+function asRecord(value: unknown): Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {};
+}
+
+function unionOf(...lists: readonly unknown[]): unknown[] {
+    return [...new Set(lists.flatMap((list) => (Array.isArray(list) ? list : [])))];
+}
+
+/**
+ * Merges the measurements stored while the run was running with the ones it closes with. The
+ * closing record wins on every field, except that the `writeKeys` (and the `providerIds`) recorded
+ * apart are kept: they are never erased by a record that did not carry them.
+ */
+function mergeMeasurements(args: {
+    readonly stored: unknown;
+    readonly closing: Record<string, unknown>;
+}): Record<string, unknown> {
+    const stored = asRecord(args.stored);
+    const merged: Record<string, unknown> = { ...stored };
+    for (const [id, closing] of Object.entries(args.closing)) {
+        const before = asRecord(stored[id]);
+        const after = asRecord(closing);
+        const writeKeys = unionOf(before['writeKeys'], after['writeKeys']);
+        const providerIds = unionOf(before['providerIds'], after['providerIds']);
+        merged[id] = {
+            ...before,
+            ...after,
+            ...(writeKeys.length > 0 ? { writeKeys } : {}),
+            ...(providerIds.length > 0 ? { providerIds } : {})
+        };
+    }
+    return merged;
+}
+
 /** Persistence of the provider watch battery's runs and accepted baselines (HOS-1512). */
 export class ProviderWatchRunModel {
     /**
@@ -20,7 +56,8 @@ export class ProviderWatchRunModel {
      *
      * @param input.account - The account the run targets
      * @param input.startedAt - The run's instant
-     * @param input.consumeAuthorization - Consume the authorization with exactly these values for this run
+     * @param input.consumeAuthorization - Take the authorization with exactly these values for this
+     *   run: consumed when above 0, taken for the run's market day when 0 (B1)
      * @param input.abandonRunsStartedBefore - In the same transaction, every `running` row of this
      *   account that started before this instant is past its deadline: it is closed as `failed`
      *   with reason `abandoned`. Its measurements are left untouched, so the provider ids it
@@ -36,10 +73,16 @@ export class ProviderWatchRunModel {
             readonly month: string;
             readonly maxChargeMinor: number;
             readonly accountId: string;
+            /** The run's market day: what an authorization of 0 is taken for (B1). */
+            readonly day: string;
         };
         readonly abandonRunsStartedBefore?: Date;
         readonly tx?: DrizzleClient;
-    }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
+    }): Promise<{
+        readonly runId: string;
+        readonly authorizationConsumed: boolean;
+        readonly authorizationMiss?: 'DAY_TAKEN' | 'CHANGED';
+    }> {
         const work = async (tx: DrizzleClient) => {
             if (input.abandonRunsStartedBefore !== undefined) {
                 await tx
@@ -69,8 +112,27 @@ export class ProviderWatchRunModel {
             if (input.consumeAuthorization === undefined) {
                 return { runId: row.id, authorizationConsumed: false };
             }
+            const { month, maxChargeMinor, accountId, day } = input.consumeAuthorization;
+            // Owner decision on B1 (2026-11-19): 0 covers one run a day, above 0 is one-shot.
+            if (maxChargeMinor === 0) {
+                const { taken, miss } =
+                    await platformSettingsModel.takeProviderWatchAuthorizationDay({
+                        month,
+                        accountId,
+                        day,
+                        runId: row.id,
+                        tx
+                    });
+                return {
+                    runId: row.id,
+                    authorizationConsumed: taken,
+                    ...(miss === undefined ? {} : { authorizationMiss: miss })
+                };
+            }
             const { consumed } = await platformSettingsModel.consumeProviderWatchAuthorization({
-                ...input.consumeAuthorization,
+                month,
+                maxChargeMinor,
+                accountId,
                 runId: row.id,
                 consumedAt: input.startedAt,
                 tx
@@ -91,6 +153,7 @@ export class ProviderWatchRunModel {
      * @param input.measurementId - The measurement
      * @param input.providerIds - Ids the provider answered
      * @param input.writeKeys - Keys (also the objects' `external_reference`) of writes sent
+     * @param input.ledger - The money ledger as it stands, set in the same statement
      * @param input.tx - Only for tests; production calls it with none, as its own statements
      * @throws When no running run has that id
      */
@@ -99,36 +162,42 @@ export class ProviderWatchRunModel {
         readonly measurementId: string;
         readonly providerIds?: readonly string[];
         readonly writeKeys?: readonly string[];
+        readonly ledger?: { readonly charged: number; readonly refunded: number };
         readonly tx?: DrizzleClient;
     }): Promise<void> {
+        const measurement = input.measurementId;
         const fields = [
             ['providerIds', input.providerIds ?? []],
             ['writeKeys', input.writeKeys ?? []]
         ] as const;
+        // ONE statement: the ids, the keys and the ledger land together or not at all, so a crash
+        // after money moved never leaves a ledger that lags behind its keys.
+        let measurements = sql`${providerWatchRuns.measurements} || jsonb_build_object(${measurement}::text, COALESCE(${providerWatchRuns.measurements} -> ${measurement}, '{}'::jsonb))`;
+        let touchesMeasurements = false;
         for (const [field, values] of fields) {
             if (values.length === 0) continue;
-            const measurement = input.measurementId;
+            touchesMeasurements = true;
             const added = JSON.stringify(values);
-            const rows = await (input.tx ?? getDb())
-                .update(providerWatchRuns)
-                .set({
-                    measurements: sql`jsonb_set(
-                        ${providerWatchRuns.measurements} || jsonb_build_object(${measurement}::text, COALESCE(${providerWatchRuns.measurements} -> ${measurement}, '{}'::jsonb)),
-                        ARRAY[${measurement}::text, ${field}::text],
-                        COALESCE(${providerWatchRuns.measurements} -> ${measurement} -> ${field}, '[]'::jsonb) || ${added}::jsonb,
-                        true
-                    )`
-                })
-                .where(
-                    and(
-                        eq(providerWatchRuns.id, input.runId),
-                        eq(providerWatchRuns.outcome, 'running')
-                    )
-                )
-                .returning({ id: providerWatchRuns.id });
-            if (rows.length !== 1) {
-                throw new Error(`provider_watch_run ${input.runId} is not a running run`);
-            }
+            measurements = sql`jsonb_set(
+                ${measurements},
+                ARRAY[${measurement}::text, ${field}::text],
+                COALESCE(${providerWatchRuns.measurements} -> ${measurement} -> ${field}, '[]'::jsonb) || ${added}::jsonb,
+                true
+            )`;
+        }
+        if (!touchesMeasurements && input.ledger === undefined) return;
+        const rows = await (input.tx ?? getDb())
+            .update(providerWatchRuns)
+            .set({
+                ...(touchesMeasurements ? { measurements } : {}),
+                ...(input.ledger === undefined ? {} : { ledger: input.ledger })
+            })
+            .where(
+                and(eq(providerWatchRuns.id, input.runId), eq(providerWatchRuns.outcome, 'running'))
+            )
+            .returning({ id: providerWatchRuns.id });
+        if (rows.length !== 1) {
+            throw new Error(`provider_watch_run ${input.runId} is not a running run`);
         }
     }
 
@@ -155,22 +224,46 @@ export class ProviderWatchRunModel {
         readonly alerts: unknown[];
         readonly tx?: DrizzleClient;
     }): Promise<SelectProviderWatchRun> {
-        const [row] = await (input.tx ?? getDb())
-            .update(providerWatchRuns)
-            .set({
-                finishedAt: input.finishedAt,
-                outcome: input.outcome,
-                reason: input.reason,
-                measurements: input.measurements,
-                ledger: input.ledger,
-                alerts: input.alerts
-            })
-            .where(
-                and(eq(providerWatchRuns.id, input.id), eq(providerWatchRuns.outcome, 'running'))
-            )
-            .returning();
-        if (!row) throw new Error(`provider_watch_run ${input.id} is not an open run`);
-        return row;
+        const work = async (executor: DrizzleClient): Promise<SelectProviderWatchRun> => {
+            // The in-memory record carries no write keys: they were persisted before each send and
+            // are the only way to find an object whose answer was lost. Merge, never overwrite.
+            // FOR UPDATE: the read and the update are one atomic step, so a progress write cannot
+            // land between them and be overwritten by a merge of a stale copy.
+            const [stored] = await executor
+                .select({ measurements: providerWatchRuns.measurements })
+                .from(providerWatchRuns)
+                .where(
+                    and(
+                        eq(providerWatchRuns.id, input.id),
+                        eq(providerWatchRuns.outcome, 'running')
+                    )
+                )
+                .limit(1)
+                .for('update');
+            const [row] = await executor
+                .update(providerWatchRuns)
+                .set({
+                    finishedAt: input.finishedAt,
+                    outcome: input.outcome,
+                    reason: input.reason,
+                    measurements: mergeMeasurements({
+                        stored: stored?.measurements,
+                        closing: input.measurements
+                    }),
+                    ledger: input.ledger,
+                    alerts: input.alerts
+                })
+                .where(
+                    and(
+                        eq(providerWatchRuns.id, input.id),
+                        eq(providerWatchRuns.outcome, 'running')
+                    )
+                )
+                .returning();
+            if (!row) throw new Error(`provider_watch_run ${input.id} is not an open run`);
+            return row;
+        };
+        return input.tx ? work(input.tx) : getDb().transaction((tx) => work(tx as DrizzleClient));
     }
 
     /**
@@ -188,6 +281,31 @@ export class ProviderWatchRunModel {
             .select()
             .from(providerWatchRuns)
             .where(eq(providerWatchRuns.id, input.id))
+            .limit(1);
+        return row ?? null;
+    }
+
+    /**
+     * The run that recorded a provider id, if any (HOS-1512, owner decision on the webhook noise):
+     * the webhook drops the notice of an authorization the battery created, and only of one it
+     * RECORDED. The ids are the `providerIds` a run persists per measurement, as each write
+     * answers (`appendProgress`) and when it closes, so a run that died midway still counts.
+     *
+     * @param input.providerId - The provider id the notice names
+     * @param input.tx - Optional transaction
+     * @returns The run id, or `null` when no run recorded it
+     */
+    async findRunRecordingProviderId(input: {
+        readonly providerId: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ readonly runId: string } | null> {
+        const [row] = await (input.tx ?? getDb())
+            .select({ runId: providerWatchRuns.id })
+            .from(providerWatchRuns)
+            .where(
+                sql`jsonb_path_exists(${providerWatchRuns.measurements}, '$.*.providerIds[*] ? (@ == $id)', jsonb_build_object('id', ${input.providerId}::text))`
+            )
+            .orderBy(desc(providerWatchRuns.startedAt))
             .limit(1);
         return row ?? null;
     }

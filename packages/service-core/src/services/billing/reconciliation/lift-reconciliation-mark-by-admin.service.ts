@@ -13,6 +13,7 @@ import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from
 import { type Actor, ServiceError } from '../../../types';
 import { isSystemActor } from '../../../utils/system-actor.js';
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger.js';
+import { isHeldChargeMark } from './held-charge-mark.js';
 import { resolveHungPaymentsWithoutRefund } from './hung-payment-resolution.js';
 import { liftReconciliationMark } from './lift-reconciliation-mark.service.js';
 import type { HangablePayment } from './reconciliation-mark-payments.port.js';
@@ -26,7 +27,8 @@ export const LIFT_RECONCILIATION_MARK_REJECTIONS = [
     'MARK_ALREADY_LIFTED',
     'MARK_VERSION_CONFLICT',
     'MARK_HAS_UNRESOLVED_PAYMENTS',
-    'MARK_PAYMENT_NOT_HUNG'
+    'MARK_PAYMENT_NOT_HUNG',
+    'MARK_CLOSES_ONLY_BY_REFUND'
 ] as const;
 
 /** A typed rejection of the admin S15 action. */
@@ -100,7 +102,8 @@ function authorize(
 
 /**
  * ACC:7 performs S15 by lifting one mark. Named payments are resolved without refund in the same
- * transaction; any unnamed unresolved payment still blocks S15. It never refunds money or changes
+ * transaction; any unnamed unresolved payment still blocks S15. A page-charge mark of a one-time
+ * addon (HOS-2179 D1) refuses that resolution: its held payment closes only through a refund. It never refunds money or changes
  * the row status (DEC-RF-002). Step 3 authorization runs inside the transaction.
  */
 export async function liftReconciliationMarkByAdmin(
@@ -126,6 +129,15 @@ export async function liftReconciliationMarkByAdmin(
                 ])
             ).values()
         ];
+        // A page-charge mark holds the charge's own payment row (HOS-2179 D1): that money is
+        // closed only by refunding it (owner, option 3), never resolved here without a refund.
+        if (resolvedWithoutRefund.length > 0 && isHeldChargeMark(mark))
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'This mark holds a charge that is closed only by refunding it',
+                undefined,
+                'MARK_CLOSES_ONLY_BY_REFUND'
+            );
         if (resolvedWithoutRefund.length > 0)
             await resolveHungPaymentsWithoutRefund({
                 tx,

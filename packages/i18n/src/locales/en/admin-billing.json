@@ -145,7 +145,8 @@
             "17": "Open mark escalation",
             "18": "Credited-payment checks window",
             "19": "Reconciliation summary window",
-            "20": "Grace-ending reminder milestones"
+            "20": "Grace-ending reminder milestones",
+            "21": "One-time add-on payment page"
         },
         "fields": {
             "days": "Days",
@@ -159,7 +160,9 @@
             "noticeDays": "Notice days",
             "contactDays": "Contacts (days before)",
             "hoursRemaining": "Hours remaining",
-            "minutes": "Minutes"
+            "minutes": "Minutes",
+            "pageMinutes": "Payment page minutes",
+            "windowMarginMinutes": "Window margin (minutes)"
         },
         "listHelp": "Comma-separated",
         "noValue": "No published value: it cannot be changed here.",
@@ -729,9 +732,10 @@
         },
         "providerWatchAuthorization": {
             "title": "Provider watch: authorization",
-            "description": "Authorize ONE production run of the watch battery per month, for the exact amount its money-moving measurements add up to",
+            "description": "Authorize the month's production runs of the watch battery: one run when its measurements move money, one a day when they move none.",
             "hint": "The production run does not start without the authorization of the current month. An authorization covers ONE run: it is consumed when the run starts, and running again needs a new authorization. The amount is EXACTLY the sum of what the money-moving measurements declare: if it does not match, the run is refused before the authorization is consumed. It is also the cap of the WHOLE run. Refunds are tracked apart and never subtracted from what was charged.",
             "statusNone": "Not authorized",
+            "statusDaily": "Authorized for {month}: one run a day ({count} so far)",
             "statusActive": "Authorized for {month}, unused",
             "statusConsumed": "Used by run {runId}",
             "statusStale": "Expired ({month})",
@@ -746,15 +750,17 @@
             "maxChargeLabel": "Run amount, in ARS centavos (computed, not typed)",
             "maxChargeHint": "It is the exact sum of what the money-moving measurements declare, computed on the server. Check that it is the one you mean to authorize.",
             "save": "Authorize",
+            "confirmTitleDaily": "Authorize the daily runs",
             "confirmTitle": "Authorize one run",
             "confirmSave": "Authorize ONE run of {month} against the account {account}, for exactly {amount}? It is the sum of the money-moving measurements and also the cap of what the run may charge. The authorization is consumed when the run starts.",
+            "confirmSaveReadOnly": "Authorize the daily runs of {month} against the account {account}? The catalog has no money-moving measurement: the runs move no money (authorized amount: {amount}). Each may create objects that cannot charge (pending preapprovals, with no card) and cancels them in the same run. The authorization is not consumed: it covers one run a day until the month ends, and it stops covering them if a money-moving measurement appears. A manual run takes up that day's run: the scheduled one that day is skipped.",
             "cancel": "Cancel",
-            "invalidValue": "Enter a month as YYYY-MM and a whole maximum charge above zero.",
+            "invalidValue": "Enter a month as YYYY-MM and exactly the amount the catalog computes: the sum of the maximum charges of its money-moving measurements (0 when it has none).",
             "noWritePermission": "Only a SUPER_ADMIN can change this authorization.",
             "saveError": "Could not save the authorization. Please try again.",
             "expectedTitle": "Amount one run needs",
             "expectedValue": "{amount} ({minor} centavos): the sum of {count} money-moving measurements ({ids}).",
-            "noMoneyCatalog": "The catalog has no money-moving measurement for this account yet: there is nothing to authorize.",
+            "noMoneyCatalog": "The catalog has no money-moving measurement for this account: the runs move no money. Each may create objects that cannot charge (pending preapprovals, with no card) and cancels them in the same run. It is authorized with an amount of 0 and covers one run a day for the whole month. A manual run takes up that day's run: the scheduled one that day is skipped.",
             "previewError": "The amount one run needs could not be computed. Authorizing is not possible."
         },
         "providerWatchShapes": {
@@ -2151,7 +2157,7 @@
             "COBRO_DUPLICADO": "Duplicate charge",
             "COBRO_DEL_PERIODO_SIN_RESOLVER": "Period charge unresolved",
             "PAUSA_NO_APLICADA": "Pause not applied",
-            "ORDEN_PAGADA_SIN_INSTANCIA": "Paid order with no add-on activated",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "One-time payment charged with no active add-on",
             "IMPORTE_COBRADO_DE_MAS": "Overcharged amount"
         },
         "proposal": "System proposal",
@@ -2239,6 +2245,7 @@
             "title": "Lift this mark",
             "description": "Only this mark will be closed. Other marks on the same row remain open, and the subscription status will not change.",
             "withoutRefund": "Resolve without refund",
+            "requiresRefund": "This mark holds a charge that is closed only through a refund. Confirm the proposed refund (or record it with action 14); once it settles, the mark can be lifted.",
             "unresolvedNotice": "Some hung payments remain unresolved. To refund them, record the refund with action 14; if they are not refunded, mark them as resolved without refund.",
             "note": "Audit note (optional)",
             "confirm": "Lift",
@@ -2251,7 +2258,128 @@
                 "MARK_ALREADY_LIFTED": "The mark was already lifted.",
                 "MARK_VERSION_CONFLICT": "The mark changed since you opened it. Review it and confirm again.",
                 "MARK_HAS_UNRESOLVED_PAYMENTS": "Some hung payments remain unresolved.",
-                "MARK_PAYMENT_NOT_HUNG": "A selected payment is no longer an unresolved hung payment on this mark."
+                "MARK_PAYMENT_NOT_HUNG": "A selected payment is no longer an unresolved hung payment on this mark.",
+                "MARK_CLOSES_ONLY_BY_REFUND": "This mark holds a charge that is closed only by refunding it. It cannot be resolved without a refund."
+            }
+        }
+    },
+    "proposedRefunds": {
+        "title": "Proposed refunds",
+        "description": "Refunds the system proposed from a reconciliation mark. They wait for a person to confirm or decline them.",
+        "loading": "Loading proposed refunds...",
+        "error": "Proposed refunds could not be loaded.",
+        "retry": "Retry",
+        "empty": "No refunds are waiting for confirmation.",
+        "pagination": "Refund pagination",
+        "previous": "Previous",
+        "next": "Next",
+        "requestedAt": "Proposed on",
+        "amount": "Amount",
+        "payment": "Payment",
+        "status": "Status",
+        "statuses": {
+            "REQUESTED": "Waiting for confirmation",
+            "CONFIRMED": "Confirmed, no refund accepted by the provider"
+        },
+        "confirmedOnlyDecline": "This refund is already confirmed and cannot be confirmed again. It can only be declined and then answered through action 14.",
+        "origin": "Originating mark",
+        "noMark": "No mark was found for this payment.",
+        "markLifted": "lifted",
+        "markOpen": "open",
+        "marksLink": "See the open marks",
+        "confirm": {
+            "button": "Confirm and send",
+            "title": "Confirm the refund",
+            "description": "A refund of {{amount}} will be sent to the payment provider. It will be recorded under your name.",
+            "confirm": "Confirm and send",
+            "cancel": "Cancel",
+            "success": "Refund confirmed and sent.",
+            "outcomes": {
+                "SENT": "The provider accepted the refund.",
+                "AWAITING_PROVIDER_ANSWER": "Refund sent. The provider's answer is still missing.",
+                "NOT_ACCEPTED_KEPT_CONFIRMED": "The provider has not accepted it yet. It stays confirmed so it can be retried.",
+                "PROVIDER_REJECTED_KEPT_CONFIRMED": "The provider rejected it for now. It stays confirmed so it can be retried.",
+                "PROVIDER_REJECTED_FAILED": "The provider rejected it and the refund failed.",
+                "CHARGED_BACK": "The charge was already charged back. The refund was closed."
+            }
+        },
+        "decline": {
+            "button": "Decline",
+            "title": "Decline the refund",
+            "description": "The refund of {{amount}} will be declined. The payment does not change and nothing is sent to the provider.",
+            "confirmedWarning": "This refund was already confirmed: check the MP panel to make sure no refund went out before declining.",
+            "confirm": "Decline refund",
+            "cancel": "Cancel",
+            "success": "Refund declined.",
+            "successVerify": "Refund declined. Before settling it by hand (action 14), check the MP panel to make sure no refund went out.",
+            "closesHeldCharge": "This refund cannot be declined: it refunds a charge held by a mark. It closes by confirming it, through a chargeback, or by recording it with action 14."
+        },
+        "rejections": {
+            "REFUND_NOT_FOUND": "The refund no longer exists.",
+            "REFUND_SOURCE_NOT_FOUND": "The refund's payment was not found.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "You do not have permission for this action.",
+            "REFUND_NOT_OPEN": "The refund is no longer open. Refresh the list.",
+            "REFUND_STATE_CHANGED": "The refund changed while you were reviewing it. Refresh the list.",
+            "PAYMENT_NOT_REFUNDABLE": "This payment does not accept a refund.",
+            "REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE": "This payment is not refunded through the provider.",
+            "RETAINED_PAYMENT_SUCCESSION_OPEN": "The retained payment has an open succession.",
+            "REFUND_EXCEEDS_BALANCE": "The refund exceeds the payment's available balance.",
+            "REFUND_PAST_PROVIDER_WINDOW": "The provider no longer accepts refunds for this payment.",
+            "REFUND_PROVIDER_ID_ALREADY_RECORDED": "The provider already has this refund recorded.",
+            "REFUND_HAS_PROVIDER_CALLS": "The refund already has provider calls and cannot be declined. Check the MP panel.",
+            "REFUND_CLOSES_HELD_CHARGE": "This refund cannot be declined: it refunds a charge held by a mark."
+        },
+        "genericError": "The action could not be completed. Try again.",
+        "serverError": "The server could not complete the action. Try again later.",
+        "remainder": {
+            "title": "Settle the remainder of a partially accepted refund",
+            "description": "For a confirmed refund that Mercado Pago accepted only in part. Refund the rest from the MP panel and record it here: the refund closes and the payment balance squares.",
+            "refundId": "Refund ID",
+            "amount": "Remainder refunded by hand (in pesos)",
+            "reference": "Refund ID in the MP panel",
+            "note": "Note (optional)",
+            "review": "Review",
+            "confirmText": "This records that you refunded {{amount}} by hand from the MP panel (reference {{reference}}) for refund {{refundId}}. The refund closes under your name.",
+            "confirm": "Record the remainder",
+            "back": "Back",
+            "success": "Refund closed. MP had accepted {{accepted}} and the remainder of {{remainder}} was recorded.",
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund's remainder can be settled.",
+                "REFUND_CALL_UNANSWERED": "A provider call is still unanswered. Use «Retry with Mercado Pago» on this screen first; if it does not close it, follow the stuck refunds runbook.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "The provider accepted no part of this refund. Decline it, then settle it with action 14.",
+                "REMAINDER_AMOUNT_MISMATCH": "The remainder does not match what is still owed: the refund amount minus what the provider credited.",
+                "ACCEPTED_PART_NOT_ACCREDITED": "The provider does not show the part it accepted as credited. Check the charge in the provider panel before recording the remainder.",
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "The provider shows no credited refund with that reference and amount on this charge.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Another refund of this payment has a provider call still unanswered. Wait until it is resolved before recording the remainder: the refund you see in the panel may belong to that call."
+            }
+        },
+        "providerRetry": {
+            "title": "Retry with Mercado Pago",
+            "description": "For a confirmed refund stuck because MP did not answer a call (timeout, error or empty response), or one MP accepted that does not show as credited yet. Before resending, the charge is read at MP: if the refund is already there, it is taken and nothing is resent. Only if it does not show up is the call resent, with its same idempotency key.",
+            "refundId": "Refund ID",
+            "review": "Review",
+            "confirmText": "The charge is read at Mercado Pago for refund {{refundId}}. If the refund already shows up, it is taken without resending; otherwise each unanswered call is resent with its same key. If MP shows it credited, the refund closes.",
+            "confirm": "Retry with MP",
+            "back": "Back",
+            "summary": {
+                "EXECUTED": "MP accepted and credited the refund. It is executed.",
+                "WAITING_ACCREDITATION": "MP has the refund, but it does not show as credited yet. It stays confirmed: it closes with MP's next notice, or by pressing «Retry with MP» again, which reads the charge again.",
+                "FAILED": "MP rejected the call. The refund failed: check the MP panel before refunding by hand (action 14).",
+                "STILL_UNANSWERED": "A call still has no usable answer. Retry later or follow the refunds runbook (§8)."
+            },
+            "calls": {
+                "SENT": "accepted by MP",
+                "FOUND_AT_PROVIDER": "already at MP: taken without resending",
+                "AWAITING_PROVIDER_ANSWER": "still unanswered",
+                "PROVIDER_KEY_CONFLICT": "MP refused the key as reused: follow the refunds runbook (§8)",
+                "PROVIDER_REJECTED_FAILED": "rejected by MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund can be retried.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "The refund has no unanswered call and no accepted call waiting to be credited: there is nothing to retry.",
+                "REFUND_PAST_PROVIDER_WINDOW": "More than 180 days have passed since the charge: MP would refuse any call without saying whether the first one went out. Check the MP panel by hand (refunds runbook, §8).",
+                "REFUND_RETRY_IN_PROGRESS": "A retry of this refund is already running. Wait for it to finish and check its result.",
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and the charge shows no refund to bind it to, so it is not resent (nothing was sent or recorded). Follow the refunds runbook, §8 steps 1-2: check the charge in the Mercado Pago panel and record the call's answer by hand (§8.1 or §8.2)."
             }
         }
     },

@@ -606,6 +606,13 @@
     margin: 0;
 }
 
+/* === Stat unavailable state (HOS-2424) === */
+.stat-value--unavailable {
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+}
+
 /* === Stat shimmer skeleton === */
 .stat-value--loading {
     display: inline-block;
@@ -1090,12 +1097,15 @@ select[aria-invalid="true"] {
 .form-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
     margin-top: var(--space-2, 0.5rem);
 }
 
 @media (max-width: 480px) {
     .form-actions {
         justify-content: stretch;
+        flex-wrap: wrap;
     }
     .form-actions > .btn-gradient {
         width: 100%;

@@ -77,6 +77,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.editProfile',
     'account.exclusiveDeals',
     'account.favorites',
+    'account.help',
     'account.myContent',
     'account.nav',
     'account.newsletter',
@@ -269,13 +270,15 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-1264 — venue half of `experience.aiChat` above.
     'venue.aiChat',
     // HOS-1787 leaf 6.3 — `VenueOpenNowBadge.client.tsx` renders
-    // `venue.card.openNow` / `venue.card.closedNow` in the browser.
+    // `venue.card.openNow` / `opensAt` / `closedNow` in the browser.
     'venue.card',
     // HOS-1787 leaf 5.1 — `NightInfoSection.client.tsx` reuses the approved
     // public `venue.detail.nightInfo.*` labels. The two-segment ancestor is what
     // the guard derives from a literal under that subtree; the three-segment
     // entry keeps the declaration honest about the only subtree the editor names.
     'venue.detail',
+    // HOS-2271: the venue promotions editor resolves this subtree in a client island.
+    'venue.owner.editor',
     'venue.detail.nightInfo',
     'venue.editOwn',
     // HOS-822 — venue half of the shared listing-type source above.

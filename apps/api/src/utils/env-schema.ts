@@ -572,6 +572,12 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_UMAMI_WEBSITE_ID_ADMIN: blankAsUndefined(z.string().uuid()),
     /** Umami API key of a view-only user (`umami_...`), used only to read stats (secret). */
     HOSPEDA_UMAMI_API_KEY: blankAsUndefined(z.string().min(1)),
+    /**
+     * Postgres URL of the Umami database for the restricted retention role
+     * (SELECT and DELETE on `session_replay` and `heatmap_event` only; secret, HOS-2347).
+     * Unset disables the recording purge. The single allowed Umami write path of the api.
+     */
+    HOSPEDA_UMAMI_DATABASE_URL: blankAsUndefined(z.string().min(1)),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
     // Healthchecks.io free cron monitors (HOS-1742). Both vars are required for
@@ -580,6 +586,11 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_HEALTHCHECKS_PING_KEY: z.string().min(1).optional(),
     /** Healthchecks.io check slug prefix; keeps staging and prod apart. */
     HOSPEDA_HEALTHCHECKS_SLUG_PREFIX: z.enum(['staging', 'prod']).optional(),
+    /**
+     * Payer email of the pending preapprovals the provider watch battery creates and cancels
+     * in the same run (HOS-1512). Without it the creating measurements fail and alert.
+     */
+    HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL: blankAsUndefined(z.string().email()),
     /**
      * Sentry environment tag. When set, takes precedence over NODE_ENV
      * for Sentry event tagging — lets prod and staging both run with

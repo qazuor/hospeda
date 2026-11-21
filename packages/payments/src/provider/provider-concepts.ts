@@ -37,6 +37,9 @@ export const PROVIDER_CONCEPT_TERMS = [
     'authorizedpayment',
     'checkout',
     'sandbox_init',
+    'preference',
+    'merchant_order',
+    'merchantorder',
     'topic_chargebacks',
     'topicchargebacks',
     'endpoint',
@@ -65,6 +68,13 @@ export const PROVIDER_CONCEPT_TERMS = [
     'chargedquantity',
     'statement_descriptor',
     'statementdescriptor',
+    // fields of its one-time payment page (HOS-2179 §6.2)
+    'excluded_payment',
+    'excludedpayment',
+    'expiration_date',
+    'expirationdate',
+    'date_of_expiration',
+    'dateofexpiration',
     // payment and card fields
     'external_reference',
     'externalreference',

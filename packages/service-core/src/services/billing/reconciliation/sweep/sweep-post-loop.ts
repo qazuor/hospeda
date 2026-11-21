@@ -10,8 +10,8 @@ import {
     type RetryOurCancellationPorts,
     runOurCancellationRetry
 } from './our-cancellation-retry.js';
-import type { PaidOrdersCheckSummary } from './paid-orders-check.js';
-import { runPaidOrdersCheck } from './paid-orders-check.js';
+import type { PagePaymentsCheckSummary } from './page-payments-check.js';
+import { runPagePaymentsCheck } from './page-payments-check.js';
 import type { PauseGiftSummary } from './pause-gift-check.js';
 import { runPauseGiftDetection } from './pause-gift-check.js';
 import type {
@@ -43,7 +43,7 @@ export interface SweepPostLoopResult {
     };
     readonly terminalReturn?: TerminalReturnSummary;
     readonly creditedPayments?: CreditedPaymentsCheckSummary;
-    readonly paidOrders?: PaidOrdersCheckSummary;
+    readonly pagePayments?: PagePaymentsCheckSummary;
     readonly markEscalation?: MarkEscalationSummary;
     readonly pauseGifts?: PauseGiftSummary;
     readonly zeroCallChecks?: ZeroCallChecksSummary;
@@ -76,7 +76,7 @@ export async function runSweepPostLoop(input: {
     let cancellationRetry: SweepPostLoopResult['cancellationRetry'];
     let terminalReturn: TerminalReturnSummary | undefined;
     let creditedPayments: CreditedPaymentsCheckSummary | undefined;
-    let paidOrders: PaidOrdersCheckSummary | undefined;
+    let pagePayments: PagePaymentsCheckSummary | undefined;
     let markEscalation: MarkEscalationSummary | undefined;
     let pauseGifts: PauseGiftSummary | undefined;
     let zeroCallChecks: ZeroCallChecksSummary | undefined;
@@ -180,22 +180,22 @@ export async function runSweepPostLoop(input: {
                 }
         }
         if (
-            !input.completed.includes('paidOrders') &&
-            !passBlocked('paidOrders', Boolean(input.ports.paidOrders)) &&
-            input.ports.paidOrders
+            !input.completed.includes('pagePayments') &&
+            !passBlocked('pagePayments', Boolean(input.ports.pagePayments)) &&
+            input.ports.pagePayments
         ) {
-            paidOrders = await runPaidOrdersCheck(
+            pagePayments = await runPagePaymentsCheck(
                 { correlationId: input.correlationId, pageSize: input.pageSize },
                 {
-                    ...input.ports.paidOrders,
+                    ...input.ports.pagePayments,
                     provider: input.provider,
                     clock: input.clock,
                     heartbeat: input.heartbeat
                 }
             );
-            await input.completePass('paidOrders');
-            rowsRead += paidOrders.examined;
-            rowsFailed += paidOrders.failures.length;
+            await input.completePass('pagePayments');
+            rowsRead += pagePayments.examined;
+            rowsFailed += pagePayments.failures.length;
         }
         if (
             !input.completed.includes('markEscalation') &&
@@ -266,7 +266,7 @@ export async function runSweepPostLoop(input: {
         ...(cancellationRetry ? { cancellationRetry } : {}),
         ...(terminalReturn ? { terminalReturn } : {}),
         ...(creditedPayments ? { creditedPayments } : {}),
-        ...(paidOrders ? { paidOrders } : {}),
+        ...(pagePayments ? { pagePayments } : {}),
         ...(markEscalation ? { markEscalation } : {}),
         ...(pauseGifts ? { pauseGifts } : {}),
         ...(zeroCallChecks ? { zeroCallChecks } : {})

@@ -19,6 +19,7 @@ import {
 import {
     AccommodationService,
     type Actor,
+    DestinationService,
     ExperienceService,
     ServiceError,
     VenueService
@@ -49,6 +50,8 @@ vi.mock('../../../../src/utils/listing-catalog-relations', async (importOriginal
 }));
 
 import { getListingTool } from '../../../../src/mcp/tools/listing/get-listing';
+import { GET_LISTING_MAX_CATALOG_NAMES } from '../../../../src/mcp/tools/listing/get-listing-context';
+import { MCP_RESULT_MAX_CHARS } from '../../../../src/mcp/tools/response-budget';
 import { runTool } from '../../../../src/mcp/tools/run-tool';
 import {
     TOOL_NOT_FOUND_MESSAGE,
@@ -61,6 +64,7 @@ const OTHER_ID = '2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d';
 const LISTING_ID = '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7';
 const AMENITY_ID = '44444444-4444-4444-8444-444444444444';
 const FEATURE_ID = '55555555-5555-4555-8555-555555555555';
+const DESTINATION_ID = '77777777-7777-4777-8777-777777777777';
 const SITE_URL = 'https://hospeda.test';
 const context = { channel: 'mcp' } as const;
 
@@ -82,6 +86,8 @@ const accommodationRow = (overrides: Record<string, unknown> = {}) => ({
     description: 'Cabañas equipadas a metros del río Uruguay.',
     richDescription: 'NOT EDITABLE HERE',
     contactInfo: CONTACT_INFO,
+    destinationId: DESTINATION_ID,
+    location: { street: 'Calle Urquiza', number: '123', floor: '2', apartment: 'B' },
     ...overrides
 });
 
@@ -95,6 +101,7 @@ const scheduledRow = (overrides: Record<string, unknown> = {}) => ({
     description: 'Parrilla de barrio.',
     openingHours: OPENING_HOURS,
     contactInfo: CONTACT_INFO,
+    destinationId: DESTINATION_ID,
     ...overrides
 });
 
@@ -147,6 +154,9 @@ describe('get_listing', () => {
 
     beforeEach(() => {
         env.HOSPEDA_SITE_URL = SITE_URL;
+        vi.spyOn(DestinationService.prototype, 'getById').mockResolvedValue({
+            data: { id: DESTINATION_ID, name: 'Concepción del Uruguay' }
+        } as never);
         accAmenities.mockResolvedValue([{ id: AMENITY_ID, slug: 'wifi' }]);
         accFeatures.mockResolvedValue([{ id: FEATURE_ID, slug: 'river_view' }]);
         venueAmenities.mockResolvedValue([{ amenityId: AMENITY_ID, slug: 'wifi' }]);
@@ -203,7 +213,11 @@ describe('get_listing', () => {
                     phone: CONTACT_INFO.mobilePhone,
                     website: CONTACT_INFO.website,
                     amenities: [{ id: AMENITY_ID, slug: 'wifi' }],
-                    features: [{ id: FEATURE_ID, slug: 'river_view' }]
+                    features: [{ id: FEATURE_ID, slug: 'river_view' }],
+                    address: 'Calle Urquiza 123, piso 2, depto B',
+                    destination: 'Concepción del Uruguay',
+                    amenityNames: { names: [expect.any(String)], total: 1 },
+                    featureNames: { names: [expect.any(String)], total: 1 }
                 }
             });
         });
@@ -242,6 +256,93 @@ describe('get_listing', () => {
         });
     });
 
+    describe('location and amenity names (HOS-2377)', () => {
+        it('answers with the destination name, the address and Spanish amenity names', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.ACCOMMODATION, { data: accommodationRow() });
+
+            // Act
+            const outcome = await run({ vertical: 'accommodation', id: LISTING_ID });
+
+            // Assert
+            const data = outcome.ok ? outcome.data : undefined;
+            expect(data).toMatchObject({
+                address: 'Calle Urquiza 123, piso 2, depto B',
+                destination: 'Concepción del Uruguay'
+            });
+            expect(JSON.stringify(data?.amenityNames)).not.toContain('wifi');
+        });
+
+        it('uses the meeting point as the address of an experience', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.EXPERIENCE, {
+                data: scheduledRow({ meetingPoint: 'Muelle 3 del puerto' })
+            });
+
+            // Act
+            const outcome = await run({ vertical: 'experience', id: LISTING_ID });
+
+            // Assert
+            expect(outcome).toMatchObject({ ok: true, data: { address: 'Muelle 3 del puerto' } });
+        });
+
+        it('reports a null destination when it cannot be read', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.ACCOMMODATION, { data: accommodationRow() });
+            vi.spyOn(DestinationService.prototype, 'getById').mockResolvedValue({
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'x' }
+            } as never);
+
+            // Act
+            const outcome = await run({ vertical: 'accommodation', id: LISTING_ID });
+
+            // Assert
+            expect(outcome).toMatchObject({ ok: true, data: { destination: null } });
+        });
+
+        it('caps the amenity names and points to get_listing_amenities', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.ACCOMMODATION, { data: accommodationRow() });
+            accAmenities.mockResolvedValue(
+                Array.from({ length: GET_LISTING_MAX_CATALOG_NAMES + 7 }, (_, i) => ({
+                    id: `a-${i}`,
+                    slug: `amenity_${i}`
+                }))
+            );
+
+            // Act
+            const outcome = await run({ vertical: 'accommodation', id: LISTING_ID });
+
+            // Assert
+            const data = outcome.ok ? outcome.data : undefined;
+            expect(data?.amenityNames.names).toHaveLength(GET_LISTING_MAX_CATALOG_NAMES);
+            expect(data?.amenityNames.total).toBe(GET_LISTING_MAX_CATALOG_NAMES + 7);
+            expect(data?.moreInfo).toContain('get_listing_amenities');
+            expect(JSON.stringify(data).length).toBeLessThan(MCP_RESULT_MAX_CHARS);
+        });
+
+        it('mentions the Spanish routing words in its description', () => {
+            // Assert
+            for (const word of ['características', 'servicios', 'comodidades', 'dónde queda']) {
+                expect(getListingTool.description).toContain(word);
+            }
+        });
+
+        it('reads no address or destination for a foreign listing', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.ACCOMMODATION, {
+                data: accommodationRow({ ownerId: OTHER_ID })
+            });
+
+            // Act
+            const outcome = await run({ vertical: 'accommodation', id: LISTING_ID });
+
+            // Assert
+            expect(outcome.ok).toBe(false);
+            expect(DestinationService.prototype.getById).not.toHaveBeenCalled();
+        });
+    });
+
     describe.each([VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const)('%s', (vertical) => {
         it('returns description, opening hours, contact and catalog refs', async () => {
             // Arrange
@@ -275,7 +376,11 @@ describe('get_listing', () => {
                             id: FEATURE_ID,
                             slug: vertical === VerticalEnum.VENUE ? 'live_music' : 'guided'
                         }
-                    ]
+                    ],
+                    address: null,
+                    destination: 'Concepción del Uruguay',
+                    amenityNames: { names: [expect.any(String)], total: 1 },
+                    featureNames: { names: [expect.any(String)], total: 1 }
                 }
             });
         });

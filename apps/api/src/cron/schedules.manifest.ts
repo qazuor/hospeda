@@ -322,6 +322,30 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Hard-delete AI chat questions and answers older than 12 months, then the chat conversations left empty (HOS-2101 owner retention decision).'
     },
     {
+        name: 'mcp-audit-retention',
+        displayName: 'Purga del historial de asistentes de IA',
+        category: 'system',
+        schedule: '20 4 * * *',
+        description:
+            'Hard-delete mcp.tool.call audit rows older than 12 months; every other audit and security row is untouched (HOS-2335 D-13 owner retention decision).'
+    },
+    {
+        name: 'session-recording-retention',
+        displayName: 'Purga de grabaciones de sesion de Umami',
+        category: 'system',
+        schedule: '25 4 * * *',
+        description:
+            'Delete Umami session replays and heatmap events older than the configured retention (14, 30 or 60 days), even while recording is switched off (HOS-2347 owner retention decision).'
+    },
+    {
+        name: 'venue-events-past-cleanup',
+        displayName: 'Limpieza de eventos pasados de locales',
+        category: 'system',
+        schedule: '15 4 * * *',
+        description:
+            'Hard-delete one-off venue agenda events whose end passed more than 60 days ago; weekly events are never touched (HOS-2254).'
+    },
+    {
         name: 'ai-questions-weekly-digest',
         displayName: 'Resumen semanal de preguntas sin responder',
         category: 'notifications',
@@ -335,7 +359,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '30 3 * * *',
         description:
-            'Hard-delete entity_views and partner_logo_clicks telemetry rows older than 95 days (30d analytics window + 65d buffer, GDPR-lite data minimisation, SPEC-159 T-011 / HOS-1063 A-3).'
+            'Hard-delete entity_views, partner_logo_clicks and entity_interactions telemetry rows older than 120 days (90d widest panel window + 30d buffer, GDPR-lite data minimisation, SPEC-159 T-011 / HOS-1063 A-3 / HOS-2256).'
     },
     {
         name: 'exchange-rate-fetch',
@@ -350,7 +374,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '10 4 * * *',
         description:
-            'Aggregate entity_views and partner_logo_clicks into their monthly rollups before the 95-day purge deletes them. Runs daily and rewrites the previous month plus the current month-to-date, so a single missed run cannot leave a permanent hole (HOS-1063 A-6).'
+            'Aggregate entity_views, partner_logo_clicks and entity_interactions into their monthly rollups before the 120-day purge deletes them. Runs daily and rewrites the previous month plus the current month-to-date, so a single missed run cannot leave a permanent hole (HOS-1063 A-6).'
     },
     {
         name: 'destination-weather-fetch',
@@ -448,8 +472,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'billing',
         schedule: '17 7 * * *',
         description:
-            'Repeat the provider measurements, compare values and response shapes and mail the administrator what changed. Ticks daily; sandbox runs on Mondays (staging), production on the 1st of the month, manual on either. Ships NOT scheduled until PR 2 adds the measurements (HOS-1512, AC:B1:15).',
-        scheduled: false
+            'Repeat the provider measurements, compare values and response shapes and mail the administrator what changed. Runs daily in both accounts (sandbox on staging, production on prod, which needs the month authorization) and moves no money; manual on either (HOS-1512, AC:B1:15).'
     },
     {
         name: 'social-publish-dispatch',

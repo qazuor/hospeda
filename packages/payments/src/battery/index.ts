@@ -5,6 +5,11 @@
  */
 
 export {
+    isWatchReference,
+    WATCH_REFERENCE_PREFIX
+} from './catalog/watch-subjects';
+export {
+    CLEANUP_CANCEL_LABEL,
     type RunWatchBatteryInput,
     type RunWatchBatteryResult,
     runWatchBattery
@@ -14,6 +19,7 @@ export {
     diffShapes,
     jsonEqual,
     type MeasurementShapeDifference,
+    projectForShape,
     shapeOf
 } from './shape';
 export type {
@@ -24,6 +30,7 @@ export type {
     WatchAlert,
     WatchAlertKind,
     WatchAuthorization,
+    WatchAuthorizationMiss,
     WatchContext,
     WatchEffect,
     WatchEntry,
@@ -35,17 +42,27 @@ export type {
     WatchResponse,
     WatchRunOutcome,
     WatchRunRecord,
+    WatchSettings,
     WatchShapeBaseline,
     WatchTransport
 } from './types';
 export { WATCH_ACCOUNTS, WATCH_EFFECTS, WatchGuardError } from './types';
-export { validateWatchCatalog, WATCH_CATALOG } from './watch-catalog';
+export {
+    REPORTED_ONLY_KEYS,
+    rowsOf,
+    validateWatchCatalog,
+    validateWatchCoverage,
+    WATCH_CATALOG,
+    WATCHED_BY_HAND,
+    type WatchedByHand
+} from './watch-catalog';
 export {
     assertAccountMatches,
     assertAuthorizationCoversMoneyCatalog,
     assertBudgetMatches,
     assertProductionAuthorized,
     expectedAuthorizationSum,
+    marketDayOf,
     marketMonthOf,
     WATCH_TEST_ACCOUNT_TAG
 } from './watch-guards';

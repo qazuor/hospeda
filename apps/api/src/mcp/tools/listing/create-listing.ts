@@ -295,15 +295,19 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
                     id: created.data.id,
                     vertical: input.vertical,
                     publicationStatus: 'DRAFT',
-                    editorUrl: listingPortalUrl({
-                        kind: 'listingEditor',
-                        vertical: input.vertical,
-                        id: created.data.id
-                    }),
+                    editorUrl: listingPortalUrl(
+                        {
+                            kind: 'listingEditor',
+                            vertical: input.vertical,
+                            id: created.data.id
+                        },
+                        context.locale
+                    ),
                     nextSteps: nextStepsFor({
                         vertical: input.vertical,
                         id: created.data.id,
-                        hasLocation: bodyHasLocation({ vertical: input.vertical, body })
+                        hasLocation: bodyHasLocation({ vertical: input.vertical, body }),
+                        locale: context.locale
                     })
                 }
             };

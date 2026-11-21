@@ -183,6 +183,8 @@ const ADMIN_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.STATS_VIEW,
     PermissionEnum.NOTIFICATION_SEND,
     PermissionEnum.NOTIFICATION_CONFIGURE,
+    // HOS-2519 email previewer (OQ-3: SUPER_ADMIN and ADMIN).
+    PermissionEnum.NOTIFICATION_TEMPLATE_PREVIEW,
     // NEWSLETTER
     PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
     PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,

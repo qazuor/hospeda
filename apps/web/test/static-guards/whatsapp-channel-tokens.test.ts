@@ -107,7 +107,10 @@ const BARE_TOKEN_PREFIX = 'channel-whatsapp';
  */
 const OWNING_FILES: readonly string[] = [
     'components/accommodation/WhatsAppContact.module.css',
-    'components/newsletter/WhatsAppCTA.module.css'
+    'components/listing/contact/ListingContactActions.module.css',
+    'components/newsletter/WhatsAppCTA.module.css',
+    // HOS-2256: the venue WhatsApp button. Inked in `VenueWhatsAppButton.test.tsx`.
+    'components/venue/VenueWhatsAppButton.module.css'
 ];
 
 /**
@@ -117,6 +120,11 @@ const OWNING_FILES: readonly string[] = [
  * which is worth a line of review.
  */
 const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, number>>>> = {
+    'components/listing/contact/ListingContactActions.module.css': {
+        '--channel-whatsapp': 1,
+        '--channel-whatsapp-foreground': 1,
+        '--channel-whatsapp-hover': 1
+    },
     'components/accommodation/WhatsAppContact.module.css': {
         '--channel-whatsapp': 1,
         '--channel-whatsapp-foreground': 1,
@@ -127,6 +135,11 @@ const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, numbe
         '--channel-whatsapp': 2,
         '--channel-whatsapp-foreground': 1,
         '--channel-whatsapp-logo': 1,
+        '--channel-whatsapp-hover': 1
+    },
+    'components/venue/VenueWhatsAppButton.module.css': {
+        '--channel-whatsapp': 1,
+        '--channel-whatsapp-foreground': 1,
         '--channel-whatsapp-hover': 1
     }
 };

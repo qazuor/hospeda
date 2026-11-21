@@ -14,6 +14,7 @@ import { seedManualPendingSubscription } from '../../fixtures/billing-signup-hel
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
+import { redeemPromoCode } from '../../fixtures/promo-redeem-helpers.ts';
 import {
     attachSession,
     type CatalogSlug,
@@ -69,8 +70,7 @@ async function redeem(page: import('@playwright/test').Page, subscriptionId: str
     const article = page.locator(
         `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
     );
-    await article.getByLabel('Código promocional').fill(code);
-    await article.getByRole('button', { name: 'Canjear código' }).click();
+    await redeemPromoCode({ scope: article, code });
     return { article, notice: article.getByTestId('promo-redeem-notice') };
 }
 
@@ -85,7 +85,11 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
     test.beforeAll(async () => {
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: randomUUID() }),
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: randomUUID()
+            }),
             clock
         });
         const { startE2eMailCapture } = await import('../../fixtures/mail-capture-server.ts');
@@ -221,8 +225,7 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
         const article = page.locator(
             `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
         );
-        await article.getByLabel('Código promocional').fill(floorCode);
-        await article.getByRole('button', { name: 'Canjear código' }).click();
+        await redeemPromoCode({ scope: article, code: floorCode });
         await expect(article.getByTestId('promo-redeem-error')).toHaveText(
             'este código deja el importe por debajo del mínimo que Mercado Pago permite cobrar'
         );

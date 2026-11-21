@@ -1,10 +1,16 @@
-/** Why a provider refund answer could not be bound to our refund call (HOS-2007, HOS-1553 Q-5). */
+/**
+ * Why a provider refund answer could not be bound to our refund call (HOS-2007, HOS-1553 Q-5).
+ * `PROVIDER_REFUND_ALREADY_CITED`: the provider refund id the answer names is already the
+ * panel reference of a refund or the provider id of another call (HOS-2517), so binding it
+ * would count one provider refund twice.
+ * `OTHER_REFUND_CALL_UNANSWERED`: another refund of the same payment has a call the provider has
+ * not answered, so an uncited provider refund of the same amount may be that call's (HOS-2516).
+ */
 export const AMBIGUOUS_REFUND_ANSWER_REASONS = [
-    'NO_NEW_ORDER_REFUND',
-    'SEVERAL_NEW_ORDER_REFUNDS',
-    'ORDER_REFUND_AMOUNT_MISMATCH',
     'NO_UNNAMED_PAYMENT_REFUND',
-    'SEVERAL_UNNAMED_PAYMENT_REFUNDS'
+    'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
+    'PROVIDER_REFUND_ALREADY_CITED',
+    'OTHER_REFUND_CALL_UNANSWERED'
 ] as const;
 
 /** One of {@link AMBIGUOUS_REFUND_ANSWER_REASONS}. */
@@ -18,12 +24,12 @@ export interface AmbiguousRefundCandidate {
 
 /** Everything an operator needs to settle the ambiguous refund by hand. */
 export interface AmbiguousRefundAnswerInput {
-    readonly kind: 'ORDER' | 'PAYMENT';
+    /** The order refund channel was retired (HOS-2179 T-7): only payment refunds remain. */
+    readonly kind: 'PAYMENT';
     readonly refundId: string;
     readonly refundCallKey: string;
     readonly paymentId: string;
     readonly providerFactId: string;
-    readonly orderId: string | null;
     readonly expectedAmountMinor: number;
     readonly reason: AmbiguousRefundAnswerReason;
     readonly candidates: readonly AmbiguousRefundCandidate[];
@@ -43,7 +49,6 @@ export class AmbiguousRefundAnswerError extends Error {
     readonly refundCallKey: string;
     readonly paymentId: string;
     readonly providerFactId: string;
-    readonly orderId: string | null;
     readonly expectedAmountMinor: number;
     readonly reason: AmbiguousRefundAnswerReason;
     readonly candidates: readonly AmbiguousRefundCandidate[];
@@ -62,7 +67,6 @@ export class AmbiguousRefundAnswerError extends Error {
         this.refundCallKey = input.refundCallKey;
         this.paymentId = input.paymentId;
         this.providerFactId = input.providerFactId;
-        this.orderId = input.orderId;
         this.expectedAmountMinor = input.expectedAmountMinor;
         this.reason = input.reason;
         this.candidates = input.candidates.map((candidate) => ({ ...candidate }));

@@ -36,6 +36,7 @@ import {
     listingRetentionPassJob,
     manualGraceExpiryJob,
     manualInstallmentOpenJob,
+    mcpAuditRetentionJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
@@ -49,6 +50,7 @@ import {
     providerWatchBatteryJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
+    sessionRecordingRetentionJob,
     socialPublishDispatchJob,
     subscriptionGraceReminderJob,
     subscriptionPauseEndJob,
@@ -58,6 +60,7 @@ import {
     subscriptionSuccessionReevaluationJob,
     subscriptionWindowExpiryJob,
     trialMachineExpiryJob,
+    venueEventsPastCleanupJob,
     viewMonthlyRollupJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -125,7 +128,13 @@ export const cronJobs: CronJobDefinition[] = [
     listingRetentionPassJob,
     // HOS-2101: the host AI questions panel's 12-month retention and weekly digest.
     aiListingQuestionsRetentionJob,
-    aiQuestionsWeeklyDigestJob
+    aiQuestionsWeeklyDigestJob,
+    // HOS-2335 D-13: 12-month retention of the assistant activity (mcp.tool.call only).
+    mcpAuditRetentionJob,
+    // HOS-2347: Umami replays and heatmaps are purged after the configured retention.
+    sessionRecordingRetentionJob,
+    // HOS-2254: past one-off venue events are deleted after 60 days.
+    venueEventsPastCleanupJob
 ];
 
 /**

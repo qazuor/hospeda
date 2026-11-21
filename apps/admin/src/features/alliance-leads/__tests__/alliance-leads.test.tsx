@@ -6,7 +6,9 @@
  *  - Inbox renders a list of leads from the mocked query.
  *  - Kind column renders and the kind filter selector is present.
  *  - Handle dialog submit calls the mark-handled mutation with the correct body.
- *  - No "Approve & provision" / "Provision owner" action exists (HOS-277 NG-1).
+ *  - Nothing calls the provisioning endpoint unprompted: the retry button only
+ *    exists for an approved service_provider lead without a provider
+ *    (HOS-2339, covered in alliance-leads.provisioning.test.tsx).
  *
  * All network calls are mocked via `vi.mock('@/lib/api/client')`.
  * No real API is hit.
@@ -392,11 +394,11 @@ describe('AllianceLeadInbox — handle dialog', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tests: NO auto-provisioning action (HOS-277 NG-1)
+// Tests: no unprompted provisioning call
 // ---------------------------------------------------------------------------
 
-describe('AllianceLeadInbox — no auto-provisioning action', () => {
-    it('never renders an "approve & provision" or "provision owner" button', async () => {
+describe('AllianceLeadInbox — no unprompted provisioning call', () => {
+    it('renders no provisioning button for partner/sponsor rows and never calls the retry endpoint', async () => {
         mockedFetchApi.mockResolvedValue(MOCK_PAGE_RESPONSE);
 
         renderInbox();
@@ -405,11 +407,12 @@ describe('AllianceLeadInbox — no auto-provisioning action', () => {
             expect(screen.getByText('Juan Pérez')).toBeInTheDocument();
         });
 
-        expect(screen.queryByText(/approve.*provision/i)).not.toBeInTheDocument();
-        expect(screen.queryByText(/provision.*owner/i)).not.toBeInTheDocument();
+        expect(
+            screen.queryByText('admin-entities.allianceLeads.actions.createProvider')
+        ).not.toBeInTheDocument();
         expect(mockedFetchApi).not.toHaveBeenCalledWith(
             expect.objectContaining({
-                path: expect.stringContaining('provision')
+                path: expect.stringContaining('/provision')
             })
         );
     });

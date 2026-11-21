@@ -90,6 +90,7 @@
         "BAD_REQUEST": "La solicitud no es válida.",
         "CONFLICT": "El recurso está en conflicto con el estado actual.",
         "CATEGORY_IN_USE": "Esta categoría la usan proveedores. Desactivala en lugar de eliminarla.",
+        "PARTNER_TYPE_IN_USE": "Este tipo lo usan partners. Asigná otro tipo a esos partners antes de desactivarlo o eliminarlo.",
         "SERVICE_UNAVAILABLE": "Este servicio no está disponible temporalmente. Probá de nuevo en unos minutos.",
         "NEWSLETTER_NOT_CONFIGURED": "El newsletter no está disponible en este momento. Estamos trabajando para restablecerlo.",
         "ACCOUNT_DELETED": "Esta cuenta fue eliminada y ya no está disponible.",
@@ -128,6 +129,12 @@
         "EMPTY_FILE": "El archivo está vacío. Elegí otra imagen.",
         "NEW_PAID_SIGNUPS_FROZEN": "Por el momento pausamos las suscripciones nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.",
         "ADDON_PURCHASES_FROZEN": "Por el momento pausamos la compra de complementos. Lo que ya compraste sigue funcionando con normalidad.",
+        "ADDON_ALREADY_ACTIVE": "Ya tenés este complemento activo. No hace falta comprarlo de nuevo.",
+        "ADDON_PRODUCT_NOT_FOUND": "Este complemento ya no está disponible. Recargá la página para ver los que hay.",
+        "ADDON_TARGET_NOT_FOUND": "No encontramos la suscripción o la ficha que elegiste. Recargá la página y elegila de nuevo.",
+        "ADDON_NO_VALID_TITLE": "Para comprar este complemento necesitás un plan activo que lo permita.",
+        "ADDON_VERSION_NOT_CURRENT": "El precio o las condiciones de este complemento cambiaron. Recargá la página para ver la versión actual.",
+        "ADDON_ORDER_REQUEST_REUSED": "Esta compra ya se envió. Recargá la página para ver su estado antes de intentar de nuevo.",
         "FIRST_PUBLISH_PAUSED": "Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden.",
         "PROMO_CODE_NOT_FOUND": "No encontramos ese código.",
         "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "Este código no extiende una prueba gratis.",
@@ -143,7 +150,8 @@
         "NO_TRIAL": "No encontramos una prueba activa para extender.",
         "TRIAL_ENDED": "Tu prueba ya terminó.",
         "CEILING_REACHED": "Este código supera el límite de extensión de tu prueba.",
-        "REDEMPTION_KEY_CONFLICT": "La extensión no coincide con un canje anterior."
+        "REDEMPTION_KEY_CONFLICT": "La extensión no coincide con un canje anterior.",
+        "PURCHASE_IDENTITY_BUSY": "Justo se estaba actualizando otra compra de este complemento. Probá de nuevo en unos segundos."
     },
     "filters": "Filtros",
     "filterChips": {

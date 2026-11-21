@@ -85,9 +85,6 @@
         "buyMore": "Comprar más complementos"
     },
     "addonPurchaseApi": {
-        "oneTimePaymentRequired": "Para un complemento de pago único, ingresá los datos de pago.",
-        "recurringPaymentNotAccepted": "Los complementos recurrentes se pagan en el checkout del proveedor.",
-        "payerEmailRequired": "Ingresá el correo del pagador.",
         "purchaseNotFound": "No encontramos esa compra de complemento.",
         "freeProductNotFound": "No encontramos ese complemento.",
         "freeTargetNotFound": "No encontramos ese destino.",
@@ -98,8 +95,10 @@
         "freeOrderRequestReused": "Ese pedido ya se usó para otra elección.",
         "freeUnderGrant": "Este complemento está incluido gratis en tu beneficio. Elegilo sin pagar.",
         "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.",
+        "pageRejected": "Mercado Pago no pudo abrir la página de pago. Volvé a intentar en unos minutos.",
         "providerBusy": "Mercado Pago está con mucha demanda en este momento. Esperá un minuto y volvé a intentar.",
-        "providerUnavailable": "El proveedor de pagos no respondió. Probá de nuevo en unos minutos."
+        "providerUnavailable": "El proveedor de pagos no respondió. Probá de nuevo en unos minutos.",
+        "identityBusy": "Justo se estaba actualizando otra compra de este complemento. Probá de nuevo en unos segundos."
     },
     "payment": {
         "title": "Métodos de pago",
@@ -243,6 +242,11 @@
             "title": "Confirmá tu suscripción",
             "intro": "Vas a autorizar el pago en Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "promo": {
+                "limited_one": "Con el código {{code}}: {{amount}} {{cycle}} durante {{count}} cobro (después {{listAmount}}).",
+                "limited_other": "Con el código {{code}}: {{amount}} {{cycle}} durante {{count}} cobros (después {{listAmount}}).",
+                "forever": "Con el código {{code}}: {{amount}} {{cycle}}."
+            },
             "cycle": {
                 "monthly": "por mes",
                 "quarterly": "por trimestre",
@@ -490,6 +494,8 @@
     },
     "vip": {
         "featureName": "Promociones VIP exclusivas",
+        "inheritedFromPaidPlan": "Por tener un plan pago también tenés Turista VIP",
+        "onUpgradeToPaidPlan": "Al pasar a un plan pago también tenés Turista VIP",
         "description": "Accedé a descuentos y ofertas exclusivas de alojamientos solo para miembros VIP.",
         "available": {
             "title": "Promociones VIP Disponibles",
@@ -701,6 +707,7 @@
             "venueMenu": "Carta cargada en Hospeda y enlace a tu carta",
             "venueDailySpecial": "Menú del día",
             "venueEvents": "Eventos del local",
+            "venueVideos": "Videos en la ficha",
             "menuItemPhotos": "Fotos por plato",
             "multilingualMenu": "Carta en varios idiomas",
             "menuQrScanMetrics": "QR de la carta con panel de escaneos",
@@ -751,6 +758,7 @@
             "venueMenu": "Cargá tu carta en Hospeda y sumá el enlace a tu carta para que se vea en la página de tu local.",
             "venueDailySpecial": "Mostrá el menú del día en tu publicación y cambialo cuando quieras.",
             "venueEvents": "Anunciá en la página de tu local los eventos que organizás.",
+            "venueVideos": "Sumá videos de YouTube, Vimeo o Dailymotion a la página de tu local.",
             "menuItemPhotos": "Sumá una foto a cada plato de tu carta.",
             "multilingualMenu": "Ofrecé tu carta en varios idiomas para visitantes de otros países.",
             "maxExperiences": "Cantidad de experiencias que podés tener publicadas al mismo tiempo.",
@@ -865,27 +873,39 @@
     "addonPurchase": {
         "title": "Comprar complementos",
         "chooseOffer": "Elegí un complemento",
+        "back": "Volver",
         "noOffers": "No hay complementos disponibles.",
         "chooseTarget": "Elegí una ficha",
         "noTargets": "No hay fichas disponibles para este complemento.",
         "chooseSubscription": "Elegí una suscripción",
         "noSubscriptions": "No hay suscripciones disponibles para este complemento.",
+        "noSubscriptionsBody": "Los complementos se suman a un plan de pago activo. Si todavía estás en la prueba gratis o no tenés plan, elegí uno y volvé acá para sumarlo.",
+        "noSubscriptionsCta": "Ver planes",
         "summary": "Confirmar complemento",
         "freeUnderGrant": "Gratis por tu beneficio",
         "days_one": "{{count}} día",
         "days_other": "{{count}} días",
         "hiddenListingRecurring": "Esta ficha no está publicada. El destaque se cobra igual aunque la ficha no se vea, hasta que lo des de baja.",
+        "hiddenListingOneTime": "Esta ficha no está publicada. El destaque corre igual aunque la ficha no se vea.",
         "chooseFree": "Elegir gratis",
         "payerEmailLabel": "Correo del pagador",
         "payerEmailInvalid": "Ingresá un correo válido del pagador.",
         "payerEmailHint": "Es el correo con el que vas a pagar en Mercado Pago. Lo declarás vos; el proveedor no lo confirma.",
         "confirmPurchase": "Confirmar compra",
+        "oneTimeSummary": "Pago único: se cobra una sola vez y no se renueva.",
+        "instantMethodsOnly": "Pagás en Mercado Pago con tarjeta de crédito, débito o dinero en cuenta. No se aceptan pagos en efectivo.",
+        "payWithMercadoPago": "Pagar con Mercado Pago",
         "loading": "Cargando complementos…",
         "loadError": "No pudimos cargar los complementos.",
         "attemptExpired": "Ese intento ya no es válido. Probá de nuevo.",
         "processing": "Se está procesando tu compra.",
+        "waitingPayment": "Estamos confirmando tu pago.",
+        "waitingPaymentLong": "Todavía no tenemos la confirmación de Mercado Pago. Volvé a esta pantalla en unos minutos para ver el resultado.",
+        "waitingPaymentMail": "Todavía no tenemos la confirmación de Mercado Pago. Te avisamos por correo cuando se acredite.",
         "active": "Activo",
         "closed": "La compra terminó sin activarse.",
+        "pageExpired": "La página de pago venció sin un pago aprobado. Podés volver a comprarlo.",
+        "paymentNotConfirmed": "No pudimos confirmar el pago de este complemento. Si querés, volvé a comprarlo.",
         "paused": {
             "title": "Compras pausadas",
             "body": "Por el momento pausamos las compras de complementos. Probá más tarde."

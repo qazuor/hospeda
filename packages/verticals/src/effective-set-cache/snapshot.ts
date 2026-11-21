@@ -64,6 +64,13 @@ export interface RehydratedEffectiveSet {
     readonly userId: string;
     readonly vertical: EffectiveSetSnapshot['vertical'];
     readonly hasLiveNonTrialTitle: boolean;
+    /**
+     * TOURIST only: whether the set holds Tourist VIP inherited from a live
+     * non-trial title elsewhere (`resolveTouristVipInheritance`); `false` for
+     * every other vertical. Optional so in-memory fakes need not spell it;
+     * {@link rehydrateEffectiveSet} always sets it (HOS-2398).
+     */
+    readonly inheritsTouristVip?: boolean;
     readonly entitlements: ScopedKeyValues;
     readonly limits: ScopedKeyValues;
 }
@@ -81,6 +88,7 @@ export function rehydrateEffectiveSet(snapshot: EffectiveSetSnapshot): Rehydrate
         userId: snapshot.userId,
         vertical: snapshot.vertical,
         hasLiveNonTrialTitle: snapshot.hasLiveNonTrialTitle,
+        inheritsTouristVip: snapshot.inheritsTouristVip,
         entitlements: scopeKeyValues({
             values: entitlements,
             userId: snapshot.userId,

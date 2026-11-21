@@ -446,7 +446,7 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   - Recurring addon on its own preapproval with the principal amount unchanged: `e2e: billing/billing-24-addon-end-to-end.spec.ts:recurring addon bought from the screen is authorized on its own preapproval (PR)`.
   - `external_reference` names the complement row: `hueco`.
   - Replaying the same `orderRequestId` creates no second preapproval (M3): `hueco`.
-  - One-time addon order: `hueco`, deferred with the one-time flow to HOS-2094 (no e2e catalog has a one-time product).
+  - One-time addon order: `hueco`, deferred with the one-time flow to HOS-2179 (no e2e catalog has a one-time product).
   - A3, our email before the expired checkout is cancelled: `e2e: billing/billing-24-addon-end-to-end.spec.ts:abandoned recurring checkout: our mail first, then exactly one cancellation (PR)`.
 
 ### S19 — Addon end of life: expiry, purged listing and declined order (HOS-1594)
@@ -462,7 +462,7 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Covers:** AC:B10:5, AC:B10:6, AC:B10:7; TEST:B10:6, TEST:B10:7, TEST:B10:8.
 - **Coverage:**
   - Step 1, the purge sends our email before the addon preapproval is cancelled, exactly once: `e2e: billing/billing-24-addon-end-to-end.spec.ts:deleting the listing names the addon and its price, then A6 mails before cancelling (PR)`. The principal unchanged after the purge: `hueco`.
-  - Steps 2–4, the one-time order rejected, retried and expired: `hueco`, deferred to HOS-2094.
+  - Steps 2–4, the one-time order rejected, retried and expired: `hueco`, deferred to HOS-2179.
 
 ### S20 — Addon version publication, free addon under grant and purchase screen (HOS-1595)
 
@@ -475,7 +475,7 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The new checkout uses the new price while the old instance keeps its version; the unpermitted admin gets 403. The grant choice is `ACTIVE` without a sandbox preapproval or order and becomes `CANCELLED` without a provider call when revoked. The draft summary warns that the boost is charged while hidden, and the published summary has no warning. The recurring checkout returns to the localized purchase screen and reaches `ACTIVE`. One-time offers do not appear on the web purchase screen.
 - **Evidence:** Admin API responses, read-only addon product and instance rows, grant anchor, sandbox preapprovals and orders, purchase screen captures, checkout return URL and purchase status reads.
 - **Covers:** AC:B10:8, AC:B10:11, AC:B10:12, AC:B10:13; TEST:B10:9, TEST:B10:13, TEST:B10:14, TEST:B10:15.
-- **Nota:** pago único: ver HOS-2094.
+- **Nota:** pago único: ver HOS-2179.
 - **Coverage:**
   - Step 1, the old instance keeps its version: `e2e: admin/adm-22-addon-version-editor.spec.ts:Publicar una versión muestra qué cambia contra la vigente y deja las compras previas en su versión (PR)`. A new version with a new price used by the next checkout: `hueco` (that test changes only a limit).
   - Step 1, the admin without permission: `e2e: admin/adm-22-addon-version-editor.spec.ts:un admin sin SUPER_ADMIN no tiene el editor (PR)` checks the missing link and a 403 on the catalog `GET`. The 403 on the publish route: `hueco`.
@@ -486,7 +486,7 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 ### S21 — B10 addon exit and end-to-end rehearsal (HOS-1596)
 
 - **Preconditions:** Staging has the Phase 3 epic deployed, Mercado Pago sandbox, a paying owner with a published listing, and an approved recurring addon amount.
-- **Steps:** Buy a recurring listing boost from `/es/mi-cuenta/complementos/` and authorize its own sandbox checkout; verify the instance is `ACTIVE`. Open listing deletion and read which addon is lost and its price before confirming. Purge the listing; observe our email before the addon preapproval is cancelled. Under Q1 option 3, the one-time order and its refund are deferred to HOS-2094 and are outside the web flow.
+- **Steps:** Buy a recurring listing boost from `/es/mi-cuenta/complementos/` and authorize its own sandbox checkout; verify the instance is `ACTIVE`. Open listing deletion and read which addon is lost and its price before confirming. Purge the listing; observe our email before the addon preapproval is cancelled. Under Q1 option 3, the one-time order and its refund are deferred to HOS-2179 and are outside the web flow.
 - Refund at the provider: moved to P2 / P12 (HOS-2302); staging answers 401.
 - **Expected:** The addon has its own preapproval; the principal amount stays unchanged. The purge closes the instance and complement once, after our email, and the exit suites cover all LISTA:B10 clauses on real A1 rows where required.
 - **Evidence:** Purchase screen and purge preview captures; read-only addon, complement, principal and outbox rows; sandbox preapproval and cancellation records; B10 integration and E2E P0 CI results.
@@ -572,7 +572,7 @@ This part is TEST:B13a:15 and TEST:U1:20.
      `REQUESTED` to its final state.
   5. If a recurring addon was purchased (P9/P12), refund the addon charge and read that the refund
      of the addon payment reaches its final state. The one-time order and its refund stay deferred
-     to HOS-2094.
+     to HOS-2179.
 - **Expected:** The subscription is cancelled; the payment shows a full refund.
 - **Evidence:** Read-only query on `subscriptions`, `payments`, and `payment_refunds`.
 - **Covers:** H-11 (return via admin panel revocation).
@@ -668,7 +668,7 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Owner account responses, read-only provider records, card summary, provider email, and read-only addon/payment rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
 - **Coverage:**
-  - All steps: `sólo MP real`. The recurring half is simulated in S18; the one-time half is deferred to HOS-2094.
+  - All steps: `sólo MP real`. The recurring half is simulated in S18; the one-time half is deferred to HOS-2179.
 
 ### P10 — Real purged-listing addon cancellation (HOS-1594)
 
@@ -687,14 +687,14 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The recurring addon becomes `ACTIVE` with its own preapproval and charge, separate from the principal's unchanged amount; the provider sends its charge email. Action 20 is not executed in production smoke.
 - **Evidence:** Owner account screen and purchase response, read-only provider and payment records, card statement, provider email, and read-only addon instance rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:11; TEST:B10:13 and the Phase 3 production go-live smoke.
-- **Nota:** pago único: ver HOS-2094.
+- **Nota:** pago único: ver HOS-2179.
 - **Coverage:**
   - All steps: `sólo MP real`. The simulated counterpart is S21.
 
 ### P12 — B10 real recurring addon and exit smoke (HOS-1596)
 
 - **Preconditions:** The owner's internal production account has an active paying principal, a published listing, an approved recurring addon amount and the owner's approved card; only the owner runs this item.
-- **Steps:** Buy a recurring listing boost from `/es/mi-cuenta/complementos/` with the owner's card and follow its real checkout. Inspect the addon and principal charges, then read the deletion preview before purging the listing. Observe our email before the provider cancellation. Under Q1 option 3, the real one-time order and its refund are deferred to HOS-2094 and are outside the web flow.
+- **Steps:** Buy a recurring listing boost from `/es/mi-cuenta/complementos/` with the owner's card and follow its real checkout. Inspect the addon and principal charges, then read the deletion preview before purging the listing. Observe our email before the provider cancellation. Under Q1 option 3, the real one-time order and its refund are deferred to HOS-2179 and are outside the web flow.
 - **Expected:** The addon reaches `ACTIVE` with a separate preapproval and charge, while the principal amount stays unchanged. Purging closes the addon and complement once; our notice arrives before cancellation and no later addon charge occurs.
 - **Evidence:** Owner purchase screen and deletion preview; read-only provider, addon, complement, principal, payment and outbox records; card statement and both email observations; E2E P0 CI result.
 - **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.

@@ -21,6 +21,7 @@
  *    the generic message: no stack or internal message leaves this module.
  */
 
+import type { PortalLocale } from '@repo/portal-routes';
 import { ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '@repo/service-core';
 import { resolvePersonStateStep } from '@repo/verticals';
@@ -97,13 +98,14 @@ function failWith(input: {
     readonly error: ToolErrorPayload;
     readonly input: unknown;
     readonly cause: unknown;
+    readonly locale: PortalLocale | undefined;
 }): ToolFailure {
-    const { definition, error } = input;
+    const { definition, error, locale } = input;
     const failure = toToolFailure({ error, reasonMessages: definition.reasonMessages });
     if (failure.unexpected) {
         logUnexpected({ tool: definition.name, code: String(error.code), error: input.cause });
     }
-    return attachRefusalAction({ failure, error, input: input.input, definition });
+    return attachRefusalAction({ failure, error, input: input.input, definition, locale });
 }
 
 /**
@@ -162,7 +164,8 @@ export async function executeConfirmableTool<TSchema extends z.ZodObject, TData>
                     definition,
                     error: result.error,
                     input,
-                    cause: result.error
+                    cause: result.error,
+                    locale: context.locale
                 })
             };
         }
@@ -177,7 +180,13 @@ export async function executeConfirmableTool<TSchema extends z.ZodObject, TData>
             };
             return {
                 ok: false,
-                failure: failWith({ definition, error: payload, input, cause: error })
+                failure: failWith({
+                    definition,
+                    error: payload,
+                    input,
+                    cause: error,
+                    locale: context.locale
+                })
             };
         }
         logUnexpected({ tool: name, code: 'UNEXPECTED', error });
@@ -234,6 +243,8 @@ export interface ParseToolInputArgs<TSchema extends z.ZodObject> {
         Partial<Pick<ToolDefinition<TSchema>, 'name' | 'refusalAction'>>;
     /** Raw input (e.g. a model's tool-call arguments). */
     readonly input: unknown;
+    /** Locale prefix of the refusal link. Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }
 
 /**
@@ -248,7 +259,8 @@ export interface ParseToolInputArgs<TSchema extends z.ZodObject> {
  */
 export function parseToolInput<TSchema extends z.ZodObject>({
     definition,
-    input
+    input,
+    locale
 }: ParseToolInputArgs<TSchema>):
     | { readonly ok: true; readonly input: z.output<TSchema> }
     | { readonly ok: false; readonly failure: ToolFailure } {
@@ -277,7 +289,8 @@ export function parseToolInput<TSchema extends z.ZodObject>({
             definition: {
                 name: definition.name ?? 'unknown_tool',
                 refusalAction: definition.refusalAction
-            }
+            },
+            locale
         })
     };
 }
@@ -302,7 +315,7 @@ export async function runTool<TSchema extends z.ZodObject, TData>({
     input,
     context
 }: RunToolArgs<TSchema, TData>): Promise<ToolRunOutcome<TData>> {
-    const parsed = parseToolInput({ definition, input });
+    const parsed = parseToolInput({ definition, input, locale: context.locale });
     if (!parsed.ok) {
         return parsed;
     }

@@ -17,6 +17,14 @@ import { VenueTypeEnum } from '../../src/enums/venue-type.enum.js';
 const verticals = ['venue', 'accommodation', 'experience'] as const;
 /** Global-scope keys a section or trait may name. HOS-1809 (Q-1): the accommodation `verification` trait. */
 const GLOBAL_KEYS_ALLOWED_IN_CATALOG: readonly string[] = ['has_verification_badge'];
+/**
+ * HOS-2258: vertical keys a trait may name BEFORE any production plan grants
+ * them. The venue `media.videos` trait ships OFF (403 on write, no videos in the
+ * public payload) until HOS-2280 grants `can_embed_video` to the venue plans;
+ * remove the entry then, so rule r6 covers it again.
+ */
+// create_promotions: HOS-2270 ships the venue promotions section before HOS-2282 grants it.
+const KEYS_PENDING_PLAN_GRANT: readonly string[] = ['can_embed_video', 'create_promotions'];
 type Catalog = typeof LISTING_SECTIONS;
 type Section = {
     id: string;
@@ -116,7 +124,10 @@ function violations(
                                 (d.scope === 'global' &&
                                     GLOBAL_KEYS_ALLOWED_IN_CATALOG.includes(d.key)))
                     ) ||
-                    !prodKeys.has(key as string)
+                    !(
+                        prodKeys.has(key as string) ||
+                        KEYS_PENDING_PLAN_GRANT.includes(key as string)
+                    )
                 )
                     errors.push('r6');
             }
@@ -212,6 +223,19 @@ function violations(
     errors.push(...reviewErrors);
     return errors;
 }
+
+describe('KEYS_PENDING_PLAN_GRANT stays honest (HOS-2258)', () => {
+    it.each(
+        KEYS_PENDING_PLAN_GRANT
+    )('%s is still granted by no production venue plan; once one grants it, drop it from the allowlist', (key) => {
+        // Rule r6 looks at the venue plans only (the allowlist is for the venue trait).
+        const granted = PRODUCTION_PLAN_CATALOG.filter((plan) => plan.vertical === 'venue').some(
+            (plan) => plan.version.entitlements.some((entitlement) => entitlement.key === key)
+        );
+
+        expect(granted).toBe(false);
+    });
+});
 
 describe('G-FAC-02 listing catalog integrity', () => {
     it('satisfies all twelve catalog rules', () =>

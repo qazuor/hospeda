@@ -328,16 +328,12 @@ describe('TEST:1734 rejected charge edges', () => {
             authorize: (input: Parameters<PaymentProvider['authorize']>[0]) =>
                 own.provider.authorize(input),
             charge: (input: Parameters<PaymentProvider['charge']>[0]) => own.provider.charge(input),
-            chargeOnce: (input: Parameters<PaymentProvider['chargeOnce']>[0]) =>
-                own.provider.chargeOnce(input),
             changeAmount: (input: Parameters<PaymentProvider['changeAmount']>[0]) =>
                 own.provider.changeAmount(input),
             pause: (input: Parameters<PaymentProvider['pause']>[0]) => own.provider.pause(input),
             resume: (input: Parameters<PaymentProvider['resume']>[0]) => own.provider.resume(input),
             cancel: (input: Parameters<PaymentProvider['cancel']>[0]) => own.provider.cancel(input),
             refund: (input: Parameters<PaymentProvider['refund']>[0]) => own.provider.refund(input),
-            refundOrder: (input: Parameters<PaymentProvider['refundOrder']>[0]) =>
-                own.provider.refundOrder(input),
             readAuthorization: (input: Parameters<PaymentProvider['readAuthorization']>[0]) => {
                 if (shouldFail) {
                     shouldFail = false;
@@ -351,10 +347,15 @@ describe('TEST:1734 rejected charge edges', () => {
                 own.provider.readCharge(input),
             listCharges: (input: Parameters<PaymentProvider['listCharges']>[0]) =>
                 own.provider.listCharges(input),
-            readOrder: (input: Parameters<PaymentProvider['readOrder']>[0]) =>
-                own.provider.readOrder(input),
-            searchOrders: (input: Parameters<PaymentProvider['searchOrders']>[0]) =>
-                own.provider.searchOrders(input),
+            requestOneTimePayment: (
+                input: Parameters<PaymentProvider['requestOneTimePayment']>[0]
+            ) => own.provider.requestOneTimePayment(input),
+            closeOneTimePayment: (input: Parameters<PaymentProvider['closeOneTimePayment']>[0]) =>
+                own.provider.closeOneTimePayment(input),
+            readOneTimePayment: (input: Parameters<PaymentProvider['readOneTimePayment']>[0]) =>
+                own.provider.readOneTimePayment(input),
+            searchCharges: (input: Parameters<PaymentProvider['searchCharges']>[0]) =>
+                own.provider.searchCharges(input),
             decodeNotice: (input: Parameters<PaymentProvider['decodeNotice']>[0]) =>
                 own.provider.decodeNotice(input)
         } satisfies PaymentProvider;

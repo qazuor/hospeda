@@ -11,11 +11,11 @@
  * `runTool`/`executeTool` (`run-tool.ts`) without MCP.
  */
 
+import type { PortalDestination, PortalLocale } from '@repo/portal-routes';
 import type { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { z } from 'zod';
-import type { PortalDestination } from '../portal/portal-routes';
 
 /**
  * Error code a tool may report. Every {@link ServiceErrorCode}, plus the
@@ -54,6 +54,14 @@ export interface ToolErrorPayload {
     readonly link?: ToolRefusalLink;
     /** Id of the help topic that explains this refusal (`get_help`, HOS-2333). */
     readonly helpTopicId?: string;
+    /**
+     * Audit classification the handler knows better than the code does: a
+     * `VALIDATION_ERROR` that is really a refusal by Hospeda (an incomplete
+     * listing, HOS-2375) names `denied` so the history does not read it as bad
+     * data from the assistant. Applied only together with a matching
+     * `reasonMessages` entry; absent keeps the code's classification.
+     */
+    readonly kind?: 'denied' | 'error';
 }
 
 /** A portal page a refusal points the user to. */
@@ -139,6 +147,12 @@ export interface ToolContext {
      * confirmation-token flow.
      */
     readonly confirmation?: ToolConfirmationContext;
+    /**
+     * The locale of the user's web pages (`users.settings.languageWeb`, `es` when
+     * unset or unsupported), resolved once per call by the binding. Portal links
+     * carry it as their prefix. Omitted means `es`.
+     */
+    readonly locale?: PortalLocale;
 }
 
 /** What the human answered on the client's confirmation form. */

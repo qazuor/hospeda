@@ -996,7 +996,10 @@
                     },
                     "reasonLabel": "Motivo (obrigatório)",
                     "reasonPlaceholder": "Informe o motivo que ficará registrado na auditoria",
-                    "confirm": { "assign": "Conceder papel", "remove": "Remover papel" },
+                    "confirm": {
+                        "assign": "Conceder papel",
+                        "remove": "Remover papel"
+                    },
                     "cancel": "Cancelar",
                     "rows": {
                         "ACC_17": "Migrar clientes de um plano descontinuado",
@@ -1306,7 +1309,48 @@
             "cacheClearError": "Falha ao limpar cache",
             "dangerZone": "Zona de Perigo",
             "dangerZoneDesc": "Redefinição de banco de dados e outras operações perigosas",
-            "dangerZoneDevOnly": "Disponível apenas no ambiente de desenvolvimento"
+            "dangerZoneDevOnly": "Disponível apenas no ambiente de desenvolvimento",
+            "sessionRecording": {
+                "title": "Gravações de sessão e mapas de calor",
+                "description": "Interruptor geral do gravador do Umami na web. Desligado, a web nunca carrega o gravador.",
+                "statusOn": "LIGADO",
+                "statusOff": "DESLIGADO",
+                "lastChanged": "Última alteração: {{date}}",
+                "neverChanged": "Nunca alterado",
+                "help": "Replay ou mapa de calor, amostragem e mascaramento são configurados no Umami com `pnpm umami:setup`, não aqui.",
+                "enable": "Ligar",
+                "disable": "Desligar",
+                "enableAria": "Ligar as gravações de sessão",
+                "disableAria": "Desligar as gravações de sessão",
+                "confirmEnable": "A produção precisa ter uma verificação de privacidade assinada (docs/analytics/session-replay-privacy.md). Ligar as gravações?",
+                "confirmDisable": "A mudança chega à web em até 60 segundos, e as páginas já abertas continuam com o replay por até 5 minutos e com os cliques do mapa de calor até serem fechadas. Desligar as gravações?",
+                "cancel": "Cancelar",
+                "saveError": "Não foi possível salvar a mudança. O estado mostrado é o último confirmado.",
+                "readError": "Não foi possível ler o estado atual.",
+                "retry": "Tentar novamente",
+                "retentionLabel": "Retenção das gravações",
+                "retentionHelp": "Passado este período, as gravações e os dados de mapas de calor são apagados automaticamente todos os dias, mesmo com o interruptor desligado.",
+                "retentionSaveError": "Não foi possível salvar o período. Mostra-se o último confirmado.",
+                "purgeButton": "Limpar agora",
+                "purgeAria": "Apagar agora as gravações vencidas",
+                "purgeConfirmAction": "Apagar agora",
+                "purgeError": "Não foi possível concluir a limpeza.",
+                "purgeNotConfigured": "A limpeza não está configurada: falta a conexão da api com o banco do Umami.",
+                "purgeStoppedEarly": "A limpeza não terminou no tempo disponível: será concluída na próxima execução.",
+                "purgeMismatch": "O período de retenção mudou enquanto você confirmava. Confira o valor atual e tente novamente.",
+                "purgeRunning": "Já há uma limpeza em andamento. Tente novamente em alguns minutos.",
+                "retentionOption_one": "{{count}} dia",
+                "retentionOption_other": "{{count}} dias",
+                "purgeConfirm_one": "As gravações (incluindo as salvas) e os dados de mapas de calor com mais de {{count}} dia serão apagados de forma definitiva. Limpar agora?",
+                "purgeConfirm_other": "As gravações (incluindo as salvas) e os dados de mapas de calor com mais de {{count}} dias serão apagados de forma definitiva. Limpar agora?",
+                "purgeDone": "Apagado: {{replays}}, {{heatmaps}} e {{saved}}. Período usado: {{period}}.",
+                "purgeDoneReplays_one": "{{count}} gravação",
+                "purgeDoneReplays_other": "{{count}} gravações",
+                "purgeDoneHeatmaps_one": "{{count}} evento do mapa de calor",
+                "purgeDoneHeatmaps_other": "{{count}} eventos do mapa de calor",
+                "purgeDoneSaved_one": "{{count}} gravação salva",
+                "purgeDoneSaved_other": "{{count}} gravações salvas"
+            }
         },
         "seo": {
             "title": "Configuração de SEO",
@@ -1530,7 +1574,10 @@
             "next": "Próxima",
             "page": "Página {page} de {total}"
         },
-        "reasons": { "RETIREMENT": "Retirada do catálogo", "PRICE_INCREASE": "Aumento de preço" },
+        "reasons": {
+            "RETIREMENT": "Retirada do catálogo",
+            "PRICE_INCREASE": "Aumento de preço"
+        },
         "retiredVersions": {
             "title": "Versões retiradas",
             "show": "Mostrar versões retiradas",
@@ -1949,7 +1996,12 @@
         },
         "state": {
             "active": "Ativo",
-            "inactive": "Inativo"
+            "inactive": "Inativo",
+            "deleted": "Excluído"
+        },
+        "showDeleted": "Mostrar excluídos",
+        "messages": {
+            "restoreError": "Não foi possível recuperar."
         },
         "loading": "Carregando…",
         "error": "Não foi possível carregar o catálogo.",
@@ -1966,7 +2018,9 @@
             "edit": "Alterar",
             "delete": "Excluir",
             "cancel": "Cancelar",
-            "save": "Salvar"
+            "save": "Salvar",
+            "restore": "Recuperar",
+            "restoring": "Recuperando..."
         },
         "groups": {
             "add": "Novo grupo",
@@ -1992,7 +2046,8 @@
                 "deleted": "Grupo excluído.",
                 "saveError": "Não foi possível salvar o grupo.",
                 "deleteError": "Não foi possível excluir o grupo.",
-                "inUse": "Não é possível excluir: o grupo ainda tem categorias. Desative-o para deixar de oferecê-lo, ou mova antes as categorias dele."
+                "inUse": "Não é possível excluir: o grupo ainda tem categorias. Desative-o para deixar de oferecê-lo, ou mova antes as categorias dele.",
+                "restored": "Grupo recuperado."
             }
         },
         "categories": {
@@ -2038,7 +2093,9 @@
                 "deleted": "Categoria excluída.",
                 "saveError": "Não foi possível salvar a categoria.",
                 "deleteError": "Não foi possível excluir a categoria.",
-                "inUse": "Não é possível excluir: há fornecedores que usam esta categoria. Desative-a para deixar de oferecê-la; os fornecedores que já a têm a mantêm."
+                "inUse": "Não é possível excluir: há fornecedores que usam esta categoria. Desative-a para deixar de oferecê-la; os fornecedores que já a têm a mantêm.",
+                "restored": "Categoria recuperada.",
+                "restoreGroupDeleted": "Não é possível recuperar: o grupo desta categoria está excluído. Recupere primeiro o grupo."
             }
         }
     },
@@ -2133,5 +2190,108 @@
             "notNeeded": "O anúncio já não conflita com outro anúncio publicado do dono, então o pedido foi encerrado e nada foi concedido. A lista foi atualizada."
         },
         "genericError": "Não foi possível concluir a ação."
+    },
+    "partnerTypes": {
+        "title": "Tipos de parceiro",
+        "subtitle": "Catálogo dos tipos que podem ser atribuídos a um parceiro.",
+        "loading": "Carregando…",
+        "error": "Não foi possível carregar o catálogo.",
+        "empty": "Ainda não há tipos.",
+        "add": "Novo tipo",
+        "showDeleted": "Mostrar excluídos",
+        "state": {
+            "active": "Ativo",
+            "inactive": "Inativo",
+            "deleted": "Excluído"
+        },
+        "columns": {
+            "name": "Nome",
+            "slug": "Código",
+            "weight": "Ordem",
+            "state": "Status",
+            "partners": "Parceiros",
+            "actions": "Ações"
+        },
+        "actions": {
+            "edit": "Alterar",
+            "delete": "Excluir",
+            "restore": "Recuperar",
+            "cancel": "Cancelar",
+            "save": "Salvar"
+        },
+        "dialog": {
+            "createTitle": "Novo tipo de parceiro",
+            "editTitle": "Editar tipo de parceiro",
+            "nameLabel": "Nome",
+            "slugLabel": "Código",
+            "slugHint": "Definido na criação e não pode ser alterado depois.",
+            "weightLabel": "Peso de ordenação",
+            "weightHint": "Valores menores aparecem primeiro.",
+            "activeLabel": "Ativo",
+            "activeHint": "Um tipo inativo deixa de ser oferecido para novos parceiros; os que já o têm o mantêm."
+        },
+        "deleteDialog": {
+            "title": "Excluir tipo de parceiro",
+            "message": "Você vai excluir o tipo «{{name}}». Pode restaurá-lo depois em «Mostrar excluídos».",
+            "confirm": "Excluir tipo"
+        },
+        "messages": {
+            "created": "Tipo criado.",
+            "updated": "Tipo atualizado.",
+            "deleted": "Tipo excluído.",
+            "restored": "Tipo recuperado.",
+            "saveError": "Não foi possível salvar o tipo.",
+            "deleteError": "Não foi possível excluir o tipo.",
+            "restoreError": "Não foi possível restaurar o tipo.",
+            "inUse": "Não permitido: {{count}} parceiro(s) usam este tipo. Atribua outro tipo a eles primeiro."
+        }
+    },
+    "emailPreviews": {
+        "title": "E-mails",
+        "description": "Pré-visualização de cada e-mail que a plataforma envia, renderizado no servidor com dados de exemplo. Nada é enviado.",
+        "searchLabel": "Buscar e-mails",
+        "searchPlaceholder": "Buscar por nome, chave ou id",
+        "domainFilterLabel": "Filtrar por domínio",
+        "clearFilters": "Limpar filtros",
+        "count": "{{shown}} de {{total}}",
+        "notWired": "sem envio em produção",
+        "empty": "Nenhum e-mail corresponde aos filtros.",
+        "loading": "Carregando catálogo...",
+        "loadError": "Não foi possível carregar o catálogo de e-mails.",
+        "retry": "Tentar novamente",
+        "selectPrompt": "Escolha um e-mail da lista.",
+        "subjectLabel": "Assunto",
+        "scenarioLabel": "Cenário",
+        "widthLabel": "Largura da pré-visualização",
+        "desktop": "Desktop (600 px)",
+        "mobile": "Celular (375 px)",
+        "previewLoading": "Gerando pré-visualização...",
+        "previewError": "Não foi possível gerar a pré-visualização",
+        "plainText": "Texto simples",
+        "iframeTitle": "Pré-visualização do e-mail: {{name}}",
+        "sendPaths": {
+            "notification": "Notificação",
+            "outbox": "Outbox",
+            "auth": "Autenticação",
+            "conversation": "Conversa",
+            "alert-digest": "Resumo de alertas",
+            "newsletter": "Newsletter"
+        },
+        "domains": {
+            "auth": "Autenticação",
+            "billing": "Faturamento",
+            "subscription": "Assinaturas",
+            "trial": "Teste gratuito",
+            "listing": "Anúncios",
+            "host-trade": "Trocas entre anfitriões",
+            "alliance": "Alianças",
+            "partner": "Parceiros",
+            "conversation": "Conversas",
+            "admin": "Administração",
+            "newsletter": "Newsletter",
+            "alerts": "Alertas",
+            "contact-feedback": "Contato e feedback",
+            "ai": "Inteligência artificial"
+        }
     }
 }

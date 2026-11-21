@@ -2,7 +2,7 @@
     "title": "Política de Cookies",
     "description": "Saiba como a Hospeda usa cookies e tecnologias similares para melhorar sua experiência no site.",
     "heading": "Política de Cookies",
-    "lastUpdated": "Última atualização: 28 de abril de 2026",
+    "lastUpdated": "Última atualização: 18 de novembro de 2026",
     "sections": {
         "whatAreCookies": {
             "title": "1. O que são cookies",
@@ -11,6 +11,10 @@
         "cookiesWeUse": {
             "title": "2. Quais cookies utilizamos",
             "body": "A Hospeda utiliza cookies estritamente necessários para o funcionamento do site (como a sessão do usuário e o idioma preferido), que não precisam do seu consentimento. Com o seu consentimento, podemos usar cookies de análise para entender como os visitantes interagem com o site e melhorar a experiência. Atualmente não usamos cookies de marketing ou publicidade."
+        },
+        "sessionRecording": {
+            "title": "Gravações de sessão e mapas de calor",
+            "body": "Se você aceitar os cookies de análise, a Hospeda pode gravar sessões de navegação e mapas de calor de cliques e rolagem com o Umami, uma ferramenta de análise que hospedamos por conta própria. As gravações são pseudônimas: se você estiver logado, elas podem ficar associadas ao identificador da sua conta. A gravação só acontece se você aceitou os cookies de análise e apenas enquanto este recurso estiver ativado. Todo o texto e todos os campos de formulário são mascarados, portanto o que você digita não é registrado. Apenas uma amostra das sessões é gravada, não todas. As gravações são mantidas por um período limitado de até 60 dias e depois são excluídas automaticamente."
         },
         "cookieList": {
             "title": "3. Lista de cookies",

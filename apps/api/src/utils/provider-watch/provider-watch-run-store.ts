@@ -6,7 +6,12 @@
  * @module utils/provider-watch/provider-watch-run-store
  */
 import { getDb, listSuperAdminRecipients, providerWatchRunModel } from '@repo/db';
-import type { WatchAccount, WatchRunRecord, WatchShapeBaseline } from '@repo/payments';
+import type {
+    WatchAccount,
+    WatchAuthorizationMiss,
+    WatchRunRecord,
+    WatchShapeBaseline
+} from '@repo/payments';
 import { z } from 'zod';
 import { apiLogger } from '../logger.js';
 import {
@@ -66,8 +71,13 @@ export async function openWatchRun(args: {
         readonly month: string;
         readonly maxChargeMinor: number;
         readonly accountId: string;
+        readonly day: string;
     };
-}): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
+}): Promise<{
+    readonly runId: string;
+    readonly authorizationConsumed: boolean;
+    readonly authorizationMiss?: WatchAuthorizationMiss;
+}> {
     return providerWatchRunModel.open({
         ...args,
         abandonRunsStartedBefore: new Date(
@@ -85,12 +95,15 @@ export async function openWatchRun(args: {
  * @param args.runId - The run
  * @param args.measurementId - The measurement that created it
  * @param args.providerIds - The ids the provider answered
+ * @param args.writeKeys - Idempotency keys of writes about to be sent
+ * @param args.ledger - The money ledger as it stands, written in the same statement
  */
 export async function recordWatchProgress(args: {
     readonly runId: string;
     readonly measurementId: string;
     readonly providerIds?: readonly string[];
     readonly writeKeys?: readonly string[];
+    readonly ledger?: { readonly charged: number; readonly refunded: number };
 }): Promise<void> {
     await providerWatchRunModel.appendProgress(args);
 }
@@ -118,8 +131,12 @@ export async function closeWatchRun(args: {
 }): Promise<{ readonly mailsQueued: number }> {
     const { run } = args;
     const outcome = await getDb().transaction(async (tx) => {
-        const recipients = run.alerts.length > 0 ? await listSuperAdminRecipients({ tx }) : [];
-        const undeliverable = run.alerts.length > 0 && recipients.length === 0;
+        // A run that failed or was aborted is mailed even with no alert: the administrator has to
+        // learn it, and the external watchdog (a day late) cannot say which measurement fell.
+        const mustMail =
+            run.alerts.length > 0 || run.outcome === 'failed' || run.outcome === 'aborted';
+        const recipients = mustMail ? await listSuperAdminRecipients({ tx }) : [];
+        const undeliverable = mustMail && recipients.length === 0;
         await providerWatchRunModel.close({
             id: args.runId,
             finishedAt: run.finishedAt,
@@ -139,18 +156,19 @@ export async function closeWatchRun(args: {
             tx
         });
         if (undeliverable) return { undeliverable: true as const, mailsQueued: 0 };
-        const { queued } =
-            run.alerts.length > 0
-                ? await enqueueProviderWatchAlerts({
-                      runId: args.runId,
-                      account: run.account,
-                      finishedAt: run.finishedAt,
-                      alerts: run.alerts,
-                      recipients,
-                      correlationId: args.correlationId,
-                      tx
-                  })
-                : { queued: 0 };
+        const { queued } = mustMail
+            ? await enqueueProviderWatchAlerts({
+                  runId: args.runId,
+                  account: run.account,
+                  finishedAt: run.finishedAt,
+                  alerts: run.alerts,
+                  outcome: run.outcome,
+                  reason: run.reason,
+                  recipients,
+                  correlationId: args.correlationId,
+                  tx
+              })
+            : { queued: 0 };
         return { undeliverable: false as const, mailsQueued: queued };
     });
     if (outcome.undeliverable) {

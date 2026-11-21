@@ -61,6 +61,7 @@ test.describe('HOS-2136 grace reminders, scheduled change and payment window @p0
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

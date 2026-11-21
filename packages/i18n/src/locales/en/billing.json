@@ -85,9 +85,6 @@
         "buyMore": "Buy more add-ons"
     },
     "addonPurchaseApi": {
-        "oneTimePaymentRequired": "Payment details are required for one-time addons.",
-        "recurringPaymentNotAccepted": "Recurring addons are paid for at the provider checkout.",
-        "payerEmailRequired": "Enter the payer's email address.",
         "purchaseNotFound": "We couldn't find that addon purchase.",
         "freeProductNotFound": "We couldn't find that addon.",
         "freeTargetNotFound": "We couldn't find that target.",
@@ -98,8 +95,10 @@
         "freeOrderRequestReused": "That request was already used for another choice.",
         "freeUnderGrant": "This addon is included for free in your benefit. Choose it without paying.",
         "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
+        "pageRejected": "Mercado Pago could not open the payment page. Try again in a few minutes.",
         "providerBusy": "Mercado Pago is very busy right now. Wait a minute and try again.",
-        "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes."
+        "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes.",
+        "identityBusy": "Another purchase of this add-on was being updated just now. Please try again in a few seconds."
     },
     "payment": {
         "title": "Payment methods",
@@ -243,6 +242,11 @@
             "title": "Confirm your subscription",
             "intro": "You will authorize the payment with Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "promo": {
+                "limited_one": "With code {{code}}: {{amount}} {{cycle}} for {{count}} charge (then {{listAmount}}).",
+                "limited_other": "With code {{code}}: {{amount}} {{cycle}} for {{count}} charges (then {{listAmount}}).",
+                "forever": "With code {{code}}: {{amount}} {{cycle}}."
+            },
             "cycle": {
                 "monthly": "per month",
                 "quarterly": "per quarter",
@@ -490,6 +494,8 @@
     },
     "vip": {
         "featureName": "Exclusive VIP promotions",
+        "inheritedFromPaidPlan": "Because you have a paid plan, you also have Tourist VIP",
+        "onUpgradeToPaidPlan": "When you move to a paid plan, you also get Tourist VIP",
         "description": "Access exclusive discounts and deals on accommodations only for VIP members.",
         "available": {
             "title": "VIP Promotions Available",
@@ -701,6 +707,7 @@
             "venueMenu": "Menu loaded into Hospeda and link to your menu",
             "venueDailySpecial": "Dish of the day",
             "venueEvents": "Venue events",
+            "venueVideos": "Videos on the listing",
             "menuItemPhotos": "Photos per dish",
             "multilingualMenu": "Menu in several languages",
             "menuQrScanMetrics": "Menu QR with scan analytics",
@@ -751,6 +758,7 @@
             "venueMenu": "Load your menu into Hospeda and add the link to your menu so it shows on your venue page.",
             "venueDailySpecial": "Show the dish of the day on your listing and change it whenever you like.",
             "venueEvents": "Announce the events you host on your venue's page.",
+            "venueVideos": "Add YouTube, Vimeo or Dailymotion videos to your venue page.",
             "menuItemPhotos": "Add a photo to every dish on your menu.",
             "multilingualMenu": "Offer your menu in several languages for visitors from other countries.",
             "maxExperiences": "Number of experiences you can have published at once.",
@@ -865,27 +873,39 @@
     "addonPurchase": {
         "title": "Buy add-ons",
         "chooseOffer": "Choose an add-on",
+        "back": "Back",
         "noOffers": "No add-ons are available.",
         "chooseTarget": "Choose a listing",
         "noTargets": "No listings are available for this add-on.",
         "chooseSubscription": "Choose a subscription",
         "noSubscriptions": "No subscriptions are available for this add-on.",
+        "noSubscriptionsBody": "Add-ons are attached to an active paid plan. If you are still on the free trial or have no plan, choose one and come back here to add it.",
+        "noSubscriptionsCta": "See plans",
         "summary": "Confirm add-on",
         "freeUnderGrant": "Free with your benefit",
         "days_one": "{{count}} day",
         "days_other": "{{count}} days",
         "hiddenListingRecurring": "This listing is not published. The boost is still charged while the listing is hidden, until you cancel it.",
+        "hiddenListingOneTime": "This listing is not published. The boost runs anyway, even while the listing is hidden.",
         "chooseFree": "Choose for free",
         "payerEmailLabel": "Payer email",
         "payerEmailInvalid": "Enter a valid payer email.",
         "payerEmailHint": "It is the email you will pay with on Mercado Pago. You declare it; the provider does not confirm it.",
         "confirmPurchase": "Confirm purchase",
+        "oneTimeSummary": "One-time payment: charged once and never renewed.",
+        "instantMethodsOnly": "You pay on Mercado Pago with a credit or debit card or your account balance. Cash payments are not accepted.",
+        "payWithMercadoPago": "Pay with Mercado Pago",
         "loading": "Loading add-ons…",
         "loadError": "We could not load the add-ons.",
         "attemptExpired": "That attempt is no longer valid. Please try again.",
         "processing": "Your purchase is being processed.",
+        "waitingPayment": "We are confirming your payment.",
+        "waitingPaymentLong": "We don't have Mercado Pago's confirmation yet. Come back to this screen in a few minutes to see the result.",
+        "waitingPaymentMail": "We don't have Mercado Pago's confirmation yet. We will email you once it is credited.",
         "active": "Active",
         "closed": "The purchase ended without activation.",
+        "pageExpired": "The payment page expired without an approved payment. You can buy it again.",
+        "paymentNotConfirmed": "We could not confirm the payment for this add-on. You can buy it again if you want.",
         "paused": {
             "title": "Purchases paused",
             "body": "Addon purchases are temporarily paused. Please try again later."

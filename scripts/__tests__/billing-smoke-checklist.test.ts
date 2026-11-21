@@ -130,7 +130,7 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
             expect(body, item).toContain('**Expected:**');
             expect(body, item).toContain('**Evidence:**');
             expect(body, item).toContain('**Covers:**');
-            expect(body, item).toContain('HOS-2094');
+            expect(body, item).toContain('HOS-2179');
             expect(body, item).toContain('Q1 option 3');
             for (const id of covers) expect(body, `${item}: ${id}`).toContain(id);
         }
@@ -202,7 +202,7 @@ describe('HOS-2302 refunds are smoked in production only', () => {
             p2Steps,
             'the addon refund step must require the refund to reach its final state'
         ).toMatch(/addon[\s\S]*final state/);
-        expect(p2).toContain('HOS-2094');
+        expect(p2).toContain('HOS-2179');
         expect(p2).toContain('Why here: staging cannot do this');
         expect(p2).toContain('Unauthorized use of live credentials');
     });

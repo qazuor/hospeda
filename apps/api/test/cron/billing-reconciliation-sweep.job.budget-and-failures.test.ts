@@ -338,7 +338,14 @@ describe('billing reconciliation sweep cron', () => {
                 creditedPayments: expect.objectContaining({
                     chargebacks: expect.objectContaining({ detect: expect.any(Function) })
                 }),
-                paidOrders: {}
+                // HOS-2179 §5.10: the page-payments pass runs A2 with the real policy readers.
+                pagePayments: expect.objectContaining({
+                    complements: expect.objectContaining({
+                        addonPolicy: expect.any(Function),
+                        listing: expect.any(Function)
+                    }),
+                    coverageNotices: expect.anything()
+                })
             })
         );
         expect(result).toMatchObject({ success: false, processed: 4, errors: 1 });

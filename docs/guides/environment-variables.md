@@ -127,8 +127,10 @@ pnpm env:check
 | `HOSPEDA_UMAMI_WEBSITE_ID_WEB` | string | no | no | - | Umami website id (UUID) of `hospeda-web`; server events describing the web surface go here (HOS-2119) |
 | `HOSPEDA_UMAMI_WEBSITE_ID_ADMIN` | string | no | no | - | Umami website id (UUID) of `hospeda-admin`; server events describing the admin surface go here (HOS-2119) |
 | `HOSPEDA_UMAMI_API_KEY` | string | no | yes | - | API key (`umami_...`) of a view-only Umami user, sent as `Authorization: Bearer`; only used to read stats (HOS-2119) |
+| `HOSPEDA_UMAMI_DATABASE_URL` | string | no | yes | - | Postgres URL of the Umami database for the restricted retention role (SELECT and DELETE on `session_replay`, `heatmap_event` and `session_replay_saved` only). Used by the recording retention purge; unset: the manual purge answers 503 and the cron skips (a failed run in production) (HOS-2347) |
 | `HOSPEDA_HEALTHCHECKS_PING_KEY` | string | no | yes | - | Healthchecks.io project ping key for the free cron monitors (HOS-1742) |
 | `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX` | enum | no | no | - | `staging` or `prod`; prefixes each check slug (HOS-1742) |
+| `HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL` | email | no | no | - | Payer email of the pending preapprovals the provider watch battery creates and cancels in the same run; sandbox test buyer on staging (HOS-1512) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_ID` | string | no | no | - | MercadoLibre OAuth app client ID (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_SECRET` | string | no | yes | - | MercadoLibre OAuth app client secret (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_REDIRECT_URI` | url | no | no | - | MercadoLibre OAuth callback URL, e.g. `https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback` (HOS-45) |

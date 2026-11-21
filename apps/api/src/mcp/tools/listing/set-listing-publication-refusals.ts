@@ -92,7 +92,10 @@ export function toRefusal(error: ServiceError): ToolHandlerResult<never> {
         code: error.code,
         message: error.message,
         details,
-        ...(reason === undefined ? {} : { reason })
+        ...(reason === undefined ? {} : { reason }),
+        // An incomplete listing is a refusal by Hospeda the owner can fix, not bad
+        // data from the assistant (HOS-2375): the audit row says `denied`.
+        ...(reason === LISTING_INCOMPLETE_REASON ? { kind: 'denied' as const } : {})
     };
     return { error: payload };
 }

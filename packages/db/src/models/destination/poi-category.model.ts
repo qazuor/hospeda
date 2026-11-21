@@ -12,6 +12,8 @@ import { poiCategories } from '../../schemas/destination/poi-category.dbschema.t
  */
 export class PoiCategoryModel extends BaseModelImpl<PoiCategory> {
     protected table = poiCategories;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'poiCategories';
 
     protected getTableName(): string {

@@ -13,5 +13,7 @@ export * from './alliance-lead.access.schema.js';
 export * from './alliance-lead.admin-search.schema.js';
 // CRUD input schemas (create, mark-handled, admin-update, delete)
 export * from './alliance-lead.crud.schema.js';
+// Provisioning outcome (HOS-2339)
+export * from './alliance-lead.provisioning.schema.js';
 // Core schema + enums
 export * from './alliance-lead.schema.js';

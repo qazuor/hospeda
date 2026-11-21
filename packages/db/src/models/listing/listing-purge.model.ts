@@ -43,7 +43,20 @@ const MEDIA_FKS: Record<ListingVertical, string> = {
     experience: 'experience_id'
 };
 
-const CONTENT_TABLES: Record<ListingVertical, readonly { table: string; fk: string }[]> = {
+/**
+ * One table whose rows are deleted with a listing. `fk` is the column that names the
+ * listing; `'entity_id'` means a polymorphic pair deleted together with its
+ * `entity_type`. `entityType` overrides the value that pair is matched against, for
+ * a table whose `entity_type` is not the shared uppercase `EntityTypeEnum`
+ * (`owner_promotions` has its own lowercase enum, HOS-2270).
+ */
+interface ContentTable {
+    readonly table: string;
+    readonly fk: string;
+    readonly entityType?: string;
+}
+
+const CONTENT_TABLES: Record<ListingVertical, readonly ContentTable[]> = {
     accommodation: [
         { table: 'accommodation_faqs', fk: 'accommodation_id' },
         { table: 'r_accommodation_amenity', fk: 'accommodation_id' },
@@ -52,6 +65,9 @@ const CONTENT_TABLES: Record<ListingVertical, readonly { table: string; fk: stri
         { table: 'qr_codes', fk: 'entity_id' },
         { table: 'entity_view_monthly_rollups', fk: 'entity_id' },
         { table: 'owner_promotions', fk: 'accommodation_id' },
+        // HOS-2270: no FK on the polymorphic pair, so it is deleted by type and id.
+        // Release N keeps the legacy column above; release N+1 drops it.
+        { table: 'owner_promotions', fk: 'entity_id', entityType: 'accommodation' },
         { table: 'accommodation_external_listings', fk: 'accommodation_id' },
         { table: 'accommodation_external_reputation', fk: 'accommodation_id' },
         { table: 'accommodation_occupancy', fk: 'accommodation_id' },
@@ -64,10 +80,15 @@ const CONTENT_TABLES: Record<ListingVertical, readonly { table: string; fk: stri
         { table: 'r_entity_tag', fk: 'entity_id' },
         { table: 'qr_codes', fk: 'entity_id' },
         { table: 'entity_view_monthly_rollups', fk: 'entity_id' },
+        // HOS-2256: the interaction summaries go with the content, like the view
+        // rollups. The raw `entity_interactions` rows are left to their TTL cron.
+        { table: 'entity_interaction_monthly_rollups', fk: 'entity_id' },
         { table: 'venue_menu_items', fk: 'venue_id' },
         { table: 'venue_menu_sections', fk: 'venue_id' },
         { table: 'venue_daily_specials', fk: 'venue_id' },
-        { table: 'venue_events', fk: 'venue_id' }
+        { table: 'venue_events', fk: 'venue_id' },
+        // HOS-2270: venue promotions hang from the polymorphic pair, no FK.
+        { table: 'owner_promotions', fk: 'entity_id', entityType: 'venue' }
     ],
     experience: [
         { table: 'experience_faqs', fk: 'experience_id' },
@@ -190,7 +211,7 @@ export const listingPurgeModel = {
         for (const item of CONTENT_TABLES[vertical]) {
             const entityPredicate =
                 item.fk === 'entity_id'
-                    ? sql`entity_type = ${ENTITY_TYPES[vertical]} AND entity_id = ${listingId}`
+                    ? sql`entity_type = ${item.entityType ?? ENTITY_TYPES[vertical]} AND entity_id = ${listingId}`
                     : sql`${sql.identifier(item.fk)} = ${listingId}`;
             await tx.execute(
                 sql`DELETE FROM ${sql.identifier(item.table)} WHERE ${entityPredicate}`

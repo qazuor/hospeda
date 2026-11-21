@@ -43,6 +43,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

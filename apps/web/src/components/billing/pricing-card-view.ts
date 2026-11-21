@@ -247,8 +247,15 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
             tourist: false,
             partner: false
         };
-        const inheritsBenefits =
-            collapseTouristVip[audience] && plan.inheritsTouristVip && touristVipBenefits != null;
+        /**
+         * HOS-2398: the inherited offer is announced from the plan's own flag,
+         * even when the tourist catalog read failed (`touristVipBenefits` null).
+         * Once the owner plans stop carrying the tourist rows, a card that
+         * waited for the key set would say nothing at all about Tourist VIP.
+         * Without the key set there is simply nothing to filter.
+         */
+        const inheritsOffer = collapseTouristVip[audience] && plan.inheritsTouristVip;
+        const inheritsBenefits = inheritsOffer && touristVipBenefits != null;
         const touristVipEntitlements = new Set(touristVipBenefits?.entitlements ?? []);
         const touristVipLimits = new Set(touristVipBenefits?.limits ?? []);
         /**
@@ -258,7 +265,7 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
          * not already inherit the VIP offer.
          */
         const hasTouristVipDelta =
-            inheritsBenefits && (!showsDelta || previousPlan?.inheritsTouristVip !== true);
+            inheritsOffer && (!showsDelta || previousPlan?.inheritsTouristVip !== true);
         /**
          * VIP catalog keys are covered by the group line wherever that line is
          * shown: on a full-offer card, or on a delta against a tier that did not

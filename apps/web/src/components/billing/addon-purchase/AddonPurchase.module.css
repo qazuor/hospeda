@@ -28,6 +28,18 @@
     outline: 2px solid currentColor;
     outline-offset: 2px;
 }
+.card:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+.activeBadge {
+    justify-self: start;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-button);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
 .notice {
     padding: var(--space-4);
     border-inline-start: 3px solid currentColor;
@@ -63,5 +75,24 @@
 }
 .confirm:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.back {
+    justify-self: start;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.back:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+.back:disabled {
+    opacity: 0.7;
     cursor: not-allowed;
 }

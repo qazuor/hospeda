@@ -7,6 +7,7 @@ import {
     CACHE_TAG_ENTITY_PREFIXES,
     CACHE_TAG_HOME,
     CACHE_TAG_HOST_TRADE_CATEGORIES,
+    CACHE_TAG_PARTNER_TYPES,
     CACHE_TAG_PRICING,
     CACHE_TAG_SITE_CONFIG,
     isValidCacheTag,
@@ -246,6 +247,34 @@ describe('CACHE_TAG_HOST_TRADE_CATEGORIES', () => {
     });
 });
 
+describe('CACHE_TAG_PARTNER_TYPES', () => {
+    it('is a non-empty, valid, kebab-case tag', () => {
+        expect(CACHE_TAG_PARTNER_TYPES).toBe('catalog-partner-types');
+        expect(isValidCacheTag({ tag: CACHE_TAG_PARTNER_TYPES })).toBe(true);
+        expect(CACHE_TAG_PARTNER_TYPES).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    });
+
+    it('is unique among the vocabulary constants and cannot collide with entity or collection tags', () => {
+        const others = [
+            ...Object.values(CACHE_TAG_COLLECTIONS),
+            CACHE_TAG_ALL,
+            CACHE_TAG_HOME,
+            CACHE_TAG_PRICING,
+            CACHE_TAG_SITE_CONFIG,
+            CACHE_TAG_HOST_TRADE_CATEGORIES
+        ];
+        expect(others).not.toContain(CACHE_TAG_PARTNER_TYPES);
+        for (const prefix of Object.values(CACHE_TAG_ENTITY_PREFIXES)) {
+            expect(CACHE_TAG_PARTNER_TYPES.startsWith(`${prefix}-`)).toBe(false);
+        }
+    });
+
+    it('is exported from the package entry point', async () => {
+        const entry = await import('./index.js');
+        expect(entry.CACHE_TAG_PARTNER_TYPES).toBe(CACHE_TAG_PARTNER_TYPES);
+    });
+});
+
 describe('CACHE_TAG_ALL', () => {
     it('is a bare vocabulary word, so it is namespaced by the same path as any other tag', () => {
         // A pre-namespaced constant would be a SECOND way of spelling a tag,
@@ -267,7 +296,8 @@ describe('CACHE_TAG_ALL', () => {
             CACHE_TAG_HOME,
             CACHE_TAG_PRICING,
             CACHE_TAG_SITE_CONFIG,
-            CACHE_TAG_HOST_TRADE_CATEGORIES
+            CACHE_TAG_HOST_TRADE_CATEGORIES,
+            CACHE_TAG_PARTNER_TYPES
         ];
 
         expect(others).not.toContain(CACHE_TAG_ALL);

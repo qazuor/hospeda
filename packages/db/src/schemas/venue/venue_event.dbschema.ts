@@ -85,8 +85,9 @@ export const VenueEventRecurrencePgEnum = pgEnum('venue_event_recurrence_enum', 
  *   columns nothing reads today.
  * - **No moderation state.** The parent listing carries one; a finer-grained
  *   moderation surface is not part of this issue.
- * - **No price, no capacity, no ticketing.** An agenda entry announces that
- *   something happens. Selling a seat for it is a different product.
+ * - **No price, no capacity.** An agenda entry announces that something
+ *   happens. Selling a seat for it is a different product; the only ticketing
+ *   it carries is an optional external link (`ticketUrl`, HOS-2255).
  *
  * Structure otherwise mirrors `venue_menu_sections`: FK CASCADE,
  * `display_order` assigned by the whole-document writer, and the full audit
@@ -143,6 +144,13 @@ export const venueEvents = pgTable(
          * would publish a claim nobody made.
          */
         endTime: time('end_time'),
+        /**
+         * Optional external link to buy tickets (HOS-2255): `https` only, no
+         * credentials, validated by `VenueEventTicketUrlSchema` (no CHECK: the
+         * only writer parses that schema first, like every other column here).
+         * `NULL` when the event has none.
+         */
+        ticketUrl: text('ticket_url'),
         /**
          * Whether the entry is currently shown.
          *

@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import { PromotionWindowSchema } from '../ownerPromotion/owner-promotion.venue.schema.js';
+
+/** Presence-only venue promotion summary attached to public cards. */
+export const VenuePromoBadgeSchema = z.object({
+    hasPromo: z.literal(true),
+    vipOnly: z.boolean(),
+    hasUnscheduled: z.boolean(),
+    windows: z.array(PromotionWindowSchema).max(10)
+});
+export type VenuePromoBadge = z.infer<typeof VenuePromoBadgeSchema>;
+
 import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
@@ -48,6 +59,28 @@ export const VenuePublicContactInfoSchema = z.object({
     mobilePhone: z.string().nullish(),
     website: z.string().nullish()
 });
+
+/**
+ * PUBLIC WhatsApp contact of a venue (HOS-2256 section 7.8, OQ-8).
+ *
+ * A SEPARATE derived field and not a `whatsapp` key of
+ * {@link VenuePublicContactInfoSchema}: that schema stays a fail-closed
+ * allow-list that never names the number (HOS-1076 / HOS-2042), so a new
+ * `contact_info` key or a future refactor cannot publish it by accident. The
+ * number can only appear here, and only in the `PUBLIC` variant the owner chose.
+ *
+ * - `{ mode: 'PUBLIC', number }`: the number is in the HTML on purpose.
+ * - `{ mode: 'LOGGED_IN_ONLY' }`: NO number. The web renders the button
+ *   and an island asks the protected endpoint for the number.
+ * - absent: no button (no number stored, or the owner has not decided).
+ */
+export const VenuePublicWhatsappSchema = z.discriminatedUnion('mode', [
+    z.object({ mode: z.literal('PUBLIC'), number: z.string().min(1) }),
+    z.object({ mode: z.literal('LOGGED_IN_ONLY') })
+]);
+
+/** TypeScript type for {@link VenuePublicWhatsappSchema}. */
+export type VenuePublicWhatsapp = z.infer<typeof VenuePublicWhatsappSchema>;
 
 /**
  * PUBLIC ACCESS SCHEMA
@@ -145,6 +178,12 @@ export const VenuePublicSchema = VenueSchema.pick({
      * existed, simply has none.
      */
     contactInfo: VenuePublicContactInfoSchema.nullish(),
+    /**
+     * WhatsApp button state (HOS-2256), derived by the public route from the
+     * owner's WhatsApp choice. Never carries the number unless the owner
+     * picked `PUBLIC`. See {@link VenuePublicWhatsappSchema}.
+     */
+    whatsapp: VenuePublicWhatsappSchema.optional(),
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
      * admin-curated `is_featured` it is derived in the public routes from
@@ -293,7 +332,9 @@ export const VenuePublicSchema = VenueSchema.pick({
      * venue payload carrying a field by that name would read, to every
      * consumer that already knows the other one, as the wrong thing.
      */
-    venueEvents: z.array(VenueEventPublicSchema).optional()
+    venueEvents: z.array(VenueEventPublicSchema).optional(),
+    /** Presence-only card badge; reveals neither promotion titles nor benefits. */
+    promoBadge: VenuePromoBadgeSchema.optional()
 });
 
 /**
@@ -371,6 +412,8 @@ export const VenueProtectedSchema = VenueSchema.pick({
 
     // Contact info (nested object with email, phone, website)
     contactInfo: true,
+    // HOS-2256: the owner reads back who may see the WhatsApp button.
+    whatsappVisibility: true,
 
     // Social networks
     socialNetworks: true,

@@ -17,10 +17,12 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { ListingActions } from '@/components/listing/ListingActions.client';
 import { ListingViewsWidget } from '@/components/listing/ListingViewsWidget.client';
 import { TourController } from '@/components/account/TourController.client';
 import { VenueMenuQrWidget } from '@/components/venue/VenueMenuQrWidget.client';
+import { VenueListingStatsPanel } from '@/components/venue/VenueListingStatsPanel.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { listingAnalyticsApi, publishApi } from '@/lib/api/endpoints-protected';
 import {
@@ -33,6 +35,8 @@ import { hasListingNavAccess } from '@/lib/nav-gating';
 import {
     fetchOwnerListingsWithState,
     isVenueListing,
+    OwnerListingsUnavailableError,
+    type OwnerListingSummaryWithState,
     VENUE_VERTICAL
 } from '@/lib/listing/owner-listings';
 import { resolveListingPublishAffordances } from '@/lib/listing/listing-publish-affordance';
@@ -44,8 +48,11 @@ import {
 import { UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import { shouldAnchorMenuQrTour } from '@/lib/venue/menu-qr-tour-anchor';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { AlertCircleIcon } from '@repo/icons';
 import { PublicationStatusEnum } from '@repo/schemas';
 
 export const prerender = false;
@@ -69,7 +76,19 @@ const title = t('listing.owner.list.title', 'Mi comercio');
 const subtitle = t('listing.owner.list.subtitle', '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const listings = await fetchOwnerListingsWithState({ cookieHeader });
+// HOS-2421: a failed read must never render the "you have no listings" empty
+// state, which tells an owner their listings are gone. The helper throws only
+// when the failure left nothing to show; the page then renders an error with a
+// retry link instead.
+let listings: readonly OwnerListingSummaryWithState[] = [];
+let listingsLoadFailed = false;
+try {
+    listings = await fetchOwnerListingsWithState({ cookieHeader });
+} catch (error) {
+    if (!(error instanceof OwnerListingsUnavailableError)) throw error;
+    listingsLoadFailed = true;
+    logger.warn('[comercio] owner listings read failed');
+}
 
 /**
  * HOS-1641 (Coord-351 F4): a `PURGED` listing offers no action — no edit link,
@@ -164,6 +183,17 @@ const venueSectionStates = await Promise.all(
 );
 const anchorMenuQrTour = shouldAnchorMenuQrTour({ sectionStates: venueSectionStates });
 
+// The catalog controls whether advanced metrics exist for venue owners yet.
+// The user's entitlement stays in the client island and is checked by its API.
+const venueStatsUnlockingPlanName =
+    venueListings.length > 0
+        ? resolveUnlockingPlanName({
+              plans: await fetchAudiencePlans({ audience: 'venue' }),
+              entitlementKey: 'view_advanced_stats',
+              t
+          })
+        : null;
+
 // HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
 // button used to open. Its replacement for a SIGNED-IN owner is the publish hub,
 // which lists all three verticals with their own CTAs and already knows which
@@ -249,12 +279,33 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         />
     </div>
 
+    {venueListings.length > 0 && venueStatsUnlockingPlanName !== null && (
+        <VenueListingStatsPanel
+            client:visible
+            locale={locale}
+            listings={venueListings.map((listing) => ({ id: listing.id, name: listing.name }))}
+            unlockingPlanName={venueStatsUnlockingPlanName}
+        />
+    )}
+
     {/* HOS-788: welcome-tour anchor for the listings list, shared by the
         venue and experience welcome tours. */}
     <div data-tour="listings">
     <AccountSectionCard>
         {
-            listings.length === 0 ? (
+            listingsLoadFailed ? (
+                <AccountEmptyState
+                    title={t('listing.owner.list.loadError.title', 'No pudimos cargar tus comercios')}
+                    description={t(
+                        'listing.owner.list.loadError.body',
+                        'Hubo un problema al leer tus fichas. Siguen ahí: probá de nuevo en un momento.'
+                    )}
+                    ctaHref={Astro.url.pathname + Astro.url.search}
+                    ctaLabel={t('listing.owner.list.loadError.retry', 'Reintentar')}
+                >
+                    <AlertCircleIcon slot="icon" size={28} aria-hidden={true} />
+                </AccountEmptyState>
+            ) : listings.length === 0 ? (
                 <div class="mc-empty">
                     <p class="mc-empty__text">
                         {t(
@@ -366,6 +417,13 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         background-color: oklch(0.95 0.05 65);
         color: oklch(0.40 0.12 65);
         border-color: oklch(0.85 0.10 65);
+    }
+
+    /* HOS-2443: reaching the cap is informational (neutral blue), never an error tone. */
+    .mc-usage--atLimit {
+        background-color: oklch(0.95 0.03 240);
+        color: oklch(0.38 0.10 240);
+        border-color: oklch(0.85 0.06 240);
     }
 
     .mc-usage--critical,

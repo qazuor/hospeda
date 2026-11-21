@@ -156,7 +156,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 readAuthorization: vi.spyOn(caseRow.fake, 'readAuthorization'),
                 changeAmount: vi.spyOn(caseRow.fake, 'changeAmount'),
                 charge: vi.spyOn(caseRow.fake, 'charge'),
-                chargeOnce: vi.spyOn(caseRow.fake, 'chargeOnce'),
+                requestOneTimePayment: vi.spyOn(caseRow.fake, 'requestOneTimePayment'),
                 pause: vi.spyOn(caseRow.fake, 'pause'),
                 resume: vi.spyOn(caseRow.fake, 'resume'),
                 cancel: vi.spyOn(caseRow.fake, 'cancel')
@@ -167,7 +167,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(spies.readAuthorization).toHaveBeenCalledTimes(0);
             expect(spies.changeAmount).toHaveBeenCalledTimes(0);
             expect(spies.charge).toHaveBeenCalledTimes(0);
-            expect(spies.chargeOnce).toHaveBeenCalledTimes(0);
+            expect(spies.requestOneTimePayment).toHaveBeenCalledTimes(0);
             expect(spies.pause).toHaveBeenCalledTimes(0);
             expect(spies.resume).toHaveBeenCalledTimes(0);
             expect(spies.cancel).toHaveBeenCalledTimes(0);

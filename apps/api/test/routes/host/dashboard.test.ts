@@ -285,6 +285,29 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                 archived: 0
             });
             expect(body.data.unreadConversations).toBe(0);
+            // HOS-2424: the zeros are a fallback and must be flagged as such.
+            expect(body.data.unavailable).toEqual(['properties', 'unreadConversations']);
+        });
+
+        it('flags unreadConversations as unavailable when getUnreadCount fails (HOS-2424)', async () => {
+            getByOwnerMock.mockResolvedValue(
+                ok([{ id: 'a1', publicationStatus: PublicationStatusEnum.PUBLISHED }])
+            );
+            getUnreadCountMock.mockRejectedValue(new Error('boom'));
+            const res = await buildApp().request('/dashboard');
+            const body = await res.json();
+            expect(res.status).toBe(200);
+            expect(body.data.properties.published).toBe(1);
+            expect(body.data.unavailable).toEqual(['unreadConversations']);
+        });
+
+        it('reports nothing unavailable when both reads succeed (HOS-2424)', async () => {
+            getByOwnerMock.mockResolvedValue(
+                ok([{ id: 'a1', publicationStatus: PublicationStatusEnum.PUBLISHED }])
+            );
+            const res = await buildApp().request('/dashboard');
+            const body = await res.json();
+            expect(body.data.unavailable).toEqual([]);
         });
 
         it('returns 200 with zeroed properties when getByOwner returns an error result', async () => {

@@ -13,8 +13,6 @@
  */
 
 import { ChevronLeftIcon, ChevronRightIcon, FullscreenIcon } from '@repo/icons';
-import type { MediaPreset } from '@repo/media';
-import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import {
@@ -22,10 +20,20 @@ import {
     DialogBody,
     DialogFloatingCloseButton
 } from '@/components/shared/ui/Dialog.client';
+import { useSwipe } from '@/hooks/useSwipe';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { PhotoCreditParts } from '@/lib/photo-credit.types';
+import { GalleryHeroPreload } from './gallery/GalleryHeroPreload';
+import {
+    buildCellSources,
+    buildCellUrl,
+    DESKTOP_GALLERY_MEDIA
+} from './gallery/gallery-image-sources';
 import styles from './ImageGallery.module.css';
+import type { MobileGalleryOptions } from './ImageGalleryMobileTrack.client';
+import { ImageGalleryMobileTrack } from './ImageGalleryMobileTrack.client';
+import mobileStyles from './ImageGalleryMobileTrack.module.css';
 
 /**
  * A single image entry for the gallery.
@@ -58,6 +66,8 @@ export interface GalleryImage {
  * Props for the ImageGallery component.
  */
 interface ImageGalleryProps {
+    /** Opts the detail variant into the mobile track with a caller-provided back destination. */
+    readonly mobile?: MobileGalleryOptions;
     /** List of images to display */
     readonly images: ReadonlyArray<GalleryImage>;
     /**
@@ -84,139 +94,6 @@ interface ImageGalleryProps {
     readonly viewAllHref?: string;
 }
 
-// ─── Per-cell URL builder ─────────────────────────────────────────────────────
-
-/**
- * Returns `true` when `url` is a Cloudinary delivery URL.
- *
- * This mirrors the internal check inside `getMediaUrl` and
- * `stripCloudinaryTransform` so callers can decide whether it is worth
- * building a `srcset` (non-Cloudinary URLs pass through width-override
- * calls unchanged, producing identical candidates — emitting a srcset
- * in that case wastes bytes and confuses the browser).
- *
- * @param url - Any image URL.
- */
-function isCloudinaryUrl(url: string): boolean {
-    // Exact hostname match. A substring check (`includes`) would treat a spoofed
-    // host like `res.cloudinary.com.evil.com` as Cloudinary (CodeQL
-    // js/incomplete-url-substring-sanitization). Relative/invalid URLs are not
-    // Cloudinary, so a parse failure resolves to false.
-    try {
-        return new URL(url).hostname === 'res.cloudinary.com';
-    } catch {
-        return false;
-    }
-}
-
-/**
- * Builds a Cloudinary-optimized URL for a specific gallery cell role.
- *
- * For Cloudinary URLs that have already been transformed with a generic preset
- * (e.g. `gallery`: `w_800,q_auto,f_auto,dpr_auto`) at extraction time, this
- * function first strips the existing transform segment via
- * `stripCloudinaryTransform` and then re-applies the correct per-cell preset
- * via `getMediaUrl`. This ensures the CDN returns an asset that is pre-cropped
- * to the cell's fixed aspect-ratio (SPEC-186 FR-3 / §7), eliminating
- * client-side crop and zeroing CLS.
- *
- * Non-Cloudinary URLs (placeholders, external hosts) are returned unchanged —
- * `getMediaUrl` pass-through semantics apply.
- *
- * @param url - Original image URL (may already carry a Cloudinary transform).
- * @param preset - Named preset matching the cell's role and fixed aspect-ratio.
- * @returns Optimized Cloudinary URL with `c_fill` + `ar_` matching the cell,
- *   or the original URL if it is not a Cloudinary upload URL.
- */
-function buildCellUrl(url: string, preset: MediaPreset): string {
-    const baseUrl = stripCloudinaryTransform(url);
-    return getMediaUrl(baseUrl, { preset });
-}
-
-/**
- * Candidate widths (in pixels) for each gallery cell preset's `srcset`.
- *
- * Values are taken from the spec §7 annotation on each preset.
- * The order (ascending) matches the `srcset` convention so browsers can
- * parse them efficiently.
- *
- * Lightbox (`full`) and thumb strip (`galleryThumb`) are intentionally absent:
- * the lightbox main image uses a single `src` (no crop applied, FR-4 scope),
- * and the 120px thumb strip is already at its final pixel size.
- */
-const SRCSET_WIDTHS: Readonly<
-    Record<'galleryFeatured' | 'galleryHalf' | 'galleryQuarter', readonly number[]>
-> = Object.freeze({
-    galleryFeatured: [640, 1000, 1400],
-    galleryHalf: [400, 640, 900],
-    galleryQuarter: [200, 400, 600]
-});
-
-/**
- * `sizes` attribute values for each gallery cell role.
- *
- * Derived from the locked §5 layout matrix and CSS breakpoints:
- *
- * - `galleryFeatured`:
- *   Mobile (≤640px): single-column full-width → `100vw`.
- *   Tablet + Desktop (>640px): `2fr` in a `2fr 1fr` grid →
- *   approximately `66vw` (two-thirds of the viewport).
- *   At a typical 1280px desktop `66vw ≈ 845px`, so the browser selects the
- *   `1000w` candidate — matching the previous single `w_1000` URL. No LCP
- *   regression: the candidate chosen at desktop is identical in weight to the
- *   pre-srcset baseline.
- *
- * - `galleryHalf`:
- *   Mobile: stacks to full width (detail count=2 single-col; cover extras single-col) → `100vw`.
- *   Tablet + Desktop: half of the container width → `50vw`.
- *
- * - `galleryQuarter`:
- *   Mobile: thumb strip in detail variant uses 2–3 equal columns → `50vw`
- *   (safest upper bound; narrows further at 3-up but 50vw avoids under-fetching).
- *   Tablet + Desktop: `1fr` column in `2fr 1fr` or `repeat(3,1fr)` grid → `33vw`.
- */
-const CELL_SIZES: Readonly<Record<'galleryFeatured' | 'galleryHalf' | 'galleryQuarter', string>> =
-    Object.freeze({
-        galleryFeatured: '(max-width: 640px) 100vw, 66vw',
-        galleryHalf: '(max-width: 640px) 100vw, 50vw',
-        galleryQuarter: '(max-width: 640px) 50vw, 33vw'
-    });
-
-/**
- * Builds a `srcset` attribute string for a gallery cell.
- *
- * Generates width candidates by overriding the preset's `w_` token via
- * `getMediaUrl({ preset, width })`. Each candidate is formatted as
- * `<url> <width>w` per the HTML specification.
- *
- * Returns `undefined` for non-Cloudinary URLs (placeholders, YouTube poster
- * frames, mock URLs in tests) because `getMediaUrl` is a pass-through for
- * those — all candidates would be identical strings, which wastes bandwidth
- * and produces a confusing srcset that the browser cannot use for selection.
- *
- * @param url - Original image URL (may carry an existing Cloudinary transform).
- * @param preset - Cell role preset; must be one of the srcset-capable presets.
- * @returns Comma-separated `srcset` string, or `undefined` if the URL is not
- *   a Cloudinary URL.
- */
-function buildCellSrcset(
-    url: string,
-    preset: 'galleryFeatured' | 'galleryHalf' | 'galleryQuarter'
-): string | undefined {
-    if (!isCloudinaryUrl(url)) {
-        // Non-Cloudinary URLs pass through width-override calls unchanged.
-        // Emitting a srcset with identical candidates would waste bytes and
-        // give the browser no useful density information. Return undefined so
-        // the caller falls back to a plain `src`.
-        return undefined;
-    }
-
-    const baseUrl = stripCloudinaryTransform(url);
-    const widths = SRCSET_WIDTHS[preset];
-
-    return widths.map((w) => `${getMediaUrl(baseUrl, { preset, width: w })} ${w}w`).join(', ');
-}
-
 /**
  * Builds a large, non-cropped URL for the lightbox viewer.
  *
@@ -231,7 +108,7 @@ function buildCellSrcset(
  * @returns URL optimized for full-size lightbox display.
  */
 function buildLightboxUrl(url: string): string {
-    return buildCellUrl(url, 'full');
+    return buildCellUrl({ url, preset: 'full' }).src;
 }
 
 // ─── Cell image with loading skeleton ─────────────────────────────────────────
@@ -244,6 +121,7 @@ interface GalleryCellImageProps {
     readonly src: string;
     readonly srcSet?: string;
     readonly sizes?: string;
+    readonly media?: string;
     readonly alt: string;
     /** Base cell image class (`styles.cellImg` or `styles.coverImg`). */
     readonly className: string;
@@ -271,26 +149,48 @@ interface GalleryCellImageProps {
  * `img.complete` after mount and clears the skeleton synchronously in that case
  * (mirrors the lightbox's belt-and-suspenders load handling).
  */
-function GalleryCellImage({ className, ariaHidden, ...imgProps }: GalleryCellImageProps) {
+function GalleryCellImage({
+    className,
+    ariaHidden,
+    src,
+    srcSet,
+    sizes,
+    media,
+    ...imgProps
+}: GalleryCellImageProps) {
     const [isLoaded, setIsLoaded] = useState(false);
     const ref = useRef<HTMLImageElement>(null);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount to catch images already decoded before `onLoad` can attach (SSR/cache path).
     useLayoutEffect(() => {
         if (ref.current?.complete) {
             setIsLoaded(true);
         }
     }, []);
 
-    return (
+    const image = (
         <img
             ref={ref}
+            src={media ? undefined : src}
+            srcSet={media ? undefined : srcSet}
+            sizes={media ? undefined : sizes}
             {...imgProps}
             aria-hidden={ariaHidden}
             className={isLoaded ? className : `${className} ${styles.cellImgSkeleton}`}
             onLoad={() => setIsLoaded(true)}
             onError={() => setIsLoaded(true)}
         />
+    );
+    // A CSS-hidden eager img can still fetch (or be preloaded during SSR).
+    if (!media) return image;
+    return (
+        <picture className={mobileStyles.desktopPicture}>
+            <source
+                media={media}
+                srcSet={srcSet ?? src}
+                sizes={sizes}
+            />
+            {image}
+        </picture>
     );
 }
 
@@ -373,6 +273,8 @@ function LightboxCaption({ image, t }: LightboxCaptionProps) {
     );
 }
 
+function noop() {}
+
 function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
     const [index, setIndex] = useState(initialIndex);
     // Tracks whether the displayed image has finished loading, so a spinner can
@@ -406,6 +308,10 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
         setIsImgLoading(true);
         setIndex((i) => (i + 1) % images.length);
     }, [images.length]);
+    const swipe = useSwipe({
+        onLeft: images.length > 1 ? next : noop,
+        onRight: images.length > 1 ? prev : noop
+    });
 
     // Arrow-key navigation. Esc + scroll-lock + focus-trap are owned by Dialog.
     useEffect(() => {
@@ -491,7 +397,8 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                         ref={imgRef}
                         src={current ? buildLightboxUrl(current.url) : undefined}
                         alt={current?.alt ?? ''}
-                        className={`${styles.lightboxImg} ${styles.lightboxImgFade}${isImgLoading ? ` ${styles.lightboxImgLoading}` : ''}`}
+                        className={`${styles.lightboxImg} ${styles.lightboxImgFade} ${mobileStyles.swipeSurface}${isImgLoading ? ` ${styles.lightboxImgLoading}` : ''}`}
+                        {...swipe}
                         onLoad={() => setIsImgLoading(false)}
                         onError={() => setIsImgLoading(false)}
                     />
@@ -540,7 +447,7 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                                 }}
                             >
                                 <img
-                                    src={buildCellUrl(img.url, 'galleryThumb')}
+                                    {...buildCellUrl({ url: img.url, preset: 'galleryThumb' })}
                                     alt={img.alt}
                                     className={styles.lightboxThumbImg}
                                     loading="lazy"
@@ -587,6 +494,8 @@ function getVisibleThumbCount(imageCount: number): number {
 
 interface DetailVariantProps {
     readonly images: ReadonlyArray<GalleryImage>;
+    readonly locale: SupportedLocale;
+    readonly mobile?: MobileGalleryOptions;
     readonly onOpen: (index: number) => void;
     readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
     /**
@@ -596,7 +505,7 @@ interface DetailVariantProps {
     readonly viewAllHref?: string;
 }
 
-function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
+function DetailVariant({ images, onOpen, t, viewAllHref, locale, mobile }: DetailVariantProps) {
     const [featured, ...rest] = images;
     const count = images.length;
     const visibleThumbCount = getVisibleThumbCount(count);
@@ -604,8 +513,11 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
     // N in "+N más" = total images minus visible inline images (featured + visible thumbs).
     const moreCount = count >= 5 ? count - 4 : 0;
     const countKey = getDetailCountKey(count);
+    const mosaicMedia = mobile ? DESKTOP_GALLERY_MEDIA : undefined;
+    const mosaicTriggerRef = useRef<HTMLButtonElement>(null);
 
     if (!featured) return null;
+    const heroSources = buildCellSources({ url: featured.url, preset: 'galleryFeatured' });
 
     // The "Ver todas las fotos" CTA is shown only when a href is provided AND
     // total images exceed the 4 visible inline slots (count >= 5). At count < 5
@@ -614,8 +526,23 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
 
     return (
         <>
+            {mosaicMedia && (
+                <GalleryHeroPreload
+                    {...heroSources}
+                    media={mosaicMedia}
+                />
+            )}
+            {mobile && (
+                <ImageGalleryMobileTrack
+                    images={images}
+                    locale={locale}
+                    onOpen={onOpen}
+                    mosaicTriggerRef={mosaicTriggerRef}
+                    {...mobile}
+                />
+            )}
             <div
-                className={styles.grid}
+                className={`${styles.grid}${mobile ? ` ${mobileStyles.mosaic}` : ''}`}
                 data-count={countKey}
             >
                 {/* Featured image — LCP candidate, eager load, full priority.
@@ -628,6 +555,7 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                 identical to the previous single-URL w_1000 baseline. No LCP
                 regression (SPEC-186 FR-4 §8 step 10). */}
                 <button
+                    ref={mosaicTriggerRef}
                     type="button"
                     className={styles.cellFeatured}
                     aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
@@ -641,11 +569,8 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                         intrinsic ratio mirrors the .mosaic max-height (480px);
                         object-fit: cover keeps remote images undistorted. */}
                     <GalleryCellImage
-                        src={buildCellUrl(featured.url, 'galleryFeatured')}
-                        srcSet={buildCellSrcset(featured.url, 'galleryFeatured')}
-                        sizes={
-                            isCloudinaryUrl(featured.url) ? CELL_SIZES.galleryFeatured : undefined
-                        }
+                        {...heroSources}
+                        media={mosaicMedia}
                         alt={featured.alt}
                         className={styles.cellImg}
                         loading="eager"
@@ -687,13 +612,11 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                                         className={`${cellClass} ${styles.moreOverlay}`}
                                     >
                                         <GalleryCellImage
-                                            src={buildCellUrl(img.url, thumbPreset)}
-                                            srcSet={buildCellSrcset(img.url, thumbPreset)}
-                                            sizes={
-                                                isCloudinaryUrl(img.url)
-                                                    ? CELL_SIZES[thumbPreset]
-                                                    : undefined
-                                            }
+                                            {...buildCellSources({
+                                                url: img.url,
+                                                preset: thumbPreset
+                                            })}
+                                            media={mosaicMedia}
                                             alt={img.alt}
                                             className={styles.cellImg}
                                             loading="lazy"
@@ -732,13 +655,8 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                                     onClick={() => onOpen(lightboxIndex)}
                                 >
                                     <GalleryCellImage
-                                        src={buildCellUrl(img.url, thumbPreset)}
-                                        srcSet={buildCellSrcset(img.url, thumbPreset)}
-                                        sizes={
-                                            isCloudinaryUrl(img.url)
-                                                ? CELL_SIZES[thumbPreset]
-                                                : undefined
-                                        }
+                                        {...buildCellSources({ url: img.url, preset: thumbPreset })}
+                                        media={mosaicMedia}
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
@@ -842,9 +760,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                 onClick={() => onOpen(0)}
             >
                 <GalleryCellImage
-                    src={buildCellUrl(cover.url, 'galleryFeatured')}
-                    srcSet={buildCellSrcset(cover.url, 'galleryFeatured')}
-                    sizes={isCloudinaryUrl(cover.url) ? CELL_SIZES.galleryFeatured : undefined}
+                    {...buildCellSources({ url: cover.url, preset: 'galleryFeatured' })}
                     alt={cover.alt}
                     className={styles.coverImg}
                     loading="eager"
@@ -883,13 +799,10 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                     className={`${cellClass} ${styles.moreOverlay}`}
                                 >
                                     <GalleryCellImage
-                                        src={buildCellUrl(img.url, extrasPreset)}
-                                        srcSet={buildCellSrcset(img.url, extrasPreset)}
-                                        sizes={
-                                            isCloudinaryUrl(img.url)
-                                                ? CELL_SIZES[extrasPreset]
-                                                : undefined
-                                        }
+                                        {...buildCellSources({
+                                            url: img.url,
+                                            preset: extrasPreset
+                                        })}
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
@@ -928,13 +841,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                 onClick={() => onOpen(lightboxIndex)}
                             >
                                 <GalleryCellImage
-                                    src={buildCellUrl(img.url, extrasPreset)}
-                                    srcSet={buildCellSrcset(img.url, extrasPreset)}
-                                    sizes={
-                                        isCloudinaryUrl(img.url)
-                                            ? CELL_SIZES[extrasPreset]
-                                            : undefined
-                                    }
+                                    {...buildCellSources({ url: img.url, preset: extrasPreset })}
                                     alt={img.alt}
                                     className={styles.cellImg}
                                     loading="lazy"
@@ -976,7 +883,8 @@ export function ImageGallery({
     variant = 'detail',
     locale,
     className,
-    viewAllHref
+    viewAllHref,
+    mobile
 }: ImageGalleryProps) {
     const { t } = createTranslations(locale);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -999,6 +907,8 @@ export function ImageGallery({
                     onOpen={openLightbox}
                     t={t}
                     viewAllHref={viewAllHref}
+                    locale={locale}
+                    mobile={mobile}
                 />
             ) : (
                 <CoverPlusGridVariant

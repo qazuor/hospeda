@@ -953,7 +953,10 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `listing-inactivity-archive` | system | `30 5 * * *` | `apps/api/src/cron/jobs/listing-inactivity-archive.job.ts` |
 | `listing-remote-deletion-retry` | system | `45 5 * * *` | `apps/api/src/cron/jobs/listing-remote-deletion-retry.job.ts` |
 | `listing-retention-pass` | system | `10 2 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
+| `mcp-audit-retention` | system | `20 4 * * *` | `apps/api/src/cron/jobs/mcp-audit-retention.job.ts` (HOS-2335 D-13: `mcp.tool.call` rows older than 12 months only) |
 | `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
+| `session-recording-retention` | system | `25 4 * * *` | `apps/api/src/cron/jobs/session-recording-retention.job.ts` (HOS-2347: Umami replays (saved ones included), heatmaps and saved pointers older than the configured 14/30/60 days; needs `HOSPEDA_UMAMI_DATABASE_URL`: skips with a warning when unset, fails the run in production; skips when another purge holds the advisory lock) |
+| `venue-events-past-cleanup` | system | `15 4 * * *` | `apps/api/src/cron/jobs/venue-events-past-cleanup.job.ts` (HOS-2254) |
 
 `subscription-scheduled-change` walks every due queue row in keyset pages of `limit`, so one
 failed row can no longer starve the rows behind it. Each failure increments that row's

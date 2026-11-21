@@ -17,6 +17,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
 import VenueJsonLd from '@/components/seo/VenueJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
@@ -24,10 +25,12 @@ import VenueDescription from '@/components/venue/VenueDescription.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
+import VenuePromotions from '@/components/venue/VenuePromotions.astro';
 import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
+import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
 import VenueAddress from '@/components/venue/VenueAddress.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
@@ -42,6 +45,7 @@ import VenueReviewsPreview from '@/components/venue/VenueReviewsPreview.astro';
 import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import { VenueInteractionTracker } from '@/components/analytics/VenueInteractionTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { venueApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toVenueDetailPageProps } from '@/lib/api/transforms';
@@ -66,7 +70,11 @@ import type { DetailFaq, VenueOpeningHoursEntry } from '@/data/types';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
-import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
+import {
+    applyCacheHeaders,
+    markResponseDegraded,
+    markResponseDegradedFromApi
+} from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -131,15 +139,23 @@ applyCacheHeaders({
 markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
 // --- Parallel secondary fetches ---
-const [reviewsSettled, faqsSettled] = await Promise.allSettled([
+const [reviewsSettled, faqsSettled, promotionsSettled] = await Promise.allSettled([
     venueApi.getReviews({ id: venue.id, page: 1, pageSize: 5 }),
-    venueApi.getFaqs({ id: venue.id })
+    venueApi.getFaqs({ id: venue.id }),
+    venueApi.listPromotions({ venueId: venue.id })
 ]);
 
 const reviewsResult =
     reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
 const faqsResult =
     faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
+const promotionsResult = promotionsSettled.status === 'fulfilled' ? promotionsSettled.value : null;
+const promotions = promotionsResult?.ok ? promotionsResult.data.items : [];
+if (promotionsResult?.ok) {
+    markResponseDegradedFromApi({ locals: Astro.locals, results: [promotionsResult] });
+} else {
+    markResponseDegraded({ locals: Astro.locals });
+}
 
 const reviews: readonly VenueReviewPublicItem[] =
     reviewsResult?.ok ? reviewsResult.data.items : [];
@@ -319,19 +335,29 @@ const venueDetailSectionBlocks: Readonly<
         { Component: ListingHouseRules, props: { policies: houseRulePolicies, locale } },
         ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
     ],
-    contact: hasContactBlock
-        ? [
-              {
-                  Component: VenueContactBlock,
-                  props: {
-                      contactInfo: venue.contactInfo,
-                      menuUrl: venue.menuUrl,
-                      socialNetworks: venue.socialNetworks,
-                      locale
+    contact: [
+        ...(hasContactBlock
+            ? [
+                  {
+                      Component: VenueContactBlock,
+                      props: {
+                          contactInfo: venue.contactInfo,
+                          listingId: venue.id,
+                          menuUrl: venue.menuUrl,
+                          socialNetworks: venue.socialNetworks,
+                          locale
+                      }
                   }
-              }
-          ]
-        : [],
+              ]
+            : []),
+        // HOS-2256: the WhatsApp button. The component decides by itself whether
+        // there is anything to show (the owner's choice rides the public payload;
+        // the page reads no session), like the other self-hiding blocks.
+        {
+            Component: VenueWhatsAppContact,
+            props: { venue, signInHref: reviewSignInHref, locale }
+        }
+    ],
     menu: [
         {
             Component: VenueMenu,
@@ -352,6 +378,7 @@ const venueDetailSectionBlocks: Readonly<
     venueEvents: [
         { Component: VenueEvents, props: { venueEvents: venue.venueEvents, locale } }
     ],
+    promotions: promotions.length > 0 ? [{ Component: VenuePromotions, props: { items: promotions, locale } }] : [],
     faqs: faqs.length > 0 ? [{ Component: FaqAccordion, props: { faqs, lang: locale } }] : [],
     nightInfo: [
         { Component: VenueNightInfo, props: { nightInfo: venue.nightInfo, locale } }
@@ -452,6 +479,16 @@ const breadcrumbItems = [
             </div>
         )}
 
+        <!-- Videos (HOS-2258): linked videos, lazy facade, right under the
+             gallery. They arrive already gated by the owner's plan
+             (`can_embed_video`) and moderation-filtered; the block hides
+             itself when none is left. -->
+        {venue.videos && venue.videos.length > 0 && (
+            <div class="venue-detail__videos">
+                <ListingVideoSection videos={venue.videos} locale={locale} scope="venue" />
+            </div>
+        )}
+
         <!-- Body: every catalog section in catalog order (sub-spec 6 § «Ficha»).
              Each id resolves its blocks by lookup in the frontmatter registry;
              a section the public projector emptied simply contributes no
@@ -501,6 +538,13 @@ const breadcrumbItems = [
             entityId={venue.id}
             locale={locale}
         />
+        <!-- Taps on phone, map, web, Instagram, ticket and WhatsApp (HOS-2256).
+             The `.astro` components only carry `data-interaction-kind`; this
+             island does the listening, so the page stays session-blind. -->
+        <VenueInteractionTracker
+            client:idle
+            entityId={venue.id}
+        />
     </div>
     <!-- AI chat widget (HOS-400) — signed-in visitors only, resolved in the
          browser. Mounted unconditionally, exactly as the accommodation page
@@ -518,6 +562,11 @@ const breadcrumbItems = [
         apiUrl={getApiUrl()}
     />
 </DetailLayout>
+
+<script>
+    import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-links';
+    initContactLinkTracking({ document });
+</script>
 
 <style>
     .venue-detail {

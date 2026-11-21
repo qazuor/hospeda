@@ -27,6 +27,15 @@ const VERTICALS = ['venue', 'experience'] as const;
  */
 const READ = /\.(getById|getBySlug|getByName|getByField)\(|\blist\w*Faqs\(/;
 
+/**
+ * Readers that load the listing only to gate on it and never return it, with the
+ * reason. Each entry must still fail to return a `faqs` field (asserted below).
+ */
+const GATE_ONLY_READERS: Readonly<Record<string, string>> = Object.freeze({
+    'venue/public/getPromotions.ts':
+        'HOS-2271: reads the venue only to require PUBLISHED; responds with promotions, never the venue'
+});
+
 /** The filter helpers, with the first identifier of their argument captured. */
 const HELPER_CALL = /\b(?:withPublicVisibleFaqs|filterPublicFaqs)\(\s*([A-Za-z_$][\w$]*)/g;
 
@@ -56,12 +65,28 @@ const wrapsTheRead = (source: string): boolean => {
 };
 
 describe('venue and experience public routes filter non-public FAQs (HOS-1263)', () => {
-    const readers = VERTICALS.flatMap((v) => filesUnder(join(ROUTES, v, 'public'))).filter((file) =>
-        READ.test(readFileSync(file, 'utf8'))
+    const relativeToRoutes = (file: string): string =>
+        file
+            .slice(ROUTES.length + 1)
+            .split('\\')
+            .join('/');
+    const allReaders = VERTICALS.flatMap((v) => filesUnder(join(ROUTES, v, 'public'))).filter(
+        (file) => READ.test(readFileSync(file, 'utf8'))
     );
+    const readers = allReaders.filter((file) => !(relativeToRoutes(file) in GATE_ONLY_READERS));
+    const gateOnly = allReaders.filter((file) => relativeToRoutes(file) in GATE_ONLY_READERS);
 
     it('finds the whole-entity and FAQ readers (guard is not vacuous)', () => {
         expect(readers.length).toBeGreaterThanOrEqual(6);
+    });
+
+    it('every gate-only exemption still exists and never returns FAQs', () => {
+        expect(gateOnly.map(relativeToRoutes).sort()).toEqual(
+            Object.keys(GATE_ONLY_READERS).sort()
+        );
+        for (const file of gateOnly) {
+            expect(readFileSync(file, 'utf8')).not.toMatch(/\bfaqs\b/);
+        }
     });
 
     it.each(readers)('%s wraps the returned value in the FAQ filter', (file) => {

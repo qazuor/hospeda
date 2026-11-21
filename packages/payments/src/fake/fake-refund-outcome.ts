@@ -43,7 +43,7 @@ export function applyFakeRefundRejection(args: {
             currency: stored.snapshot.refundedAmount.currency
         },
         refunds: stored.snapshot.refunds.map((r) =>
-            r.refundId === args.refundId ? { ...r, accredited: false } : r
+            r.refundId === args.refundId ? { ...r, accredited: false, rejected: true } : r
         )
     };
     args.ledger.bump({ stored, resourceKind: 'charge', resourceId: args.chargeId });

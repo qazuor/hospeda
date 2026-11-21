@@ -126,7 +126,8 @@ export async function readMercadoPagoCharge(args: {
         refunds: (parsed.refunds ?? []).map((r) => ({
             refundId: r.id,
             amount: { amountMinor: toMinor(r.amount), currency: parsed.currency_id },
-            accredited: r.status === 'approved'
+            accredited: r.status === 'approved',
+            ...(r.status === 'rejected' || r.status === 'cancelled' ? { rejected: true } : {})
         })),
         chargedBack: parsed.status === 'charged_back'
     };

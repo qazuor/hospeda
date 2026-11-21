@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/partnerType.schema.json",
+    "id": "004-partner-type-media",
+    "slug": "media",
+    "nameI18n": {
+        "es": "Medio",
+        "en": "Media outlet",
+        "pt": "Meio de comunicação"
+    },
+    "displayWeight": 40,
+    "lifecycleState": "ACTIVE"
+}

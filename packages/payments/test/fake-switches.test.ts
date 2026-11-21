@@ -53,10 +53,10 @@ describe('TEST:B1:9 turning a lie off', () => {
     });
 
     it('refuses a lie that is not in the closed list', () => {
-        expect(() => build({ clock, honestAbout: [{ lie: 'M14', why: 'invented' }] })).toThrow(
+        expect(() => build({ clock, honestAbout: [{ lie: 'M99', why: 'invented' }] })).toThrow(
             /not a lie of the closed list/
         );
-        expect(FAKE_LIES.some((lie) => lie.id === 'M14')).toBe(false);
+        expect(FAKE_LIES.some((lie) => lie.id === 'M99')).toBe(false);
     });
 
     it('refuses a lie turned off without saying why', () => {
@@ -117,12 +117,12 @@ describe('TEST:B1:9 turning a measured behaviour off by name', () => {
         expect(FAKE_RULES.find((r) => r.id === 'RP1')?.kind).toBe('rule');
     });
 
-    it('TEST:B11:12 (support) (e) refuses to turn RP13 off: the order search rule is a rule', () => {
-        expect(FAKE_RULES.find((r) => r.id === 'RP13')?.kind).toBe('rule');
+    it('TEST:B11:12 (support) (e) refuses to turn a rule off: RP17 is a rule', () => {
+        expect(FAKE_RULES.find((r) => r.id === 'RP17')?.kind).toBe('rule');
         expect(() =>
             build({
                 clock,
-                withoutBehaviour: [{ behaviour: 'RP13', why: 'search without bounds' }]
+                withoutBehaviour: [{ behaviour: 'RP17', why: 'skip the rule' }]
             })
         ).toThrow(/not a measured behaviour of the list/);
     });

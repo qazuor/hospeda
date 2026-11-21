@@ -34,11 +34,17 @@
  * @see SPEC-197 §4.2
  */
 
-import type { AccommodationModel, ExperienceModel, VenueModel } from '@repo/db';
+import type {
+    AccommodationModel,
+    EntityInteractionModel,
+    ExperienceModel,
+    VenueModel
+} from '@repo/db';
 import {
     AccommodationModel as AccommodationModelClass,
     type AdminSummaryTotalsRow,
     type DailySeriesRow,
+    EntityInteractionModel as EntityInteractionModelClass,
     type EntityViewModel,
     ExperienceModel as ExperienceModelClass,
     entityViewModel,
@@ -54,7 +60,9 @@ import {
     EntityViewWindowSchema,
     PermissionEnum,
     ServiceErrorCode,
-    type TrackableEntityType
+    type TrackableEntityType,
+    type VenueListingStats,
+    VenueStatsWindowSchema
 } from '@repo/schemas';
 import { getLocalDayWindow } from '@repo/utils';
 import { z } from 'zod';
@@ -120,6 +128,19 @@ const LISTING_COMPARISON_WINDOW_DAYS: Record<'7d' | '30d' | '90d', number> = {
     '30d': 30,
     '90d': 90
 };
+
+/** Rolling days for the advanced venue metrics endpoint only. */
+const VENUE_STATS_WINDOW_DAYS: Record<'7d' | '30d' | '90d', number> = {
+    '7d': 7,
+    '30d': 30,
+    '90d': 90
+};
+
+/** Validated input for {@link EntityViewService.getStatsForVenue}. */
+const GetStatsForVenueSchema = z.object({
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    window: VenueStatsWindowSchema
+});
 
 /**
  * Input schema for {@link EntityViewService.getStatsForHostAccommodations}.
@@ -434,6 +455,16 @@ export interface GetStatsForOwnListingsInput {
     readonly window: EntityViewWindow;
 }
 
+/** Input for advanced statistics on one venue owned by the actor. */
+export interface GetStatsForVenueInput {
+    /** Authenticated listing owner. */
+    readonly actor: Actor;
+    /** Venue UUID. */
+    readonly venueId: string;
+    /** Supported advanced metrics window. */
+    readonly window: '7d' | '30d' | '90d';
+}
+
 /**
  * The daily-series output item produced by
  * {@link EntityViewService.getDailySeriesForHostAccommodations}.
@@ -517,13 +548,16 @@ export class EntityViewService extends BaseService {
     private venueModelLazy: VenueModel | undefined;
     private readonly experienceModelOverride: ExperienceModel | undefined;
     private experienceModelLazy: ExperienceModel | undefined;
+    private readonly interactionModelOverride: EntityInteractionModel | undefined;
+    private interactionModelLazy: EntityInteractionModel | undefined;
 
     constructor(
         ctx: ServiceConfig,
         model?: EntityViewModel,
         accommodationModel?: AccommodationModel,
         venueModel?: VenueModel,
-        experienceModel?: ExperienceModel
+        experienceModel?: ExperienceModel,
+        interactionModel?: EntityInteractionModel
     ) {
         super(ctx, EntityViewService.ENTITY_NAME);
         // IMPORTANT: do NOT dereference @repo/db exports here. The singleton
@@ -535,6 +569,7 @@ export class EntityViewService extends BaseService {
         this.accommodationModelOverride = accommodationModel;
         this.venueModelOverride = venueModel;
         this.experienceModelOverride = experienceModel;
+        this.interactionModelOverride = interactionModel;
     }
 
     /**
@@ -544,6 +579,13 @@ export class EntityViewService extends BaseService {
      */
     protected get model(): EntityViewModel {
         return this.modelOverride ?? entityViewModel;
+    }
+
+    /** Resolves the click telemetry model only when venue metrics are requested. */
+    private get interactionModel(): EntityInteractionModel {
+        this.interactionModelLazy ??=
+            this.interactionModelOverride ?? new EntityInteractionModelClass();
+        return this.interactionModelLazy;
     }
 
     /**
@@ -1110,6 +1152,80 @@ export class EntityViewService extends BaseService {
     // -------------------------------------------------------------------------
     // HOS-734: listing vertical aggregation methods (venue / EXPERIENCE)
     // -------------------------------------------------------------------------
+
+    /**
+     * Returns advanced views and click metrics for one owned venue.
+     *
+     * @param input - Actor, owned venue id and rolling window.
+     * @returns Gap-filled venue metrics with all click channels represented.
+     */
+    public async getStatsForVenue(
+        input: GetStatsForVenueInput
+    ): Promise<ServiceOutput<VenueListingStats>> {
+        const { actor, ...params } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'getStatsForVenue',
+            input: { actor, ...params },
+            schema: GetStatsForVenueSchema,
+            execute: async (validated, validatedActor) => {
+                const ownedIds = await this.venueModel.findIdsByOwnerId(validatedActor.id);
+                if (!ownedIds.includes(validated.venueId)) {
+                    throw entityNotFoundError({ entityName: 'venue' });
+                }
+
+                const windowDays = VENUE_STATS_WINDOW_DAYS[validated.window];
+                const [viewStats, dailyRows, clickStats] = await Promise.all([
+                    this.model.getStatsForEntities({
+                        entityType: EntityTypeEnum.VENUE,
+                        entityIds: [validated.venueId],
+                        windowDays
+                    }),
+                    this.model.getDailySeriesForEntityIds({
+                        entityType: EntityTypeEnum.VENUE,
+                        entityIds: [validated.venueId],
+                        windowDays
+                    }),
+                    this.interactionModel.getClickStatsForEntity({
+                        entityType: EntityTypeEnum.VENUE,
+                        entityId: validated.venueId,
+                        windowDays
+                    })
+                ]);
+
+                const views = viewStats[0] ?? { unique: 0, total: 0 };
+                const dailyViews = gapFillHostDailySeries(dailyRows, windowDays);
+                const empty = { unique: 0, total: 0 };
+                const byKind = {
+                    PHONE_CLICK: { ...empty },
+                    MAP_CLICK: { ...empty },
+                    WEBSITE_CLICK: { ...empty },
+                    INSTAGRAM_CLICK: { ...empty },
+                    TICKET_CLICK: { ...empty },
+                    WHATSAPP_CLICK: { ...empty }
+                };
+                for (const row of clickStats.byKind) {
+                    const key = row.kind as keyof typeof byKind;
+                    if (key in byKind) {
+                        byKind[key].unique += row.unique;
+                        byKind[key].total += row.total;
+                    }
+                }
+                const total = Object.values(byKind).reduce((sum, count) => sum + count.total, 0);
+                const clickRate =
+                    views.total === 0
+                        ? null
+                        : Math.min(1, clickStats.visitsWithClick / views.total);
+
+                return {
+                    window: validated.window,
+                    views: { unique: views.unique, total: views.total },
+                    dailyViews,
+                    clicks: { total, byKind },
+                    clickRate
+                } satisfies VenueListingStats;
+            }
+        });
+    }
 
     /**
      * Returns view-count statistics for every venue or experience listing

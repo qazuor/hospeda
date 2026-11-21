@@ -292,8 +292,10 @@ export function ProviderUsagesPanel({
         setDeclared(true);
     }
 
-    /** The counterpart's label for the dialog. The payload carries no host name. */
-    const hostLabel = t('host-trades.provider.usages.counterpart', 'el anfitrión');
+    /** The counterpart's label for the dialog: the host's name, else a generic one. */
+    const hostLabel =
+        rejectTarget?.hostDisplayName ??
+        t('host-trades.provider.usages.counterpart', 'el anfitrión');
 
     return (
         <div className={styles.panel}>
@@ -311,10 +313,10 @@ export function ProviderUsagesPanel({
                 what a host declared about him. Hiding this would leave rows he
                 is the only person able to resolve stuck until they expire. */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('host-trades.provider.usages.pending.title', 'Esperan tu confirmación')}
                     {pending.length > 0 ? ` (${pending.length})` : ''}
-                </h3>
+                </h2>
 
                 {pending.length === 0 ? (
                     <p className={styles.empty}>
@@ -339,10 +341,16 @@ export function ProviderUsagesPanel({
                                                 : usage.servicedAt}
                                         </p>
                                         <p className={styles.rowMeta}>
-                                            {t(
-                                                'host-trades.provider.usages.pending.declaredByHost',
-                                                'Lo registró el anfitrión. Confirmalo para que cuente en tus números.'
-                                            )}
+                                            {usage.hostDisplayName
+                                                ? t(
+                                                      'host-trades.provider.usages.pending.declaredByHostNamed',
+                                                      '{{name}} lo registró. Confirmalo para que cuente en tus números.',
+                                                      { name: usage.hostDisplayName }
+                                                  )
+                                                : t(
+                                                      'host-trades.provider.usages.pending.declaredByHost',
+                                                      'Lo registró el anfitrión. Confirmalo para que cuente en tus números.'
+                                                  )}
                                         </p>
                                         {usage.note ? (
                                             <p className={styles.rowMeta}>“{usage.note}”</p>
@@ -401,12 +409,12 @@ export function ProviderUsagesPanel({
                     onSubmit={handleSubmit}
                     noValidate
                 >
-                    <h3 className={styles.formTitle}>
+                    <h2 className={styles.formTitle}>
                         {t(
                             'host-trades.provider.usages.form.title',
                             'Registrar un uso del beneficio'
                         )}
-                    </h3>
+                    </h2>
 
                     <fieldset className={styles.channelGroup}>
                         <legend
@@ -568,10 +576,10 @@ export function ProviderUsagesPanel({
             )}
 
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('host-trades.provider.usages.list.title', 'Usos registrados')}
                     {total > 0 ? ` (${total})` : ''}
-                </h3>
+                </h2>
 
                 {usages.length === 0 ? (
                     <p className={styles.empty}>
@@ -601,10 +609,16 @@ export function ProviderUsagesPanel({
                                                       'host-trades.provider.usages.list.declaredByYou',
                                                       'Lo registraste vos'
                                                   )
-                                                : t(
-                                                      'host-trades.provider.usages.list.declaredByHost',
-                                                      'Lo registró el anfitrión'
-                                                  )}
+                                                : usage.hostDisplayName
+                                                  ? t(
+                                                        'host-trades.provider.usages.list.declaredByHostNamed',
+                                                        'Lo registró {{name}}',
+                                                        { name: usage.hostDisplayName }
+                                                    )
+                                                  : t(
+                                                        'host-trades.provider.usages.list.declaredByHost',
+                                                        'Lo registró el anfitrión'
+                                                    )}
                                         </p>
                                         {usage.note ? (
                                             <p className={styles.rowMeta}>“{usage.note}”</p>

@@ -140,11 +140,14 @@ function mapFloor(
  * to `ok: false`.
  */
 export async function fetchPublicPlans({
-    vertical
+    vertical,
+    apiUrl
 }: {
     readonly vertical: PublicPlanCatalogVertical;
+    /** API base URL. Defaults to the server-side env; a browser island passes its own prop. */
+    readonly apiUrl?: string;
 }): Promise<FetchPlansResult> {
-    const url = `${getApiUrl()}/api/v1/public/plan-catalog?vertical=${encodeURIComponent(vertical)}`;
+    const url = `${apiUrl?.replace(/\/$/, '') ?? getApiUrl()}/api/v1/public/plan-catalog?vertical=${encodeURIComponent(vertical)}`;
     try {
         const response = await fetch(url, { headers: { Accept: 'application/json' } });
         if (!response.ok) {
@@ -184,4 +187,21 @@ export function filterPlansByCategory(
         .filter((plan) => plan.isActive && plan.category === category)
         .slice()
         .sort((left, right) => left.sortOrder - right.sortOrder);
+}
+
+/**
+ * HOS-2437: names of the plans that grant `entitlement`, in catalog order. An unreadable
+ * catalog yields no names, so a gate that uses them names no plan rather than a guessed one.
+ */
+export function planNamesWithEntitlement({
+    result,
+    entitlement
+}: {
+    readonly result: FetchPlansResult;
+    readonly entitlement: string;
+}): readonly string[] {
+    if (!result.ok) return [];
+    return result.plans
+        .filter((plan) => plan.entitlements.includes(entitlement))
+        .map((plan) => plan.name);
 }

@@ -100,9 +100,29 @@ describe('VenueOpenNowBadge', () => {
             expect(screen.getByText('Aberto agora')).toBeInTheDocument();
         });
 
-        it('renders the closed label outside a shift', () => {
+        it('renders the opens-at label before the shift, in all locales (AC-2)', () => {
             vi.useFakeTimers();
             vi.setSystemTime(FRIDAY_EARLY);
+
+            for (const [locale, text] of [
+                ['es', 'Abre a las 09:00'],
+                ['en', 'Opens at 09:00'],
+                ['pt', 'Abre às 09:00']
+            ] as const) {
+                const { unmount } = render(
+                    <VenueOpenNowBadge
+                        locale={locale}
+                        openingHours={FRIDAY_HOURS}
+                    />
+                );
+                expect(screen.getByText(text)).toBeInTheDocument();
+                unmount();
+            }
+        });
+
+        it('renders the closed label after the shift (AC-3, AC-14)', () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(FRIDAY_NIGHT);
 
             render(
                 <VenueOpenNowBadge
@@ -111,7 +131,7 @@ describe('VenueOpenNowBadge', () => {
                 />
             );
 
-            expect(screen.getByText('Cerrado ahora')).toBeInTheDocument();
+            expect(screen.getByText('Cerrado')).toBeInTheDocument();
         });
 
         it('renders nothing when there is no entry for the venue day', () => {
@@ -151,7 +171,7 @@ describe('VenueOpenNowBadge', () => {
                 />
             );
 
-            expect(screen.getByText('Cerrado ahora')).toBeInTheDocument();
+            expect(screen.getByText('Cerrado')).toBeInTheDocument();
         });
     });
 });

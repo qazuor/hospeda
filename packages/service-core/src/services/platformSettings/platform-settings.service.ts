@@ -4,6 +4,7 @@ import {
     AddonPurchasesFreezeValueSchema,
     type AnnouncementItem,
     AnnouncementsValueSchema,
+    DEFAULT_SESSION_RECORDING_RETENTION_DAYS,
     MaintenanceModeValueSchema,
     PaidSignupsFreezeValueSchema,
     PermissionEnum,
@@ -14,7 +15,10 @@ import {
     type ProviderWatchAuthorizationValue,
     ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    SessionRecordingPatchSchema,
+    type SessionRecordingRetentionDays,
+    SessionRecordingValueSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
@@ -43,6 +47,9 @@ import { ServiceError } from '../../types';
  *     authorizes real money to move at the provider, and the owner custodies it, HOS-1512). It is
  *     written ONLY by {@link PlatformSettingsService.setProviderWatchAuthorization}: the API
  *     reads the provider account first, so the generic `upsert` refuses this key.
+ *   - `analytics.sessionRecording` (read or write) → `ANALYTICS_SESSION_RECORDING_MANAGE`
+ *     (HOS-2347; granted to SUPER_ADMIN by the seed, not locked (D-3); same
+ *     read+write collapse as `MAINTENANCE_MODE_WRITE`).
  *
  * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
  * successful write to `seo.defaults` purges the `site-config` and `home`
@@ -72,6 +79,11 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.addonPurchasesFreeze'),
         value: AddonPurchasesFreezeValueSchema
+    }),
+    z.object({
+        key: z.literal('analytics.sessionRecording'),
+        // A partial write: omitted fields are merged from the stored row in `upsert`.
+        value: SessionRecordingPatchSchema
     })
     // `billing.providerWatchAuthorization` is deliberately absent: it is written only through
     // `setProviderWatchAuthorization`, after the API confirmed the provider account (HOS-1512 D5).
@@ -92,6 +104,8 @@ function requiredReadPermission(key: PlatformSettingsKey): PermissionEnum {
         case 'billing.addonPurchasesFreeze':
         case 'billing.providerWatchAuthorization':
             return PermissionEnum.BILLING_SETTINGS_VIEW;
+        case 'analytics.sessionRecording':
+            return PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -111,6 +125,8 @@ function requiredWritePermission(key: PlatformSettingsKey): PermissionEnum {
             return PermissionEnum.BILLING_SETTINGS_WRITE;
         case 'billing.providerWatchAuthorization':
             return PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE;
+        case 'analytics.sessionRecording':
+            return PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -289,6 +305,63 @@ export class PlatformSettingsService extends BaseService {
     }
 
     /**
+     * Whether the public web may load the Umami session recorder (HOS-2347).
+     *
+     * **Why this method instead of `get`**: same reason as
+     * {@link isNewPaidSignupsFrozen}. The only caller is the public endpoint
+     * `GET /api/v1/public/session-recording`, which has no admin actor to gate
+     * on; the answer is one platform-wide boolean.
+     *
+     * A missing row answers `false` (recording is off by default). A stored
+     * value that fails the schema answers `false` and logs a warning. A read
+     * error is NOT swallowed: it propagates so the route answers 500 and the
+     * outage is visible. The web fails closed on a 500 anyway.
+     *
+     * @returns Whether session recording is switched on.
+     */
+    async isSessionRecordingEnabled(): Promise<boolean> {
+        const row = await this.model.findByKey('analytics.sessionRecording');
+        if (!row) return false;
+        const parsed = SessionRecordingValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored analytics.sessionRecording value failed schema validation — recording stays off'
+            );
+            return false;
+        }
+        return parsed.data.enabled;
+    }
+
+    /**
+     * How many days a Umami replay or heatmap event is kept (HOS-2347 retention).
+     *
+     * **Why this method instead of `get`**: the callers are the daily retention
+     * cron and the manual purge, and the cron has no actor. The answer is one
+     * platform-wide number.
+     *
+     * Independent of the on/off switch: old data has to go even while recording
+     * is OFF. A missing row, a row written before the field existed, or a value
+     * that fails the schema answers the default (30 days). A read error is NOT
+     * swallowed, so the caller fails loudly instead of purging on a guess.
+     *
+     * @returns The configured retention in days: 14, 30 or 60.
+     */
+    async getSessionRecordingRetentionDays(): Promise<SessionRecordingRetentionDays> {
+        const row = await this.model.findByKey('analytics.sessionRecording');
+        if (!row) return DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+        const parsed = SessionRecordingValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored analytics.sessionRecording value failed schema validation, using the default retention'
+            );
+            return DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+        }
+        return parsed.data.retentionDays;
+    }
+
+    /**
      * The owner's monthly authorization for the provider watch battery (HOS-1512).
      *
      * **Why this method instead of `get`**: the caller is a cron job with no admin actor.
@@ -318,7 +391,8 @@ export class PlatformSettingsService extends BaseService {
 
     /**
      * Writes the owner's monthly authorization for the provider watch battery (HOS-1512). Always a
-     * NEW authorization: the consumption fields are never accepted, so it is unconsumed. Requires
+     * NEW authorization: the consumption fields are never accepted, so it is unconsumed. Re-authorizing
+     * 0 for the same month and account keeps the day already taken and the runs it covered (A3). Requires
      * `BILLING_PROVIDER_WATCH_MANAGE`. The caller (the admin route) has already read the provider account
      * and confirmed `accountId` with the owner.
      *
@@ -337,12 +411,11 @@ export class PlatformSettingsService extends BaseService {
             ctx,
             execute: async (data, actor, resolvedCtx) => {
                 this.checkWritePermission(actor, 'billing.providerWatchAuthorization');
-                return this.model.upsertByKey(
-                    'billing.providerWatchAuthorization',
-                    data.value,
-                    actor.id,
-                    resolvedCtx.tx
-                );
+                return this.model.writeProviderWatchAuthorization({
+                    value: data.value,
+                    actorId: actor.id,
+                    ...(resolvedCtx.tx === undefined ? {} : { tx: resolvedCtx.tx })
+                });
             }
         });
     }
@@ -367,12 +440,14 @@ export class PlatformSettingsService extends BaseService {
             ctx,
             execute: async (data, actor, resolvedCtx) => {
                 this.checkWritePermission(actor, data.key);
-                const row = await this.model.upsertByKey(
-                    data.key,
-                    data.value,
-                    actor.id,
-                    resolvedCtx.tx
-                );
+                const value =
+                    data.key === 'analytics.sessionRecording'
+                        ? await this.mergeSessionRecordingPatch({
+                              patch: data.value,
+                              tx: resolvedCtx.tx
+                          })
+                        : data.value;
+                const row = await this.model.upsertByKey(data.key, value, actor.id, resolvedCtx.tx);
                 if (data.key === 'seo.defaults') {
                     this.triggerSeoRevalidation();
                 }
@@ -384,6 +459,27 @@ export class PlatformSettingsService extends BaseService {
     // -----------------------------------------------------------------------
     // Internal helpers
     // -----------------------------------------------------------------------
+
+    /**
+     * Merges a partial `analytics.sessionRecording` write with the stored row
+     * (HOS-2347): a field the caller left out keeps its stored value, falling
+     * back to the defaults (`enabled: false`, 30 days) only when nothing is
+     * stored or the stored row is invalid.
+     */
+    private async mergeSessionRecordingPatch(input: {
+        readonly patch: z.infer<typeof SessionRecordingPatchSchema>;
+        readonly tx: ServiceContext['tx'];
+    }): Promise<z.infer<typeof SessionRecordingValueSchema>> {
+        const row = await this.model.findByKey('analytics.sessionRecording', input.tx);
+        const stored = row ? SessionRecordingValueSchema.safeParse(row.value) : null;
+        const base = stored?.success
+            ? stored.data
+            : { enabled: false, retentionDays: DEFAULT_SESSION_RECORDING_RETENTION_DAYS };
+        return {
+            enabled: input.patch.enabled ?? base.enabled,
+            retentionDays: input.patch.retentionDays ?? base.retentionDays
+        };
+    }
 
     private checkReadPermission(actor: Actor, key: PlatformSettingsKey): void {
         const required = requiredReadPermission(key);

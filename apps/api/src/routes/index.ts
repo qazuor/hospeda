@@ -9,6 +9,7 @@
 import { ApiInfoSchema } from '@repo/schemas';
 import { mountAccommodationCacheInvalidation } from '../middlewares/accommodation-cache-invalidation';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
+import { mountPartnerCacheInvalidation } from '../middlewares/partner-cache-invalidation';
 import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
 import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import type { AppOpenAPI } from '../types';
@@ -88,6 +89,7 @@ import {
     publicDestinationRoutes
 } from './destination';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
+import { adminEmailPreviewRoutes } from './email-preview/admin/index.js';
 import { adminEventRoutes, protectedEventRoutes, publicEventRoutes } from './event';
 import {
     adminEventLocationRoutes,
@@ -125,8 +127,10 @@ import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
+import { interactionRoutes } from './interactions';
 import { adminListingFixRequestRoutes } from './listing-fix-requests/admin/index.js';
 import { mcpRoutes } from './mcp';
+import { adminMcpActivityRoutes } from './mcp-activity';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -148,6 +152,7 @@ import {
     publicPartnerClaimRoutes
 } from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
+import { adminPartnerTypeRoutes, publicPartnerTypeRoutes } from './partner-type';
 import {
     adminConfigurePartnerBillingRoute,
     adminCreatePartnerMentionsRoute,
@@ -170,6 +175,7 @@ import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
 import { publicPlanCatalogRoutes } from './plan-catalog/public/index.js';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
+import { publicSessionRecordingRoutes } from './platform-settings/public/session-recording.js';
 // POI category catalog: admin list/search (HOS-144 NG-1) + public catalog (HOS-147)
 import { adminPoiCategoryRoutes, publicPoiCategoryRoutes } from './poi-category';
 // Points of interest: seed-originated editorial catalog; admin CRUD added HOS-143
@@ -187,6 +193,7 @@ import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { robotsRoute } from './robots';
 import { protectedSearchHistoryRoutes } from './search-history';
+import { adminSessionRecordingRoutes } from './session-recording/admin/index.js';
 import {
     adminGetGptActionSchemaRoute,
     adminGetMakeWebhookSchemaRoute,
@@ -383,6 +390,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/poi-categories', publicPoiCategoryRoutes);
         // Provider trade catalog: public read tier for the selectors (HOS-919)
         app.route('/api/v1/public/host-trade-categories', publicHostTradeCategoryRoutes);
+        app.route('/api/v1/public/partner-types', publicPartnerTypeRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
@@ -405,6 +413,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Global platform announcements (SPEC-156 T-010): cross-device cache
         // for the web layout banner. Reads from platform_settings.announcements.global.
         app.route('/api/v1/public/announcements', publicPlatformSettingsRoutes);
+        // Web session recording switch (HOS-2347): `{ enabled }` only, 30 s cache.
+        app.route('/api/v1/public/session-recording', publicSessionRecordingRoutes);
 
         // Conversations (guest-owner messaging — SPEC-085)
         // Public:    /api/v1/public/conversations/*
@@ -443,6 +453,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // `entity_views` would be indistinguishable from a page view of the same
         // partner and would inflate the views card (OQ-2).
         app.route('/api/v1/public', partnerLogoClickRoutes);
+
+        // Listing interaction capture (HOS-2256): taps on phone, map, web,
+        // ticket and WhatsApp of a venue page. Fire-and-forget, always 202, no auth.
+        app.route('/api/v1/public', interactionRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
@@ -517,6 +531,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/alliance', protectedAllianceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
+        // Evict the public partner cache after any successful partner or partner-type
+        // write (HOS-2368). Covers the admin and protected tiers, so it is registered
+        // here, ahead of the first partner router.
+        mountPartnerCacheInvalidation({ app });
         // Partner self-service: the caller's OWN listing (HOS-278 D3).
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
         app.route('/api/v1/protected/partner-claims', protectedPartnerClaimRoutes);
@@ -646,6 +664,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Provider trade catalog: one set of permissions gates groups and categories (HOS-919)
         app.route('/api/v1/admin/host-trade-category-groups', adminHostTradeCategoryGroupRoutes);
         app.route('/api/v1/admin/host-trade-categories', adminHostTradeCategoryRoutes);
+        app.route('/api/v1/admin/partner-types', adminPartnerTypeRoutes);
 
         // User-tag admin routes (SPEC-086 T-025..T-028)
         // IMPORTANT mounting order: more-specific prefixes MUST be registered BEFORE
@@ -684,6 +703,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/audit-logs', adminAuditLogRoutes);
         app.route('/api/v1/admin/security-logs', adminSecurityLogRoutes);
 
+        // Admin log of every assistant (MCP) tool call (HOS-2349, MCP_ACTIVITY_VIEW)
+        app.route('/api/v1/admin/mcp-activity', adminMcpActivityRoutes);
+
         // Admin view stats (SPEC-197 T-008–T-011)
         app.route('/api/v1/admin/views', adminViewsRoutes);
 
@@ -711,6 +733,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
         // HOS-1512: provider watch battery (account confirmation, authorization, shape acceptance)
         app.route('/api/v1/admin/provider-watch', adminProviderWatchRoutes);
+        // HOS-2347: manual purge of expired Umami recordings
+        app.route('/api/v1/admin/session-recording', adminSessionRecordingRoutes);
+        // HOS-2519: admin email previewer (catalog list + single-scenario render, read-only)
+        app.route('/api/v1/admin/email-previews', adminEmailPreviewRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);

@@ -57,10 +57,26 @@ a structural filter against naive crawlers.
 
 ## Retention
 
-A nightly cron purges `entity_views` rows older than **95 days**
-(`WHERE viewed_at < now() - interval '95 days'`). This is the GDPR-lite data-minimization
-control — the widest query window is 30 days; the 95-day buffer covers a full quarter plus
-margin. No manual action is required; the cron records each run via `recordCronRun`.
+A nightly cron purges `entity_views`, `partner_logo_clicks` and `entity_interactions` rows
+older than **120 days** (`WHERE <time column> < now() - interval '120 days'`). This is the
+GDPR-lite data-minimization control. The widest panel window is 90 days, which leaves 30 days of
+margin for a nightly run that did not happen (owner decision, 2026-11-16, HOS-2256). The horizon was
+95 days before that, so hashes now live 25 days longer. A daily rollup job writes the monthly totals
+before the rows are purged, so the numbers outlive the fingerprints. No manual action is required;
+the cron records each run via `recordCronRun`.
+
+## Listing interactions (HOS-2256)
+
+The venue page also records what a visitor taps (phone, map, website, Instagram, ticket, WhatsApp)
+in `entity_interactions`, through `POST /api/v1/public/interactions`. Same rules as views: no
+cookie, no consent banner, daily salt, same bot filter, no raw IP. Two differences, on purpose:
+
+- **A logged-in visitor is hashed like an anonymous one** (truncated IP + user agent), never as
+  `user:<uuid>`. "Tapped this venue's phone" would otherwise identify a person with a contact
+  intention. The table has no `is_authenticated` column.
+- **The owner's own taps are dropped.** The endpoint reads the session only for that comparison.
+
+Limit: copying a number without tapping it, or opening a link from the context menu, is not counted.
 
 ## What this is NOT
 

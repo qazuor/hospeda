@@ -1,4 +1,4 @@
-import { PartnerModel } from '@repo/db';
+import { PartnerModel, PartnerTypeModel, partnerTypeSlugCondition } from '@repo/db';
 import {
     adminSearchPartnerSchema,
     createPartnerSchema,
@@ -13,17 +13,21 @@ import {
     updatePartnerSchema
 } from '@repo/schemas';
 import { toSlug } from '@repo/utils';
+import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation';
 import type {
     Actor,
+    AdminSearchExecuteParams,
     PaginatedListOutput,
     ServiceConfig,
     ServiceContext,
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { runInServiceTransaction } from '../../utils/service-transaction';
+import { hydratePartnerTypeRefs, legacyPartnerTypeFor } from '../partner-type/partner-type.helpers';
 import {
     checkCanAdminList,
     checkCanCount,
@@ -44,6 +48,12 @@ import {
  * repeated across every owner-scoped read.
  */
 const PARTNER_OWNER_SCOPE_KEY = 'ownerUserId' as const;
+
+/** `hookState` key carrying the id being updated to `_beforeUpdate` (HOS-2336). */
+const PARTNER_UPDATE_ID_KEY = 'partnerUpdateId';
+
+/** `hookState` key carrying `{ id, slug }` from a `_before` hook to its `_after` hook (HOS-2368). */
+const PARTNER_LIFECYCLE_TARGET_KEY = 'partnerLifecycleTarget';
 
 /**
  * Resolves the actor to the account id a partner may be owned by, or null.
@@ -143,10 +153,173 @@ export class PartnerService extends BaseCrudService<
         return ['slug', 'name'];
     }
 
-    constructor(ctx: ServiceConfig & { model?: PartnerModel }) {
+    /** Partner type catalog (HOS-2336): validates and hydrates `typeId`. */
+    protected readonly partnerTypeModel: PartnerTypeModel;
+
+    constructor(
+        ctx: ServiceConfig & { model?: PartnerModel; partnerTypeModel?: PartnerTypeModel }
+    ) {
         super(ctx, PartnerService.ENTITY_NAME);
         this.model = ctx.model ?? new PartnerModel();
+        this.partnerTypeModel = ctx.partnerTypeModel ?? new PartnerTypeModel();
         this.adminSearchSchema = adminSearchPartnerSchema;
+    }
+
+    /**
+     * Resolves the type a partner write assigns and returns the dual-write
+     * columns (HOS-2336, release N): `typeId` plus the legacy enum `type`
+     * (`null` when the slug has no legacy value).
+     *
+     * The type is read `FOR SHARE`, so a concurrent deactivation or delete
+     * (which locks it `FOR UPDATE`) cannot commit between this check and the
+     * write. It must exist, not be soft-deleted, and be ACTIVE, unless it is
+     * the partner's CURRENT type (AC-4.3): saving other fields of a partner
+     * whose type was deactivated never forces a type change.
+     *
+     * @param input.typeId - The type id the write carries.
+     * @param input.currentTypeId - The partner's current type id, on update.
+     * @param input.ctx - Service context (its `tx` holds the lock).
+     * @returns `{ typeId, type }` to merge into the write.
+     * @throws {ServiceError} VALIDATION_ERROR with `details.field = 'typeId'`.
+     */
+    private async resolveTypeColumns(input: {
+        readonly typeId: string;
+        readonly currentTypeId?: string | null;
+        readonly ctx: ServiceContext;
+    }): Promise<{ typeId: string; type: string | null }> {
+        const type = await this.partnerTypeModel.findByIdForShare(input.typeId, input.ctx?.tx);
+        const isCurrent = input.currentTypeId === input.typeId;
+        const usable =
+            type !== null &&
+            !type.deletedAt &&
+            (type.lifecycleState === LifecycleStatusEnum.ACTIVE || isCurrent);
+        if (!type || !usable) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'typeId is not an available partner type',
+                { field: 'typeId', typeId: input.typeId }
+            );
+        }
+        return { typeId: type.id, type: legacyPartnerTypeFor({ slug: type.slug }) };
+    }
+
+    /** Attaches the `partnerType` ref to one partner (null-safe). */
+    private async hydrateOne(entity: Partner, ctx?: ServiceContext): Promise<Partner> {
+        const [hydrated] = await hydratePartnerTypeRefs({
+            items: [entity],
+            model: this.partnerTypeModel,
+            tx: ctx?.tx
+        });
+        return (hydrated ?? entity) as Partner;
+    }
+
+    /** Attaches the `partnerType` ref to a page of partners in ONE query. */
+    private async hydrateList(
+        result: PaginatedListOutput<Partner>,
+        ctx?: ServiceContext
+    ): Promise<PaginatedListOutput<Partner>> {
+        const items = await hydratePartnerTypeRefs({
+            items: result.items,
+            model: this.partnerTypeModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items: items as Partner[] };
+    }
+
+    /**
+     * Creates a partner inside ONE transaction, so the `FOR SHARE` lock taken
+     * on its type is held until the insert commits.
+     */
+    public override async create(
+        actor: Actor,
+        data: z.infer<typeof createPartnerSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Partner>> {
+        return runInServiceTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
+    }
+
+    /**
+     * Updates a partner inside ONE transaction (see {@link create}), carrying
+     * the id to {@link _beforeUpdate} so the type check knows the partner's
+     * current type.
+     */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<typeof updatePartnerSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Partner>> {
+        return runInServiceTransaction(ctx, (txCtx) =>
+            super.update(actor, id, data, {
+                ...txCtx,
+                hookState: { ...txCtx.hookState, [PARTNER_UPDATE_ID_KEY]: id }
+            })
+        );
+    }
+
+    /**
+     * Validates a `typeId` change (AC-4.3) and dual-writes the legacy column.
+     * An update that does not touch `typeId` leaves both columns alone.
+     */
+    protected override async _beforeUpdate(
+        data: z.infer<typeof updatePartnerSchema>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<Partner>> {
+        if (data.typeId === undefined || data.typeId === null) {
+            // `null` is not a valid assignment: `type_id` only ever moves to
+            // another type. Drop it rather than clearing the column.
+            const { typeId: _ignored, ...rest } = data;
+            return rest as Partial<Partner>;
+        }
+        const id = ctx?.hookState?.[PARTNER_UPDATE_ID_KEY];
+        const current = typeof id === 'string' ? await this.model.findById(id, ctx?.tx) : null;
+        const columns = await this.resolveTypeColumns({
+            typeId: data.typeId,
+            currentTypeId: current?.typeId ?? null,
+            ctx
+        });
+        return { ...data, ...columns } as Partial<Partner>;
+    }
+
+    protected override async _afterGetByField(
+        entity: Partner | null,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partner | null> {
+        return entity ? this.hydrateOne(entity, ctx) : null;
+    }
+
+    protected override async _afterList(
+        result: PaginatedListOutput<Partner>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Partner>> {
+        return this.hydrateList(result, ctx);
+    }
+
+    protected override async _afterSearch(
+        result: PaginatedListOutput<Partner>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Partner>> {
+        return this.hydrateList(result, ctx);
+    }
+
+    /**
+     * Admin search: `type` arrives as an entity filter carrying a catalog SLUG
+     * (AC-4.2). It is turned into a predicate through `type_id`, never mapped
+     * to the legacy enum column (where `media` would be an invalid-enum error).
+     */
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<Partner>> {
+        const { type, ...entityFilters } = (params.entityFilters ?? {}) as Record<string, unknown>;
+        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+        if (typeof type === 'string' && type.length > 0) {
+            extraConditions.push(partnerTypeSlugCondition(type));
+        }
+        return super._executeAdminSearch({ ...params, entityFilters, extraConditions });
     }
 
     /**
@@ -156,9 +329,15 @@ export class PartnerService extends BaseCrudService<
     protected async _beforeCreate(
         data: Record<string, unknown>,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<Partner>> {
-        const updates: Partial<Partner> = {};
+        // The catalog type must be ACTIVE (HOS-2336). Dual-writes the legacy
+        // enum column next to `type_id` during release N.
+        const typeColumns = await this.resolveTypeColumns({
+            typeId: data.typeId as string,
+            ctx
+        });
+        const updates: Partial<Partner> = { ...(typeColumns as Partial<Partner>) };
 
         if (!data.slug || (data.slug as string).trim().length === 0) {
             const base = `${(data.name as string) ?? 'partner'}`;
@@ -355,7 +534,7 @@ export class PartnerService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                return { partner: partner ?? null };
+                return { partner: partner ? await this.hydrateOne(partner, ctx) : null };
             }
         });
     }
@@ -373,7 +552,7 @@ export class PartnerService extends BaseCrudService<
      *
      * @param entity - The partner as it now stands after the write.
      */
-    private _schedulePartnerRevalidation(entity: Partner): void {
+    private _schedulePartnerRevalidation(entity: Pick<Partner, 'id' | 'slug'>): void {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'partner',
@@ -388,14 +567,100 @@ export class PartnerService extends BaseCrudService<
         }
     }
 
-    protected async _afterCreate(entity: Partner): Promise<Partner> {
+    protected async _afterCreate(
+        entity: Partner,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partner> {
         this._schedulePartnerRevalidation(entity);
-        return entity;
+        return this.hydrateOne(entity, ctx);
     }
 
-    protected async _afterUpdate(entity: Partner): Promise<Partner> {
+    protected async _afterUpdate(
+        entity: Partner,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partner> {
         this._schedulePartnerRevalidation(entity);
-        return entity;
+        return this.hydrateOne(entity, ctx);
+    }
+
+    /**
+     * Captures the partner's identity before it is soft-deleted (HOS-2368).
+     * The after hook only receives `{ count }`, so the page's `id` and `slug`
+     * travel through `hookState`.
+     */
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<string> {
+        await this._captureLifecycleTarget({ id, ctx });
+        return id;
+    }
+
+    /** Purges the partner's page and the home carousel once a soft delete landed (HOS-2368). */
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<{ count: number }> {
+        this._scheduleLifecycleRevalidation({ count: result.count, ctx });
+        return result;
+    }
+
+    /** Captures the partner's identity before it is restored (HOS-2368). */
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<string> {
+        await this._captureLifecycleTarget({ id, ctx });
+        return id;
+    }
+
+    /** Purges the partner's page and the home carousel once a restore landed (HOS-2368). */
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<{ count: number }> {
+        this._scheduleLifecycleRevalidation({ count: result.count, ctx });
+        return result;
+    }
+
+    /** Stores `{ id, slug }` of the partner a delete or restore is about to touch. */
+    private async _captureLifecycleTarget({
+        id,
+        ctx
+    }: {
+        readonly id: string;
+        readonly ctx: ServiceContext;
+    }): Promise<void> {
+        const entity = await this.model.findById(id, ctx?.tx);
+        if (entity && ctx.hookState) {
+            ctx.hookState[PARTNER_LIFECYCLE_TARGET_KEY] = { id: entity.id, slug: entity.slug };
+        }
+    }
+
+    /**
+     * Schedules the purge for a delete or restore, only when a row actually
+     * changed and the identity was captured (a purge of `{ id: undefined }`
+     * would be a purge of nothing, HOS-389).
+     */
+    private _scheduleLifecycleRevalidation({
+        count,
+        ctx
+    }: {
+        readonly count: number;
+        readonly ctx: ServiceContext;
+    }): void {
+        const target = ctx?.hookState?.[PARTNER_LIFECYCLE_TARGET_KEY] as
+            | { readonly id: string; readonly slug: string }
+            | undefined;
+        if (count > 0 && target) {
+            this._schedulePartnerRevalidation(target);
+        }
     }
 
     /**

@@ -13,7 +13,10 @@ import { users } from '../user/user.dbschema.ts';
 import { addonInstances } from './addon-product.dbschema.ts';
 import { billingDeadlineVersions } from './billing-deadline-version.dbschema.ts';
 import { quotedList } from './quoted-list.ts';
-import { RECONCILIATION_MARK_REASONS } from './reconciliation-mark-reasons.ts';
+import {
+    ADDON_INSTANCE_MARK_REASONS,
+    RECONCILIATION_MARK_REASONS
+} from './reconciliation-mark-reasons.ts';
 import { subscriptions } from './subscription.dbschema.ts';
 
 /** A separate reconciliation mark with a closed MOT:1–MOT:24 reason (B3.md AC:B3:13–16). */
@@ -23,7 +26,7 @@ export const reconciliationMarks = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         /** suscripción */
         subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
-        /** instancia de addon UNA_VEZ, sólo MOT:23 */
+        /** instancia de addon UNA_VEZ: MOT:23, MOT:5, MOT:20 (HOS-2179) o MOT:17 (HOS-2391) */
         addonInstanceId: uuid('addon_instance_id').references(() => addonInstances.id),
         /** motivo */
         reason: varchar('reason', { length: 64 }).notNull(),
@@ -51,9 +54,15 @@ export const reconciliationMarks = pgTable(
             'ck_reconciliation_mark_one_reference',
             sql`(${t.subscriptionId} IS NOT NULL) <> (${t.addonInstanceId} IS NOT NULL)`
         ),
-        instanceOnlyForOrder: check(
-            'ck_reconciliation_mark_instance_only_for_order',
-            sql`(${t.addonInstanceId} IS NOT NULL) = (${t.reason} = 'ORDEN_PAGADA_SIN_INSTANCIA')`
+        /**
+         * MOT:23 always hangs from an addon instance, and an addon instance carries only the
+         * reasons a one-time purchase can raise: MOT:23, plus MOT:5 (DIVERGENCIA_DE_MONTO, AC-8)
+         * and MOT:20 (COBRO_DUPLICADO, AC-11) since HOS-2179 (owner: "relax the CHECK"), and
+         * MOT:17 (CONTRACARGO) since HOS-2391: a chargeback on the payment that activated it.
+         */
+        instanceReasons: check(
+            'ck_reconciliation_mark_instance_reasons',
+            sql`(${t.reason} <> 'ORDEN_PAGADA_SIN_INSTANCIA' OR ${t.addonInstanceId} IS NOT NULL) AND (${t.addonInstanceId} IS NULL OR ${t.reason} IN (${quotedList(ADDON_INSTANCE_MARK_REASONS)}))`
         ),
         liftedPair: check(
             'ck_reconciliation_mark_lifted_pair',

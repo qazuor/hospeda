@@ -1329,6 +1329,13 @@
         "028-host-trade-category-fletes.json",
         "029-host-trade-category-remis.json"
     ],
+    "partnerTypes": [
+        "001-partner-type-business.json",
+        "002-partner-type-ngo.json",
+        "003-partner-type-institution.json",
+        "004-partner-type-media.json",
+        "005-partner-type-person.json"
+    ],
     "exchangeRateConfig": ["001-exchange-rate-config-default.json"],
     "exchangeRates": [
         "001-rate-usd-ars-oficial.json",

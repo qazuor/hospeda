@@ -7,8 +7,12 @@
  *   the matrix rows it comes from (with date and account), and the test that
  *   proves our code resists it. By default the fake tells every lie it
  *   implements; a test may turn one off only by naming it and saying why.
- * - **The provider's own rules and measured behaviour**, RP1..RP13: rules stay
- *   on; a measured behaviour can be turned off by name with a reason.
+ * - **The provider's own rules and measured behaviour**, RP1..RP12 and RP17..RP20:
+ *   rules stay on; a measured behaviour can be turned off by name with a reason.
+ *   RP13..RP16 (the order search and order creation/refund rules) and M14 (the order
+ *   search total in text) were retired with the one-time order path (HOS-2179 T-7):
+ *   no code reaches the Orders API any more, so nothing can meet them. Their ids are not
+ *   reused.
  * - **The simulations**: network cases nobody measured (a lost answer, a cut
  *   network, notices out of order). Not lies, never counted as such, and off
  *   unless a test turns one on, naming it and saying why.
@@ -133,10 +137,10 @@ export function parseFakeLists(args: { readonly input: unknown }): { readonly li
 /** The lists, validated at load: a broken file fails the import, never empties a list. */
 export const FAKE_LISTS: FakeLists = Object.freeze(parseFakeLists({ input: fakeListsJson }).lists);
 
-/** The closed list of measured lies, M1..M13. */
+/** The closed list of measured lies, M1..M13 (M14 retired, HOS-2179 T-7). */
 export const FAKE_LIES: readonly FakeLie[] = FAKE_LISTS.lies;
 
-/** The provider's own rules and measured behaviour, RP1..RP13. */
+/** The provider's own rules and measured behaviour, RP1..RP12 and RP17..RP20. */
 export const FAKE_RULES: readonly FakeRule[] = FAKE_LISTS.rules;
 
 /** What the fake simulates without having measured it. */

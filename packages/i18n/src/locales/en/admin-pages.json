@@ -996,7 +996,10 @@
                     },
                     "reasonLabel": "Reason (required)",
                     "reasonPlaceholder": "Enter the reason that will be recorded in the audit log",
-                    "confirm": { "assign": "Grant role", "remove": "Remove role" },
+                    "confirm": {
+                        "assign": "Grant role",
+                        "remove": "Remove role"
+                    },
                     "cancel": "Cancel",
                     "rows": {
                         "ACC_17": "Migrate customers from a retired plan",
@@ -1306,7 +1309,48 @@
             "cacheClearError": "Failed to clear cache",
             "dangerZone": "Danger Zone",
             "dangerZoneDesc": "Database reset and other dangerous operations",
-            "dangerZoneDevOnly": "Only available in development environment"
+            "dangerZoneDevOnly": "Only available in development environment",
+            "sessionRecording": {
+                "title": "Session recordings and heatmaps",
+                "description": "Master switch for the Umami recorder on the web. While off, the web never loads the recorder.",
+                "statusOn": "ON",
+                "statusOff": "OFF",
+                "lastChanged": "Last changed: {{date}}",
+                "neverChanged": "Never changed",
+                "help": "Replay vs heatmap, sampling and masking are configured in Umami through `pnpm umami:setup`, not here.",
+                "enable": "Turn on",
+                "disable": "Turn off",
+                "enableAria": "Turn session recordings on",
+                "disableAria": "Turn session recordings off",
+                "confirmEnable": "Production must have a signed privacy verification (docs/analytics/session-replay-privacy.md). Turn recordings on?",
+                "confirmDisable": "The change reaches the web within 60 seconds, and pages already open keep their replay for up to 5 minutes and their heatmap clicks until they are closed. Turn recordings off?",
+                "cancel": "Cancel",
+                "saveError": "The change could not be saved. The state shown is the last confirmed one.",
+                "readError": "The current state could not be read.",
+                "retry": "Retry",
+                "retentionLabel": "Recording retention",
+                "retentionHelp": "After this period, recordings and heatmap data are deleted automatically every day, even while the switch is off.",
+                "retentionSaveError": "The period could not be saved. The last confirmed one is shown.",
+                "purgeButton": "Clean up now",
+                "purgeAria": "Delete expired recordings now",
+                "purgeConfirmAction": "Delete now",
+                "purgeError": "The cleanup could not be completed.",
+                "purgeNotConfigured": "The cleanup is not configured: the api has no connection to the Umami database.",
+                "purgeStoppedEarly": "The cleanup did not finish within the available time: it will be completed on the next run.",
+                "purgeMismatch": "The retention period changed while you were confirming. Check the current value and try again.",
+                "purgeRunning": "A cleanup is already running. Try again in a few minutes.",
+                "retentionOption_one": "{{count}} day",
+                "retentionOption_other": "{{count}} days",
+                "purgeConfirm_one": "Recordings (saved ones included) and heatmap data older than {{count}} day will be permanently deleted. Clean up now?",
+                "purgeConfirm_other": "Recordings (saved ones included) and heatmap data older than {{count}} days will be permanently deleted. Clean up now?",
+                "purgeDone": "Deleted: {{replays}}, {{heatmaps}} and {{saved}}. Period used: {{period}}.",
+                "purgeDoneReplays_one": "{{count}} recording",
+                "purgeDoneReplays_other": "{{count}} recordings",
+                "purgeDoneHeatmaps_one": "{{count}} heatmap event",
+                "purgeDoneHeatmaps_other": "{{count}} heatmap events",
+                "purgeDoneSaved_one": "{{count}} saved recording",
+                "purgeDoneSaved_other": "{{count}} saved recordings"
+            }
         },
         "seo": {
             "title": "SEO Configuration",
@@ -1530,7 +1574,10 @@
             "next": "Next",
             "page": "Page {page} of {total}"
         },
-        "reasons": { "RETIREMENT": "Catalog retirement", "PRICE_INCREASE": "Price increase" },
+        "reasons": {
+            "RETIREMENT": "Catalog retirement",
+            "PRICE_INCREASE": "Price increase"
+        },
         "retiredVersions": {
             "title": "Retired versions",
             "show": "Show retired versions",
@@ -1949,7 +1996,12 @@
         },
         "state": {
             "active": "Active",
-            "inactive": "Inactive"
+            "inactive": "Inactive",
+            "deleted": "Deleted"
+        },
+        "showDeleted": "Show deleted",
+        "messages": {
+            "restoreError": "Could not restore."
         },
         "loading": "Loading…",
         "error": "The catalog could not be loaded.",
@@ -1966,7 +2018,9 @@
             "edit": "Edit",
             "delete": "Delete",
             "cancel": "Cancel",
-            "save": "Save"
+            "save": "Save",
+            "restore": "Restore",
+            "restoring": "Restoring..."
         },
         "groups": {
             "add": "New group",
@@ -1992,7 +2046,8 @@
                 "deleted": "Group deleted.",
                 "saveError": "The group could not be saved.",
                 "deleteError": "The group could not be deleted.",
-                "inUse": "It cannot be deleted: the group still has categories. Deactivate it to stop offering it, or move its categories first."
+                "inUse": "It cannot be deleted: the group still has categories. Deactivate it to stop offering it, or move its categories first.",
+                "restored": "Group restored."
             }
         },
         "categories": {
@@ -2038,7 +2093,9 @@
                 "deleted": "Category deleted.",
                 "saveError": "The category could not be saved.",
                 "deleteError": "The category could not be deleted.",
-                "inUse": "It cannot be deleted: providers use this category. Deactivate it to stop offering it; providers that already have it keep it."
+                "inUse": "It cannot be deleted: providers use this category. Deactivate it to stop offering it; providers that already have it keep it.",
+                "restored": "Category restored.",
+                "restoreGroupDeleted": "It cannot be restored: this category's group is deleted. Restore the group first."
             }
         }
     },
@@ -2133,5 +2190,108 @@
             "notNeeded": "The listing no longer collides with another published listing of the owner, so the request was closed and nothing was granted. The list was refreshed."
         },
         "genericError": "The action could not be completed."
+    },
+    "partnerTypes": {
+        "title": "Partner types",
+        "subtitle": "Catalog of the types a partner can be assigned.",
+        "loading": "Loading…",
+        "error": "The catalog could not be loaded.",
+        "empty": "There are no types yet.",
+        "add": "New type",
+        "showDeleted": "Show deleted",
+        "state": {
+            "active": "Active",
+            "inactive": "Inactive",
+            "deleted": "Deleted"
+        },
+        "columns": {
+            "name": "Name",
+            "slug": "Identifier",
+            "weight": "Weight",
+            "state": "Status",
+            "partners": "Partner count",
+            "actions": "Actions"
+        },
+        "actions": {
+            "edit": "Edit",
+            "delete": "Delete",
+            "restore": "Restore",
+            "cancel": "Cancel",
+            "save": "Save"
+        },
+        "dialog": {
+            "createTitle": "New partner type",
+            "editTitle": "Edit partner type",
+            "nameLabel": "Name",
+            "slugLabel": "Identifier",
+            "slugHint": "Set on creation and cannot be changed afterwards.",
+            "weightLabel": "Sort weight",
+            "weightHint": "Lower values are shown first.",
+            "activeLabel": "Active",
+            "activeHint": "An inactive type is no longer offered for new partners; partners that have it keep it."
+        },
+        "deleteDialog": {
+            "title": "Delete partner type",
+            "message": "You are about to delete the type “{{name}}”. You can restore it later from “Show deleted”.",
+            "confirm": "Delete type"
+        },
+        "messages": {
+            "created": "Type created.",
+            "updated": "Type updated.",
+            "deleted": "Type deleted.",
+            "restored": "Type restored.",
+            "saveError": "The type could not be saved.",
+            "deleteError": "The type could not be deleted.",
+            "restoreError": "The type could not be restored.",
+            "inUse": "Not allowed: {{count}} partner(s) use this type. Assign them another type first."
+        }
+    },
+    "emailPreviews": {
+        "title": "Emails",
+        "description": "Preview of every email the platform sends, rendered on the server with sample data. Nothing is sent.",
+        "searchLabel": "Search emails",
+        "searchPlaceholder": "Search by name, key or id",
+        "domainFilterLabel": "Filter by domain",
+        "clearFilters": "Clear filters",
+        "count": "{{shown}} of {{total}}",
+        "notWired": "not sent in production",
+        "empty": "No email matches the filters.",
+        "loading": "Loading catalog...",
+        "loadError": "The email catalog could not be loaded.",
+        "retry": "Retry",
+        "selectPrompt": "Pick an email from the list.",
+        "subjectLabel": "Subject",
+        "scenarioLabel": "Scenario",
+        "widthLabel": "Preview width",
+        "desktop": "Desktop (600 px)",
+        "mobile": "Mobile (375 px)",
+        "previewLoading": "Rendering preview...",
+        "previewError": "The preview could not be rendered",
+        "plainText": "Plain text",
+        "iframeTitle": "Email preview: {{name}}",
+        "sendPaths": {
+            "notification": "Notification",
+            "outbox": "Outbox",
+            "auth": "Authentication",
+            "conversation": "Conversation",
+            "alert-digest": "Alert digest",
+            "newsletter": "Newsletter"
+        },
+        "domains": {
+            "auth": "Authentication",
+            "billing": "Billing",
+            "subscription": "Subscriptions",
+            "trial": "Free trial",
+            "listing": "Listings",
+            "host-trade": "Host trades",
+            "alliance": "Alliances",
+            "partner": "Partners",
+            "conversation": "Conversations",
+            "admin": "Administration",
+            "newsletter": "Newsletter",
+            "alerts": "Alerts",
+            "contact-feedback": "Contact and feedback",
+            "ai": "Artificial intelligence"
+        }
     }
 }

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'notification.template.preview' BEFORE 'professionalService.create';

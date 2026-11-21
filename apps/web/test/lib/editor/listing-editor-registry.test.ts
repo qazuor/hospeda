@@ -17,6 +17,7 @@ import {
     buildListingEditorSections,
     type ListingSectionStates
 } from '@/lib/editor/listing-editor-registry';
+import { LISTING_SECTION_PRESENTATION } from '@/lib/editor/listing-section-presentation';
 
 /** BAR: a nightlife profile with a menu, daily specials and night info. */
 const BAR_STATES: ListingSectionStates = {
@@ -105,5 +106,25 @@ describe('TEST:5.1:3 derived listing editor registry', () => {
 
         expect(nightInfo?.group).toBe('property');
         expect(nightInfo?.slug).toBe('de-noche');
+    });
+});
+
+describe('HOS-2271 venue promotions section', () => {
+    it('offers the section according to its catalog state', () => {
+        expect(idsOf('venue', { promotions: { state: 'available' } })).toContain('promotions');
+        expect(idsOf('venue', { promotions: { state: 'locked' } })).toContain('promotions');
+    });
+
+    it('keeps locked promotions visible in the hub and section navigation', () => {
+        const registry = buildListingEditorRegistry({
+            vertical: 'venue',
+            sectionStates: { promotions: { state: 'locked' } }
+        });
+
+        expect(registry.sections.map(({ id }) => id)).toContain('promotions');
+        expect(registry.sections.find(({ id }) => id === 'promotions')?.slug).toBe('promociones');
+        expect(LISTING_SECTION_PRESENTATION.venue.promotions).not.toHaveProperty(
+            'hideWhenLockedWithoutPlan'
+        );
     });
 });

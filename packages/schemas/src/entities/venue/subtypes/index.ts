@@ -5,6 +5,7 @@
 // Daily-special schemas (HOS-1041 — the menú del día, with its own validity window)
 export * from './venue.daily-special.schema.js';
 // Venue events schemas (HOS-1042 — the venue's own agenda, with recurrence)
+export * from './venue.event.lifecycle.js';
 export * from './venue.event.schema.js';
 
 // FAQ schemas

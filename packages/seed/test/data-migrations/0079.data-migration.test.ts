@@ -55,13 +55,17 @@ const later = await loadMigrationByNumber<{
 const latest = await loadMigrationByNumber<{
     readonly GRANTS: ReadonlyArray<{ role: RoleEnum; permission: PermissionEnum }>;
 }>({ number: '0120' });
+/** HOS-2270: the six own-scoped promotion permissions VENUE_OWNER gained. */
+const promotionGrants = await loadMigrationByNumber<{
+    readonly GRANTS: ReadonlyArray<{ role: RoleEnum; permission: PermissionEnum }>;
+}>({ number: '0185' });
 
 /** 0079's list for a role plus what later migrations granted to it. */
 function expectedSeedFor(args: {
     readonly role: RoleEnum;
     readonly own: readonly PermissionEnum[];
 }): PermissionEnum[] {
-    const added = [...later.GRANTS, ...latest.GRANTS]
+    const added = [...later.GRANTS, ...latest.GRANTS, ...promotionGrants.GRANTS]
         .filter((g) => g.role === args.role)
         .map((g) => g.permission);
     return [...new Set([...args.own, ...added])].sort();

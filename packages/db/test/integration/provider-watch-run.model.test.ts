@@ -2,10 +2,12 @@
  * HOS-1512: the watch battery's run lifecycle, the one-shot authorization and the accepted
  * baseline, against a real database.
  */
+
+import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { platformSettingsModel } from '../../src/models/platform/platform-settings.model.ts';
 import { providerWatchRunModel as model } from '../../src/models/provider-watch-run/provider-watch-run.model.ts';
-import { users } from '../../src/schemas/index.ts';
+import { platformSettings, users } from '../../src/schemas/index.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 import {
     closeTestPool,
@@ -21,6 +23,11 @@ afterAll(closeTestPool);
 const START = new Date('2026-11-17T10:00:00.000Z');
 const END = new Date('2026-11-17T10:05:00.000Z');
 const AUTHORIZATION = { month: '2026-11', maxChargeMinor: 150000, accountId: '100000001' };
+/** What the run takes the authorization with: the stored values plus its market day. */
+const CONSUME = { ...AUTHORIZATION, day: '2026-11-17' };
+/** An authorization of 0: a catalog that moves no money (owner decision on B1, 2026-11-19). */
+const ZERO = { month: '2026-11', maxChargeMinor: 0, accountId: '100000001' };
+const takeZero = (day: string) => ({ ...ZERO, day });
 
 async function seedAuthorization(tx: DrizzleClient, value: unknown = AUTHORIZATION) {
     const user = testData.user();
@@ -165,6 +172,67 @@ describe('provider ids are persisted as the writes answer, apart from the closin
         });
     });
 
+    it('keeps the write keys recorded before sending when the run closes SUCCESSFULLY (F1)', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            await model.appendProgress({ runId, measurementId: 'M1', writeKeys: ['hw-k1'], tx });
+            await model.appendProgress({
+                runId,
+                measurementId: 'M1',
+                providerIds: ['pre-1'],
+                writeKeys: ['hw-k2'],
+                tx
+            });
+            await model.appendProgress({ runId, measurementId: 'M2', writeKeys: ['hw-k3'], tx });
+            const closed = await model.close({
+                ...close(runId, {
+                    measurements: {
+                        M1: { outcome: 'matched', providerIds: ['pre-1'] },
+                        M3: { outcome: 'matched' }
+                    }
+                }),
+                tx
+            });
+            expect(closed.outcome).toBe('completed');
+            const row = await model.findById({ id: runId, tx });
+            expect(row?.measurements).toEqual({
+                M1: {
+                    outcome: 'matched',
+                    providerIds: ['pre-1'],
+                    writeKeys: ['hw-k1', 'hw-k2']
+                },
+                M2: { writeKeys: ['hw-k3'] },
+                M3: { outcome: 'matched' }
+            });
+        });
+    });
+
+    it('writes the ledger in the same statement as each progress record (F3)', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            await model.appendProgress({
+                runId,
+                measurementId: 'M1',
+                writeKeys: ['hw-k1'],
+                ledger: { charged: 150000, refunded: 0 },
+                tx
+            });
+            let row = await model.findById({ id: runId, tx });
+            expect(row?.ledger).toEqual({ charged: 150000, refunded: 0 });
+            expect(row?.measurements).toEqual({ M1: { writeKeys: ['hw-k1'] } });
+            // A release carries only the ledger.
+            await model.appendProgress({
+                runId,
+                measurementId: 'M1',
+                ledger: { charged: 0, refunded: 0 },
+                tx
+            });
+            row = await model.findById({ id: runId, tx });
+            expect(row?.ledger).toEqual({ charged: 0, refunded: 0 });
+            expect(row?.measurements).toEqual({ M1: { writeKeys: ['hw-k1'] } });
+        });
+    });
+
     it('stores the ledger of the run when it closes, charges and refunds apart', async () => {
         await withTestTransaction(async (tx) => {
             const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
@@ -214,6 +282,54 @@ describe('provider ids are persisted as the writes answer, apart from the closin
             expect(row).toMatchObject({
                 outcome: 'running',
                 measurements: { M1: { providerIds: ['pre-9'] } }
+            });
+        });
+    });
+});
+
+describe('closing reads the stored measurements under a row lock (HOS-1512 G1c)', () => {
+    it('waits for a progress write in flight and keeps what it recorded', async () => {
+        await withCleanSlate(async (db) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx: db });
+            const writer = await getTestPool().connect();
+            try {
+                // A progress write that has updated the row and not committed yet.
+                await writer.query('BEGIN');
+                const pidRow = await writer.query<{ pid: number }>(
+                    'SELECT pg_backend_pid() AS pid'
+                );
+                const writerPid = pidRow.rows[0]?.pid ?? 0;
+                await writer.query(
+                    `UPDATE provider_watch_run
+                        SET measurements = jsonb_build_object('M1', jsonb_build_object('providerIds', jsonb_build_array('late-1')))
+                      WHERE id = $1`,
+                    [runId]
+                );
+                const closing = db.transaction((tx) =>
+                    model.close({ ...close(runId), tx: tx as unknown as DrizzleClient })
+                );
+                // Wait until the closing backend is really blocked on a lock, then release it.
+                const deadline = Date.now() + 10_000;
+                for (;;) {
+                    const { rows } = await getTestPool().query(
+                        `SELECT 1 FROM pg_stat_activity
+                          WHERE wait_event_type = 'Lock' AND datname = current_database()
+                            AND pid <> pg_backend_pid() AND pid <> $1`,
+                        [writerPid]
+                    );
+                    if (rows.length > 0) break;
+                    if (Date.now() > deadline) throw new Error('close never blocked on the lock');
+                    await new Promise((resolve) => setTimeout(resolve, 20));
+                }
+                await writer.query('COMMIT');
+                await closing;
+            } finally {
+                writer.release();
+            }
+            const row = await model.findById({ id: runId, tx: db });
+            expect(row).toMatchObject({
+                outcome: 'completed',
+                measurements: { M1: { outcome: 'matched', providerIds: ['late-1'] } }
             });
         });
     });
@@ -302,7 +418,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const { runId, authorizationConsumed } = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(authorizationConsumed).toBe(true);
@@ -321,13 +437,13 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const first = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             const second = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(second.authorizationConsumed).toBe(false);
@@ -343,7 +459,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: { ...AUTHORIZATION, month: '2026-10' },
+                consumeAuthorization: { ...CONSUME, month: '2026-10' },
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -360,7 +476,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -373,7 +489,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -386,7 +502,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             await platformSettingsModel.upsertByKey(
@@ -398,7 +514,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const again = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(again.authorizationConsumed).toBe(true);
@@ -413,7 +529,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
                     model.open({
                         account: 'production',
                         startedAt: START,
-                        consumeAuthorization: AUTHORIZATION,
+                        consumeAuthorization: CONSUME,
                         tx: tx as unknown as DrizzleClient
                     })
                 );
@@ -423,6 +539,323 @@ describe('the authorization is consumed by the run that starts, once', () => {
             expect((await authorizationRow(getTestDb()))?.value).toMatchObject({
                 consumedByRunId: winners[0]?.runId
             });
+        });
+    });
+});
+
+describe('an authorization of 0 covers one run a day for its month, unconsumed (B1)', () => {
+    it('lets two consecutive daily runs both take it, and records each run', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const monday = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            const tuesday = await model.open({
+                account: 'production',
+                startedAt: new Date('2026-11-18T10:00:00.000Z'),
+                consumeAuthorization: takeZero('2026-11-18'),
+                tx
+            });
+            expect(monday.authorizationConsumed).toBe(true);
+            expect(tuesday.authorizationConsumed).toBe(true);
+            const value = (await authorizationRow(tx))?.value;
+            expect(value).toMatchObject({
+                ...ZERO,
+                lastRunDay: '2026-11-18',
+                runIds: [monday.runId, tuesday.runId]
+            });
+            expect(value).not.toHaveProperty('consumedByRunId');
+            expect(value).not.toHaveProperty('consumedAt');
+        });
+    });
+
+    it('refuses a second run the same day', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const first = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            const second = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            expect(first.authorizationConsumed).toBe(true);
+            expect(second.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).toMatchObject({ runIds: [first.runId] });
+        });
+    });
+
+    it('refuses a day already behind the last one taken: A, then B, then A again (A1)', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const take = (day: string) =>
+                model.open({
+                    account: 'production',
+                    startedAt: START,
+                    consumeAuthorization: takeZero(day),
+                    tx
+                });
+            const first = await take('2026-11-17');
+            const second = await take('2026-11-18');
+            const again = await take('2026-11-17');
+            expect([first, second, again].map((r) => r.authorizationConsumed)).toEqual([
+                true,
+                true,
+                false
+            ]);
+            expect((await authorizationRow(tx))?.value).toMatchObject({
+                lastRunDay: '2026-11-18',
+                runIds: [first.runId, second.runId]
+            });
+        });
+    });
+
+    it("refuses a day of the next month under this month's authorization (A1)", async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            // The month the run was pre-flighted with matches; only the day is out of it.
+            const result = await model.open({
+                account: 'production',
+                startedAt: new Date('2026-12-01T10:00:00.000Z'),
+                consumeAuthorization: takeZero('2026-12-01'),
+                tx
+            });
+            expect(result.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).not.toHaveProperty('runIds');
+        });
+    });
+
+    it('is not taken for another month', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const next = await model.open({
+                account: 'production',
+                startedAt: new Date('2026-12-01T10:00:00.000Z'),
+                consumeAuthorization: { ...takeZero('2026-12-01'), month: '2026-12' },
+                tx
+            });
+            expect(next.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).not.toHaveProperty('runIds');
+        });
+    });
+
+    it('is not taken by a run pre-flighted with an amount above 0', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const result = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: { ...takeZero('2026-11-17'), maxChargeMinor: 150000 },
+                tx
+            });
+            expect(result.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).not.toHaveProperty('consumedByRunId');
+        });
+    });
+
+    it('is not taken when the owner rewrote it above 0 while the run pre-flighted with 0', async () => {
+        await withTestTransaction(async (tx) => {
+            // Same month and account, the amount rewritten: a daily take would cover a money run.
+            await seedAuthorization(tx, { ...ZERO, maxChargeMinor: 150000 });
+            const result = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            expect(result.authorizationConsumed).toBe(false);
+            const value = (await authorizationRow(tx))?.value;
+            expect(value).not.toHaveProperty('runIds');
+            expect(value).not.toHaveProperty('consumedByRunId');
+        });
+    });
+
+    it('lets exactly one of two CONCURRENT runs the same day take it', async () => {
+        await withCleanSlate(async (db) => {
+            await seedAuthorization(db, ZERO);
+            const attempt = () =>
+                db.transaction(async (tx) =>
+                    model.open({
+                        account: 'production',
+                        startedAt: START,
+                        consumeAuthorization: takeZero('2026-11-17'),
+                        tx: tx as unknown as DrizzleClient
+                    })
+                );
+            const results = await Promise.all([attempt(), attempt(), attempt()]);
+            expect(results.filter((result) => result.authorizationConsumed)).toHaveLength(1);
+        });
+    });
+});
+
+describe('a missed take of an authorization of 0 names its cause (follow-up of #4538, A2b)', () => {
+    const take = (tx: DrizzleClient, day: string, change: Record<string, unknown> = {}) =>
+        model.open({
+            account: 'production',
+            startedAt: START,
+            consumeAuthorization: { ...takeZero(day), ...change },
+            tx
+        });
+
+    it('answers DAY_TAKEN only for the same day against the unchanged authorization', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const first = await take(tx, '2026-11-17');
+            const second = await take(tx, '2026-11-17');
+            expect(first).not.toHaveProperty('authorizationMiss');
+            expect(second).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'DAY_TAKEN'
+            });
+        });
+    });
+
+    it('answers CHANGED for a day behind the last one taken (a clock that went back)', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            await take(tx, '2026-11-18');
+            expect(await take(tx, '2026-11-17')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it.each([
+        ['another account stored', { accountId: '999999999' }],
+        ['an amount above 0 stored', { maxChargeMinor: 150000 }],
+        ['another month stored', { month: '2026-10' }],
+        ['a consumed authorization stored', { consumedByRunId: crypto.randomUUID() }]
+    ])('answers CHANGED with %s, even when that day was already taken', async (_name, stored) => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, { ...ZERO, ...stored, lastRunDay: '2026-11-17' });
+            expect(await take(tx, '2026-11-17')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it('answers CHANGED when there is no authorization at all (revoked)', async () => {
+        await withTestTransaction(async (tx) => {
+            // The concurrent-take test commits a row through withCleanSlate; remove it here.
+            await tx
+                .delete(platformSettings)
+                .where(eq(platformSettings.key, 'billing.providerWatchAuthorization'));
+            expect(await take(tx, '2026-11-17')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it('answers CHANGED for a day outside the authorized month', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            expect(await take(tx, '2026-12-01')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it('names no cause for a one-shot authorization above 0', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx);
+            await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: CONSUME,
+                tx
+            });
+            const again = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: CONSUME,
+                tx
+            });
+            expect(again.authorizationConsumed).toBe(false);
+            expect(again).not.toHaveProperty('authorizationMiss');
+        });
+    });
+});
+
+describe('re-authorizing keeps the daily use of an authorization of 0 only when it is the same (A3)', () => {
+    async function takeToday(tx: DrizzleClient) {
+        return model.open({
+            account: 'production',
+            startedAt: START,
+            consumeAuthorization: takeZero('2026-11-17'),
+            tx
+        });
+    }
+
+    it('keeps lastRunDay and runIds for the same month and account, so today stays taken', async () => {
+        await withTestTransaction(async (tx) => {
+            const user = await seedAuthorization(tx, ZERO);
+            const first = await takeToday(tx);
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value: { ...ZERO, accountNickname: 'HOSPEDA' },
+                actorId: user.id,
+                tx
+            });
+            expect((await authorizationRow(tx))?.value).toEqual({
+                ...ZERO,
+                accountNickname: 'HOSPEDA',
+                lastRunDay: '2026-11-17',
+                runIds: [first.runId]
+            });
+            expect((await takeToday(tx)).authorizationConsumed).toBe(false);
+        });
+    });
+
+    it.each([
+        ['another month', { month: '2026-12' }],
+        ['another account', { accountId: '999999999' }],
+        ['an amount above 0', { maxChargeMinor: 150000 }]
+    ])('starts afresh for %s', async (_name, change) => {
+        await withTestTransaction(async (tx) => {
+            const user = await seedAuthorization(tx, ZERO);
+            await takeToday(tx);
+            const value = { ...ZERO, ...change };
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value,
+                actorId: user.id,
+                tx
+            });
+            expect((await authorizationRow(tx))?.value).toEqual(value);
+        });
+    });
+
+    it('starts afresh over a consumed authorization above 0, and writes a first one', async () => {
+        await withTestTransaction(async (tx) => {
+            const user = testData.user();
+            await tx.insert(users).values(user);
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value: AUTHORIZATION,
+                actorId: user.id,
+                tx
+            });
+            await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: CONSUME,
+                tx
+            });
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value: ZERO,
+                actorId: user.id,
+                tx
+            });
+            expect((await authorizationRow(tx))?.value).toEqual(ZERO);
         });
     });
 });

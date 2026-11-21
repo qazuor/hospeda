@@ -24,10 +24,11 @@
  */
 
 import {
-    VenueEventsOutputSchema,
+    VenueEventsOwnerOutputSchema,
     type VenueEventsReplacePayload,
     VenueEventsReplacePayloadSchema,
-    VerticalEnum
+    VerticalEnum,
+    withVenueEventPastFlag
 } from '@repo/schemas';
 import { replaceVenueEvents, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
@@ -69,7 +70,7 @@ export async function handlePutVenueEvents(
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    return result.data;
+    return { events: withVenueEventPastFlag({ events: result.data.events, now: new Date() }) };
 }
 
 export const protectedPutVenueEventsRoute = createProtectedRoute({
@@ -95,7 +96,7 @@ export const protectedPutVenueEventsRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     requestBody: VenueEventsReplacePayloadSchema,
-    responseSchema: VenueEventsOutputSchema,
+    responseSchema: VenueEventsOwnerOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutVenueEvents(ctx, params, body)
 });

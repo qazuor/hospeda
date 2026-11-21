@@ -337,6 +337,7 @@ export enum PermissionEnum {
     LOGS_VIEW_ALL = 'logs.viewAll', // Allows viewing all logs.
     ERRORS_VIEW = 'errors.view', // Allows viewing error logs.
     ANALYTICS_VIEW = 'analytics.view', // Allows viewing analytics data.
+    ANALYTICS_SESSION_RECORDING_MANAGE = 'analytics.sessionRecording.manage', // Allows reading and switching the web session recording (Umami replays + heatmaps) on or off (HOS-2347). Granted to SUPER_ADMIN by the seed; not locked (D-3), so per-user overrides can extend it.
 
     // DEBUG & DEPLOY: Permissions for debugging and bulk operations
     DEBUG_TOOLS_ACCESS = 'system.debugTools.access', // Allows accessing debug tools.
@@ -752,6 +753,7 @@ export enum PermissionEnum {
     NOTIFICATION_SOFT_DELETE_VIEW = 'notification.softDelete.view', // Allows viewing soft-deleted notifications.
     NOTIFICATION_SEND = 'notification.send', // Allows sending notifications.
     NOTIFICATION_STATUS_MANAGE = 'notification.status.manage', // Allows managing notification status.
+    NOTIFICATION_TEMPLATE_PREVIEW = 'notification.template.preview', // Allows previewing every email template in the admin email previewer (HOS-2519). Read-only, fictional sample data.
 
     // PROFESSIONAL_SERVICE: Permissions related to professional service management
     PROFESSIONAL_SERVICE_CREATE = 'professionalService.create', // Allows creating a new professional service.
@@ -895,6 +897,7 @@ export enum PermissionEnum {
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     AI_CONVERSATION_VIEW_ANY = 'aiConversation.viewAny', // Allows reading the listing AI chat conversations of any listing, anonymised and with personal data redacted (HOS-2075). SUPER_ADMIN-only.
+    MCP_ACTIVITY_VIEW = 'mcpActivity.view', // Allows reading every user's assistant (MCP) tool calls in the admin log: user, tool, outcome, client and raw error code (HOS-2349, decision D-15). SUPER_ADMIN-only; ADMIN does not hold it.
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
 
     // REDIRECTABLE QR CODES (HOS-981): the Plataforma → Códigos QR manager.
@@ -998,6 +1001,15 @@ export enum PermissionEnum {
     PARTNER_CONFIGURE_BILLING = 'partner.configureBilling', // Allows action 6 to configure a Partner plan and manual payment; SUPER_ADMIN-only (AC:V7:17, ACC:6).
     PARTNER_EMPTY_PRESENCE = 'partner.emptyPresence', // Allows action 25 to empty a Partner presence at its owner's request (AC:V8b:6, ACC:25).
     PARTNER_EDIT_OWN = 'partner.editOwn', // Allows the owner of a partner to edit their own listing (the partner owner family, V7 step 3).
+
+    // PARTNER_TYPE: admin-managed partner type catalog (HOS-2336). The public
+    // catalog read needs no permission. Grouped under the PARTNER permission
+    // category by key prefix.
+    PARTNER_TYPE_VIEW = 'partnerType.view', // Admin: list partner types, active or not.
+    PARTNER_TYPE_CREATE = 'partnerType.create', // Admin: create a partner type.
+    PARTNER_TYPE_UPDATE = 'partnerType.update', // Admin: edit or deactivate a partner type.
+    PARTNER_TYPE_DELETE = 'partnerType.delete', // Admin: soft-delete an unused partner type.
+    PARTNER_TYPE_RESTORE = 'partnerType.restore', // Admin: restore a soft-deleted partner type.
 
     // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277)
     ALLIANCE_LEAD_VIEW_ALL = 'allianceLead.viewAll', // Allows viewing all alliance leads (admin inbox, filterable by kind/status).

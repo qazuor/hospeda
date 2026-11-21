@@ -43,6 +43,13 @@ export type SelectFilterConfig = BaseFilterConfig & {
     }>;
     /** i18n key for the "all" option. Defaults to "admin-filters.allOption" */
     readonly allLabelKey?: string;
+    /**
+     * Loads catalog-driven options at runtime (HOS-2336), appended after
+     * `options`. Their labels are display text (catalog data), not i18n keys.
+     */
+    readonly loadOptions?: () => Promise<
+        ReadonlyArray<{ readonly value: string; readonly label: string }>
+    >;
 };
 
 /**
@@ -148,6 +155,15 @@ export type TextFilterConfig = BaseFilterConfig & {
     readonly debounceMs?: number;
     /** Maximum number of characters accepted by the input. */
     readonly maxLength?: number;
+    /**
+     * Only a value matching this pattern reaches the URL (HOS-2349). While the
+     * typed value does not match, the param is omitted (so a half-typed id
+     * never fires a 400 on every debounce) and `invalidHintKey` is shown.
+     * Omit to keep the plain free-text behaviour.
+     */
+    readonly validPattern?: RegExp;
+    /** i18n key of the hint shown while the typed value misses `validPattern`. */
+    readonly invalidHintKey?: string;
 };
 
 /**

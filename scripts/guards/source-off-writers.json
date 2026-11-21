@@ -267,7 +267,7 @@
         "table": "subscriptions",
         "effect": "neutral",
         "via": null,
-        "reason": "Only links the predecessor to its successor (succeededById); the predecessor keeps its status and its coverage until the successor activates, so no coverage source turns off here (HOS-1530, inventoried at merge by HOS-1491)."
+        "reason": "Only touches the predecessor's updatedAt as an optimistic lock (HOS-2351: succeededById is written by S18 at close, never here); the predecessor keeps its status and its coverage until the successor activates, so no coverage source turns off here (HOS-1530, inventoried at merge by HOS-1491)."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-instances.service.ts",
@@ -295,7 +295,7 @@
     },
     {
         "file": "packages/service-core/src/services/billing/addon/purchase-addon.service.ts",
-        "symbol": "purchaseAddon",
+        "symbol": "purchaseAddonOnce",
         "table": "addonInstances",
         "effect": "neutral",
         "via": null,
@@ -334,12 +334,12 @@
         "reason": "A2 activates the complement alongside its addon; emitAddonCoverageAdded sends coverage after commit."
     },
     {
-        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time.ts",
-        "symbol": "confirmOneTimeOrder",
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time-activation.ts",
+        "symbol": "activateOneTimeInstance",
         "table": "addonInstances",
         "effect": "turns-on",
         "via": "notice",
-        "reason": "A2 activates an approved one-time addon; emitAddonCoverageAdded sends coverage after commit."
+        "reason": "A2 activates an approved one-time addon (payment page, HOS-2179); emitAddonCoverageAdded sends coverage after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows-one-time.ts",
@@ -350,12 +350,28 @@
         "reason": "A3 abandons a still pending one-time addon; pending instances emit no ADDON coverage source."
     },
     {
-        "file": "packages/service-core/src/services/billing/addon/addon-instance-a7.ts",
-        "symbol": "rejectOneTimeOrder",
+        "file": "packages/service-core/src/services/billing/addon/one-time-payment-page.ts",
+        "symbol": "abandonRefusedPage",
         "table": "addonInstances",
         "effect": "neutral",
         "via": null,
-        "reason": "A7 abandons a declined one-time addon still in PENDING_AUTHORIZATION; pending instances emit no ADDON coverage source."
+        "reason": "HOS-2179: releases a one-time purchase still in PENDING_AUTHORIZATION whose payment page the provider refused; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/one-time-payment-page.ts",
+        "symbol": "openOneTimePaymentPage",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2179: records the payment page id and expiry of a pending one-time purchase; status is untouched, so no coverage source changes."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/close-one-time-payment-page.ts",
+        "symbol": "closeOneTimePaymentPage",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2179: records the re-read expiry of a closed payment page; status is untouched, so no coverage source changes."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows.service.ts",
@@ -582,14 +598,6 @@
         "reason": "S18 closes the succession: links only, no status or coverage change (AC:B8b:10)."
     },
     {
-        "file": "packages/service-core/src/services/billing/subscription/succession-cancel-writes.ts",
-        "symbol": "releaseCancelledSuccessionPredecessor",
-        "table": "subscriptions",
-        "effect": "neutral",
-        "via": null,
-        "reason": "HOS-2344: S40 on a pending successor clears the predecessor's succeeded_by_id only; the predecessor keeps its status and coverage, and the abandoned successor never covered anything."
-    },
-    {
         "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
         "symbol": "repointComplements",
         "table": "addonInstances",
@@ -612,14 +620,6 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
-    },
-    {
-        "file": "packages/service-core/src/services/billing/addon/send-one-time-order.service.ts",
-        "symbol": "sendOneTimeOrder",
-        "table": "addonInstances",
-        "effect": "neutral",
-        "via": null,
-        "reason": "B6 records the provider order id of a one-time add-on charge; status is untouched, so no coverage source turns off here (AC:B6:12)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/apply-scheduled-change.service.ts",

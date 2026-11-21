@@ -309,9 +309,12 @@ export async function startSuccession(
                 operation: 'PREAPPROVAL_CREATE',
                 subjectId: subscription.id
             });
+            // Optimistic lock on the predecessor only. `succeeded_by_id` is written by S18 when the
+            // succession closes, never here: an open succession is read from its live successor
+            // (HOS-2351, 04-catalogos.md four-state table).
             const moved = await tx
                 .update(subscriptions)
-                .set({ succeededById: subscription.id, updatedAt: ports.clock.now() })
+                .set({ updatedAt: ports.clock.now() })
                 .where(
                     and(
                         eq(subscriptions.id, admitted.predecessorId),

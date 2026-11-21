@@ -145,7 +145,8 @@
             "17": "Escalonamento de uma marca aberta",
             "18": "Verificações de pagamentos creditados",
             "19": "Janela do resumo de conciliação",
-            "20": "Marcos do aviso de fim de carência"
+            "20": "Marcos do aviso de fim de carência",
+            "21": "Página de pagamento de complemento avulso"
         },
         "fields": {
             "days": "Dias",
@@ -159,7 +160,9 @@
             "noticeDays": "Dias de aviso",
             "contactDays": "Contatos (dias antes)",
             "hoursRemaining": "Horas restantes",
-            "minutes": "Minutos"
+            "minutes": "Minutos",
+            "pageMinutes": "Minutos da página de pagamento",
+            "windowMarginMinutes": "Margem da janela (minutos)"
         },
         "listHelp": "Separados por vírgula",
         "noValue": "Sem valor publicado: não pode ser alterado aqui.",
@@ -729,9 +732,10 @@
         },
         "providerWatchAuthorization": {
             "title": "Vigilância do provedor: autorização",
-            "description": "Autorize UMA execução em produção da bateria de vigilância por mês, pelo valor exato que somam as suas medições que movimentam dinheiro",
+            "description": "Autorize as execuções de produção da bateria de vigilância do mês: uma só se as suas medições movimentam dinheiro, uma por dia se não movimentam nenhum.",
             "hint": "A execução em produção não começa sem a autorização do mês corrente. Uma autorização vale para UMA execução: é consumida quando a execução começa e, para executar de novo, é preciso autorizar outra vez. O valor é EXATAMENTE a soma do que declaram as medições que movimentam dinheiro: se não coincidir, a execução é recusada antes de consumir a autorização. Também é o teto de TODA a execução. Os estornos são contados à parte e nunca são subtraídos do que foi cobrado.",
             "statusNone": "Sem autorização",
+            "statusDaily": "Autorizado para {month}: uma execução por dia ({count} até agora)",
             "statusActive": "Autorizada para o mês {month}, sem uso",
             "statusConsumed": "Usada pela execução {runId}",
             "statusStale": "Expirada ({month})",
@@ -746,15 +750,17 @@
             "maxChargeLabel": "Valor da execução, em centavos de ARS (calculado, não digitado)",
             "maxChargeHint": "É a soma exata do que declaram as medições que movimentam dinheiro, calculada no servidor. Confira se é a que você quer autorizar.",
             "save": "Salvar autorização",
+            "confirmTitleDaily": "Autorizar as execuções diárias",
             "confirmTitle": "Autorizar uma execução",
             "confirmSave": "Autorizar UMA execução de {month} contra a conta {account}, por exatamente {amount}? É a soma das medições que movimentam dinheiro e também o teto do que a execução pode cobrar. A autorização é consumida quando a execução começa.",
+            "confirmSaveReadOnly": "Autorizar as execuções diárias de {month} contra a conta {account}? O catálogo não tem medições que movimentem dinheiro: as execuções não movimentam dinheiro (valor autorizado: {amount}). Cada uma pode criar objetos que não podem cobrar (pré-aprovações pendentes, sem cartão) e os cancela na mesma execução. A autorização não é consumida: cobre uma execução por dia até o fim do mês e deixa de cobri-las se aparecer uma medição que movimenta dinheiro. Uma execução manual ocupa a execução daquele dia: a agendada daquele dia é pulada.",
             "cancel": "Cancelar",
-            "invalidValue": "Informe um mês no formato AAAA-MM e um máximo a cobrar inteiro e maior que zero.",
+            "invalidValue": "Informe um mês no formato AAAA-MM e exatamente o valor que o catálogo calcula: a soma dos máximos a cobrar das suas medições que movimentam dinheiro (0 se não tiver nenhuma).",
             "noWritePermission": "Somente um SUPER_ADMIN pode alterar esta autorização.",
             "saveError": "Não foi possível salvar a autorização. Tente novamente.",
             "expectedTitle": "Valor de que uma execução precisa",
             "expectedValue": "{amount} ({minor} centavos): soma de {count} medições que movimentam dinheiro ({ids}).",
-            "noMoneyCatalog": "O catálogo ainda não tem medições que movimentem dinheiro nesta conta: não há nada a autorizar.",
+            "noMoneyCatalog": "O catálogo não tem medições que movimentem dinheiro nesta conta: as execuções não movimentam dinheiro. Cada uma pode criar objetos que não podem cobrar (pré-aprovações pendentes, sem cartão) e os cancela na mesma execução. Ela é autorizada com valor 0 e cobre uma execução por dia durante todo o mês. Uma execução manual ocupa a execução daquele dia: a agendada daquele dia é pulada.",
             "previewError": "Não foi possível calcular o valor de que a execução precisa. Não é possível autorizar."
         },
         "providerWatchShapes": {
@@ -2151,7 +2157,7 @@
             "COBRO_DUPLICADO": "Cobrança duplicada",
             "COBRO_DEL_PERIODO_SIN_RESOLVER": "Cobrança do período não resolvida",
             "PAUSA_NO_APLICADA": "Pausa não aplicada",
-            "ORDEN_PAGADA_SIN_INSTANCIA": "Pedido pago sem complemento ativado",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "Pagamento único cobrado sem complemento ativo",
             "IMPORTE_COBRADO_DE_MAS": "Valor cobrado a mais"
         },
         "proposal": "Proposta do sistema",
@@ -2239,6 +2245,7 @@
             "title": "Levantar esta marca",
             "description": "Somente esta marca será encerrada. As outras marcas da mesma linha continuam abertas, e o estado da assinatura não muda.",
             "withoutRefund": "Resolver sem reembolso",
+            "requiresRefund": "Esta marca retém uma cobrança que só se encerra com um reembolso. Confirme o reembolso proposto (ou registre-o com a ação 14); quando ele for liquidado, a marca poderá ser levantada.",
             "unresolvedNotice": "Há pagamentos pendentes sem resolução. Para reembolsá-los, registre o reembolso com a ação 14; se não forem reembolsados, marque-os como resolvidos sem reembolso.",
             "note": "Nota para auditoria (opcional)",
             "confirm": "Levantar",
@@ -2251,7 +2258,128 @@
                 "MARK_ALREADY_LIFTED": "A marca já foi levantada.",
                 "MARK_VERSION_CONFLICT": "A marca mudou desde que você a abriu. Revise-a e confirme novamente.",
                 "MARK_HAS_UNRESOLVED_PAYMENTS": "Ainda há pagamentos pendentes sem resolução.",
-                "MARK_PAYMENT_NOT_HUNG": "Um pagamento selecionado já não está pendente sem resolução nesta marca."
+                "MARK_PAYMENT_NOT_HUNG": "Um pagamento selecionado já não está pendente sem resolução nesta marca.",
+                "MARK_CLOSES_ONLY_BY_REFUND": "Esta marca retém uma cobrança que só se encerra reembolsando-a. Não pode ser resolvida sem reembolso."
+            }
+        }
+    },
+    "proposedRefunds": {
+        "title": "Reembolsos propostos",
+        "description": "Reembolsos que o sistema propôs a partir de uma marca de conciliação. Aguardam que uma pessoa os confirme ou os recuse.",
+        "loading": "Carregando reembolsos propostos...",
+        "error": "Não foi possível carregar os reembolsos propostos.",
+        "retry": "Tentar novamente",
+        "empty": "Não há reembolsos aguardando confirmação.",
+        "pagination": "Paginação de reembolsos",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "requestedAt": "Proposto em",
+        "amount": "Valor",
+        "payment": "Pagamento",
+        "status": "Situação",
+        "statuses": {
+            "REQUESTED": "Aguardando confirmação",
+            "CONFIRMED": "Confirmado, sem reembolso aceito pelo provedor"
+        },
+        "confirmedOnlyDecline": "Este reembolso já está confirmado e não pode ser confirmado de novo. Só pode ser recusado e depois registrado pela ação 14.",
+        "origin": "Marca de origem",
+        "noMark": "Nenhuma marca foi encontrada para este pagamento.",
+        "markLifted": "encerrada",
+        "markOpen": "aberta",
+        "marksLink": "Ver as marcas abertas",
+        "confirm": {
+            "button": "Confirmar e enviar",
+            "title": "Confirmar o reembolso",
+            "description": "Um reembolso de {{amount}} será enviado ao provedor de pagamentos. Ficará em seu nome.",
+            "confirm": "Confirmar e enviar",
+            "cancel": "Cancelar",
+            "success": "Reembolso confirmado e enviado.",
+            "outcomes": {
+                "SENT": "O provedor aceitou o reembolso.",
+                "AWAITING_PROVIDER_ANSWER": "Reembolso enviado. Falta a resposta do provedor.",
+                "NOT_ACCEPTED_KEPT_CONFIRMED": "O provedor ainda não o aceitou. Continua confirmado para nova tentativa.",
+                "PROVIDER_REJECTED_KEPT_CONFIRMED": "O provedor o recusou por ora. Continua confirmado para nova tentativa.",
+                "PROVIDER_REJECTED_FAILED": "O provedor o recusou e o reembolso falhou.",
+                "CHARGED_BACK": "A cobrança já tinha um estorno. O reembolso foi encerrado."
+            }
+        },
+        "decline": {
+            "button": "Recusar",
+            "title": "Recusar o reembolso",
+            "description": "O reembolso de {{amount}} será recusado. O pagamento não muda e nada é enviado ao provedor.",
+            "confirmedWarning": "Este reembolso já estava confirmado: verifique no painel do MP que nenhum reembolso saiu antes de recusar.",
+            "confirm": "Recusar reembolso",
+            "cancel": "Cancelar",
+            "success": "Reembolso recusado.",
+            "successVerify": "Reembolso recusado. Antes de registrá-lo manualmente (ação 14), verifique no painel do MP que nenhum reembolso saiu.",
+            "closesHeldCharge": "Este reembolso não pode ser recusado: ele devolve uma cobrança retida por uma marca. Encerra-se confirmando-o, por um estorno ou registrando-o com a ação 14."
+        },
+        "rejections": {
+            "REFUND_NOT_FOUND": "O reembolso não existe mais.",
+            "REFUND_SOURCE_NOT_FOUND": "O pagamento do reembolso não foi encontrado.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "Você não tem permissão para esta ação.",
+            "REFUND_NOT_OPEN": "O reembolso não está mais aberto. Atualize a lista.",
+            "REFUND_STATE_CHANGED": "O reembolso mudou enquanto você o revisava. Atualize a lista.",
+            "PAYMENT_NOT_REFUNDABLE": "Este pagamento não admite reembolso.",
+            "REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE": "Este pagamento não é reembolsado pelo provedor.",
+            "RETAINED_PAYMENT_SUCCESSION_OPEN": "O pagamento retido tem uma sucessão aberta.",
+            "REFUND_EXCEEDS_BALANCE": "O reembolso excede o saldo disponível do pagamento.",
+            "REFUND_PAST_PROVIDER_WINDOW": "O provedor não aceita mais reembolsos deste pagamento.",
+            "REFUND_PROVIDER_ID_ALREADY_RECORDED": "O provedor já tem este reembolso registrado.",
+            "REFUND_HAS_PROVIDER_CALLS": "O reembolso já tem chamadas ao provedor e não pode ser recusado. Verifique o painel do MP.",
+            "REFUND_CLOSES_HELD_CHARGE": "Este reembolso não pode ser recusado: ele devolve uma cobrança retida por uma marca."
+        },
+        "genericError": "Não foi possível concluir a ação. Tente novamente.",
+        "serverError": "O servidor não conseguiu concluir a ação. Tente novamente mais tarde.",
+        "remainder": {
+            "title": "Registrar o restante de um reembolso aceito em parte",
+            "description": "Para um reembolso confirmado que o Mercado Pago aceitou só em parte. Reembolse o restante pelo painel do MP e registre aqui: o reembolso é fechado e o saldo do pagamento confere.",
+            "refundId": "ID do reembolso",
+            "amount": "Restante reembolsado manualmente (em pesos)",
+            "reference": "ID do reembolso no painel do MP",
+            "note": "Observação (opcional)",
+            "review": "Conferir",
+            "confirmText": "Será registrado que você reembolsou {{amount}} manualmente pelo painel do MP (referência {{reference}}) para o reembolso {{refundId}}. O reembolso é fechado em seu nome.",
+            "confirm": "Registrar o restante",
+            "back": "Voltar",
+            "success": "Reembolso fechado. O MP tinha aceitado {{accepted}} e o restante de {{remainder}} foi registrado.",
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "O reembolso não está confirmado. Só é possível registrar o restante de um reembolso confirmado.",
+                "REFUND_CALL_UNANSWERED": "Há uma chamada ao provedor sem resposta. Use primeiro «Tentar novamente com o Mercado Pago» nesta mesma tela; se não resolver, siga o guia de reembolsos travados.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "O provedor não aceitou nenhuma parte deste reembolso. Recuse-o e depois registre-o com a ação 14.",
+                "REMAINDER_AMOUNT_MISMATCH": "O restante não confere com o que falta reembolsar: o valor do reembolso menos o que o provedor creditou.",
+                "ACCEPTED_PART_NOT_ACCREDITED": "O provedor não mostra como creditada a parte que tinha aceitado. Confira a cobrança no painel do provedor antes de registrar o restante.",
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "O provedor não mostra nesta cobrança um reembolso creditado com essa referência e esse valor.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Outro reembolso deste pagamento tem uma chamada ao provedor ainda sem resposta. Aguarde a resolução antes de registrar o restante: o reembolso que você vê no painel pode ser dessa chamada."
+            }
+        },
+        "providerRetry": {
+            "title": "Tentar novamente com o Mercado Pago",
+            "description": "Para um reembolso confirmado que ficou travado porque o MP não respondeu uma chamada (timeout, erro ou resposta vazia), ou que o MP aceitou mas ainda não aparece creditado. Antes de reenviar, a cobrança é lida no MP: se o reembolso já está lá, ele é tomado e nada é reenviado. Só se não aparecer a chamada é reenviada, com a mesma chave de idempotência.",
+            "refundId": "ID do reembolso",
+            "review": "Conferir",
+            "confirmText": "A cobrança do reembolso {{refundId}} é lida no Mercado Pago. Se o reembolso já aparece, ele é tomado sem reenviar; caso contrário, cada chamada sem resposta é reenviada com a mesma chave. Se o MP o mostrar creditado, o reembolso é fechado.",
+            "confirm": "Tentar novamente com o MP",
+            "back": "Voltar",
+            "summary": {
+                "EXECUTED": "O MP aceitou e creditou o reembolso. Ele foi executado.",
+                "WAITING_ACCREDITATION": "O MP tem o reembolso, mas ele ainda não aparece creditado. Continua confirmado: fecha com o próximo aviso do MP, ou tocando de novo em «Tentar novamente com o MP», que lê a cobrança outra vez.",
+                "FAILED": "O MP recusou a chamada. O reembolso falhou: confira o painel do MP antes de reembolsar manualmente (ação 14).",
+                "STILL_UNANSWERED": "Alguma chamada ainda não tem uma resposta utilizável. Tente mais tarde ou siga o runbook de reembolsos (§8)."
+            },
+            "calls": {
+                "SENT": "aceita pelo MP",
+                "FOUND_AT_PROVIDER": "já estava no MP: tomado sem reenviar",
+                "AWAITING_PROVIDER_ANSWER": "continua sem resposta",
+                "PROVIDER_KEY_CONFLICT": "o MP recusou a chave por reutilizada: siga o runbook de reembolsos (§8)",
+                "PROVIDER_REJECTED_FAILED": "recusada pelo MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "O reembolso não está confirmado. Só um reembolso confirmado pode ser reenviado.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "O reembolso não tem chamadas sem resposta nem aceitas aguardando crédito: não há nada para tentar de novo.",
+                "REFUND_PAST_PROVIDER_WINDOW": "Passaram-se mais de 180 dias desde a cobrança: o MP recusaria qualquer chamada sem dizer se a primeira saiu. Confira o painel do MP manualmente (runbook de reembolsos, §8).",
+                "REFUND_RETRY_IN_PROGRESS": "Já há uma nova tentativa deste reembolso em andamento. Espere terminar e confira o resultado.",
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "A chamada sem resposta foi enviada há mais de 24 horas e a cobrança não mostra nenhum reembolso para vinculá-la, então ela não é reenviada (nada foi enviado nem registrado). Siga o runbook de reembolsos, §8 passos 1-2: confira a cobrança no painel do Mercado Pago e registre a resposta da chamada manualmente (§8.1 ou §8.2)."
             }
         }
     },

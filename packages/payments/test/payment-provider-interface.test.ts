@@ -140,7 +140,7 @@ describe('what each implementation declares', () => {
             return entry.level === 'partial' ? entry.gaps.map((gap) => gap.handling) : [];
         };
         expect(handlingOf('pauseAndResume')).toEqual(['emulate']);
-        expect(handlingOf('read')).toEqual(['block']);
+        expect(handlingOf('read')).toEqual(['block', 'emulate']);
         expect(handlingOf('notify')).toEqual(['emulate', 'emulate']);
     });
 });

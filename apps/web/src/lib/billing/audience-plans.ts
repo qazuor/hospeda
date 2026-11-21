@@ -173,10 +173,12 @@ export async function fetchAudiencePlans({
     const vertical = AUDIENCE_PLAN_VERTICALS[audience];
     const result = await fetchPublicPlans({ vertical });
 
-    return (result.ok ? result.plans : [])
-        .filter((plan) => plan.isActive)
-        .slice()
-        .sort((a, b) => a.sortOrder - b.sortOrder);
+    return result.ok
+        ? result.plans
+              .filter((plan) => plan.isActive)
+              .slice()
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+        : [];
 }
 
 /**

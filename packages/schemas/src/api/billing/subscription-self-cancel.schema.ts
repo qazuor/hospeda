@@ -60,6 +60,11 @@ export const OwnSubscriptionsResponseSchema = z.object({
                     checkoutUrl: z.url().nullable().optional()
                 })
                 .nullable(),
+            /**
+             * HOS-2381: the change queued on this subscription (`subscription_scheduled_change`),
+             * with the instant it takes effect; null when nothing is queued.
+             */
+            scheduledChange: z.object({ effectiveAt: z.string().datetime() }).nullable().optional(),
             plan: OwnSubscriptionPlanSchema,
             nextCharge: OwnSubscriptionNextChargeSchema
         })

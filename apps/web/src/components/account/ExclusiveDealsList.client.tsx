@@ -26,11 +26,11 @@ import type { OwnerPromotionListItem } from '@repo/schemas';
 import { TouristAudienceEnum } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
-import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
 import { buildUrl } from '@/lib/urls';
 import styles from './ExclusiveDealsList.module.css';
 
@@ -158,25 +158,12 @@ export function ExclusiveDealsList({ locale, apiUrl, userId: _userId }: Exclusiv
 
     // ── Render helpers ────────────────────────────────────────────────────────
 
-    /**
-     * Locale-aware discount label for a given deal — mirrors
-     * `PromotionBanner.astro`'s `formatDiscount`.
-     */
     function formatDiscount(deal: OwnerPromotionListItem): string {
-        const { discountType, discountValue } = deal;
-        const off = t('accommodations.detail.promotions.discountOff', 'de descuento');
-
-        if (discountType === 'percentage') {
-            return `${discountValue}% ${off}`;
-        }
-        if (discountType === 'fixed') {
-            const formatted = formatPrice({ amount: discountValue, locale });
-            return `${formatted} ${off}`;
-        }
-        if (discountType === 'free_night') {
-            return t('host.promotions.discountTypes.free_night', 'Noche gratis');
-        }
-        return String(discountValue);
+        return formatPromotionBenefit({
+            discountType: deal.discountType,
+            discountValue: deal.discountValue,
+            locale
+        });
     }
 
     // Tourist-only Área Turista feature — the CTA must point at the tourist

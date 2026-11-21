@@ -140,6 +140,7 @@
         "preferences": "Preferencias",
         "newsletter": "Boletín de novedades",
         "whatsNew": "Qué hay de nuevo",
+        "help": "Ayuda",
         "aiAssistants": "Asistentes de IA",
         "favorites": "Favoritos",
         "searchHistory": "Historial de búsquedas",
@@ -238,6 +239,12 @@
         "uploading": "Subiendo…"
     },
     "editProfile": {
+        "security": {
+            "description": "Cambiá la contraseña con la que ingresás a Hospeda.",
+            "changePasswordLink": "Cambiar contraseña",
+            "noPasswordDescription": "Entrás con tu cuenta de Google o Facebook y todavía no tenés contraseña. Agregá una para poder entrar también con tu email.",
+            "addPasswordLink": "Agregar contraseña"
+        },
         "fields": {
             "displayName": "Nombre para mostrar",
             "firstName": "Nombre",
@@ -409,6 +416,126 @@
             "link": "Ver mis asistentes de IA",
             "revoked": "Desconectamos tus asistentes de IA.",
             "failed": "No pudimos guardar tu respuesta. Probá de nuevo."
+        },
+        "activity": {
+            "title": "Historial de tus asistentes",
+            "description": "Todo lo que tus asistentes de IA hicieron con tu cuenta.",
+            "intro": "Guardamos lo que hicieron tus asistentes durante los últimos 12 meses. Nunca guardamos el texto de tus mensajes ni de tus respuestas.",
+            "historyLink": "Ver lo que hicieron tus asistentes",
+            "backLink": "Volver a mis asistentes",
+            "unnamedAssistant": "Asistente sin nombre",
+            "unknownTool": "Otra acción del asistente",
+            "loading": "Cargando el historial...",
+            "emptyFiltered": "No hay acciones que coincidan con este filtro.",
+            "filters": {
+                "title": "Filtrar el historial",
+                "includeReads": "Mostrar también lo que solo miró",
+                "includeReadsHint": "Acciones en las que el asistente solo vio datos, sin cambiar nada.",
+                "outcome": "Resultado",
+                "outcomeAll": "Todos los resultados"
+            },
+            "outcomes": {
+                "success": "Hecho",
+                "denied": "Rechazado",
+                "error": "Con error"
+            },
+            "result": {
+                "done": "Hecho",
+                "deniedByHospeda": "Rechazado por Hospeda",
+                "declinedByYou": "Rechazado por vos",
+                "error": "Error",
+                "unknown": "Resultado desconocido"
+            },
+            "steps": {
+                "preview": "Vista previa",
+                "commit": "Confirmado"
+            },
+            "target": {
+                "conversation": "Consulta de huésped",
+                "unavailable": "Publicación que ya no está disponible",
+                "conversationAria": "Abrir la consulta de huésped de «{{action}}», del {{date}}"
+            },
+            "empty": {
+                "title": "Todavía no hay acciones de tus asistentes",
+                "description": "Cuando conectes un asistente de IA y le pidas algo, acá vas a ver lo que hizo con tu cuenta.",
+                "cta": "Cómo conectar un asistente"
+            },
+            "errors": {
+                "loadFailed": "No pudimos cargar el historial. Probá de nuevo.",
+                "retry": "Reintentar",
+                "signedOut": "Tu sesión terminó. Volvé a ingresar para ver el historial.",
+                "signIn": "Ingresar"
+            },
+            "pagination": {
+                "label": "Páginas del historial",
+                "prev": "Anterior",
+                "next": "Siguiente"
+            },
+            "tools": {
+                "list_my_listings": "Ver tus publicaciones",
+                "get_owner_summary": "Ver el resumen de tu cuenta",
+                "get_my_plan": "Ver tu plan y suscripción",
+                "get_listing": "Ver una publicación",
+                "update_listing_basic": "Editar los datos de una publicación",
+                "get_listing_amenities": "Ver los servicios de una publicación",
+                "update_listing_amenities": "Editar los servicios de una publicación",
+                "set_listing_publication": "Publicar o pausar una publicación",
+                "list_amenities_and_features": "Ver el catálogo de servicios",
+                "get_listing_stats": "Ver las estadísticas de una publicación",
+                "get_listing_creation_guide": "Ver cómo crear una publicación",
+                "create_listing": "Crear un borrador de publicación",
+                "list_reviews": "Ver las reseñas de tus publicaciones",
+                "get_help": "Ver la ayuda de Hospeda",
+                "list_inquiries": "Ver tus consultas",
+                "get_inquiry": "Ver una consulta",
+                "reply_inquiry": "Responder una consulta",
+                "search_providers": "Buscar proveedores",
+                "list_benefit_usages": "Ver tus usos de beneficio",
+                "confirm_benefit_usage": "Confirmar un uso de beneficio",
+                "reject_benefit_usage": "Rechazar un uso de beneficio",
+                "undo_benefit_rejection": "Deshacer el rechazo de un uso de beneficio"
+            },
+            "errorCodes": {
+                "VALIDATION_ERROR": "Los datos que mandó el asistente no eran válidos.",
+                "NOT_FOUND": "No encontramos lo que el asistente buscaba.",
+                "UNAUTHORIZED": "El asistente tenía que volver a iniciar sesión.",
+                "FORBIDDEN": "Tu cuenta no permite esa acción.",
+                "EMAIL_NOT_VERIFIED": "Primero tenés que verificar tu correo.",
+                "INTERNAL_ERROR": "Tuvimos un problema de nuestro lado.",
+                "ALREADY_EXISTS": "Eso ya existía.",
+                "INVALID_PAGINATION_PARAMS": "El asistente pidió una página que no existe.",
+                "NOT_IMPLEMENTED": "Esa acción todavía no está disponible.",
+                "SERVICE_UNAVAILABLE": "El servicio no estaba disponible en ese momento.",
+                "CONFIGURATION_ERROR": "Tuvimos un problema de configuración.",
+                "QUOTA_EXCEEDED": "Llegaste al límite de tu plan.",
+                "LIMIT_REACHED": "Llegaste al límite de tu plan.",
+                "ENTITLEMENT_REQUIRED": "Tu plan no incluye esa función.",
+                "PROVIDER_ERROR": "Un servicio externo respondió con un error.",
+                "PROVIDER_RATE_LIMITED": "Un servicio externo estaba saturado.",
+                "PROVIDER_TIMEOUT": "Un servicio externo tardó demasiado en responder.",
+                "PLAN_DISABLED": "Ese plan ya no está disponible.",
+                "GONE": "Eso ya no existe.",
+                "PASSWORD_INCORRECT": "La contraseña no era correcta.",
+                "HOST_NOT_FOUND": "No encontramos a ese anfitrión.",
+                "USAGE_PENDING_EXISTS": "Ya había un uso de beneficio pendiente.",
+                "DECLARATION_BLOCKED": "No se podía registrar ese uso por ahora.",
+                "DECLARATION_SUSPENDED": "El registro de usos estaba suspendido.",
+                "NO_CONFIRMED_USAGE": "No había un uso confirmado para eso.",
+                "SELF_REVIEW_FORBIDDEN": "No podés reseñar tu propia publicación.",
+                "SELF_USAGE_FORBIDDEN": "No podés registrar un uso con vos mismo.",
+                "REVIEW_ALREADY_EXISTS": "Esa reseña ya existía.",
+                "PROVIDER_REVOKED": "Ese proveedor ya no está en el directorio.",
+                "NEW_PAID_SIGNUPS_FROZEN": "Las altas de planes pagos están pausadas por ahora.",
+                "ADDON_PURCHASES_FROZEN": "La compra de complementos está pausada por ahora.",
+                "FAQ_DRAFT_NOT_ELIGIBLE": "Esa pregunta no admite un borrador de respuesta.",
+                "CATEGORY_IN_USE": "Esa categoría todavía está en uso.",
+                "PARTNER_TYPE_IN_USE": "Ese tipo de partner todavía está en uso.",
+                "RATE_LIMIT_EXCEEDED": "El asistente hizo demasiados pedidos seguidos.",
+                "LISTING_INCOMPLETE": "A la publicación le faltan datos obligatorios.",
+                "UNEXPECTED": "Ocurrió un error inesperado.",
+                "USER_DECLINED": "No lo confirmaste.",
+                "USER_CANCELLED": "Cancelaste la confirmación."
+            }
         }
     },
     "subscription": {
@@ -639,7 +766,9 @@
                 "PAUSED": "Pausada",
                 "SUSPENDED": "Suspendida",
                 "CANCEL_SCHEDULED": "Baja pedida",
-                "NOT_RENEWING": "No se renueva"
+                "NOT_RENEWING": "No se renueva",
+                "COURTESY": "Cortesía",
+                "PERMANENT_GRANT": "Acceso permanente"
             },
             "loadError": "No pudimos leer tus suscripciones. Recargá la página.",
             "scheduledUntil": "Diste de baja esta suscripción: seguís hasta el {{date}}.",
@@ -718,7 +847,8 @@
             "event": "Eventos",
             "experience": "Experiencias",
             "venue": "Comer y salir",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Atracciones"
         },
         "collections": {
             "create": "Crear colección",
@@ -741,6 +871,7 @@
             "fetchError": "Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.",
             "errorTitle": "No pudimos cargar la colección",
             "backToList": "Volver a mis favoritos",
+            "bookmarksLabel": "favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Página siguiente",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -780,10 +911,6 @@
         },
         "filter": {
             "all": "Todos",
-            "accommodations": "Alojamientos",
-            "destinations": "Destinos",
-            "events": "Eventos",
-            "posts": "Posts",
             "label": "Filtrar por tipo"
         },
         "bookmarks": {
@@ -803,7 +930,8 @@
         "notes": {
             "cancel": "Cancelar",
             "placeholder": "Agregá una nota personal...",
-            "save": "Guardar nota"
+            "save": "Guardar nota",
+            "saved": "Nota guardada"
         },
         "removeBtn": "Quitar",
         "removeLabel": "Quitar de favoritos",
@@ -869,7 +997,6 @@
             "description": "Administrá tu cuenta, favoritos, reseñas y preferencias.",
             "greeting": "Bienvenido",
             "dashboardLabel": "Dashboard",
-            "viewLabel": "Ver",
             "nav": {
                 "editProfile": "Editar perfil",
                 "editProfileDesc": "Actualizá tu información personal y foto de perfil",
@@ -902,6 +1029,7 @@
                 "reviews": "Mis reseñas",
                 "subscription": "Mi suscripción",
                 "favoritesDesc": "Alojamientos guardados",
+                "unavailable": "No disponible",
                 "reviewsDesc": "Reseñas publicadas",
                 "subscriptionDesc": "Plan actual",
                 "subscriptionStatus": "Estado de la suscripción",
@@ -922,7 +1050,13 @@
                 "listings": "Mis fichas",
                 "listingsDesc": "Fichas publicadas",
                 "listingsHidden_one": "{{count}} ficha sin publicar: no se ve en público.",
-                "listingsHidden_other": "{{count}} fichas sin publicar: no se ven en público."
+                "listingsHidden_other": "{{count}} fichas sin publicar: no se ven en público.",
+                "viewProperties": "Ver mis propiedades",
+                "viewMessages": "Ver mensajes sin leer",
+                "viewListings": "Ver mis fichas",
+                "viewFavorites": "Ver mis favoritos",
+                "viewReviews": "Ver mis reseñas",
+                "viewSubscription": "Ver mi suscripción"
             },
             "sectionsLabel": "Secciones"
         },
@@ -933,6 +1067,7 @@
             "personalSection": "Información personal",
             "extrasSection": "Más sobre vos",
             "locationSection": "Ubicación",
+            "securitySection": "Seguridad",
             "socialSection": "Redes sociales"
         },
         "favorites": {
@@ -1236,7 +1371,9 @@
         "deleteError": "No se pudo eliminar la alerta",
         "upgrade": {
             "title": "Alertas de precio",
-            "message": "Las alertas de precio están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "message_one": "Las alertas de precio están disponibles en el plan {{plans}}. Actualizá tu plan para acceder.",
+            "message_other": "Las alertas de precio están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
+            "messageNoPlans": "Las alertas de precio no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         },
         "listLabel": "Tus alertas de precio activas",
@@ -1731,6 +1868,53 @@
             "weak": "Débil"
         },
         "strengthLabel": "Seguridad de la contraseña",
+        "subtitleVoluntary": "Elegí una contraseña nueva para tu cuenta. Vas a necesitar la actual.",
         "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
+    },
+    "help": {
+        "landing": {
+            "title": "Ayuda para publicar en Hospeda",
+            "description": "Todo lo que podés hacer, cómo hacerlo y qué esperar.",
+            "tabsLabel": "Tipo de cuenta",
+            "emptyAudience": "Todavía estamos escribiendo la ayuda para este tipo de cuenta."
+        },
+        "audiences": {
+            "host": "Alojamientos",
+            "venue": "Comer y salir",
+            "experience": "Experiencias",
+            "provider": "Proveedores",
+            "partner": "Aliados"
+        },
+        "audiencesLabel": "Para",
+        "search": {
+            "label": "Buscar en la ayuda",
+            "placeholder": "Por ejemplo: cómo subo fotos",
+            "onlyMine": "Solo para mi tipo de cuenta",
+            "results_one": "{{count}} resultado",
+            "results_other": "{{count}} resultados",
+            "noMatch": "No encontramos ayuda para eso",
+            "submit": "Buscar"
+        },
+        "fallback": {
+            "title": "¿No encontraste lo que buscabas?",
+            "faq": "Ver las preguntas frecuentes",
+            "contact": "Escribinos"
+        },
+        "article": {
+            "breadcrumbRoot": "Ayuda",
+            "breadcrumbLabel": "Ruta de la ayuda",
+            "reviewedAt": "Revisado el {{date}}",
+            "tocLabel": "En este artículo",
+            "tocToggle": "Índice del artículo",
+            "pagesTitle": "Páginas",
+            "faqLink": "Ver también en preguntas frecuentes",
+            "onlySpanish": "Este artículo por ahora está disponible solo en español.",
+            "limitNeutral": "el tope de tu plan",
+            "unlimited": "sin tope",
+            "title": "Ayuda: {{title}}"
+        },
+        "link": {
+            "ariaLabel": "Ayuda: {{title}} (se abre en una pestaña nueva)"
+        }
     }
 }

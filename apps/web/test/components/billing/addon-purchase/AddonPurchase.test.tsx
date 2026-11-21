@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
 
@@ -32,6 +32,14 @@ const baseOffer = {
     validity: 'WHILE_SUBSCRIPTION_ALIVE',
     validityDays: null,
     freeUnderGrantVerticals: []
+};
+
+const ONE_TIME = {
+    ...baseOffer,
+    chargeKind: 'UNA_VEZ',
+    cycle: null,
+    validity: 'FIXED_DAYS',
+    validityDays: 7
 };
 
 beforeEach(() => {
@@ -144,33 +152,7 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
             'se cobra igual'
         );
     });
-    it('hides one-time offers and shows the existing empty state', async () => {
-        offers.mockResolvedValue({
-            ok: true,
-            data: {
-                items: [
-                    {
-                        ...baseOffer,
-                        chargeKind: 'UNA_VEZ',
-                        cycle: null,
-                        validity: 'FIXED_DAYS',
-                        validityDays: 30
-                    }
-                ]
-            }
-        });
-        render(
-            <AddonPurchase
-                locale="es"
-                returnOrderRequestId={null}
-                accountEmail="payer@example.test"
-            />
-        );
-        expect(await screen.findByText('No hay complementos disponibles.')).toBeTruthy();
-        expect(screen.queryByTestId(`addon-offer-${productId}`)).toBeNull();
-        expect(listingNotices).not.toHaveBeenCalled();
-    });
-    it('shows recurring offers when the API also returns one-time offers', async () => {
+    it('lists one-time offers next to recurring ones (HOS-2179 D-4)', async () => {
         offers.mockResolvedValue({
             ok: true,
             data: {
@@ -185,7 +167,97 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
             />
         );
         expect(await screen.findByTestId(`addon-offer-${productId}`)).toBeTruthy();
-        expect(screen.queryByTestId('addon-offer-one-time')).toBeNull();
+        expect(screen.getByTestId('addon-offer-one-time')).toBeTruthy();
+    });
+    it('sells a one-time addon on Mercado Pago without asking for card data or the payer email', async () => {
+        offers.mockResolvedValue({
+            ok: true,
+            data: { items: [{ ...ONE_TIME, scopeType: 'USER' }] }
+        });
+        purchase.mockResolvedValue({
+            ok: true,
+            data: {
+                outcome: 'CREATED',
+                instanceId: listingId,
+                chargeKind: 'UNA_VEZ',
+                processing: false,
+                checkoutUrl: 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1'
+            }
+        });
+        const navigateToCheckout = vi.fn();
+        render(
+            <AddonPurchase
+                locale="es"
+                returnOrderRequestId={null}
+                accountEmail="payer@example.test"
+                navigateToCheckout={navigateToCheckout}
+            />
+        );
+        fireEvent.click(await screen.findByTestId(`addon-offer-${productId}`));
+        const summary = await screen.findByTestId('addon-purchase-summary');
+        expect(summary.textContent).toContain('7 días');
+        expect(summary.textContent).toContain('se cobra una sola vez');
+        expect(screen.getByTestId('addon-instant-methods').textContent).toContain(
+            'No se aceptan pagos en efectivo'
+        );
+        expect(within(summary).queryByRole('textbox')).toBeNull();
+        expect(summary.querySelector('input')).toBeNull();
+        const confirm = screen.getByTestId('addon-purchase-confirm');
+        expect(confirm.textContent).toBe('Pagar con Mercado Pago');
+        fireEvent.click(confirm);
+        await waitFor(() =>
+            expect(navigateToCheckout).toHaveBeenCalledWith(
+                'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1'
+            )
+        );
+        expect(purchase).toHaveBeenCalledWith({
+            body: { productId, addonVersionId: versionId, targetId: null, orderRequestId: orderId }
+        });
+    });
+    it('warns that a one-time boost runs even on a hidden listing', async () => {
+        offers.mockResolvedValue({ ok: true, data: { items: [ONE_TIME] } });
+        await selectListing('DRAFT');
+        const notice = screen.getByTestId('addon-hidden-listing-notice');
+        expect(notice.getAttribute('data-notice-kind')).toBe('ONE_TIME');
+        expect(notice.textContent).toContain('corre igual aunque la ficha no se vea');
+    });
+    it('reads a replayed purchase that is no longer waiting instead of paying again', async () => {
+        offers.mockResolvedValue({
+            ok: true,
+            data: { items: [{ ...ONE_TIME, scopeType: 'USER' }] }
+        });
+        purchase.mockResolvedValue({
+            ok: true,
+            data: {
+                outcome: 'EXISTING',
+                instanceId: listingId,
+                chargeKind: 'UNA_VEZ',
+                processing: false
+            }
+        });
+        readPurchase.mockResolvedValue({
+            ok: true,
+            data: {
+                instanceId: listingId,
+                status: 'ACTIVE',
+                chargeKind: 'UNA_VEZ',
+                processing: false
+            }
+        });
+        const navigateToCheckout = vi.fn();
+        render(
+            <AddonPurchase
+                locale="es"
+                returnOrderRequestId={null}
+                accountEmail="payer@example.test"
+                navigateToCheckout={navigateToCheckout}
+            />
+        );
+        fireEvent.click(await screen.findByTestId(`addon-offer-${productId}`));
+        fireEvent.click(await screen.findByTestId('addon-purchase-confirm'));
+        expect(await screen.findByTestId('addon-purchase-active')).toBeTruthy();
+        expect(readPurchase).toHaveBeenCalledWith({ orderRequestId: orderId });
+        expect(navigateToCheckout).not.toHaveBeenCalled();
     });
     it('shows no paid notice for a published listing or free choice', async () => {
         await selectListing('PUBLISHED');
@@ -323,19 +395,25 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
             }
         });
     });
-    it('shows processing for PENDING_ELSEWHERE', async () => {
+    it.each([
+        'PERIODICO',
+        'UNA_VEZ'
+    ] as const)('ends a %s PENDING_ELSEWHERE wait with the come-back-later copy, reading nothing', async (chargeKind) => {
         purchase.mockResolvedValue({
             ok: true,
             data: {
                 outcome: 'PENDING_ELSEWHERE',
                 instanceId: listingId,
-                chargeKind: 'PERIODICO',
+                chargeKind,
                 processing: true
             }
         });
         await selectListing('DRAFT');
         fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
-        expect(await screen.findByTestId('addon-purchase-processing')).toBeTruthy();
+        const status = await screen.findByTestId('addon-purchase-processing');
+        expect(status.getAttribute('data-exhausted')).toBe('true');
+        expect(status.textContent).toContain('Volvé a esta pantalla en unos minutos');
+        expect(readPurchase).not.toHaveBeenCalled();
     });
     it('filters PURGED and MODERATED targets', async () => {
         listingNotices.mockResolvedValue({
@@ -386,4 +464,76 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
         expect(await screen.findByText('Activo')).toBeTruthy();
         expect(readPurchase).toHaveBeenCalledTimes(1);
     }, 8000);
+
+    describe('HOS-2179 P-1 return from a one-time payment page', () => {
+        const pending = {
+            instanceId: listingId,
+            status: 'PENDING_AUTHORIZATION',
+            chargeKind: 'UNA_VEZ',
+            processing: true
+        };
+        const back = () =>
+            render(
+                <AddonPurchase
+                    locale="es"
+                    returnOrderRequestId={orderId}
+                    accountEmail="payer@example.test"
+                />
+            );
+
+        it('says the payment is being confirmed, then shows it active', async () => {
+            readPurchase.mockResolvedValueOnce({ ok: true, data: pending }).mockResolvedValue({
+                ok: true,
+                data: { ...pending, status: 'ACTIVE', processing: false }
+            });
+            back();
+            expect(await screen.findByText('Estamos confirmando tu pago.')).toBeTruthy();
+            expect(readPurchase).toHaveBeenCalledWith({ orderRequestId: orderId });
+            expect(
+                await screen.findByTestId('addon-purchase-active', {}, { timeout: 5000 })
+            ).toBeTruthy();
+            expect(readPurchase).toHaveBeenCalledTimes(2);
+        }, 8000);
+
+        it('says the result comes by mail once the screen stops asking', async () => {
+            vi.useFakeTimers({ shouldAdvanceTime: true });
+            readPurchase.mockResolvedValue({ ok: true, data: pending });
+            back();
+            for (let tick = 0; tick < 12; tick++)
+                await act(async () => {
+                    await vi.advanceTimersByTimeAsync(3000);
+                });
+            const status = screen.getByTestId('addon-purchase-processing');
+            expect(status.getAttribute('data-exhausted')).toBe('true');
+            expect(status.textContent).toContain('Te avisamos por correo cuando se acredite');
+            expect(readPurchase).toHaveBeenCalledTimes(10);
+        });
+
+        it('says the page expired when the purchase was abandoned', async () => {
+            readPurchase.mockResolvedValue({
+                ok: true,
+                data: { ...pending, status: 'ABANDONED', processing: false }
+            });
+            back();
+            expect((await screen.findByTestId('addon-purchase-closed')).textContent).toBe(
+                'La página de pago venció sin un pago aprobado. Podés volver a comprarlo.'
+            );
+        });
+
+        it('keeps the generic copy for a recurring checkout that closed', async () => {
+            readPurchase.mockResolvedValue({
+                ok: true,
+                data: {
+                    ...pending,
+                    chargeKind: 'PERIODICO',
+                    status: 'ABANDONED',
+                    processing: false
+                }
+            });
+            back();
+            expect((await screen.findByTestId('addon-purchase-closed')).textContent).toBe(
+                'La compra terminó sin activarse.'
+            );
+        });
+    });
 });

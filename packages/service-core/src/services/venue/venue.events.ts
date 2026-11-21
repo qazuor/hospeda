@@ -17,14 +17,14 @@
  * four requests it can half-succeed and leave a published agenda in a state the
  * owner never described.
  *
- * ## Why delete-and-reinsert rather than a diff
+ * ## Why a diff rather than delete-and-reinsert (HOS-2291)
  *
- * Entry ids are not stable across a save, and callers are told so by the payload
- * schema, which carries no ids at all. Nothing references an agenda entry today
- * — no photo, no ticket, no metric — so a diff would be machinery with no
- * consequence, and the reinsert is what makes the transaction trivially correct.
- * The day something DOES reference an entry, this function grows a diff, exactly
- * as `replaceVenueMenu` records for the carta.
+ * Entries are referenced from outside this table now (clicks, reminders, guest
+ * lists, a featured slot), so an entry has to keep its id and its `created_at`
+ * across a save. {@link replaceVenueEvents} therefore diffs the submitted
+ * document against the stored agenda inside ONE transaction: an entry carrying
+ * an id updates that row, an entry without one is created, and a stored row the
+ * document does not mention is deleted.
  *
  * ## Permissions vs. entitlements
  *
@@ -39,8 +39,14 @@
  */
 
 import { VenueEventModel, type VenueModel, withTransaction } from '@repo/db';
+
 import {
+    isVenueEventPast,
+    partitionVenueEvents,
     ServiceErrorCode,
+    VENUE_EVENTS_MAX_ENTRIES,
+    type VenueEvent,
+    type VenueEventPublic,
     type VenueEventsGetInput,
     VenueEventsGetInputSchema,
     type VenueEventsOutput,
@@ -58,8 +64,9 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
  *
  * `findAll` paginates, and the agenda is read whole — so an unstated page size
  * would silently truncate a long agenda rather than fail. Sized well above the
- * schema's own ceiling (`VENUE_EVENTS_MAX_ENTRIES`), so an agenda that
- * passed validation on the way in can always be read back out.
+ * ceiling (`VENUE_EVENTS_MAX_ENTRIES`, which counts only non-past entries,
+ * so a document carrying past ones can be longer), so an agenda that passed
+ * validation on the way in can always be read back out.
  */
 const EVENTS_READ_PAGE_SIZE = 500;
 
@@ -85,6 +92,9 @@ async function requireVenue(
     }
     return entity;
 }
+
+/** A stored agenda row: the fields {@link projectEvent} reads, nothing more is required. */
+type StoredVenueEvent = Pick<VenueEvent, keyof VenueEventPublic>;
 
 /** Ascending by `displayOrder`, ties broken by title so the order is total. */
 const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T, b: T): number =>
@@ -124,10 +134,28 @@ export function toClockTime(value: string | null): string | null {
  * and not a `timestamp`).
  *
  * @param row - The stored row.
- * @returns The row with its times normalised to `HH:MM`.
+ * @returns The public fields of the row, with times normalised to `HH:MM`.
  */
-export function projectEvent<T extends { startTime: string; endTime: string | null }>(row: T): T {
-    return { ...row, startTime: toClockTime(row.startTime), endTime: toClockTime(row.endTime) };
+export function projectEvent(row: StoredVenueEvent): VenueEventPublic {
+    // Explicit selection, never `...row` (HOS-2291): a column added to the table
+    // later (an internal flag, an audit field) must not leak into the owner and
+    // public responses until someone adds it here on purpose.
+    return {
+        id: row.id,
+        venueId: row.venueId,
+        title: row.title,
+        description: row.description,
+        recurrence: row.recurrence,
+        date: row.date,
+        weekday: row.weekday,
+        startTime: toClockTime(row.startTime),
+        endTime: toClockTime(row.endTime),
+        ticketUrl: row.ticketUrl,
+        isActive: row.isActive,
+        displayOrder: row.displayOrder,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt
+    };
 }
 
 /**
@@ -199,6 +227,13 @@ export async function getVenueEvents(
  * a venue that stopped doing live music needs a way to say so, and refusing the
  * empty document would leave them with no way to.
  *
+ * The agenda ceiling (`VENUE_EVENTS_MAX_ENTRIES`) is enforced here, over the
+ * entries that are not past (HOS-2254), and answers 400 `VALIDATION_ERROR`.
+ *
+ * Entries are matched by `id` (HOS-2291): see the module header for the diff
+ * rules, and {@link VenueEventInputSchema} for why an id of another venue is a
+ * 404 rather than something the service trusts.
+ *
  * `displayOrder` is assigned from ARRAY POSITION, never read from the payload —
  * so the order a client sees is the order it sent, and two entries cannot be
  * given the same place.
@@ -240,38 +275,111 @@ export async function replaceVenueEvents(
         const venue = await requireVenue(model, venueId, ctx?.tx);
         checkVenueCanEditFaqs(actor, venue);
 
+        // HOS-2254: the ceiling counts the entries that are NOT past (live and
+        // switched-off ones). A past entry counts for nothing, because the
+        // document still carries it until the cleanup cron deletes it. The
+        // schema cannot do this: it does not know the time.
+        const now = new Date();
+        const { current, past } = partitionVenueEvents({
+            events: validated.agenda.events,
+            now
+        });
+        if (current.length > VENUE_EVENTS_MAX_ENTRIES) {
+            throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'zodError.venue.events.max');
+        }
+        // A past entry may only be one that already exists (re-sent with its id).
+        // Creating one dated in the past would skip the ceiling above.
+        if (past.some((event) => event.id === undefined)) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'zodError.venue.events.newPast'
+            );
+        }
+
         const eventModel = new VenueEventModel();
 
         // ONE transaction for the whole document, same reason the carta's write
         // is one: an agenda half-written — the old entries gone and the new ones
         // not yet in — is a published page the owner never described.
         const runInTx = async (tx: ServiceContext['tx']): Promise<void> => {
-            await eventModel.hardDelete({ venueId }, tx);
+            const { items: stored } = await eventModel.findAll(
+                { venueId },
+                { pageSize: EVENTS_READ_PAGE_SIZE },
+                undefined,
+                tx
+            );
+            const storedIds = new Set(stored.map((row) => row.id));
+
+            // Ownership first, before any write: an id that is not one of THIS
+            // venue's stored events (another venue's, or unknown) is a missing
+            // resource, 404, never a 403 that would confirm it exists elsewhere
+            // (error-contract). Nothing has been written yet, so the refusal
+            // leaves the agenda exactly as it was.
+            const sentIds = new Set<string>();
+            // Past entries whose id is no longer stored: the cleanup cron deleted
+            // them while the owner's editor was open. They are already gone, so
+            // they are skipped instead of failing the whole save.
+            const vanishedPast = new Set<string>();
+            for (const event of validated.agenda.events) {
+                if (event.id === undefined) continue;
+                if (!storedIds.has(event.id)) {
+                    // Only a PAST entry gets this leniency. An unknown id of a
+                    // live entry stays a 404, so a foreign id is never accepted.
+                    // Nothing is written for a skipped entry either way.
+                    if (isVenueEventPast({ event, now })) {
+                        vanishedPast.add(event.id);
+                        continue;
+                    }
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue event not found');
+                }
+                if (sentIds.has(event.id)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'the same venue event id appears more than once'
+                    );
+                }
+                sentIds.add(event.id);
+            }
+
+            for (const row of stored) {
+                if (!sentIds.has(row.id)) {
+                    await eventModel.hardDelete({ id: row.id, venueId }, tx);
+                }
+            }
 
             for (const [index, event] of validated.agenda.events.entries()) {
-                await eventModel.create(
-                    {
-                        venueId,
-                        title: event.title,
-                        // `''` and `undefined` both mean "no blurb"; stored as
-                        // NULL so the read has one absent value, not two.
-                        description: event.description || null,
-                        recurrence: event.recurrence,
-                        date: event.recurrence === 'once' ? (event.date ?? null) : null,
-                        // `?? null` and NOT `|| null`: weekday `0` is Sunday, a
-                        // perfectly ordinary day for a venue to open, and `||`
-                        // would silently turn every Sunday event into a row with
-                        // no day at all.
-                        weekday: event.recurrence === 'weekly' ? (event.weekday ?? null) : null,
-                        startTime: event.startTime,
-                        endTime: event.endTime || null,
-                        isActive: event.isActive,
-                        displayOrder: index,
-                        createdById: actor.id,
-                        updatedById: actor.id
-                    },
-                    tx
-                );
+                if (event.id !== undefined && vanishedPast.has(event.id)) continue;
+                const fields = {
+                    title: event.title,
+                    // `''` and `undefined` both mean "no blurb"; stored as
+                    // NULL so the read has one absent value, not two.
+                    description: event.description || null,
+                    recurrence: event.recurrence,
+                    date: event.recurrence === 'once' ? (event.date ?? null) : null,
+                    // `?? null` and NOT `|| null`: weekday `0` is Sunday, a
+                    // perfectly ordinary day for a venue to open, and `||`
+                    // would silently turn every Sunday event into a row with
+                    // no day at all.
+                    weekday: event.recurrence === 'weekly' ? (event.weekday ?? null) : null,
+                    startTime: event.startTime,
+                    endTime: event.endTime || null,
+                    // `''` is already `null` after the schema; `|| null` keeps a
+                    // caller that skipped it from persisting an empty link.
+                    ticketUrl: event.ticketUrl || null,
+                    isActive: event.isActive,
+                    displayOrder: index,
+                    updatedById: actor.id
+                };
+                if (event.id === undefined) {
+                    await eventModel.create({ venueId, ...fields, createdById: actor.id }, tx);
+                } else {
+                    // `createdAt` and `createdById` are deliberately not written.
+                    await eventModel.update(
+                        { id: event.id, venueId },
+                        { ...fields, updatedAt: new Date() },
+                        tx
+                    );
+                }
             }
             // AC:V9a:7 — the owner act commits with the whole events document.
             await recordListingSubEntityEdit({

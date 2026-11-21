@@ -10,8 +10,10 @@
  * - Non-owner gets NOT_FOUND (ownership enforcement in updateOwn)
  * - Operational fields accepted without error
  */
+
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
+import { APP_IMPORT_TIMEOUT_MS } from '../../../helpers/app-import-timeout';
 
 delete process.env.CI;
 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -72,7 +74,7 @@ describe('PATCH /api/v1/protected/venues/:id', () => {
     beforeAll(async () => {
         const { initApp } = await import('../../../../src/app.js');
         app = initApp();
-    });
+    }, APP_IMPORT_TIMEOUT_MS);
 
     beforeEach(() => {
         vi.clearAllMocks();

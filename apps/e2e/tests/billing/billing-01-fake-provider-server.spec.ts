@@ -32,6 +32,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
 
     test.beforeAll(async () => {
         const initialProvider = new FakePaymentProvider({
+            allowLocalHttpReturnUrl: true,
             clock,
             idNamespace: crypto.randomUUID()
         });
@@ -153,7 +154,11 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
     test('sanitizes the broken authorization link from the fake server', async () => {
         if (!fakeServer) throw new Error('TEST:B3:43 fake provider server was not started');
         fakeServer.useProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: crypto.randomUUID()
+            })
         });
         const user = await freshUser();
         const { response, body } = await startSubscription(user, monthlyOptionId);
@@ -175,6 +180,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         if (!fakeServer) throw new Error('TEST:B3:43 fake provider server was not started');
         fakeServer.useProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: crypto.randomUUID(),
                 honestAbout: [
@@ -201,7 +207,11 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
     test('detects the unapplied annual option and accepts it when M1 is honest', async () => {
         if (!fakeServer) throw new Error('TEST:B3:43 fake provider server was not started');
         fakeServer.useProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: crypto.randomUUID()
+            })
         });
         const lyingUser = await freshUser();
         const unapplied = await startSubscription(lyingUser, annualOptionId);
@@ -213,6 +223,7 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
 
         fakeServer.useProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: crypto.randomUUID(),
                 honestAbout: [
@@ -236,7 +247,11 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         const at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         await fakeServer.setClock({ at });
         fakeServer.useProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: crypto.randomUUID()
+            })
         });
         const user = await freshUser();
         const { response, body } = await startSubscription(user, monthlyOptionId);
@@ -265,7 +280,11 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
     }) => {
         if (!fakeServer) throw new Error('TEST:B3:43 fake provider server was not started');
         fakeServer.useProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: crypto.randomUUID()
+            })
         });
         const user = await freshUser();
         await seedCookieConsent(page);
@@ -310,7 +329,11 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
     test('TEST:1730:5d creates the preapproval for the declared payer email', async ({ page }) => {
         if (!fakeServer) throw new Error('TEST:1730:5d fake provider server was not started');
         fakeServer.useProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: crypto.randomUUID()
+            })
         });
         const user = await freshUser();
         const declaredEmail = `declared-${crypto.randomUUID()}@example.test`;

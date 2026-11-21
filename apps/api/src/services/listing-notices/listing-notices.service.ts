@@ -20,6 +20,7 @@ import {
     listingModerationModel,
     listingNoticesModel,
     listingPublicationModel,
+    plans,
     trialRedemptions,
     trials
 } from '@repo/db';
@@ -28,7 +29,8 @@ import {
     PublicationStatusEnum,
     type ReportFixedResponse,
     ServiceErrorCode,
-    type TrialSummaryResponse
+    type TrialSummaryResponse,
+    type VerticalEnum
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { type ListingVertical, PUBLICATION_LIMIT_KEYS, trialMachineLockKey } from '@repo/verticals';
@@ -49,7 +51,7 @@ import { readRecurringListingAddonNames } from './recurring-listing-addons';
 /** Reads the person's trial row in a vertical, if any. */
 async function readTrialRow(input: {
     readonly userId: string;
-    readonly vertical: ListingVertical;
+    readonly vertical: ListingVertical | VerticalEnum;
 }): Promise<(TrialRowFacts & { readonly id: string }) | null> {
     const [row] = await getDb()
         .select({
@@ -156,12 +158,13 @@ export async function listListingNotices(input: {
  * that trial (action 11).
  *
  * @param input.userId - The authenticated person.
- * @param input.vertical - The vertical.
+ * @param input.vertical - The vertical. Any vertical with a trial (the tourist
+ *   one included, HOS-2328); the publish route passes listing verticals only.
  * @returns The summary, or `{ status: 'NONE' }` without a trial row.
  */
 export async function readTrialSummary(input: {
     readonly userId: string;
-    readonly vertical: ListingVertical;
+    readonly vertical: ListingVertical | VerticalEnum;
 }): Promise<TrialSummaryResponse> {
     const trial = await readTrialRow(input);
     if (!trial) return { status: 'NONE' };
@@ -192,6 +195,42 @@ export async function readTrialSummary(input: {
         return total + (typeof days === 'number' ? days : 0);
     }, 0);
     return buildTrialSummary({ trial, promoDays, supportDays });
+}
+
+/** The catalog plan a person's trial runs on, and the version in force when it started. */
+export interface OwnTrialPlan {
+    /** Stable plan slug; resolves the localized name (`billing.plan.<slug>.name`). */
+    readonly slug: string;
+    /** Stored catalog name, used only when the slug has no label. */
+    readonly name: string;
+    /** The trial plan version in force at start (`floor_trial_plan_version_id`); `null` on a row born consumed. */
+    readonly planVersionId: string | null;
+}
+
+/**
+ * The trial plan of the person's trial in a vertical (HOS-2328, `get_my_plan`):
+ * the plan the `trial` row points at, read from the catalog row, never from a
+ * code map (HOS-1967).
+ *
+ * @param input.userId - The person.
+ * @param input.vertical - The vertical.
+ * @returns The plan, or `null` without a trial row or without a trial plan.
+ */
+export async function readOwnTrialPlan(input: {
+    readonly userId: string;
+    readonly vertical: VerticalEnum;
+}): Promise<OwnTrialPlan | null> {
+    const [row] = await getDb()
+        .select({
+            slug: plans.slug,
+            name: plans.name,
+            planVersionId: trials.floorTrialPlanVersionId
+        })
+        .from(trials)
+        .innerJoin(plans, eq(plans.id, trials.trialPlanId))
+        .where(and(eq(trials.userId, input.userId), eq(trials.vertical, input.vertical)))
+        .limit(1);
+    return row ?? null;
 }
 
 /**

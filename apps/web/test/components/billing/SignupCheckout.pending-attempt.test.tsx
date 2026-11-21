@@ -135,6 +135,45 @@ describe('TEST:1735:11 pending attempt checkout panel', () => {
         expect(island.queryByTestId('signup-checkout-payer-email')).toBeNull();
     });
 
+    it('HOS-2388 ends the body with a single period when the es time already ends in one', () => {
+        // Arrange: 02:30Z is 11:30 p. m. in Argentina, and the es time format
+        // ends in "p. m." while the copy closes the sentence with its own ".".
+        render(
+            <SignupCheckout
+                {...props}
+                pendingAttempt={pendingAttempt}
+            />
+        );
+
+        // Act
+        const panel = screen.getByTestId('signup-checkout-pending-attempt');
+
+        // Assert
+        expect(panel).toHaveTextContent('p. m.');
+        expect(panel.textContent).not.toMatch(/\.\./);
+    });
+
+    it('HOS-2388 keeps the closing period when the en time does not end in one', () => {
+        // Arrange
+        render(
+            <SignupCheckout
+                {...props}
+                locale="en"
+                plansHref="/en/planes/"
+                pendingAttempt={pendingAttempt}
+            />
+        );
+
+        // Act
+        const body = screen
+            .getByTestId('signup-checkout-pending-attempt')
+            .querySelector('p')?.textContent;
+
+        // Assert
+        expect(body).toMatch(/PM\.$/);
+        expect(body).not.toMatch(/\.\./);
+    });
+
     it('omits resume when checkoutUrl is null and keeps cancel', () => {
         render(
             <SignupCheckout

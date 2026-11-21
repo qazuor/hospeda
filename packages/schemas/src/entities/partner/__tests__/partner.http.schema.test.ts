@@ -48,6 +48,25 @@ describe('PartnerSearchHttpSchema — the directory filters are gone (HOS-294 AC
         }
     });
 
+    it.each([
+        'media',
+        'not-a-type'
+    ])('answers ?type=%s with a plain unfiltered page, never a 400 (HOS-2336 AC-5.2 vs HOS-294 D-5)', (slug) => {
+        // Arrange — HOS-2336 AC-5.2 assumed the public list still filtered
+        // by type. It does not: HOS-294 D-5 retired that filter on purpose,
+        // and the catalog does not bring it back. What survives of AC-5.2
+        // is "an unknown slug is not an error", for a known and an unknown
+        // slug alike.
+        const query = { pageSize: '20', type: slug };
+
+        // Act
+        const result = PartnerSearchHttpSchema.safeParse(query);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data).not.toHaveProperty('type');
+    });
+
     it('still accepts the pagination the home carousel sends', () => {
         // Arrange — the carousel is the only remaining caller and it sends
         // pageSize alone. Trimming the filters must not break it.

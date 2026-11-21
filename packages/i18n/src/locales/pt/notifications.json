@@ -46,5 +46,22 @@
         "introFirst": "Já configuramos sua assinatura de Partner. Este é o detalhe da sua primeira parcela.",
         "introRenewal": "Foi aberta a parcela de um novo período da sua assinatura de Partner.",
         "cta": "Ver minha parcela"
+    },
+    "latePaymentRefunded": {
+        "subject": "Devolvemos um pagamento que chegou atrasado",
+        "heading": "Devolvemos seu pagamento",
+        "intro": "Seu pagamento de {{product}} chegou depois que a compra já tinha sido encerrada, por isso o complemento não foi ativado.",
+        "refunded": "Devolvemos {{amount}}.",
+        "timing": "Dependendo do seu meio de pagamento, pode levar alguns dias para aparecer.",
+        "closing": "Se você ainda quiser o complemento, pode comprá-lo novamente na sua conta."
+    },
+    "oneTimeAddonActivated": {
+        "subject": "Seu destaque está ativo",
+        "heading": "Seu destaque está ativo",
+        "intro": "{{product}} já está ativo em {{listing}}.",
+        "introWithoutListing": "{{product}} já está ativo.",
+        "endsAt": "Vence em {{date}}.",
+        "closing": "Você pode ver seus complementos e o status deles na sua conta.",
+        "cta": "Ver meus complementos"
     }
 }

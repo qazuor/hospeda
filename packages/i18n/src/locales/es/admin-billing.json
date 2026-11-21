@@ -145,7 +145,8 @@
             "17": "Escalamiento de una marca abierta",
             "18": "Comprobaciones de pagos acreditados",
             "19": "Ventana del resumen de conciliación",
-            "20": "Hitos del aviso de fin de gracia"
+            "20": "Hitos del aviso de fin de gracia",
+            "21": "Página de pago de un complemento de pago único"
         },
         "fields": {
             "days": "Días",
@@ -159,7 +160,9 @@
             "noticeDays": "Días de aviso",
             "contactDays": "Contactos (días antes)",
             "hoursRemaining": "Horas que quedan",
-            "minutes": "Minutos"
+            "minutes": "Minutos",
+            "pageMinutes": "Minutos de la página de pago",
+            "windowMarginMinutes": "Margen de la ventana (minutos)"
         },
         "listHelp": "Separados por coma",
         "noValue": "Sin valor publicado: no se puede cambiar desde acá.",
@@ -729,9 +732,10 @@
         },
         "providerWatchAuthorization": {
             "title": "Vigilancia del proveedor: autorización",
-            "description": "Autorizá UNA corrida de producción de la batería de vigilancia por mes, por el monto exacto que suman sus mediciones que mueven plata",
+            "description": "Autorizá las corridas de producción de la batería de vigilancia del mes: una sola si sus mediciones mueven plata, una por día si no mueven ninguna.",
             "hint": "La corrida de producción no arranca sin la autorización del mes en curso. Una autorización vale para UNA corrida: se consume cuando la corrida empieza y, para correr de nuevo, hay que autorizar otra vez. El monto es EXACTAMENTE la suma de lo que declaran las mediciones que mueven plata: si no coincide, la corrida se rechaza antes de consumir la autorización. Además es el tope de TODA la corrida. Las devoluciones se llevan aparte y nunca se restan de lo cobrado.",
             "statusNone": "Sin autorización",
+            "statusDaily": "Autorizado para {month}: una corrida por día ({count} hasta ahora)",
             "statusActive": "Autorizada para {month}, sin usar",
             "statusConsumed": "Usada por la corrida {runId}",
             "statusStale": "Vencida ({month})",
@@ -746,15 +750,17 @@
             "maxChargeLabel": "Monto de la corrida, en centavos de ARS (calculado, no se escribe)",
             "maxChargeHint": "Es la suma exacta de lo que declaran las mediciones que mueven plata, calculada en el servidor. Revisá que sea la que querés autorizar.",
             "save": "Autorizar",
+            "confirmTitleDaily": "Autorizar las corridas diarias",
             "confirmTitle": "Autorizar una corrida",
             "confirmSave": "¿Autorizar UNA corrida de {month} contra la cuenta {account}, por exactamente {amount}? Es la suma de las mediciones que mueven plata y también el tope de lo que la corrida puede cobrar. La autorización se consume cuando la corrida empieza.",
+            "confirmSaveReadOnly": "¿Autorizar las corridas diarias de {month} contra la cuenta {account}? El catálogo no tiene mediciones que muevan plata: las corridas no mueven plata (monto autorizado: {amount}). Cada una puede crear objetos que no pueden cobrar (preaprobaciones pendientes, sin tarjeta) y los cancela en la misma corrida. La autorización no se consume: cubre una corrida por día hasta que termine el mes, y deja de cubrirlas si aparece una medición que mueve plata. Una corrida manual ocupa la corrida de ese día: la programada de ese día se saltea.",
             "cancel": "Cancelar",
-            "invalidValue": "Ingresá un mes con formato AAAA-MM y un máximo a cobrar entero y mayor que cero.",
+            "invalidValue": "Ingresá un mes con formato AAAA-MM y exactamente el monto que calcula el catálogo: la suma de los máximos a cobrar de sus mediciones que mueven plata (0 si no tiene ninguna).",
             "noWritePermission": "Solo un SUPER_ADMIN puede cambiar esta autorización.",
             "saveError": "No se pudo guardar la autorización. Probá de nuevo.",
             "expectedTitle": "Monto que necesita una corrida",
             "expectedValue": "{amount} ({minor} centavos): suma de {count} mediciones que mueven plata ({ids}).",
-            "noMoneyCatalog": "El catálogo todavía no tiene mediciones que muevan plata en esta cuenta: no hay nada que autorizar.",
+            "noMoneyCatalog": "El catálogo no tiene mediciones que muevan plata en esta cuenta: las corridas no mueven plata. Cada una puede crear objetos que no pueden cobrar (preaprobaciones pendientes, sin tarjeta) y los cancela en la misma corrida. Se autoriza con monto 0 y cubre una corrida por día durante todo el mes. Una corrida manual ocupa la corrida de ese día: la programada de ese día se saltea.",
             "previewError": "No se pudo calcular el monto que necesita la corrida. No se puede autorizar."
         },
         "providerWatchShapes": {
@@ -2151,7 +2157,7 @@
             "COBRO_DUPLICADO": "Cobro duplicado",
             "COBRO_DEL_PERIODO_SIN_RESOLVER": "Cobro del período sin resolver",
             "PAUSA_NO_APLICADA": "Pausa no aplicada",
-            "ORDEN_PAGADA_SIN_INSTANCIA": "Orden pagada sin complemento activado",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "Pago único cobrado sin complemento activo",
             "IMPORTE_COBRADO_DE_MAS": "Se cobró de más"
         },
         "proposal": "Propuesta del sistema",
@@ -2239,6 +2245,7 @@
             "title": "Levantar esta marca",
             "description": "Se cierra sólo esta marca. Las otras marcas de la misma fila siguen abiertas y no cambia el estado de la suscripción.",
             "withoutRefund": "Resolver sin devolver",
+            "requiresRefund": "Esta marca retiene un cobro que solo se cierra con una devolución. Confirmá la devolución propuesta (o asentala con la acción 14); cuando se liquide, la marca se va a poder levantar.",
             "unresolvedNotice": "Hay pagos colgados sin resolver. Para devolverlos, asentá la devolución con la acción 14; si no se devuelven, marcalos como resueltos sin devolver.",
             "note": "Nota para la auditoría (opcional)",
             "confirm": "Levantar",
@@ -2251,7 +2258,128 @@
                 "MARK_ALREADY_LIFTED": "La marca ya estaba levantada.",
                 "MARK_VERSION_CONFLICT": "La marca cambió desde que la abriste. Revisala y confirmá otra vez.",
                 "MARK_HAS_UNRESOLVED_PAYMENTS": "Quedan pagos colgados sin resolver.",
-                "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca."
+                "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca.",
+                "MARK_CLOSES_ONLY_BY_REFUND": "Esta marca retiene un cobro que solo se cierra devolviéndolo. No se puede resolver sin devolución."
+            }
+        }
+    },
+    "proposedRefunds": {
+        "title": "Devoluciones propuestas",
+        "description": "Devoluciones que el sistema propuso desde una marca de conciliación y esperan que una persona las confirme o las rechace.",
+        "loading": "Cargando devoluciones propuestas...",
+        "error": "No se pudieron cargar las devoluciones propuestas.",
+        "retry": "Reintentar",
+        "empty": "No hay devoluciones esperando confirmación.",
+        "pagination": "Paginación de devoluciones",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "requestedAt": "Propuesta el",
+        "amount": "Monto",
+        "payment": "Pago",
+        "status": "Estado",
+        "statuses": {
+            "REQUESTED": "Esperando confirmación",
+            "CONFIRMED": "Confirmada, sin devolución aceptada por el proveedor"
+        },
+        "confirmedOnlyDecline": "Esta devolución ya está confirmada y no se puede confirmar de nuevo. Solo se puede rechazar y después asentarla con la acción 14.",
+        "origin": "Marca que la originó",
+        "noMark": "No se encontró una marca asociada a este pago.",
+        "markLifted": "levantada",
+        "markOpen": "abierta",
+        "marksLink": "Ver las marcas abiertas",
+        "confirm": {
+            "button": "Confirmar y enviar",
+            "title": "Confirmar la devolución",
+            "description": "Se envía al proveedor de pagos la devolución de {{amount}}. Queda a tu nombre.",
+            "confirm": "Confirmar y enviar",
+            "cancel": "Cancelar",
+            "success": "Devolución confirmada y enviada.",
+            "outcomes": {
+                "SENT": "El proveedor aceptó la devolución.",
+                "AWAITING_PROVIDER_ANSWER": "Devolución enviada. Falta la respuesta del proveedor.",
+                "NOT_ACCEPTED_KEPT_CONFIRMED": "El proveedor no la aceptó todavía. Queda confirmada para reintentar.",
+                "PROVIDER_REJECTED_KEPT_CONFIRMED": "El proveedor la rechazó por ahora. Queda confirmada para reintentar.",
+                "PROVIDER_REJECTED_FAILED": "El proveedor la rechazó y la devolución quedó fallida.",
+                "CHARGED_BACK": "El cobro ya tenía un contracargo. La devolución se cerró."
+            }
+        },
+        "decline": {
+            "button": "Rechazar",
+            "title": "Rechazar la devolución",
+            "description": "Se rechaza la devolución de {{amount}}. El pago no cambia y no se envía nada al proveedor.",
+            "confirmedWarning": "Esta devolución ya estaba confirmada: verificá en el panel de MP que no salió ninguna devolución antes de rechazar.",
+            "confirm": "Rechazar devolución",
+            "cancel": "Cancelar",
+            "success": "Devolución rechazada.",
+            "successVerify": "Devolución rechazada. Antes de asentarla a mano (acción 14), verificá en el panel de MP que no salió ninguna devolución.",
+            "closesHeldCharge": "Esta devolución no se puede rechazar: devuelve un cobro retenido por una marca. Se cierra confirmándola, por un contracargo o asentándola con la acción 14."
+        },
+        "rejections": {
+            "REFUND_NOT_FOUND": "La devolución ya no existe.",
+            "REFUND_SOURCE_NOT_FOUND": "No se encontró el pago de la devolución.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "No tenés permiso para esta acción.",
+            "REFUND_NOT_OPEN": "La devolución ya no está abierta. Actualizá la lista.",
+            "REFUND_STATE_CHANGED": "La devolución cambió mientras la revisabas. Actualizá la lista.",
+            "PAYMENT_NOT_REFUNDABLE": "Este pago no admite una devolución.",
+            "REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE": "Este pago no se devuelve por el proveedor.",
+            "RETAINED_PAYMENT_SUCCESSION_OPEN": "El pago retenido tiene una sucesión abierta.",
+            "REFUND_EXCEEDS_BALANCE": "La devolución supera el saldo disponible del pago.",
+            "REFUND_PAST_PROVIDER_WINDOW": "El proveedor ya no admite devoluciones de este pago.",
+            "REFUND_PROVIDER_ID_ALREADY_RECORDED": "El proveedor ya tiene registrada esta devolución.",
+            "REFUND_HAS_PROVIDER_CALLS": "La devolución ya tiene llamadas al proveedor y no se puede rechazar. Revisá el panel de MP.",
+            "REFUND_CLOSES_HELD_CHARGE": "Esta devolución no se puede rechazar: devuelve un cobro retenido por una marca."
+        },
+        "genericError": "No se pudo completar la acción. Intentá de nuevo.",
+        "serverError": "El servidor no pudo completar la acción. Intentá de nuevo más tarde.",
+        "remainder": {
+            "title": "Asentar el resto de una devolución aceptada en parte",
+            "description": "Para una devolución confirmada que Mercado Pago aceptó solo en parte. Devolvé el resto desde el panel de MP y registralo acá: la devolución se cierra y el saldo del pago cuadra.",
+            "refundId": "ID de la devolución",
+            "amount": "Resto devuelto a mano (en pesos)",
+            "reference": "ID de la devolución en el panel de MP",
+            "note": "Nota (opcional)",
+            "review": "Revisar",
+            "confirmText": "Se registra que devolviste {{amount}} a mano desde el panel de MP (referencia {{reference}}) para la devolución {{refundId}}. La devolución se cierra a tu nombre.",
+            "confirm": "Registrar el resto",
+            "back": "Volver",
+            "success": "Devolución cerrada. MP había aceptado {{accepted}} y se registró el resto de {{remainder}}.",
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "La devolución no está confirmada. Solo se puede asentar el resto de una devolución confirmada.",
+                "REFUND_CALL_UNANSWERED": "Hay un pedido al proveedor sin respuesta. Primero usá «Reintentar con Mercado Pago» en esta misma pantalla; si no lo cierra, seguí la nota de devoluciones trabadas.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "El proveedor no aceptó ninguna parte de esta devolución. Rechazala y después asentala con la acción 14.",
+                "REMAINDER_AMOUNT_MISMATCH": "El resto no coincide con lo que falta devolver: monto de la devolución menos lo que el proveedor acreditó.",
+                "ACCEPTED_PART_NOT_ACCREDITED": "El proveedor no muestra acreditada la parte que había aceptado. Revisá el cobro en el panel del proveedor antes de registrar el resto.",
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "El proveedor no muestra en este cobro una devolución acreditada con esa referencia y ese monto.",
+                "OTHER_REFUND_CALL_UNANSWERED": "Otra devolución de este pago tiene una llamada a MP sin respuesta. Esperá a que se resuelva antes de registrar el resto: el reembolso que ves en el panel puede ser de esa llamada."
+            }
+        },
+        "providerRetry": {
+            "title": "Reintentar con Mercado Pago",
+            "description": "Para una devolución confirmada que quedó trabada porque MP no contestó una llamada (timeout, error o respuesta vacía), o que MP aceptó pero todavía no figura acreditada. Antes de reenviar, se lee el cobro en MP: si la devolución ya está ahí, se la toma y no se reenvía nada. Solo si no aparece se reenvía la llamada, con su misma clave de idempotencia.",
+            "refundId": "ID de la devolución",
+            "review": "Revisar",
+            "confirmText": "Se lee el cobro en Mercado Pago para la devolución {{refundId}}. Si la devolución ya figura, se la toma sin reenviar; si no, se reenvía cada llamada sin respuesta con su misma clave. Si MP la muestra acreditada, la devolución se cierra.",
+            "confirm": "Reintentar con MP",
+            "back": "Volver",
+            "summary": {
+                "EXECUTED": "MP aceptó y acreditó la devolución. Quedó ejecutada.",
+                "WAITING_ACCREDITATION": "MP tiene la devolución pero todavía no figura acreditada. Sigue confirmada: se cierra con el próximo aviso de MP, o tocando de nuevo «Reintentar con MP», que vuelve a leer el cobro.",
+                "FAILED": "MP rechazó la llamada. La devolución quedó fallida: revisá el panel de MP antes de devolver a mano (acción 14).",
+                "STILL_UNANSWERED": "Alguna llamada sigue sin una respuesta que se pueda usar. Reintentá más tarde o seguí el runbook de devoluciones (§8)."
+            },
+            "calls": {
+                "SENT": "aceptada por MP",
+                "FOUND_AT_PROVIDER": "ya estaba en MP: se tomó sin reenviar",
+                "AWAITING_PROVIDER_ANSWER": "sigue sin respuesta",
+                "PROVIDER_KEY_CONFLICT": "MP rechazó la clave por reutilizada: seguí el runbook de devoluciones (§8)",
+                "PROVIDER_REJECTED_FAILED": "rechazada por MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "La devolución no está confirmada. Solo se reintenta una devolución confirmada.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "La devolución no tiene llamadas sin respuesta ni aceptadas pendientes de acreditar: no hay nada que reintentar.",
+                "REFUND_PAST_PROVIDER_WINDOW": "Pasaron más de 180 días del cobro: MP rechazaría cualquier llamada sin decir si la primera salió. Revisá el panel de MP a mano (runbook de devoluciones, §8).",
+                "REFUND_RETRY_IN_PROGRESS": "Ya hay un reintento de esta devolución en curso. Esperá a que termine y mirá el resultado.",
+                "REFUND_CALL_TOO_OLD_TO_RETRY": "El llamado sin respuesta se envió hace más de 24 horas y el cobro no muestra ninguna devolución para atarlo, así que no se reenvía (no se envió ni se registró nada). Seguí el runbook de devoluciones, §8 pasos 1-2: revisá el cobro en el panel de Mercado Pago y registrá la respuesta del llamado a mano (§8.1 o §8.2)."
             }
         }
     },

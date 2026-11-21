@@ -80,6 +80,9 @@ export interface WatchContext {
      *   non-GET request of a `moves-money` measurement (0 for one that charges nothing), and it
      *   must equal what the request body states: the guard does not trust the declaration
      * @returns The answer
+     * @param args.shapePaths - When set, the shape is recorded over ONLY these paths (`a.b`,
+     *   `results[].id`), a missing one read as `null` (see `projectForShape`). For re-reads of real
+     *   objects, whose optional fields vary from one object to the next
      * @throws {WatchGuardError} A non-GET from a `read` entry, a money write from a measurement
      *   that does not move money, an undeclared or mismatching charge, or charges above the maximum
      */
@@ -88,13 +91,57 @@ export interface WatchContext {
         readonly request: WatchRequest;
         readonly chargeMinor?: number;
         readonly refundMinor?: number;
+        readonly shapePaths?: readonly string[];
     }) => Promise<WatchResponse>;
+    /**
+     * Resends, VERBATIM, the last money write this measurement sent under the label `of`: the same
+     * method, path, body and derived idempotency key (F4, for measurements such as `EX-58`, where an
+     * identical replay must answer the first full response). The request is the stored one, so a
+     * replay cannot change it. A replay books no money: if the provider answers a create replay with
+     * an object other than the first one (or a lost answer, or a 5xx), money may have moved and the
+     * run stops with `WRITE_OUTCOME_UNKNOWN`.
+     *
+     * @param args.label - The label the replay's answer shape is recorded under
+     * @param args.of - The label of the money write to replay
+     * @returns The answer
+     * @throws {WatchGuardError} `REPLAY_NOT_SENT` when this measurement never sent a money write
+     *   under `of`; `WRITE_OUTCOME_UNKNOWN` as described above
+     */
+    readonly replay: (args: {
+        readonly label: string;
+        readonly of: string;
+    }) => Promise<WatchResponse>;
+    /** The run's id: what a measurement derives its own `external_reference` values from. */
+    readonly runId: string;
+    /** The run's clock. */
+    readonly now: () => Date;
+    /** Per-deployment values a measurement needs and the catalog cannot know. */
+    readonly settings: WatchSettings;
 }
 
-/** One entry of the catalog: a measurement behind one `M*` or `RP*` row. */
+/** Per-deployment values the measurements need (set by the composition root). */
+export interface WatchSettings {
+    /**
+     * The payer email a measurement declares on the authorizations it creates. The provider
+     * refuses a preapproval without one (`payer_email is required`).
+     */
+    readonly payerEmail?: string | undefined;
+    /** The `back_url` of the authorizations a measurement creates: the site's origin. */
+    readonly returnUrl?: string | undefined;
+}
+
+/** One entry of the catalog: a measurement that re-checks one or more `M*` / `RP*` rows. */
 export interface WatchEntry {
-    /** The row id in `fake-lists.json` (`M1`..`M13`, `RP1`..`RP13`). */
+    /**
+     * Stable id of the measurement (at most 16 characters: the accepted-baseline key). Without
+     * `rows` it must itself be a row id of `fake-lists.json`.
+     */
     readonly id: string;
+    /**
+     * The `fake-lists.json` rows this measurement re-checks. Empty for a drift watch that re-reads
+     * real objects (adapter parse and shape) without re-checking a row. When absent, `id` is the row.
+     */
+    readonly rows?: readonly string[];
     /** The accounts this measurement is run against. */
     readonly accounts: readonly WatchAccount[];
     readonly effect: WatchEffect;
@@ -105,8 +152,20 @@ export interface WatchEntry {
      * charges are also capped at the authorized amount.
      */
     readonly maxChargeMinor?: number;
+    /**
+     * The amount, in centavos, the measurement's ONE pending creation states. The floor when
+     * absent; only the RP3 probes declare another, and it must be one of `PENDING_AMOUNTS_MINOR`.
+     * The engine refuses, sending nothing, a pending creation that states any other amount.
+     */
+    readonly pendingAmountMinor?: number;
     /** The value the fake's list says the provider yields. */
     readonly expected: JsonValue;
+    /**
+     * Keys of the obtained object that are recorded but NOT compared with `expected`: counts that
+     * vary from run to run and say what the measurement could not judge, such as the foreign
+     * subjects a re-read skipped (re-review of #4538, R2). They must not be keys of `expected`.
+     */
+    readonly reportedOnly?: readonly string[];
     /** Runs the measurement and reads its result. Every request goes through `ctx.send`. */
     readonly measure: (ctx: WatchContext) => Promise<JsonValue>;
 }
@@ -126,9 +185,19 @@ export interface WatchAuthorization {
      * nothing, when `GET /users/me` answers another id, or when this is absent.
      */
     readonly accountId?: string;
-    /** The run that consumed this authorization. One authorization allows ONE run. */
+    /**
+     * The run that consumed this authorization. An authorization above 0 allows ONE run; one of 0
+     * is never consumed (owner decision on B1, 2026-11-19).
+     */
     readonly consumedByRunId?: string;
 }
+
+/**
+ * Why a production run could not take an authorization of 0 (follow-up of #4538, A2b):
+ * `DAY_TAKEN` is the expected second run of a day against the unchanged authorization; `CHANGED`
+ * is any other miss (no authorization, revoked, replaced, another account or amount, a day behind).
+ */
+export type WatchAuthorizationMiss = 'DAY_TAKEN' | 'CHANGED';
 
 /** What went wrong in one measurement. */
 export type WatchMeasurementOutcome = 'matched' | 'changed' | 'errored';
@@ -149,7 +218,11 @@ export interface WatchMeasurementRecord {
 }
 
 /** What kind of change an alert reports. */
-export type WatchAlertKind = 'value_changed' | 'shape_changed' | 'shape_baseline_missing';
+export type WatchAlertKind =
+    | 'value_changed'
+    | 'shape_changed'
+    | 'shape_baseline_missing'
+    | 'measurement_errored';
 
 /** One change the run found, ready to be mailed. */
 export interface WatchAlert {
@@ -157,7 +230,8 @@ export interface WatchAlert {
     readonly kind: WatchAlertKind;
     /**
      * For `shape_changed`: the request label whose response changed. A `shape_baseline_missing`
-     * alert has no label: it covers every response of the measurement.
+     * alert has no label: it covers every response of the measurement. A `measurement_errored`
+     * alert carries the error in `details` and has no label either.
      */
     readonly label?: string;
     readonly expected: JsonValue;
@@ -212,7 +286,12 @@ export type WatchGuardCode =
     | 'TARGET_NOT_CREATED_BY_RUN'
     | 'WRITE_OUTCOME_UNKNOWN'
     | 'AUTHORIZATION_SUM_MISMATCH'
-    | 'READ_ENTRY_MUTATED';
+    | 'READ_ENTRY_MUTATED'
+    | 'SEND_AFTER_SETTLED'
+    | 'REPLAY_NOT_SENT'
+    | 'PENDING_CREATE_LIMIT'
+    | 'PENDING_AMOUNT_MISMATCH'
+    | 'PENDING_NOT_CANCELLED';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */
 export class WatchGuardError extends Error {

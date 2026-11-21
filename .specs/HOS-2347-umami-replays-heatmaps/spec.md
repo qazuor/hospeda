@@ -54,7 +54,9 @@ never captures six marked UI surfaces.
 
 ## 3. Goals
 
-- G-1 One admin switch (SUPER_ADMIN only) turns recording on or off for the web.
+- G-1 One admin switch turns recording on or off for the web. It is gated by
+  `ANALYTICS_SESSION_RECORDING_MANAGE`, which is granted to SUPER_ADMIN by the
+  seed; not locked (D-3), so per-user overrides can extend it.
   Switching OFF reaches new page loads within about 60 seconds.
 - G-2 Recording happens only when ALL of these hold: switch ON, the visitor's
   analytics consent is `true`, the route is not excluded, and the Umami tracker
@@ -64,7 +66,7 @@ never captures six marked UI surfaces.
 - G-4 Recorder parameters are code: `pnpm umami:setup` declares them,
   idempotently, with `--dry-run`, touching only what it declares.
 - G-5 Strict masking (all text, all inputs) plus element-level blocking of four
-  surfaces plus route exclusion of eleven route families.
+  surfaces plus route exclusion of ten route families.
 - G-6 Admin, api and mobile are never recorded.
 - G-7 The privacy doc describes the real recorder, and a manual privacy
   verification is signed before production is ever switched ON.
@@ -189,7 +191,8 @@ Verified on `origin/staging` (worktree cut 2026-11-18).
 - `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS`
   (`packages/schemas/src/entities/permission/permission.super-admin-exclusive.schema.ts`)
   is a closed set tied to the V5 action keys (ACC_*). The new permission is
-  NOT added to it (D-3): it is SUPER_ADMIN-only through the seed grant alone.
+  NOT added to it (D-3): it is granted to SUPER_ADMIN by the seed; not locked,
+  so per-user overrides can extend it (review wording fix, 2026-11-18).
 - Seed: baseline grants are in `packages/seed/src/required/rolePermissions.seed.ts`.
   The data-migration precedent for a SUPER_ADMIN-only grant is
   `packages/seed/src/data-migrations/0128-hos1591-promo-code-permission.ts`
@@ -237,7 +240,7 @@ view-only by registry contract.
 
 | Layer | Lives in | Who changes it | Decides |
 |---|---|---|---|
-| Hospeda switch | `platform_settings` key `analytics.sessionRecording` | SUPER_ADMIN, admin card | Whether the web injects `recorder.js` at all |
+| Hospeda switch | `platform_settings` key `analytics.sessionRecording` | `ANALYTICS_SESSION_RECORDING_MANAGE` (seed: SUPER_ADMIN), admin card | Whether the web injects `recorder.js` at all |
 | Recorder config | Umami `website.recorder_enabled` + `replay_config` | `pnpm umami:setup` (code review + owner run) | What the recorder does once loaded |
 
 `umami:setup` keeps `recorder_enabled = true` on the web website permanently.
@@ -348,9 +351,16 @@ One exported constant in `apps/web/src/lib/analytics/recording-exclusions.ts`:
 RECORDING_EXCLUDED_ROUTE_PREFIXES = [
   'auth', 'mi-cuenta', 'guest', 'suscriptores/checkout', 'publicar',
   'feedback', 'colaborar', 'contacto', 'partners/reclamar',
-  'sumate/proveedor', 'newsletter'
+  'newsletter'
 ] as const
 ```
+
+> **Owner decision (2026-11-18, supersedes the review decision of the same day).**
+> The first draft listed only `sumate/proveedor`; the review widened it to the whole
+> `sumate` prefix. The owner then decided that `sumate/*` (partner, provider and
+> sponsor sign-ups) is recorded, to study the conversion funnel. The prefix is
+> removed from the list: ten route families remain. Those pages rely on strict
+> masking of all text and inputs.
 
 Matching rules for `isRecordingExcludedPath({ pathname })`:
 
@@ -439,6 +449,27 @@ replay_config: {
     it on the Umami app in Coolify, and the value is recorded on the issue.
   - If no retention setting exists, Umami's default of **30 days** is accepted
     and stated in the privacy doc.
+
+> **T-001 result (spike, 2026-11-18).** Read from the built server of the
+> staging Umami 3.5 container:
+>
+> - The write path is `POST /api/websites/:id` with only `replayConfig`. It is
+>   partial and merged over the stored config; no full-record payload is needed,
+>   so `name` and `domain` are never sent.
+> - `recorderEnabled` is not an input: Umami derives it as
+>   `replayEnabled || heatmapEnabled`.
+> - The stored config is sparse (Umami drops `false` and unknown keys). Defaults
+>   (0.15, 0.15, `moderate`, 300000, `""`) are applied only by the recorder GET,
+>   which is cached 60 s plus 300 s stale-while-revalidate. The script compares
+>   normalized and defaulted values.
+> - Umami's normalization strips unknown keys on every write, so "preserve any
+>   undeclared key" can only mean "never send one": the script sends only the
+>   seven declared keys.
+> - **Retention is not configurable, and nothing in Umami ever deletes replays**
+>   (only a website reset or delete does). There is no 30-day default either. The
+>   spike found this; the owner then decided (2026-11-18, OQ-8) that Hospeda purges
+>   them itself: configurable 14, 30 or 60 days (default 30), a daily cron plus a
+>   manual action, saved replays included. See the privacy doc and AC-S7.
 
 ### 6.9 Admin card
 
@@ -629,11 +660,12 @@ means a `script#umami-recorder` exists with
   locale, e.g. `/es/auth/signin/`, `/en/mi-cuenta/favoritos/`,
   `/pt/guest/messages/abc`, `/es/suscriptores/checkout/?plan=x`,
   `/es/publicar/nueva`, `/es/feedback/`, `/es/colaborar/fotos/`,
-  `/es/contacto/`, `/es/partners/reclamar/`, `/es/sumate/proveedor/`, and
-  `/es/newsletter/confirmado`.
+  `/es/contacto/`, `/es/partners/reclamar/`, and `/es/newsletter/confirmado`.
 - **AC-R2** It returns `false` for `/es/`, `/es/alojamientos/x/`,
   `/es/publicaciones/`, `/es/partners/foo/`, `/es/suscriptores/planes/`,
-  `/es/sumate/partner/` and `/es/contactos-utiles/` (prefix-boundary check).
+  `/es/sumatoria/` and `/es/contactos-utiles/` (prefix-boundary check). It also
+  returns `false` for `/es/sumate/`, `/es/sumate/proveedor/`,
+  `/es/sumate/sponsor/` and `/es/sumate/partner/` (owner decision, 2026-11-18, §6.5).
 - **AC-R3** Given all other conditions hold and the current path is excluded,
   then nothing is injected and `fetch` is not called.
 - **AC-R4** Guard: every entry of `RECORDING_EXCLUDED_ROUTE_PREFIXES` maps to an
@@ -674,17 +706,22 @@ means a `script#umami-recorder` exists with
 - **AC-S3** Given `--dry-run`, then only GET requests are sent and the planned
   per-field diff is printed.
 - **AC-S4** Given `replay_config` holds an undeclared key, when setup writes,
-  then that key is preserved verbatim and listed as unmanaged. The website's
-  name and domain are byte-identical before and after.
+  then that key is listed as unmanaged and the write body carries exactly the
+  seven declared keys: never the undeclared key, never `name`, `domain` or any
+  other website field. The website's name and domain are byte-identical before
+  and after. (Rewritten after review, 2026-11-18: measured Umami drops unknown
+  keys on any write, so "preserved verbatim" is not something the script can
+  promise; the test fake reproduces that drop.)
 - **AC-S5** `sampleRate` and `heatmapSampleRate` both equal the single constant
   `RECORDER_SAMPLE_RATE = 0.5`. `maxDuration` is `300000`.
 - **AC-S6** No env var for a write-capable Umami credential is added to
   `packages/config` or to any app env schema (`pnpm env:check:registry` green,
   plus a grep guard over the api).
-- **AC-S7** Given T-001 found a configurable recording retention, then it reads
-  14 days on staging and on prod, wherever it lives (declared by `umami:setup`,
-  or set on the Umami app). Given T-001 found none, then the privacy doc states
-  that Umami's default retention of 30 days applies.
+- **AC-S7** (rewritten by the retention decision, 2026-11-18, OQ-8) Umami 3.5 has no
+  retention setting, so the privacy doc states the retention Hospeda enforces itself:
+  configurable 14, 30 or 60 days (default 30), a daily purge that also runs while
+  recording is OFF, saved replays included, and a manual "clean up now" action. A test
+  (`apps/web/test/docs/session-replay-privacy-doc.test.ts`) pins those statements.
 
 ### 9.7 Permission and seed
 
@@ -723,6 +760,9 @@ means a `script#umami-recorder` exists with
   blocks, the cookie banner and the feedback modal. All other text is masked.
 - **AC-SM5 (staging)** Turning the switch OFF: a new full page load 60 s later
   fetches `{ enabled: false }` and loads no recorder.
+  An already-open page is also observed: its replay stops no later than 5 minutes
+  after it started, while its heatmap events (`/api/record` with type `heatmap`)
+  continue until the page is closed (measured behaviour, R-2).
 - **AC-SM6 (prod, before the first ON)** The owner, or someone the owner
   designates, runs the manual verification in the rewritten privacy doc:
   - log in or sign up;
@@ -762,6 +802,14 @@ Total: 55 acceptance criteria (A 6, P 5, W 13, R 6, B 4, S 7, PE 5, C 1, SM 6, D
   revoke or switch-OFF does not reload the page, so the current document may
   keep recording until unload or 5 min (`maxDuration`). Accepted and documented
   in the privacy doc. An in-page stop, if T-001 finds one, may shorten it.
+  **Measured after review (2026-11-18, staging `recorder.js`, read only):** the
+  5-minute cap applies to the replay only and counts per page load. When reached,
+  the replay stops for good in that page load; neither a soft navigation nor
+  `pushState` restarts it, and only a new full page load starts a new (re-sampled)
+  recording. Heatmap clicks and scrolls have **no** cap and continue across soft
+  navigations until the page unloads. Copy and the privacy doc state this. No
+  extra smoke step is needed for a restart (there is none); AC-SM5 now also
+  checks that an open page keeps sending heatmap events after the switch-off.
 - **R-3 Soft-nav hook does not cancel.** If the router hook cannot turn the swap
   into a full load, an excluded page could be recorded after a soft nav.
   Mitigation: T-001 measures it, and the AC-R5 test plus AC-SM3 verify it.
@@ -808,12 +856,26 @@ The six open questions of the first draft were answered by the owner on
 
 ### 12.2 Open questions
 
-- **OQ-7 Legal pages.** The first draft's OQ-1 also asked whether the legal
-  cookies and privacy pages (`/{lang}/legal/cookies`, `/{lang}/legal/privacidad`)
-  need to mention session recordings. D-1 covers only the consent-banner
-  description. Whether those legal texts change too is still open, and it is the
-  owner's legal call. It does not block implementation; it must be answered
-  before the first prod ON (AC-SM6).
+- **OQ-7 Legal pages. RESOLVED (2026-11-18).** The owner approved mentioning
+  session recordings and heatmaps in both legal pages. A new section
+  "Session recordings and heatmaps" (`sections.sessionRecording`) was added to
+  the privacy and cookie policies in es, en and pt (`packages/i18n/src/locales/*/privacy.json`
+  and `cookies.json`). It says: pseudonymous replays (tied to the account id for logged-in users) and click/scroll heatmaps with
+  self-hosted Umami; only with analytics consent and only while enabled; all text
+  and inputs masked; a sample of sessions; retention "a limited period of up to
+  60 days" (no fixed number, because the period is configurable; see OQ-8). `CONSENT_VERSION` is not bumped (D-1). Guard:
+  `packages/i18n/test/session-recording-legal-copy.guard.test.ts`.
+- **OQ-8 Replay retention (opened by the T-001 spike). RESOLVED 2026-11-18 (owner).**
+  Umami 3.5 keeps replays forever, so D-5 does not hold. Decision: replays and
+  heatmaps are deleted automatically after a configurable period of 14, 30 or
+  60 days (default 30), plus a manual "clean up now" action. Both live in the
+  existing admin card behind `analytics.sessionRecording.manage`. The api purges
+  through a direct Postgres connection (`HOSPEDA_UMAMI_DATABASE_URL`, a role with
+  only SELECT and DELETE on `session_replay`, `heatmap_event` and
+  `session_replay_saved`), scoped by
+  website id and `created_at`, in batches. The api still holds no Umami API write
+  key. Delivered by the retention follow-up PR; see
+  `docs/analytics/session-replay-privacy.md`.
 
 No other questions remain open.
 
@@ -821,7 +883,7 @@ No other questions remain open.
 
 ### Task breakdown (phased; each phase is a pause point)
 
-**Phase 0 — Spike (blocks everything else)**
+#### Phase 0 — Spike (blocks everything else)
 
 - T-001 Spike on staging. The owner runs it with owner credentials. Measure:
   - (a) the Umami API call and payload that set `recorder_enabled` and
@@ -835,14 +897,14 @@ No other questions remain open.
 
   Record the results on the issue. Re-plan if any result contradicts §6.
 
-**Phase 1 — Contracts**
+#### Phase 1 — Contracts
 
 - T-002 Schemas: key, value schema, response union, public response schema,
   and the permission enum value. Includes guard updates and recounts.
 - T-003 DB: structural migration for the enum value.
 - T-004 Seed: baseline grant plus a data-migration via `db:seed:make`.
 
-**Phase 2 — Core**
+#### Phase 2 — Core
 
 - T-005 Service: mapper branches, upsert union, and `isSessionRecordingEnabled`.
 - T-006 API: public route plus headers plus a cache-list guard. The admin GET and
@@ -852,7 +914,7 @@ No other questions remain open.
   If it is instance-level, the owner sets it in Coolify and it is recorded on
   the issue.
 
-**Phase 3 — Integration**
+#### Phase 3 — Integration
 
 - T-008 Web: exclusion list plus matcher plus pages-directory guard.
 - T-009 Web: recorder loader plus consent listener plus soft-nav guard. No
@@ -864,7 +926,7 @@ No other questions remain open.
 - T-016 i18n: update the analytics consent description in es, en and pt; keep
   `CONSENT_VERSION = 2` (D-1, AC-C1).
 
-**Phase 4 — Verification and docs**
+#### Phase 4 — Verification and docs
 
 - T-013 Rewrite `docs/analytics/session-replay-privacy.md`.
 - T-014 Staging smoke (AC-SM1 to AC-SM5).

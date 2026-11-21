@@ -636,6 +636,19 @@ const comercialSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'proposed-refunds',
+            label: {
+                es: 'Devoluciones propuestas',
+                en: 'Proposed refunds',
+                pt: 'Reembolsos propostos'
+            },
+            icon: 'DollarSignIcon',
+            route: '/billing/reconciliation/refunds',
+            permissions: ['BILLING_REFUND'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'promo-codes',
             label: { es: 'Códigos promocionales', en: 'Promo codes', pt: 'Códigos promocionais' },
             icon: 'CouponsIcon',
@@ -733,7 +746,7 @@ const plataformaSidebar: SidebarInput = {
             },
             icon: 'SettingsIcon',
             defaultOpen: true,
-            permissions: ['SETTINGS_MANAGE', 'SEO_MANAGE'],
+            permissions: ['SETTINGS_MANAGE', 'SEO_MANAGE', 'NOTIFICATION_TEMPLATE_PREVIEW'],
             items: [
                 {
                     type: 'link',
@@ -754,6 +767,18 @@ const plataformaSidebar: SidebarInput = {
                     // permission than its route enforces is an entry shown to
                     // somebody who then eats a 403.
                     permissions: ['QR_CODE_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'email-previews',
+                    label: { es: 'Emails', en: 'Emails', pt: 'E-mails' },
+                    icon: 'MailIcon',
+                    route: '/platform/emails',
+                    // Same gate as the route's RoutePermissionGuard (HOS-2519,
+                    // the HOS-981 rule: menu gate === route gate).
+                    permissions: ['NOTIFICATION_TEMPLATE_PREVIEW'],
+                    // AC-7.1: hidden, not disabled, without the permission.
+                    onMissing: 'hide'
                 },
                 {
                     type: 'link',
@@ -956,6 +981,18 @@ const plataformaSidebar: SidebarInput = {
             route: '/content/host-trade-categories',
             permissions: ['HOST_TRADE_CATEGORY_VIEW']
         },
+        {
+            type: 'link',
+            id: 'partner-types',
+            label: {
+                es: 'Tipos de partner',
+                en: 'Partner types',
+                pt: 'Tipos de parceiro'
+            },
+            icon: 'OffersIcon',
+            route: '/content/partner-types',
+            permissions: ['PARTNER_TYPE_VIEW']
+        },
         { type: 'separator', id: 'sep-ai' },
         // ── Inteligencia Artificial ────────────────────────────────────────
         {
@@ -1041,6 +1078,20 @@ const plataformaSidebar: SidebarInput = {
             icon: 'ShieldIcon',
             route: '/platform/ops/security-logs',
             permissions: ['SECURITY_LOG_VIEW'],
+            onMissing: 'hide'
+        },
+        // HOS-2349 (D-15): SUPER_ADMIN only; ADMIN lacks MCP_ACTIVITY_VIEW, so hidden.
+        {
+            type: 'link',
+            id: 'mcp-activity',
+            label: {
+                es: 'Uso de asistentes IA',
+                en: 'AI assistant activity',
+                pt: 'Uso de assistentes IA'
+            },
+            icon: 'LogsIcon',
+            route: '/platform/ops/mcp-activity',
+            permissions: ['MCP_ACTIVITY_VIEW'],
             onMissing: 'hide'
         }
     ]

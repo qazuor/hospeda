@@ -1,0 +1,236 @@
+/* AiActivityHistory.module.css */
+/* Scoped styles for the assistant history island and its rows (HOS-2348). */
+/* ALL values use CSS custom properties from global.css. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+}
+
+/* ── Filters ───────────────────────────────────────────────────────────── */
+
+.filters {
+    composes: card from "./AccountSection.module.css";
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4, 16px);
+}
+
+.toggleRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    flex: 1 1 18rem;
+    font-family: var(--font-sans);
+}
+
+.toggle {
+    flex-shrink: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 2px;
+    accent-color: var(--brand-primary);
+}
+
+.toggleLabel {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.hint {
+    display: block;
+    margin-top: var(--space-1, 4px);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.selectRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    font-family: var(--font-sans);
+}
+
+.selectLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.select {
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md);
+    background-color: var(--core-background);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+/* ── List ──────────────────────────────────────────────────────────────── */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+    font-family: var(--font-sans);
+}
+
+.itemHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+}
+
+.action {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.result {
+    padding: 2px var(--space-2, 8px);
+    border-radius: var(--radius-pill);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.resultDone {
+    background-color: var(--success-a15);
+    color: var(--success);
+}
+
+.resultDenied {
+    background-color: var(--warning-a12);
+    color: var(--warning);
+}
+
+.resultDeclined {
+    background-color: var(--core-foreground-a08);
+    color: var(--core-foreground);
+}
+
+.resultError {
+    background-color: var(--destructive-a15);
+    color: var(--destructive);
+}
+
+.resultUnknown {
+    background-color: var(--core-foreground-a08);
+    color: var(--core-muted-foreground);
+}
+
+.target {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+.targetLink {
+    font-size: 0.9375rem;
+    color: var(--brand-primary);
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+}
+
+.targetMuted {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    overflow-wrap: anywhere;
+}
+
+.step {
+    font-weight: 600;
+}
+
+.reason {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Empty / error ─────────────────────────────────────────────────────── */
+
+.notice {
+    margin: 0;
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+}
+
+.errorWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-card);
+    background-color: var(--destructive-a10);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--destructive);
+}
+
+.retryBtn {
+    composes: secondary from "./AccountButton.module.css";
+}
+
+.signInLink {
+    composes: primary from "./AccountButton.module.css";
+}
+
+/* ── Pagination ────────────────────────────────────────────────────────── */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+.pageBtn {
+    composes: pagination from "./AccountButton.module.css";
+}
+
+.pageInfo {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}

@@ -160,6 +160,17 @@ describe('ActiveFilterChips', () => {
             expect(chip.textContent).toContain('4');
         });
 
+        it('resolves bedroom and bathroom chips through tPlural with the count', () => {
+            // Arrange + Act: the mocked tPlural renders "<key> <value> <count>",
+            // while the plain t() path would render the "<key>: <value>" fallback.
+            renderChips({ filters: { minBedrooms: 1, maxBathrooms: 2 } });
+            const labels = screen.getAllByRole('listitem').map((chip) => chip.textContent ?? '');
+
+            // Assert
+            expect(labels.some((l) => l.includes('aiSearch.chips.minBedrooms 1 1'))).toBe(true);
+            expect(labels.some((l) => l.includes('aiSearch.chips.maxBathrooms 2 2'))).toBe(true);
+        });
+
         it('formats maxPrice with value interpolation', () => {
             renderChips({ filters: { maxPrice: 50000 } });
             const chip = screen.getByRole('listitem');

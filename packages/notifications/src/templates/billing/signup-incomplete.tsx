@@ -1,7 +1,7 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 export interface SignupIncompleteProps {
     readonly vertical: string;

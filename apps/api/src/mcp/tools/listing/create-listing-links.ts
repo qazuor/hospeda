@@ -6,11 +6,11 @@
  * @module mcp/tools/listing/create-listing-links
  */
 
+import type { PortalDestination, PortalLocale, PortalSectionId } from '@repo/portal-routes';
+import { buildPortalUrl } from '@repo/portal-routes';
 import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
-import type { PortalDestination, PortalSectionId } from '../../portal/portal-routes';
 import type { ToolRefusalLink } from '../tool-definition';
 import type { ListingToolVertical } from './listing-services';
 
@@ -42,32 +42,40 @@ export interface CreateListingNextStep {
  * Builds a portal URL from the configured site URL.
  *
  * @param destination - The portal page
+ * @param locale - The user's web language; omitted means `es`
  * @returns Its absolute URL
  */
-export function listingPortalUrl(destination: PortalDestination): string {
-    return buildPortalUrl({ destination, siteUrl: env.HOSPEDA_SITE_URL });
+export function listingPortalUrl(
+    destination: PortalDestination,
+    locale: PortalLocale | undefined
+): string {
+    return buildPortalUrl({ destination, locale, siteUrl: env.HOSPEDA_SITE_URL });
 }
 
 /**
  * The steps left once the draft exists (§6.4, AC-C23c).
  *
- * @param args - Vertical, new id and whether the draft already has a location
+ * @param args - Vertical, new id, whether the draft already has a location, and the locale
  * @returns The next steps, with editor links
  */
 export function nextStepsFor(args: {
     readonly vertical: ListingToolVertical;
     readonly id: string;
     readonly hasLocation: boolean;
+    readonly locale: PortalLocale | undefined;
 }): readonly CreateListingNextStep[] {
-    const { vertical, id, hasLocation } = args;
+    const { vertical, id, hasLocation, locale } = args;
     const sections = NEXT_STEP_SECTIONS[vertical];
     const editor = (section?: PortalSectionId) =>
-        listingPortalUrl({
-            kind: 'listingEditor',
-            vertical,
-            id,
-            ...(section === undefined ? {} : { section })
-        });
+        listingPortalUrl(
+            {
+                kind: 'listingEditor',
+                vertical,
+                id,
+                ...(section === undefined ? {} : { section })
+            },
+            locale
+        );
     return [
         {
             step: 'amenities',

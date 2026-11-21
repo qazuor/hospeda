@@ -23,10 +23,12 @@ const EXPECTED_ORDER = [
     'menu',
     'dailySpecials',
     'venueEvents',
+    'promotions',
     'faqs',
     'nightInfo'
 ] as const;
 
+// Fixed header/gallery/management sections are outside the in-flow body.
 const EXCLUDED = ['price', 'media', 'translations'] as const;
 
 describe('VENUE_DETAIL_SECTION_BODY', () => {

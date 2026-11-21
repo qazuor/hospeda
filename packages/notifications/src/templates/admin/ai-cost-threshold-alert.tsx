@@ -1,7 +1,7 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for AiCostThresholdAlert email template (SPEC-173 T-025).

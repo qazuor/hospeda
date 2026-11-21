@@ -82,6 +82,10 @@ interface DockItemSource {
 /** Every mobile dock control must mark its measured root and become static. */
 const DOCK_ITEMS: readonly DockItemSource[] = [
     {
+        component: 'components/listing/contact/ListingContactBar.client.tsx',
+        css: 'components/listing/contact/ListingContactBar.module.css'
+    },
+    {
         component: 'components/shared/navigation/ScrollToTop.astro',
         css: 'components/shared/navigation/ScrollToTop.astro'
     },
@@ -111,7 +115,7 @@ const DOCK_ITEMS: readonly DockItemSource[] = [
     }
 ];
 
-const PORTAL_SLOTS = ['above', 'filters', 'map-cards', 'ai-search', 'ai-chat'] as const;
+const PORTAL_SLOTS = ['above', 'contact', 'filters', 'map-cards', 'ai-search', 'ai-chat'] as const;
 
 function read(relative: string): string {
     return fs.readFileSync(path.join(WEB_SRC, relative), 'utf8');
@@ -203,6 +207,13 @@ describe('mobile floating dock guard (TEST:1768:20)', () => {
                 `DockPortal slot "${slot}" must appear exactly once.`
             ).toHaveLength(1);
         }
+    });
+
+    it('reserves the contact slot without requiring a portal before the listing bar ships', () => {
+        const source = read('components/shared/dock/MobileDock.astro');
+
+        expect(MOBILE_DOCK_SLOTS).toContain('contact');
+        expect(source.match(/<div\b[^>]*data-mobile-dock-slot="contact"/g)).toHaveLength(1);
     });
 
     it('keeps numeric z-index values out of dock mobile media blocks', () => {

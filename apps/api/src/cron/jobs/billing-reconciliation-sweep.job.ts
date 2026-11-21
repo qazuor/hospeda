@@ -252,8 +252,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     terminalReturn: { beforeCancelNotice },
                     // AC:B11:12, AC:B11:27: re-read credited payments with the real defaults.
                     creditedPayments: { chargebacks: buildChargebackDetection({ markPayments }) },
-                    // AC:B11:13: zero population until B10 writes order keys.
-                    paidOrders: {},
+                    // HOS-2179 §5.10: paid twice or paid after the purchase closed, over page payments.
+                    pagePayments: { complements, coverageNotices: getCoverageNotices() },
                     markEscalation: { notice: {} },
                     pauseGifts: {},
                     livenessPing: createSentryCronMonitorPing()

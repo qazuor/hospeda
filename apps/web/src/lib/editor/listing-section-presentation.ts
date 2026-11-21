@@ -27,6 +27,12 @@ export interface ListingSectionPresentation {
      * Only a section that is shown conditionally declares one.
      */
     readonly visibilityKey?: string;
+    /**
+     * The section exists in the catalog but its editor page does not ship yet, so the
+     * nav, the hub and the registry must not offer it (a link would 404). Removed by
+     * the leaf that adds the page. Data, not dispatch by section id (G-FAC-05).
+     */
+    readonly unreleased?: boolean;
 }
 
 /**
@@ -78,6 +84,10 @@ const VENUE_SECTION_PRESENTATION = {
     venueEvents: {
         slug: 'eventos',
         labelKey: 'listing.owner.editor.sectionNav.venueEvents'
+    },
+    promotions: {
+        slug: 'promociones',
+        labelKey: 'listing.owner.editor.sectionNav.venuePromotions'
     },
     faqs: {
         slug: 'preguntas',

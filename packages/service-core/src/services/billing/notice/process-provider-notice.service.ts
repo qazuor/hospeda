@@ -58,6 +58,10 @@ import { activateAuthorizedPending } from './complement-authorized.js';
 import { logProviderNoticeFailure } from './log-provider-notice-failure.js';
 import { mirrorOurCancellationOnActive } from './mirror-our-cancellation-on-active.js';
 import {
+    type OneTimePagePaymentNoticeOutcome,
+    routeOneTimePagePaymentNotice
+} from './one-time-page-payment-notice.js';
+import {
     getProviderNoticeMirror,
     type ProviderNoticeMirror,
     type ReadState
@@ -68,6 +72,7 @@ import {
     executeConfirmedRefundsOnNotice
 } from './refund-execution-on-notice.js';
 import { UnsupportedProviderAuthorizationError } from './unsupported-provider-authorization.error.js';
+import { watchBatteryNoticeToDrop } from './watch-battery-notice.js';
 
 const logger = createLogger('process-provider-notice');
 
@@ -94,12 +99,14 @@ type Outcome =
     | 'RELINKED'
     | 'UNKNOWN_BECAME_KNOWN'
     | 'TOMBSTONE_WRITTEN'
+    | 'WATCH_BATTERY_DROPPED'
     | 'RESOURCE_KIND_NOT_HANDLED'
     | 'UNSUPPORTED_NOTICE'
     | 'CHARGEBACK_MARKED'
     | 'CHARGEBACK_ON_UNCREDITED'
     | 'REFUNDED_NOT_CREDITED'
     | 'DEFERRED'
+    | OneTimePagePaymentNoticeOutcome
     | 'FAILED';
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
@@ -162,6 +169,9 @@ async function resolveUnknownAuthorization(
     input: { readonly authorizationId: string; readonly arrival: UnknownAuthorizationArrival },
     ports: ProcessProviderNoticePorts
 ): Promise<UnknownResourceResolution> {
+    // HOS-1512: the battery's own pending preapprovals are dropped, with no tombstone and no mark.
+    if ((await watchBatteryNoticeToDrop(input, ports)) !== null)
+        return { kind: 'OUTCOME', outcome: 'WATCH_BATTERY_DROPPED' };
     const correlationId = crypto.randomUUID();
     let result: Awaited<ReturnType<typeof handleUnknownAuthorization>>;
     try {
@@ -248,8 +258,17 @@ export async function processProviderNotice(
             }
             if (result.outcome === 'CARD_VALIDATION_IGNORED')
                 return { ack: 'OK', outcome: 'CARD_VALIDATION_IGNORED' };
-            if (result.outcome === 'NO_SUBSCRIPTION')
-                return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
+            if (result.outcome === 'NO_SUBSCRIPTION') {
+                // HOS-2179 §5.3: a charge with no authorization may be a one-time page payment.
+                const page =
+                    result.authorizationId === null
+                        ? await routeOneTimePagePaymentNotice(
+                              { chargeId: notice.resourceId, reference: result.reference },
+                              ports
+                          )
+                        : null;
+                return { ack: 'OK', outcome: page ?? 'UNKNOWN_RESOURCE' };
+            }
             await executeConfirmedRefundsOnNotice(
                 {
                     paymentId: result.paymentId,

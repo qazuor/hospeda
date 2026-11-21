@@ -12,7 +12,15 @@
  * - `charge`: the body MUST state the amount, which is compared with what the measurement declares.
  * - `zero-charge`: an exact match on method, path and body (a cancel or a pause); it charges nothing.
  * - `refund`: money going OUT; the body MUST state the amount. Never added to the charged total.
- * - `non-money`: creates something that cannot charge (a customer, a card token, a plan).
+ * - `non-money`: creates something that cannot charge (a customer, a card token, a plan), or a
+ *   PENDING preapproval with no card token and no plan (`preapproval.create-pending`, owner decision
+ *   2026-11-18): it charges nothing until a person authorizes it on the checkout, and the battery
+ *   cancels it in the same run (`preapproval.cancel`, the exact body `{status: 'cancelled'}`).
+ *   A creation that carries `card_token_id`, `status` or `preapproval_plan_id`, another currency
+ *   than ARS or an amount outside {@link PENDING_AMOUNTS_MINOR} never matches it and falls to the
+ *   `charge` rule, which needs a declared maximum charge. The engine also tracks it like a money
+ *   write (derived key recorded before it leaves, id recorded as it answers), allows ONE per
+ *   measurement, and aborts the run if any it created was not cancelled.
  *
  * Every rule also fixes the SHAPE of the body: an exact allowlist of keys, nested keys included, so a
  * charge cannot carry a `preapproval_plan_id`, a held `capture`, a free period or `installments: 12`.
@@ -20,14 +28,25 @@
  * the write guard allows it only on an id THIS RUN created: in production a measurement must never
  * be able to cancel, re-price or refund a real customer's object.
  *
- * Amount shapes, as the adapter sends them and as measured against the live API (EX-41, EX-30, EX-58):
- * Payments and Preapproval bodies carry amounts as numbers in PESOS; the Orders API carries them as
- * strings in pesos under `total_amount` and `transactions.payments[].amount` (plural `transactions`),
- * and its refund under `transactions[].amount`.
+ * Amount shapes, as the adapter sends them and as measured against the live API: Payments and
+ * Preapproval bodies carry amounts as numbers in PESOS. The Orders API rules (`orders.create`,
+ * `orders.refund`) were retired with the one-time order path (HOS-2179 T-7, owner decision
+ * 2026-11-20): an Orders write is now unlisted, and `MONEY_ROUTE` still names the route, so it is
+ * refused as a money write.
  *
  * @module battery/watch-operations
  */
-import { type WatchGuardCode, WatchGuardError, type WatchRequest } from './types';
+import {
+    FAKE_AMOUNT_CEILING_MINOR,
+    FAKE_AMOUNT_FLOOR_MINOR,
+    FAKE_CURRENCY
+} from '../fake/fake-rules';
+import {
+    type WatchGuardCode,
+    WatchGuardError,
+    type WatchRequest,
+    type WatchSettings
+} from './types';
 
 /** What an allowed operation does with money. */
 export type WatchOperationKind = 'charge' | 'zero-charge' | 'refund' | 'non-money';
@@ -60,8 +79,8 @@ interface Rule {
     readonly kind: WatchOperationKind;
     /** The EXACT keys the body may carry. */
     readonly shape?: Shape;
-    /** Values that are pinned to what the adapter sends. */
-    readonly pins?: (body: Body) => boolean;
+    /** Values that are pinned to what the adapter sends (and, for some, to the deployment's settings). */
+    readonly pins?: (body: Body, settings: WatchSettings) => boolean;
     /** Whether the body fits the rule beyond its keys (exact-match rules). */
     readonly accepts?: (body: Body) => boolean;
     /** The pesos amounts the body states, for `charge` and `refund`. */
@@ -106,16 +125,113 @@ function nested(body: Body, key: string): Body {
     return bodyOf(body[key]);
 }
 
-function listOf(value: unknown): readonly unknown[] {
-    return Array.isArray(value) ? value : [];
-}
-
 /** `installments`, when stated, is 1: what the adapter sends. */
 function installmentsPinned(value: unknown): boolean {
     return value === undefined || value === 1;
 }
 
+/** The rule of a pending, no-token preapproval creation. */
+export const PENDING_CREATE_RULE = 'preapproval.create-pending';
+
+/** The rule of the exact cancel of a preapproval. */
+export const PENDING_CANCEL_RULE = 'preapproval.cancel';
+
+/** One peso, in centavos: the step just outside each bound of RP3. */
+const CENTAVOS_PER_PESO = 100;
+
+/**
+ * The ONLY amounts a pending creation may state, in centavos (security review 2026-11-18): someone
+ * who opens its approval link could still authorize it before the run cancels it, so its amount is
+ * a fixed, small set. The floor (PC-2) is what every measurement uses; one peso below the floor and
+ * one peso above the ceiling are the RP3 probes the provider is expected to refuse, and the engine
+ * lets only the measurement that declares one of them send it (`WatchEntry.pendingAmountMinor`).
+ */
+export const PENDING_AMOUNTS_MINOR: ReadonlySet<number> = new Set([
+    FAKE_AMOUNT_FLOOR_MINOR,
+    FAKE_AMOUNT_FLOOR_MINOR - CENTAVOS_PER_PESO,
+    FAKE_AMOUNT_CEILING_MINOR + CENTAVOS_PER_PESO
+]);
+
+/** The only currency a pending creation may state (security review 2026-11-18). */
+export const PENDING_CURRENCY = FAKE_CURRENCY;
+
+/**
+ * The amount a pending creation's body states, in centavos.
+ *
+ * @param body - The request body
+ * @returns The amount, or `null` when the body states none or a malformed one
+ */
+export function pendingAmountMinorOf(body: unknown): number | null {
+    return minorOf(nested(bodyOf(body), 'auto_recurring').transaction_amount);
+}
+
+/** The keys a pending, no-token preapproval create carries: what the adapter's `authorize` sends. */
+const PENDING_PREAPPROVAL_KEYS = [
+    'reason',
+    'external_reference',
+    'payer_email',
+    'back_url',
+    'auto_recurring'
+] as const;
+
+/** The `auto_recurring` keys it must carry (`start_date` is the one optional one). */
+const PENDING_RECURRING_KEYS = [
+    'frequency',
+    'frequency_type',
+    'transaction_amount',
+    'currency_id'
+] as const;
+
 const RULES: readonly Rule[] = [
+    {
+        // Owner decision 2026-11-18: a preapproval created WITHOUT a card token is pending and
+        // cannot charge until a person authorizes it on the provider's page, which nobody is
+        // given; the measurement cancels it in the same run. It is the subscription path
+        // production uses, so it is NOT money-moving. The exact shape excludes `card_token_id`,
+        // `status` and `preapproval_plan_id`: any of them falls to `preapproval.create`, a charge.
+        // Its currency is pinned to ARS and its amount to PENDING_AMOUNTS_MINOR (security review
+        // 2026-11-18); anything else falls to `preapproval.create` too.
+        rule: PENDING_CREATE_RULE,
+        method: 'POST',
+        path: /^\/preapproval$/,
+        kind: 'non-money',
+        creates: true,
+        shape: {
+            reason: true,
+            external_reference: true,
+            payer_email: true,
+            back_url: true,
+            auto_recurring: {
+                frequency: true,
+                frequency_type: true,
+                transaction_amount: true,
+                currency_id: true,
+                start_date: true
+            }
+        },
+        pins: (body, settings) => {
+            const recurring = nested(body, 'auto_recurring');
+            const amount = pendingAmountMinorOf(body);
+            return (
+                // Review of #4538 (L2): back_url and payer_email are OURS, never a measurement's.
+                settings.returnUrl !== undefined &&
+                body.back_url === settings.returnUrl &&
+                settings.payerEmail !== undefined &&
+                body.payer_email === settings.payerEmail &&
+                recurring.frequency_type === 'months' &&
+                recurring.currency_id === PENDING_CURRENCY &&
+                amount !== null &&
+                PENDING_AMOUNTS_MINOR.has(amount)
+            );
+        },
+        accepts: (body) => {
+            const recurring = nested(body, 'auto_recurring');
+            return (
+                exactKeys(body, PENDING_PREAPPROVAL_KEYS) &&
+                PENDING_RECURRING_KEYS.every((key) => recurring[key] !== undefined)
+            );
+        }
+    },
     {
         rule: 'preapproval.create',
         method: 'POST',
@@ -161,6 +277,16 @@ const RULES: readonly Rule[] = [
         amounts: (body) => [nested(body, 'auto_recurring').transaction_amount]
     },
     {
+        // A cancel stops charges and never makes one; the write guard still allows it only on an
+        // object THIS RUN created. Listed as non-money so a `mutates` measurement can cancel the
+        // pending preapproval it created (owner decision 2026-11-18). A pause stays below.
+        rule: PENDING_CANCEL_RULE,
+        method: 'PUT',
+        path: new RegExp(`^/preapproval/(${ID})$`),
+        kind: 'non-money',
+        accepts: (body) => exactKeys(body, ['status']) && body.status === 'cancelled'
+    },
+    {
         rule: 'preapproval.cancel-or-pause',
         method: 'PUT',
         path: new RegExp(`^/preapproval/(${ID})$`),
@@ -194,51 +320,6 @@ const RULES: readonly Rule[] = [
         kind: 'refund',
         shape: { amount: true },
         amounts: (body) => [body.amount]
-    },
-    {
-        rule: 'orders.create',
-        method: 'POST',
-        path: /^\/v1\/orders$/,
-        kind: 'charge',
-        creates: true,
-        stampsReference: true,
-        shape: {
-            type: true,
-            external_reference: true,
-            total_amount: true,
-            processing_mode: true,
-            payer: { email: true },
-            transactions: {
-                payments: [
-                    {
-                        amount: true,
-                        payment_method: { id: true, type: true, token: true, installments: true }
-                    }
-                ]
-            }
-        },
-        pins: (body) => {
-            const payments = listOf(nested(body, 'transactions').payments);
-            return (
-                (body.type === undefined || body.type === 'online') &&
-                (body.processing_mode === undefined || body.processing_mode === 'automatic') &&
-                payments.every((payment) =>
-                    installmentsPinned(nested(bodyOf(payment), 'payment_method').installments)
-                )
-            );
-        },
-        amounts: (body) => {
-            const payments = listOf(nested(body, 'transactions').payments);
-            return [body.total_amount, ...payments.map((payment) => bodyOf(payment).amount)];
-        }
-    },
-    {
-        rule: 'orders.refund',
-        method: 'POST',
-        path: new RegExp(`^/v1/orders/(${ID})/refund$`),
-        kind: 'refund',
-        shape: { transactions: [{ id: true, amount: true }] },
-        amounts: (body) => listOf(body.transactions).map((entry) => bodyOf(entry).amount)
     },
     {
         rule: 'customers.create',
@@ -283,7 +364,7 @@ function minorOf(value: unknown): number | null {
 }
 
 /**
- * What the body states, in minor units. `charge` amounts that appear more than once (an order's
+ * What the body states, in minor units. `charge` amounts that appear more than once (a
  * total and its payment) must agree; `refund` amounts (one per refunded transaction) are summed.
  *
  * @throws {WatchGuardError} `CHARGE_MISMATCH` for an amount that is not a plain number, or
@@ -317,20 +398,23 @@ function statedMinorOf(args: { readonly rule: Rule; readonly body: Body }): numb
  *
  * @param args.request - The request
  * @param args.pathname - The normalized pathname
+ * @param args.settings - The deployment's payer email and return URL (a pending creation's pins)
  * @returns The operation, or `null`: the request must then be refused
  * @throws {WatchGuardError} `CHARGE_MISMATCH` when the body states a malformed or ambiguous amount
  */
 export function classifyOperation(args: {
     readonly request: WatchRequest;
     readonly pathname: string;
+    readonly settings?: WatchSettings;
 }): WatchOperation | null {
+    const settings = args.settings ?? {};
     const body = bodyOf(args.request.body);
     for (const rule of RULES) {
         if (rule.method !== args.request.method) continue;
         const match = rule.path.exec(args.pathname);
         if (!match) continue;
         if (rule.shape && !conforms(args.request.body ?? {}, rule.shape)) continue;
-        if (rule.pins && !rule.pins(body)) continue;
+        if (rule.pins && !rule.pins(body, settings)) continue;
         if (rule.accepts && !rule.accepts(body)) continue;
         const stated =
             rule.kind === 'charge' || rule.kind === 'refund' ? statedMinorOf({ rule, body }) : null;
@@ -346,7 +430,11 @@ export function classifyOperation(args: {
     return null;
 }
 
-/** Routes that can move money. A non-GET to one of them is never anything but a listed operation. */
+/**
+ * Routes that can move money. A non-GET to one of them is never anything but a listed operation.
+ * The Orders route stays named although no rule lists it any more (HOS-2179 T-7): a write to it is
+ * refused and reported as a money write.
+ */
 const MONEY_ROUTE =
     /^\/(?:v1\/payments|v1\/advanced_payments|preapproval|v1\/orders|authorized_payments)(?:\/|$)/;
 

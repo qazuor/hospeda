@@ -249,6 +249,7 @@ describe('registerMcpToolHandlers', () => {
                 actor: expect.objectContaining({ id: USER_ID }),
                 mcpAuth,
                 tool: 'probe_write',
+                isWrite: true,
                 outcome: 'success',
                 target: { type: 'accommodation', id: LISTING_ID },
                 contentLength: 4
@@ -279,6 +280,7 @@ describe('registerMcpToolHandlers', () => {
                 actor: expect.objectContaining({ id: USER_ID }),
                 mcpAuth,
                 tool: 'probe_write',
+                isWrite: true,
                 outcome: 'error',
                 errorCode: 'VALIDATION_ERROR'
             });
@@ -295,14 +297,22 @@ describe('registerMcpToolHandlers', () => {
             );
         });
 
-        it('does not audit a malformed read call', async () => {
+        it('audits a malformed read call as a read error (D-12)', async () => {
             // Act
             const reply = await callTool('probe_read', { q: 42 });
 
             // Assert
             expect(reply.result?.isError).toBe(true);
             expect(readHandler).not.toHaveBeenCalled();
-            expect(mockRecord).not.toHaveBeenCalled();
+            expect(mockRecord).toHaveBeenCalledTimes(1);
+            expect(mockRecord).toHaveBeenCalledWith({
+                actor: expect.objectContaining({ id: USER_ID }),
+                mcpAuth,
+                tool: 'probe_read',
+                isWrite: false,
+                outcome: 'error',
+                errorCode: 'VALIDATION_ERROR'
+            });
         });
 
         it('answers an unknown tool with the JSON-RPC invalid-params error', async () => {

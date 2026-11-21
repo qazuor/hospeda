@@ -182,6 +182,7 @@ export function createPeriodChargesComparison(ports: {
                     ...(await compareCreditedChargeAmount({
                         subscription,
                         paymentId: payment.id,
+                        promoChargesRecorded: payment.promoChargesRecorded,
                         chargeId: charge.chargeId,
                         chargedMinor: amountMinor,
                         chargeCurrency: charge.currency,

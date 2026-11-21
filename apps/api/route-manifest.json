@@ -346,6 +346,10 @@
             "path": "/api/v1/admin/alliance/leads/:id/mark-handled"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/alliance/leads/:id/provision"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/amenities"
         },
@@ -539,11 +543,23 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/retry-provider-calls"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/settle-remainder"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {
             "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external-charge"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-refunds/proposed"
         },
         {
             "method": "GET",
@@ -880,6 +896,14 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/destinations/reviews/:id/restore"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/email-previews"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/email-previews/render"
         },
         {
             "method": "GET",
@@ -1378,6 +1402,10 @@
             "path": "/api/v1/admin/logs"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/mcp-activity"
+        },
+        {
             "method": "DELETE",
             "path": "/api/v1/admin/media"
         },
@@ -1540,6 +1568,30 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/partner-applications/:id/replace-email"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/partner-types"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-types"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-types/:id/restore"
         },
         {
             "method": "GET",
@@ -1940,6 +1992,10 @@
         {
             "method": "GET",
             "path": "/api/v1/admin/security-logs"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/session-recording/purge"
         },
         {
             "method": "GET",
@@ -2814,6 +2870,10 @@
             "path": "/api/v1/protected/ai-connections"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/ai-connections/activity"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/ai-connections/reset-review"
         },
@@ -3458,6 +3518,10 @@
             "path": "/api/v1/protected/partner-claims"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/partner-claims/check"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/partners/mine"
         },
@@ -3842,6 +3906,26 @@
             "path": "/api/v1/protected/venues/:id/menu-qr/scans"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/promotions"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/promotions"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/protected/venues/:id/promotions/:promotionId"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/protected/venues/:id/promotions/:promotionId"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/promotions/:promotionId"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/venues/:id/publish"
         },
@@ -3871,11 +3955,19 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/venues/:id/stats"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/venues/:id/support-edits"
         },
         {
             "method": "POST",
             "path": "/api/v1/protected/venues/:id/unpublish"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/whatsapp"
         },
         {
             "method": "POST",
@@ -4231,6 +4323,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/public/interactions"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/public/newsletter/resend"
         },
         {
@@ -4268,6 +4364,10 @@
         {
             "method": "POST",
             "path": "/api/v1/public/partner-logo-clicks"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/partner-types"
         },
         {
             "method": "GET",
@@ -4363,6 +4463,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/public/session-recording"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/public/stats"
         },
         {
@@ -4400,6 +4504,10 @@
         {
             "method": "GET",
             "path": "/api/v1/public/venues/:venueId/faqs"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/:venueId/promotions"
         },
         {
             "method": "GET",

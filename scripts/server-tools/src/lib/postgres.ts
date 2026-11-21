@@ -128,13 +128,29 @@ export async function getPostgresPassword(container: string): Promise<string> {
  * execution).
  */
 export async function getPostgresHostPort(container: string): Promise<string | null> {
-    const result = await docker(['port', container, '5432']);
+    return getContainerHostPort({ container, containerPort: 5432 });
+}
+
+/**
+ * Read the host `host:port` mapped to a container port (`docker port`), with
+ * `0.0.0.0` normalised to `127.0.0.1`. Shared by Postgres and Redis lookups.
+ *
+ * @returns null when the port is not published to the host.
+ */
+export async function getContainerHostPort(params: {
+    readonly container: string;
+    readonly containerPort: number;
+}): Promise<string | null> {
+    const { container, containerPort } = params;
+    const result = await docker(['port', container, String(containerPort)]);
     if (result.exitCode !== 0) {
         // `docker port` exits 0 with empty stdout when the port is not
         // published — but older docker versions exit 6 with stderr. Treat
         // both shapes as "not published" rather than crashing.
         if (result.stdout.trim().length === 0) return null;
-        throw new Error(`docker port ${container} 5432 failed: ${result.stderr.trim()}`);
+        throw new Error(
+            `docker port ${container} ${containerPort} failed: ${result.stderr.trim()}`
+        );
     }
     const firstIpv4 = result.stdout
         .split('\n')

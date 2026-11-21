@@ -201,6 +201,8 @@
             "needsPlanBanner": {
                 "title": "Você é um anfitrião em preparação",
                 "description": "Suas propriedades ficam salvas como rascunho e ainda não são visíveis no site. Para publicá-las é necessário um plano de anfitrião ativo.",
+                "trialDescription_one": "Suas propriedades ficam salvas como rascunho. Ao publicar a primeira começa seu teste grátis de {{trialDays}} dia, sem cartão.",
+                "trialDescription_other": "Suas propriedades ficam salvas como rascunho. Ao publicar a primeira começa seu teste grátis de {{trialDays}} dias, sem cartão.",
                 "cta": "Escolher plano de anfitrião"
             }
         },
@@ -280,6 +282,9 @@
                 "photosDescription_one": "Envie até {{cap}} foto do seu imóvel para atrair mais hóspedes",
                 "photosDescription_other": "Envie até {{cap}} fotos do seu imóvel para atrair mais hóspedes",
                 "photosDescriptionLoading": "Carregando seu limite de fotos…",
+                "photosDescriptionNoPlan": "Seu plano atual não inclui o envio de fotos. Escolha um plano para adicioná-las.",
+                "photosDescriptionError": "Não foi possível carregar seu limite de fotos. Tente recarregar a página.",
+                "photosPlansCta": "Ver planos",
                 "externalReputation": "Reputação externa",
                 "calendar": "Calendário",
                 "capacityPricing": "Capacidade e preço",
@@ -890,7 +895,8 @@
         "discountTypes": {
             "percentage": "Porcentagem",
             "fixed": "Valor fixo",
-            "free_night": "Noite grátis"
+            "free_night": "Noite grátis",
+            "special_offer": "Oferta diferenciada"
         },
         "lifecycleStates": {
             "active": "Ativa",
@@ -912,6 +918,10 @@
             "notFound": "Promoção não encontrada.",
             "forbidden": "Você não tem permissão para acessar esta promoção."
         },
+        "success": {
+            "created": "Promoção criada",
+            "updated": "Promoção atualizada"
+        },
         "actions": {
             "edit": "Editar",
             "delete": "Excluir",
@@ -920,6 +930,10 @@
             "cancel": "Cancelar",
             "confirmDelete": "Excluir esta promoção? Esta ação não pode ser desfeita.",
             "upgradePlan": "Ver planos"
+        },
+        "specialOffer": {
+            "label": "Descreva a vantagem",
+            "help": "Descreva o benefício em poucas palavras, por exemplo, dois drinks pelo preço de um."
         }
     },
     "dashboard": {

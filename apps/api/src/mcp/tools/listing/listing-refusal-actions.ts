@@ -16,18 +16,18 @@
  */
 
 import {
+    EDITOR_SECTION_SLUGS,
+    type PortalDestination,
+    type PortalListingVertical,
+    type PortalSectionId
+} from '@repo/portal-routes';
+import {
     ACCOMMODATION_PUBLISH_REQUIREMENTS,
     type ListingSectionId,
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
 import { z } from 'zod';
-import {
-    EDITOR_SECTION_SLUGS,
-    type PortalDestination,
-    type PortalListingVertical,
-    type PortalSectionId
-} from '../../portal/portal-routes';
 import type { ToolErrorPayload, ToolRefusalLink } from '../tool-definition';
 import { ListingToolVerticalSchema } from './listing-services';
 

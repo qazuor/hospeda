@@ -272,12 +272,28 @@
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
     },
     {
+        "table": "entity_interaction_monthly_rollups",
+        "specTable": "entity_interaction_monthly_rollups",
+        "hangsBy": "entity_type",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-2256-venue-interactions-tracking/spec.md:190"
+    },
+    {
         "table": "entity_views",
         "specTable": "entity_views",
         "hangsBy": "entity_type",
         "owner": "another record",
         "inPurged": "untouched",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806"
+    },
+    {
+        "table": "entity_interactions",
+        "specTable": "entity_interactions",
+        "hangsBy": "entity_type",
+        "owner": "another record",
+        "inPurged": "untouched",
+        "spec": ".specs/HOS-2256-venue-interactions-tracking/spec.md:107"
     },
     {
         "table": "social_audit_log",

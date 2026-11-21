@@ -111,7 +111,7 @@ async function noticesOf({
 }
 
 describe('TEST:B1:13 the closed list of measured lies', () => {
-    it('holds thirteen rows, M1 to M13, each with its three data', () => {
+    it('holds thirteen rows, M1 to M13, each with its three data (M14 retired by HOS-2179 T-7)', () => {
         expect(FAKE_LIES.map((row) => row.id)).toEqual(
             Array.from({ length: 13 }, (_, i) => `M${i + 1}`)
         );

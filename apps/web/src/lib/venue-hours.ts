@@ -177,3 +177,64 @@ export function computeOpenNowStatus(
 
     return todayEntry ? false : null;
 }
+
+/** Formats total minutes since midnight as zero-padded `HH:MM`. */
+function formatMinutesAsHhMm(minutes: number): string {
+    const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
+    const mm = String(minutes % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+}
+
+/**
+ * Detailed open status of a venue for the "open now" badge (HOS-2257).
+ *
+ * - `open`: a shift covers `now` (same rule as {@link computeOpenNowStatus}).
+ * - `opensToday`: closed now but a shift STARTS later today; `opensAt` is the
+ *   earliest such start as `HH:MM`.
+ * - `closed`: today has an entry but nothing opens later today. A venue that
+ *   only opens tomorrow is still `closed` (owner decision, HOS-2252 round 2).
+ */
+export type VenueOpenStatusDetail =
+    | { readonly status: 'open' }
+    | { readonly status: 'opensToday'; readonly opensAt: string }
+    | { readonly status: 'closed' };
+
+/**
+ * Computes the detailed open status from the `openingHours` map and a wall
+ * clock `Date` (its local getters mirror the venue's clock).
+ *
+ * Rules: `open` when {@link computeOpenNowStatus} is `true`; otherwise
+ * `opensToday` with the earliest shift start later today (overnight shifts
+ * start today, so they count); otherwise `closed`. `null` when there is no
+ * entry for today and nothing wraps into it (no badge).
+ *
+ * @param openingHours - The full week map from the API response.
+ * @param now - Wall-clock moment to evaluate. Defaults to `new Date()`.
+ * @returns The detailed status, or `null` when data is absent.
+ */
+export function computeOpenStatusDetail(
+    openingHours: Record<string, VenueOpeningHoursEntry>,
+    now: Date = new Date()
+): VenueOpenStatusDetail | null {
+    const base = computeOpenNowStatus(openingHours, now);
+    if (base === null) return null;
+    if (base) return { status: 'open' };
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const todayEntry = openingHours[getDayKey(now)];
+
+    let earliest: { minutes: number; label: string } | null = null;
+    if (todayEntry?.isOpen) {
+        for (const shift of todayEntry.shifts) {
+            const openMinutes = parseTimeToMinutes(shift.open);
+            if (openMinutes === null || openMinutes <= currentMinutes) continue;
+            if (earliest === null || openMinutes < earliest.minutes) {
+                earliest = { minutes: openMinutes, label: formatMinutesAsHhMm(openMinutes) };
+            }
+        }
+    }
+
+    return earliest === null
+        ? { status: 'closed' }
+        : { status: 'opensToday', opensAt: earliest.label };
+}

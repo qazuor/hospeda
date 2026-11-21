@@ -225,7 +225,12 @@ describe('TEST:B10:14 TEST:B10:15 protected free choice route', () => {
         const { app, fake } = purchaseApp();
         await grant(f.ownerId, fake);
         const authorize = vi.spyOn(fake, 'authorize');
-        const response = await post(app, f.ownerId, f.request());
+        // The free choice route refuses a paid-purchase body; since HOS-2179 T-6 the paid body
+        // carries no card data, so the extra field the free route rejects is named here.
+        const response = await post(app, f.ownerId, {
+            ...f.request(),
+            payment: { token: 'tok-free-choice', brand: 'visa', kind: 'credit' }
+        });
         expect(response.status).toBe(400);
         const paid = await app.request('/api/v1/protected/billing/addons/purchases', {
             method: 'POST',

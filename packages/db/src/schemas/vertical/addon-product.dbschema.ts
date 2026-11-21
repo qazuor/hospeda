@@ -84,7 +84,8 @@ export const addonProducts = pgTable(
  * Acquired addon anchored to its product and version at purchase (AC:B3:29; ESQ:8).
  * FKs identify its product, version, owner and optional complement subscription;
  * the polymorphic target has no FK. Purchase identity is unique for pending or
- * active complemented rows, including rows with a null target; order IDs are unique.
+ * active complemented rows, including rows with a null target; order IDs and payment
+ * page IDs are unique, and a payment page is stored with its expiry or not at all.
  */
 export const addonInstances = pgTable(
     'addon_instance',
@@ -118,8 +119,16 @@ export const addonInstances = pgTable(
         titleAnchorId: uuid('title_anchor_id').references(() => permanentGrantVerticals.id),
         /** pedido */
         orderRequestId: varchar('order_request_id', { length: 64 }),
-        /** id de la orden */
+        /**
+         * id de la orden. No writers since HOS-2179 T-7 retired the one-time order path: a one-time
+         * addon is paid on a payment page (`paymentPageId`). Kept in this release (expand/contract);
+         * dropped in N+1 with `uq_addon_instance_provider_order`.
+         */
         providerOrderId: varchar('provider_order_id', { length: 64 }),
+        /** The one-time payment page (HOS-2179 §7.1); a domain name, not the provider's. */
+        paymentPageId: varchar('payment_page_id', { length: 64 }),
+        /** That page's expiry; stored together with its id. */
+        paymentPageExpiresAt: timestamp('payment_page_expires_at', { withTimezone: true }),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
     },
@@ -131,6 +140,11 @@ export const addonInstances = pgTable(
         complementUnique: unique('uq_addon_instance_complement').on(t.complementSubscriptionId),
         orderRequestUnique: unique('uq_addon_instance_order_request').on(t.orderRequestId),
         providerOrderUnique: unique('uq_addon_instance_provider_order').on(t.providerOrderId),
+        paymentPageUnique: unique('uq_addon_instance_payment_page').on(t.paymentPageId),
+        paymentPagePair: check(
+            'ck_addon_instance_payment_page_pair',
+            sql`(${t.paymentPageId} IS NULL) = (${t.paymentPageExpiresAt} IS NULL)`
+        ),
         purchaseIdentity: uniqueIndex('uq_addon_instance_purchase_identity')
             .on(
                 t.ownerId,

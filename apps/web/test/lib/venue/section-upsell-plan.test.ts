@@ -87,7 +87,25 @@ describe('venue section upsell plan resolution', () => {
             itemPhotos: 'Plan completo',
             translations: 'Plan completo',
             dailySpecials: 'Plan completo',
-            venueEvents: 'Plan completo'
+            venueEvents: 'Plan completo',
+            promotions: 'Plan completo',
+            videos: 'Plan completo'
         });
+    });
+
+    it('resolves the videos trait to null while no plan grants it, and to its plan once one does (HOS-2258)', () => {
+        const t = (key: string, fallback?: string) => fallback ?? key;
+        const none = resolveVenueUpsellPlans({
+            plans: [plan('basic', 'Básico', [menuEntitlement])],
+            t
+        });
+        const some = resolveVenueUpsellPlans({
+            plans: [plan('basic', 'Básico', []), plan('pro', 'Pro', ['can_embed_video'])],
+            t
+        });
+
+        expect(none.videos).toBeNull();
+        expect(none.promotions).toBeNull();
+        expect(some.videos).toBe('Pro');
     });
 });

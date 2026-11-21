@@ -13,6 +13,11 @@ const OVERCHARGED = 'IMPORTE_COBRADO_DE_MAS' as const satisfies ReconciliationMa
 export async function compareCreditedChargeAmount(input: {
     readonly subscription: SelectSubscription;
     readonly paymentId: string;
+    /**
+     * `payment.promo_charges_recorded` (HOS-2352): false for a payment credited
+     * before the per-charge promo ledger existed, whose promo history is unknown.
+     */
+    readonly promoChargesRecorded: boolean;
     readonly chargeId: string;
     readonly chargedMinor: number;
     readonly chargeCurrency: string;
@@ -45,6 +50,10 @@ export async function compareCreditedChargeAmount(input: {
     const differenceMinor = input.chargedMinor - expected.amountMinor;
     if (differenceMinor === 0) return [];
     if (differenceMinor < 0) {
+        // HOS-2352 owner decision: a payment credited before the ledger has no record
+        // of which promos priced it, so it is never reported as undercharged. The
+        // overcharge check below still applies to it.
+        if (!input.promoChargesRecorded) return [];
         await input.ports.dailySummary.addUndercharge({
             subscriptionId: input.subscription.id,
             paymentId: input.paymentId,

@@ -61,6 +61,7 @@ describe('the authorize route refuses a wrong amount before it reads the provide
         expect(check).toBeGreaterThan(-1);
         expect(check).toBeLessThan(read);
         expect(read).toBeLessThan(write);
-        expect(block).toContain('NO_MONEY_MEASUREMENTS');
+        // A sum of 0 is a valid authorization (F5, 2026-11-18): the route must not refuse it outright.
+        expect(block).not.toContain('NO_MONEY_MEASUREMENTS');
     });
 });

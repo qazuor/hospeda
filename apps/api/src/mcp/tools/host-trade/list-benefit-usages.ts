@@ -20,14 +20,17 @@
  * accept.
  *
  * The counterpart's name: on the host side, the provider's name (the ref the
- * host lists carry); on the provider side, the host's display name ONLY when
- * that host is in the provider's linked-hosts selector (a confirmed pair), the
- * one place the portal names hosts to a provider. Otherwise `null`, as the
- * provider panel shows "el anfitrión".
+ * host lists carry); on the provider side, the host's display name, which
+ * `listForProvider` attaches to HOST-DECLARED rows (HOS-2376, owner decision:
+ * the provider must see which host to confirm or reject; a display name only,
+ * never an e-mail). On a provider-declared row the host is named only when in
+ * the provider's linked-hosts selector (a confirmed pair), as before: naming it
+ * otherwise would be an e-mail-to-name oracle. Else `null`.
  *
  * Notes and provider names are third-party text, wrapped as untrusted (C-5).
  */
 
+import { buildPortalUrl } from '@repo/portal-routes';
 import {
     type HostTradeBenefitUsage,
     HostTradeUsageDeclaredByEnum,
@@ -37,7 +40,6 @@ import {
 import { type Actor, isUsageCounterpart } from '@repo/service-core';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
 import { excerptText, MCP_LIST_MAX_PAGE_SIZE } from '../response-budget';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
@@ -354,7 +356,7 @@ async function readProviderSide({
     if (listed.error) {
         return { error: listed.error };
     }
-    const hostNames = new Map(
+    const linkedHostNames = new Map(
         (linked.data?.hosts ?? []).map((host) => [host.id, host.displayName])
     );
     return {
@@ -364,7 +366,10 @@ async function readProviderSide({
                 listed.data.items.map((row) => {
                     const providerName = wrapName(trade.name, 'provider_listing', noteChars);
                     const hostName = wrapName(
-                        hostNames.get(row.hostUserId),
+                        // Host-declared rows carry the host's own name; a
+                        // provider-declared row names the host only when the pair
+                        // is linked (the selector), as before.
+                        row.hostDisplayName ?? linkedHostNames.get(row.hostUserId),
                         'host_name',
                         noteChars
                     );
@@ -394,7 +399,11 @@ export const listBenefitUsagesTool = defineTool({
     description: `Lists the benefit usages of the connected Hospeda user, newest first, paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}). A usage records that a host used a directory provider's benefit: one party declares it and the OTHER party confirms or rejects it. side "host" = the user used a provider's benefit; side "provider" = a host used the benefit of the user's own directory listing (only if the user is a provider, see "isProvider"); "both" (default) lists the two. Filters: status, and pendingMine: true for only the usages waiting for the user's answer. Per usage: id, side, declaredBy, status, provider, counterpartName, servicedAt, createdAt, note, rejectionNote, textTruncated (a note or name was cut) and canAnswer (true when the user may confirm or reject it now with confirm_benefit_usage or reject_benefit_usage). A REJECTED usage can be put back to PENDING with undo_benefit_rejection, only by whoever rejected it. If "omittedItems" is present, that many usages of this page did not fit: ask again with a smaller pageSize. Usages cannot be declared from here: send the user to the provider's declareUsageUrl (search_providers) or to providerPanelUrl. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: ListBenefitUsagesInputSchema,
     isWrite: false,
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListBenefitUsagesResult>> => {
+    handler: async ({
+        actor,
+        input,
+        context
+    }): Promise<ToolHandlerResult<ListBenefitUsagesResult>> => {
         const { side, status, pendingMine, page, pageSize } = input;
         // One side pages through the service; "both" reads each side from its
         // first row up to this page's end, then merges and cuts.
@@ -439,12 +448,14 @@ export const listBenefitUsagesTool = defineTool({
             ...(isProvider === undefined ? {} : { isProvider }),
             benefitUsagesUrl: buildPortalUrl({
                 destination: { kind: 'benefitUsages' },
+                locale: context.locale,
                 siteUrl
             }),
             ...(isProvider
                 ? {
                       providerPanelUrl: buildPortalUrl({
                           destination: { kind: 'providerPanel' },
+                          locale: context.locale,
                           siteUrl
                       })
                   }

@@ -48,6 +48,9 @@ import type {
     UserProtected,
     UserPublic,
     UserStatsResponse,
+    VenueListingStats,
+    VenuePromotionListOutput,
+    VenueStatsWindow,
     VerticalEnum
 } from '@repo/schemas';
 import {
@@ -56,6 +59,7 @@ import {
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnManualInstallmentsResponse,
     type OwnSubscriptionsResponseSchema,
+    type PartnerClaimCheckResponseSchema,
     type PartnerClaimResponseSchema,
     type SelfSubscriptionPausePreviewResponseSchema,
     type SelfSubscriptionPauseResponseSchema,
@@ -1234,6 +1238,12 @@ export interface BenefitUsage {
      * is the recoverable direction.
      */
     readonly hasReview: boolean;
+    /**
+     * The host's display name, on the PROVIDER's own list only (HOS-2376,
+     * `GET /mine/usages`). Never an e-mail. Absent on the host's lists and
+     * `null` when the host did not resolve.
+     */
+    readonly hostDisplayName?: string | null;
 }
 
 /** Response envelope shared by the three usage transitions. */
@@ -1971,7 +1981,15 @@ export interface MyPartner {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /** Catalog type id (HOS-2336). `null` until the release-N backfill reaches the row. */
+    readonly typeId?: string | null;
+    /** The hydrated catalog type row (HOS-2336), as `PartnerTypeRefSchema` serializes it. */
+    readonly partnerType?: {
+        readonly id: string;
+        readonly slug: string;
+        readonly nameI18n: Readonly<Record<string, string | undefined>>;
+        readonly lifecycleState: string;
+    } | null;
     readonly logoUrl: string | null;
     readonly description: string | null;
     readonly websiteUrl: string | null;
@@ -2128,6 +2146,27 @@ export const partnersApi = {
     }): Promise<ApiResult<z.infer<typeof PartnerClaimResponseSchema>>> {
         return apiClient.postProtected({
             path: '/api/v1/protected/partner-claims',
+            body: { partnerId, secret }
+        });
+    },
+
+    /**
+     * Asks whether the signed-in account is the account of a claim link's mailbox
+     * (HOS-2353). Answers a boolean only; never the mailbox itself.
+     *
+     * @param params - Partner UUID and the secret from the URL fragment.
+     * @returns `{ emailMatches }`, or an error (404 invalid link, 409 already
+     * claimed, 401 unauthenticated).
+     */
+    checkClaim({
+        partnerId,
+        secret
+    }: {
+        readonly partnerId: string;
+        readonly secret: string;
+    }): Promise<ApiResult<z.infer<typeof PartnerClaimCheckResponseSchema>>> {
+        return apiClient.postProtected({
+            path: '/api/v1/protected/partner-claims/check',
             body: { partnerId, secret }
         });
     },
@@ -2688,6 +2727,25 @@ export const listingAnalyticsApi = {
             path: `${PROTECTED}/venues/${venueId}/menu-qr/scans`,
             params: { window: windowParam }
         });
+    },
+
+    /**
+     * Get advanced daily views and click metrics for one venue listing (HOS-2261).
+     *
+     * @param params - Venue id and requested rolling window.
+     * @returns The venue metrics response or the protected route error.
+     */
+    getVenueStats({
+        id,
+        window: windowParam
+    }: {
+        readonly id: string;
+        readonly window: VenueStatsWindow;
+    }): Promise<ApiResult<VenueListingStats>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/venues/${id}/stats`,
+            params: { window: windowParam }
+        });
     }
 };
 
@@ -2699,6 +2757,35 @@ interface AccommodationContactResponse {
     readonly phone?: string;
     readonly website?: string;
 }
+
+/**
+ * Protected venue reads for signed-in VISITORS (not the owner surfaces).
+ *
+ * @see GET /api/v1/protected/venues/:id/whatsapp (HOS-2256)
+ */
+export const protectedVenuesApi = {
+    /**
+     * Get the WhatsApp number of a published venue whose owner chose to share it
+     * with signed-in users. The public page is session-blind and edge-cached, so
+     * in that mode the number is never in the HTML and is fetched here instead.
+     *
+     * @param params - Venue ID + optional SSR cookie header.
+     * @returns `{ number }`, `number` being `null` when the venue shares none.
+     */
+    getWhatsApp({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        /** SSR-only: raw `Cookie` header so the request carries the session. */
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly number: string | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/venues/${id}/whatsapp`,
+            cookieHeader
+        });
+    }
+};
 
 /** Accommodation lifecycle state values used as query filter */
 
@@ -4152,7 +4239,9 @@ type CollectionBookmarkEntityType =
     | 'DESTINATION'
     | 'ATTRACTION'
     | 'EVENT'
-    | 'POST';
+    | 'POST'
+    | 'VENUE'
+    | 'EXPERIENCE';
 
 /** Single bookmark row returned inside a collection detail response */
 export interface CollectionBookmarkRow {
@@ -4507,6 +4596,61 @@ export const ownerPromotionApi = {
      */
     remove({ id }: { readonly id: string }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
+    }
+};
+
+/** Venue-scoped promotion endpoints (HOS-2271). */
+export const venuePromotionsApi = {
+    /** List every owner-managed promotion for a venue with quota metadata. */
+    list({ id }: { readonly id: string }): Promise<ApiResult<VenuePromotionListOutput>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/venues/${id}/promotions` });
+    },
+    /** Create a venue promotion. */
+    create({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/venues/${id}/promotions`, body });
+    },
+    /** Replace a venue promotion. */
+    update({
+        id,
+        promotionId,
+        body
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.put({ path: `${PROTECTED}/venues/${id}/promotions/${promotionId}`, body });
+    },
+    /** Change a venue promotion's lifecycle state. */
+    patch({
+        id,
+        promotionId,
+        body
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/venues/${id}/promotions/${promotionId}`,
+            body
+        });
+    },
+    /** Soft-delete a venue promotion. */
+    remove({
+        id,
+        promotionId
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({ path: `${PROTECTED}/venues/${id}/promotions/${promotionId}` });
     }
 };
 

@@ -17,7 +17,8 @@ import { TagsFields } from '../../common/tags.schema.js';
 import {
     PriceRangeEnumSchema,
     VenueEntryKindEnumSchema,
-    VenueTypeEnumSchema
+    VenueTypeEnumSchema,
+    VenueWhatsappVisibilityEnumSchema
 } from '../../enums/index.js';
 import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { VenueFaqSchema } from './subtypes/venue.faq.schema.js';
@@ -101,6 +102,13 @@ export const VenueSchema = z.object({
      * empty even there.
      */
     entryKind: VenueEntryKindEnumSchema.nullish(),
+
+    /**
+     * Who may see the WhatsApp button (HOS-2256 section 7.8). Nullish: `null`
+     * is "the owner has not decided" and reads as hidden, the behaviour of
+     * every listing before this setting existed.
+     */
+    whatsappVisibility: VenueWhatsappVisibilityEnumSchema.nullish(),
 
     /** Short localized note about the entry (e.g. "free until 1am"). */
     entryNoteI18n: VenueNightNoteSchema.nullish(),

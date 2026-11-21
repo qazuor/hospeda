@@ -201,6 +201,8 @@
             "needsPlanBanner": {
                 "title": "Sos anfitrión en preparación",
                 "description": "Tus propiedades quedan guardadas como borrador y todavía no son visibles en el sitio. Para publicarlas necesitás un plan de anfitrión activo.",
+                "trialDescription_one": "Tus propiedades quedan guardadas como borrador. Al publicar la primera arranca tu prueba gratis de {{trialDays}} día, sin tarjeta.",
+                "trialDescription_other": "Tus propiedades quedan guardadas como borrador. Al publicar la primera arranca tu prueba gratis de {{trialDays}} días, sin tarjeta.",
                 "cta": "Elegir plan de anfitrión"
             }
         },
@@ -280,6 +282,9 @@
                 "photosDescription_one": "Subí hasta {{cap}} foto de tu propiedad para atraer más huéspedes",
                 "photosDescription_other": "Subí hasta {{cap}} fotos de tu propiedad para atraer más huéspedes",
                 "photosDescriptionLoading": "Cargando tu límite de fotos…",
+                "photosDescriptionNoPlan": "Tu plan actual no incluye subir fotos. Elegí un plan para agregarlas.",
+                "photosDescriptionError": "No pudimos cargar tu límite de fotos. Probá recargar la página.",
+                "photosPlansCta": "Ver planes",
                 "externalReputation": "Reputación externa",
                 "calendar": "Calendario",
                 "capacityPricing": "Capacidad y precio",
@@ -890,7 +895,8 @@
         "discountTypes": {
             "percentage": "Porcentaje",
             "fixed": "Monto fijo",
-            "free_night": "Noche gratis"
+            "free_night": "Noche gratis",
+            "special_offer": "Oferta especial"
         },
         "lifecycleStates": {
             "active": "Activa",
@@ -912,6 +918,10 @@
             "notFound": "No se encontró la promoción.",
             "forbidden": "No tenés permiso para acceder a esta promoción."
         },
+        "success": {
+            "created": "Promoción creada",
+            "updated": "Promoción actualizada"
+        },
         "actions": {
             "edit": "Editar",
             "delete": "Eliminar",
@@ -920,6 +930,10 @@
             "cancel": "Cancelar",
             "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer.",
             "upgradePlan": "Ver planes"
+        },
+        "specialOffer": {
+            "label": "Describí el beneficio",
+            "help": "Contá el beneficio en pocas palabras, por ejemplo 2x1 en tragos."
         }
     },
     "dashboard": {

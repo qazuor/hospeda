@@ -12,6 +12,7 @@ import {
     payments,
     plans,
     planVersions,
+    promoRedemptionCharges,
     promoRedemptions,
     subscriptions
 } from '@repo/db';
@@ -129,6 +130,9 @@ export async function creditPayment(
                     .update(payments)
                     .set({
                         status: 'SUCCEEDED',
+                        // HOS-2352: this writer records the promo ledger below, in the
+                        // same transaction, so the payment's promo history is known.
+                        promoChargesRecorded: true,
                         version: payment.version + 1,
                         updatedAt: ports.clock.now()
                     })
@@ -257,6 +261,22 @@ export async function creditPayment(
                                 )
                             )
                             .returning({ remainingCharges: promoRedemptions.remainingCharges });
+                        // HOS-2352: the per-charge ledger row, written with the decrement so
+                        // the reconciliation can rebuild the counter at any past charge.
+                        if (remaining)
+                            await tx
+                                .insert(promoRedemptionCharges)
+                                .values({
+                                    redemptionId: redemption.id,
+                                    paymentId: payment.id,
+                                    chargeCreatedAt: input.chargeCreatedAt
+                                })
+                                .onConflictDoNothing({
+                                    target: [
+                                        promoRedemptionCharges.redemptionId,
+                                        promoRedemptionCharges.paymentId
+                                    ]
+                                });
                         if (remaining?.remainingCharges === 0)
                             exhaustedPromos.push({
                                 subscriptionId: subscription.id,

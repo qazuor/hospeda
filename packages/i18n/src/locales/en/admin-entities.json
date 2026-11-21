@@ -112,6 +112,12 @@
             "plural": "Security log",
             "description": "Authentication events: login failures, lockouts, and access denied"
         },
+        "mcpActivity": {
+            "singular": "Assistant use",
+            "plural": "AI assistant activity",
+            "description": "Every AI assistant (MCP) call made on behalf of a user",
+            "coverageNote": "Calls stopped by the rate limit, calls that fail before reaching the tool and calls whose record is lost while saving are not recorded."
+        },
         "hostTrade": {
             "singular": "Trade",
             "plural": "Trades",
@@ -338,6 +344,16 @@
             "actor": "Actor",
             "target": "Target",
             "message": "Detail"
+        },
+        "mcpActivity": {
+            "loggedAt": "Date/Time",
+            "user": "User",
+            "tool": "Tool",
+            "access": "Type",
+            "outcome": "Result",
+            "errorCode": "Error code",
+            "client": "Assistant",
+            "target": "Target"
         }
     },
     "actions": {
@@ -998,7 +1014,9 @@
             "actions": "Actions"
         },
         "actions": {
-            "handle": "Handle"
+            "handle": "Handle",
+            "createProvider": "Create provider",
+            "creatingProvider": "Creating..."
         },
         "handle": {
             "title": "Handle lead",
@@ -1012,12 +1030,32 @@
             "submit": "Confirm",
             "submitting": "Saving...",
             "successApproved": "Lead approved successfully.",
-            "successRejected": "Lead rejected."
+            "successRejected": "Lead rejected.",
+            "categoriesLabel": "Chosen categories",
+            "categoryState": {
+                "inactive": "Inactive",
+                "deleted": "Deleted",
+                "missing": "Does not exist"
+            },
+            "categoriesNote": "If no category is active, the provider is not created.",
+            "catalogUnavailable": "Could not load the catalog",
+            "warningNoActiveCategory": "Lead approved, but the provider was not created: none of its categories is active. Reactivate a category and press \"Create provider\".",
+            "warningLegacy": "Lead approved, but the provider was not created: the lead lacks the data to create it automatically."
         },
         "pagination": {
             "prev": "Previous",
             "next": "Next",
             "info": "Page {{page}} of {{totalPages}} · {{total}} leads"
+        },
+        "badge": {
+            "providerNotCreated": "Provider not created"
+        },
+        "provision": {
+            "success": "Provider created",
+            "alreadyExists": "The provider already exists",
+            "error": "Could not create the provider. Please try again.",
+            "stillNoCategory": "The provider is still not created: none of the chosen categories is active. Reactivate one and try again.",
+            "missingData": "The provider cannot be created automatically: the lead is missing data."
         }
     },
     "hostTrade": {
@@ -1297,12 +1335,7 @@
         "error": "Could not load applications. Reload the page.",
         "previous": "Previous",
         "next": "Next",
-        "page": "Page {page} of {totalPages}",
-        "types": {
-            "business": "Business",
-            "ngo": "Nonprofit organization",
-            "institution": "Institution"
-        }
+        "page": "Page {page} of {totalPages}"
     },
     "partnerEmptyPresence": {
         "title": "Empty the Partner presence",

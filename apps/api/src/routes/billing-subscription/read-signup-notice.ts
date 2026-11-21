@@ -13,10 +13,15 @@ import {
     SignupNoticeResponseSchema,
     VerticalEnumSchema
 } from '@repo/schemas';
-import { readBillingChoice, readResumableCheckoutUrl, ServiceError } from '@repo/service-core';
+import {
+    readBillingChoice,
+    readOwnSubscriptions,
+    readResumableCheckoutUrl,
+    ServiceError
+} from '@repo/service-core';
 import { isTrialRunning } from '../../services/listing-notices/listing-notices.builder';
 import { getClock } from '../../utils/clock';
-import { readOwnSubscriptions } from './read-own-subscriptions';
+import { readPendingPromo } from './read-pending-promo';
 import {
     touristVipCancelledOnActivation,
     touristVipCancelledOnReturn
@@ -41,15 +46,24 @@ export async function readSignupNotice(input: {
     if (!vertical.success) {
         throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Unknown billing option vertical');
     }
-    const plan = await readPlan({ billingOptionId: input.billingOptionId });
+    const listPlan = await readPlan({ billingOptionId: input.billingOptionId });
     const now = getClock().clock.now();
     const commitment = await liveCommitmentReader.findLiveCommitment({
         userId: input.userId,
         vertical: vertical.data
     });
+    // HOS-2382: a pending subscription on this very option already carries its
+    // promo, so the confirmation shows what the provider will charge.
+    const samePendingPromo =
+        commitment &&
+        commitment.subscription.status === 'PENDING_AUTHORIZATION' &&
+        commitment.subscription.billingOptionId === input.billingOptionId
+            ? await readPendingPromo({ subscription: commitment.subscription })
+            : null;
+    const plan = samePendingPromo ? { ...listPlan, promo: samePendingPromo } : listPlan;
     // Reuse the own-subscriptions read, which verifies successor.succeedsId and
     // exposes the same deadline already shown in My Subscriptions.
-    const ownSubscriptions = await readOwnSubscriptions(input.userId);
+    const ownSubscriptions = await readOwnSubscriptions({ userId: input.userId, now });
     const successor = ownSubscriptions.find(
         (row) => row.vertical === vertical.data && row.succession?.checkoutOpen
     );
@@ -64,9 +78,13 @@ export async function readSignupNotice(input: {
         commitment.providerLink &&
         commitment.idempotencyKey?.completedAt
     ) {
+        const attemptPlan = await readPlan({
+            billingOptionId: commitment.subscription.billingOptionId
+        });
+        const attemptPromo = await readPendingPromo({ subscription: commitment.subscription });
         pendingAttempt = {
             subscriptionId: commitment.subscription.id,
-            plan: await readPlan({ billingOptionId: commitment.subscription.billingOptionId }),
+            plan: attemptPromo ? { ...attemptPlan, promo: attemptPromo } : attemptPlan,
             checkoutUrl: readResumableCheckoutUrl({ commitment }),
             takenBy: 'LIVE_PRINCIPAL',
             authorizationWindowEndsAt:

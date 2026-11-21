@@ -230,3 +230,38 @@ describe('TEST:1710:3 AC:1710:2 refunded amount variants', () => {
         expect(rejectedSnapshot.declineReason).toBe('cc_rejected_other_reason');
     });
 });
+
+describe('HOS-2516 a refund the provider refused is read as rejected, and only then', () => {
+    it('reads rejected and cancelled refunds as rejected, and anything else as not rejected', async () => {
+        // Arrange
+        const payment = clonePayment();
+        Object.assign(payment, {
+            status: 'approved',
+            transaction_amount: 100,
+            transaction_amount_refunded: 10,
+            refunds: [
+                { id: 'ok', amount: 10, status: 'approved' },
+                { id: 'refused', amount: 10, status: 'rejected' },
+                { id: 'withdrawn', amount: 10, status: 'cancelled' },
+                { id: 'pending', amount: 10, status: 'in_process' }
+            ]
+        });
+
+        // Act
+        const { snapshot } = await adapterFor(payment).adapter.readCharge({ chargeId: 'x' });
+
+        // Assert
+        expect(
+            snapshot.refunds.map(({ refundId, accredited, rejected }) => ({
+                refundId,
+                accredited,
+                rejected: rejected === true
+            }))
+        ).toEqual([
+            { refundId: 'ok', accredited: true, rejected: false },
+            { refundId: 'refused', accredited: false, rejected: true },
+            { refundId: 'withdrawn', accredited: false, rejected: true },
+            { refundId: 'pending', accredited: false, rejected: false }
+        ]);
+    });
+});

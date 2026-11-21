@@ -2,17 +2,24 @@
 import type { WatchRunRecord, WatchShapeBaseline } from '../src/battery/index';
 
 export interface MemoryRunStore {
-    readonly started: { readonly runId: string; readonly consume: string | undefined }[];
+    readonly started: {
+        readonly runId: string;
+        readonly consume: string | undefined;
+        readonly day?: string;
+    }[];
     /** Provider ids recorded the moment a write answered, before the run closed. */
     readonly progress: {
         readonly runId: string;
         readonly measurementId: string;
         readonly providerIds?: readonly string[];
         readonly writeKeys?: readonly string[];
+        readonly ledger?: { readonly charged: number; readonly refunded: number };
     }[];
     readonly finished: { readonly runId: string; readonly run: WatchRunRecord }[];
     /** The run that consumed the authorization, if any. */
     consumedBy(): string | undefined;
+    /** The runs an authorization of 0 covered, one per market day (B1). */
+    dailyRuns(): readonly string[];
     readonly ports: {
         readonly readBaseline: () => Promise<WatchShapeBaseline | null>;
         readonly startRun: (args: {
@@ -22,13 +29,19 @@ export interface MemoryRunStore {
                 readonly month: string;
                 readonly maxChargeMinor: number;
                 readonly accountId: string;
+                readonly day: string;
             };
-        }) => Promise<{ runId: string; authorizationConsumed: boolean }>;
+        }) => Promise<{
+            runId: string;
+            authorizationConsumed: boolean;
+            authorizationMiss?: 'DAY_TAKEN' | 'CHANGED';
+        }>;
         readonly recordProgress: (args: {
             readonly runId: string;
             readonly measurementId: string;
             readonly providerIds?: readonly string[];
             readonly writeKeys?: readonly string[];
+            readonly ledger: { readonly charged: number; readonly refunded: number };
         }) => Promise<void>;
         readonly finishRun: (args: { runId: string; run: WatchRunRecord }) => Promise<void>;
     };
@@ -58,11 +71,14 @@ export function memoryRunStore(
     const finished: { runId: string; run: WatchRunRecord }[] = [];
     const progress: MemoryRunStore['progress'] = [];
     let consumed: string | undefined = args.consumedBy;
+    const dailyRuns: string[] = [];
+    let lastRunDay: string | undefined;
     return {
         started,
         progress,
         finished,
         consumedBy: () => consumed,
+        dailyRuns: () => dailyRuns,
         last: () => {
             const entry = finished[finished.length - 1];
             if (!entry) throw new Error('no run was finished');
@@ -72,7 +88,40 @@ export function memoryRunStore(
             readBaseline: async () => args.baseline ?? null,
             startRun: async ({ consumeAuthorization }) => {
                 const runId = crypto.randomUUID();
-                started.push({ runId, consume: consumeAuthorization?.month });
+                started.push({
+                    runId,
+                    consume: consumeAuthorization?.month,
+                    ...(consumeAuthorization ? { day: consumeAuthorization.day } : {})
+                });
+                const matchesStored =
+                    consumeAuthorization !== undefined &&
+                    (args.stored === undefined ||
+                        (args.stored.month === consumeAuthorization.month &&
+                            args.stored.maxChargeMinor === consumeAuthorization.maxChargeMinor &&
+                            args.stored.accountId === consumeAuthorization.accountId));
+                // B1: an authorization of 0 is never consumed; it is taken once per market day.
+                if (consumeAuthorization?.maxChargeMinor === 0) {
+                    const taken =
+                        matchesStored &&
+                        consumed === undefined &&
+                        consumeAuthorization.day.slice(0, 7) === consumeAuthorization.month &&
+                        (lastRunDay === undefined || lastRunDay < consumeAuthorization.day);
+                    if (taken) {
+                        lastRunDay = consumeAuthorization.day;
+                        dailyRuns.push(runId);
+                    }
+                    if (taken) return { runId, authorizationConsumed: true };
+                    // As the database: only the same day against the unchanged one is DAY_TAKEN.
+                    const sameDay =
+                        matchesStored &&
+                        consumed === undefined &&
+                        lastRunDay === consumeAuthorization.day;
+                    return {
+                        runId,
+                        authorizationConsumed: false,
+                        authorizationMiss: sameDay ? 'DAY_TAKEN' : 'CHANGED'
+                    };
+                }
                 let authorizationConsumed = false;
                 if (
                     consumeAuthorization !== undefined &&

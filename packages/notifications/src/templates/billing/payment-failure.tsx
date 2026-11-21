@@ -1,9 +1,9 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import type { Major } from '../../types/money.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 import { formatMajorCurrency } from '../utils/index.js';
 
 /**

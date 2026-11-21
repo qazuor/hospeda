@@ -85,6 +85,12 @@ export interface AlertsListProps {
      * `SearchHistoryListProps.userId`).
      */
     readonly userId: string;
+    /**
+     * HOS-2437: names of the catalog plans that carry the price-alerts entitlement, read by
+     * the SSR page (the catalog reader is server-only). Empty when the catalog could not be
+     * read: the plan gate then names no plan.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -95,8 +101,13 @@ export interface AlertsListProps {
  * Lists the authenticated user's active price-alert subscriptions and
  * provides a per-item delete action with inline confirmation.
  */
-export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps) {
-    const { t } = createTranslations(locale);
+export function AlertsList({
+    locale,
+    apiUrl,
+    userId: _userId,
+    gatePlanNames = []
+}: AlertsListProps) {
+    const { t, tPlural } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -279,10 +290,17 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
                     {t('account.alerts.upgrade.title', 'Alertas de precio')}
                 </p>
                 <p className={styles.alertsUpgradeMessage}>
-                    {t(
-                        'account.alerts.upgrade.message',
-                        'Las alertas de precio están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
-                    )}
+                    {gatePlanNames.length > 0
+                        ? tPlural('account.alerts.upgrade.message', gatePlanNames.length, {
+                              plans: new Intl.ListFormat(locale, {
+                                  style: 'long',
+                                  type: 'conjunction'
+                              }).format(gatePlanNames)
+                          })
+                        : t(
+                              'account.alerts.upgrade.messageNoPlans',
+                              'Las alertas de precio no están incluidas en tu plan actual. Actualizá tu plan para acceder.'
+                          )}
                 </p>
                 <a
                     href={upgradeHref}

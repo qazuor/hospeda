@@ -77,7 +77,8 @@ const marks = [
         paymentCount: 2,
         totalAmount: [{ currency: 'ARS', amountMinor: 25000 }],
         unknownAmountCount: 0,
-        eventLink: { markId: '11111111-1111-4111-8111-111111111111' }
+        eventLink: { markId: '11111111-1111-4111-8111-111111111111' },
+        liftRequiresRefund: false
     },
     {
         markId: '44444444-4444-4444-8444-444444444444',
@@ -92,7 +93,8 @@ const marks = [
         paymentCount: 0,
         totalAmount: [],
         unknownAmountCount: 0,
-        eventLink: null
+        eventLink: null,
+        liftRequiresRefund: false
     },
     {
         markId: '55555555-5555-4555-8555-555555555555',
@@ -107,7 +109,8 @@ const marks = [
         paymentCount: 1,
         totalAmount: [{ currency: 'ARS', amountMinor: 12500 }],
         unknownAmountCount: 0,
-        eventLink: null
+        eventLink: null,
+        liftRequiresRefund: false
     },
     {
         markId: '77777777-7777-4777-8777-777777777777',
@@ -122,7 +125,8 @@ const marks = [
         paymentCount: 0,
         totalAmount: [],
         unknownAmountCount: 0,
-        eventLink: null
+        eventLink: null,
+        liftRequiresRefund: false
     }
 ];
 

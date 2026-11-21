@@ -10,7 +10,7 @@
  * - A partner created by an admin is payable without a review round-trip.
  */
 
-import type { PartnerModel } from '@repo/db';
+import type { PartnerModel, PartnerTypeModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
     PartnerContentReviewStateEnum,
@@ -28,6 +28,32 @@ import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
+
+// HOS-2336: create/update run in one transaction (the type's FOR SHARE lock).
+// Run the work inline with a fake tx instead of opening a real one.
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (fn: (ctx: unknown) => Promise<unknown>, baseCtx?: { hookState?: object }) =>
+            fn({ ...baseCtx, tx: {}, hookState: baseCtx?.hookState ?? {} })
+    )
+}));
+
+/** Partner type catalog stub (HOS-2336): one ACTIVE type, no hydration rows. */
+const BUSINESS_TYPE_ID = getMockId('attraction', 'partner-type-business');
+const partnerTypeModelStub = () =>
+    ({
+        findByIdForShare: vi.fn(async (id: string) =>
+            id === BUSINESS_TYPE_ID
+                ? {
+                      id,
+                      slug: 'business',
+                      lifecycleState: LifecycleStatusEnum.ACTIVE,
+                      deletedAt: null
+                  }
+                : null
+        ),
+        findRefsByIds: vi.fn(async () => new Map())
+    }) as unknown as PartnerTypeModel;
 
 const PARTNER_ID = getMockId('attraction', 'partner-review-1');
 
@@ -69,7 +95,8 @@ function buildService(modelOverrides: Record<string, unknown> = {}) {
     const model = { ...createModelMock(), ...modelOverrides };
     const service = new PartnerService({
         logger: mockLogger,
-        model: model as unknown as PartnerModel
+        model: model as unknown as PartnerModel,
+        partnerTypeModel: partnerTypeModelStub()
     });
     return { service, model };
 }
@@ -369,7 +396,7 @@ describe('PartnerService.create — a hand-created partner is payable immediatel
         const result = await service.create(adminActor, {
             slug: 'acme-turismo',
             name: 'Acme Turismo',
-            type: PartnerTypeEnum.BUSINESS,
+            typeId: BUSINESS_TYPE_ID,
             lifecycleState: LifecycleStatusEnum.DRAFT
         });
 

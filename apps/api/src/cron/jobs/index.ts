@@ -45,6 +45,7 @@ export { listingRemoteDeletionRetryJob } from './listing-remote-deletion-retry.j
 export { listingRetentionPassJob } from './listing-retention-pass.job.js';
 export { manualGraceExpiryJob } from './manual-grace-expiry.job.js';
 export { manualInstallmentOpenJob } from './manual-installment-open.job.js';
+export { mcpAuditRetentionJob } from './mcp-audit-retention.job.js';
 export { mediaOrphanCleanupJob } from './media-orphan-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
 export { notificationLogPurgeJob } from './notification-log-purge.job.js';
@@ -58,6 +59,7 @@ export { providerNotificationRetentionJob } from './provider-notification-retent
 export { providerWatchBatteryJob } from './provider-watch-battery.job.js';
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
+export { sessionRecordingRetentionJob } from './session-recording-retention.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
 export { subscriptionGraceReminderJob } from './subscription-grace-reminder.job.js';
 export { subscriptionPauseEndJob } from './subscription-pause-end.job.js';
@@ -67,4 +69,5 @@ export { subscriptionServiceEndJob } from './subscription-service-end.job.js';
 export { subscriptionSuccessionReevaluationJob } from './subscription-succession-reevaluation.job.js';
 export { subscriptionWindowExpiryJob } from './subscription-window-expiry.job.js';
 export { trialMachineExpiryJob } from './trial-machine-expiry.job.js';
+export { venueEventsPastCleanupJob } from './venue-events-past-cleanup.job.js';
 export { viewMonthlyRollupJob } from './view-monthly-rollup.job.js';

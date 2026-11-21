@@ -23,6 +23,7 @@
  * `takeDeliveries` hands over the notices the fake sent and that are due.
  */
 import type { Clock } from '@repo/billing-verticals-contract';
+import type { z } from 'zod';
 import type { CapabilitySupportMap, PaymentCapability } from '../provider/capabilities';
 import type {
     AuthorizationRef,
@@ -36,18 +37,15 @@ import type {
     ChargeListResult,
     ChargeRef,
     ChargeResult,
+    ChargeSearchInput,
+    ChargeSearchResult,
     ChargeSnapshot,
-    Money,
     MutationAcknowledgement,
     NoticeDelivery,
-    OneTimeChargeInput,
-    OneTimeChargeResult,
-    OrderRef,
-    OrderRefundInput,
-    OrderRefundResult,
-    OrderSearchInput,
-    OrderSearchResult,
-    OrderSnapshot,
+    OneTimePaymentInput,
+    OneTimePaymentResult,
+    PaymentPageRef,
+    PaymentPageSnapshot,
     PaymentProvider,
     ProviderNotice,
     RefundInput,
@@ -61,10 +59,10 @@ import {
     ChangeAmountInputSchema,
     ChargeInputSchema,
     ChargeRefSchema,
+    ChargeSearchInputSchema,
     NoticeDeliverySchema,
-    OrderRefSchema,
-    OrderRefundInputSchema,
-    OrderSearchInputSchema,
+    oneTimePaymentInputSchemaFor,
+    PaymentPageRefSchema,
     parseProviderInput,
     RefundInputSchema
 } from '../provider/schemas';
@@ -79,10 +77,13 @@ import {
     type FakePaymentProviderOptions,
     parseFakeOptions
 } from './fake-options';
-import { chargeFakeOrder } from './fake-order-charge';
-import { FakeOrders } from './fake-orders';
 import { FakeOutbox } from './fake-outbox';
 import * as pauseCycle from './fake-pause-cycle';
+import {
+    FakePaymentPages,
+    type PagePaymentOutcome,
+    type StoredPaymentPage
+} from './fake-payment-pages';
 import * as refundOutcome from './fake-refund-outcome';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import { searchStoredAuthorizations } from './fake-search';
@@ -105,13 +106,13 @@ export class FakePaymentProvider implements PaymentProvider {
 
     private readonly outbox: FakeOutbox;
     private readonly ledger: FakeLedger;
-    private readonly orders: FakeOrders;
+    private readonly pages: FakePaymentPages;
+    private readonly oneTimePaymentSchema: z.ZodType<OneTimePaymentInput>;
     private readonly clock: Clock;
     private readonly honest: Set<string>;
     private readonly simulating: ReadonlySet<string>;
     private readonly without: ReadonlySet<string>;
     private readonly usedPaymentTokens = new Set<string>();
-    private readonly declinedOrderPaymentTokens = new Set<string>();
 
     /**
      * @param options.clock - The clock every read and every delay runs on
@@ -139,7 +140,10 @@ export class FakePaymentProvider implements PaymentProvider {
             outOfOrder: this.simulating.has('noticesOutOfOrder')
         });
         this.ledger = new FakeLedger({ outbox: this.outbox, idNamespace: parsed.idNamespace });
-        this.orders = new FakeOrders({ ledger: this.ledger, clock: this.clock });
+        this.pages = new FakePaymentPages({ ledger: this.ledger, clock: this.clock });
+        this.oneTimePaymentSchema = oneTimePaymentInputSchemaFor({
+            allowLocalHttpReturnUrl: parsed.allowLocalHttpReturnUrl
+        });
     }
 
     /** Restore a measured lie after an honest fixture setup, without replacing its ledger. */
@@ -413,16 +417,56 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
-    /** Creates one order under its stable key (AC:B6:12, MP:EX-41/EX-30). */
-    async chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult> {
-        return chargeFakeOrder({
-            input,
-            orders: this.orders,
-            simulating: this.simulating,
-            usedPaymentTokens: this.usedPaymentTokens,
-            declinedPaymentTokens: this.declinedOrderPaymentTokens
-        });
+    /** Capability 2 · open a one-time payment page (HOS-2179); moves no money, no key dedupe (EX-61). */
+    async requestOneTimePayment(input: OneTimePaymentInput): Promise<OneTimePaymentResult> {
+        const ref = { schema: this.oneTimePaymentSchema, input, capability: 'charge' } as const;
+        const { value } = parseProviderInput(ref);
+        const run = () => this.pages.create(value);
+        return throughNetwork({ simulating: this.simulating, capability: 'charge', run });
     }
+
+    /** Capability 5 · close a payment page by moving its expiry to now. */
+    async closeOneTimePayment(input: PaymentPageRef): Promise<MutationAcknowledgement> {
+        const ref = { schema: PaymentPageRefSchema, input, capability: 'cancel' } as const;
+        const { value } = parseProviderInput(ref);
+        const run = () => this.pages.close(value);
+        return throughNetwork({ simulating: this.simulating, capability: 'cancel', run });
+    }
+
+    /** Capability 7 · read a payment page by id; no expired flag (RP19). */
+    async readOneTimePayment(input: PaymentPageRef): Promise<ProviderRead<PaymentPageSnapshot>> {
+        const ref = { schema: PaymentPageRefSchema, input, capability: 'read' } as const;
+        const { value } = parseProviderInput(ref);
+        this.catchUp();
+        return stampProviderRead({ snapshot: this.pages.read(value), clock: this.clock });
+    }
+
+    /** Capability 7 · charge ids by exact reference inside an inclusive creation range. */
+    async searchCharges(input: ChargeSearchInput): Promise<ChargeSearchResult> {
+        const ref = { schema: ChargeSearchInputSchema, input, capability: 'read' } as const;
+        const { value } = parseProviderInput(ref);
+        this.catchUp();
+        return this.pages.searchCharges(value);
+    }
+
+    /**
+     * Test handle (not a PaymentProvider method): the customer pays on the page,
+     * approved or rejected. RP18: an open page takes every payment; RP19: an
+     * expired one refuses and creates nothing. Sends the charge notice.
+     */
+    payOnPage(input: {
+        readonly paymentPageId: string;
+        readonly outcome: 'approved' | 'rejected';
+    }): PagePaymentOutcome {
+        this.catchUp();
+        return this.pages.pay(input);
+    }
+
+    /** Test and server handle: the stored page, with its amount, copy and return link. */
+    paymentPage(input: PaymentPageRef): Readonly<StoredPaymentPage> {
+        return this.pages.stored(input);
+    }
+
     /**
      * Capability 3 · change the amount of a live authorization. A paused one
      * refuses it (RP6); the new amount keeps the range (RP3, RP4). No notice
@@ -579,20 +623,6 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
-    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-    async refundOrder(input: OrderRefundInput): Promise<OrderRefundResult> {
-        const { value } = parseProviderInput({
-            schema: OrderRefundInputSchema,
-            input,
-            capability: 'refund'
-        });
-        return throughNetwork({
-            simulating: this.simulating,
-            capability: 'refund',
-            run: () => this.orders.refund(value)
-        });
-    }
-
     /** Capability 7 · read an authorization by id. */
     async readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>> {
         const { value } = parseProviderInput({
@@ -662,43 +692,6 @@ export class FakePaymentProvider implements PaymentProvider {
             this.ledger.chargeOrThrow({ id: value.chargeId, capability: 'read' }).snapshot
         );
         return stampProviderRead({ snapshot, clock: this.clock });
-    }
-
-    /** Capability 7 · read a one-time order by id. */
-    async readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>> {
-        const ref = { schema: OrderRefSchema, input, capability: 'read' } as const;
-        const { orderId } = parseProviderInput(ref).value;
-        this.catchUp();
-        return stampProviderRead({ snapshot: this.orders.read({ orderId }), clock: this.clock });
-    }
-
-    /** Capability 7 · search orders by exact reference inside a bounded range (RP13, EX-57). */
-    async searchOrders(input: OrderSearchInput): Promise<OrderSearchResult> {
-        const ref = { schema: OrderSearchInputSchema, input, capability: 'read' } as const;
-        const { value } = parseProviderInput(ref);
-        this.catchUp();
-        return this.orders.search(value);
-    }
-
-    /** Test handle (not a PaymentProvider method): the customer places an order, paid or not. */
-    placeOrder(input: {
-        readonly reference: string;
-        readonly createdAt?: string;
-        readonly paid: boolean;
-        readonly amount?: Money;
-    }): { readonly orderId: string } {
-        return this.orders.place(input);
-    }
-
-    /** Test handle for declined one-time payments (AC:B6:12, MP:EX-30). */
-    readonly declineOrderPayments = (input: { readonly paymentToken: string }): void => {
-        this.declinedOrderPaymentTokens.add(input.paymentToken);
-    };
-    /** Test handle counting orders and approved payments (AC:B6:12, MP:EX-41). */
-    readonly ordersFor = (input: { readonly reference: string }) => this.orders.countFor(input);
-    /** Test handle: holds a refund as pending (AC:B6:8, TRANS:B:RF3). */
-    holdOrderRefund(input: { readonly orderId: string; readonly refundId: string }): void {
-        this.orders.hold(input);
     }
 
     /** Capability 8 · decode one of the fake's own deliveries, in either format, into a notice. */

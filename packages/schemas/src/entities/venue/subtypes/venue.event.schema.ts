@@ -31,8 +31,9 @@
  * entries today; making that one entry is a follow-up, and it is an added enum
  * value plus a branch, not a rewrite.
  *
- * No price, no capacity, no ticketing either. An agenda entry announces that
- * something happens; selling a seat for it is a different product.
+ * No price and no capacity. The only ticketing it knows is an optional external
+ * link (`ticketUrl`, HOS-2255) to wherever the venue already sells entries;
+ * selling a seat here is a different product.
  *
  * @module entities/venue/subtypes/venue.event.schema
  */
@@ -52,6 +53,16 @@ import { z } from 'zod';
  * exists next to it.
  */
 export const VENUE_EVENTS_MAX_ENTRIES = 30;
+
+/**
+ * Hard ceiling on the WHOLE document, past entries included (HOS-2254).
+ *
+ * `VENUE_EVENTS_MAX_ENTRIES` counts only entries that are not past, and the
+ * schema cannot tell them apart (it does not know the time). This bound keeps
+ * one PUT from writing an unbounded number of rows and stays well below the
+ * page size the agenda read uses, so a stored agenda can always be read back.
+ */
+export const VENUE_EVENTS_MAX_TOTAL_ENTRIES = 100;
 
 // ----------------------------------------------------------------------------
 // Recurrence
@@ -110,6 +121,36 @@ export const VenueEventDateSchema = z
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'zodError.venue.eventDate.invalid' });
 
 // ----------------------------------------------------------------------------
+// Ticket link
+// ----------------------------------------------------------------------------
+
+/**
+ * The external «Comprar entrada» link of an event (HOS-2255).
+ *
+ * Any `https` URL, no allow-list of ticket sellers (owner decision, 2026-11-16),
+ * and no credentials in it. `http` is refused on purpose: the link is rendered
+ * on a public page and opened by strangers. Rendering still goes through
+ * `resolveSafeExternalUrl()` on the web side; this schema is the write-side half.
+ */
+export const VenueEventTicketUrlSchema = z
+    .string()
+    .trim()
+    .max(2048, { message: 'zodError.venue.event.ticketUrl.max' })
+    .url({ message: 'zodError.venue.event.ticketUrl.invalid' })
+    .startsWith('https://', { message: 'zodError.venue.event.ticketUrl.httpsRequired' })
+    .refine(
+        (value) => {
+            try {
+                const parsed = new URL(value);
+                return parsed.username === '' && parsed.password === '';
+            } catch {
+                return false;
+            }
+        },
+        { message: 'zodError.venue.event.ticketUrl.credentials' }
+    );
+
+// ----------------------------------------------------------------------------
 // Stored row
 // ----------------------------------------------------------------------------
 
@@ -147,6 +188,8 @@ export const VenueEventSchema = z.object({
     startTime: VenueEventTimeSchema,
     /** When it ends, or `null` when the venue does not say. */
     endTime: VenueEventTimeSchema.nullable(),
+    /** External link to buy tickets, or `null` when the event has none (HOS-2255). */
+    ticketUrl: VenueEventTicketUrlSchema.nullable(),
     /** Whether the entry is currently shown. */
     isActive: z.boolean(),
     /** Position within the agenda. */
@@ -245,11 +288,17 @@ function refineRecurrenceShape(
 /**
  * One agenda entry as the owner submits it.
  *
- * Carries NO id. The agenda is written as a whole document (see
- * {@link VenueEventsReplacePayloadSchema}), so an id supplied by the
- * client would be an id the server has to either trust or ignore — and trusting
- * one is how a caller writes an event into somebody else's listing. Same
- * reasoning `venueMenuItemInputSchema` states.
+ * Carries an OPTIONAL `id` (HOS-2291). The agenda is still written as a whole
+ * document, but an entry that already exists must keep its identity across a
+ * save, because other features point at it (clicks, reminders, guest lists, a
+ * featured slot). An entry WITH an `id` updates that stored event; an entry
+ * WITHOUT one is created; a stored event the document no longer mentions is
+ * deleted.
+ *
+ * The id is never trusted: the service only honours one that belongs to THIS
+ * venue's stored agenda. An id of another venue, or one that does not exist,
+ * answers 404 and writes nothing, so a caller cannot update or re-parent an
+ * event that is not theirs.
  *
  * ## Why an end time earlier than the start is accepted
  *
@@ -262,6 +311,12 @@ function refineRecurrenceShape(
  */
 export const VenueEventInputSchema = z
     .object({
+        /**
+         * Id of the stored event this entry updates. Omit it for a new entry.
+         * See the note above: an id that is not one of this venue's own events
+         * is refused by the service, never created or re-parented.
+         */
+        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).optional(),
         /** What the event is called. */
         title: z
             .string()
@@ -284,6 +339,15 @@ export const VenueEventInputSchema = z
         startTime: VenueEventTimeSchema,
         /** When it ends, or omitted when the venue does not say. */
         endTime: VenueEventTimeSchema.nullish(),
+        /**
+         * Optional external ticket link (HOS-2255). Omitted, `null` and `''` all
+         * mean "none" (the service stores `NULL`); `''` is turned into `null`
+         * here so the empty input of the editor is not an `https` violation.
+         */
+        ticketUrl: z.preprocess(
+            (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+            VenueEventTicketUrlSchema.nullish()
+        ),
         /** Whether the entry is shown. Defaults to `true`. */
         isActive: z.boolean().default(true)
     })
@@ -306,11 +370,12 @@ export const VenueEventsReplacePayloadSchema = z.object({
      * means "take the agenda down" — a venue that stopped doing live music
      * needs a way to say so.
      */
+    // The 30-entry ceiling applies to entries that are NOT past (HOS-2254): the
+    // service enforces it with `partitionVenueEvents`, because the schema does
+    // not know the time. This bound is only the hard cap on the whole document.
     events: z
         .array(VenueEventInputSchema)
-        .max(VENUE_EVENTS_MAX_ENTRIES, {
-            message: 'zodError.venue.events.max'
-        })
+        .max(VENUE_EVENTS_MAX_TOTAL_ENTRIES, { message: 'zodError.venue.events.maxTotal' })
         .default([])
 });
 export type VenueEventsReplacePayload = z.input<typeof VenueEventsReplacePayloadSchema>;
@@ -344,3 +409,20 @@ export const VenueEventsOutputSchema = z.object({
     events: z.array(VenueEventPublicSchema)
 });
 export type VenueEventsOutput = z.infer<typeof VenueEventsOutputSchema>;
+
+/**
+ * An agenda entry as its OWNER reads it (HOS-2254): the public shape plus the
+ * calculated `isPast`. Never persisted; computed by `isVenueEventPast` on the
+ * server so the editor does not depend on the browser's clock.
+ */
+export const VenueEventOwnerSchema = VenueEventPublicSchema.extend({
+    isPast: z.boolean()
+});
+export type VenueEventOwner = z.infer<typeof VenueEventOwnerSchema>;
+
+/** What the owner's agenda read and write answer with. */
+export const VenueEventsOwnerOutputSchema = z.object({
+    /** The agenda, ordered by `displayOrder`, past entries included. */
+    events: z.array(VenueEventOwnerSchema)
+});
+export type VenueEventsOwnerOutput = z.infer<typeof VenueEventsOwnerOutputSchema>;

@@ -1481,6 +1481,23 @@ export const HOSPEDA_ENV_VARS = [
             'Poné `staging` en el contenedor de staging y `prod` en el de prod. El slug del check es `<prefijo>-<job>` (por ejemplo `staging-billing-reconciliation-sweep`), que separa los dos entornos dentro del único proyecto gratuito. Opcional (HOS-1742): sin prefijo el ping es un no-op, así staging nunca alimenta los checks de prod.'
     },
     {
+        name: 'HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL',
+        description:
+            'Payer email of the pending preapprovals the provider watch battery creates and cancels (HOS-1512)',
+        descriptionEs:
+            'Email del pagador de las preaprobaciones pendientes que la batería de vigilancia del proveedor crea y cancela (HOS-1512)',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'provider-watch@hospeda.com.ar',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Mercado Pago refuses a preapproval without `payer_email`. The battery creates one pending preapproval per measurement, with no card token, and cancels it in the same run, so nobody is ever charged. On staging use the email of the sandbox TEST buyer; on prod use an inbox Hospeda owns. Optional: without it the creating measurements fail (and the run alerts) while the read-only measurements still run.',
+        howToObtainEs:
+            'Mercado Pago rechaza una preaprobación sin `payer_email`. La batería crea una preaprobación pendiente por medición, sin token de tarjeta, y la cancela en la misma corrida, así que nunca se le cobra a nadie. En staging usá el email del comprador de PRUEBA del sandbox; en prod, una casilla de Hospeda. Opcional: sin ella fallan las mediciones que crean (y la corrida alerta), mientras las de solo lectura siguen corriendo.'
+    },
+    {
         name: 'HOSPEDA_SENTRY_ENVIRONMENT',
         description: 'Sentry environment tag (production | staging)',
         descriptionEs:
@@ -1567,6 +1584,24 @@ export const HOSPEDA_ENV_VARS = [
             'Create a view-only Umami user, then mint an API key for it (format `umami_...`). Never use an admin user key: this key only reads stats.',
         howToObtainEs:
             'Creá un usuario view-only en Umami y generá una API key para él (formato `umami_...`). Nunca uses la key de un admin: esta key solo lee stats.'
+    },
+    {
+        name: 'HOSPEDA_UMAMI_DATABASE_URL',
+        description:
+            'Postgres connection string of the Umami database, for a dedicated role that can only SELECT and DELETE on session_replay, heatmap_event and session_replay_saved. Used only by the recording retention purge (HOS-2347). Unset: the manual purge answers 503, and the daily purge skips with a warning (a failed run in production)',
+        descriptionEs:
+            'Connection string de Postgres de la base de Umami, para un rol dedicado que solo puede hacer SELECT y DELETE sobre session_replay, heatmap_event y session_replay_saved. Lo usa solo la purga de retencion de grabaciones (HOS-2347). Sin setear: la purga manual responde 503 y el cron diario se saltea con un aviso (falla la corrida en produccion)',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'postgresql://umami_retention:CHANGE_ME@umami-db:5432/umami',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain:
+            'Create the restricted role on the Umami Postgres with the SQL in docs/analytics/session-replay-privacy.md (CONNECT, USAGE on public, SELECT and DELETE on session_replay, heatmap_event and session_replay_saved only), then build the URL with that role. This is the ONLY Umami write path the api holds; it never holds a Umami API write key.',
+        howToObtainEs:
+            'Crea el rol restringido en el Postgres de Umami con el SQL de docs/analytics/session-replay-privacy.md (CONNECT, USAGE sobre public, SELECT y DELETE solo sobre session_replay, heatmap_event y session_replay_saved) y arma la URL con ese rol. Es el UNICO camino de escritura a Umami que tiene la api; nunca guarda una API key de escritura de Umami.'
     },
     {
         name: 'SENTRY_AUTH_TOKEN',

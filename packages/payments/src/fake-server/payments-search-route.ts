@@ -23,6 +23,20 @@ export async function handlePaymentsSearchRoute(args: {
         )
     ).flat(2);
     const reference = args.url.searchParams.get('external_reference');
+    // A one-time payment page's charges hang from no authorization (HOS-2179 §7.3).
+    if (reference !== null) {
+        const known = new Set(charges.map(({ chargeId }) => chargeId));
+        const found = await args.provider.searchCharges({
+            reference,
+            createdFrom: '1970-01-01T00:00:00.000Z',
+            createdTo: '9999-12-31T23:59:59.999Z'
+        });
+        for (const chargeId of found.chargeIds.filter((id) => !known.has(id)))
+            charges.push({
+                chargeId,
+                snapshot: (await args.provider.readCharge({ chargeId })).snapshot
+            });
+    }
     const filtered = charges.filter(
         ({ snapshot }) => reference === null || snapshot.reference === reference
     );

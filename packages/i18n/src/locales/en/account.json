@@ -140,6 +140,7 @@
         "preferences": "Preferences",
         "newsletter": "Newsletter",
         "whatsNew": "What's new",
+        "help": "Help",
         "aiAssistants": "AI assistants",
         "favorites": "Favorites",
         "searchHistory": "Search history",
@@ -238,6 +239,12 @@
         "uploading": "Subiendo…"
     },
     "editProfile": {
+        "security": {
+            "description": "Change the password you use to sign in to Hospeda.",
+            "changePasswordLink": "Change password",
+            "noPasswordDescription": "You sign in with Google or Facebook and do not have a password yet. Add one to also sign in with your email.",
+            "addPasswordLink": "Add password"
+        },
         "fields": {
             "displayName": "Display name",
             "firstName": "First name",
@@ -409,6 +416,126 @@
             "link": "See my AI assistants",
             "revoked": "We disconnected your AI assistants.",
             "failed": "We could not save your answer. Please try again."
+        },
+        "activity": {
+            "title": "Your assistants’ history",
+            "description": "Everything your AI assistants did with your account.",
+            "intro": "We keep what your assistants did for the last 12 months. We never keep the text of your messages or replies.",
+            "historyLink": "See what your assistants did",
+            "backLink": "Back to my assistants",
+            "unnamedAssistant": "Unnamed assistant",
+            "unknownTool": "Another assistant action",
+            "loading": "Loading the history...",
+            "emptyFiltered": "No actions match this filter.",
+            "filters": {
+                "title": "Filter the history",
+                "includeReads": "Also show view-only actions",
+                "includeReadsHint": "Actions where the assistant only looked at data, without changing anything.",
+                "outcome": "Result",
+                "outcomeAll": "All results"
+            },
+            "outcomes": {
+                "success": "Done",
+                "denied": "Refused",
+                "error": "Failed"
+            },
+            "result": {
+                "done": "Done",
+                "deniedByHospeda": "Refused by Hospeda",
+                "declinedByYou": "Declined by you",
+                "error": "Error",
+                "unknown": "Unknown result"
+            },
+            "steps": {
+                "preview": "Preview",
+                "commit": "Confirmed"
+            },
+            "target": {
+                "conversation": "Guest inquiry",
+                "unavailable": "Listing no longer available",
+                "conversationAria": "Open the guest inquiry of “{{action}}”, {{date}}"
+            },
+            "empty": {
+                "title": "Your assistants haven’t done anything yet",
+                "description": "When you connect an AI assistant and ask it for something, you’ll see here what it did with your account.",
+                "cta": "How to connect an assistant"
+            },
+            "errors": {
+                "loadFailed": "We couldn’t load the history. Please try again.",
+                "retry": "Try again",
+                "signedOut": "Your session ended. Sign in again to see the history.",
+                "signIn": "Sign in"
+            },
+            "pagination": {
+                "label": "History pages",
+                "prev": "Previous",
+                "next": "Next"
+            },
+            "tools": {
+                "list_my_listings": "View your listings",
+                "get_owner_summary": "View your account summary",
+                "get_my_plan": "View your plan and subscription",
+                "get_listing": "View a listing",
+                "update_listing_basic": "Edit a listing’s details",
+                "get_listing_amenities": "View a listing’s amenities",
+                "update_listing_amenities": "Edit a listing’s amenities",
+                "set_listing_publication": "Publish or pause a listing",
+                "list_amenities_and_features": "View the amenities catalog",
+                "get_listing_stats": "View a listing’s statistics",
+                "get_listing_creation_guide": "Check how to create a listing",
+                "create_listing": "Create a draft listing",
+                "list_reviews": "View your listings’ reviews",
+                "get_help": "View Hospeda’s help",
+                "list_inquiries": "View your inquiries",
+                "get_inquiry": "View an inquiry",
+                "reply_inquiry": "Reply to an inquiry",
+                "search_providers": "Search for providers",
+                "list_benefit_usages": "View your benefit uses",
+                "confirm_benefit_usage": "Confirm a benefit use",
+                "reject_benefit_usage": "Reject a benefit use",
+                "undo_benefit_rejection": "Undo a benefit use rejection"
+            },
+            "errorCodes": {
+                "VALIDATION_ERROR": "The assistant sent data that wasn’t valid.",
+                "NOT_FOUND": "We couldn’t find what the assistant was looking for.",
+                "UNAUTHORIZED": "The assistant needed to sign in again.",
+                "FORBIDDEN": "Your account doesn’t allow that action.",
+                "EMAIL_NOT_VERIFIED": "You need to verify your email first.",
+                "INTERNAL_ERROR": "We had a problem on our side.",
+                "ALREADY_EXISTS": "That already existed.",
+                "INVALID_PAGINATION_PARAMS": "The assistant asked for a page that doesn’t exist.",
+                "NOT_IMPLEMENTED": "That action isn’t available yet.",
+                "SERVICE_UNAVAILABLE": "The service wasn’t available at that moment.",
+                "CONFIGURATION_ERROR": "We had a configuration problem.",
+                "QUOTA_EXCEEDED": "You reached your plan’s limit.",
+                "LIMIT_REACHED": "You reached your plan’s limit.",
+                "ENTITLEMENT_REQUIRED": "Your plan doesn’t include that feature.",
+                "PROVIDER_ERROR": "An external service answered with an error.",
+                "PROVIDER_RATE_LIMITED": "An external service was overloaded.",
+                "PROVIDER_TIMEOUT": "An external service took too long to answer.",
+                "PLAN_DISABLED": "That plan is no longer available.",
+                "GONE": "That no longer exists.",
+                "PASSWORD_INCORRECT": "The password wasn’t correct.",
+                "HOST_NOT_FOUND": "We couldn’t find that host.",
+                "USAGE_PENDING_EXISTS": "There was already a pending benefit use.",
+                "DECLARATION_BLOCKED": "That use couldn’t be recorded for now.",
+                "DECLARATION_SUSPENDED": "Recording uses was suspended.",
+                "NO_CONFIRMED_USAGE": "There was no confirmed use for that.",
+                "SELF_REVIEW_FORBIDDEN": "You can’t review your own listing.",
+                "SELF_USAGE_FORBIDDEN": "You can’t record a use with yourself.",
+                "REVIEW_ALREADY_EXISTS": "That review already existed.",
+                "PROVIDER_REVOKED": "That provider is no longer in the directory.",
+                "NEW_PAID_SIGNUPS_FROZEN": "New paid plan signups are paused for now.",
+                "ADDON_PURCHASES_FROZEN": "Add-on purchases are paused for now.",
+                "FAQ_DRAFT_NOT_ELIGIBLE": "That question doesn’t allow a draft answer.",
+                "CATEGORY_IN_USE": "That category is still in use.",
+                "PARTNER_TYPE_IN_USE": "That partner type is still in use.",
+                "RATE_LIMIT_EXCEEDED": "The assistant made too many requests in a row.",
+                "LISTING_INCOMPLETE": "The listing is missing required information.",
+                "UNEXPECTED": "An unexpected error happened.",
+                "USER_DECLINED": "You didn’t confirm it.",
+                "USER_CANCELLED": "You cancelled the confirmation."
+            }
         }
     },
     "subscription": {
@@ -639,7 +766,9 @@
                 "PAUSED": "Paused",
                 "SUSPENDED": "Suspended",
                 "CANCEL_SCHEDULED": "Cancellation requested",
-                "NOT_RENEWING": "Not renewing"
+                "NOT_RENEWING": "Not renewing",
+                "COURTESY": "Courtesy",
+                "PERMANENT_GRANT": "Permanent access"
             },
             "loadError": "We could not read your subscriptions. Reload the page.",
             "scheduledUntil": "You cancelled this subscription: you keep it until {{date}}.",
@@ -718,7 +847,8 @@
             "event": "Events",
             "experience": "Experiences",
             "venue": "Food & nightlife",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Attractions"
         },
         "collections": {
             "create": "Create collection",
@@ -741,6 +871,7 @@
             "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
             "errorTitle": "We couldn't load the collection",
             "backToList": "Back to my favorites",
+            "bookmarksLabel": "favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
             "pageInfo": "Page {{page}} of {{total}}",
@@ -780,10 +911,6 @@
         },
         "filter": {
             "all": "All",
-            "accommodations": "Accommodations",
-            "destinations": "Destinations",
-            "events": "Events",
-            "posts": "Posts",
             "label": "Filter by type"
         },
         "bookmarks": {
@@ -803,7 +930,8 @@
         "notes": {
             "cancel": "Cancel",
             "placeholder": "Add a personal note...",
-            "save": "Save note"
+            "save": "Save note",
+            "saved": "Note saved"
         },
         "removeBtn": "Remove",
         "removeLabel": "Remove from favorites",
@@ -869,7 +997,6 @@
             "description": "Manage your account, favorites, reviews and preferences.",
             "greeting": "Welcome",
             "dashboardLabel": "Dashboard",
-            "viewLabel": "View",
             "nav": {
                 "editProfile": "Edit Profile",
                 "editProfileDesc": "Update your personal information and profile photo",
@@ -902,6 +1029,7 @@
                 "reviews": "My Reviews",
                 "subscription": "My Subscription",
                 "favoritesDesc": "Saved accommodations",
+                "unavailable": "Not available",
                 "reviewsDesc": "Published reviews",
                 "subscriptionDesc": "Current plan",
                 "subscriptionStatus": "Subscription status",
@@ -922,7 +1050,13 @@
                 "listings": "My listings",
                 "listingsDesc": "Published listings",
                 "listingsHidden_one": "{{count}} listing not published: it is not visible to the public.",
-                "listingsHidden_other": "{{count}} listings not published: they are not visible to the public."
+                "listingsHidden_other": "{{count}} listings not published: they are not visible to the public.",
+                "viewProperties": "View my properties",
+                "viewMessages": "View unread messages",
+                "viewListings": "View my listings",
+                "viewFavorites": "View my favorites",
+                "viewReviews": "View my reviews",
+                "viewSubscription": "View my subscription"
             },
             "sectionsLabel": "Sections"
         },
@@ -933,6 +1067,7 @@
             "personalSection": "Personal information",
             "extrasSection": "Más sobre vos",
             "locationSection": "Ubicación",
+            "securitySection": "Security",
             "socialSection": "Redes sociales"
         },
         "favorites": {
@@ -1236,7 +1371,9 @@
         "deleteError": "Could not delete the alert",
         "upgrade": {
             "title": "Price alerts",
-            "message": "Price alerts are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+            "message_one": "Price alerts are available on the {{plans}} plan. Upgrade your plan to access this feature.",
+            "message_other": "Price alerts are available on the {{plans}} plans. Upgrade your plan to access this feature.",
+            "messageNoPlans": "Price alerts are not included in your current plan. Upgrade your plan to access this feature.",
             "cta": "View plans"
         },
         "listLabel": "Your active price alerts",
@@ -1731,6 +1868,53 @@
             "weak": "Débil"
         },
         "strengthLabel": "Seguridad de la contraseña",
+        "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
         "accountNotice": "You are about to change the password for this account:"
+    },
+    "help": {
+        "landing": {
+            "title": "Help for publishing on Hospeda",
+            "description": "Everything you can do, how to do it and what to expect.",
+            "tabsLabel": "Account type",
+            "emptyAudience": "We are still writing the help for this account type."
+        },
+        "audiences": {
+            "host": "Accommodations",
+            "venue": "Food and nightlife",
+            "experience": "Experiences",
+            "provider": "Providers",
+            "partner": "Partners"
+        },
+        "audiencesLabel": "For",
+        "search": {
+            "label": "Search the help",
+            "placeholder": "For example: how do I upload photos",
+            "onlyMine": "Only for my account type",
+            "results_one": "{{count}} result",
+            "results_other": "{{count}} results",
+            "noMatch": "We could not find help for that",
+            "submit": "Search"
+        },
+        "fallback": {
+            "title": "Did not find what you were looking for?",
+            "faq": "See the frequently asked questions",
+            "contact": "Write to us"
+        },
+        "article": {
+            "breadcrumbRoot": "Help",
+            "breadcrumbLabel": "Help path",
+            "reviewedAt": "Reviewed on {{date}}",
+            "tocLabel": "In this article",
+            "tocToggle": "Article contents",
+            "pagesTitle": "Pages",
+            "faqLink": "See also in the frequently asked questions",
+            "onlySpanish": "This article is only available in Spanish for now.",
+            "limitNeutral": "your plan limit",
+            "unlimited": "no limit",
+            "title": "Help: {{title}}"
+        },
+        "link": {
+            "ariaLabel": "Help: {{title}} (opens in a new tab)"
+        }
     }
 }

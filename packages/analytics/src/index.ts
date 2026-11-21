@@ -10,7 +10,8 @@ export {
     ANALYTICS_ENTITY_VIEWED_TYPES,
     ANALYTICS_LISTING_ENTITY_TYPES,
     AnalyticsEventSchemas,
-    AnalyticsEvents
+    AnalyticsEvents,
+    ContactOriginSchema
 } from './catalog.js';
 export type {
     CaptureTaggedInput,

@@ -97,6 +97,15 @@ describe('VenueCard.astro', () => {
         });
     });
 
+    describe('promotion badge (HOS-2271)', () => {
+        it('shows only the fixed Promo or Promo VIP label when a badge is present', () => {
+            expect(src).toContain('data.promoBadge?.hasPromo');
+            expect(src).toContain('venue.card.promoVip');
+            expect(src).toContain('venue.card.promo');
+            expect(src).not.toContain('specialOfferText');
+        });
+    });
+
     describe('open-now badge', () => {
         it('TEST:6.3:3 mounts the badge island with client:idle only when openingHours is present', () => {
             expect(src).toMatch(
@@ -114,6 +123,36 @@ describe('VenueCard.astro', () => {
 
         // BETA-117: the badge was illegible over photos because it used
         // near-transparent alpha tints. It must use solid/opaque fills.
+        // HOS-2257 AC-11: opens-later state is a solid, darkened amber so white
+        // text clears AA; AC-10: the card geometry stays absolute, the inline
+        // variant (detail header) is the only one in flow.
+        it('HOS-2257 fills the opens-at state with a solid darkened warning mix', () => {
+            expect(badgeCss).toContain('.opensSoon {\n');
+            expect(badgeCss).toContain(
+                'background-color: color-mix(in oklab, var(--warning) 65%, black);'
+            );
+        });
+
+        it('HOS-2257 only the inline variant leaves absolute positioning', () => {
+            expect(badgeCss).toMatch(/\.inline \{\s*position: static;/);
+        });
+
+        it('HOS-2257 declares venue.card.opensAt with {{time}} in es/en/pt', () => {
+            for (const lang of ['es', 'en', 'pt']) {
+                const json = JSON.parse(
+                    readFileSync(
+                        resolve(
+                            __dirname,
+                            `../../../../../packages/i18n/src/locales/${lang}/venue.json`
+                        ),
+                        'utf8'
+                    )
+                ) as { card: Record<string, string> };
+                expect(json.card.opensAt).toContain('{{time}}');
+                expect(json.card.closedNow).not.toMatch(/agora|now|ahora/i);
+            }
+        });
+
         it('uses the green brand fill for the open state', () => {
             expect(badgeCss).toContain('.open {\n    background-color: var(--hospeda-forest);');
         });

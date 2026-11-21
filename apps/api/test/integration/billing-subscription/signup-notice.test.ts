@@ -159,10 +159,6 @@ describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of 
             .returning({ id: subscriptions.id, succeedsId: subscriptions.succeedsId });
         expect(successor?.succeedsId).toBe(principal.id);
         if (!successor) throw new Error('No successor');
-        await getDb()
-            .update(subscriptions)
-            .set({ succeededById: successor.id })
-            .where(eq(subscriptions.id, principal.id));
 
         const { response, body } = await readNotice(user.id, option.id);
         expect(response.status).toBe(200);

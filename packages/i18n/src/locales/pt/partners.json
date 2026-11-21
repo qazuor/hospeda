@@ -36,7 +36,8 @@
         "notFound": "Não encontramos este Partner. Confira se o link está completo.",
         "alreadyClaimed": "Este Partner já tem proprietário; se não foi você, fale com o suporte",
         "accountAlreadyOwns": "Sua conta já é proprietária de um Partner. Cada conta administra apenas um Partner: reivindique o segundo negócio com outra conta. Se precisar de ajuda, fale com o suporte.",
-        "emailMismatch": "Este Partner só pode ser reivindicado com a conta do e-mail usado na solicitação. Saia e entre com essa conta. Se o Partner é seu, mas você quer administrá-lo com outro e-mail, fale com a Hospeda.",
+        "emailMismatch": "Este Partner só pode ser reivindicado com a conta do e-mail para o qual o link de reivindicação foi enviado. Saia e entre com essa conta. Se o Partner é seu, mas você quer administrá-lo com outro e-mail, fale com a Hospeda.",
+        "wrongAccount": "Este Partner só pode ser reivindicado com a conta do e-mail para o qual o link foi enviado. Agora você está com outra conta.",
         "emailMismatchSignedInAs": "Você entrou como {{email}}.",
         "supportCta": "Falar com o suporte",
         "genericError": "Não foi possível concluir a reivindicação. Tente novamente em alguns minutos."

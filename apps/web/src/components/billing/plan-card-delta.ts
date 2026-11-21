@@ -34,23 +34,14 @@
  * every value side by side.
  */
 
-import { LimitKeyEnum } from '@repo/schemas';
+import { isUnlimitedLimit, LimitKeyEnum } from '@repo/schemas';
 
 /**
- * The int4 max sentinel chosen by Coord-41 for `plan_version_limit`, whose
- * value column has `CHECK (value >= 0)`; ranked as `+Infinity` across tiers.
+ * The int4 max sentinel chosen by Coord-41 for `plan_version_limit` and its
+ * at-or-above check, re-exported from `@repo/schemas` so the web, the API views
+ * and the effective-set fold share ONE definition (HOS-2403).
  */
-export const UNLIMITED_LIMIT_VALUE = 2147483647;
-
-/**
- * Whether a raw limit represents unlimited under the production catalog sentinel.
- *
- * @param input.value - Raw value from a plan limits map or effective limit fold.
- * @returns `true` when the value is at least the int4 max sentinel.
- */
-export function isUnlimitedLimit({ value }: { readonly value: number }): boolean {
-    return value >= UNLIMITED_LIMIT_VALUE;
-}
+export { isUnlimitedLimit, UNLIMITED_LIMIT_VALUE } from '@repo/schemas';
 
 /**
  * Display order for limit lines, most commercially meaningful first.

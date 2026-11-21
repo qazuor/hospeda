@@ -16,7 +16,6 @@ import { recordProviderCancellationDecided } from '../reconciliation/provider-ca
 import { reevaluateRetainedPayments } from './expire-authorization-windows.service.js';
 import { commitmentTaken, previousAttemptInProgress } from './resolve-live-commitment.js';
 import type { BeforeCancelNotice } from './start-subscription.service.js';
-import { releaseCancelledSuccessionPredecessor } from './succession-cancel-writes.js';
 
 const logger = createLogger('cancel-pending-attempt');
 
@@ -32,8 +31,9 @@ export type CancelPendingAttemptRetainedPaymentPorts = Partial<
  * S40 (HOS-1735): let the person abandon their own pending card signup and release its vertical commitment.
  * It is distinct from S39 because S39 means restarting the same option and uses its replacement notice.
  * Since HOS-2344 it also abandons a pending successor (a plan change whose checkout was left open):
- * the predecessor's `succeeded_by_id` goes back to NULL in the same transaction, its deferred
- * courtesy stays open, and the payments S19 retained on it are re-evaluated as in S3.
+ * the predecessor's `succeeded_by_id` is untouched (it is only written when S18 closes a
+ * succession, HOS-2351), its deferred courtesy stays open, and the payments S19 retained on it
+ * are re-evaluated as in S3.
  */
 export async function cancelPendingAttempt(
     input: { readonly subscriptionId: string; readonly userId: string },
@@ -58,7 +58,8 @@ export async function cancelPendingAttempt(
         candidate.subscription.class !== 'PRINCIPAL'
     )
         throw commitmentTaken();
-    // HOS-2344: a pending successor is cancellable too; its predecessor is released below.
+    // HOS-2344: a pending successor is cancellable too. Its predecessor needs no write: once the
+    // successor is no longer live, the succession is no longer in progress (HOS-2351).
     const predecessorId = candidate.subscription.succeedsId;
     const link = candidate.providerLink;
     if (!link || !candidate.idempotencyKey || candidate.idempotencyKey.completedAt === null)
@@ -96,33 +97,13 @@ export async function cancelPendingAttempt(
             ...(predecessorId === null ? {} : { predecessorId })
         });
         if (!changed.wrote) return 'CONFLICT';
-        const release =
-            predecessorId === null
-                ? { released: false }
-                : await releaseCancelledSuccessionPredecessor({
-                      predecessorId,
-                      successorId: candidate.subscription.id,
-                      now,
-                      tx
-                  });
         await recordProviderCancellationDecided({
             subscriptionId: candidate.subscription.id,
             transition: 'S40',
             decidedAt: now,
             actor: { type: 'owner', id: input.userId },
             correlationId: randomUUID(),
-            changes: [
-                { field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' },
-                ...(release.released
-                    ? [
-                          {
-                              field: 'predecessor.succeededById',
-                              old: candidate.subscription.id,
-                              new: null
-                          }
-                      ]
-                    : [])
-            ],
+            changes: [{ field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' }],
             tx
         });
         return 'ABANDONED';

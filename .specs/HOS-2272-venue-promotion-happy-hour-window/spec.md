@@ -57,10 +57,12 @@ Verificado en `origin/staging` (`92994b9dc6`).
 ### 6.1 Datos (estructural más extras)
 
 Tres columnas nuevas en `owner_promotions` (migración con `pnpm db:generate`):
+
 - `window_weekdays smallint[] NULL`: días en que rige, `0` domingo a `6` sábado (misma convención que `venue_events.weekday`).
 - `window_start time NULL` y `window_end time NULL`: hora local del local, `HH:MM`.
 
 Restricciones en el carril de extras (archivo idempotente en `packages/db/src/migrations/extras/`, se reaplica con `pnpm db:apply-extras`):
+
 - Todo o nada: `(window_weekdays IS NULL) = (window_start IS NULL) AND (window_start IS NULL) = (window_end IS NULL)`.
 - `cardinality(window_weekdays) BETWEEN 1 AND 7` y todos los valores entre 0 y 6.
 - `window_start <> window_end`. Si `window_end < window_start`, la franja cruza la medianoche. (Un cierre igual a la apertura queda prohibido: en horarios significa «24 horas», acá sería ambiguo.)
@@ -80,6 +82,7 @@ Las tres columnas son aditivas y nulas, sin dato previo: no hay data-migration n
 ### 6.3 Lógica de «Ahora» en el cliente
 
 Módulo puro nuevo `apps/web/src/lib/venue/promotion-window.ts`:
+
 - `isPromotionWindowActive({ window, now, timeZone = VENUE_OPEN_NOW_TIME_ZONE })`: arma un mapa tipo horarios (`monday…sunday`, cada día de la franja con un tramo `{ open: startTime, close: endTime }`) y llama a `computeOpenNowInZone`. Un resultado `null` (sin entrada para hoy) se toma como `false`. Así el cruce de medianoche y la regla de «el tramo pertenece al día en que empieza» salen de la misma función que ya tiene su test del calendario viernes y sábado. No se escribe ninguna comparación de horas nueva.
 - `isPromotionLive({ promo, now })`: `isPromotionWindowActive` y además `now` dentro de `validFrom` y `validUntil`, porque el HTML cacheado puede sobrevivir al fin de la promo.
 - `formatPromotionWindow({ window, t })`: texto «Jue a sáb, 23 a 00:30».
@@ -96,6 +99,7 @@ Módulo puro nuevo `apps/web/src/lib/venue/promotion-window.ts`:
 ### 6.5 Formulario del dueño
 
 `VenuePromotionForm` (HOS-2271) suma un bloque «Solo en ciertos días y horas», apagado por defecto:
+
 - Siete casillas de día (lunes primero) con nombres cortos.
 - Dos `<input type="time">` (inicio y fin). Si `fin <= inicio`, una ayuda dice «Termina después de la medianoche, el día siguiente».
 - Vista previa en vivo con `formatPromotionWindow`.
@@ -148,16 +152,20 @@ Sin cambios: la franja es un dato de la promo. Una promo con franja ya cargada s
 ## 11. Riesgos y preguntas para el dueño
 
 Riesgos:
+
 - R-1. Dos relojes: el de la zona del local (franja) y el del navegador. Mitigación: todo pasa por `computeOpenNowInZone`.
 - R-2. El badge puede quedar desactualizado con la pestaña abierta (sin intervalo). Mitigación: mismo comportamiento que «Abierto ahora».
 - R-3. El conteo de franjas en la tarjeta infla el HTML de listados largos. Mitigación: tope de 10 y deduplicado.
 - R-4. Esta spec y HOS-2271 tocan la misma isla de tarjeta: coordinar el orden de merge.
 
 Preguntas (OQ-2 decidida abajo, el resto abiertas y menores):
+
 - OQ-1. Zona horaria. Opciones: (a) fija de Buenos Aires, como `VENUE_OPEN_NOW_TIME_ZONE`; (b) una zona por local (columna nueva). **Recomiendo (a)**: todos los locales están en Argentina y el propio código lo declara como único lugar a revisar.
+- Decidido (implementación HOS-2272, 18/11/2026): OQ-1 opción (a). La franja usa `VENUE_OPEN_NOW_TIME_ZONE` (`America/Argentina/Buenos_Aires`); no se agrega una zona por local.
 - Decidido (owner, 16/11/2026): una franja por promo. Una franja es un conjunto de días con un único rango de horas. Quien necesite «lun a mié 18 a 20» y «jue a sáb 23 a 00:30» carga dos promos, y cada una cuenta contra `max_active_promotions` (dos promos son dos cupos). No hay tabla ni lista de franjas. Esto deja el modelo de 6.1 tal cual y fija el tope de 10 franjas de la tarjeta como un máximo de promos con franja, no de franjas por promo.
 - OQ-3. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #26): opción (a).** Una promo sin franja muestra solo «Promo», sin «Ahora». Una promo sin franja, ¿muestra «Ahora» todo el tiempo? Opciones: (a) no, solo «Promo»; (b) sí. **Recomiendo (a)**: «Ahora» solo tiene sentido si hay una franja.
 - OQ-4. Refresco del badge con la página abierta. Opciones: (a) sin intervalo (precedente de «Abierto ahora»); (b) recalcular cada minuto. **Recomiendo (a)**.
+- Decidido (implementación HOS-2272, 18/11/2026): OQ-4 opción (a). Se calcula una vez al montar, siguiendo `VenueOpenNowBadge`.
 - OQ-5. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #27): opción (a).** Si el local ya tiene un happy hour en su agenda, el formulario muestra una ayuda pero no lo impide. Solapamiento con la agenda (`venue_events` ya admite un happy hour semanal). Opciones: (a) solo una ayuda en el formulario; (b) impedirlo. **Recomiendo (a)**: son cosas distintas (agenda vs beneficio) y el dueño puede querer ambas.
 
 ## 12. Dependencias

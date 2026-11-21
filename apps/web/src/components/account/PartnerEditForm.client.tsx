@@ -177,9 +177,9 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
         >
             {/* Identity — admin-managed, display-only (never enters the payload) */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('account.partner.form.identitySection', 'Datos administrados por Hospeda')}
-                </h3>
+                </h2>
                 <p className={styles.hint}>
                     {t(
                         'account.partner.form.identityNote',
@@ -224,9 +224,9 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
 
             {/* Content — goes to review, never live on save */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('account.partner.form.contentSection', 'Logo y textos')}
-                </h3>
+                </h2>
                 <p className={styles.hint}>
                     {t(
                         'account.partner.form.contentNote',
@@ -286,9 +286,9 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
 
             {/* Contact — applies immediately */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('account.partner.form.contactSection', 'Contacto')}
-                </h3>
+                </h2>
                 <p className={styles.hint}>
                     {t(
                         'account.partner.form.immediateNote',
@@ -309,9 +309,9 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
 
             {/* Social — applies immediately */}
             <section className={styles.section}>
-                <h3 className={styles.sectionTitle}>
+                <h2 className={styles.sectionTitle}>
                     {t('account.partner.form.socialSection', 'Redes')}
-                </h3>
+                </h2>
                 <p className={styles.hint}>
                     {t(
                         'account.partner.form.immediateNote',

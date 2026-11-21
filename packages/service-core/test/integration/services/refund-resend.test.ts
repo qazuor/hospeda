@@ -1,4 +1,4 @@
-import type { OrderRefundInput, PaymentProvider } from '@repo/payments';
+import type { PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
@@ -6,23 +6,18 @@ import { executeRefundFromProviderRead } from '../../../src/services/billing/ref
 import { resendUnansweredRefundCalls } from '../../../src/services/billing/refund/resend-refund-call.service.js';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { refundConfirmFixture, refundConfirmRows } from './support/refund-confirm-fixtures.js';
-import { orderRefundRows, refundOrderFixture } from './support/refund-order-fixtures.js';
 
 afterAll(closeServiceTestPool);
 const skip = !isServiceTestDbAvailable();
 
-function lostResponseProvider(provider: PaymentProvider, kind: 'refund' | 'refundOrder') {
+function lostResponseProvider(provider: PaymentProvider) {
     const refund = vi.fn(provider.refund.bind(provider));
-    const refundOrder = vi.fn(provider.refundOrder.bind(provider));
     let first = true;
     const wrapped = new Proxy(provider, {
         get(target, property, receiver) {
-            if (property === kind)
-                return async (input: Parameters<PaymentProvider[typeof kind]>[0]) => {
-                    const result =
-                        kind === 'refund'
-                            ? await refund(input as Parameters<PaymentProvider['refund']>[0])
-                            : await refundOrder(input as OrderRefundInput);
+            if (property === 'refund')
+                return async (input: Parameters<PaymentProvider['refund']>[0]) => {
+                    const result = await refund(input);
                     if (first) {
                         first = false;
                         throw new PaymentProviderError({
@@ -33,12 +28,30 @@ function lostResponseProvider(provider: PaymentProvider, kind: 'refund' | 'refun
                     }
                     return result;
                 };
-            if (property === 'refund') return refund;
-            if (property === 'refundOrder') return refundOrder;
             return Reflect.get(target, property, receiver);
         }
     });
-    return { wrapped, refund, refundOrder };
+    return { wrapped, refund };
+}
+
+/**
+ * The provider whose first charge read lags behind and does not show refunds yet, so the resend
+ * finds nothing to bind and posts again (HOS-2516 reads before posting).
+ */
+function laggingFirstRead(provider: PaymentProvider): PaymentProvider {
+    let first = true;
+    return new Proxy(provider, {
+        get(target, property, receiver) {
+            if (property === 'readCharge')
+                return async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+                    const read = await target.readCharge(input);
+                    if (!first) return read;
+                    first = false;
+                    return { ...read, snapshot: { ...read.snapshot, refunds: [] } };
+                };
+            return Reflect.get(target, property, receiver);
+        }
+    });
 }
 
 describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
@@ -55,7 +68,7 @@ describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
             } catch (error) {
                 expect(error).toMatchObject({ refundRefusal: 'AMOUNT_NOT_ACCEPTED' });
             }
-            const lost = lostResponseProvider(seeded.fixture.provider, 'refund');
+            const lost = lostResponseProvider(seeded.fixture.provider);
             const first = await confirmRefund(
                 { actor: seeded.actor, refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider: lost.wrapped }
@@ -66,7 +79,7 @@ describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
             const key = before.calls[0]!.idempotencyKey;
             const replay = await resendUnansweredRefundCalls(
                 { refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider: lost.wrapped }
+                { clock: seeded.fixture.clock, provider: laggingFirstRead(lost.wrapped) }
             );
             expect(replay.outcomes).toEqual([{ idempotencyKey: key, outcome: 'SENT' }]);
             expect(lost.refund).toHaveBeenNthCalledWith(2, {
@@ -110,7 +123,7 @@ describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
             } catch (error) {
                 expect(error).toMatchObject({ refundRefusal: 'AMOUNT_NOT_ACCEPTED' });
             }
-            const lost = lostResponseProvider(seeded.fixture.provider, 'refund');
+            const lost = lostResponseProvider(seeded.fixture.provider);
             await confirmRefund(
                 { actor: seeded.actor, refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider: lost.wrapped }
@@ -141,79 +154,12 @@ describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
         }
     );
 
-    it.skipIf(skip)(
-        'replays an order with the same key and partial scope and binds by subtraction',
-        async () => {
-            const seeded = await refundOrderFixture({ refundAmount: 4000 });
-            const lost = lostResponseProvider(seeded.fixture.provider, 'refundOrder');
-            const first = await confirmRefund(
-                { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider: lost.wrapped }
-            );
-            expect(first.outcome).toBe('AWAITING_PROVIDER_ANSWER');
-            const before = await orderRefundRows(seeded.refundId);
-            const replay = await resendUnansweredRefundCalls(
-                { refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider: lost.wrapped }
-            );
-            expect(replay.outcomes).toEqual([
-                { idempotencyKey: before.calls[0]!.idempotencyKey, outcome: 'SENT' }
-            ]);
-            expect(lost.refundOrder).toHaveBeenNthCalledWith(
-                2,
-                lost.refundOrder.mock.calls[0]?.[0]
-            );
-            const after = await orderRefundRows(seeded.refundId);
-            const order = await seeded.fixture.provider.readOrder({ orderId: seeded.orderId });
-            expect(after.calls).toHaveLength(1);
-            expect(order.snapshot.refunds).toHaveLength(1);
-            expect(after.calls[0]?.providerRefundId).toBe(order.snapshot.refunds[0]?.refundId);
-        }
-    );
-
-    it.skipIf(skip)('keeps an order key pending after a 409 replay', async () => {
-        const seeded = await refundOrderFixture();
-        const lost = lostResponseProvider(seeded.fixture.provider, 'refundOrder');
-        await confirmRefund(
-            { actor: seeded.actor, refundId: seeded.refundId },
-            { clock: seeded.fixture.clock, provider: lost.wrapped }
-        );
-        const conflict = new Proxy(seeded.fixture.provider as PaymentProvider, {
-            get(target, property, receiver) {
-                if (property === 'refundOrder')
-                    return async () => {
-                        throw new PaymentProviderError({
-                            code: 'REJECTED',
-                            capability: 'refund',
-                            refundRefusal: 'KEY_REUSED',
-                            message: 'conflict'
-                        });
-                    };
-                return Reflect.get(target, property, receiver);
-            }
-        });
-        const replay = await resendUnansweredRefundCalls(
-            { refundId: seeded.refundId },
-            { clock: seeded.fixture.clock, provider: conflict }
-        );
-        const rows = await orderRefundRows(seeded.refundId);
-        expect(replay.outcomes).toEqual([
-            { idempotencyKey: rows.calls[0]!.idempotencyKey, outcome: 'PROVIDER_KEY_CONFLICT' }
-        ]);
-        expect(rows.calls[0]?.providerRefundId).toBeNull();
-        expect(rows.keys[0]?.completedAt).toBeNull();
-    });
-
     it.skipIf(skip)('does nothing when the confirmed refund has no unanswered call', async () => {
-        const seeded = await refundOrderFixture();
+        const seeded = await refundConfirmFixture();
         const refund = vi.fn(seeded.fixture.provider.refund.bind(seeded.fixture.provider));
-        const refundOrder = vi.fn(
-            seeded.fixture.provider.refundOrder.bind(seeded.fixture.provider)
-        );
         const provider = new Proxy(seeded.fixture.provider as PaymentProvider, {
             get(target, property, receiver) {
                 if (property === 'refund') return refund;
-                if (property === 'refundOrder') return refundOrder;
                 return Reflect.get(target, property, receiver);
             }
         });
@@ -223,7 +169,6 @@ describe('HOS-1553 TEST:B6:8 AC:B6:10 refund call resend', () => {
         );
         expect(replay).toEqual({ refundId: seeded.refundId, outcomes: [] });
         expect(refund).toHaveBeenCalledTimes(0);
-        expect(refundOrder).toHaveBeenCalledTimes(0);
-        expect((await orderRefundRows(seeded.refundId)).calls).toHaveLength(0);
+        expect((await refundConfirmRows(seeded.refundId)).calls).toHaveLength(0);
     });
 });

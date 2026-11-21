@@ -27,6 +27,7 @@ import type {
     PublicBusinessLine,
     PublicHostTradeCatalog,
     QrCodeResolution,
+    VenuePromotionPublic,
     VenuePublic,
     VenuePublicFilterOptions
 } from '@repo/schemas';
@@ -1608,6 +1609,14 @@ export interface VenueReviewPublicItem {
 
 /** Public venue API endpoints (SPEC-239 T-042..T-044). */
 export const venueApi = {
+    /** Read the public current promotions of one venue; does not forward cookies. */
+    listPromotions({
+        venueId
+    }: {
+        readonly venueId: string;
+    }): Promise<ApiResult<{ readonly items: readonly VenuePromotionPublic[] }>> {
+        return apiClient.get({ path: `${BASE}/venues/${venueId}/promotions` });
+    },
     /**
      * List venue listings with pagination, search, sorting, and filters.
      *

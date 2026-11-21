@@ -93,6 +93,7 @@ async function run(args: {
     readonly store?: ReturnType<typeof memoryRunStore>;
     readonly account?: 'sandbox' | 'production';
     readonly authorization?: WatchAuthorization | null;
+    readonly now?: Date;
 }) {
     const store = args.store ?? memoryRunStore();
     const account = args.account ?? 'sandbox';
@@ -104,7 +105,7 @@ async function run(args: {
             args.authorization === undefined
                 ? { month: '2026-11', maxChargeMinor: CAP, accountId: '100000001' }
                 : args.authorization,
-        clock: createAdjustableClock({ start: NOW }),
+        clock: createAdjustableClock({ start: args.now ?? NOW }),
         ...store.ports
     });
     return { ...result, store };
@@ -146,10 +147,9 @@ describe('N1: an id-targeted write acts only on an object THIS RUN created', () 
         expect(writes()).toEqual([]);
     });
 
-    it('refuses a payment refund and an order refund on a foreign id', async () => {
+    it('refuses a payment refund on a foreign id', async () => {
         for (const [path, body] of [
-            ['/v1/payments/real-payment-1/refunds', { amount: 1 }],
-            ['/v1/orders/real-order-1/refund', { transactions: [{ id: 't', amount: '1.00' }] }]
+            ['/v1/payments/real-payment-1/refunds', { amount: 1 }]
         ] as const) {
             const { transport, writes } = provider();
             const result = await run({
@@ -249,42 +249,6 @@ describe('N1: an id-targeted write acts only on an object THIS RUN created', () 
         });
         expect(over.run.reason).toContain('BUDGET_EXCEEDED');
     });
-
-    it('refunds an order only up to what the run charged on that order', async () => {
-        const { transport } = provider();
-        const result = await run({
-            catalog: [
-                money('M1', async (ctx): Promise<JsonValue> => {
-                    const made = await ctx.send({
-                        label: 'order',
-                        request: {
-                            method: 'POST',
-                            path: '/v1/orders',
-                            body: {
-                                type: 'online',
-                                total_amount: '1500.00',
-                                processing_mode: 'automatic',
-                                transactions: { payments: [{ amount: '1500.00' }] }
-                            }
-                        },
-                        chargeMinor: CAP
-                    });
-                    await ctx.send({
-                        label: 'refund',
-                        request: {
-                            method: 'POST',
-                            path: `/v1/orders/${idOf(made)}/refund`,
-                            body: { transactions: [{ id: 't1', amount: '1500.01' }] }
-                        },
-                        refundMinor: 150001
-                    });
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.reason).toContain('BUDGET_EXCEEDED');
-    });
 });
 
 describe('N2: a charge carries exactly the keys its rule allows', () => {
@@ -370,45 +334,6 @@ describe('N2: a charge carries exactly the keys its rule allows', () => {
             payer: { email: 'a@b.test' }
         });
         expect(result.run.outcome).toBe('completed');
-    });
-
-    it.each([
-        [
-            'an extra key',
-            {
-                total_amount: '1500.00',
-                transactions: { payments: [{ amount: '1500.00' }] },
-                expiration_time: 'P1D'
-            }
-        ],
-        [
-            'an extra payment key',
-            {
-                total_amount: '1500.00',
-                transactions: { payments: [{ amount: '1500.00', capture: false }] }
-            }
-        ],
-        [
-            'installments: 12',
-            {
-                total_amount: '1500.00',
-                transactions: {
-                    payments: [{ amount: '1500.00', payment_method: { installments: 12 } }]
-                }
-            }
-        ],
-        [
-            'a manual processing mode',
-            {
-                total_amount: '1500.00',
-                processing_mode: 'manual',
-                transactions: { payments: [{ amount: '1500.00' }] }
-            }
-        ]
-    ])('refuses an order with %s', async (_name, body) => {
-        const { result, writes } = await attempt('/v1/orders', body);
-        expect(result.run.outcome).toBe('aborted');
-        expect(writes()).toEqual([]);
     });
 
     it('refuses a change of amount that carries anything else', async () => {
@@ -500,12 +425,169 @@ describe('N3: the authorized amount equals the sum of the money-moving measureme
         expect(store.consumedBy()).toBeUndefined();
     });
 
-    it('refuses a production authorization when the catalog has no money-moving measurement', async () => {
-        const { go, store } = production([], 150000);
+    describe('a read-only battery (no money-moving measurement, sum 0)', () => {
+        const readOnly = (
+            authorizedMinor: number,
+            store = memoryRunStore(),
+            now = NOW,
+            month = '2026-11'
+        ) => {
+            const { transport, sent } = provider({ account: 'production' });
+            const catalog: readonly WatchEntry[] = [
+                {
+                    id: 'RP7',
+                    accounts: ['sandbox', 'production'],
+                    effect: 'read',
+                    expected: 'done',
+                    measure: async () => 'done'
+                }
+            ];
+            return {
+                sent,
+                store,
+                go: () =>
+                    run({
+                        catalog,
+                        transport,
+                        store,
+                        account: 'production',
+                        now,
+                        authorization: {
+                            month,
+                            maxChargeMinor: authorizedMinor,
+                            accountId: '100000001'
+                        }
+                    })
+            };
+        };
+
+        it('runs with an authorization of 0 and does not consume it (B1)', async () => {
+            const { go, store } = readOnly(0);
+            const result = await go();
+            expect(result.run.outcome).toBe('completed');
+            expect(store.consumedBy()).toBeUndefined();
+            expect(store.dailyRuns()).toEqual([result.runId]);
+            expect(store.started[0]?.day).toBe('2026-11-17');
+        });
+
+        it('refuses an authorization above 0, naming both numbers, and does not consume it', async () => {
+            const { go, store } = readOnly(150000);
+            const result = await go();
+            expect(result.run.outcome).toBe('refused');
+            expect(result.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
+            expect(result.run.reason).toContain('add up to 0');
+            expect(store.consumedBy()).toBeUndefined();
+        });
+
+        it('lets two consecutive daily ticks run against the same authorization of 0 (B1)', async () => {
+            const store = memoryRunStore();
+            const first = await readOnly(0, store).go();
+            const second = await readOnly(0, store, new Date('2026-11-18T12:00:00.000Z')).go();
+            expect(first.run.outcome).toBe('completed');
+            expect(second.run.outcome).toBe('completed');
+            expect(store.dailyRuns()).toEqual([first.runId, second.runId]);
+            expect(store.started.map((entry) => entry.day)).toEqual(['2026-11-17', '2026-11-18']);
+        });
+
+        it('takes the day on the market clock, not UTC (B1)', async () => {
+            // 01:30 UTC on the 18th is still the 17th in Buenos Aires: the day already taken.
+            const store = memoryRunStore();
+            await readOnly(0, store).go();
+            const late = await readOnly(0, store, new Date('2026-11-18T01:30:00.000Z')).go();
+            expect(late.run.outcome).toBe('refused');
+            expect(store.started[1]?.day).toBe('2026-11-17');
+        });
+
+        it('refuses a second run the same day against an authorization of 0 (B1)', async () => {
+            const store = memoryRunStore();
+            const first = await readOnly(0, store).go();
+            expect(first.run.outcome).toBe('completed');
+            const second = await readOnly(0, store).go();
+            expect(second.run.outcome).toBe('refused');
+            expect(second.run.reason).toContain('AUTHORIZATION_DAY_TAKEN');
+        });
+
+        it('names AUTHORIZATION_CHANGED when the authorization was replaced, never DAY_TAKEN (A2b)', async () => {
+            // Same month and amount of 0, but another account stored: not the expected skip.
+            const store = memoryRunStore({
+                stored: { month: '2026-11', maxChargeMinor: 0, accountId: '999999999' }
+            });
+            const result = await readOnly(0, store).go();
+            expect(result.run.outcome).toBe('refused');
+            expect(result.run.reason).toContain('AUTHORIZATION_CHANGED');
+            expect(result.run.reason).not.toContain('AUTHORIZATION_DAY_TAKEN');
+        });
+
+        it('names AUTHORIZATION_CHANGED for a day behind the last one taken (A2b)', async () => {
+            const store = memoryRunStore();
+            await readOnly(0, store, new Date('2026-11-18T12:00:00.000Z')).go();
+            const behind = await readOnly(0, store).go();
+            expect(behind.run.reason).toContain('AUTHORIZATION_CHANGED');
+        });
+
+        it('refuses an authorization of 0 the next month (B1)', async () => {
+            const store = memoryRunStore();
+            await readOnly(0, store).go();
+            const december = await readOnly(0, store, new Date('2026-12-01T12:00:00.000Z')).go();
+            expect(december.run.outcome).toBe('refused');
+            expect(december.run.reason).toContain('AUTHORIZATION_STALE');
+            expect(store.dailyRuns()).toHaveLength(1);
+        });
+
+        it('still refuses a second run against an authorization above 0 (B1)', async () => {
+            const { go, store } = production([100000], 100000);
+            const first = await go();
+            const second = await run({
+                catalog: [money('RP1', async () => 'done', 100000)],
+                transport: provider({ account: 'production' }).transport,
+                store,
+                account: 'production',
+                now: new Date('2026-11-18T12:00:00.000Z'),
+                authorization: { month: '2026-11', maxChargeMinor: 100000, accountId: '100000001' }
+            });
+            expect(first.run.outcome).toBe('completed');
+            expect(store.consumedBy()).toBe(first.runId);
+            expect(second.run.outcome).toBe('refused');
+            expect(second.run.reason).toContain('AUTHORIZATION_CONSUMED');
+        });
+    });
+
+    it('refuses an authorization of 0 mid-month once a money-moving measurement appears (B1)', async () => {
+        // Day 1: a read-only catalog runs against 0. Day 2: a money measurement was added.
+        const store = memoryRunStore();
+        const readOnlyCatalog: readonly WatchEntry[] = [
+            {
+                id: 'RP7',
+                accounts: ['sandbox', 'production'],
+                effect: 'read',
+                expected: 'done',
+                measure: async () => 'done'
+            }
+        ];
+        const zero = { month: '2026-11', maxChargeMinor: 0, accountId: '100000001' };
+        const first = await run({
+            catalog: readOnlyCatalog,
+            transport: provider({ account: 'production' }).transport,
+            store,
+            account: 'production',
+            authorization: zero
+        });
+        const { go } = production([100000], 0, store);
+        const second = await go();
+        expect(first.run.outcome).toBe('completed');
+        expect(second.run.outcome).toBe('refused');
+        expect(second.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
+        expect(store.dailyRuns()).toEqual([first.runId]);
+    });
+
+    it('refuses an authorization of 0 when the money-moving measurements add up to more than 0', async () => {
+        const { go, store, sent } = production([100000], 0);
         const result = await go();
         expect(result.run.outcome).toBe('refused');
-        expect(result.run.reason).toContain('add up to 0');
+        expect(result.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
+        expect(result.run.reason).toContain('100000');
         expect(store.consumedBy()).toBeUndefined();
+        expect(sent).toEqual([]);
     });
 
     it('does not apply the exact-sum rule to a sandbox run, which consumes nothing', async () => {
@@ -765,26 +847,6 @@ describe('n6: amounts in pesos have at most two decimals, as numbers and as stri
     });
 
     it.each([
-        '1.005',
-        '10.123',
-        '1500.',
-        '.5',
-        '1e3',
-        '-1',
-        '1,50',
-        ' 1.00',
-        '0x10'
-    ])('refuses the string %j', async (amount) => {
-        const { result, writes } = await attempt(
-            '/v1/orders',
-            { total_amount: amount, transactions: { payments: [{ amount }] } },
-            100
-        );
-        expect(result.run.outcome).toBe('aborted');
-        expect(writes()).toEqual([]);
-    });
-
-    it.each([
         [1500, 150000],
         [1500.1, 150010],
         [0.01, 1],
@@ -794,18 +856,166 @@ describe('n6: amounts in pesos have at most two decimals, as numbers and as stri
         const { result } = await attempt('/v1/payments', payment(amount), minor);
         expect(result.run.outcome).toBe('completed');
     });
+});
+
+describe('F2: a definitive 4xx releases its reservation, an unknown outcome keeps it', () => {
+    const refundPath = /\/v1\/payments\/[^/]+\/refunds$/;
+    const refunder = (attempts: number) =>
+        money('M1', async (ctx): Promise<JsonValue> => {
+            const made = await ctx.send({
+                label: 'charge',
+                request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                chargeMinor: CAP
+            });
+            for (let index = 0; index < attempts; index += 1) {
+                await ctx.send({
+                    label: `refund-${index}`,
+                    request: {
+                        method: 'POST',
+                        path: `/v1/payments/${idOf(made)}/refunds`,
+                        body: { amount: 1500 }
+                    },
+                    refundMinor: CAP
+                });
+            }
+            return 'done';
+        });
+
+    it('lets a refund be retried after the provider refused it with a 4xx, and books it once', async () => {
+        let refunds = 0;
+        const { transport, writes } = provider({
+            onWrite: (sent) => {
+                if (!refundPath.test(sent.path)) return undefined;
+                refunds += 1;
+                return refunds === 1
+                    ? { status: 422, body: { message: 'refused' } }
+                    : { status: 201, body: {} };
+            }
+        });
+        const result = await run({ catalog: [refunder(2)], transport });
+        expect(result.run.outcome).toBe('completed');
+        expect(result.run.reason).toBeUndefined();
+        expect(writes()).toHaveLength(3);
+        expect(result.run.ledger).toEqual({ charged: CAP, refunded: CAP });
+    });
 
     it.each([
-        ['10.5', 1050],
-        ['10.50', 1050],
-        ['0.01', 1],
-        ['1500', 150000]
-    ])('accepts the string %j as %s minor units', async (amount, minor) => {
-        const { result } = await attempt(
-            '/v1/orders',
-            { total_amount: amount, transactions: { payments: [{ amount }] } },
-            minor
-        );
+        400, 401, 403, 404, 422
+    ])('lets a charge be retried after a definitive %s without passing the cap', async (status) => {
+        let attempts = 0;
+        const { transport } = provider({
+            onWrite: () => {
+                attempts += 1;
+                return attempts === 1 ? { status, body: { message: 'no' } } : undefined;
+            }
+        });
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    for (const label of ['first', 'second']) {
+                        await ctx.send({
+                            label,
+                            request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                            chargeMinor: CAP
+                        });
+                    }
+                    return 'done';
+                })
+            ],
+            transport
+        });
         expect(result.run.outcome).toBe('completed');
+        expect(result.run.ledger).toEqual({ charged: CAP, refunded: 0 });
+    });
+
+    it('still holds the cap on the reserved amount before the answer arrives', async () => {
+        const { transport } = provider();
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    for (const label of ['first', 'second']) {
+                        await ctx.send({
+                            label,
+                            request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                            chargeMinor: CAP
+                        });
+                    }
+                    return 'done';
+                })
+            ],
+            transport
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('BUDGET_EXCEEDED');
+    });
+
+    it.each([
+        ['a 5xx', () => ({ status: 503, body: {} })],
+        ['a 409', () => ({ status: 409, body: {} })],
+        ['a 429', () => ({ status: 429, body: {} })],
+        ['a 408', () => ({ status: 408, body: {} })],
+        ['a lost answer', () => new Error('socket hang up')],
+        ['a 2xx create without an id', () => ({ status: 201, body: {} })]
+    ])('keeps the reservation on %s and aborts with WRITE_OUTCOME_UNKNOWN', async (_name, answer) => {
+        const { transport } = provider({ onWrite: answer });
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    await ctx.send({
+                        label: 'charge',
+                        request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                        chargeMinor: CAP
+                    });
+                    return 'done';
+                })
+            ],
+            transport
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('WRITE_OUTCOME_UNKNOWN');
+        expect(result.run.reason).toContain(
+            watchWriteKey({ runId: result.runId, entryId: 'M1', label: 'charge', sequence: 0 })
+        );
+        expect(result.run.ledger).toEqual({ charged: CAP, refunded: 0 });
+    });
+});
+
+describe('F3: every progress record carries the ledger as it stands', () => {
+    it('stores the reserved charge with its key, and the release with the refusal', async () => {
+        const store = memoryRunStore();
+        let refused = false;
+        const { transport } = provider({
+            onWrite: () => {
+                if (refused) return undefined;
+                refused = true;
+                return { status: 400, body: {} };
+            }
+        });
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    for (const label of ['first', 'second']) {
+                        await ctx.send({
+                            label,
+                            request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                            chargeMinor: CAP
+                        });
+                    }
+                    return 'done';
+                })
+            ],
+            transport,
+            store
+        });
+        expect(result.run.outcome).toBe('completed');
+        // key(first), release(first), key(second), id(second)
+        expect(store.progress.map((entry) => entry.ledger)).toEqual([
+            { charged: CAP, refunded: 0 },
+            { charged: 0, refunded: 0 },
+            { charged: CAP, refunded: 0 },
+            { charged: CAP, refunded: 0 }
+        ]);
+        expect(store.progress[0]?.writeKeys).toHaveLength(1);
+        expect(store.progress[1]?.writeKeys).toBeUndefined();
     });
 });

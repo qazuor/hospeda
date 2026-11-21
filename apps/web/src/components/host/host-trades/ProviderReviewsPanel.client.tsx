@@ -95,10 +95,10 @@ export function ProviderReviewsPanel({
 
     return (
         <div className={styles.panel}>
-            <h3 className={styles.sectionTitle}>
+            <h2 className={styles.sectionTitle}>
                 {t('host-trades.provider.reviews.title', 'Valoraciones')}
                 {initialTotal > 0 ? ` (${initialTotal})` : ''}
-            </h3>
+            </h2>
 
             <ul className={styles.list}>
                 {initialReviews.map(({ review, author }) => {

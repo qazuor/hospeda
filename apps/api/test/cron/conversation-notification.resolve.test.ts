@@ -53,7 +53,8 @@ vi.mock('drizzle-orm', () => ({
     desc: vi.fn((col: unknown) => ({ desc: col }))
 }));
 
-vi.mock('@repo/notifications', () => ({
+vi.mock('@repo/notifications', async () => ({
+    ...(await import('../../../../packages/notifications/src/templates/conversation/subjects.ts')),
     ConversationNewMessage: vi.fn().mockReturnValue({ type: 'mock-email-template' }),
     ConversationNewMessageAnon: vi.fn().mockReturnValue({ type: 'mock-email-anon-template' })
 }));

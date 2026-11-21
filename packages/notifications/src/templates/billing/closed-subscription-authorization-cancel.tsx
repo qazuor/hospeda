@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject and heading of the notice sent before a live authorization found on a closed subscription is cancelled. */
 export const CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT =

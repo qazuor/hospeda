@@ -26,7 +26,7 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import { buildEntityCacheTags, CACHE_TAG_ALL } from '@repo/cache-tags';
+import { buildEntityCacheTags, CACHE_TAG_ALL, CACHE_TAG_PARTNER_TYPES } from '@repo/cache-tags';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { partnerApi } from '@/lib/api/endpoints';
@@ -34,6 +34,8 @@ import { toPartnerDetailProps } from '@/lib/api/transforms';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
+import { resolvePartnerContactLink } from '@/lib/listing-contact/partner-contact-link';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { evaluatePartnerIndexability } from '@/lib/seo/partner-indexable';
 import { buildUrl } from '@/lib/urls';
@@ -87,11 +89,19 @@ applyCacheHeaders({
     // `CACHE_TAG_ALL` is the filler rather than a collection tag because
     // partners deliberately have none.
     tags:
-        primaryCacheTag !== undefined ? [primaryCacheTag, ...extraCacheTags] : [CACHE_TAG_ALL]
+        primaryCacheTag !== undefined
+            ? // The type label is catalog data: a rename purges this tag (HOS-2336).
+              [primaryCacheTag, ...extraCacheTags, CACHE_TAG_PARTNER_TYPES]
+            : [CACHE_TAG_ALL]
 });
 
 // --- Presentation ---
-const typeLabel = t(`partners.types.${partner.type}`, partner.type);
+// The type label is catalog data resolved by the transform (HOS-2336 AC-5.1).
+// An API older than HOS-2336 still answers a bare enum string: label it with
+// the legacy keys so a web-first rollout never renders a raw value.
+const typeLabel =
+    partner.typeLabel ??
+    (partner.legacyType ? t(`partners.types.${partner.legacyType}`, partner.legacyType) : null);
 const metaTitle = t('partners.detail.metaTitle', `${partner.name} — Aliado de Hospeda`, {
     name: partner.name
 });
@@ -124,10 +134,14 @@ const socialLinks = Object.entries(partner.socialNetworks ?? {})
 /** The partner's own site, same treatment — see `socialLinks` above. */
 const websiteHref = resolveSafeExternalUrl(partner.websiteUrl);
 
-/** Contact rows, same treatment. */
+/** Contact rows, with native links for phone and email. */
+const contactOrigin: ContactOrigin = 'contact_block';
 const contactRows = Object.entries(partner.contactInfo ?? {})
     .filter(([, value]) => typeof value === 'string' && value.trim().length > 0)
-    .map(([field, value]) => ({ field, value: String(value) }));
+    .map(([field, value]) => ({
+        value: String(value),
+        link: resolvePartnerContactLink({ field, value: String(value) })
+    }));
 ---
 
 <DefaultLayout
@@ -149,7 +163,7 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
                     decoding="async"
                 />
             )}
-            <p class="partner__type">{typeLabel}</p>
+            {typeLabel && <p class="partner__type">{typeLabel}</p>}
             <h1 class="partner__name">{partner.name}</h1>
         </header>
 
@@ -170,7 +184,17 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
                 </h2>
                 <ul class="partner__list">
                     {contactRows.map((row) => (
-                        <li class="partner__list-item">{row.value}</li>
+                        <li class="partner__list-item">
+                            {row.link ? (
+                                <a
+                                    href={row.link.href}
+                                    data-contact-channel={row.link.channel}
+                                    data-listing-id={partnerId}
+                                    data-vertical="partner"
+                                    data-contact-origin={contactOrigin}
+                                >{row.value}</a>
+                            ) : row.value}
+                        </li>
                     ))}
                 </ul>
             </section>
@@ -233,6 +257,11 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
     </article>
 </DefaultLayout>
 
+<script>
+    import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-links';
+    initContactLinkTracking({ document });
+</script>
+
 <style>
     .partner {
         max-width: 720px;
@@ -290,7 +319,7 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
 
     .partner__website a,
     .partner__list-item a {
-        color: var(--brand-primary);
+        color: var(--brand-primary-link);
     }
 
     .partner__block-title {

@@ -24,16 +24,23 @@ const PASSAGE_TABLE = 'cutover_v6_deleted_listing';
 
 /**
  * The 9 legacy `entity_type` tables, `fix_request` (the spec's `pedido_de_arreglo`),
- * `domain_event` and the two HOS-2192 location exception tables: 13 in all.
+ * `domain_event`, the two HOS-2192 location exception tables and `owner_promotions`
+ * (HOS-2270), on top of the HOS-2256 interaction tables: 16 in all. `owner_promotions` is walked by its new `entity_type` column but
+ * ALSO has a FK to accommodations until the release N+1 drops `accommodation_id`; a table
+ * with both is listed as `fk` (the guard lets the FK win), so the list row does not move
+ * until that release flips it to `entity_type`.
  */
 const EXPECTED_ENTITY_TYPE = [
     'domain_event',
     'entity_comments',
+    'entity_interaction_monthly_rollups',
+    'entity_interactions',
     'entity_view_monthly_rollups',
     'entity_views',
     'fix_request',
     'location_exception_event',
     'location_exception_request',
+    'owner_promotions',
     'qr_codes',
     'r_entity_tag',
     'revalidation_config',
@@ -131,7 +138,7 @@ afterAll(async () => {
 });
 
 describe('TEST:V6:15 the schema walk over a database built from empty', () => {
-    it('finds 29 tables by FK and the 13 expected by entity_type, plus the passage table', () => {
+    it('finds 29 tables by FK and the 16 expected by entity_type, plus the passage table', () => {
         expect(byFk).toHaveLength(29);
         // The passage table is seen by the catalog walk and excluded by name (see PASSAGE_TABLE).
         expect(byEntityType).toContain(PASSAGE_TABLE);

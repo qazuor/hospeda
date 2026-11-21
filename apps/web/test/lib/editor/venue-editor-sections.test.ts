@@ -56,8 +56,16 @@ describe('buildVenueEditorSections: the vertical split', () => {
 
         // Asserted as an exact list rather than N `toContain`s so a FOURTH cannot
         // be added without this failing and someone deciding whether an
-        // experience should have it.
-        expect(extra).toEqual(['location', 'menu', 'dailySpecials', 'venueEvents', 'nightInfo']);
+        // experience should have it. `promotions` is venue-only by HOS-2271: experience
+        // promotions are out of scope of the HOS-2252 program.
+        expect(extra).toEqual([
+            'location',
+            'menu',
+            'dailySpecials',
+            'venueEvents',
+            'promotions',
+            'nightInfo'
+        ]);
     });
 
     it('should place the venue-only run in order, ending at the FAQ page', () => {
@@ -65,7 +73,8 @@ describe('buildVenueEditorSections: the vertical split', () => {
 
         expect(ids.indexOf('menu')).toBe(ids.indexOf('dailySpecials') - 1);
         expect(ids.indexOf('dailySpecials')).toBe(ids.indexOf('venueEvents') - 1);
-        expect(ids.indexOf('venueEvents')).toBe(ids.indexOf('faqs') - 1);
+        expect(ids.indexOf('venueEvents')).toBe(ids.indexOf('promotions') - 1);
+        expect(ids.indexOf('promotions')).toBe(ids.indexOf('faqs') - 1);
     });
 
     it('should place nightInfo after the FAQ page and in the property group', () => {

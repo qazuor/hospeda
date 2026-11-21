@@ -1,4 +1,4 @@
-import type { ProtectedEffectiveSetResponse } from '@repo/schemas';
+import { type ProtectedEffectiveSetResponse, VenuePromoBadgeSchema } from '@repo/schemas';
 /**
  * Centralized API response to card component prop transformations.
  *
@@ -37,10 +37,12 @@ import type {
     VenueEvent,
     VenueMenuSection,
     VenueOpeningHoursEntry,
-    VenueSocialNetworks
+    VenueSocialNetworks,
+    VenueWhatsappState
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { parseListingPolicyValues } from '../listing/listing-policies';
+import { normalizeListingVideos } from '../listing/listing-videos';
 import { parseLocationException } from '../listing/location-exception-view';
 import { webLogger } from '../logger';
 import {
@@ -1041,54 +1043,9 @@ export function toAccommodationDetailPageProps({
             : {}),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
-            const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
-            // Normalize videos to `{ url, caption?, description? }`. Accepts both
-            // the schema shape (objects) and legacy bare-URL strings so older
-            // accommodation records keep rendering.
-            //
-            // HOS-1022: `moderationState` is read here ONLY to filter — it is
-            // still dropped from the output object, exactly as before. Nothing
-            // read `videos` on the public detail page prior to this ticket, so
-            // no filter existed; now that a video actually reaches the DOM as an
-            // `<iframe>`, an un-approved one must not render. A legacy bare-URL
-            // string entry carries no `moderationState` at all (it predates the
-            // field), which is treated as "not approved" — fail closed, matching
-            // the platform's moderation default, rather than assuming old data is
-            // safe to publish unreviewed.
-            const videos = (rawVideos ?? [])
-                .map((entry) => {
-                    if (typeof entry === 'string') {
-                        return entry.length > 0 ? { url: entry, moderationState: undefined } : null;
-                    }
-                    if (entry && typeof entry === 'object') {
-                        const v = entry as Record<string, unknown>;
-                        const url = typeof v.url === 'string' ? v.url : '';
-                        if (!url) return null;
-                        return {
-                            url,
-                            caption: typeof v.caption === 'string' ? v.caption : undefined,
-                            description:
-                                typeof v.description === 'string' ? v.description : undefined,
-                            moderationState:
-                                typeof v.moderationState === 'string'
-                                    ? v.moderationState
-                                    : undefined
-                        };
-                    }
-                    return null;
-                })
-                .filter(
-                    (
-                        entry
-                    ): entry is {
-                        url: string;
-                        caption?: string;
-                        description?: string;
-                        moderationState?: string;
-                    } => entry !== null
-                )
-                .filter((entry) => entry.moderationState === 'APPROVED')
-                .map(({ moderationState: _moderationState, ...rest }) => rest);
+            // HOS-1022 / HOS-2258: the approved-only normalization is shared with
+            // the venue detail page (`normalizeListingVideos`).
+            const videos = normalizeListingVideos({ raw: mediaObj?.videos });
             return {
                 images: mediaObj?.images ?? extractGalleryUrls(item),
                 // Preserve caption/description alongside gallery URLs so
@@ -2778,6 +2735,7 @@ export function toVenueCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
+        promoBadge: VenuePromoBadgeSchema.safeParse(item.promoBadge).data,
         openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null,
         // SPEC-098: pass through favorite/bookmark enrichment when present.
@@ -2991,7 +2949,8 @@ function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
             date: event.date == null ? null : String(event.date),
             weekday: typeof event.weekday === 'number' ? event.weekday : null,
             startTime: String(event.startTime ?? ''),
-            endTime: event.endTime == null ? null : String(event.endTime)
+            endTime: event.endTime == null ? null : String(event.endTime),
+            ticketUrl: typeof event.ticketUrl === 'string' ? event.ticketUrl : null
         }))
         .filter((event) => event.id.length > 0 && event.title.length > 0);
 }
@@ -3023,6 +2982,22 @@ function toVenueDetailLocation(raw: unknown): VenueDetailLocation | null {
         lat: read(coordinates, 'lat'),
         long: read(coordinates, 'long')
     };
+}
+
+/**
+ * Reads the public WhatsApp block of a venue (HOS-2256). Fail-closed: anything
+ * that is not exactly one of the two documented shapes is "no button", and the
+ * number is kept only for `PUBLIC`, so a malformed payload can never turn a
+ * `LOGGED_IN_ONLY` block into a published number.
+ */
+function parseVenueWhatsapp(raw: unknown): VenueWhatsappState | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    if (obj.mode === 'LOGGED_IN_ONLY') return { mode: 'LOGGED_IN_ONLY' };
+    if (obj.mode === 'PUBLIC' && typeof obj.number === 'string' && obj.number.trim()) {
+        return { mode: 'PUBLIC', number: obj.number.trim() };
+    }
+    return null;
 }
 
 /**
@@ -3058,6 +3033,7 @@ export function toVenueDetailPageProps({
         ),
         richDescription: item.richDescription == null ? null : String(item.richDescription),
         contactInfo: normalizeVenueContactInfo(item.contactInfo),
+        whatsapp: parseVenueWhatsapp(item.whatsapp),
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
@@ -3071,6 +3047,11 @@ export function toVenueDetailPageProps({
         // re-applies either.
         dailySpecials: mapVenueDailySpecials(item.dailySpecials),
         venueEvents: mapVenueEvents(item.venueEvents),
+        // HOS-2258: already withheld by the API's trait projection for a plan
+        // without `can_embed_video`; only approved entries are kept here.
+        videos: normalizeListingVideos({
+            raw: (item.media as { videos?: unknown } | null)?.videos
+        }),
         nightInfo: toVenueNightInfo({ item, locale }),
         policies: parseListingPolicyValues({ raw: item.policies }),
         rating: parsePublicDimensionRatings(item.rating),
@@ -3393,6 +3374,29 @@ export function toExperienceDetailPageProps({
  * @param locale - Active locale for i18n field resolution
  * @returns Typed PartnerDetailData for the partner detail page
  */
+/**
+ * Resolves the public partner type `{ slug, name, nameI18n }` (HOS-2336 D5) to
+ * the label the page renders: `nameI18n[locale]`, then Spanish, then `name`.
+ * A bare string (an API older than HOS-2336) yields `null` here and is carried
+ * as `legacyType` instead, so it never renders as "[object Object]" or a raw
+ * enum value.
+ *
+ * @param input - The raw `type` value and the page locale.
+ * @returns The label, or `null` when the payload carries no type.
+ */
+function resolvePartnerTypeLabel({
+    type,
+    locale
+}: {
+    readonly type: unknown;
+    readonly locale: string;
+}): string | null {
+    if (!type || typeof type !== 'object') return null;
+    const { name, nameI18n } = type as { name?: unknown; nameI18n?: I18nTextLike };
+    const label = resolveI18nTextWithLegacyFallback({ i18n: nameI18n, legacy: name, locale });
+    return label || null;
+}
+
 export function toPartnerDetailProps({
     item,
     locale = 'es'
@@ -3407,7 +3411,8 @@ export function toPartnerDetailProps({
             legacy: item.name,
             locale
         }),
-        type: String(item.type || ''),
+        typeLabel: resolvePartnerTypeLabel({ type: item.type, locale }),
+        legacyType: typeof item.type === 'string' && item.type !== '' ? item.type : null,
         description:
             item.description == null
                 ? null

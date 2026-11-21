@@ -42,6 +42,7 @@ export const VENUE_DETAIL_SECTION_BODY = {
     menu: true,
     dailySpecials: true,
     venueEvents: true,
+    promotions: true,
     faqs: true,
     nightInfo: true,
     translations: false

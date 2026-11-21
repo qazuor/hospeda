@@ -206,7 +206,21 @@ async function latestCreditedOfRow(input: {
     return fromProvider ?? fromManual;
 }
 
-/** The row whose `sucedida_por` points at this one (I-5); never `sucede_a`. */
+/**
+ * The row whose `sucedida_por` points at this one (I-5); never `sucede_a`.
+ *
+ * Why never `sucede_a` (HOS-2374): R17 returns the predecessor's payment because "the credit
+ * came from that payment", which only holds once the succession is CLOSED and the predecessor
+ * is dead. `sucede_a` is written only while the succession is IN PROGRESS: S2 commits the
+ * successor as ACTIVE, and S17+S18 (which write `sucedida_por`) run afterwards, outside that
+ * transaction, through `settleSuccessionAfterActivation`. When S17 defers (notice pending,
+ * provider call failed or unconfirmed) the hourly `subscription-succession-reevaluation` cron
+ * (:33) retries it. In that window the predecessor is still a live row whose payment pays its
+ * own service, and revoking the successor leaves it alive (the "dead, unclosed" succession
+ * state), so following `sucede_a` would refund a payment whose service keeps running. The walk
+ * finds nothing and S36 rejects with `REVOCATION_NO_CREDITED_PAYMENT`: a safe refusal the
+ * operator retries once S18 has closed the succession.
+ */
 async function predecessorOf(input: {
     readonly tx: DrizzleClient;
     readonly subscriptionId: string;

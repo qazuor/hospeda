@@ -9,7 +9,7 @@
  * - The BUDGET guard, in two layers. (1) The authorized amount is EXACT at run level: in pre-flight,
  *   before it is consumed, it must equal the sum of the declared maximum charges of the account's
  *   money-moving measurements (owner decision, 2026-11-18); a mismatch refuses the run and burns
- *   nothing. (2) It also caps the WHOLE run: the engine keeps one running total of charges, and a
+ *   nothing. A read-only battery has a sum of 0 and is authorized with 0 (owner decision F5, 2026-11-18). (2) It also caps the WHOLE run: the engine keeps one running total of charges, and a
  *   measurement whose own maximum is above the authorized amount aborts. Refunds are tracked apart.
  *
  * @module battery/watch-guards
@@ -26,6 +26,22 @@ import {
 export const WATCH_TEST_ACCOUNT_TAG = 'test_user';
 
 const MARKET_TIME_ZONE = 'America/Argentina/Buenos_Aires';
+
+/**
+ * The day of an instant on the market clock (owner decision on B1, 2026-11-19): a zero-sum
+ * authorization covers one run per market day.
+ *
+ * @param args.at - The instant
+ * @returns `YYYY-MM-DD` as read in Buenos Aires
+ */
+export function marketDayOf(args: { readonly at: Date }): string {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: MARKET_TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(args.at);
+}
 
 /**
  * The month of an instant on the market clock.
@@ -175,17 +191,17 @@ export function expectedAuthorizationSum(args: {
  * another catalog, or the catalog changed) refuses the run and burns nothing. The per-run cap stays
  * as a second layer.
  *
- * @param args.entries - The measurements of the account
+ * @param args.entries - The measurements to sum
+ * @param args.account - The account the run targets
  * @param args.authorization - The authorization in force
  * @throws {WatchGuardError} `AUTHORIZATION_SUM_MISMATCH`, naming both numbers
  */
 export function assertAuthorizationCoversMoneyCatalog(args: {
     readonly entries: readonly WatchEntry[];
+    readonly account: WatchAccount;
     readonly authorization: WatchAuthorization;
 }): void {
-    const expected = args.entries
-        .filter((entry) => entry.effect === 'moves-money')
-        .reduce((sum, entry) => sum + (entry.maxChargeMinor ?? 0), 0);
+    const expected = expectedAuthorizationSum({ catalog: args.entries, account: args.account });
     if (expected !== args.authorization.maxChargeMinor) {
         throw new WatchGuardError({
             code: 'AUTHORIZATION_SUM_MISMATCH',

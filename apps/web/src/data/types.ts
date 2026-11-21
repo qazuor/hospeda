@@ -10,6 +10,7 @@
  * All fields are `readonly` to prevent accidental mutation of shared data.
  */
 
+import type { VenuePromoBadge } from '@repo/schemas';
 import type { ListingPolicyValues } from '../lib/listing/listing-policies';
 import type { MediaAttribution } from '../lib/media';
 import type { I18nTextLike } from '../lib/resolve-i18n-text';
@@ -1104,6 +1105,8 @@ export interface VenueCardData {
     readonly reviewsCount: number;
     /** Whether this listing appears in featured/promoted slots. */
     readonly isFeatured: boolean;
+    /** Presence-only promotion marker (HOS-2271). */
+    readonly promoBadge?: VenuePromoBadge;
     /** Structured opening hours by day. Null when not configured by the owner. */
     readonly openingHours: Record<string, VenueOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
@@ -1223,6 +1226,8 @@ export interface VenueEvent {
     readonly startTime: string;
     /** `HH:MM`, or `null` when the venue does not say. */
     readonly endTime: string | null;
+    /** External «Comprar entrada» link (`https`), or `null` (HOS-2255). */
+    readonly ticketUrl: string | null;
 }
 
 /**
@@ -1262,6 +1267,11 @@ export interface VenueContactInfo {
     readonly website?: string | null;
 }
 
+/** WhatsApp button state of a venue's public payload (HOS-2256). */
+export type VenueWhatsappState =
+    | { readonly mode: 'PUBLIC'; readonly number: string }
+    | { readonly mode: 'LOGGED_IN_ONLY' };
+
 export interface VenueDetailData extends VenueCardData {
     /** Structured postal address (HOS-2189). Null when the owner has not set one. */
     readonly location: VenueDetailLocation | null;
@@ -1275,6 +1285,13 @@ export interface VenueDetailData extends VenueCardData {
      * when no usable channel is present.
      */
     readonly contactInfo?: VenueContactInfo | null;
+    /**
+     * State of the WhatsApp button (HOS-2256), derived by the API from the
+     * owner's choice. The number is present ONLY for `PUBLIC`;
+     * `LOGGED_IN_ONLY` never carries it (an island asks a protected endpoint).
+     * `null` when the venue shows no button.
+     */
+    readonly whatsapp?: VenueWhatsappState | null;
     /** External URL for the establishment's menu. Null when not provided. */
     readonly menuUrl?: string | null;
     /**
@@ -1307,6 +1324,16 @@ export interface VenueDetailData extends VenueCardData {
      * `manage_venue_events` — same withholding as {@link menuSections}.
      */
     readonly venueEvents?: readonly VenueEvent[];
+    /**
+     * Approved linked videos (HOS-2258). Empty when the venue has none OR the
+     * owner's plan does not grant `can_embed_video`: the API's trait projection
+     * empties `media.videos`, and the page cannot tell the two apart.
+     */
+    readonly videos?: readonly {
+        readonly url: string;
+        readonly caption?: string;
+        readonly description?: string;
+    }[];
     /**
      * The `nightInfo` section (HOS-1849 / 4.5). Every field is `null` when the
      * section is not `available` — the API's projector removes them — so the
@@ -1623,7 +1650,19 @@ export interface ExperienceDetailData extends ExperienceCardData {
 export interface PartnerDetailData {
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /**
+     * The catalog type's name in the page locale, falling back to Spanish
+     * (HOS-2336 AC-5.1). `null` for a partner the release-N backfill has not
+     * reached yet.
+     */
+    readonly typeLabel: string | null;
+    /**
+     * The bare legacy enum value (`business` / `ngo` / `institution`) when the
+     * API still answers `type` as a string, i.e. an API older than HOS-2336
+     * during a web-first rollout. The page labels it through `partners.types.*`.
+     * `null` whenever {@link typeLabel} came from the catalog.
+     */
+    readonly legacyType: string | null;
     readonly description: string | null;
     readonly logoUrl: string | null;
     readonly websiteUrl: string | null;

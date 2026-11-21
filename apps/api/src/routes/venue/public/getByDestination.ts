@@ -7,6 +7,8 @@
  * (that is AccommodationService-specific); the destinationId scalar filter in
  * _executeSearch provides equivalent behaviour.
  */
+
+import { ownerPromotionModel } from '@repo/db';
 import { VenuePublicListItemSchema } from '@repo/schemas';
 import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -51,14 +53,18 @@ export const publicGetVenuesByDestinationRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
+        const projected = await projectPublicListings({
+            vertical: 'venue',
+            listings: result.data?.items || [],
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
+        });
+        const badges = await ownerPromotionModel.findVenueIdsWithActivePromo({
+            venueIds: projected.map((item) => item.id)
+        });
         return {
             // HOS-1792: withhold the menu file of unentitled owners.
             items: withPublicIsFeaturedList(
-                await projectPublicListings({
-                    vertical: 'venue',
-                    listings: result.data?.items || [],
-                    onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
-                })
+                projected.map((item) => ({ ...item, promoBadge: badges.get(item.id) }))
             ),
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };

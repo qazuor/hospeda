@@ -1,6 +1,7 @@
 /**
  * HOS-2184 T-012 — the MCP binding of a tool definition: caller, error
- * rendering, re-authentication challenge, and auditing of write tools.
+ * rendering, re-authentication challenge, and auditing of every call
+ * (reads too since D-12 of HOS-2335).
  *
  * @module test/lib/mcp/bind-tool
  */
@@ -136,6 +137,7 @@ describe('handleMcpToolCall', () => {
             actor,
             mcpAuth,
             tool: 'probe_write',
+            isWrite: true,
             outcome: 'success',
             target: { type: 'accommodation', id: LISTING_ID },
             contentLength: 4
@@ -176,6 +178,39 @@ describe('handleMcpToolCall', () => {
         });
         expect(mockRecord).toHaveBeenCalledWith(
             expect.objectContaining({ outcome: 'denied', errorCode: ServiceErrorCode.NOT_FOUND })
+        );
+    });
+
+    it('audits a validation error the tool classifies as a refusal as denied, under its reason (HOS-2375)', async () => {
+        // Arrange
+        const { ctx } = ctxFor();
+        const definition = defineTool({
+            name: 'probe_write',
+            title: 'Probe write',
+            description: 'Probe',
+            inputSchema,
+            isWrite: true,
+            reasonMessages: { LISTING_INCOMPLETE: 'Faltan datos obligatorios.' },
+            handler: async () => ({
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Listing incomplete: media',
+                    reason: 'LISTING_INCOMPLETE',
+                    kind: 'denied' as const
+                }
+            })
+        });
+
+        // Act
+        const result = await handleMcpToolCall({ definition, input, ctx });
+
+        // Assert
+        expect(result).toEqual({
+            content: [{ type: 'text', text: 'Faltan datos obligatorios.' }],
+            isError: true
+        });
+        expect(mockRecord).toHaveBeenCalledWith(
+            expect.objectContaining({ outcome: 'denied', errorCode: 'LISTING_INCOMPLETE' })
         );
     });
 
@@ -243,13 +278,16 @@ describe('handleMcpToolCall', () => {
         expect(a).toEqual(b);
     });
 
-    it('does not audit a read tool', async () => {
+    it('audits a read tool too, with isWrite false and its auditTarget only (D-12)', async () => {
         // Arrange
-        const { ctx } = ctxFor();
+        const { actor, ctx } = ctxFor();
         const definition = defineTool({
             ...writeTool(async () => ({ data: { done: true } })),
+            name: 'probe_read',
             isWrite: false,
-            emailUnverifiedOperation: 'READ_OWN'
+            emailUnverifiedOperation: 'READ_OWN',
+            auditDetails: () => ({ step: 'preview' }),
+            auditResultTarget: () => ({ type: 'accommodation', id: 'created' })
         });
 
         // Act
@@ -263,8 +301,27 @@ describe('handleMcpToolCall', () => {
             ctx
         });
 
-        // Assert
-        expect(mockRecord).not.toHaveBeenCalled();
+        // Assert: a read row has no details and no content length, even when
+        // the definition declares readers for them.
+        expect(mockRecord.mock.calls.map(([call]) => call)).toEqual([
+            {
+                actor,
+                mcpAuth,
+                tool: 'probe_read',
+                isWrite: false,
+                outcome: 'success',
+                target: { type: 'accommodation', id: LISTING_ID }
+            },
+            {
+                actor,
+                mcpAuth,
+                tool: 'probe_read',
+                isWrite: false,
+                outcome: 'denied',
+                errorCode: ServiceErrorCode.NOT_FOUND,
+                target: { type: 'accommodation', id: LISTING_ID }
+            }
+        ]);
     });
 
     it('attaches the re-authentication challenge on UNAUTHORIZED', async () => {
@@ -340,6 +397,7 @@ describe('handleMcpToolCall', () => {
             actor,
             mcpAuth,
             tool: 'probe_write',
+            isWrite: true,
             outcome: 'error',
             errorCode: ServiceErrorCode.VALIDATION_ERROR
         });

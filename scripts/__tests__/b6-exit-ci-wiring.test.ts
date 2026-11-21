@@ -6,7 +6,7 @@ import { apiIntegrationCollection } from './helpers/api-integration-collection';
 
 /**
  * B6 exit evidence (TEST:B6:11, AC:B6:13, HOS-1555): this static check pins
- * the seven LISTA:B6 clauses in the tree and their collection by CI. It does
+ * the LISTA:B6 clauses in the tree (6 and 7 retired by HOS-2179 T-7) and their collection by CI. It does
  * not run those tests; the second exit run verifies they pass against the
  * fake provider. The index has its own database test. The B11 sweep is
  * deferred to HOS-1636.
@@ -25,6 +25,8 @@ interface CorteEntry {
     readonly tests: readonly string[];
     readonly files: readonly string[];
     readonly acOnly: readonly string[];
+    /** Struck through in B6.md by HOS-2179 T-7: it owes no evidence, and the spec says why. */
+    readonly retired?: true;
 }
 // LISTA:B6, B6.md:230-252; grouping from AC:B6:13 and TEST "Cubre" rows.
 const clause = (
@@ -34,6 +36,19 @@ const clause = (
     files: readonly string[],
     acOnly: readonly string[] = []
 ): CorteEntry => ({ clause, acs, tests, files, acOnly });
+/** A LISTA:B6 clause HOS-2179 T-7 retired with the order refund channel. */
+const retiredClause = (
+    clause: number,
+    acs: readonly string[],
+    tests: readonly string[]
+): CorteEntry => ({ clause, acs, tests, files: [], acOnly: [], retired: true });
+const SPEC_B6 = '.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B6.md';
+/** The note B6.md carries under every struck-through AC and TEST (HOS-2179 T-7). */
+const RETIRED_NOTE =
+    '**Retirada por HOS-2179 T-7** (`.specs/HOS-2179-addons-pago-unico-checkout-pro/spec.md` §5.11 y §6): el canal de devolución por orden salió con la orden; la devolución de un pago de página sale por el pago, como la de una suscripción (`openOneTimePageChargeMark` → `MARK_PROPOSAL` → `RF2`, `POST /v1/payments/{id}/refunds`).';
+/** The note B6.md carries inside every struck-through LISTA clause (HOS-2179 T-7). */
+const RETIRED_CLAUSE_NOTE =
+    'retirada por HOS-2179 T-7: el canal de devolución por orden salió con la orden; la devolución de un pago de página sale por el pago (`openOneTimePageChargeMark` → `MARK_PROPOSAL` → `RF2`)';
 const CORTE_MAP: readonly CorteEntry[] = [
     clause(
         1,
@@ -91,38 +106,25 @@ const CORTE_MAP: readonly CorteEntry[] = [
         [
             'packages/service-core/test/integration/services/refund-confirm-3.test.ts',
             'packages/service-core/test/integration/services/refund-execute-1.test.ts',
-            'packages/service-core/test/integration/services/one-time-order-send.test.ts',
-            'packages/payments/test/fake-order-charge.test.ts',
-            'packages/payments/test/mercadopago-order-charge.test.ts'
-        ],
-        [
-            'packages/payments/test/fake-order-charge.test.ts',
-            'packages/payments/test/mercadopago-order-charge.test.ts'
+            // HOS-2179 T-7 retired the card order; TEST:B6:10 / AC:B6:12 hold on the payment page.
+            'packages/service-core/test/integration/services/addon-purchase-identity.test.ts',
+            'packages/service-core/test/integration/services/addon-one-time-page.test.ts'
         ]
     ),
-    clause(
-        6,
-        ['AC:B6:8', 'AC:B6:10'],
-        ['TEST:B6:6', 'TEST:B6:8'],
-        [
-            'packages/service-core/test/integration/services/refund-order-confirm.test.ts',
-            'packages/service-core/test/integration/services/refund-order-execute.test.ts',
-            'packages/service-core/test/integration/services/refund-resend.test.ts',
-            'packages/payments/test/mercadopago-order-refund.test.ts',
-            'packages/payments/test/fake-order-refund.test.ts',
-            'packages/payments/test/fake-server-order-refund.test.ts'
-        ]
-    ),
-    clause(
-        7,
-        ['AC:B6:9'],
-        ['TEST:B6:7', 'TEST:B6:11'],
-        [
-            'packages/service-core/test/integration/services/refund-order-held.test.ts',
-            'packages/db/test/integration/b6-order-refund-index.test.ts'
-        ]
-    )
+    // Clauses 6 and 7 were the order refunds; HOS-2179 T-7 struck them through in B6.md.
+    retiredClause(6, ['AC:B6:8'], ['TEST:B6:6']),
+    retiredClause(7, ['AC:B6:9'], ['TEST:B6:7'])
 ];
+const RETIRED_IDS = CORTE_MAP.filter(({ retired }) => retired).flatMap(({ acs, tests }) => [
+    ...acs,
+    ...tests
+]);
+/** The resend (AC:B6:10) outlives the order channel: it is the payment refund's own. */
+const RESEND = {
+    ac: 'AC:B6:10',
+    test: 'TEST:B6:8',
+    file: 'packages/service-core/test/integration/services/refund-resend.test.ts'
+} as const;
 
 const BEYOND_LISTA = {
     acs: ['AC:B6:2', 'AC:B6:6'],
@@ -153,11 +155,6 @@ const DEFERRED_FUNCTIONS = [
         name: 'resendUnansweredRefundCalls',
         file: 'packages/service-core/src/services/billing/refund/resend-refund-call.service.ts',
         exportLine: "export * from './billing/refund/resend-refund-call.service.js';"
-    },
-    {
-        name: 'sendHeldOrderRefund',
-        file: 'packages/service-core/src/services/billing/refund/send-held-order-refund.service.ts',
-        exportLine: "export * from './billing/refund/send-held-order-refund.service.js';"
     }
 ] as const;
 
@@ -264,7 +261,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
     });
 
     describe('(b) every LISTA clause has TEST titles and evidence files', () => {
-        for (const entry of CORTE_MAP) {
+        for (const entry of CORTE_MAP.filter(({ retired }) => !retired)) {
             it(`clause ${entry.clause} (${entry.acs.join(', ')}): ${entry.tests.join(', ')}`, () => {
                 const missingTitles = entry.tests.filter(
                     (id) => !allTitles.some((title) => namesId({ text: title, id }))
@@ -314,14 +311,18 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
 
     describe('(d) B6 ids and clause coverage', () => {
         it('every TEST:B6 id from 1 to 11 has a title outside this file', () => {
-            const ids = Array.from({ length: 11 }, (_, index) => `TEST:B6:${index + 1}`);
+            const ids = Array.from({ length: 11 }, (_, index) => `TEST:B6:${index + 1}`).filter(
+                (id) => !RETIRED_IDS.includes(id)
+            );
             const missing = ids.filter(
                 (id) => !allTitles.some((title) => namesId({ text: title, id }))
             );
             expect(missing, `TEST ids without a title: ${missing.join(', ')}`).toEqual([]);
         });
         it('every AC:B6 id from 1 to 12 has a title outside this file', () => {
-            const ids = Array.from({ length: 12 }, (_, index) => `AC:B6:${index + 1}`);
+            const ids = Array.from({ length: 12 }, (_, index) => `AC:B6:${index + 1}`).filter(
+                (id) => !RETIRED_IDS.includes(id)
+            );
             const missing = ids.filter(
                 (id) => !allTitles.some((title) => namesId({ text: title, id }))
             );
@@ -331,19 +332,59 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
             const clauses = CORTE_MAP.map((entry) => entry.clause);
             const expectedClauses = Array.from({ length: 7 }, (_, index) => index + 1);
             const mappedAcs = new Set(CORTE_MAP.flatMap((entry) => entry.acs));
-            const exitAcs = [
-                'AC:B6:1',
-                'AC:B6:11',
-                'AC:B6:5',
-                'AC:B6:3',
-                'AC:B6:7',
-                'AC:B6:12',
-                'AC:B6:8',
-                'AC:B6:9'
-            ];
+            const exitAcs = ['AC:B6:1', 'AC:B6:11', 'AC:B6:5', 'AC:B6:3', 'AC:B6:7', 'AC:B6:12'];
             expect(new Set(clauses).size).toBe(clauses.length);
             expect([...clauses].sort((a, b) => a - b)).toEqual(expectedClauses);
             expect(exitAcs.filter((id) => !mappedAcs.has(id))).toEqual([]);
+        });
+        it('retired clauses and ids are struck through in B6.md with the HOS-2179 note', () => {
+            const spec = read(SPEC_B6);
+            for (const { clause: number } of CORTE_MAP.filter(({ retired }) => retired)) {
+                const at = spec.search(new RegExp(`^${number}\\. ~~`, 'm'));
+                expect(at, `LISTA:B6 clause ${number} is struck through`).toBeGreaterThan(-1);
+                // The span ends where the next clause starts (or the list ends), as in B10, so
+                // one clause's note never covers its neighbour.
+                const next = spec.indexOf(`\n${number + 1}. `, at);
+                const span = spec.slice(at, next > -1 ? next : spec.indexOf('\n\n', at));
+                const noteAt = span.indexOf(RETIRED_CLAUSE_NOTE);
+                expect(noteAt, `clause ${number} note`).toBeGreaterThan(-1);
+                expect(
+                    span.slice(0, noteAt).trimEnd(),
+                    `clause ${number} text is struck through up to its note`
+                ).toMatch(new RegExp(`^${number}\\. ~~[^~]+~~ —$`));
+            }
+            for (const id of RETIRED_IDS) {
+                const start = spec.indexOf(`\n${id}\n`);
+                expect(start, `${id} heading`).toBeGreaterThan(-1);
+                const lines = spec
+                    .slice(start + 1, spec.indexOf('\n\n<a id=', start))
+                    .split('\n')
+                    .slice(1);
+                expect(lines[0], `${id} carries the retired note`).toBe(RETIRED_NOTE);
+                // Every body line is struck through: only the metadata lines stay plain.
+                const body = lines
+                    .slice(1)
+                    .filter((line) => line.trim() && !/^(Tipo|Cubre|Fuente):/.test(line));
+                expect(body.length, `${id} has a body`).toBeGreaterThan(0);
+                expect(
+                    body.filter((line) => !/^~~.+~~$/.test(line)),
+                    `${id} body lines not struck through`
+                ).toEqual([]);
+            }
+        });
+        it('no test title still claims a retired B6 id', () => {
+            expect(
+                RETIRED_IDS.filter((id) => allTitles.some((title) => namesId({ text: title, id })))
+            ).toEqual([]);
+        });
+        it(`${RESEND.test} ${RESEND.ac} keeps its resend evidence`, () => {
+            expect(
+                testTitles({ source: read(RESEND.file) }).some(
+                    (title) =>
+                        namesId({ text: title, id: RESEND.test }) &&
+                        namesId({ text: title, id: RESEND.ac })
+                )
+            ).toBe(true);
         });
         it('keeps RF5 and charged-back evidence beyond LISTA:B6', () => {
             const missingFiles = BEYOND_LISTA.files.filter(
@@ -365,7 +406,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
     });
 
     describe('(e) the B11 sweep is deferred as data', () => {
-        it('records HOS-1636 phase 2 CT and keeps both sweep functions exported', () => {
+        it('records HOS-1636 phase 2 CT and keeps the resend function exported', () => {
             const entry = DEFERRED[0];
             expect(DEFERRED).toHaveLength(1);
             expect(entry).toEqual({
@@ -388,7 +429,8 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
                     `services/index.ts does not re-export ${contract.name}`
                 ).toContain(contract.exportLine);
             }
-            for (const id of ['TEST:B6:7', 'TEST:B6:8', 'TEST:B6:6'])
+            // TEST:B6:6 and TEST:B6:7 left with the order refunds (HOS-2179 T-7); the resend stays.
+            for (const id of ['TEST:B6:8'])
                 expect(
                     allTitles.some((title) => namesId({ text: title, id })),
                     `${id} has no title`
@@ -397,7 +439,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
     });
 
     describe('(f) the fake provider has the measured lies and rules', () => {
-        it('maps M13 to TEST:B6:3 and includes RP14, RP15 and RP16 by id', () => {
+        it('maps M13 to TEST:B6:3; RP14, RP15 and RP16 left with the order path (HOS-2179 T-7)', () => {
             const fakeLists = JSON.parse(read('packages/payments/src/fake/fake-lists.json')) as {
                 readonly lies: readonly { readonly id: string; readonly defenseTest?: string }[];
                 readonly rules: readonly { readonly id: string }[];
@@ -406,7 +448,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
             const ruleIds = new Set(fakeLists.rules.map((entry) => entry.id));
             expect(m13?.defenseTest, 'M13 does not name TEST:B6:3').toBe('TEST:B6:3');
             for (const id of ['RP14', 'RP15', 'RP16'])
-                expect(ruleIds.has(id), `${id} is missing from fake-lists.json`).toBe(true);
+                expect(ruleIds.has(id), `${id} was retired and must not come back`).toBe(false);
         });
     });
 

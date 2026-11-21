@@ -12,16 +12,23 @@
  * a listing page's HTML — so every navigation re-downloaded it. As an asset the
  * browser fetches it once per session per locale (HOS-369 Wave D).
  *
- * Two constraints shape the tag below, and neither is cosmetic:
+ * Three constraints shape the tag below, and none is cosmetic:
  *
  *  - It is a CLASSIC script assigning a global, never a `fetch`.
  *    `getClientLocaleDict` is synchronous and runs while islands render;
  *    anything asynchronous would hand the first islands an empty dictionary and
  *    every key would silently fall back.
- *  - It is rendered in `<head>`, in all four HTML shells. A parser-inserted
- *    `<script defer>` runs before the deferred module scripts that hydrate
- *    islands only if it comes FIRST in document order; from `<body>` it can land
- *    after an island that appears earlier, and that island hydrates with nothing.
+ *  - It is parser-BLOCKING: no `defer`, no `async` (HOS-2388). Astro does not
+ *    hydrate islands through deferred module scripts. The inline `astro-island`
+ *    runtime starts a `client:load` island's dynamic `import()` as soon as the
+ *    parser reaches it, and that import can resolve before deferred scripts run
+ *    (they wait for the end of parsing AND for the ~600 KB dictionary to
+ *    download). On a cold first load the island then rendered raw keys, or its
+ *    Spanish fallbacks, and kept them. A blocking script costs one download on
+ *    the first visit only (the asset is `immutable`), and it guarantees the
+ *    global exists before any island code runs.
+ *  - It is rendered in `<head>`, in all four HTML shells, so it precedes every
+ *    island in document order.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
@@ -34,4 +41,4 @@ interface Props {
 const { locale } = Astro.props;
 ---
 
-<script defer src={i18nAssetUrl(locale)} is:inline></script>
+<script src={i18nAssetUrl(locale)} is:inline></script>

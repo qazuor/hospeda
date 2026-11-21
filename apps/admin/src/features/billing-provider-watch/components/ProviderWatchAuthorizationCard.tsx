@@ -179,7 +179,13 @@ export function ProviderWatchAuthorizationCard() {
             : consumedBy
               ? translate('statusConsumed', { runId: consumedBy })
               : stored.month === month
-                ? translate('statusActive', { month: stored.month })
+                ? stored.maxChargeMinor === 0
+                    ? // Owner decision on B1 (2026-11-19): 0 is never consumed, it covers a run a day.
+                      translate('statusDaily', {
+                          month: stored.month,
+                          count: String(stored.runIds?.length ?? 0)
+                      })
+                    : translate('statusActive', { month: stored.month })
                 : translate('statusStale', { month: stored.month });
     const usable = stored !== null && !consumedBy && stored.month === month;
     const accountLabel = account.data
@@ -267,7 +273,7 @@ export function ProviderWatchAuthorizationCard() {
                                 {translate('previewError')}
                             </p>
                         )}
-                        {preview.data && preview.data.expectedMaxChargeMinor > 0 && (
+                        {preview.data && preview.data.measurements.length > 0 && (
                             <p data-testid="provider-watch-expected">
                                 {translate('expectedValue', {
                                     amount: formatArs(preview.data.expectedMaxChargeMinor),
@@ -279,9 +285,9 @@ export function ProviderWatchAuthorizationCard() {
                                 })}
                             </p>
                         )}
-                        {preview.data && preview.data.expectedMaxChargeMinor === 0 && (
+                        {preview.data && preview.data.measurements.length === 0 && (
                             <p
-                                className="text-destructive"
+                                className="text-muted-foreground"
                                 data-testid="provider-watch-no-money"
                             >
                                 {translate('noMoneyCatalog')}
@@ -310,13 +316,7 @@ export function ProviderWatchAuthorizationCard() {
                         key={preview.data?.expectedMaxChargeMinor ?? 'pending'}
                         stored={stored}
                         expectedMinor={preview.data?.expectedMaxChargeMinor ?? 0}
-                        disabled={
-                            !canWrite ||
-                            !account.data ||
-                            !preview.data ||
-                            preview.data.expectedMaxChargeMinor === 0 ||
-                            mutation.isPending
-                        }
+                        disabled={!canWrite || !account.data || !preview.data || mutation.isPending}
                         translate={translate}
                         confirmedAccountId={account.data?.id ?? ''}
                         onValid={(value) => {
@@ -334,14 +334,26 @@ export function ProviderWatchAuthorizationCard() {
                 >
                     <AlertDialogContent data-testid="provider-watch-confirm">
                         <AlertDialogHeader>
-                            <AlertDialogTitle>{translate('confirmTitle')}</AlertDialogTitle>
+                            <AlertDialogTitle>
+                                {translate(
+                                    preview.data?.measurements.length === 0
+                                        ? 'confirmTitleDaily'
+                                        : 'confirmTitle'
+                                )}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
                                 {pending
-                                    ? translate('confirmSave', {
-                                          month: pending.month,
-                                          account: accountLabel,
-                                          amount: formatArs(pending.maxChargeMinor)
-                                      })
+                                    ? translate(
+                                          // No money-moving measurement, never "the sum is 0" (HOS-1512).
+                                          preview.data?.measurements.length === 0
+                                              ? 'confirmSaveReadOnly'
+                                              : 'confirmSave',
+                                          {
+                                              month: pending.month,
+                                              account: accountLabel,
+                                              amount: formatArs(pending.maxChargeMinor)
+                                          }
+                                      )
                                     : ''}
                             </AlertDialogDescription>
                         </AlertDialogHeader>

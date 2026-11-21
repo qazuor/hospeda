@@ -72,6 +72,7 @@ test.describe('HOS-2081 CA-1 CA-2 CA-3 encontrar una suscripción por email y ll
         const clock = createAdjustableClock({ start: new Date() });
         providerNamespace = randomUUID();
         const provider = new FakePaymentProvider({
+            allowLocalHttpReturnUrl: true,
             clock,
             idNamespace: providerNamespace,
             honestAbout: [

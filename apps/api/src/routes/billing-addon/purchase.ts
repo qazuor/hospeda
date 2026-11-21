@@ -1,88 +1,32 @@
-import { addonProducts, eq, getDb, users } from '@repo/db';
-import {
-    AddonPurchaseRequestSchema,
-    AddonPurchaseResponseSchema,
-    ServiceErrorCode
-} from '@repo/schemas';
-import {
-    confirmOneTimeOrder,
-    purchaseAddon,
-    readAddonPurchase,
-    rejectOneTimeOrder,
-    ServiceError,
-    sendOneTimeOrder
-} from '@repo/service-core';
+import { AddonPurchaseRequestSchema, AddonPurchaseResponseSchema } from '@repo/schemas';
+import { purchaseAddon, readAddonPurchase } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
-import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { buildAddonPurchasePorts } from './purchase-ports';
-import {
-    answerAddonProviderError,
-    answerPurchaseRefusal,
-    readAddonPurchaseCopy
-} from './purchase-rejections';
+import { answerAddonProviderError, answerPurchaseRefusal } from './purchase-rejections';
 import { addonPurchaseReturnUrl } from './purchase-return-url';
 
-/** Buy an addon for the current actor; order sending stays outside A1's transaction. */
+/**
+ * Buy an addon for the current actor. A recurring addon gets its provider checkout; a one-time
+ * (`UNA_VEZ`) addon gets a Mercado Pago payment page (HOS-2179 §5.1). Either way the answer
+ * carries the sanitized link to redirect to, and no payment data ever reaches this route: the
+ * request schema is strict and has no field for it (§6.2). The provider is called after A1
+ * commits, outside its transaction.
+ */
 export const protectedAddonPurchaseRoute = createProtectedRoute({
     method: 'post',
     path: '/purchases',
     summary: 'Purchase an addon',
-    description: 'Creates or resumes the actor addon purchase request.',
+    description:
+        'Creates or resumes the actor addon purchase request and returns the provider link to pay it.',
     tags: ['Billing addons'],
     requestBody: AddonPurchaseRequestSchema,
     responseSchema: AddonPurchaseResponseSchema,
-    successStatusCode: (result) => {
-        const response = AddonPurchaseResponseSchema.parse(result);
-        if (response.processing && response.order) return 202;
-        return response.outcome === 'CREATED' ? 201 : 200;
-    },
+    successStatusCode: (result) =>
+        AddonPurchaseResponseSchema.parse(result).outcome === 'CREATED' ? 201 : 200,
     handler: async (ctx, _params, body) => {
         const actor = getActorFromContext(ctx);
         const parsed = AddonPurchaseRequestSchema.parse(body);
-        const [product] = await getDb()
-            .select({ chargeKind: addonProducts.chargeKind })
-            .from(addonProducts)
-            .where(eq(addonProducts.id, parsed.productId))
-            .limit(1);
-        if (product?.chargeKind === 'UNA_VEZ' && !parsed.payment) {
-            return createErrorResponse(
-                {
-                    code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: readAddonPurchaseCopy(ctx, 'oneTimePaymentRequired')
-                },
-                ctx,
-                400
-            );
-        }
-        if (product?.chargeKind === 'PERIODICO' && parsed.payment) {
-            return createErrorResponse(
-                {
-                    code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: readAddonPurchaseCopy(ctx, 'recurringPaymentNotAccepted')
-                },
-                ctx,
-                400
-            );
-        }
-        const [owner] =
-            product?.chargeKind === 'UNA_VEZ' && !parsed.payerEmail
-                ? await getDb()
-                      .select({ email: users.email })
-                      .from(users)
-                      .where(eq(users.id, actor.id))
-                      .limit(1)
-                : [];
-        const payerEmail = parsed.payerEmail ?? owner?.email;
-        if (product?.chargeKind === 'UNA_VEZ' && !payerEmail)
-            return createErrorResponse(
-                {
-                    code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: readAddonPurchaseCopy(ctx, 'payerEmailRequired')
-                },
-                ctx,
-                400
-            );
         const ports = buildAddonPurchasePorts();
         try {
             const result = await purchaseAddon(
@@ -92,7 +36,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                     targetId: parsed.targetId,
                     orderRequestId: parsed.orderRequestId,
                     expectedAddonVersionId: parsed.addonVersionId,
-                    payerEmail,
+                    payerEmail: parsed.payerEmail,
                     returnUrl: addonPurchaseReturnUrl({
                         ctx,
                         orderRequestId: parsed.orderRequestId
@@ -104,56 +48,20 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                 return answerPurchaseRefusal({ reason: result.reason, ctx });
             if (result.outcome === 'PENDING_ELSEWHERE') return { ...result, processing: true };
             if (result.chargeKind === 'PERIODICO') return { ...result, processing: false };
-            if (result.outcome === 'EXISTING') {
-                const prior = await readAddonPurchase({
+            // A replayed one-time purchase may be paid already, and one activated while its page
+            // was in flight has no link: never hand out a link to pay a settled purchase again
+            // (§5.5). A waiting purchase without a link is still processing.
+            if (result.outcome === 'EXISTING' || !result.checkoutUrl) {
+                const current = await readAddonPurchase({
                     ownerId: actor.id,
                     orderRequestId: parsed.orderRequestId
                 });
-                if (prior?.status === 'ACTIVE')
-                    return {
-                        ...result,
-                        processing: false,
-                        order: { outcome: 'ORDER_ALREADY_PLACED' as const }
-                    };
+                if (current && current.status !== 'PENDING_AUTHORIZATION') {
+                    const { checkoutUrl: _settledLink, ...settled } = result;
+                    return { ...settled, processing: false };
+                }
             }
-            if (!parsed.payment || !payerEmail)
-                throw new ServiceError(
-                    ServiceErrorCode.INTERNAL_ERROR,
-                    'One-time payment input missing'
-                );
-            const order = await sendOneTimeOrder(
-                {
-                    orderRequestId: parsed.orderRequestId,
-                    payerEmail,
-                    payment: parsed.payment
-                },
-                ports
-            );
-            let orderOutcome: typeof order.outcome | 'ACTIVATED' | 'NOT_APPROVED' | 'UNKNOWN' =
-                order.outcome;
-            if (order.outcome === 'ORDER_PLACED' || order.outcome === 'ORDER_ALREADY_PLACED') {
-                const confirmation = await confirmOneTimeOrder(
-                    { instanceId: result.instanceId },
-                    ports
-                );
-                orderOutcome = confirmation.outcome;
-                if (confirmation.outcome === 'NOT_APPROVED')
-                    await rejectOneTimeOrder({ instanceId: result.instanceId }, ports);
-            }
-            if (order.outcome === 'ORDER_DECLINED')
-                await rejectOneTimeOrder({ instanceId: result.instanceId }, ports);
-            const current = await readAddonPurchase({
-                ownerId: actor.id,
-                orderRequestId: parsed.orderRequestId
-            });
-            return {
-                ...result,
-                processing:
-                    orderOutcome === 'ORDER_DECLINED' || orderOutcome === 'NOT_APPROVED'
-                        ? true
-                        : (current?.processing ?? orderOutcome !== 'ACTIVATED'),
-                order: { outcome: orderOutcome }
-            };
+            return { ...result, processing: !result.checkoutUrl };
         } catch (error) {
             return answerAddonProviderError({ error, ctx });
         }

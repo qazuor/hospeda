@@ -8,10 +8,14 @@
 
 import {
     EXPERIENCE_GROUPS,
+    type GroupConfig,
     OWNER_GROUPS,
+    type PlanCellSource,
+    type RowConfig,
     TOURIST_GROUPS,
     VENUE_GROUPS
 } from '@/components/billing/plan-comparison-rows';
+import { resolveGroupCell } from '@/components/billing/plan-comparison-source';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
 import type { PricingAudience } from '@/lib/billing-i18n';
@@ -33,6 +37,33 @@ const GROUPS_BY_AUDIENCE = {
  */
 export function getComparisonGroups(audience: ComparisonAudience) {
     return GROUPS_BY_AUDIENCE[audience];
+}
+
+/**
+ * Drops the rows flagged `hideUntilGranted` while no rendered plan column
+ * grants them (HOS-2258). A row with the flag and at least one granting column
+ * is kept, so the row appears by itself once a plan gets the entitlement.
+ * Visibility is decided against the same plan the cells resolve against, so a
+ * group that reads an inheriting plan's cells off the Tourist VIP plan
+ * (HOS-2398) also decides "granted" off that plan.
+ * @param input - The group's rows, the plan columns actually rendered, and
+ *   optionally the group and the sellable Tourist VIP plan.
+ * @returns The rows to render, in their original order.
+ */
+export function getVisibleRows(input: {
+    readonly rows: readonly RowConfig[];
+    readonly plans: readonly PlanCellSource[];
+    readonly group?: Pick<GroupConfig, 'resolvesAgainstTouristVip'> | undefined;
+    readonly touristVipPlan?: PlanCellSource | null | undefined;
+}): readonly RowConfig[] {
+    const { rows, plans, group = {}, touristVipPlan = null } = input;
+    return rows.filter(
+        (row) =>
+            !row.hideUntilGranted ||
+            plans.some(
+                (plan) => resolveGroupCell({ group, cell: row.cell, plan, touristVipPlan }) !== 'no'
+            )
+    );
 }
 
 /**

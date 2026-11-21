@@ -1,9 +1,11 @@
 import type { HostTradeCategoryGroup } from '@repo/schemas';
-import { and, count, eq, isNull } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTradeCategories } from '../../schemas/host-trade/host-trade-category.dbschema.ts';
 import { hostTradeCategoryGroups } from '../../schemas/host-trade/host-trade-category-group.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -15,10 +17,76 @@ import { logError, logQuery } from '../../utils/logger.ts';
  */
 export class HostTradeCategoryGroupModel extends BaseModelImpl<HostTradeCategoryGroup> {
     protected table = hostTradeCategoryGroups;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'hostTradeCategoryGroup';
 
     protected getTableName(): string {
         return 'hostTradeCategoryGroups';
+    }
+
+    /**
+     * Admin list page with the catalog's default order (HOS-2340 D3): `display_weight`,
+     * Spanish name (case and accent insensitive through `lower(unaccent(...))`) and
+     * `id` as the final tie-break, which keeps pagination stable.
+     *
+     * @param input.where - Column equality map, translated like `findAll` does.
+     * @param input.additionalConditions - Extra SQL conditions (admin text search).
+     * @param input.page - 1-based page.
+     * @param input.pageSize - Page size (capped at 200, like `findAll`).
+     * @param input.tx - Optional transaction client.
+     * @returns The page of groups and the total of the filtered rows.
+     * @throws DbError if the database query fails.
+     */
+    async findAdminPage(input: {
+        readonly where: Record<string, unknown>;
+        readonly additionalConditions?: readonly SQL[];
+        readonly page: number;
+        readonly pageSize: number;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ items: HostTradeCategoryGroup[]; total: number }> {
+        const db = this.getClient(input.tx);
+        const pageSize = Math.min(input.pageSize, 200);
+        const offset = (input.page - 1) * pageSize;
+        const logContext = { where: input.where, page: input.page, pageSize };
+
+        try {
+            const conditions = [
+                buildWhereClause(input.where, hostTradeCategoryGroups),
+                ...(input.additionalConditions ?? [])
+            ].filter((condition): condition is SQL => condition !== undefined);
+            const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+            const [items, totals] = await Promise.all([
+                db
+                    .select()
+                    .from(hostTradeCategoryGroups)
+                    .where(whereClause)
+                    .orderBy(
+                        asc(hostTradeCategoryGroups.displayWeight),
+                        asc(sql`lower(unaccent(${hostTradeCategoryGroups.nameI18n} ->> 'es'))`),
+                        asc(hostTradeCategoryGroups.id)
+                    )
+                    .limit(pageSize)
+                    .offset(offset),
+                db.select({ total: count() }).from(hostTradeCategoryGroups).where(whereClause)
+            ]);
+
+            const result = {
+                items: items as HostTradeCategoryGroup[],
+                total: totals[0]?.total ?? 0
+            };
+            try {
+                logQuery(this.entityName, 'findAdminPage', logContext, result);
+            } catch {}
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAdminPage', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findAdminPage', logContext, err.message, err);
+        }
     }
 
     /**

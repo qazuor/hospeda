@@ -36,7 +36,8 @@
         "notFound": "We couldn't find this Partner. Check that the link is complete.",
         "alreadyClaimed": "This Partner already has an owner; if it wasn't you, contact support",
         "accountAlreadyOwns": "Your account already owns a Partner. Each account can manage one Partner: claim a second business with another account. If you need help, contact support.",
-        "emailMismatch": "This Partner can only be claimed with the account for the email address used in the application. Sign out and sign in with that account. If the Partner is yours but you want to manage it with a different email address, contact Hospeda.",
+        "emailMismatch": "This Partner can only be claimed with the account for the email address the claim link was sent to. Sign out and sign in with that account. If the Partner is yours but you want to manage it with a different email address, contact Hospeda.",
+        "wrongAccount": "This Partner can only be claimed with the account for the email address the link was sent to. You are currently signed in with a different account.",
         "emailMismatchSignedInAs": "You are signed in as {{email}}.",
         "supportCta": "Contact support",
         "genericError": "We couldn't complete the claim. Please try again in a few minutes."

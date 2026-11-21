@@ -96,6 +96,10 @@ class GenericMockModel {
     async count(_filters?: unknown) {
         return 0;
     }
+    /** HOS-2271: batch lookup for public venue promotion badges. */
+    async findVenueIdsWithActivePromo(_args: { readonly venueIds: readonly string[] }) {
+        return new Map();
+    }
     getTable() {
         return {};
     }
@@ -1507,6 +1511,9 @@ export function createDbMock() {
         // assertions, which is what that failure mode looks like from the
         // summary line.
         PartnerMentionModel: GenericMockModel,
+        // HOS-2336: PartnerTypeService (catalog routes) and PartnerService (which
+        // now validates and hydrates the type) instantiate it at module scope.
+        PartnerTypeModel: GenericMockModel,
         OwnerPromotionModel: GenericMockModel,
         // HOS-113 T-021: PointOfInterestService (+ its default related model)
         // is instantiated at module scope by the new public POI routes, same
@@ -1592,6 +1599,24 @@ export function createDbMock() {
             getStatsForPartner = vi.fn().mockResolvedValue({ total: 0, uniqueVisitors: 0 });
             purgeOlderThan = vi.fn().mockResolvedValue(0);
             rollUpMonth = vi.fn().mockResolvedValue(0);
+        },
+
+        /*
+         * HOS-2256 — listing interactions. EntityInteractionService defaults its
+         * three models at construction time and `routes/index.ts` imports the
+         * capture route, so every suite that mounts the router needs these
+         * exports (same failure mode as the partner trio above).
+         */
+        EntityInteractionModel: class MockEntityInteractionModel {
+            insertInteraction = vi.fn().mockResolvedValue({ id: 'ei_mock_id' });
+            purgeOlderThan = vi.fn().mockResolvedValue(0);
+            rollUpMonth = vi.fn().mockResolvedValue(0);
+        },
+
+        entityInteractionModel: {
+            insertInteraction: vi.fn().mockResolvedValue({ id: 'ei_mock_id' }),
+            purgeOlderThan: vi.fn().mockResolvedValue(0),
+            rollUpMonth: vi.fn().mockResolvedValue(0)
         },
 
         EntityViewModel: class MockEntityViewModel {
@@ -1698,6 +1723,12 @@ export function createDbMock() {
         // protected listing tests can initialize the real app.
         PlanCatalogModel: GenericMockModel,
         planCatalogModel: new GenericMockModel(),
+        // HOS-2336: partner presence reads and partner-application approval use
+        // the shared instance to resolve/hydrate the catalog type.
+        partnerTypeModel: Object.assign(new GenericMockModel(), {
+            findRefsByIds: async () => new Map(),
+            findByIdForShare: async () => null
+        }),
 
         // SPEC-239: Venue singleton model instances. VenueService,
         // VenueReviewService, and the standalone FAQ helpers access these at module
@@ -1705,6 +1736,12 @@ export function createDbMock() {
         // instances (not classes) in @repo/db — mirror that here with GenericMockModel
         // instances so initApp() can construct all venue routes without a real DB.
         venueModel: new VenueMockModel(),
+        // HOS-2270: `OwnerPromotionService` (real in route tests that do not mock it)
+        // and `VenuePromotionService` construct a `VenueModel` to validate the target
+        // of a venue promotion; the CLASS has to be here or the route tree throws
+        // "not a constructor" while it loads.
+        VenueModel: GenericMockModel,
+        ownerPromotionModel: new GenericMockModel(),
         venues: VENUE_TABLE_COLUMNS,
         venueReviewModel: new GenericMockModel(),
         rVenueAmenityModel: new GenericMockModel(),

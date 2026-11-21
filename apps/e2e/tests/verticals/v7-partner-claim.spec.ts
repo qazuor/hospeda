@@ -10,6 +10,19 @@ import { cleanupManualArrearsRows } from '../../fixtures/manual-arrears.ts';
 import { activatePartnerPlan, assignPartnerSlug } from '../../fixtures/partner-lifecycle.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
+/**
+ * The catalog id of the seeded `business` partner type (HOS-2336): approval
+ * now takes `typeId`, not the legacy enum value.
+ */
+async function businessTypeId(): Promise<string> {
+    const rows = await execSQL<{ id: string }>(
+        "SELECT id FROM partner_types WHERE slug = 'business' AND deleted_at IS NULL"
+    );
+    const id = rows[0]?.id;
+    if (!id) throw new Error('The seeded business partner type is missing.');
+    return id;
+}
+
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const applicationIds: string[] = [];
@@ -87,7 +100,7 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         await markProfileCompleted({ userId: claimant.id });
         const approvalInput = PartnerApplicationApproveSchema.parse({
             name: partnerName,
-            type: 'business',
+            typeId: await businessTypeId(),
             reason: `Approved by TEST:V7:22 ${randomUUID()}`
         });
         const approval = await fetch(
@@ -190,7 +203,7 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
                 body: JSON.stringify(
                     PartnerApplicationApproveSchema.parse({
                         name: silverName,
-                        type: 'business',
+                        typeId: await businessTypeId(),
                         reason: `Silver control ${randomUUID()}`
                     })
                 )
@@ -236,12 +249,15 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         await seedCookieConsent(replayPage);
         await attachSession({ page: replayPage, sessionCookie: otherClaimant.sessionCookie });
         await replayPage.goto(claimUrl);
-        await replayPage.getByRole('button', { name: 'Reclamar el Partner' }).click();
+        // HOS-2353: the pre-check answers before any click, so there is no claim button.
         await expect(
             replayPage.getByText(
                 'Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte'
             )
         ).toBeVisible();
+        await expect(replayPage.getByRole('button', { name: 'Reclamar el Partner' })).toHaveCount(
+            0
+        );
         await replayPage.close();
 
         const tamperedPage = await page.context().newPage();
@@ -250,7 +266,6 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         await tamperedPage.goto(
             `${WEB_URL}/es/partners/reclamar/#partner=${partnerId}&secret=${encodeURIComponent(`${secret}x`)}`
         );
-        await tamperedPage.getByRole('button', { name: 'Reclamar el Partner' }).click();
         await expect(
             tamperedPage.getByText('No encontramos este Partner. Revisá que el link esté completo.')
         ).toBeVisible();

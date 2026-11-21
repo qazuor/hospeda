@@ -78,11 +78,24 @@ export interface RowConfig {
     readonly icon?: ComponentType<IconProps> | undefined;
     /** Business lines that own the row's section; absent on common rows. */
     readonly lineMarks?: readonly LineMark[] | undefined;
+    /**
+     * HOS-2258: the row is omitted while no rendered plan column grants it.
+     * Lets a catalog trait ship before any plan includes it without the table
+     * advertising a feature nobody can buy; the row appears on its own once a
+     * plan grants the key.
+     */
+    readonly hideUntilGranted?: boolean | undefined;
 }
 
 export interface GroupConfig {
     readonly id: string;
     readonly rows: readonly RowConfig[];
+    /**
+     * HOS-2398: the group lists benefits the plan INHERITS from Tourist VIP, so
+     * an inheriting plan's cells resolve against the sellable Tourist VIP plan
+     * (see `resolveGroupCellSource`), never against the plan's own rows.
+     */
+    readonly resolvesAgainstTouristVip?: boolean | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -165,19 +178,16 @@ export const TOURIST_AI_ROWS: readonly RowConfig[] = [
 
 /**
  * The tourist-facing rows as they appear in the owner table's "as tourist"
- * group. They are reused VERBATIM: every owner plan already carries the full
- * tourist-vip entitlement set, so each cell resolves correctly against the
- * owner plan's own entitlements.
+ * group. They are reused VERBATIM from the tourist table.
  *
- * This used to run each cell through an `asVipForAll` transform that rewrote
- * the tourist literals into a flat all-yes/all-no. That transform existed only
- * because the cells could not be resolved per-plan; deriving from
- * `plan.entitlements` makes it redundant. The four rows it touched still
- * resolve to "yes" for every owner tier, because each owner plan spreads
- * `TOURIST_VIP_ENTITLEMENTS` (`plans.config.ts`).
+ * An owner plan does not own these benefits: it inherits them from Tourist VIP
+ * at runtime (`resolveTouristVipInheritance`). So the `asTourist` group carries
+ * `resolvesAgainstTouristVip`, and an inheriting plan's cells are resolved
+ * against the sellable Tourist VIP plan (HOS-2398). Resolving them against the
+ * owner plan's own rows only worked while every owner plan carried a copy of
+ * the tourist set, which the HOS-2398 catalog cleanup removes.
  *
- * `limit` cells were always passed through unchanged so that graduated AI
- * quotas surface for owners (SPEC-283).
+ * `limit` cells pass through unchanged, so the quotas shown are the VIP plan's.
  */
 export const OWNER_AS_TOURIST_ROWS: readonly RowConfig[] = [
     ...TOURIST_EXPERIENCE_ROWS,
@@ -462,6 +472,8 @@ export interface PlanCellSource {
     readonly limits: Readonly<Record<string, number>>;
     /** Entitlement keys the plan grants, as plain strings. */
     readonly entitlements: readonly string[];
+    /** Whether the plan inherits Tourist VIP at runtime (HOS-2398). */
+    readonly inheritsTouristVip?: boolean | undefined;
 }
 
 /**
@@ -519,7 +531,7 @@ export const TOURIST_GROUPS: readonly GroupConfig[] = [
 ];
 
 export const OWNER_GROUPS: readonly GroupConfig[] = [
-    { id: 'asTourist', rows: OWNER_AS_TOURIST_ROWS },
+    { id: 'asTourist', rows: OWNER_AS_TOURIST_ROWS, resolvesAgainstTouristVip: true },
     { id: 'asOwner', rows: OWNER_ROWS },
     { id: 'aiBusiness', rows: OWNER_AI_ROWS }
 ];

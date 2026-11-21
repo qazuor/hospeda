@@ -80,21 +80,68 @@ export interface ChargeResult {
     readonly chargeId: string;
 }
 
-/** Capability 2 one-time order request (AC:B6:11/12, MP:EX-41, MP:EX-30). */
-export interface OneTimeChargeInput {
+/**
+ * Capability 2 input: open a page where the customer pays ONE amount once (HOS-2179 §7.2).
+ * It carries no card data: the customer pays on the provider's page, never through us.
+ * The provider offers only instant methods there; that is the adapter's rule, not a field,
+ * so a caller cannot ask for a delayed method.
+ */
+export interface OneTimePaymentInput {
+    /** Our purchase identifier; every payment made on the page carries it back. */
     readonly reference: string;
+    /** The key persisted before the call, sent so a repeat can be recognized. */
     readonly idempotencyKey: string;
     readonly amount: Money;
-    readonly payerEmail: string;
-    readonly paymentToken: string;
-    readonly paymentBrand: string;
-    readonly paymentKind: 'credit' | 'debit';
+    /** Customer-facing text shown on the page (copy, never an identifier: INV:D9). */
+    readonly reason: string;
+    /** Where the customer lands after paying, or after giving up. */
+    readonly returnUrl: string;
+    /** ISO 8601 instant after which the page takes no payment (RP19). */
+    readonly expiresAt: string;
 }
 
-/** One-time order creation result; a declined payment still has an order id (AC:B6:12, MP:EX-30). */
-export interface OneTimeChargeResult {
-    readonly orderId: string;
-    readonly declined: boolean;
+/** Capability 2 output: the page opened. Creating it moves no money. */
+export interface OneTimePaymentResult {
+    readonly paymentPageId: string;
+    /** Where the customer goes to pay, RAW: shown only through `sanitizeApprovalUrl` (GUARD:G10). */
+    readonly approvalUrl: string;
+    /** The expiry the provider read back, ISO 8601. */
+    readonly expiresAt: string;
+}
+
+/** Identifies one payment page (capabilities 5 and 7). */
+export interface PaymentPageRef {
+    readonly paymentPageId: string;
+}
+
+/**
+ * Capability 7 output: a payment page read by id. It carries no "expired" flag
+ * (RP19): whether it still takes payments is `expiresAt` against the caller's clock.
+ * It says nothing of payments either: those are found with `searchCharges`.
+ */
+export interface PaymentPageSnapshot {
+    readonly paymentPageId: string;
+    readonly reference: string;
+    /** ISO 8601 instant the page stops taking payments; null when the provider reads none. */
+    readonly expiresAt: string | null;
+    /** ISO 8601 instant the page was created. */
+    readonly createdAt: string;
+}
+
+/**
+ * Capability 7 input: find the charges made with our reference. Not a source of
+ * truth (INV:D6): it only yields ids, each re-read with `readCharge` before any
+ * decision. Both creation dates are ISO 8601 and bound the result inclusively.
+ */
+export interface ChargeSearchInput {
+    readonly reference: string;
+    readonly createdFrom: string;
+    readonly createdTo: string;
+}
+
+/** Capability 7 output of a charge search: ids to re-read, never state. */
+export interface ChargeSearchResult {
+    readonly chargeIds: readonly string[];
 }
 
 /** Identifies one authorization. */
@@ -124,30 +171,6 @@ export interface RefundInput {
 /** Capability 6 output. */
 export interface RefundResult {
     readonly refundId: string;
-}
-
-/** One order refund returned by Mercado Pago (MP:EX-58, AC:B6:8, TRANS:B:RF3). */
-export interface OrderRefund {
-    readonly refundId: string;
-    readonly amountMinor: number;
-    readonly accredited: boolean;
-}
-
-/** The exact order refund request shape (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-export type OrderRefundScope =
-    | { readonly kind: 'total' }
-    | { readonly kind: 'partial'; readonly transactionId: string; readonly amount: Money };
-
-/** Capability 6 order refund input; reference is the stable key (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-export interface OrderRefundInput {
-    readonly orderId: string;
-    readonly reference: string;
-    readonly scope: OrderRefundScope;
-}
-
-/** All refunds in the order response, including older ones (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-export interface OrderRefundResult {
-    readonly refunds: readonly OrderRefund[];
 }
 
 /**
@@ -220,6 +243,13 @@ export interface ChargeRefund {
     readonly amount: Money;
     /** True only for a refund the provider reads `approved` (the only measured status, D-1); anything else fails closed. */
     readonly accredited: boolean;
+    /**
+     * True only when the provider reads the refund `rejected` or `cancelled`: it was refused and
+     * moved no money (HOS-2516). Those statuses are documented by Mercado Pago but not measured
+     * (matrix row EX-74). Absent or false means "not known to be rejected": a refund still in
+     * process is never read as rejected, so nothing fails a refund on a status it cannot name.
+     */
+    readonly rejected?: boolean;
 }
 
 /** Capability 7 output: a charge as read by id. */
@@ -231,7 +261,7 @@ export interface ChargeSnapshot {
     readonly expiresAt: string | null;
     /** A card validation is zero-amount, does not charge anything and is not a charge from any authorization (RP12). */
     readonly purpose: ChargePurpose;
-    /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
+    /** Null for card validation (RP12) and for a payment made on a one-time payment page (HOS-2179). */
     readonly authorizationId: string | null;
     /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
     readonly reference: string | null;
@@ -253,54 +283,6 @@ export interface ChargeSnapshot {
 
 export type ChargePurpose = 'charge' | 'cardValidation';
 
-/** Identifies one one-time order (capability 7). */
-export interface OrderRef {
-    readonly orderId: string;
-}
-
-/**
- * Capability 7 output: a one-time order, read by id. `reference` is our
- * identifier of the customer's request; `hasApprovedPayment` says whether a
- * payment of the order was approved.
- */
-export interface OrderSnapshot {
-    readonly orderId: string;
-    readonly reference: string;
-    /** The ISO 8601 instant the order was created. */
-    readonly createdAt: string;
-    readonly hasApprovedPayment: boolean;
-    /** True iff the provider reports the order as `failed`: a declined one-time payment creates a failed order (EX-30). */
-    readonly failed: boolean;
-    /** Payment transaction id for a partial refund (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-    readonly paymentTransactionId: string | null;
-    /** Refunds read by order id (MP:EX-58, AC:B6:8, TRANS:B:RF3). */
-    readonly refunds: readonly OrderRefund[];
-}
-
-/**
- * Capability 7 input: search orders by our request identifier. The search is
- * NOT a source of truth (INV:D6): it only yields ids, re-read by id before any
- * decision. Both creation dates are required and the range may not exceed 30
- * days (EX-57); dates are ISO 8601.
- */
-export interface OrderSearchInput {
-    readonly reference: string;
-    readonly createdFrom: string;
-    readonly createdTo: string;
-}
-
-/** One order a search found: ids to re-read, never state. */
-export interface OrderSummary {
-    readonly orderId: string;
-    readonly reference: string;
-    readonly createdAt: string;
-}
-
-/** Capability 7 output of an order search. */
-export interface OrderSearchResult {
-    readonly orders: readonly OrderSummary[];
-}
-
 /** Capability 8 input: one delivery as it reached our receiver. */
 export interface NoticeDelivery {
     readonly headers: Readonly<Record<string, string>>;
@@ -319,7 +301,7 @@ export interface ProviderNotice {
 
 /**
  * The eight capabilities as methods. `pauseAndResume` is two methods and `read`
- * is several (an authorization, a charge and an order, plus their listings); `CAPABILITY_METHODS` maps each method
+ * is several (an authorization, a charge and a payment page, plus their listings); `CAPABILITY_METHODS` maps each method
  * to its capability. Every method receives one object and resolves one object;
  * a refusal rejects with `PaymentProviderError`.
  */
@@ -331,8 +313,8 @@ export interface PaymentProvider {
     authorize(input: AuthorizeInput): Promise<AuthorizeResult>;
     /** Capability 2 · charge. */
     charge(input: ChargeInput): Promise<ChargeResult>;
-    /** Capability 2 · create one order with the request's stable key (AC:B6:11/12, MP:EX-41). */
-    chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult>;
+    /** Capability 2 · open a one-time payment page. Moves no money; a page can be paid twice (RP18). */
+    requestOneTimePayment(input: OneTimePaymentInput): Promise<OneTimePaymentResult>;
     /** Capability 3 · change the amount. Accepted is not applied: re-read. */
     changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement>;
     /** Capability 4 · pause. Accepted is not applied: re-read. */
@@ -341,10 +323,10 @@ export interface PaymentProvider {
     resume(input: AuthorizationRef): Promise<MutationAcknowledgement>;
     /** Capability 5 · cancel. Accepted is not applied: re-read. */
     cancel(input: AuthorizationRef): Promise<MutationAcknowledgement>;
+    /** Capability 5 · close a payment page by moving its expiry to now. Accepted is not applied: re-read. */
+    closeOneTimePayment(input: PaymentPageRef): Promise<MutationAcknowledgement>;
     /** Capability 6 · refund. */
     refund(input: RefundInput): Promise<RefundResult>;
-    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-    refundOrder(input: OrderRefundInput): Promise<OrderRefundResult>;
     /**
      * Capability 7 · read an authorization by id. The read carries its instant
      * (AC:B1:4): a decision takes it through `assertFreshForAct`.
@@ -366,16 +348,15 @@ export interface PaymentProvider {
     /** List ids only; not a ProviderRead or state source. Compare completeness to chargeRecordCount. */
     listCharges(input: AuthorizationRef): Promise<ChargeListResult>;
     /**
-     * Capability 7 · read a one-time order by id. The read carries its instant
+     * Capability 7 · read a payment page by id. The read carries its instant
      * (AC:B1:4): a decision takes it through `assertFreshForAct`.
      */
-    readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>>;
+    readOneTimePayment(input: PaymentPageRef): Promise<ProviderRead<PaymentPageSnapshot>>;
     /**
-     * Capability 7 · search orders by our request identifier (EX-57). Not a
-     * ProviderRead: no decision may rely on it (INV:D6); re-read each id with
-     * `readOrder`.
+     * Capability 7 · search charges by our reference inside a creation range. Not a
+     * ProviderRead: no decision may rely on it (INV:D6); re-read each id with `readCharge`.
      */
-    searchOrders(input: OrderSearchInput): Promise<OrderSearchResult>;
+    searchCharges(input: ChargeSearchInput): Promise<ChargeSearchResult>;
     /** Capability 8 · turn a delivery into a notice (kind, id, version only). */
     decodeNotice(input: NoticeDelivery): Promise<ProviderNotice>;
 }

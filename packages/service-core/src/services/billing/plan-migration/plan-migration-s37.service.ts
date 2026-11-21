@@ -18,6 +18,7 @@ import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
 import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
+import { isLiveSuccessionPredecessor } from '../subscription/late-payment-conditions.js';
 import type { PlanMigrationCohortRow } from './plan-migration-cohort.js';
 import {
     PLAN_MIGRATION_UPCOMING_TEMPLATE,
@@ -190,7 +191,6 @@ async function runInsideTransaction(input: {
             paymentMethod: subscriptions.paymentMethod,
             nextChargeAt: subscriptions.nextChargeAt,
             succeedsId: subscriptions.succeedsId,
-            succeededById: subscriptions.succeededById,
             billingOptionId: subscriptions.billingOptionId,
             cycle: billingOptions.cycle
         })
@@ -248,7 +248,11 @@ async function runInsideTransaction(input: {
         subscription: {
             class: row.class,
             status: row.status,
-            successionInProgress: row.succeedsId !== null || row.succeededById !== null
+            // In progress is read from a live successor; `succeeded_by_id` only marks a
+            // closed succession (HOS-2351).
+            successionInProgress:
+                row.succeedsId !== null ||
+                (await isLiveSuccessionPredecessor({ subscriptionId: row.subscriptionId, tx }))
         },
         hasQueuedChange: queued !== undefined,
         targetOffersCycle: pricing.newAmount !== null && targetOption !== undefined,

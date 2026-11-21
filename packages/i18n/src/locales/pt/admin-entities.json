@@ -112,6 +112,12 @@
             "plural": "Log de segurança",
             "description": "Eventos de autenticação: falhas de login, bloqueios e acessos negados"
         },
+        "mcpActivity": {
+            "singular": "Uso do assistente",
+            "plural": "Uso de assistentes IA",
+            "description": "Cada chamada de um assistente de IA (MCP) em nome de um usuário",
+            "coverageNote": "Não são registradas as chamadas bloqueadas pelo limite de uso, as que falham antes de chegar à ferramenta nem as que se perdem ao salvar o registro."
+        },
         "hostTrade": {
             "singular": "Ofício",
             "plural": "Ofícios",
@@ -338,6 +344,16 @@
             "actor": "Ator",
             "target": "Alvo",
             "message": "Detalhe"
+        },
+        "mcpActivity": {
+            "loggedAt": "Data/Hora",
+            "user": "Usuário",
+            "tool": "Ferramenta",
+            "access": "Tipo",
+            "outcome": "Resultado",
+            "errorCode": "Código de erro",
+            "client": "Assistente",
+            "target": "Alvo"
         }
     },
     "actions": {
@@ -998,7 +1014,9 @@
             "actions": "Ações"
         },
         "actions": {
-            "handle": "Resolver"
+            "handle": "Resolver",
+            "createProvider": "Criar fornecedor",
+            "creatingProvider": "Criando..."
         },
         "handle": {
             "title": "Resolver lead",
@@ -1012,12 +1030,32 @@
             "submit": "Confirmar",
             "submitting": "Salvando...",
             "successApproved": "Lead aprovado com sucesso.",
-            "successRejected": "Lead rejeitado."
+            "successRejected": "Lead rejeitado.",
+            "categoriesLabel": "Categorias escolhidas",
+            "categoryState": {
+                "inactive": "Inativa",
+                "deleted": "Excluída",
+                "missing": "Não existe"
+            },
+            "categoriesNote": "Se nenhuma categoria estiver ativa, o fornecedor não é criado.",
+            "catalogUnavailable": "Não foi possível carregar o catálogo",
+            "warningNoActiveCategory": "Lead aprovado, mas o fornecedor não foi criado: nenhuma das suas categorias está ativa. Reative uma categoria e toque em «Criar fornecedor».",
+            "warningLegacy": "Lead aprovado, mas o fornecedor não foi criado: faltam ao lead os dados para criá-lo automaticamente."
         },
         "pagination": {
             "prev": "Anterior",
             "next": "Próximo",
             "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
+        },
+        "badge": {
+            "providerNotCreated": "Fornecedor não criado"
+        },
+        "provision": {
+            "success": "Fornecedor criado",
+            "alreadyExists": "O fornecedor já existe",
+            "error": "Não foi possível criar o fornecedor. Tente novamente.",
+            "stillNoCategory": "O fornecedor continua sem ser criado: nenhuma das categorias escolhidas está ativa. Reative uma e tente novamente.",
+            "missingData": "Não é possível criar o fornecedor automaticamente: faltam dados no lead."
         }
     },
     "hostTrade": {
@@ -1297,12 +1335,7 @@
         "error": "Não foi possível carregar as candidaturas. Recarregue a página.",
         "previous": "Anterior",
         "next": "Próxima",
-        "page": "Página {page} de {totalPages}",
-        "types": {
-            "business": "Empresa",
-            "ngo": "Organização sem fins lucrativos",
-            "institution": "Instituição"
-        }
+        "page": "Página {page} de {totalPages}"
     },
     "partnerEmptyPresence": {
         "title": "Esvaziar a presença do Partner",

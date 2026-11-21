@@ -220,16 +220,20 @@ describe('what each row says', () => {
         expect(row?.note).toContain('<untrusted_data source="usage_note">');
     });
 
-    it('names a host on the provider side only when the pair is linked', async () => {
+    it('names the host on a host-declared provider-side row only (HOS-2376)', async () => {
         // Act
         const data = await listData({ side: 'provider' });
 
         // Assert
-        const linked = data.items.find((item) => item.id === HOST_DECLARED_ON_OWN.id);
-        const unlinked = data.items.find((item) => item.id === OWN_PROVIDER_DECLARATION.id);
-        expect(linked?.counterpartName).toContain('<untrusted_data source="host_name">');
-        expect(linked?.counterpartName).toContain('Ana');
-        expect(unlinked?.counterpartName).toBeNull();
+        const hostDeclared = data.items.find((item) => item.id === HOST_DECLARED_ON_OWN.id);
+        const providerDeclared = data.items.find((item) => item.id === OWN_PROVIDER_DECLARATION.id);
+        expect(hostDeclared?.counterpartName).toContain('<untrusted_data source="host_name">');
+        expect(hostDeclared?.counterpartName).toContain('Ana');
+        // The provider named this host itself and the pair is not linked: no
+        // name comes back (it would be an e-mail-to-name oracle).
+        expect(providerDeclared?.counterpartName).toBeNull();
+        expect(JSON.stringify(data)).not.toContain('Bea');
+        expect(JSON.stringify(data)).not.toContain('@example.test');
     });
 
     it('carries no host id, email, channel or audit column', async () => {

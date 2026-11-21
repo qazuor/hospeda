@@ -19,6 +19,7 @@ import { execSQL } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
 import { cleanupPermanentGrantE2eRows } from '../../fixtures/permanent-grant-flow.ts';
+import { redeemPromoCode } from '../../fixtures/promo-redeem-helpers.ts';
 import { attachSession, monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
 import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 
@@ -45,6 +46,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         const clock = createAdjustableClock({ start: new Date() });
         const provider = testInfo.title.startsWith('fila 5')
             ? new FakePaymentProvider({
+                  allowLocalHttpReturnUrl: true,
                   clock,
                   idNamespace: providerNamespace,
                   honestAbout: [
@@ -60,6 +62,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
                   ]
               })
             : new FakePaymentProvider({
+                  allowLocalHttpReturnUrl: true,
                   clock,
                   idNamespace: providerNamespace,
                   honestAbout: [
@@ -316,8 +319,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         ]);
         if (!promo[0]) throw new Error('Expected promo created by admin route.');
         promoIds.push(promo[0].id);
-        await article.getByLabel('Código promocional').fill(code);
-        await article.getByRole('button', { name: 'Canjear código' }).click();
+        await redeemPromoCode({ scope: article, code });
         await expect(article.getByTestId('promo-redeem-notice')).toBeVisible();
         await page.reload();
         const updated = articleFor(page, subscriptionId);

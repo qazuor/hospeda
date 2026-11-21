@@ -1,5 +1,5 @@
 import type { AddonOffersResponse } from '@repo/schemas';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import {
     billingSubscriptionApi,
@@ -7,39 +7,43 @@ import {
     publishApi
 } from '@/lib/api/endpoints-protected';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
-import { visibleApiMessage } from '@/lib/api-errors';
+import { type ApiErrorShape, translateApiError, visibleApiMessage } from '@/lib/api-errors';
 import {
+    type ActiveAddonInstance,
     type AddonSubscriptionTarget,
+    addonPlansPath,
+    closedCopyKey,
     eligibleSubscriptionTargets,
     eligibleTargets,
+    isAddonActiveOnTarget,
+    isOfferFullyActive,
     mintOrderRequestId,
     orderIdentityReleased,
+    processingCopyKey,
     purchasableOffers,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
 import styles from './AddonPurchase.module.css';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
+import { type AddonPurchaseView, useAddonPurchaseBack } from './use-addon-purchase-back';
+import { useAddonPurchasePoll } from './use-addon-purchase-poll';
 
 type Offer = AddonOffersResponse['items'][number];
-type View =
-    | 'LOADING'
-    | 'OFFERS'
-    | 'TARGETS'
-    | 'SUBSCRIPTIONS'
-    | 'SUMMARY'
-    | 'PROCESSING'
-    | 'ACTIVE'
-    | 'CLOSED';
-const POLL_INTERVAL_MS = 3000;
-const POLL_MAX_ATTEMPTS = 10;
+type View = AddonPurchaseView;
 const PUBLISH_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
-/** Owner-only addon purchase screen. Billing reads happen in the browser. */
+/**
+ * Owner-only addon purchase screen. Billing reads happen in the browser, so the page itself
+ * stays session-blind. A recurring addon is paid at the provider checkout and a one-time one
+ * on a Mercado Pago payment page (HOS-2179); both redirect, and the return lands here with
+ * `?compra=<id>`, which the screen re-reads until it settles. No card data is ever asked for.
+ */
 export function AddonPurchase(input: {
     readonly locale: SupportedLocale;
     readonly returnOrderRequestId: string | null;
@@ -63,7 +67,16 @@ export function AddonPurchase(input: {
     const [error, setError] = useState<string | null>(null);
     const [purchasesPaused, setPurchasesPaused] = useState(false);
     const [payerEmail, setPayerEmail] = useState(input.accountEmail);
-    const [pollAttempt, setPollAttempt] = useState(0);
+    // The purchase the screen waits on: the one the owner came back for, or the one a replay
+    // answered without a link. A purchase another screen holds is not ours to read.
+    const [pollOrderRequestId, setPollOrderRequestId] = useState(input.returnOrderRequestId);
+    // A purchase another screen holds (PENDING_ELSEWHERE) carries no order id this screen can
+    // read, so nothing would ever end its wait: it shows the "come back later" ending at once.
+    const [waitingElsewhere, setWaitingElsewhere] = useState(false);
+    const [activeInstances, setActiveInstances] = useState<readonly ActiveAddonInstance[]>([]);
+    const [liveSubscriptions, setLiveSubscriptions] = useState<
+        readonly AddonSubscriptionTarget[] | null
+    >(null);
     const targetVertical = target?.vertical ?? subscriptionTarget?.vertical ?? null;
     const free =
         !!offer &&
@@ -101,46 +114,45 @@ export function AddonPurchase(input: {
         };
     }, [input.returnOrderRequestId, t]);
 
+    // HOS-2362: what the account already holds, so a bought addon shows as active instead of
+    // inviting a purchase the API refuses. Best effort: if the read fails the screen simply
+    // behaves as before and the server stays the authority.
+    const refreshActive = useCallback(async () => {
+        try {
+            const result = await billingAddonApi.listRecurringAddons();
+            if (!result.ok) return;
+            setActiveInstances(result.data.items);
+            if (!result.data.items.some((item) => item.status === 'ACTIVE')) return;
+            const subs = await billingSubscriptionApi.listMine({});
+            if (subs.ok)
+                setLiveSubscriptions(
+                    eligibleSubscriptionTargets({
+                        subscriptions: subs.data.subscriptions,
+                        compatibleVerticals: subs.data.subscriptions.map((item) => item.vertical)
+                    })
+                );
+        } catch {
+            // Leave the screen on its pre-read behavior.
+        }
+    }, []);
+
     useEffect(() => {
-        if (
-            !input.returnOrderRequestId ||
-            view !== 'PROCESSING' ||
-            pollAttempt >= POLL_MAX_ATTEMPTS
-        )
-            return;
-        let alive = true;
-        const timer = window.setTimeout(() => {
-            void billingAddonApi
-                .readPurchase({ orderRequestId: input.returnOrderRequestId as string })
-                .then((result) => {
-                    if (!alive) return;
-                    if (result.ok) {
-                        const state = purchaseStateFrom({ read: result.data });
-                        if (state === 'ACTIVE') setView('ACTIVE');
-                        else if (state === 'CLOSED') setView('CLOSED');
-                    } else
-                        setError(
-                            visibleApiMessage({ error: result.error }) ??
-                                t('billing.addonPurchase.loadError')
-                        );
-                    setPollAttempt((attempt) => attempt + 1);
-                })
-                .catch((cause: unknown) => {
-                    if (alive) {
-                        setError(
-                            cause instanceof Error
-                                ? cause.message
-                                : t('billing.addonPurchase.loadError')
-                        );
-                        setPollAttempt((attempt) => attempt + 1);
-                    }
-                });
-        }, POLL_INTERVAL_MS);
-        return () => {
-            alive = false;
-            window.clearTimeout(timer);
-        };
-    }, [input.returnOrderRequestId, pollAttempt, t, view]);
+        void refreshActive();
+    }, [refreshActive]);
+
+    const poll = useAddonPurchasePoll({
+        orderRequestId: pollOrderRequestId,
+        enabled: view === 'PROCESSING',
+        loadError: t('billing.addonPurchase.loadError')
+    });
+    useEffect(() => {
+        if (!poll.read) return;
+        const state = purchaseStateFrom({ read: poll.read });
+        if (state === 'ACTIVE') setView('ACTIVE');
+        else if (state === 'CLOSED') setView('CLOSED');
+    }, [poll.read]);
+    const waitingKind = poll.read?.chargeKind ?? offer?.chargeKind ?? null;
+    const waitEnded = poll.exhausted || waitingElsewhere;
 
     const selectOffer = async (selected: Offer) => {
         setOffer(selected);
@@ -164,7 +176,16 @@ export function AddonPurchase(input: {
                 });
                 setSubscriptionTargets(items);
                 const [only] = items;
-                if (items.length === 1 && only) selectSubscription(only);
+                if (
+                    items.length === 1 &&
+                    only &&
+                    !isAddonActiveOnTarget({
+                        active: activeInstances,
+                        slug: selected.slug,
+                        targetId: only.id
+                    })
+                )
+                    selectSubscription(only);
                 else setView('SUBSCRIPTIONS');
             } catch (cause) {
                 setError(
@@ -221,11 +242,38 @@ export function AddonPurchase(input: {
         setView('SUMMARY');
     };
 
+    const { backView, goBack } = useAddonPurchaseBack({
+        view,
+        target,
+        subscriptionTarget,
+        subscriptionTargetCount: subscriptionTargets.length,
+        busy,
+        setError,
+        setPurchasesPaused,
+        setOffer,
+        setTarget,
+        setSubscriptionTarget,
+        setOrderRequestId,
+        setView
+    });
+
+    /** Known refusal codes and reasons get their localized copy; anything else keeps the API text. */
+    const purchaseErrorMessage = (params: { readonly error: ApiErrorShape }): string => {
+        const { error } = params;
+        const generic = t('billing.addonPurchase.loadError');
+        return translateApiError({
+            error,
+            t,
+            fallback: visibleApiMessage({ error }) ?? generic
+        });
+    };
+
     const confirmPurchase = async () => {
         if (!offer || !orderRequestId || busy) return;
         setBusy(true);
         setError(null);
         setPurchasesPaused(false);
+        setWaitingElsewhere(false);
         const body = {
             productId: offer.productId,
             addonVersionId: offer.addonVersionId,
@@ -236,20 +284,19 @@ export function AddonPurchase(input: {
             if (free) {
                 const result = await billingAddonApi.chooseFree({ body });
                 if (result.ok) setView('ACTIVE');
-                else
-                    setError(
-                        visibleApiMessage({ error: result.error }) ??
-                            t('billing.addonPurchase.loadError')
-                    );
-            } else if (offer.chargeKind === 'PERIODICO') {
-                const email = z.email().safeParse(payerEmail);
-                if (!email.success) {
-                    setError(t('billing.addonPurchase.payerEmailInvalid'));
-                    return;
+                else setError(purchaseErrorMessage({ error: result.error }));
+            } else {
+                // A one-time addon neither asks for the payer email nor sends it (P-8).
+                let payer: { payerEmail?: string } = {};
+                if (offer.chargeKind === 'PERIODICO') {
+                    const email = z.email().safeParse(payerEmail);
+                    if (!email.success) {
+                        setError(t('billing.addonPurchase.payerEmailInvalid'));
+                        return;
+                    }
+                    payer = { payerEmail: email.data };
                 }
-                const result = await billingAddonApi.purchase({
-                    body: { ...body, payerEmail: email.data }
-                });
+                const result = await billingAddonApi.purchase({ body: { ...body, ...payer } });
                 if (result.ok) {
                     const state = purchaseStateFrom({ response: result.data });
                     if (state === 'REDIRECT' && result.data.checkoutUrl)
@@ -257,9 +304,12 @@ export function AddonPurchase(input: {
                             input.navigateToCheckout ??
                             ((url: string) => window.location.assign(url))
                         )(result.data.checkoutUrl);
-                    else if (state === 'ACTIVE') setView('ACTIVE');
-                    else if (state === 'PROCESSING') setView('PROCESSING');
-                    else setView('CLOSED');
+                    else if (state === 'PROCESSING' || state === 'SETTLED') {
+                        // Our own purchase without a link to follow: read it until it settles.
+                        if (result.data.outcome === 'PENDING_ELSEWHERE') setWaitingElsewhere(true);
+                        else setPollOrderRequestId(orderRequestId);
+                        setView('PROCESSING');
+                    } else setView('CLOSED');
                 } else if (result.error.code === 'ADDON_PURCHASES_FROZEN') setPurchasesPaused(true);
                 else {
                     // HOS-2321: the server released this order identity, so the next click must
@@ -269,9 +319,14 @@ export function AddonPurchase(input: {
                     setError(
                         result.error.code === 'ADDON_ORDER_REQUEST_ABANDONED'
                             ? t('billing.addonPurchase.attemptExpired')
-                            : (visibleApiMessage({ error: result.error }) ??
-                                  t('billing.addonPurchase.loadError'))
+                            : purchaseErrorMessage({ error: result.error })
                     );
+                    // HOS-2362: lost a race with another purchase; re-read so the addon shows
+                    // as active and send the owner back to the offers.
+                    if (result.error.code === 'ADDON_ALREADY_ACTIVE') {
+                        void refreshActive();
+                        setView('OFFERS');
+                    }
                 }
             }
         } catch (cause) {
@@ -301,10 +356,28 @@ export function AddonPurchase(input: {
                     {error}
                 </p>
             )}
+            {backView && (
+                <button
+                    type="button"
+                    className={styles.back}
+                    data-testid="addon-purchase-back"
+                    disabled={busy}
+                    onClick={goBack}
+                >
+                    {t('billing.addonPurchase.back')}
+                </button>
+            )}
             {view === 'LOADING' && <p>{t('billing.addonPurchase.loading')}</p>}
             {view === 'OFFERS' && (
                 <AddonOfferList
                     offers={offers}
+                    isActive={(candidate) =>
+                        isOfferFullyActive({
+                            offer: candidate,
+                            active: activeInstances,
+                            subscriptionTargets: liveSubscriptions
+                        })
+                    }
                     onSelect={(selected) => {
                         void selectOffer(selected);
                     }}
@@ -314,6 +387,14 @@ export function AddonPurchase(input: {
             {view === 'TARGETS' && (
                 <AddonTargetPicker
                     items={targets}
+                    isActive={(item) =>
+                        !!offer &&
+                        isAddonActiveOnTarget({
+                            active: activeInstances,
+                            slug: offer.slug,
+                            targetId: item.listingId
+                        })
+                    }
                     onSelect={selectTarget}
                     t={t}
                 />
@@ -321,7 +402,21 @@ export function AddonPurchase(input: {
             {view === 'SUBSCRIPTIONS' && (
                 <AddonSubscriptionPicker
                     items={subscriptionTargets}
+                    isActive={(item) =>
+                        !!offer &&
+                        isAddonActiveOnTarget({
+                            active: activeInstances,
+                            slug: offer.slug,
+                            targetId: item.id
+                        })
+                    }
                     onSelect={selectSubscription}
+                    plansHref={buildUrl({
+                        locale: input.locale,
+                        path: addonPlansPath({
+                            compatibleVerticals: offer?.compatibleVerticals ?? []
+                        })
+                    })}
                     t={t}
                 />
             )}
@@ -343,13 +438,43 @@ export function AddonPurchase(input: {
             {view === 'PROCESSING' && (
                 <p
                     data-testid="addon-purchase-processing"
+                    data-exhausted={waitEnded ? 'true' : 'false'}
                     role="status"
                 >
-                    {t('billing.addonPurchase.processing')}
+                    {t(
+                        waitingElsewhere
+                            ? 'billing.addonPurchase.waitingPaymentLong'
+                            : processingCopyKey({
+                                  chargeKind: waitingKind,
+                                  exhausted: poll.exhausted
+                              })
+                    )}
                 </p>
             )}
-            {view === 'ACTIVE' && <p role="status">{t('billing.addonPurchase.active')}</p>}
-            {view === 'CLOSED' && <p role="status">{t('billing.addonPurchase.closed')}</p>}
+            {view === 'PROCESSING' && poll.error && (
+                <p
+                    role="alert"
+                    className={styles.error}
+                >
+                    {poll.error}
+                </p>
+            )}
+            {view === 'ACTIVE' && (
+                <p
+                    data-testid="addon-purchase-active"
+                    role="status"
+                >
+                    {t('billing.addonPurchase.active')}
+                </p>
+            )}
+            {view === 'CLOSED' && (
+                <p
+                    data-testid="addon-purchase-closed"
+                    role="status"
+                >
+                    {t(closedCopyKey({ read: poll.read }))}
+                </p>
+            )}
         </div>
     );
 }

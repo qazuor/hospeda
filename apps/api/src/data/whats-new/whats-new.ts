@@ -152,6 +152,525 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4634
+    {
+        id: '2026-11-20-unlimited-favorites-shown-as-unlimited',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tus favoritos sin límite ahora se muestran como «ilimitado»',
+            en: 'Your unlimited favorites now show as «unlimited»',
+            pt: 'Seus favoritos sem limite agora aparecem como «ilimitado»'
+        },
+        body: {
+            es: 'Si tu plan de propietario te da los beneficios de Turista VIP, tu plan y el asistente muestran los favoritos y las alertas de precio como «ilimitado», en lugar de un número enorme sin sentido.',
+            en: 'If your owner plan gives you Tourist VIP benefits, your plan and the assistant now show favorites and price alerts as «unlimited» instead of a huge meaningless number.',
+            pt: 'Se o seu plano de proprietário dá os benefícios do Turista VIP, o seu plano e o assistente mostram os favoritos e os alertas de preço como «ilimitado», em vez de um número enorme sem sentido.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4629
+    {
+        id: '2026-11-20-screens-translated-on-first-load',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Las pantallas se ven traducidas desde la primera carga',
+            en: 'Screens now show translated from the first load',
+            pt: 'As telas aparecem traduzidas desde o primeiro carregamento'
+        },
+        body: {
+            es: 'Al abrir Hospeda por primera vez en inglés o en portugués, las pantallas y el aviso de cookies ya aparecen en tu idioma, sin textos sueltos ni español de por medio. Además, la hora del aviso de suscripción pendiente se muestra con un solo punto.',
+            en: 'When you open Hospeda for the first time in English or Portuguese, screens and the cookie notice now appear in your language, with no stray text or Spanish in between. Also, the time in the pending subscription notice now shows a single period.',
+            pt: 'Ao abrir o Hospeda pela primeira vez em inglês ou em português, as telas e o aviso de cookies já aparecem no seu idioma, sem textos soltos nem espanhol no meio. Além disso, o horário do aviso de assinatura pendente aparece com um único ponto.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4631, #4632, #4620
+    {
+        id: '2026-11-20-owner-plans-show-tourist-vip-benefits',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los planes para propietarios muestran los beneficios de Turista VIP',
+            en: 'Owner plans now show their Tourist VIP benefits',
+            pt: 'Os planos para proprietários mostram os benefícios do Turista VIP'
+        },
+        body: {
+            es: 'En la comparativa de planes de alojamiento, locales y experiencias, cada plan para propietarios muestra los beneficios de Turista VIP que incluye, como favoritos sin límite, colecciones de viaje y más consultas con IA.',
+            en: 'In the plan comparison for accommodations, venues and experiences, each owner plan now shows the Tourist VIP benefits it includes, such as unlimited favorites, travel collections and more AI queries.',
+            pt: 'Na comparação de planos de hospedagens, locais e experiências, cada plano para proprietários mostra os benefícios do Turista VIP que inclui, como favoritos sem limite, coleções de viagem e mais consultas de IA.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4594, #4543, #4550, #4607, #4609
+    {
+        id: '2026-11-19-venue-pro-premium-promotions',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Con el plan Profesional o Premium ya podés cargar promociones',
+            en: 'With the Professional or Premium plan you can now add promotions',
+            pt: 'Com o plano Profissional ou Premium você já pode cadastrar promoções'
+        },
+        body: {
+            es: 'En el editor de tu local, «Promociones» te deja crear, pausar y reactivar descuentos y ofertas: hasta 5 activas a la vez con Profesional, sin tope con Premium. Las pausadas no cuentan para el tope. Si tu plan no las incluye, la sección te dice desde qué plan están disponibles y te lleva a comparar planes.',
+            en: 'In your venue editor, «Promotions» lets you create, pause and reactivate discounts and offers: up to 5 active at a time with Professional, no limit with Premium. Paused ones do not count toward the limit. If your plan does not include them, the section tells you which plan unlocks them and takes you to compare plans.',
+            pt: 'No editor do seu local, «Promoções» permite criar, pausar e reativar descontos e ofertas: até 5 ativas ao mesmo tempo com Profissional, sem limite com Premium. As pausadas não contam para o limite. Se o seu plano não as inclui, a seção mostra a partir de qual plano estão disponíveis e leva você a comparar planos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4541, #4608
+    {
+        id: '2026-11-19-venue-promotion-happy-hour',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Tus promos pueden valer solo en ciertos días y horas',
+            en: 'Your promotions can run only on certain days and hours',
+            pt: 'Suas promoções podem valer só em certos dias e horários'
+        },
+        body: {
+            es: 'Al cargar una promoción podés activar una franja semanal, por ejemplo jueves de 22 a 01, aunque pase la medianoche. La ficha muestra el horario y, mientras la franja está vigente, tanto la ficha como la tarjeta de tu local en el listado dicen «Ahora».',
+            en: 'When you add a promotion you can turn on a weekly window, for example Thursday from 22 to 01, even past midnight. Your page shows the schedule and, while the window is on, both your page and your venue card in the listing say "Now".',
+            pt: 'Ao cadastrar uma promoção você pode ativar uma faixa semanal, por exemplo quinta das 22 à 01, mesmo depois da meia-noite. A página mostra o horário e, enquanto a faixa está vigente, tanto a página quanto o cartão do seu local na listagem dizem «Agora».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4592
+    {
+        id: '2026-11-19-admin-partner-page-updates-right-away',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los cambios de un aliado se ven enseguida en su ficha pública',
+            en: "A partner's changes show up right away on its public page",
+            pt: 'As mudanças de um parceiro aparecem logo na sua página pública'
+        },
+        body: {
+            es: 'Si cambiás el tipo de un aliado o renombrás un tipo de aliado desde el panel, su ficha pública muestra la etiqueta nueva en segundos, en lugar de seguir mostrando la anterior durante varios minutos.',
+            en: "If you change a partner's type or rename a partner type from the panel, its public page shows the new label within seconds, instead of keeping the old one for several minutes.",
+            pt: 'Se você mudar o tipo de um parceiro ou renomear um tipo de parceiro pelo painel, a página pública dele mostra o novo rótulo em segundos, em vez de continuar exibindo o antigo por vários minutos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4551
+    {
+        id: '2026-11-19-partner-claim-warns-wrong-account',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El link para reclamar tu Partner te avisa si entraste con otra cuenta',
+            en: 'The link to claim your Partner warns you if you signed in with another account',
+            pt: 'O link para reivindicar seu Partner avisa se você entrou com outra conta'
+        },
+        body: {
+            es: 'Si abrís el link con una cuenta distinta a la del correo donde lo recibiste, lo ves antes de tocar nada y podés cerrar sesión y seguir con la cuenta correcta en un solo paso.',
+            en: 'If you open the link with an account other than the one for the email where you received it, you see it before touching anything and can sign out and continue with the right account in one step.',
+            pt: 'Se você abrir o link com uma conta diferente da do e-mail onde o recebeu, verá isso antes de tocar em qualquer coisa e poderá sair e continuar com a conta certa em um único passo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4584
+    {
+        id: '2026-11-19-checkout-shows-promo-price',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Al confirmar tu suscripción ves el precio con tu código promocional',
+            en: 'When you confirm your subscription you see the price with your promo code',
+            pt: 'Ao confirmar sua assinatura você vê o preço com seu código promocional'
+        },
+        body: {
+            es: 'Si ya canjeaste un código, la confirmación muestra lo que vas a pagar, con el precio de lista tachado y una línea con el código, cuántos cobros dura el descuento y cuánto pagás después.',
+            en: 'If you already redeemed a code, the confirmation shows what you will pay, with the list price struck through and a line with the code, how many charges the discount lasts and what you pay afterwards.',
+            pt: 'Se você já resgatou um código, a confirmação mostra quanto você vai pagar, com o preço de tabela riscado e uma linha com o código, por quantas cobranças dura o desconto e quanto você paga depois.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4585
+    {
+        id: '2026-11-19-queued-plan-change-stays-visible',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Mi suscripción te muestra cuándo cambia tu plan',
+            en: 'My subscription shows when your plan changes',
+            pt: 'Minha assinatura mostra quando seu plano muda'
+        },
+        body: {
+            es: 'Si programaste un cambio a un plan más bajo, Mi suscripción muestra «Tu plan cambia el…» con la fecha, también cuando volvés a entrar o recargás la página.',
+            en: 'If you scheduled a change to a lower plan, My subscription shows "Your plan changes on…" with the date, also when you come back or reload the page.',
+            pt: 'Se você agendou uma troca para um plano menor, Minha assinatura mostra «Seu plano muda em…» com a data, também quando você volta ou recarrega a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4548
+    {
+        id: '2026-11-19-admin-restored-records-come-back-inactive',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Lo que restaurás en el admin vuelve inactivo, como estaba',
+            en: 'What you restore in the admin comes back inactive, as it was',
+            pt: 'O que você restaura no admin volta inativo, como estava'
+        },
+        body: {
+            es: 'Si desactivás, eliminás y restaurás un tipo de partner, un grupo de categorías de proveedores o una categoría de rubro, ahora vuelve como INACTIVO y no como ACTIVO: conserva el estado que tenía. Lo mismo vale para amenities, características, categorías de puntos de interés, atracciones y etiquetas.',
+            en: 'If you deactivate, delete and restore a partner type, a provider trade category group or a trade category, it now comes back as INACTIVE instead of ACTIVE: it keeps the state it had. The same applies to amenities, features, point of interest categories, attractions and tags.',
+            pt: 'Se você desativar, excluir e restaurar um tipo de parceiro, um grupo de categorias de prestadores ou uma categoria de ofício, agora ele volta como INATIVO e não como ATIVO: mantém o estado que tinha. O mesmo vale para comodidades, características, categorias de pontos de interesse, atrações e etiquetas.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4552
+    {
+        id: '2026-11-19-reconciliation-prices-promos-at-charge-time',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'La conciliación ya no marca cobros de menos por promos agotadas',
+            en: 'Reconciliation no longer flags undercharges for used-up promos',
+            pt: 'A conciliação não marca mais cobranças a menos por promoções esgotadas'
+        },
+        body: {
+            es: 'Cada cobro con promo queda registrado con la promo que estaba vigente en ese momento, así que la conciliación ya no reporta un cobro de menos cuando la promo se agotó después. Además, al encolar una baja de plan, la promo termina en ese momento, como avisa la pantalla del cliente.',
+            en: 'Each charge with a promo is recorded with the promo that was in force at that moment, so reconciliation no longer reports an undercharge when the promo ran out later. Also, when a plan downgrade is queued, the promo ends right then, as the customer screen warns.',
+            pt: 'Cada cobrança com promoção fica registrada com a promoção vigente naquele momento, então a conciliação não reporta mais uma cobrança a menos quando a promoção se esgotou depois. Além disso, ao agendar um downgrade de plano, a promoção termina nesse momento, como avisa a tela do cliente.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4553
+    {
+        id: '2026-11-19-unfinished-plan-change-stops-blocking',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Un cambio de plan que no terminaste ya no te traba la suscripción',
+            en: 'A plan change you did not finish no longer blocks your subscription',
+            pt: 'Uma troca de plano que você não terminou não trava mais sua assinatura'
+        },
+        body: {
+            es: 'Si empezaste un cambio de plan y no completaste el pago, cuando ese intento vence o lo reiniciás tu suscripción vuelve a la normalidad: podés usar códigos promocionales y registrar pagos como siempre.',
+            en: 'If you started a plan change and did not complete the payment, once that attempt expires or you start it again your subscription goes back to normal: you can use promo codes and payments are recorded as usual.',
+            pt: 'Se você começou uma troca de plano e não concluiu o pagamento, quando essa tentativa vence ou você a reinicia sua assinatura volta ao normal: você pode usar códigos promocionais e os pagamentos são registrados como sempre.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4549
+    {
+        id: '2026-11-19-addon-purchase-errors-explained',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Si una compra de complemento no sale, te decimos por qué',
+            en: 'If an add-on purchase fails, we tell you why',
+            pt: 'Se a compra de um complemento não der certo, dizemos por quê'
+        },
+        body: {
+            es: 'En **Comprar complementos**, cuando una compra no se puede hacer ves un mensaje claro en lugar de un código de error: por ejemplo, que necesitás un plan activo que lo permita, o que el complemento cambió y conviene recargar la página.',
+            en: 'In **Buy add-ons**, when a purchase cannot go through you see a clear message instead of an error code: for example, that you need an active plan that allows it, or that the add-on changed and you should reload the page.',
+            pt: 'Em **Comprar complementos**, quando uma compra não pode ser feita você vê uma mensagem clara em vez de um código de erro: por exemplo, que precisa de um plano ativo que o permita, ou que o complemento mudou e é melhor recarregar a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4531
+    {
+        id: '2026-11-19-active-addons-show-as-active',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Los complementos que ya tenés aparecen como «Activo»',
+            en: 'Add-ons you already have show as «Active»',
+            pt: 'Os complementos que você já tem aparecem como «Ativo»'
+        },
+        body: {
+            es: 'En **Comprar complementos**, un complemento que ya tenés activo muestra la etiqueta «Activo» y no se puede volver a comprar. Si igual intentás comprarlo, te avisamos con un mensaje claro en lugar de un código de error.',
+            en: 'In **Buy add-ons**, an add-on you already have active shows an «Active» label and cannot be bought again. If you still try to buy it, you get a clear message instead of an error code.',
+            pt: 'Em **Comprar complementos**, um complemento que você já tem ativo mostra a etiqueta «Ativo» e não pode ser comprado de novo. Se mesmo assim tentar comprá-lo, você recebe uma mensagem clara em vez de um código de erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4474, #4532
+    {
+        id: '2026-11-17-assistant-refusals-link-to-the-fix',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Cuando tu asistente de IA no puede hacer algo, te deja el link para hacerlo vos',
+            en: 'When your AI assistant cannot do something, it leaves you the link to do it yourself',
+            pt: 'Quando seu assistente de IA não pode fazer algo, ele deixa o link para você fazer'
+        },
+        body: {
+            es: 'Si le pedís al asistente algo que no puede hacer desde el chat, como cambiar el nombre de tu publicación o publicarla sin plan, ahora te responde con un link directo a la página de Hospeda donde lo resolvés: la sección exacta del editor, la página de planes o la parte de la ficha que falta completar. El link respeta el idioma de tu cuenta.',
+            en: 'If you ask the assistant for something it cannot do from the chat, such as renaming your listing or publishing it without a plan, it now answers with a direct link to the Hospeda page where you can fix it: the exact editor section, the plans page or the part of the listing that is still missing. The link follows your account language.',
+            pt: 'Se você pedir ao assistente algo que ele não pode fazer pelo chat, como mudar o nome do seu anúncio ou publicá-lo sem plano, agora ele responde com um link direto para a página do Hospeda onde você resolve: a seção exata do editor, a página de planos ou a parte do anúncio que falta preencher. O link respeita o idioma da sua conta.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4512
+    {
+        id: '2026-11-18-admin-trade-categories-restore-and-search',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Restaurá categorías de proveedores borradas y encontrá rubros más fácil',
+            en: 'Restore deleted provider categories and find trades more easily',
+            pt: 'Restaure categorias de fornecedores apagadas e encontre ramos com mais facilidade'
+        },
+        body: {
+            es: 'En Categorías de proveedores, el interruptor «Mostrar borrados» te deja ver grupos y categorías borrados, con su etiqueta «Borrado» y un botón «Restaurar». Si el grupo de una categoría sigue borrado, te avisa que primero tenés que restaurar el grupo. En el formulario de proveedores, el selector de rubros ahora busca por palabras relacionadas, sin importar tildes ni mayúsculas, en español, inglés y portugués: «pozo» encuentra Destapaciones y desagotes y «aire» encuentra Climatización, y las coincidencias por nombre salen primero. Además, las listas de grupos y categorías ahora tienen un orden estable: peso del grupo, peso de la categoría y nombre.',
+            en: 'In Provider categories, the «Show deleted» toggle lets you see deleted groups and categories, with a «Deleted» badge and a «Restore» button. If the group of a category is still deleted, it warns you that you need to restore the group first. In the provider form, the trade selector now searches by related words, ignoring accents and case, in Spanish, English and Portuguese: «pozo» finds Destapaciones y desagotes and «aire» finds Climatización, and name matches come first. The group and category lists also now have a stable order: group weight, category weight and name.',
+            pt: 'Em Categorias de fornecedores, o interruptor «Mostrar apagados» permite ver grupos e categorias apagados, com o selo «Apagado» e um botão «Restaurar». Se o grupo de uma categoria ainda estiver apagado, o sistema avisa que você precisa restaurar o grupo primeiro. No formulário de fornecedores, o seletor de ramos agora busca por palavras relacionadas, sem diferenciar acentos nem maiúsculas, em espanhol, inglês e português: «pozo» encontra Destapaciones y desagotes e «aire» encontra Climatización, e as correspondências por nome aparecem primeiro. Além disso, as listas de grupos e categorias agora têm uma ordem estável: peso do grupo, peso da categoria e nome.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4491, #4476
+    {
+        id: '2026-11-17-assistant-creates-listing-drafts',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'USER'],
+        title: {
+            es: 'Creá un borrador de tu alojamiento, comercio o experiencia conversando con tu asistente de IA',
+            en: 'Create a draft of your accommodation, venue or experience by chatting with your AI assistant',
+            pt: 'Crie um rascunho da sua hospedagem, comércio ou experiência conversando com seu assistente de IA'
+        },
+        body: {
+            es: 'Contale al asistente qué querés publicar y te va pidiendo los datos de a uno, te muestra cómo va a quedar y recién crea el borrador cuando confirmás. Podés pegarle un link de Google Maps para la ubicación. El asistente nunca publica solo: cuando quieras publicar, te deja el link a la página donde lo hacés.',
+            en: 'Tell the assistant what you want to list and it asks for the details one at a time, shows you a preview, and only creates the draft once you confirm. You can paste a Google Maps link for the location. The assistant never publishes on its own: when you want to publish, it leaves you the link to the page where you do it.',
+            pt: 'Conte ao assistente o que você quer publicar e ele pede os dados um de cada vez, mostra uma prévia e só cria o rascunho quando você confirma. Você pode colar um link do Google Maps para a localização. O assistente nunca publica sozinho: quando você quiser publicar, ele deixa o link para a página onde você faz isso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4483
+    {
+        id: '2026-11-18-ai-assistant-answers-photo-upload-help',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya sabe explicarte cómo cargar fotos en Hospeda',
+            en: 'Your AI assistant can now explain how to upload photos on Hospeda',
+            pt: 'Seu assistente de IA agora sabe explicar como enviar fotos na Hospeda'
+        },
+        body: {
+            es: 'Si conectás el asistente de Claude con Hospeda y le preguntás «¿cómo subo fotos de mi ficha?», te responde con los pasos de Hospeda y links directos a la sección de fotos del editor de cada ficha. Si preguntás algo que no está en la ayuda, te comparte las preguntas frecuentes y el soporte, sin inventar pasos.',
+            en: "If you connect the Claude assistant to Hospeda and ask «how do I upload photos to my listing?», it answers with Hospeda's own steps and direct links to the photos section of each listing's editor. If you ask something outside the help content, it shares the FAQ and support links without inventing steps.",
+            pt: 'Se você conectar o assistente do Claude à Hospeda e perguntar «como envio fotos da minha ficha?», ele responde com os passos da Hospeda e links diretos para a seção de fotos do editor de cada ficha. Se você perguntar algo fora da ajuda, ele compartilha as perguntas frequentes e o suporte, sem inventar passos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4578
+    {
+        id: '2026-11-19-provider-sees-which-host-declared-a-usage',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Como proveedor, ahora ves qué anfitrión registró cada uso de tu beneficio',
+            en: 'As a provider, you now see which host registered each use of your benefit',
+            pt: 'Como fornecedor, agora você vê qual anfitrião registrou cada uso do seu benefício'
+        },
+        body: {
+            es: 'En tu ficha de proveedor, en la pestaña Usos, cada uso que registró un anfitrión muestra su nombre, así sabés a quién le confirmás o rechazás. Tu asistente de IA también te lo dice cuando le preguntás por tus usos.',
+            en: 'In your provider page, under the Uses tab, every use a host registered shows their name, so you know whom you are confirming or rejecting. Your AI assistant also tells you when you ask about your uses.',
+            pt: 'Na sua ficha de fornecedor, na aba Usos, cada uso que um anfitrião registrou mostra o nome dele, assim você sabe quem está confirmando ou recusando. Seu assistente de IA também informa quando você pergunta pelos seus usos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4479
+    {
+        id: '2026-11-17-assistant-reads-your-reviews',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Preguntale a tu asistente de IA qué dicen las reseñas de tus publicaciones',
+            en: 'Ask your AI assistant what the reviews of your listings say',
+            pt: 'Pergunte ao seu assistente de IA o que dizem as avaliações dos seus anúncios'
+        },
+        body: {
+            es: 'El asistente te lista las reseñas de tus alojamientos, comercios y experiencias, de la más nueva a la más vieja, con la calificación, el texto y si está aprobada, pendiente o rechazada. Podés filtrar por publicación, calificación, fecha o estado.',
+            en: 'The assistant lists the reviews of your accommodations, venues and experiences, newest first, with the rating, the text and whether each one is approved, pending or rejected. You can filter by listing, rating, date or status.',
+            pt: 'O assistente lista as avaliações das suas hospedagens, comércios e experiências, da mais nova para a mais antiga, com a nota, o texto e se cada uma está aprovada, pendente ou rejeitada. Você pode filtrar por anúncio, nota, data ou status.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4577
+    {
+        id: '2026-11-19-assistant-listing-location-and-amenities',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya sabe dónde queda tu publicación y qué comodidades tiene',
+            en: 'Your AI assistant now knows where your listing is and what amenities it has',
+            pt: 'Seu assistente de IA agora sabe onde fica seu anúncio e quais comodidades ele tem'
+        },
+        body: {
+            es: 'Preguntale «¿qué características tiene mi alojamiento y dónde queda?» y te responde con la dirección, el destino y las comodidades y servicios por nombre, sin que tengas que buscarlos.',
+            en: 'Ask it «what features does my listing have and where is it?» and it answers with the address, the destination and the amenities and services by name, without you having to look them up.',
+            pt: 'Pergunte «quais características tem meu anúncio e onde fica?» e ele responde com o endereço, o destino e as comodidades e serviços pelo nome, sem que você precise procurar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4478
+    {
+        id: '2026-11-17-assistant-amenities-by-category',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya puede revisar y cambiar los servicios de tu alojamiento por categoría',
+            en: 'Your AI assistant can now review and change your listing amenities by category',
+            pt: 'Seu assistente de IA agora pode revisar e alterar as comodidades da sua hospedagem por categoria'
+        },
+        body: {
+            es: 'Con el asistente de IA conectado a Hospeda, podés ver los servicios y amenidades de tu alojamiento o comercio agrupados por categoría y con sus nombres en español. También podés agregar o quitar servicios de una categoría sin tocar el resto. El cambio se ve enseguida en el editor y en la página pública.',
+            en: 'With the AI assistant connected to Hospeda, you can see the amenities of your accommodation or venue grouped by category and with Spanish labels. You can also add or remove amenities in one category without touching the rest. The change shows up right away in the editor and on the public page.',
+            pt: 'Com o assistente de IA conectado ao Hospeda, você pode ver as comodidades da sua hospedagem ou estabelecimento agrupadas por categoria e com nomes em espanhol. Também pode adicionar ou remover comodidades de uma categoria sem mexer nas demais. A mudança aparece na hora no editor e na página pública.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4501, #4476
+    {
+        id: '2026-11-17-assistant-provider-search-and-benefit-usages',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Buscá proveedores y respondé usos de beneficios desde tu asistente de IA',
+            en: 'Search providers and answer benefit usages from your AI assistant',
+            pt: 'Busque fornecedores e responda usos de benefícios pelo seu assistente de IA'
+        },
+        body: {
+            es: 'Preguntale al asistente por un proveedor, por ejemplo «plomeros con descuento», y te muestra los mismos proveedores del directorio, con su beneficio y contacto. También te lista los usos de beneficios pendientes y te deja confirmarlos o rechazarlos, siempre después de mostrarte qué va a hacer.',
+            en: 'Ask the assistant for a provider, for example «plumbers with a discount», and it shows you the same providers as the directory, with their benefit and contact. It also lists your pending benefit usages and lets you confirm or reject them, always after showing you what it is about to do.',
+            pt: 'Pergunte ao assistente por um fornecedor, por exemplo «encanadores com desconto», e ele mostra os mesmos fornecedores do diretório, com o benefício e o contato. Ele também lista os usos de benefícios pendentes e deixa você confirmá-los ou rejeitá-los, sempre depois de mostrar o que vai fazer.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4511
+    {
+        id: '2026-11-18-assistant-owner-summary',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Preguntale a tu asistente de IA «¿cómo vengo?» y recibí un resumen de tus publicaciones',
+            en: 'Ask your AI assistant «how am I doing?» and get a summary of your listings',
+            pt: 'Pergunte ao seu assistente de IA «como estou indo?» e receba um resumo dos seus anúncios'
+        },
+        body: {
+            es: 'En una sola respuesta, el asistente te dice cuántas publicaciones tenés por tipo y en qué estado están, los números principales del período y lo que necesita tu atención: consultas sin responder, pedidos de arreglo y usos de beneficios pendientes, cada uno con el link para resolverlo.',
+            en: 'In a single answer, the assistant tells you how many listings you have of each type and their status, the key numbers for the period, and what needs your attention: unanswered inquiries, fix requests and pending benefit usages, each with the link to handle it.',
+            pt: 'Em uma única resposta, o assistente diz quantos anúncios você tem de cada tipo e em que estado estão, os números principais do período e o que precisa da sua atenção: consultas sem resposta, pedidos de ajuste e usos de benefícios pendentes, cada um com o link para resolver.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4523
+    {
+        id: '2026-11-18-admin-provider-lead-approval-categories',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Aprobar un lead de prestador ahora te avisa si no se pudo crear el proveedor',
+            en: 'Approving a provider lead now tells you if the provider could not be created',
+            pt: 'Aprovar um lead de prestador agora avisa se o fornecedor não pôde ser criado'
+        },
+        body: {
+            es: 'En Leads de aliados, al aprobar un lead de prestador de servicios el diálogo lista los rubros que eligió el solicitante y marca los que están inactivos, eliminados o inexistentes. Si ninguno está activo, el lead se aprueba igual, pero te aparece un aviso amarillo con el motivo de que el proveedor no se creó. Esos leads muestran la etiqueta Proveedor no creado en el listado y un botón Crear proveedor: reactivá un rubro y reintentá desde ahí, sin que se vuelva a enviar el mail de aprobación.',
+            en: 'In Partner leads, when you approve a service provider lead the dialog lists the categories the applicant chose and marks any that are inactive, deleted or missing. If none of them is active, the lead is still approved, but you get a yellow warning with the reason the provider was not created. Those leads show a Provider not created badge in the list and a Create provider button: reactivate a category and retry from there, without the approval email being sent again.',
+            pt: 'Em Leads de parceiros, ao aprovar um lead de prestador de serviços o diálogo lista as categorias escolhidas pelo solicitante e marca as que estão inativas, excluídas ou inexistentes. Se nenhuma estiver ativa, o lead é aprovado mesmo assim, mas aparece um aviso amarelo com o motivo de o fornecedor não ter sido criado. Esses leads mostram o selo Fornecedor não criado na lista e um botão Criar fornecedor: reative uma categoria e tente de novo a partir dali, sem que o e-mail de aprovação seja enviado outra vez.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4514, #4526, #4532, #4535
+    {
+        id: '2026-11-18-assistant-activity-history',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'USER'],
+        title: {
+            es: 'Mirá en tu cuenta todo lo que hizo tu asistente de IA',
+            en: 'See in your account everything your AI assistant did',
+            pt: 'Veja na sua conta tudo o que seu assistente de IA fez'
+        },
+        body: {
+            es: 'En Mi cuenta › Asistentes de IA › Historial ves cada acción que hizo un asistente conectado con tu cuenta: qué hizo, sobre qué publicación, cuándo, desde qué asistente y si salió bien, fue rechazada o tuvo un error. Podés filtrar por resultado y elegir si mostrar también lo que solo miró. Nunca guardamos el texto de tus mensajes.',
+            en: 'In My account › AI assistants › History you see every action an assistant connected to your account took: what it did, on which listing, when, from which assistant, and whether it worked, was refused or failed. You can filter by result and choose whether to also show what it only viewed. We never store the text of your messages.',
+            pt: 'Em Minha conta › Assistentes de IA › Histórico você vê cada ação que um assistente conectado à sua conta realizou: o que fez, em qual anúncio, quando, de qual assistente e se deu certo, foi recusada ou teve erro. Você pode filtrar por resultado e escolher se também quer ver o que ele apenas consultou. Nunca guardamos o texto das suas mensagens.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4528
+    {
+        id: '2026-11-19-venue-event-ticket-link',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Tus eventos ya pueden tener un botón «Comprar entrada»',
+            en: 'Your events can now have a «Buy tickets» button',
+            pt: 'Seus eventos agora podem ter um botão «Comprar ingresso»'
+        },
+        body: {
+            es: 'En **Mi comercio → Eventos** podés pegar el link de la ticketera donde ya vendés las entradas (Passline, Venti o tu web). En la ficha, ese evento muestra el botón «Comprar entrada», que abre la venta en una pestaña nueva.',
+            en: 'In **My business → Events** you can paste the link to the ticketing site where you already sell tickets (Passline, Venti or your own website). On your listing, that event shows a «Buy tickets» button that opens the sale in a new tab.',
+            pt: 'Em **Meu comércio → Eventos** você pode colar o link da plataforma onde já vende os ingressos (Passline, Venti ou seu site). Na ficha, esse evento mostra o botão «Comprar ingresso», que abre a venda em uma nova aba.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4514, #4527
+    {
+        id: '2026-11-18-admin-assistant-activity-log',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['SUPER_ADMIN'],
+        title: {
+            es: 'Nuevo log en el admin con todo lo que hicieron los asistentes de IA',
+            en: 'New admin log of everything the AI assistants did',
+            pt: 'Novo log no admin com tudo o que os assistentes de IA fizeram'
+        },
+        body: {
+            es: 'En Plataforma, la pantalla «Uso de asistentes IA» te muestra cada uso de los asistentes de IA de todas las cuentas, con usuario, asistente, herramienta, resultado y fecha. Podés filtrar por usuario, herramienta, resultado, asistente y rango de fechas. Solo lo ven los Super Admin.',
+            en: 'In Platform, the «AI assistant activity» screen shows you every use of the AI assistants across all accounts, with user, assistant, tool, result and date. You can filter by user, tool, result, assistant and date range. Only Super Admins can see it.',
+            pt: 'Em Plataforma, a tela «Uso de assistentes IA» mostra cada uso dos assistentes de IA de todas as contas, com usuário, assistente, ferramenta, resultado e data. Você pode filtrar por usuário, ferramenta, resultado, assistente e intervalo de datas. Só os Super Admins podem ver.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4500
+    {
+        id: '2026-11-18-plan-change-checkout-resume-or-cancel',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Podés retomar o cancelar un cambio de plan que dejaste a medias',
+            en: 'You can resume or cancel a plan change you left halfway',
+            pt: 'Você pode retomar ou cancelar uma mudança de plano que deixou pela metade'
+        },
+        body: {
+            es: 'Si empezaste un cambio de plan y no terminaste el pago en Mercado Pago, Mi suscripción ahora te ofrece retomar ese mismo checkout o cancelar el cambio. Al cancelarlo, tu plan actual sigue igual y podés volver a cambiar de plan cuando quieras.',
+            en: 'If you started a plan change and did not finish paying in Mercado Pago, My subscription now lets you resume that same checkout or cancel the change. When you cancel it, your current plan stays the same and you can change plans again whenever you want.',
+            pt: 'Se você começou uma mudança de plano e não terminou o pagamento no Mercado Pago, Minha assinatura agora permite retomar esse mesmo checkout ou cancelar a mudança. Ao cancelar, seu plano atual continua igual e você pode mudar de plano de novo quando quiser.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4480, #4496
     {
         id: '2026-11-18-providers-multiple-trade-categories',

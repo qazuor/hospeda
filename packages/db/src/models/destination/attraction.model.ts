@@ -10,6 +10,8 @@ import { logError, logQuery } from '../../utils/logger.ts';
 
 export class AttractionModel extends BaseModelImpl<Attraction> {
     protected table = attractions;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'attractions';
 
     protected getTableName(): string {

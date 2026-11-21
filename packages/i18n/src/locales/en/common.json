@@ -90,6 +90,7 @@
         "BAD_REQUEST": "That request isn't valid.",
         "CONFLICT": "The resource conflicts with the current state.",
         "CATEGORY_IN_USE": "This category is used by providers. Deactivate it instead of deleting it.",
+        "PARTNER_TYPE_IN_USE": "This type is used by partners. Assign them another type before deactivating or deleting it.",
         "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again in a few minutes.",
         "NEWSLETTER_NOT_CONFIGURED": "The newsletter isn't available right now. We're working on bringing it back.",
         "ACCOUNT_DELETED": "This account has been deleted and is no longer available.",
@@ -128,6 +129,12 @@
         "EMPTY_FILE": "The file is empty. Choose another image.",
         "NEW_PAID_SIGNUPS_FROZEN": "We've temporarily paused new subscriptions. If you already have a subscription, it keeps working as usual.",
         "ADDON_PURCHASES_FROZEN": "We've temporarily paused add-on purchases. Anything you already bought keeps working as usual.",
+        "ADDON_ALREADY_ACTIVE": "You already have this add-on active. There is no need to buy it again.",
+        "ADDON_PRODUCT_NOT_FOUND": "This add-on is no longer available. Reload the page to see the ones on offer.",
+        "ADDON_TARGET_NOT_FOUND": "We could not find the subscription or listing you picked. Reload the page and choose it again.",
+        "ADDON_NO_VALID_TITLE": "To buy this add-on you need an active plan that allows it.",
+        "ADDON_VERSION_NOT_CURRENT": "The price or terms of this add-on have changed. Reload the page to see the current version.",
+        "ADDON_ORDER_REQUEST_REUSED": "This purchase was already submitted. Reload the page to check its status before trying again.",
         "FIRST_PUBLISH_PAUSED": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume.",
         "PROMO_CODE_NOT_FOUND": "We couldn’t find that code.",
         "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "This code does not extend a trial.",
@@ -143,7 +150,8 @@
         "NO_TRIAL": "We couldn't find an active trial to extend.",
         "TRIAL_ENDED": "Your trial has ended.",
         "CEILING_REACHED": "This code exceeds your trial's extension limit.",
-        "REDEMPTION_KEY_CONFLICT": "This extension conflicts with an earlier redemption."
+        "REDEMPTION_KEY_CONFLICT": "This extension conflicts with an earlier redemption.",
+        "PURCHASE_IDENTITY_BUSY": "Another purchase of this add-on was being updated just now. Please try again in a few seconds."
     },
     "filters": "Filters",
     "filterChips": {

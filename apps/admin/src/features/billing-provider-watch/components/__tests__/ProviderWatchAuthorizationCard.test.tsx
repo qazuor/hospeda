@@ -121,6 +121,25 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         expect(screen.queryByTestId('provider-watch-authorization-consumed')).toBeNull();
     });
 
+    it('shows an authorization of 0 as covering one run a day, with the runs so far (B1)', async () => {
+        api({
+            setting: row({
+                month: monthNow(),
+                maxChargeMinor: 0,
+                accountId: '100000001',
+                lastRunDay: `${monthNow()}-02`,
+                runIds: [RUN_ID, '7d8f4c1a-3b2e-4f6a-9c5d-1e2f3a4b5c6d']
+            })
+        });
+        renderCard();
+        await waitFor(() =>
+            expect(screen.getByTestId('provider-watch-authorization-status')).toHaveTextContent(
+                copy.statusDaily.replace('{month}', monthNow()).replace('{count}', '2')
+            )
+        );
+        expect(screen.queryByTestId('provider-watch-authorization-consumed')).toBeNull();
+    });
+
     it('shows a CONSUMED authorization with the run that consumed it', async () => {
         api({
             setting: row({
@@ -266,15 +285,32 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         expect(posts()[0]?.[0]).toMatchObject({ body: { maxChargeMinor: 42000 } });
     });
 
-    it('cannot authorize an empty money catalog: sum 0', async () => {
+    it('lets the owner authorize a battery with no money-moving measurement: says it moves no money and cancels what it creates, sends 0', async () => {
         permissions.mockReturnValue(MANAGER);
         api({ preview: { expectedMaxChargeMinor: 0, measurements: [] } });
         renderCard();
         expect(await screen.findByTestId('provider-watch-no-money')).toHaveTextContent(
             copy.noMoneyCatalog
         );
-        expect(screen.getByTestId('provider-watch-save')).toBeDisabled();
-        expect(posts()).toHaveLength(0);
+        await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
+        fireEvent.click(screen.getByTestId('provider-watch-save'));
+        const dialog = await screen.findByTestId('provider-watch-confirm');
+        expect(dialog).toHaveTextContent(/no mueven plata|move no money/i);
+        // B1: an amount of 0 authorizes the month's daily runs and is never consumed.
+        expect(dialog).toHaveTextContent(copy.confirmTitleDaily);
+        expect(dialog).toHaveTextContent(/una corrida por día|one run a day/i);
+        expect(dialog).not.toHaveTextContent(/se consume cuando|consumed when the run starts/i);
+        // A2: a manual run takes up that day's run.
+        expect(dialog).toHaveTextContent(
+            /corrida manual ocupa la corrida de ese día|manual run takes up/i
+        );
+        expect(dialog).toHaveTextContent(
+            /cancela en la misma corrida|cancels them in the same run/i
+        );
+        expect(dialog).not.toHaveTextContent(/solo lectura|read-only/i);
+        fireEvent.click(within(dialog).getByRole('button', { name: copy.save }));
+        await waitFor(() => expect(posts()).toHaveLength(1));
+        expect(posts()[0]?.[0]).toMatchObject({ body: { maxChargeMinor: 0 } });
     });
 
     it('cannot authorize when the amount cannot be computed', async () => {

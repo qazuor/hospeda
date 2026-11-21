@@ -25,7 +25,13 @@ import {
     PlatformSettingsResponseSchema,
     ProviderWatchAuthorizationInputSchema,
     ProviderWatchAuthorizationValueSchema,
-    SeoDefaultsValueSchema
+    PublicSessionRecordingResponseSchema,
+    SeoDefaultsValueSchema,
+    SessionRecordingPatchSchema,
+    SessionRecordingPurgeRequestSchema,
+    SessionRecordingPurgeResponseSchema,
+    SessionRecordingRetentionDaysSchema,
+    SessionRecordingValueSchema
 } from '../../../src/entities/platformSettings/platform-settings.schema';
 
 const VALID_UUID = '11111111-1111-4111-8111-111111111111';
@@ -33,14 +39,15 @@ const VALID_ACTOR_UUID = '22222222-2222-4222-8222-222222222222';
 const VALID_TIMESTAMP = '2026-05-28T12:34:56.000Z';
 
 describe('PlatformSettingsKeySchema', () => {
-    it('accepts each of the 6 supported keys', () => {
+    it('accepts each of the 7 supported keys', () => {
         for (const key of [
             'seo.defaults',
             'maintenance.mode',
             'announcements.global',
             'billing.paidSignupsFreeze',
             'billing.addonPurchasesFreeze',
-            'billing.providerWatchAuthorization'
+            'billing.providerWatchAuthorization',
+            'analytics.sessionRecording'
         ]) {
             expect(PlatformSettingsKeySchema.safeParse(key).success).toBe(true);
         }
@@ -48,6 +55,119 @@ describe('PlatformSettingsKeySchema', () => {
 
     it('rejects unknown keys', () => {
         const result = PlatformSettingsKeySchema.safeParse('seo.unknown');
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-2347 SessionRecordingValueSchema', () => {
+    it('accepts a boolean enabled value', () => {
+        expect(SessionRecordingValueSchema.safeParse({ enabled: true }).success).toBe(true);
+        expect(SessionRecordingValueSchema.safeParse({ enabled: false }).success).toBe(true);
+    });
+
+    it('AC-A6: rejects a non-boolean enabled value', () => {
+        // Arrange
+        const value = { enabled: 'yes' };
+
+        // Act
+        const result = SessionRecordingValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('routes the analytics.sessionRecording branch of the response union', () => {
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'analytics.sessionRecording',
+            value: { enabled: true },
+            updatedAt: VALID_TIMESTAMP,
+            updatedBy: VALID_ACTOR_UUID
+        });
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('HOS-2347 retention period', () => {
+    it.each([14, 30, 60])('accepts %i days', (days) => {
+        expect(SessionRecordingRetentionDaysSchema.safeParse(days).success).toBe(true);
+    });
+
+    it.each([0, 7, 15, 90, -30, 30.5, '30', null])('rejects %s', (days) => {
+        expect(SessionRecordingRetentionDaysSchema.safeParse(days).success).toBe(false);
+    });
+
+    it('defaults to 30 when a stored row predates the field', () => {
+        // Arrange
+        const legacyRow = { enabled: true };
+
+        // Act
+        const result = SessionRecordingValueSchema.parse(legacyRow);
+
+        // Assert
+        expect(result).toEqual({ enabled: true, retentionDays: 30 });
+    });
+
+    it('keeps an explicit period and rejects a value outside the enum', () => {
+        expect(SessionRecordingValueSchema.parse({ enabled: false, retentionDays: 14 })).toEqual({
+            enabled: false,
+            retentionDays: 14
+        });
+        expect(
+            SessionRecordingValueSchema.safeParse({ enabled: true, retentionDays: 45 }).success
+        ).toBe(false);
+    });
+
+    it('the purge response carries the counts, the period used and stoppedEarly', () => {
+        const valid = {
+            replaysDeleted: 3,
+            heatmapEventsDeleted: 0,
+            savedReplaysDeleted: 1,
+            retentionDays: 30,
+            stoppedEarly: false
+        };
+        expect(SessionRecordingPurgeResponseSchema.safeParse(valid).success).toBe(true);
+        expect(
+            SessionRecordingPurgeResponseSchema.safeParse({ ...valid, replaysDeleted: -1 }).success
+        ).toBe(false);
+        expect(
+            SessionRecordingPurgeResponseSchema.safeParse({ ...valid, stoppedEarly: undefined })
+                .success
+        ).toBe(false);
+    });
+
+    it('the purge request is strictly { retentionDays: 14 | 30 | 60 }', () => {
+        expect(SessionRecordingPurgeRequestSchema.safeParse({ retentionDays: 14 }).success).toBe(
+            true
+        );
+        expect(SessionRecordingPurgeRequestSchema.safeParse({ retentionDays: 45 }).success).toBe(
+            false
+        );
+        expect(SessionRecordingPurgeRequestSchema.safeParse({}).success).toBe(false);
+        expect(
+            SessionRecordingPurgeRequestSchema.safeParse({ retentionDays: 30, x: 1 }).success
+        ).toBe(false);
+    });
+
+    it('the patch accepts either field alone, and refuses none or a bad period', () => {
+        expect(SessionRecordingPatchSchema.safeParse({ enabled: true }).success).toBe(true);
+        expect(SessionRecordingPatchSchema.safeParse({ retentionDays: 60 }).success).toBe(true);
+        expect(SessionRecordingPatchSchema.safeParse({}).success).toBe(false);
+        expect(SessionRecordingPatchSchema.safeParse({ retentionDays: 7 }).success).toBe(false);
+    });
+});
+
+describe('HOS-2347 PublicSessionRecordingResponseSchema', () => {
+    it('accepts exactly { enabled }', () => {
+        expect(PublicSessionRecordingResponseSchema.safeParse({ enabled: false }).success).toBe(
+            true
+        );
+    });
+
+    it('AC-P2: rejects any extra key (no updatedAt/updatedBy leak)', () => {
+        const result = PublicSessionRecordingResponseSchema.safeParse({
+            enabled: true,
+            updatedBy: VALID_ACTOR_UUID
+        });
         expect(result.success).toBe(false);
     });
 });
@@ -411,7 +531,14 @@ describe('HOS-1512 ProviderWatchAuthorizationValueSchema', () => {
         ).toBe(false);
     });
 
-    it.each([0, -1, 1.5, Number.NaN, '100'])('rejects the maximum charge %j', (maxChargeMinor) => {
+    it('accepts a maximum charge of 0: the authorization of a read-only battery', () => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor: 0 })
+                .success
+        ).toBe(true);
+    });
+
+    it.each([-1, 1.5, Number.NaN, '100'])('rejects the maximum charge %j', (maxChargeMinor) => {
         expect(
             ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor })
                 .success

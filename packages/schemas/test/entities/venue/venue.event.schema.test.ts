@@ -28,8 +28,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     VENUE_EVENTS_MAX_ENTRIES,
+    VENUE_EVENTS_MAX_TOTAL_ENTRIES,
     VenueEventInputSchema,
-    VenueEventsReplacePayloadSchema
+    VenueEventsReplacePayloadSchema,
+    VenueEventTicketUrlSchema
 } from '../../../src/entities/venue/subtypes/venue.event.schema.js';
 
 /** A valid weekly happy hour, the shape most of these tests vary from. */
@@ -209,35 +211,22 @@ describe('VenueEventsReplacePayloadSchema (HOS-1042)', () => {
         expect(result.data?.events[0]?.isActive).toBe(true);
     });
 
-    it('refuses an agenda longer than the ceiling', () => {
-        // The ceiling exists so ONE request cannot write an unbounded number of
-        // rows in one transaction — not as a product tier, which is the
-        // entitlement's job.
-        // Arrange
-        const tooMany = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 1 }, () => ({
+    it('allows more than the non-past ceiling, since past entries are counted by the service (HOS-2254)', () => {
+        const many = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 5 }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
-        // Act
-        const result = VenueEventsReplacePayloadSchema.safeParse({ events: tooMany });
+        const result = VenueEventsReplacePayloadSchema.safeParse({ events: many });
 
-        // Assert
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
-    it('accepts exactly the ceiling', () => {
-        // Guards the boundary from the off-by-one that would make the test
-        // above pass while refusing a legitimate agenda.
-        // Arrange
-        const atLimit = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES }, () => ({
+    it('refuses a document over the hard total cap', () => {
+        const tooMany = Array.from({ length: VENUE_EVENTS_MAX_TOTAL_ENTRIES + 1 }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
-        // Act
-        const result = VenueEventsReplacePayloadSchema.safeParse({ events: atLimit });
-
-        // Assert
-        expect(result.success).toBe(true);
+        expect(VenueEventsReplacePayloadSchema.safeParse({ events: tooMany }).success).toBe(false);
     });
 
     it('rejects the whole document when ONE entry has a broken recurrence', () => {
@@ -254,5 +243,82 @@ describe('VenueEventsReplacePayloadSchema (HOS-1042)', () => {
 
         // Assert
         expect(result.success).toBe(false);
+    });
+});
+
+describe('VenueEventInputSchema: optional id (HOS-2291)', () => {
+    const base = {
+        title: 'Jueves de jazz',
+        recurrence: 'weekly' as const,
+        weekday: 4,
+        startTime: '21:00'
+    };
+
+    it('keeps a valid id through parsing', () => {
+        const id = '33333333-3333-4333-8333-333333333333';
+        const parsed = VenueEventInputSchema.safeParse({ ...base, id });
+        expect(parsed.success && parsed.data.id).toBe(id);
+    });
+
+    it('accepts an entry without id (a new event)', () => {
+        const parsed = VenueEventInputSchema.safeParse(base);
+        expect(parsed.success && parsed.data.id).toBeUndefined();
+    });
+
+    it('rejects an id that is not a uuid', () => {
+        expect(VenueEventInputSchema.safeParse({ ...base, id: 'nope' }).success).toBe(false);
+    });
+});
+
+describe('VenueEventInputSchema: ticketUrl (HOS-2255)', () => {
+    const base = {
+        title: 'Jueves de jazz',
+        recurrence: 'weekly' as const,
+        weekday: 4,
+        startTime: '21:00'
+    };
+    const parse = (ticketUrl: unknown) => VenueEventInputSchema.safeParse({ ...base, ticketUrl });
+
+    it.each([
+        'https://www.passline.com/e/x',
+        'https://venti.com.ar/evento?id=1#top'
+    ])('accepts %s', (url) => {
+        expect(parse(url).success).toBe(true);
+    });
+
+    it.each([
+        'http://example.com/e',
+        'javascript:alert(1)',
+        'https://user:pass@example.com/e',
+        'https://user@example.com/e',
+        'ftp://example.com',
+        'not a url'
+    ])('rejects %s', (url) => {
+        expect(parse(url).success).toBe(false);
+    });
+
+    it('rejects a link over 2048 characters', () => {
+        expect(parse(`https://example.com/${'a'.repeat(2048)}`).success).toBe(false);
+    });
+
+    it('reports the https message for http', () => {
+        const result = VenueEventTicketUrlSchema.safeParse('http://example.com');
+        expect(result.success).toBe(false);
+        expect(JSON.stringify(result.error?.issues)).toContain(
+            'zodError.venue.event.ticketUrl.httpsRequired'
+        );
+    });
+
+    it('treats absent, null and empty as no link', () => {
+        for (const value of [undefined, null, '', '   ']) {
+            const parsed = parse(value);
+            expect(parsed.success).toBe(true);
+            expect(parsed.success && (parsed.data.ticketUrl ?? null)).toBeNull();
+        }
+    });
+
+    it('trims the link', () => {
+        const parsed = parse('  https://example.com/e  ');
+        expect(parsed.success && parsed.data.ticketUrl).toBe('https://example.com/e');
     });
 });

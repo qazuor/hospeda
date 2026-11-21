@@ -15,9 +15,9 @@
  * race) has no page that fixes it, so it carries no link.
  */
 
+import type { PortalDestination } from '@repo/portal-routes';
 import { DUPLICATE_LOCATION_REASON, parsePublishRequirementsReason } from '@repo/schemas';
 import { z } from 'zod';
-import type { PortalDestination } from '../../portal/portal-routes';
 import type { ToolErrorPayload } from '../tool-definition';
 import {
     editorLink,

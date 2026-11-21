@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../src/types';
+import { APP_IMPORT_TIMEOUT_MS } from '../../helpers/app-import-timeout';
 
 const { mockAdminList, mockGetById, mockCreate, mockUpdate, mockSoftDelete, mockRestore } =
     vi.hoisted(() => ({
@@ -309,6 +310,23 @@ describe('category-specific behaviour', () => {
         });
     });
 
+    it('list does NOT invent a sort when the caller sends none (HOS-2340 AC-3.1)', async () => {
+        const res = await buildApp(ALL).request('/?page=1&pageSize=5');
+        expect(res.status).toBe(200);
+        // A defaulted `sort=createdAt:desc` would be indistinguishable from an explicit one
+        // in the service, so the catalog default order could never apply.
+        expect(mockAdminList.mock.calls[0]?.[1]).not.toHaveProperty('sort');
+    });
+
+    it('list forwards an explicit sort and includeDeleted untouched (HOS-2340 AC-3.4, AC-1.2)', async () => {
+        const res = await buildApp(ALL).request('/?sort=createdAt:desc&includeDeleted=true');
+        expect(res.status).toBe(200);
+        expect(mockAdminList.mock.calls[0]?.[1]).toMatchObject({
+            sort: 'createdAt:desc',
+            includeDeleted: true
+        });
+    });
+
     it('list answers 400 on a non-UUID groupId', async () => {
         expect((await buildApp(ALL).request('/?groupId=nope')).status).toBe(400);
         expect(mockAdminList).not.toHaveBeenCalled();
@@ -337,12 +355,16 @@ describe('401 without a session (real app)', () => {
         ['PATCH', `/api/v1/admin/host-trade-categories/${GROUP_ID}`],
         ['DELETE', `/api/v1/admin/host-trade-categories/${GROUP_ID}`],
         ['POST', `/api/v1/admin/host-trade-categories/${GROUP_ID}/restore`]
-    ])('%s %s answers 401', async (method, path) => {
-        const { initApp } = await import('../../../src/app.js');
-        const res = await initApp().request(path, {
-            method,
-            headers: { 'user-agent': 'vitest', accept: 'application/json' }
-        });
-        expect(res.status).toBe(401);
-    });
+    ])(
+        '%s %s answers 401',
+        async (method, path) => {
+            const { initApp } = await import('../../../src/app.js');
+            const res = await initApp().request(path, {
+                method,
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+            expect(res.status).toBe(401);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });

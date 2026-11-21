@@ -25,6 +25,7 @@ import {
     checkAuthorizedAmount,
     previewAuthorization
 } from '../../../utils/provider-watch/provider-watch-authorization.js';
+import { ProviderWatchMeasurementIdSchema } from '../../../utils/provider-watch/provider-watch-measurement-id.js';
 import {
     acceptShape,
     listShapeReviews
@@ -93,8 +94,23 @@ export const adminProviderWatchAuthorizationPreviewRoute = createAdminRoute({
     tags: ['Provider watch'],
     requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
     responseSchema: ProviderWatchAuthorizationPreviewSchema,
-    handler: async () => previewAuthorization({ account: environmentAccount() })
+    handler: async () => {
+        const previewed = previewAuthorization({ account: environmentAccount() });
+        if (!previewed.ok) throw catalogInvalid(previewed.problems);
+        return previewed.preview;
+    }
 });
+
+/**
+ * A catalog that `validateWatchCatalog` rejects is a defect of the deployed code, not of the
+ * owner's input: nothing can be previewed or authorized against it.
+ */
+function catalogInvalid(problems: readonly string[]): ServiceError {
+    return new ServiceError(
+        ServiceErrorCode.CONFIGURATION_ERROR,
+        `The provider watch catalog is invalid, so nothing can be authorized: ${problems.join('; ')}`
+    );
+}
 
 /**
  * POST /api/v1/admin/provider-watch/authorization: authorizes ONE run of the month. The API reads
@@ -123,18 +139,20 @@ export const adminAuthorizeProviderWatchRoute = createAdminRoute({
         const input = ProviderWatchAuthorizeInputSchema.parse(body);
         const actor = getActorFromContext(ctx);
         const environment = environmentAccount();
-        // The amount is EXACT: the sum of the money-moving measurements, never typed. A production
-        // authorization with no money-moving measurement is refused outright.
+        // The amount is EXACT: the sum of the money-moving measurements, never typed. A valid catalog
+        // with no money-moving measurement sums 0 and 0 is then the one valid amount; an invalid
+        // catalog is never authorized (a money measurement without its maximum would also sum 0).
         const amount = checkAuthorizedAmount({
             account: environment,
             amountMinor: input.maxChargeMinor
         });
+        if (!amount.ok && amount.refusal === 'CATALOG_INVALID') {
+            throw catalogInvalid(amount.problems);
+        }
         if (!amount.ok) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
-                amount.refusal === 'NO_MONEY_MEASUREMENTS'
-                    ? 'The catalog has no money-moving measurement for this account: there is nothing to authorize'
-                    : `The authorized amount must be exactly ${amount.expectedMinor} (the sum of the money-moving measurements), not ${input.maxChargeMinor}`
+                `The authorized amount must be exactly ${amount.expectedMinor} (the sum of the money-moving measurements), not ${input.maxChargeMinor}`
             );
         }
         const account = await readConfirmedAccount(environment);
@@ -194,7 +212,7 @@ export const adminAcceptProviderWatchShapeRoute = createAdminRoute({
         'Makes the shapes observed by the given completed run the accepted baseline of the measurement, recording who accepted and when.',
     tags: ['Provider watch'],
     requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
-    requestParams: { measurementId: z.string().regex(/^(?:M|RP)\d{1,2}$/) },
+    requestParams: { measurementId: ProviderWatchMeasurementIdSchema },
     requestBody: ProviderWatchAcceptShapeInputSchema,
     responseSchema: z.object({ acceptedAt: z.string().datetime({ offset: true }) }),
     handler: async (

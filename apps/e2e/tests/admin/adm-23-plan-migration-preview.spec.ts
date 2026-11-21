@@ -104,6 +104,7 @@ test.describe('TEST:B12:2 AC:B12:2 la previsualización @p0 @admin @billing @clo
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: providerNamespace,
                 honestAbout: [
