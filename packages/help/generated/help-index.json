@@ -1,5 +1,5 @@
 {
-  "contentHash": "41a689a5255b681a3275975d5940ced028704a43462512d1a9009cb67ce7efec",
+  "contentHash": "10308271bba31668165258bd364e91cf5da65c87e0aaee473a53553981c627b4",
   "locales": {
     "es": [
       {
@@ -262,7 +262,7 @@
           "provider-directory",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Registrar un uso desde el proveedor en el {{link:providerDirectory|directorio}} y responder los que te registran en {{link:benefitUsages|Usos del beneficio}}.",
           "expect": "- Un uso queda pendiente hasta que la otra parte lo confirma, y solo cuenta cuando está confirmado.\n- Un rechazo se puede deshacer.\n- El historial se filtra por pendientes, confirmados, rechazados o vencidos.",
@@ -557,7 +557,7 @@
           "photos",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Crear una publicación nueva del rubro que elijas: {{link:create:accommodation|publicar un alojamiento}}, {{link:create:venue|publicar un comercio}} o {{link:create:experience|publicar una experiencia}}.\n\nUn asistente de IA conectado también puede crear el borrador por vos.",
           "expect": "- La publicación nace como borrador y no se ve en el sitio hasta que la publiques.\n- Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.\n- Después completás las secciones en el editor; las fotos se cargan como explica {{article:photos|la ayuda de fotos}}.",
@@ -849,7 +849,7 @@
           "ai-assistants",
           "calendar"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-21",
         "sections": {
           "canDo": "Leer y responder las conversaciones de tus alojamientos en {{link:inquiries|Mensajes de huéspedes}}.",
           "expect": "- Las conversaciones con mensajes sin leer tienen una marca.\n- Un asistente redacta la respuesta y te la muestra antes de enviarla (mirá {{article:ai-assistants|cómo conectarlo}}).",
