@@ -330,7 +330,8 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 
 	/*
 	 * Side index from 80rem: below that the account sidebar leaves too little
-	 * width for two columns (the editor shell uses the same breakpoint).
+	 * width for two columns. 80rem is the closest closed breakpoint above the
+	 * editor shell's legacy 1100px (D6, HOS-2469).
 	 */
 	@media (min-width: 80rem) {
 		.help-article__toc-mobile {
