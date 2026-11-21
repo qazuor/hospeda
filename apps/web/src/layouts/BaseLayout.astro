@@ -42,6 +42,7 @@ import CriticalStyles from '@/components/shared/CriticalStyles.astro';
 import MobileDock from '@/components/shared/dock/MobileDock.astro';
 import AccountHeader from './AccountHeader.astro';
 import { AccountFooter } from '@/components/account/ui/AccountFooter';
+import { AccountToastRegion } from '@/components/account/ui/AccountToastRegion';
 // @repo/feedback's package stylesheet and the Hospeda brand-token overrides
 // (`@/styles/feedback-overrides.css`) are NOT imported here (HOS-369 W3-5).
 // `FeedbackHeadlessHost` hydrates with `client:idle` and cannot be interacted
@@ -281,7 +282,11 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			cookiesPolicyUrl={cookiesPolicyUrl}
 		/>
 
-		<ToastViewport client:idle locale={locale} />
+		{isAccountChrome ? (
+			<AccountToastRegion client:idle locale={locale} />
+		) : (
+			<ToastViewport client:idle locale={locale} />
+		)}
 		<GuestPreferenceNudge client:idle />
 		<AuthedPreferenceSync client:idle />
 		<AiResetReviewPrompt client:idle locale={locale} apiUrl={apiUrl} />

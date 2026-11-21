@@ -35,6 +35,16 @@ describe('BaseLayout chrome (HOS-2413)', () => {
         expect(dockIndex).toBeGreaterThan(siteBranchStart);
     });
 
+    it('mounts exactly one toast viewport per chrome (OD-11)', () => {
+        expect(base).toContain('<AccountToastRegion client:idle locale={locale} />');
+        expect(base).toContain('<ToastViewport client:idle locale={locale} />');
+        expect(base).toMatch(
+            /isAccountChrome \? \(\s*<AccountToastRegion[\s\S]*?\) : \(\s*<ToastViewport/
+        );
+        expect(base.match(/<ToastViewport/g)).toHaveLength(1);
+        expect(base.match(/<AccountToastRegion/g)).toHaveLength(1);
+    });
+
     it('stays within the 500-line limit', () => {
         expect(base.split('\n').length).toBeLessThanOrEqual(500);
     });

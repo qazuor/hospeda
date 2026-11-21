@@ -11,6 +11,7 @@
 export { AccountBar, type AccountBarProps } from './AccountBar';
 export { AccountFooter, type AccountFooterProps } from './AccountFooter';
 export { AccountSidebar, type AccountSidebarProps } from './AccountSidebar';
+export { AccountToastRegion, type AccountToastRegionProps } from './AccountToastRegion';
 export { Alert, type AlertProps, type AlertTone } from './Alert';
 export {
     AsyncRegion,
@@ -89,6 +90,7 @@ export {
 export { counterLevel, Textarea, type TextareaProps } from './Textarea';
 export { TextInput, type TextInputProps } from './TextInput';
 export { TextLink, type TextLinkProps, type TextLinkTone } from './TextLink';
+export { Toast, type ToastProps, type ToastTone, toneForToast } from './Toast';
 export { type ConfirmRequest, type UseConfirmResult, useConfirm } from './use-confirm';
 export {
     SAVED_VISIBLE_MS,
