@@ -80,6 +80,8 @@ import {
 } from '@repo/db';
 import { createEmailClient } from '@repo/email';
 import {
+    buildConversationTokenDay15Subject,
+    buildConversationTokenDay25Subject,
     ConversationTokenExpiringDay15,
     ConversationTokenExpiringDay25
 } from '@repo/notifications';
@@ -415,8 +417,7 @@ export const conversationTokenReminderJob: CronJobDefinition = {
             day15Sent = await processWindow(
                 day15Tokens,
                 'day15',
-                (accommodationName) =>
-                    `Tu enlace de acceso vence en 15 días — ${accommodationName}`,
+                (accommodationName) => buildConversationTokenDay15Subject({ accommodationName }),
                 ({ accommodationName, renewUrl, expiryDate, locale }) =>
                     ConversationTokenExpiringDay15({
                         accommodationName,
@@ -429,8 +430,7 @@ export const conversationTokenReminderJob: CronJobDefinition = {
             day25Sent = await processWindow(
                 day25Tokens,
                 'day25',
-                (accommodationName) =>
-                    `¡Último aviso! Tu enlace vence en 5 días — ${accommodationName}`,
+                (accommodationName) => buildConversationTokenDay25Subject({ accommodationName }),
                 ({ accommodationName, renewUrl, expiryDate, locale }) =>
                     ConversationTokenExpiringDay25({
                         accommodationName,
