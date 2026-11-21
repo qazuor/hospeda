@@ -548,9 +548,10 @@ describe('HOS-360 static guard — @repo/billing never enters the web client gra
         // measured 2026-07-29 it resolves 100 distinct modules.
         expect(astroDerived.size).toBeGreaterThanOrEqual(95);
 
-        // `*.client.tsx` is a naming convention. These three islands are
-        // hydrated from modules that do not carry the suffix, so the filename
-        // sweep alone never scans them.
+        // `*.client.tsx` is a naming convention. These islands are hydrated
+        // from modules that do not carry the suffix, so the filename sweep
+        // alone never scans them. The account kit (HOS-2413) names its
+        // components without the suffix by design.
         const beyondTheSweep = entrypoints
             .filter((file) => !clientTsxSweep.has(file))
             .map((file) => path.relative(WEB_SRC, file))
@@ -559,7 +560,10 @@ describe('HOS-360 static guard — @repo/billing never enters the web client gra
         expect(beyondTheSweep).toEqual([
             'components/accommodation/AiChatWidget.tsx',
             'components/accommodation/PriceAlertButton.tsx',
-            'components/account/EditableNote.tsx'
+            'components/account/EditableNote.tsx',
+            'components/account/kit-gallery/KitGallery.tsx',
+            'components/account/ui/AccountBar.tsx',
+            'components/account/ui/AccountToastRegion.tsx'
         ]);
     });
 
