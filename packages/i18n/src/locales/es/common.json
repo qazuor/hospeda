@@ -150,7 +150,8 @@
         "NO_TRIAL": "No encontramos una prueba activa para extender.",
         "TRIAL_ENDED": "Tu prueba ya terminó.",
         "CEILING_REACHED": "Este código supera el límite de extensión de tu prueba.",
-        "REDEMPTION_KEY_CONFLICT": "La extensión no coincide con un canje anterior."
+        "REDEMPTION_KEY_CONFLICT": "La extensión no coincide con un canje anterior.",
+        "PURCHASE_IDENTITY_BUSY": "Justo se estaba actualizando otra compra de este complemento. Probá de nuevo en unos segundos."
     },
     "filters": "Filtros",
     "filterChips": {

@@ -8,9 +8,6 @@ import {
     eq,
     getDb,
     idempotencyKeys,
-    isNotNull,
-    isNull,
-    or,
     type SelectAddonInstance,
     type SelectAddonProduct
 } from '@repo/db';
@@ -38,10 +35,12 @@ import {
     isCreationRefusedBeforeExisting
 } from './purchase-addon-rejection';
 import {
+    PURCHASE_IDENTITY_BUSY_REASON,
     type PurchaseAddonInput,
     PurchaseAddonInputSchema,
     type PurchaseAddonResult
 } from './purchase-addon-types';
+import { type PurchaseIdentity, readIdentityOccupant } from './purchase-identity-occupant';
 
 const logger = createLogger('addon-purchase');
 
@@ -180,6 +179,58 @@ async function resumeOccupiedPage(
     return current?.status === 'ACTIVE'
         ? { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' }
         : resumed;
+}
+
+/** How long a request that lost the identity waits for the purchase holding it to commit. */
+const OCCUPANT_WAIT_MS = 2_000;
+/** The pause between two reads of the identity while waiting. */
+const OCCUPANT_POLL_MS = 50;
+
+/**
+ * HOS-2518: reads the purchase that holds the identity a request collided with, waiting a
+ * bounded time when none is committed.
+ *
+ * The read can come back empty after a 23505 when two tabs retry the same expired page purchase:
+ * the other tab released the old purchase (ABANDONED) after this one collided with it, and its
+ * new purchase is not committed yet. That gap has two parts. First the other tab's release is
+ * committed while its new insert has not started (it re-reads the product and the policy before
+ * opening its transaction), and nothing is held there that this request could wait on. Then its
+ * insert transaction is open and uncommitted. A lock on the identity would cover only the second
+ * part unless it spanned the release and the insert, which are separate transactions shared with
+ * A3. So this re-reads with a short pause until a committed purchase appears: it never writes,
+ * and it answers the live purchase as soon as the other tab commits.
+ *
+ * It covers recurring (PERIODICO) purchases too: any identity conflict whose re-read comes back
+ * empty (an occupant released or expired by another entry in between) waits here the same way.
+ *
+ * @param input.identity - The owner, product and target the request asked for
+ * @returns The committed purchase that holds the identity
+ * @throws ServiceError (`SERVICE_UNAVAILABLE`, reason `PURCHASE_IDENTITY_BUSY`) when no purchase
+ *   holds the identity by the end of the wait: this request created nothing, so the owner can
+ *   retry with the same order id
+ */
+async function awaitIdentityOccupant(input: {
+    readonly identity: PurchaseIdentity;
+}): Promise<SelectAddonInstance> {
+    const deadline = Date.now() + OCCUPANT_WAIT_MS;
+    for (;;) {
+        const { occupant } = await readIdentityOccupant({ identity: input.identity });
+        if (occupant) return occupant;
+        if (Date.now() >= deadline) break;
+        await new Promise((resolve) => setTimeout(resolve, OCCUPANT_POLL_MS));
+    }
+    // Only the identity: the request passed in also carries the payer's declared email.
+    const { ownerId, productId, targetId } = input.identity;
+    logger.warn(
+        { ownerId, productId, targetId },
+        'HOS-2518: no purchase holds the identity after a purchase identity conflict'
+    );
+    throw new ServiceError(
+        ServiceErrorCode.SERVICE_UNAVAILABLE,
+        'Another purchase of this addon was changing; try again',
+        undefined,
+        PURCHASE_IDENTITY_BUSY_REASON
+    );
 }
 
 /**
@@ -407,27 +458,8 @@ async function purchaseAddonOnce(
             }
         }
         if (cause.constraint === 'uq_addon_instance_purchase_identity') {
-            const [occupant] = await getDb()
-                .select()
-                .from(addonInstances)
-                .where(
-                    and(
-                        eq(addonInstances.ownerId, request.ownerId),
-                        eq(addonInstances.productId, request.productId),
-                        request.targetId === null
-                            ? isNull(addonInstances.targetId)
-                            : eq(addonInstances.targetId, request.targetId),
-                        or(
-                            eq(addonInstances.status, 'PENDING_AUTHORIZATION'),
-                            and(
-                                eq(addonInstances.status, 'ACTIVE'),
-                                isNotNull(addonInstances.complementSubscriptionId)
-                            )
-                        )
-                    )
-                )
-                .limit(1);
-            if (occupant?.status === 'PENDING_AUTHORIZATION' && pagePurchase && deadlines) {
+            const occupant = await awaitIdentityOccupant({ identity: request });
+            if (occupant.status === 'PENDING_AUTHORIZATION' && pagePurchase && deadlines) {
                 // HOS-2179 T-6 review: the owner came back from the page without paying and asks
                 // again with a fresh order id. Answer a page to pay, never "confirming".
                 const decision = await decideOccupiedPagePurchase({ occupant, deadlines }, ports);
@@ -438,13 +470,13 @@ async function purchaseAddonOnce(
                 if (decision === 'RETRY' && options.mayReleaseOccupant)
                     return purchaseAddonOnce(input, ports, { mayReleaseOccupant: false });
             }
-            if (occupant?.status === 'PENDING_AUTHORIZATION')
+            if (occupant.status === 'PENDING_AUTHORIZATION')
                 return {
                     outcome: 'PENDING_ELSEWHERE',
                     instanceId: occupant.id,
                     chargeKind: chargeKindOf(product)
                 };
-            if (occupant?.status === 'ACTIVE' && occupant.complementSubscriptionId)
+            if (occupant.status === 'ACTIVE' && occupant.complementSubscriptionId)
                 return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
         }
         throw error;

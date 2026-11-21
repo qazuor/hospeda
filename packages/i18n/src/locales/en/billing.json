@@ -97,7 +97,8 @@
         "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
         "pageRejected": "Mercado Pago could not open the payment page. Try again in a few minutes.",
         "providerBusy": "Mercado Pago is very busy right now. Wait a minute and try again.",
-        "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes."
+        "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes.",
+        "identityBusy": "Another purchase of this add-on was being updated just now. Please try again in a few seconds."
     },
     "payment": {
         "title": "Payment methods",
