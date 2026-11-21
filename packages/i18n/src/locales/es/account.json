@@ -1866,6 +1866,7 @@
         "charCount": "{{current}} de {{max}} caracteres",
         "charNearLimit": "Quedan {{remaining}} caracteres",
         "charAtLimit": "Llegaste al límite de {{max}} caracteres",
-        "charOverLimit": "Superaste el límite de {{max}} caracteres en {{over}}"
+        "charOverLimit": "Superaste el límite de {{max}} caracteres en {{over}}",
+        "dialogClose": "Cerrar diálogo"
     }
 }

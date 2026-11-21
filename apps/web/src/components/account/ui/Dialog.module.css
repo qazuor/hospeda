@@ -1,0 +1,66 @@
+/* Dialog.module.css — the kit skin over the shared Dialog (HOS-2413 T-011, OD-3).
+   The shared Dialog keeps the mechanics (focus trap, scroll lock, Escape, the
+   HOS-310 back button, `dialog-panel`). This file only repaints: popover
+   surface, shadow-overlay, the `overlay` scrim, kit radius and kit sizes.
+   It never re-declares max-height or overflow (check:dialog-panel). */
+
+/* The selectors repeat attribute hooks to beat the shared module's rules
+   without depending on stylesheet order. */
+.overlay.overlay {
+    background-color: var(--overlay);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.panel[data-size][data-variant] {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    border-radius: var(--radius-surface);
+    box-shadow: var(--shadow-overlay);
+}
+
+.panel[data-size="sm"] {
+    max-width: 30rem;
+}
+
+.panel[data-size="md"] {
+    max-width: 40rem;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-6) var(--space-3);
+}
+
+.title {
+    margin: 0;
+    font: var(--app-section);
+    color: var(--popover-foreground);
+}
+
+.description {
+    margin: var(--space-1) 0 0;
+    font: var(--app-ui);
+    color: var(--core-muted-foreground);
+}
+
+.body {
+    padding: var(--space-2) var(--space-6) var(--space-5);
+}
+
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-6) var(--space-5);
+}
+
+/* Below 30rem the panel is simply `width: 100%` of the overlay, whose own
+   16px padding leaves the gutter: no media query needed. */
