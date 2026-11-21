@@ -278,7 +278,7 @@
 .securityLink {
     display: inline-block;
     font-weight: 600;
-    color: var(--color-primary, inherit);
+    color: var(--brand-primary);
     text-decoration: underline;
     text-underline-offset: 3px;
 }

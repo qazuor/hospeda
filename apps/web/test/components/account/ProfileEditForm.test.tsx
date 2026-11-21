@@ -44,8 +44,9 @@ vi.mock('../../../src/lib/avatar-utils', () => ({
 }));
 
 vi.mock('../../../src/store/toast-store', () => ({
-    addToast: vi.fn(),
-    clearToasts: vi.fn()
+    addToast: vi.fn(() => 'toast-id'),
+    removeToast: vi.fn(),
+    getToasts: () => []
 }));
 
 vi.mock('@repo/schemas', async () => {

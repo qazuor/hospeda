@@ -240,7 +240,9 @@
     "editProfile": {
         "security": {
             "description": "Change the password you use to sign in to Hospeda.",
-            "changePasswordLink": "Change password"
+            "changePasswordLink": "Change password",
+            "noPasswordDescription": "You sign in with Google or Facebook and do not have a password yet. Add one to also sign in with your email.",
+            "addPasswordLink": "Add password"
         },
         "fields": {
             "displayName": "Display name",

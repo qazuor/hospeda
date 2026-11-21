@@ -240,7 +240,9 @@
     "editProfile": {
         "security": {
             "description": "Cambiá la contraseña con la que ingresás a Hospeda.",
-            "changePasswordLink": "Cambiar contraseña"
+            "changePasswordLink": "Cambiar contraseña",
+            "noPasswordDescription": "Entrás con tu cuenta de Google o Facebook y todavía no tenés contraseña. Agregá una para poder entrar también con tu email.",
+            "addPasswordLink": "Agregar contraseña"
         },
         "fields": {
             "displayName": "Nombre para mostrar",
