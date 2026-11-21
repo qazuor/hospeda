@@ -12,7 +12,8 @@
  * @module test/runtime-imports
  */
 
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -21,11 +22,14 @@ const SRC = resolve(import.meta.dirname, '../src');
 /** Module specifiers the runtime must never import. */
 const FORBIDDEN = new Set(['fs', 'node:fs', 'fs/promises', 'node:fs/promises', 'yaml', 'marked']);
 
-/** Every `import … from '<x>'` / `export … from '<x>'` / `import('<x>')` specifier of a source. */
+/**
+ * Every module specifier of a source: `import … from '<x>'`, `export … from
+ * '<x>'`, a side-effect `import '<x>'` and a dynamic `import('<x>')`.
+ */
 function specifiersOf(source: string): string[] {
     const pattern =
-        /(?:^|\n)\s*(?:import|export)\s[^;]*?from\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
-    return [...source.matchAll(pattern)].map((match) => match[1] ?? match[2] ?? '');
+        /(?:^|\n)\s*(?:import|export)\s[^;]*?from\s+['"]([^'"]+)['"]|(?:^|\n)\s*import\s*['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
+    return [...source.matchAll(pattern)].map((match) => match[1] ?? match[2] ?? match[3] ?? '');
 }
 
 /** Every module reachable from an entry through relative imports, with its specifiers. */
@@ -45,6 +49,22 @@ function walk(entry: string): Map<string, string[]> {
     return seen;
 }
 
+/** The forbidden imports of a walked graph, as `<file> → <specifier>`. */
+function forbiddenImportsOf({ modules, root }: { modules: Map<string, string[]>; root: string }) {
+    return [...modules].flatMap(([file, specifiers]) =>
+        specifiers
+            .filter((specifier) => FORBIDDEN.has(specifier))
+            .map((specifier) => `${relative(root, file)} → ${specifier}`)
+    );
+}
+
+/** The walked modules under the generator folder. */
+function generatorModulesOf({ modules, root }: { modules: Map<string, string[]>; root: string }) {
+    return [...modules.keys()]
+        .map((file) => relative(root, file))
+        .filter((file) => file.startsWith('generator'));
+}
+
 describe('the @repo/help runtime (AC-12)', () => {
     const modules = walk(join(SRC, 'index.ts'));
 
@@ -53,27 +73,50 @@ describe('the @repo/help runtime (AC-12)', () => {
     });
 
     it('imports neither node:fs, fs, yaml nor marked, directly or through another module', () => {
-        const offenders = [...modules].flatMap(([file, specifiers]) =>
-            specifiers
-                .filter((specifier) => FORBIDDEN.has(specifier))
-                .map((specifier) => `${relative(SRC, file)} → ${specifier}`)
-        );
-        expect(offenders).toEqual([]);
+        expect(forbiddenImportsOf({ modules, root: SRC })).toEqual([]);
     });
 
     it('never reaches the generator folder', () => {
+        expect(generatorModulesOf({ modules, root: SRC })).toEqual([]);
+    });
+});
+
+describe('the AC-12 scan itself (it is not vacuous)', () => {
+    it('reads every import form, side-effect imports included', () => {
         expect(
-            [...modules.keys()]
-                .map((file) => relative(SRC, file))
-                .filter((file) => file.startsWith('generator'))
-        ).toEqual([]);
+            specifiersOf(
+                "import { parse } from 'yaml';\nexport * from './x';\nimport 'node:fs';\nimport {\n  a\n} from 'marked';\nconst m = import('fs');"
+            )
+        ).toEqual(['yaml', './x', 'node:fs', 'marked', 'fs']);
     });
 
-    it('detects a forbidden import when there is one (the scan is not vacuous)', () => {
-        expect(specifiersOf("import { parse } from 'yaml';\nexport * from './x';")).toEqual([
-            'yaml',
-            './x'
-        ]);
-        expect(specifiersOf("import {\n  readFileSync\n} from 'node:fs';")).toEqual(['node:fs']);
+    it('finds a forbidden import and a generator module two hops away from the entry', () => {
+        // Arrange: index → a (side-effect) → b, which imports node:fs and the generator.
+        const root = mkdtempSync(join(tmpdir(), 'help-ac12-'));
+        try {
+            mkdirSync(join(root, 'generator'));
+            writeFileSync(join(root, 'index.ts'), "export * from './a';\n");
+            writeFileSync(join(root, 'a.ts'), "import './b';\n");
+            writeFileSync(
+                join(root, 'b.ts'),
+                "import 'node:fs';\nexport { x } from './generator/cli';\n"
+            );
+            writeFileSync(join(root, 'generator', 'cli.ts'), "import { parse } from 'yaml';\n");
+
+            // Act
+            const graph = walk(join(root, 'index.ts'));
+
+            // Assert
+            expect(graph.size).toBe(4);
+            expect(forbiddenImportsOf({ modules: graph, root })).toEqual([
+                'b.ts → node:fs',
+                `${join('generator', 'cli.ts')} → yaml`
+            ]);
+            expect(generatorModulesOf({ modules: graph, root })).toEqual([
+                join('generator', 'cli.ts')
+            ]);
+        } finally {
+            rmSync(root, { recursive: true, force: true });
+        }
     });
 });
