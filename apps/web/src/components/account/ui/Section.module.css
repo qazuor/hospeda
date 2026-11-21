@@ -1,0 +1,103 @@
+/* Section.module.css — the flat surface of D5 «secciones planas con barra degradé»
+   (HOS-2413 T-005). A bordered core-card with a 3px gradient top bar. No
+   shadow and no hover rule, ever: a Section is not interactive. */
+
+.root {
+    container-type: inline-size;
+    position: relative;
+    box-sizing: border-box;
+    overflow: hidden;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    color: var(--core-foreground);
+}
+
+/* The 3px top bar: brand-primary to brand-accent at .65. */
+.root::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 3px;
+    background: linear-gradient(to right, var(--brand-primary), var(--brand-accent));
+    opacity: 0.65;
+}
+
+.danger {
+    border-color: var(--status-danger-border);
+}
+
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-6) var(--space-6) 0;
+}
+
+.heading {
+    min-inline-size: 0;
+}
+
+.title {
+    margin: 0;
+    font: var(--app-section);
+    color: var(--core-foreground);
+}
+
+.danger .title {
+    color: var(--status-danger-fg);
+}
+
+.description {
+    margin: var(--space-1) 0 0;
+    font: var(--app-ui);
+    color: var(--core-muted-foreground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.body {
+    padding: var(--space-6);
+}
+
+.flush .body {
+    padding: 0;
+}
+
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: 0 var(--space-6) var(--space-6);
+}
+
+/* The Section responds to its own container, not to the viewport. */
+@container (width < 30rem) {
+    .header {
+        padding: var(--space-4) var(--space-4) 0;
+    }
+
+    .body {
+        padding: var(--space-4);
+    }
+
+    .flush .body {
+        padding: 0;
+    }
+
+    .footer {
+        padding: 0 var(--space-4) var(--space-4);
+    }
+
+    .footer > * {
+        flex: 1 1 100%;
+    }
+}
