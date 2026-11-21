@@ -1,5 +1,5 @@
 import { Button, Heading, Text } from '@react-email/components';
-import { BaseLayout } from './base-layout.js';
+import { EmailLayout } from './email-layout.js';
 import { resolveGreeting } from './greeting.js';
 
 /**
@@ -44,7 +44,7 @@ export interface ResetPasswordTemplateProps {
  */
 export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateProps) {
     return (
-        <BaseLayout showUnsubscribe={false}>
+        <EmailLayout>
             <Heading style={h1}>Restablece tu contraseña</Heading>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>
@@ -80,7 +80,7 @@ export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateP
                 Este enlace expira en 1 hora por motivos de seguridad. Si necesitas más tiempo,
                 puedes solicitar un nuevo enlace de restablecimiento.
             </Text>
-        </BaseLayout>
+        </EmailLayout>
     );
 }
 

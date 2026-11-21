@@ -312,7 +312,7 @@ describe('Subscription Lifecycle Email Templates', () => {
         });
     });
 
-    describe('showUnsubscribe=false across lifecycle templates', () => {
+    describe('no preferences footer link across lifecycle templates', () => {
         it('should not show unsubscribe link in SubscriptionCancelled template', () => {
             // Arrange
             const props: SubscriptionCancelledProps = {

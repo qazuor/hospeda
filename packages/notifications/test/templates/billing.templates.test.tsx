@@ -283,13 +283,16 @@ describe('Billing Email Templates', () => {
             expect(html).toMatch(/\d{1,2}.*de.*(diciembre|enero|febrero)/i);
         });
 
-        it('should include unsubscribe link', () => {
+        it('should not link to the preferences page yet (HOS-2519 OQ-2)', () => {
             // Arrange & Act
             const html = renderToStaticMarkup(RenewalReminder(validProps));
 
             // Assert
-            // Renewal reminders are REMINDER category, so should have unsubscribe
-            expect(html).toContain('preferencias');
+            // REMINDER category, but the web preferences page does not drive
+            // REMINDER opt-outs today, so the footer carries no preferences link
+            // and never the old unresolved {{unsubscribe_url}} placeholder.
+            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            expect(html).not.toContain('unsubscribe_url');
         });
 
         describe('productDomain footer (HOS-1283)', () => {

@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Props for the CourtesyEnded email template (HOS-180). */
 export interface CourtesyEndedProps {
@@ -31,7 +31,6 @@ export function CourtesyEnded({
     return (
         <EmailLayout
             previewText={`Tu regalo terminó — la facturación se reanuda el ${nextBillingDate}`}
-            showUnsubscribe={false}
         >
             <Heading>Tu regalo terminó</Heading>
 

@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import {
     formatTrialGreeting,
     resolveTrialPlanName,
@@ -38,7 +38,7 @@ export function TrialWinBack1Day({
     return (
         <EmailLayout
             previewText="Tu ficha quedó lista; falta un paso para volver a verla online"
-            showUnsubscribe={true}
+            footerLink="none"
         >
             <Heading>Tu publicación te está esperando</Heading>
 

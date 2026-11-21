@@ -1365,7 +1365,9 @@
         "deleteError": "Could not delete the alert",
         "upgrade": {
             "title": "Price alerts",
-            "message": "Price alerts are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+            "message_one": "Price alerts are available on the {{plans}} plan. Upgrade your plan to access this feature.",
+            "message_other": "Price alerts are available on the {{plans}} plans. Upgrade your plan to access this feature.",
+            "messageNoPlans": "Price alerts are not included in your current plan. Upgrade your plan to access this feature.",
             "cta": "View plans"
         },
         "listLabel": "Your active price alerts",

@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject of P1's credited-payment receipt notice (HOS-1675). */
 export const PAYMENT_CREDITED_SUBJECT = 'Recibimos tu pago';
