@@ -59,6 +59,16 @@ describe('collection entity types (HOS-2423)', () => {
         expect(pageSrc).toContain('isCollectionEntityType');
     });
 
+    it('reuses the account.favorites.tabs.* keys instead of a duplicate filter set', () => {
+        for (const type of COLLECTION_ENTITY_TYPES) {
+            expect(COLLECTION_FILTER_LABELS[type].key).toMatch(/^account\.favorites\.tabs\./);
+        }
+    });
+
+    it('uses the same fallback as the favorites tabs for the blog type', () => {
+        expect(COLLECTION_FILTER_LABELS.POST.fallback).toBe('Blog');
+    });
+
     it.each(['es', 'en', 'pt'])('has every filter label key in %s', (locale) => {
         const json = accountLocale(locale);
         for (const type of COLLECTION_ENTITY_TYPES) {

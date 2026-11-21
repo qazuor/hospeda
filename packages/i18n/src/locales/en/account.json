@@ -840,7 +840,8 @@
             "event": "Events",
             "experience": "Experiences",
             "venue": "Food & nightlife",
-            "post": "Blog"
+            "post": "Blog",
+            "attraction": "Attractions"
         },
         "collections": {
             "create": "Create collection",
@@ -903,13 +904,6 @@
         },
         "filter": {
             "all": "All",
-            "accommodations": "Accommodations",
-            "destinations": "Destinations",
-            "events": "Events",
-            "posts": "Posts",
-            "venues": "Food & nightlife",
-            "experiences": "Experiences",
-            "attractions": "Attractions",
             "label": "Filter by type"
         },
         "bookmarks": {
