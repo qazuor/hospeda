@@ -14,6 +14,18 @@ export const HELP_AUDIENCES = ['host', 'venue', 'experience', 'provider', 'partn
 export type HelpAudience = (typeof HELP_AUDIENCES)[number];
 
 /**
+ * The Spanish name of each audience, as the help landing's tabs show it
+ * (HOS-2410 `docs/web-ui.md` §2) and the export titles its bundle (AC-35).
+ */
+export const HELP_AUDIENCE_LABELS = {
+    host: 'Alojamientos',
+    venue: 'Comer y salir',
+    experience: 'Experiencias',
+    provider: 'Proveedores',
+    partner: 'Aliados'
+} as const satisfies Record<HelpAudience, string>;
+
+/**
  * The verticals an article may name in `verticals`: every `VerticalEnum` value
  * but `tourist` (`docs/data-model.md` §2). Written out instead of derived from
  * the enum so the runtime imports no value from `@repo/schemas`; the
@@ -112,3 +124,6 @@ export const HELP_INDEX_VERSION = 1;
 
 /** What a `{{limit}}` token reads as when the reader's value is unknown. */
 export const HELP_NEUTRAL_LIMIT_TEXT = 'el tope de tu plan';
+
+/** What a `{{limit}}` token reads as in the Markdown export (`docs/data-model.md` §5.2). */
+export const HELP_EXPORT_LIMIT_TEXT = 'según tu plan';
