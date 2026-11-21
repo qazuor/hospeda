@@ -40,12 +40,14 @@ hospeda/
 │   ├── design-tokens/ # Shared design tokens (web + admin)
 │   ├── email/        # Email service (Resend + React Email)
 │   ├── feedback/     # Feedback widget support
+│   ├── help/         # Help center articles (Markdown), index generator, shared search (HOS-2410)
 │   ├── i18n/         # Internationalization (es/en/pt)
 │   ├── icons/        # Shared icon components
 │   ├── logger/       # Structured logging
 │   ├── media/        # Cloudinary uploads, transforms, presets
 │   ├── notifications/# Notification system
 │   ├── payments/     # PaymentProvider interface, MercadoPago adapter, fake (HOS-1352)
+│   ├── portal-routes/ # Owner portal route map shared by api and web (HOS-2410)
 │   ├── schemas/      # Zod validation schemas (source of truth for types)
 │   ├── seed/         # Database seeding
 │   ├── service-core/ # Business logic services (BaseCrudService)

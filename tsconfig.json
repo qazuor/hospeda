@@ -12,7 +12,12 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "isolatedModules": true
+        "isolatedModules": true,
+        // Workspace packages that scripts reach through @repo/help resolve from
+        // source, so guards run without building anything (HOS-2410).
+        "paths": {
+            "@repo/portal-routes": ["./packages/portal-routes/src/index.ts"]
+        }
     },
     "include": ["scripts/**/*"],
     "exclude": ["node_modules", "dist", "build", ".turbo"]

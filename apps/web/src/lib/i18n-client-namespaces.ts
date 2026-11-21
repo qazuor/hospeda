@@ -77,6 +77,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.editProfile',
     'account.exclusiveDeals',
     'account.favorites',
+    'account.help',
     'account.myContent',
     'account.nav',
     'account.newsletter',

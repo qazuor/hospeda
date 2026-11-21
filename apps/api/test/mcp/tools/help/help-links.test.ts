@@ -6,10 +6,9 @@
  * @module test/mcp/tools/help/help-links
  */
 
+import { HELP_ARTICLES as OWNER_HELP_TOPICS, type HelpArticle as OwnerHelpTopic } from '@repo/help';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { OWNER_HELP_TOPICS } from '../../../../src/data/owner-help/owner-help';
-import type { OwnerHelpTopic } from '../../../../src/data/owner-help/owner-help.types';
 import {
     buildFallbackHelpLinks,
     buildHelpLinks,

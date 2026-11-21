@@ -343,8 +343,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL (billing category, api only) — the
  * payer email of the pending preapprovals the provider watch battery creates
  * and cancels (HOS-1512). 290 + 1 = 291.
+ *
+ * +1 = INIT_CWD (system category, platform-injected by pnpm) - read by the
+ * @repo/help export CLI (HOS-2410). 291 + 1 = 292.
  */
-const EXPECTED_VAR_COUNT = 291;
+const EXPECTED_VAR_COUNT = 292;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
