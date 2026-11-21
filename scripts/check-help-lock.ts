@@ -18,7 +18,7 @@
  *   several articles cover is hashed in each of their entries, so one change
  *   flags every one of them.
  * - (c3) The lock entry's `reviewedAt` equals the article's.
- * - (c4) Non-vacuity: the content parses, and the lock is not empty when the
+ * - (c4) Non-vacuity: the content parses and has at least one article, and the lock is not empty when the
  *   catalog is not.
  *
  * ## What it does NOT see, so a green run is not read as more
@@ -68,7 +68,7 @@ export const PREDICATE_MESSAGES: Readonly<Record<LockPredicate, string>> = {
     c1: 'GUARD:help-lock (c1): an article has no lock entry, a lock entry has no article, or the lock is malformed.',
     c2: 'GUARD:help-lock (c2): code an article is anchored to changed since the article was last reviewed.',
     c3: 'GUARD:help-lock (c3): an article reviewedAt differs from its lock entry.',
-    c4: 'GUARD:help-lock (c4): the content does not parse or the lock is empty, so nothing was checked.'
+    c4: 'GUARD:help-lock (c4): the content does not parse or is empty, or the lock is empty, so nothing was checked.'
 };
 
 /** Arguments for {@link checkHelpLock}. RO-RO. */
@@ -178,7 +178,12 @@ export function checkHelpLock({
         ? parseHelpLock({ text: readFileSync(lockFile, 'utf8') })
         : { entries: [], problems: [`${HELP_LOCK_PATH} does not exist`] };
     violations.push(...parsed.problems.map((detail) => ({ predicate: 'c1' as const, detail })));
-    if (articles.length > 0 && parsed.entries.length === 0) {
+    if (articles.length === 0) {
+        violations.push({
+            predicate: 'c4',
+            detail: `no article under ${contentDir}, so no lock entry was checked`
+        });
+    } else if (parsed.entries.length === 0) {
         violations.push({
             predicate: 'c4',
             detail: `the lock is empty but the catalog has ${articles.length} articles. Run pnpm help:review <id> for each, after re-reading it`

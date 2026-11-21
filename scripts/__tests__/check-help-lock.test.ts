@@ -226,6 +226,18 @@ describe('checkHelpLock on a synthetic repo', () => {
         expect(run({ root, sources: sources() }).output).toContain(PREDICATE_MESSAGES.c4);
     });
 
+    it('fails c4 on an empty catalog with an empty lock (AC-34)', () => {
+        // Arrange
+        const root = syntheticRoot({ files: [] });
+
+        // Act
+        const result = check(root);
+
+        // Assert
+        expect(predicatesOf(result)).toEqual(['c4']);
+        expect(run({ root, sources: sources() }).exitCode).toBe(1);
+    });
+
     it('fails c4 when the content does not parse', () => {
         // Arrange
         const root = syntheticRoot({ files: [{ path: 'es/host/a.md', source: 'nope' }] });
