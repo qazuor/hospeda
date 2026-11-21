@@ -18,7 +18,9 @@
         "empty": "No hay novedades aún",
         "emptyDesc": "Cuando publiquemos mejoras o nuevas funciones de la plataforma, vas a verlas acá.",
         "markAllRead": "Marcar todo como leído",
-        "seeEntry": "Ver"
+        "seeEntry": "Ver",
+        "showMore": "Ver más novedades",
+        "showingCount": "Mostrando {{shown}} de {{total}}"
     },
     "status": {
         "new": "Nuevo"
