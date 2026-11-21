@@ -9,7 +9,6 @@ import {
     getDb,
     idempotencyKeys,
     isNotNull,
-    isNull,
     lte,
     or,
     providerLinks,
@@ -26,10 +25,7 @@ import { recordProviderCancellationDecided } from '../reconciliation/provider-ca
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service';
 import { applyA2Recurring, emitAddonCoverageAdded } from './addon-instance-a2';
 import type { A5Ports } from './addon-instance-a5';
-import {
-    expireOneTimeAddon,
-    expireOneTimePageAddon
-} from './expire-addon-authorization-windows-one-time';
+import { expireOneTimePageAddon } from './expire-addon-authorization-windows-one-time';
 import { PAYMENT_PAGE_OPERATION } from './one-time-payment-page';
 import { optionalPaymentPageTiming } from './one-time-payment-page-deadline';
 
@@ -137,7 +133,6 @@ export async function expireAddonAuthorizationWindows(
     limitSchema.parse(limit);
     const now = ports.clock.now();
     const deadlines = ports.deadlines ?? (await getCurrentBillingDeadlines());
-    const oneTimeCutoff = new Date(now.getTime() - deadlines.values['10'].cardHours * 3_600_000);
     // HOS-2179 §5.2: a page purchase waits until its page stopped taking payments plus a margin
     // (PLAZO:21). The page end is the expiry the instance stored at creation; only a purchase
     // whose creation answer was lost (no stored expiry) falls back to createdAt plus today's
@@ -153,8 +148,7 @@ export async function expireAddonAuthorizationWindows(
             instance: addonInstances,
             chargeKind: addonProducts.chargeKind,
             complement: subscriptions,
-            link: providerLinks,
-            pageKey: idempotencyKeys.key
+            link: providerLinks
         })
         .from(addonInstances)
         .innerJoin(addonProducts, eq(addonProducts.id, addonInstances.productId))
@@ -174,11 +168,6 @@ export async function expireAddonAuthorizationWindows(
                     and(
                         eq(addonProducts.chargeKind, 'PERIODICO'),
                         lte(subscriptions.authorizationWindowEndsAt, now)
-                    ),
-                    and(
-                        eq(addonProducts.chargeKind, 'UNA_VEZ'),
-                        isNull(idempotencyKeys.key),
-                        lte(addonInstances.createdAt, oneTimeCutoff)
                     ),
                     pageWindowElapsed
                         ? and(
@@ -200,15 +189,10 @@ export async function expireAddonAuthorizationWindows(
     for (const row of rows) {
         try {
             if (row.chargeKind === 'UNA_VEZ') {
-                const outcome = row.pageKey
-                    ? await expireOneTimePageAddon({ instanceId: row.instance.id }, ports)
-                    : await expireOneTimeAddon(
-                          {
-                              instanceId: row.instance.id,
-                              providerOrderId: row.instance.providerOrderId
-                          },
-                          ports
-                      );
+                const outcome = await expireOneTimePageAddon(
+                    { instanceId: row.instance.id },
+                    ports
+                );
                 if (outcome === 'ACTIVATED') activated++;
                 else if (outcome === 'ABANDONED') abandoned++;
                 else deferred++;

@@ -5,7 +5,9 @@
  * - Button: CTA button with primary/secondary variants
  * - Heading: Section heading with consistent styling
  * - InfoRow: Key-value pair display for receipts
- * - EmailLayout: Shared layout with header, footer, and optional unsubscribe
+ *
+ * EmailLayout moved to `@repo/email` (HOS-2519) and is tested there
+ * (`packages/email/test/templates/email-layout.test.tsx`).
  *
  * @module test/templates/components.test
  */
@@ -15,7 +17,6 @@ import { describe, expect, it } from 'vitest';
 import { Button } from '../../src/templates/components/button';
 import { Heading } from '../../src/templates/components/heading';
 import { InfoRow } from '../../src/templates/components/info-row';
-import { EmailLayout } from '../../src/templates/components/layout';
 
 describe('Email Template Components', () => {
     describe('Button', () => {
@@ -190,171 +191,6 @@ describe('Email Template Components', () => {
             expect(html).toContain('Mensual');
             expect(html).toContain('40%');
             expect(html).toContain('60%');
-        });
-    });
-
-    describe('EmailLayout', () => {
-        it('should render without errors', () => {
-            // Arrange & Act
-            const render = () =>
-                renderToStaticMarkup(
-                    EmailLayout({
-                        previewText: 'Preview text',
-                        children: 'Content'
-                    })
-                );
-
-            // Assert
-            expect(render).not.toThrow();
-        });
-
-        it('should include preview text', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Tu pago fue procesado',
-                    children: 'Body content'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('Tu pago fue procesado');
-        });
-
-        it('should render children content', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Email body content here'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('Email body content here');
-        });
-
-        it('should include Hospeda branding in header', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('Hospeda');
-            expect(html).toContain('Turismo en el Litoral');
-        });
-
-        it('should include footer text', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('Hospeda - Turismo en el Litoral');
-            expect(html).toContain('Concepción del Uruguay');
-        });
-
-        it('should set HTML lang attribute to Spanish', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('lang="es"');
-        });
-
-        it('should apply dark header background color', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('#1e293b');
-        });
-
-        it('should not show unsubscribe link by default', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content'
-                })
-            );
-
-            // Assert
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
-            expect(html).not.toContain('unsubscribe_url');
-        });
-
-        it('should show unsubscribe link when showUnsubscribe is true', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content',
-                    showUnsubscribe: true
-                })
-            );
-
-            // Assert
-            expect(html).toContain('Administrar preferencias de notificaciones');
-            expect(html).toContain('unsubscribe_url');
-        });
-
-        it('should not show unsubscribe link when showUnsubscribe is false', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content',
-                    showUnsubscribe: false
-                })
-            );
-
-            // Assert
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
-        });
-
-        it('should apply light background to body', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('#f6f9fc');
-        });
-
-        it('should set max-width on container', () => {
-            // Arrange & Act
-            const html = renderToStaticMarkup(
-                EmailLayout({
-                    previewText: 'Preview',
-                    children: 'Content'
-                })
-            );
-
-            // Assert
-            expect(html).toContain('max-width:600px');
         });
     });
 });

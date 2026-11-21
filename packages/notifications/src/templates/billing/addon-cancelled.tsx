@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject and heading of the notice sent before an orphaned addon's charge is cancelled. */
 export const ADDON_CANCELLED_SUBJECT = 'Cancelamos el cobro de tu addon';

@@ -53,8 +53,8 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * The page-payments check of the daily sweep (HOS-2179 §5.10), next to the paid-orders check it
- * replaces in T-7. Every one-time page purchase bought inside the PLAZO:18 window that no longer
+ * The page-payments check of the daily sweep (HOS-2179 §5.10). It replaced the paid-orders check,
+ * retired with the order path in T-7. Every one-time page purchase bought inside the PLAZO:18 window that no longer
  * waits (A3 owns a waiting one) has its payments searched by its reference, and each id
  * goes through A2, which re-reads it by id and decides (INV:D6, G17): the search never decides.
  * A2 opens `COBRO_DUPLICADO` for a second payment beside the one the purchase holds (paid twice)

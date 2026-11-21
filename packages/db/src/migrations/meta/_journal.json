@@ -1716,6 +1716,13 @@
       "when": 1795152635401,
       "tag": "0244_hos2391_addon_instance_chargeback_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 245,
+      "version": "7",
+      "when": 1795237318594,
+      "tag": "0245_hos2519_email_template_preview",
+      "breakpoints": true
     }
   ]
 }

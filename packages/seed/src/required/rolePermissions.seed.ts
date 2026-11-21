@@ -229,6 +229,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+        // EMAIL PREVIEWER (HOS-2519 OQ-3): read-only, fictional sample data.
+        PermissionEnum.NOTIFICATION_TEMPLATE_PREVIEW,
 
         // NEWSLETTER: All permissions (SPEC-101)
         PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
@@ -698,6 +700,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.STATS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
         PermissionEnum.NOTIFICATION_CONFIGURE,
+        // EMAIL PREVIEWER (HOS-2519 OQ-3): read-only, fictional sample data.
+        PermissionEnum.NOTIFICATION_TEMPLATE_PREVIEW,
 
         // NEWSLETTER: All permissions (SPEC-101)
         PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,

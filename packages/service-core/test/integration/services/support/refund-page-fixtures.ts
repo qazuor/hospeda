@@ -24,10 +24,7 @@ import { purchaseFixture } from './addon-purchase-fixtures.js';
 export async function refundPageFixture(input: { readonly refundAmount?: number } = {}) {
     const f = await purchaseFixture();
     await payingPrincipal(f);
-    const purchase = await purchaseAddon(
-        { ...f.input(), oneTimeChannel: 'PAGE' as const },
-        f.ports
-    );
+    const purchase = await purchaseAddon(f.input(), f.ports);
     if (purchase.outcome !== 'CREATED') throw new Error(`Purchase returned ${purchase.outcome}`);
     const db = getServiceTestDb();
     const [instance] = await db

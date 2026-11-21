@@ -113,7 +113,12 @@
         "ownerInboxTitle": "Mensajes de huéspedes",
         "status": "Estado",
         "title": "Bandeja de entrada",
-        "unreadCount": "{count} sin leer"
+        "unreadCount": "{count} sin leer",
+        "loadError": {
+            "title": "No pudimos cargar tus consultas",
+            "body": "Hubo un problema al leer tu bandeja. Tus consultas siguen ahí: probá de nuevo en un momento.",
+            "retry": "Reintentar"
+        }
     },
     "senderLabels": {
         "guest": "Huésped",

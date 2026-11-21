@@ -1,8 +1,8 @@
 import { Section, Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { EmailLayout } from '../components/layout.js';
 
 /**
  * Props for AccommodationCalendarFeedBroken email template (HOS-162 Phase 3,
@@ -47,7 +47,6 @@ export function AccommodationCalendarFeedBroken({
     return (
         <EmailLayout
             previewText={`Tu calendario de ${providerLabel} dejó de sincronizarse — revisá ${accommodationName}`}
-            showUnsubscribe={false}
         >
             <Heading>Tu calendario de {providerLabel} dejó de sincronizarse</Heading>
 

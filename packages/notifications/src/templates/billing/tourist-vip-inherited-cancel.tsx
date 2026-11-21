@@ -1,6 +1,6 @@
 import { Text } from '@react-email/components';
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 
 /** Subject and heading of the notice sent before an inherited Tourist VIP is cancelled. */
 export const TOURIST_VIP_INHERITED_CANCEL_SUBJECT = 'Cancelamos tu suscripción a Turista VIP';

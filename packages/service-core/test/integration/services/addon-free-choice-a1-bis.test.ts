@@ -12,10 +12,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:14 AC:B10:12 free addon u
     it('creates ACTIVE with the anchor, event, fixed end, and no payment or provider call', async () => {
         const f = await freeChoiceFixture();
         const authorize = vi.spyOn(f.fake, 'authorize');
-        const charge = vi.spyOn(f.fake, 'chargeOnce');
+        const charge = vi.spyOn(f.fake, 'requestOneTimePayment');
         const cancel = vi.spyOn(f.fake, 'cancel');
         const input = f.freeInput();
-        const ordersBefore = f.fake.ordersFor({ reference: input.orderRequestId });
         const authorizationsBefore = await f.fake.searchAuthorizations({
             reference: input.orderRequestId
         });
@@ -59,7 +58,6 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:14 AC:B10:12 free addon u
         expect(authorize).toHaveBeenCalledTimes(0);
         expect(charge).toHaveBeenCalledTimes(0);
         expect(cancel).toHaveBeenCalledTimes(0);
-        expect(f.fake.ordersFor({ reference: input.orderRequestId })).toEqual(ordersBefore);
         expect(await f.fake.searchAuthorizations({ reference: input.orderRequestId })).toEqual(
             authorizationsBefore
         );

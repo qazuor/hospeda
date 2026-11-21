@@ -5,6 +5,7 @@
  * preference management for transactional emails, reminders, and admin alerts.
  */
 
+export * from './catalog/index.js';
 export * from './config/index.js';
 export * from './constants/index.js';
 export * from './services/index.js';

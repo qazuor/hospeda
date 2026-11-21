@@ -1,5 +1,5 @@
+import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
-import { EmailLayout } from '../components/layout.js';
 import { ModeratedListingBody } from './listing-notice-shared.js';
 
 /** Props of {@link ListingModerated}. */
