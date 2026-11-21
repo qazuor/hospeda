@@ -28,10 +28,11 @@
  * the write guard allows it only on an id THIS RUN created: in production a measurement must never
  * be able to cancel, re-price or refund a real customer's object.
  *
- * Amount shapes, as the adapter sends them and as measured against the live API (EX-41, EX-30, EX-58):
- * Payments and Preapproval bodies carry amounts as numbers in PESOS; the Orders API carries them as
- * strings in pesos under `total_amount` and `transactions.payments[].amount` (plural `transactions`),
- * and its refund under `transactions[].amount`.
+ * Amount shapes, as the adapter sends them and as measured against the live API: Payments and
+ * Preapproval bodies carry amounts as numbers in PESOS. The Orders API rules (`orders.create`,
+ * `orders.refund`) were retired with the one-time order path (HOS-2179 T-7, owner decision
+ * 2026-11-20): an Orders write is now unlisted, and `MONEY_ROUTE` still names the route, so it is
+ * refused as a money write.
  *
  * @module battery/watch-operations
  */
@@ -122,10 +123,6 @@ function conforms(value: unknown, shape: Shape): boolean {
 
 function nested(body: Body, key: string): Body {
     return bodyOf(body[key]);
-}
-
-function listOf(value: unknown): readonly unknown[] {
-    return Array.isArray(value) ? value : [];
 }
 
 /** `installments`, when stated, is 1: what the adapter sends. */
@@ -325,54 +322,6 @@ const RULES: readonly Rule[] = [
         amounts: (body) => [body.amount]
     },
     {
-        rule: 'orders.create',
-        method: 'POST',
-        path: /^\/v1\/orders$/,
-        kind: 'charge',
-        creates: true,
-        stampsReference: true,
-        shape: {
-            type: true,
-            external_reference: true,
-            total_amount: true,
-            processing_mode: true,
-            payer: { email: true },
-            transactions: {
-                payments: [
-                    {
-                        amount: true,
-                        payment_method: { id: true, type: true, token: true, installments: true }
-                    }
-                ]
-            }
-        },
-        pins: (body) => {
-            const payments = listOf(nested(body, 'transactions').payments);
-            return (
-                (body.type === undefined || body.type === 'online') &&
-                (body.processing_mode === undefined || body.processing_mode === 'automatic') &&
-                payments.every((payment) =>
-                    installmentsPinned(nested(bodyOf(payment), 'payment_method').installments)
-                )
-            );
-        },
-        // The charge is ONE payment worth the total: several payments (even of equal amounts), or
-        // none, are not the order the adapter sends and are not on the list.
-        accepts: (body) => listOf(nested(body, 'transactions').payments).length === 1,
-        amounts: (body) => {
-            const payments = listOf(nested(body, 'transactions').payments);
-            return [body.total_amount, ...payments.map((payment) => bodyOf(payment).amount)];
-        }
-    },
-    {
-        rule: 'orders.refund',
-        method: 'POST',
-        path: new RegExp(`^/v1/orders/(${ID})/refund$`),
-        kind: 'refund',
-        shape: { transactions: [{ id: true, amount: true }] },
-        amounts: (body) => listOf(body.transactions).map((entry) => bodyOf(entry).amount)
-    },
-    {
         rule: 'customers.create',
         method: 'POST',
         path: /^\/v1\/customers$/,
@@ -415,7 +364,7 @@ function minorOf(value: unknown): number | null {
 }
 
 /**
- * What the body states, in minor units. `charge` amounts that appear more than once (an order's
+ * What the body states, in minor units. `charge` amounts that appear more than once (a
  * total and its payment) must agree; `refund` amounts (one per refunded transaction) are summed.
  *
  * @throws {WatchGuardError} `CHARGE_MISMATCH` for an amount that is not a plain number, or
@@ -481,7 +430,11 @@ export function classifyOperation(args: {
     return null;
 }
 
-/** Routes that can move money. A non-GET to one of them is never anything but a listed operation. */
+/**
+ * Routes that can move money. A non-GET to one of them is never anything but a listed operation.
+ * The Orders route stays named although no rule lists it any more (HOS-2179 T-7): a write to it is
+ * refused and reported as a money write.
+ */
 const MONEY_ROUTE =
     /^\/(?:v1\/payments|v1\/advanced_payments|preapproval|v1\/orders|authorized_payments)(?:\/|$)/;
 

@@ -73,10 +73,15 @@ async function approvedCharge(): Promise<string> {
 }
 
 describe('TEST:B1:14 the list of rules and measured behaviour', () => {
-    it('holds twenty rows, RP1 to RP20: fourteen rules and six measured behaviours', () => {
-        expect(FAKE_RULES.map((row) => row.id)).toEqual(
-            Array.from({ length: 20 }, (_, i) => `RP${i + 1}`)
-        );
+    it('holds sixteen rows, RP1 to RP12 and RP17 to RP20: ten rules and six measured behaviours', () => {
+        // RP13..RP16 were retired with the order path (HOS-2179 T-7); their ids are not reused.
+        expect(FAKE_RULES.map((row) => row.id)).toEqual([
+            ...Array.from({ length: 12 }, (_, i) => `RP${i + 1}`),
+            'RP17',
+            'RP18',
+            'RP19',
+            'RP20'
+        ]);
         expect(FAKE_RULES.filter((row) => row.kind === 'rule').map((row) => row.id)).toEqual([
             'RP1',
             'RP2',
@@ -84,10 +89,6 @@ describe('TEST:B1:14 the list of rules and measured behaviour', () => {
             'RP4',
             'RP5',
             'RP6',
-            'RP13',
-            'RP14',
-            'RP15',
-            'RP16',
             'RP17',
             'RP18',
             'RP19',

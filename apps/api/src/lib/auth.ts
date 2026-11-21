@@ -27,7 +27,13 @@ import {
     users,
     verifications
 } from '@repo/db';
-import { createEmailClient, ResetPasswordTemplate, VerifyEmailTemplate } from '@repo/email';
+import {
+    createEmailClient,
+    RESET_PASSWORD_EMAIL_SUBJECT,
+    ResetPasswordTemplate,
+    VERIFY_EMAIL_SUBJECT,
+    VerifyEmailTemplate
+} from '@repo/email';
 import { createLogger } from '@repo/logger';
 import { RoleEnum } from '@repo/schemas';
 import { compare, hash } from 'bcryptjs';
@@ -324,7 +330,7 @@ function buildAuth() {
                         const result = await sendAppEmail({
                             client,
                             to: user.email,
-                            subject: 'Restablece tu contraseña de Hospeda',
+                            subject: RESET_PASSWORD_EMAIL_SUBJECT,
                             react: ResetPasswordTemplate({
                                 name: user.name,
                                 resetUrl
@@ -408,7 +414,7 @@ function buildAuth() {
                         const result = await sendAppEmail({
                             client,
                             to: user.email,
-                            subject: 'Verifica tu cuenta de Hospeda',
+                            subject: VERIFY_EMAIL_SUBJECT,
                             react: VerifyEmailTemplate({
                                 name: user.name,
                                 verificationUrl

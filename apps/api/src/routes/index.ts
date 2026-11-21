@@ -89,6 +89,7 @@ import {
     publicDestinationRoutes
 } from './destination';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
+import { adminEmailPreviewRoutes } from './email-preview/admin/index.js';
 import { adminEventRoutes, protectedEventRoutes, publicEventRoutes } from './event';
 import {
     adminEventLocationRoutes,
@@ -734,6 +735,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/provider-watch', adminProviderWatchRoutes);
         // HOS-2347: manual purge of expired Umami recordings
         app.route('/api/v1/admin/session-recording', adminSessionRecordingRoutes);
+        // HOS-2519: admin email previewer (catalog list + single-scenario render, read-only)
+        app.route('/api/v1/admin/email-previews', adminEmailPreviewRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);

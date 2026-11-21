@@ -17,11 +17,7 @@ import type {
     ChargeSearchInput,
     Money,
     NoticeDelivery,
-    OneTimeChargeInput,
     OneTimePaymentInput,
-    OrderRef,
-    OrderRefundInput,
-    OrderSearchInput,
     PaymentPageRef,
     RefundInput
 } from './payment-provider';
@@ -63,17 +59,6 @@ export const ChargeInputSchema: z.ZodType<ChargeInput> = z.strictObject({
     authorizationId: NonEmptyId,
     amount: PositiveMoneySchema,
     reference: NonEmptyId
-});
-
-/** Validates a one-time order before any provider call (AC:B6:12, MP:EX-41/EX-30). */
-export const OneTimeChargeInputSchema: z.ZodType<OneTimeChargeInput> = z.strictObject({
-    reference: NonEmptyId,
-    idempotencyKey: NonEmptyId,
-    amount: PositiveMoneySchema,
-    payerEmail: z.email(),
-    paymentToken: NonEmptyId,
-    paymentBrand: NonEmptyId,
-    paymentKind: z.enum(['credit', 'debit'])
 });
 
 /** The only hosts a plain-http return URL may name, and only outside production (HOS-2179). */
@@ -167,37 +152,11 @@ export const ChargeRefSchema: z.ZodType<ChargeRef> = z.strictObject({
     chargeId: NonEmptyId
 });
 
-/** Identifies one one-time order (capability 7). */
-export const OrderRefSchema: z.ZodType<OrderRef> = z.strictObject({
-    orderId: NonEmptyId
-});
-
-/** Order search criteria (capability 7, EX-57): both creation dates are required. */
-export const OrderSearchInputSchema: z.ZodType<OrderSearchInput> = z.strictObject({
-    reference: NonEmptyId,
-    createdFrom: z.iso.datetime({ offset: true }),
-    createdTo: z.iso.datetime({ offset: true })
-});
-
 /** Input of capability 6. */
 export const RefundInputSchema: z.ZodType<RefundInput> = z.strictObject({
     chargeId: NonEmptyId,
     amount: PositiveMoneySchema,
     reference: NonEmptyId
-});
-
-/** Capability 6 order refund input (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
-export const OrderRefundInputSchema: z.ZodType<OrderRefundInput> = z.strictObject({
-    orderId: NonEmptyId,
-    reference: NonEmptyId,
-    scope: z.discriminatedUnion('kind', [
-        z.strictObject({ kind: z.literal('total') }),
-        z.strictObject({
-            kind: z.literal('partial'),
-            transactionId: NonEmptyId,
-            amount: PositiveMoneySchema
-        })
-    ])
 });
 
 /** Input of capability 8. */

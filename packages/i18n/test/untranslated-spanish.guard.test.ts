@@ -82,7 +82,14 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     // Same word in Brazilian Portuguese (HOS-2349 assistant activity log).
     Tipo: ['pt'],
     Resultado: ['pt'],
-    Consulta: ['pt']
+    Consulta: ['pt'],
+    // Loanwords used as-is in the admin email previewer (HOS-2519).
+    Emails: ['en'],
+    Newsletter: ['en', 'pt'],
+    Partners: ['en'],
+    Outbox: ['en', 'pt'],
+    Alertas: ['pt'],
+    '{{shown}} de {{total}}': ['pt']
 };
 
 /** Flattens a nested JSON object to dot-notation leaf entries. */

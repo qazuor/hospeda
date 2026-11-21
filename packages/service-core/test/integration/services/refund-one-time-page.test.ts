@@ -18,21 +18,19 @@ afterEach(async () => {
 });
 afterAll(closeServiceTestPool);
 
-/** Wraps the fake so `refund` and `refundOrder` are observable; `override` replaces `refund`. */
+/** Wraps the fake so `refund` is observable; `override` replaces it. */
 function observed(
     provider: PaymentProvider,
     override?: (input: RefundInput) => ReturnType<PaymentProvider['refund']>
 ) {
     const refund = vi.fn(override ?? provider.refund.bind(provider));
-    const refundOrder = vi.fn(provider.refundOrder.bind(provider));
     const wrapped = new Proxy(provider, {
         get(target, property, receiver) {
             if (property === 'refund') return refund;
-            if (property === 'refundOrder') return refundOrder;
             return Reflect.get(target, property, receiver);
         }
     });
-    return { wrapped, refund, refundOrder };
+    return { wrapped, refund };
 }
 
 async function paymentRow(id: string) {
@@ -71,7 +69,6 @@ describe('HOS-2179 §5.11 AC-13 refund of a one-time page purchase', () => {
             });
             expect(s.instance.providerOrderId).toBeNull();
             expect(result).toMatchObject({ status: 'CONFIRMED', outcome: 'SENT' });
-            expect(spy.refundOrder).not.toHaveBeenCalled();
             expect(spy.refund).toHaveBeenCalledTimes(1);
             expect(spy.refund).toHaveBeenCalledWith({
                 chargeId: s.charge.chargeId,
@@ -241,7 +238,6 @@ describe('HOS-2179 §5.11 AC-13 refund of a one-time page purchase', () => {
 
             // Assert
             expect(result).toMatchObject({ status: 'FAILED', outcome: 'PROVIDER_REJECTED_FAILED' });
-            expect(spy.refundOrder).not.toHaveBeenCalled();
             const rows = await orderRefundRows(s.refundId);
             expect(rows.refund?.status).toBe('FAILED');
             expect(rows.keys[0]).toMatchObject({
@@ -279,7 +275,6 @@ describe('HOS-2179 §5.11 AC-13 refund of a one-time page purchase', () => {
                 reason: 'REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE'
             });
             expect(spy.refund).not.toHaveBeenCalled();
-            expect(spy.refundOrder).not.toHaveBeenCalled();
             const rows = await orderRefundRows(s.refundId);
             expect(rows.refund?.status).toBe('REQUESTED');
             expect(rows.calls).toHaveLength(0);

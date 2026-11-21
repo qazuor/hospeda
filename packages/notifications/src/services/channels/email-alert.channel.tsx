@@ -29,6 +29,22 @@ const DIGEST_SUBJECT_BY_LOCALE: Record<string, string> = {
     pt: 'Seus alertas de preço e ofertas'
 };
 
+/** Subject used when neither the locale nor Spanish resolves (never expected). */
+const DIGEST_SUBJECT_FALLBACK = 'Tus alertas de precios y ofertas';
+
+/**
+ * Resolves the subject of the alerts & offers digest for a locale: the
+ * locale's copy, else Spanish. Shared by {@link EmailAlertChannel} and the
+ * admin email preview (HOS-2519 D6).
+ *
+ * @param input - The recipient's locale (`es`, `en`, `pt`; anything else falls back to `es`).
+ * @returns The subject line.
+ */
+export function resolveAlertDigestSubject(input: { readonly locale: string }): string {
+    const subject = DIGEST_SUBJECT_BY_LOCALE[input.locale] ?? DIGEST_SUBJECT_BY_LOCALE.es;
+    return subject ?? DIGEST_SUBJECT_FALLBACK;
+}
+
 /**
  * Email delivery channel for the alerts & offers daily digest.
  *
@@ -69,11 +85,11 @@ export class EmailAlertChannel implements NotificationChannel {
         }
 
         const { emailTransport, logger } = this.deps;
-        const subject = DIGEST_SUBJECT_BY_LOCALE[payload.locale] ?? DIGEST_SUBJECT_BY_LOCALE.es;
+        const subject = resolveAlertDigestSubject({ locale: payload.locale });
 
         const result = await emailTransport.send({
             to: payload.userEmail,
-            subject: subject ?? 'Tus alertas de precios y ofertas',
+            subject,
             react: AlertDigestEmail(payload),
             tags: [{ name: 'notification_type', value: 'alerts_digest' }]
         });
