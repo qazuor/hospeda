@@ -8,6 +8,7 @@
  * @module components/account/ui
  */
 
+export { AccountBar, type AccountBarProps } from './AccountBar';
 export { AccountFooter, type AccountFooterProps } from './AccountFooter';
 export { AccountSidebar, type AccountSidebarProps } from './AccountSidebar';
 export { Alert, type AlertProps, type AlertTone } from './Alert';
