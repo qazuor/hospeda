@@ -81,9 +81,9 @@ Rules that keep it email-client-safe:
 - Absolute URLs come from module constants (`EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar'`, `EMAIL_LOGO_URL`, `EMAIL_PREFERENCES_URL`), never from `siteUrl`: emails always point at production.
 - Keep it lean: Gmail clips messages over 102 KB. `apps/api/test/services/email-preview/email-catalog-layout.test.ts` asserts every catalog email stays under 90 KB, plus the AC-1.2/2.1/3.2 checks on every scenario.
 
-### Pending: the logo asset
+### The logo asset
 
-`EMAIL_LOGO_URL` is `https://hospeda.com.ar/email/hospeda-logo@2x.png`, served from `apps/web/public/email/hospeda-logo@2x.png`. The file does not exist yet (owner to supply a 280px-wide PNG). Until it reaches production, clients show the styled `alt` text. `EMAIL_LOGO_HEIGHT` assumes a 7:2 horizontal lockup (280x80); set it to `round(140 * height / width)` when the real asset lands.
+`EMAIL_LOGO_URL` is `https://hospeda.com.ar/email/hospeda-logo@2x.png`, served from `apps/web/public/email/hospeda-logo@2x.png` (360x108 PNG, rendered at 180x54). It only resolves once the file reaches production; until then clients show the styled `alt` text. If the asset changes, keep `EMAIL_LOGO_WIDTH`/`EMAIL_LOGO_HEIGHT` at the asset's aspect ratio (Outlook desktop honours the `height` attribute).
 
 ### `footerLink="preferences"`: when it is allowed
 
