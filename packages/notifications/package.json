@@ -26,6 +26,7 @@
         "@react-email/render": "^2.1.0",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
+        "@repo/email": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/utils": "workspace:*",
         "ioredis": "^6.0.0",

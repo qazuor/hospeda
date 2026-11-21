@@ -1647,6 +1647,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../db
+      '@repo/email':
+        specifier: workspace:*
+        version: link:../email
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger
