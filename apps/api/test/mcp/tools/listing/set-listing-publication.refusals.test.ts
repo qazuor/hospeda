@@ -28,7 +28,13 @@ const mocks = vi.hoisted(() => ({
     coverage: vi.fn(),
     effectiveSet: vi.fn(),
     preTrialDraftLimits: vi.fn(),
-    subscribeDestination: vi.fn()
+    subscribeDestination: vi.fn(),
+    redis: undefined as unknown
+}));
+
+// Publishing is two steps (HOS-2247, D-19): the token store runs over a fake.
+vi.mock('../../../../src/utils/redis', () => ({
+    getRedisClient: vi.fn(async () => mocks.redis)
 }));
 
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
@@ -88,12 +94,17 @@ function givenState(status: PublicationStatusEnum): void {
 
 /** Runs the tool and returns its failure. */
 async function failureOf(action: 'pause' | 'resume') {
-    const outcome = await runTool({
-        definition: setListingPublicationTool,
-        actor: actorFor(OWNER_ID),
-        input: { vertical, id: LISTING_ID, action },
-        context: { channel: 'mcp' }
-    });
+    // A publish refusal of the service shows on the confirmed second call.
+    const outcome = await harness.throughPreview(
+        (input) =>
+            runTool({
+                definition: setListingPublicationTool,
+                actor: actorFor(OWNER_ID),
+                input,
+                context: { channel: 'mcp', clientId: harness.CLIENT }
+            }),
+        { vertical, id: LISTING_ID, action }
+    );
     if (outcome.ok) throw new Error('expected a failure');
     return outcome.failure;
 }
@@ -105,6 +116,7 @@ describe('set_listing_publication — refusals in Spanish', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.redis = harness.makeFakeRedis().redis;
         harness.givenBilling(mocks, { covered: true, granted: true });
     });
 
@@ -356,7 +368,13 @@ describe('set_listing_publication — refusals in Spanish', () => {
                 'NO_COVERAGE',
                 'NO_PLANS_AVAILABLE',
                 'PUBLICATION_STATE_CHANGED',
-                'SUBSCRIPTION_REQUIRED'
+                'SUBSCRIPTION_REQUIRED',
+                // HOS-2247 (D-19): the confirmation step of publishing.
+                'CONFIRMATION_INVALID',
+                'CONFIRMATION_NOT_NEEDED',
+                'CONFIRMATION_TOKEN_REFUSED',
+                'CONFIRMATION_UNAVAILABLE',
+                'ELICITATION_STATE_INVALID'
             ].sort()
         );
     });

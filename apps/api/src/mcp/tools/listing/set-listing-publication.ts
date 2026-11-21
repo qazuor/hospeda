@@ -41,22 +41,18 @@
  * Billing and publication refusals keep the route's codes; each one gets a
  * `reason` (see {@link publicationRefusalReason}) so the user reads a Spanish
  * explanation of what blocked it instead of a generic message.
+ *
+ * **Publishing is two steps (HOS-2247, owner decision D-19).** A `resume` that
+ * would run `publish` first answers a preview and writes nothing: after the
+ * dry run of the publish access step it issues a single-use token, or, on a
+ * client that renders confirmation forms, asks the human through that form.
+ * Only the second call, proven by the token or by the human's `confirm`, runs
+ * steps 2 to 4 above (`publish-confirmation.ts`). `pause`, and a `resume` that
+ * only reactivates or changes nothing, stay one step.
  */
 
-import {
-    DUPLICATE_LOCATION_REASON,
-    NO_PLANS_AVAILABLE_MESSAGE,
-    PUBLISH_REQUIREMENTS_MISSING_REASON_PREFIX,
-    PublicationStatusEnum,
-    ServiceErrorCode,
-    VerticalEnum
-} from '@repo/schemas';
-import {
-    type Actor,
-    entityNotFoundError,
-    FIRST_PUBLISH_PAUSED_REASON,
-    ServiceError
-} from '@repo/service-core';
+import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { type Actor, entityNotFoundError, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import {
     decideListingAccess,
@@ -65,19 +61,38 @@ import {
 } from '../../../middlewares/listing-access';
 import { captureAccommodationPublished } from '../../../services/listing-publication/accommodation-published-analytics';
 import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
-import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
-import { type ListingDetail, readOwnListingDetail } from './get-listing';
+import { confirmationTokenRefused, planConfirmation } from '../elicitation-confirmation';
+import { defineTool, type ToolHandlerOutput, type ToolHandlerResult } from '../tool-definition';
+import {
+    type ListingDetail,
+    readOwnListingDetail,
+    readOwnListingDetailWithRow
+} from './get-listing';
 import { listingRefusalLink, readListingRef } from './listing-refusal-actions';
 import { type ListingToolVertical, ListingToolVerticalSchema } from './listing-services';
+import { LISTING_MODERATED_REASON, publicationRefusalLink } from './publication-refusal-link';
 import {
-    LISTING_INCOMPLETE_MESSAGE_PREFIX,
-    LISTING_INCOMPLETE_REASON,
-    LISTING_MODERATED_REASON,
-    missingRequirementsOf,
-    publicationRefusalLink
-} from './publication-refusal-link';
+    confirmPublishCommit,
+    issuePublishPreview,
+    type ListingPublicationPreview,
+    publicationAuditDetails,
+    publishBinding,
+    readPublishListingFacts,
+    refuseUnneededConfirmation,
+    SET_LISTING_PUBLICATION_TOOL_NAME
+} from './publish-confirmation';
+import {
+    publicationRefusalReason,
+    SET_LISTING_PUBLICATION_REASON_MESSAGES,
+    toRefusal
+} from './set-listing-publication-refusals';
 
-export { LISTING_MODERATED_REASON };
+export type { ListingPublicationPreview };
+export {
+    LISTING_MODERATED_REASON,
+    publicationRefusalReason,
+    SET_LISTING_PUBLICATION_REASON_MESSAGES
+};
 
 /** What the owner asks for. */
 export const LISTING_PUBLICATION_ACTIONS = ['pause', 'resume'] as const;
@@ -147,6 +162,13 @@ export const SetListingPublicationInputSchema = z
             .enum(LISTING_PUBLICATION_ACTIONS)
             .describe(
                 'pause: hide the listing from the public site (it stays as a draft). resume: put it back online; an archived listing first returns to draft and needs a second resume.'
+            ),
+        confirmationToken: z
+            .string()
+            .min(1)
+            .optional()
+            .describe(
+                'Only to publish. Omit on the first call. Pass the confirmationToken returned by the preview ONLY after the user explicitly approved publishing, repeating the same vertical, id and action.'
             )
     })
     .strict();
@@ -154,7 +176,7 @@ export const SetListingPublicationInputSchema = z
 /** Validated input of `set_listing_publication`. */
 export type SetListingPublicationInput = z.output<typeof SetListingPublicationInputSchema>;
 
-/** Result of `set_listing_publication`. */
+/** Result of a `set_listing_publication` call that changed (or kept) the state. */
 export interface ListingPublicationResult {
     /** Listing id. */
     readonly id: string;
@@ -176,109 +198,11 @@ export interface ListingPublicationResult {
     readonly summary: string;
 }
 
+/** What `set_listing_publication` answers: a publish preview, or the state after the call. */
+export type SetListingPublicationResult = ListingPublicationResult | ListingPublicationPreview;
+
 /** `ListingPublicationService` as the publication routes build it, once per process. */
 const listingPublicationService = new ListingPublicationService();
-
-/**
- * The message both sides of the publish contract use for "a plan is needed"
- * (`mapListingPublishDenial` and `throwListingAccessRefusal`).
- */
-const SUBSCRIPTION_REQUIRED_MESSAGE = 'subscription_required';
-
-/** The message `ListingPublicationService` uses when PB1/PB6/PB8 lost a race. */
-const STATE_CHANGED_MESSAGE = 'Listing state changed';
-
-/** Reads `details.reason` of a service error, when it carries one. */
-function detailsReason(details: unknown): unknown {
-    return typeof details === 'object' && details !== null && 'reason' in details
-        ? details.reason
-        : undefined;
-}
-
-/**
- * The `reason` a publication refusal is shown with. The routes signal most
- * refusals through their code and message, not `ServiceError.reason`, so the
- * tool names them here; each name has a Spanish entry in
- * {@link SET_LISTING_PUBLICATION_REASON_MESSAGES}. `undefined` keeps the
- * code's default message.
- *
- * @param error - A refusal from listing access or `ListingPublicationService`
- * @returns The reason to show it with
- */
-export function publicationRefusalReason(error: ServiceError): string | undefined {
-    switch (error.code) {
-        case ServiceErrorCode.ENTITLEMENT_REQUIRED:
-            return detailsReason(error.details) === 'NO_COVERAGE' ? 'NO_COVERAGE' : 'NO_CAPABILITY';
-        case ServiceErrorCode.FORBIDDEN:
-            if (error.message === NO_PLANS_AVAILABLE_MESSAGE) return 'NO_PLANS_AVAILABLE';
-            if (error.message === SUBSCRIPTION_REQUIRED_MESSAGE) return 'SUBSCRIPTION_REQUIRED';
-            return undefined;
-        case ServiceErrorCode.LIMIT_REACHED:
-            return 'LISTING_LIMIT_REACHED';
-        case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
-            return FIRST_PUBLISH_PAUSED_REASON;
-        case ServiceErrorCode.VALIDATION_ERROR:
-            return error.reason?.startsWith(PUBLISH_REQUIREMENTS_MISSING_REASON_PREFIX) ||
-                error.message.startsWith(LISTING_INCOMPLETE_MESSAGE_PREFIX)
-                ? LISTING_INCOMPLETE_REASON
-                : undefined;
-        case ServiceErrorCode.ALREADY_EXISTS:
-            if (error.reason === DUPLICATE_LOCATION_REASON) return DUPLICATE_LOCATION_REASON;
-            return error.message === STATE_CHANGED_MESSAGE
-                ? 'PUBLICATION_STATE_CHANGED'
-                : undefined;
-        default:
-            return undefined;
-    }
-}
-
-/**
- * Converts a refusal into the tool error, with its reason when it has one. A
- * completeness refusal also carries the unmet requirements in `details`: the
- * named reason replaces the service's own, which is where an accommodation
- * keeps them, and `refusalAction` needs them to pick the editor section.
- */
-function toRefusal(error: ServiceError): ToolHandlerResult<never> {
-    const reason = publicationRefusalReason(error) ?? error.reason;
-    const details =
-        reason === LISTING_INCOMPLETE_REASON
-            ? { missing: missingRequirementsOf({ reason: error.reason, message: error.message }) }
-            : error.details;
-    const payload: ToolErrorPayload = {
-        code: error.code,
-        message: error.message,
-        details,
-        ...(reason === undefined ? {} : { reason }),
-        // An incomplete listing is a refusal by Hospeda the owner can fix, not bad
-        // data from the assistant (HOS-2375): the audit row says `denied`.
-        ...(reason === LISTING_INCOMPLETE_REASON ? { kind: 'denied' as const } : {})
-    };
-    return { error: payload };
-}
-
-/** Spanish messages for every refusal the publication path can return. */
-export const SET_LISTING_PUBLICATION_REASON_MESSAGES: Readonly<Record<string, string>> = {
-    NO_COVERAGE:
-        'No tenés un plan activo ni una prueba gratis que cubra este tipo de publicación. Elegí un plan desde tu panel de Hospeda.',
-    NO_CAPABILITY:
-        'Tu plan actual no incluye esta acción sobre la publicación. Revisá o mejorá tu plan desde tu panel de Hospeda.',
-    SUBSCRIPTION_REQUIRED:
-        'Para publicar necesitás un plan activo: la prueba gratis ya se usó o no corresponde. Elegí un plan desde tu panel de Hospeda.',
-    NO_PLANS_AVAILABLE:
-        'Por ahora Hospeda no ofrece planes para este tipo de publicación, así que no se puede publicar. Probá más adelante.',
-    LISTING_LIMIT_REACHED:
-        'Llegaste a la cantidad máxima de publicaciones activas que permite tu plan. Pausá otra publicación o mejorá tu plan.',
-    [FIRST_PUBLISH_PAUSED_REASON]:
-        'Hospeda pausó por un tiempo las altas nuevas, así que ahora no se puede empezar la prueba gratis publicando. Probá más adelante.',
-    LISTING_INCOMPLETE:
-        'A la publicación le faltan datos obligatorios para salir online. Completala desde tu panel de Hospeda y volvé a intentar.',
-    [DUPLICATE_LOCATION_REASON]:
-        'Ya tenés otra publicación activa en la misma dirección. Pausá esa primero o pedile una excepción a Hospeda.',
-    PUBLICATION_STATE_CHANGED:
-        'El estado de la publicación cambió mientras se procesaba el pedido. Consultalo con get_listing y volvé a intentar.',
-    [LISTING_MODERATED_REASON]:
-        'Hospeda dio de baja esta publicación por moderación, así que no se puede reanudar desde acá. Revisá el pedido de corrección en tu panel.'
-};
 
 /** The uniform not-found error, whatever the vertical. */
 function notFound(): ToolHandlerResult<never> {
@@ -368,15 +292,19 @@ function summarize(input: {
  * `set_listing_publication`: a write that can hide a listing (`pause`), so it
  * is destructive for the client. Not idempotent: `resume` on an archived
  * listing first returns it to draft, and repeating it then publishes it.
+ *
+ * The name is a literal because the help-coverage guard (b4) reads it from this
+ * file's source; `satisfies` keeps it equal to the shared constant.
  */
 export const setListingPublicationTool = defineTool({
-    name: 'set_listing_publication',
+    name: 'set_listing_publication' satisfies typeof SET_LISTING_PUBLICATION_TOOL_NAME,
     title: 'Pausar o reanudar una publicación',
     description:
-        'Pauses or resumes one listing the connected Hospeda user owns. pause hides a published listing from the public site (it becomes a draft); pausing a listing that is not online changes nothing. resume puts a draft listing, or one paused for lack of payment, back online; resuming a listing that is already online changes nothing. An archived listing returns to draft on the first resume and goes online on a second one. Going online needs an active plan or the free trial and a free slot in the plan; when Hospeda refuses, the answer explains why. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings. Answers with the state before and after and the public URL when the listing is online.',
+        "Pauses or resumes one listing the connected Hospeda user owns. pause hides a published listing from the public site (it becomes a draft); pausing a listing that is not online changes nothing. resume puts a draft listing, or one paused for lack of payment, back online; resuming a listing that is already online changes nothing. Putting a listing online is two steps: the first resume publishes nothing and answers a preview with a confirmationToken; tell the user it will become public and, only after they explicitly approve, call again with the same vertical, id and action plus the confirmationToken (some apps instead show the user their own confirmation form: then there is no token, and it goes online only if the user confirms there). Never confirm on the user's behalf. pause runs in one step. An archived listing returns to draft on the first resume (one step) and goes online on a second one. Going online needs an active plan or the free trial and a free slot in the plan; when Hospeda refuses, the answer explains why. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings. Answers with the state before and after and the public URL when the listing is online.",
     inputSchema: SetListingPublicationInputSchema,
     isWrite: true,
     hints: { destructiveHint: true, idempotentHint: false },
+    confirmation: { elicitation: true },
     reasonMessages: SET_LISTING_PUBLICATION_REASON_MESSAGES,
     refusalAction: ({ error, input }) => {
         const ref = readListingRef({ input });
@@ -392,14 +320,20 @@ export const setListingPublicationTool = defineTool({
         return error.reason === undefined ? listingRefusalLink({ error, ref }) : undefined;
     },
     auditTarget: ({ input }) => ({ type: input.vertical, id: input.id }),
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingPublicationResult>> => {
-        const { vertical, id, action } = input;
+    auditDetails: ({ input, context, data }) => publicationAuditDetails({ input, context, data }),
+    handler: async ({
+        actor,
+        input,
+        context
+    }): Promise<ToolHandlerOutput<SetListingPublicationResult>> => {
+        const { vertical, id, action, confirmationToken } = input;
 
-        const before = await readOwnListingDetail({ actor, vertical, id });
-        if (before.error) {
-            return before;
+        const read = await readOwnListingDetailWithRow({ actor, vertical, id });
+        if (read.error) {
+            return read;
         }
-        const previousStatus = before.data.publicationStatus;
+        const before = read.data.detail;
+        const previousStatus = before.publicationStatus;
         const plan = planListingPublication({ action, status: previousStatus });
 
         if (plan.kind === 'refuse') {
@@ -412,7 +346,64 @@ export const setListingPublicationTool = defineTool({
             };
         }
 
-        let current: ListingDetail = before.data;
+        const publishes = plan.kind === 'run' && plan.step === 'PUBLISH';
+        if (publishes || confirmationToken !== undefined || context.confirmation?.answer) {
+            // The proof is bound to the OAuth client; without one there is nothing to bind.
+            const { clientId } = context;
+            if (clientId === undefined) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.UNAUTHORIZED,
+                        message:
+                            'set_listing_publication needs an identified OAuth client to publish'
+                    }
+                };
+            }
+            const binding = publishBinding({ userId: actor.id, clientId, vertical, id });
+            if (!publishes) {
+                return refuseUnneededConfirmation({ binding, confirmationToken, context });
+            }
+            const confirmation = planConfirmation({
+                tool: SET_LISTING_PUBLICATION_TOOL_NAME,
+                confirmationToken,
+                context
+            });
+            if (confirmation.step === 'token_refused') {
+                return confirmationTokenRefused();
+            }
+            if (confirmation.step === 'preview') {
+                // Dry run of the publish access step: a refusal shows now,
+                // before the user is asked to confirm. Nothing is written.
+                try {
+                    const refused = await authorizeStep({ actor, vertical, id, step: 'PUBLISH' });
+                    if (refused) {
+                        return refused;
+                    }
+                } catch (error) {
+                    if (error instanceof ServiceError) {
+                        return toRefusal(error);
+                    }
+                    throw error;
+                }
+                return issuePublishPreview({
+                    binding,
+                    mode: confirmation.mode,
+                    listing: {
+                        id,
+                        vertical,
+                        name: before.name,
+                        previousStatus,
+                        ...(await readPublishListingFacts({ vertical, row: read.data.row }))
+                    }
+                });
+            }
+            const refused = await confirmPublishCommit({ binding, plan: confirmation });
+            if (refused) {
+                return refused;
+            }
+        }
+
+        let current: ListingDetail = before;
         if (plan.kind === 'run') {
             try {
                 const refused = await authorizeStep({ actor, vertical, id, step: plan.step });

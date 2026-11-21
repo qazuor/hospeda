@@ -28,17 +28,33 @@
  *    refusal has a portal page, its URL on a last line of the text and in
  *    `structuredContent.action`, HOS-2326), plus
  *    `_meta['mcp/www_authenticate']` when the user must reconnect (spec
- *    §6.3; ChatGPT shows its linking UI on it).
+ *    §6.3; ChatGPT shows its linking UI on it); or, when a covered tool asks
+ *    the human to confirm out of band, the 2026-07-28 `input_required` result
+ *    (`elicitation.ts`, HOS-2247). Whether the client can show that form is
+ *    read from the request itself before the tool runs. A failed outcome
+ *    burns the elicitation state the retry carried, so a refusal that came
+ *    before the answer was settled never leaves it replayable (L2).
  *
  * It never throws. A thrown error would reach the client as a protocol error
  * carrying internals; everything is caught here and answered with the
  * generic message instead.
  */
 
-import type { CallToolResult, Tool, ToolAnnotations } from '@modelcontextprotocol/server';
+import type {
+    CallToolResult,
+    InputRequiredResult,
+    Tool,
+    ToolAnnotations
+} from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { executeTool, parseToolInput, type ToolRunOutcome } from '../../mcp/tools/run-tool';
-import type { ToolDefinition, ToolTarget } from '../../mcp/tools/tool-definition';
+import { discardUnsettledConfirmation } from '../../mcp/tools/elicitation-confirmation';
+import {
+    type ConfirmableToolRunOutcome,
+    executeConfirmableTool,
+    parseToolInput,
+    type ToolRunOutcome
+} from '../../mcp/tools/run-tool';
+import type { ToolContext, ToolDefinition, ToolTarget } from '../../mcp/tools/tool-definition';
 import {
     TOOL_UNEXPECTED_ERROR_MESSAGE,
     type ToolFailure,
@@ -49,6 +65,11 @@ import { resolveRecipientLocale } from '../../services/notification-recipient-lo
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { getMcpCaller, type McpCaller, type McpCallerSource } from './caller';
+import {
+    type McpElicitationSource,
+    readElicitationContext,
+    renderConfirmationRequest
+} from './elicitation';
 import { recordMcpToolCall } from './record-tool-call';
 import { consumeMcpToolCall } from './tool-rate-limit';
 
@@ -235,8 +256,10 @@ interface RecordToolCallArgs<TSchema extends z.ZodObject, TData> extends McpCall
     readonly parsed:
         | { readonly ok: true; readonly input: z.output<TSchema> }
         | { readonly ok: false };
-    /** How the call ended. */
-    readonly outcome: ToolRunOutcome<TData>;
+    /** How the call ended; a confirmation request is a preview (nothing written or refused). */
+    readonly outcome: ConfirmableToolRunOutcome<TData>;
+    /** The per-call context, handed to `auditDetails` (HOS-2247). */
+    readonly context: ToolContext;
 }
 
 /**
@@ -256,13 +279,14 @@ function recordToolCall<TSchema extends z.ZodObject, TData>({
     actor,
     mcpAuth,
     parsed,
-    outcome
+    outcome,
+    context
 }: RecordToolCallArgs<TSchema, TData>): void {
     const { isWrite } = definition;
     // The audit readers are typed on VALIDATED input; on a malformed call
     // there is none, so the record carries no target, length or details.
     const resultTarget: ToolTarget | undefined =
-        isWrite && parsed.ok && outcome.ok
+        isWrite && parsed.ok && outcome.ok === true
             ? readAuditField(() =>
                   definition.auditResultTarget?.({ input: parsed.input, data: outcome.data })
               )
@@ -278,18 +302,23 @@ function recordToolCall<TSchema extends z.ZodObject, TData>({
             : undefined;
     const details =
         isWrite && parsed.ok
-            ? readAuditField(() => definition.auditDetails?.({ input: parsed.input }))
+            ? readAuditField(() =>
+                  definition.auditDetails?.({
+                      input: parsed.input,
+                      context,
+                      ...(outcome.ok === true ? { data: outcome.data } : {})
+                  })
+              )
             : undefined;
+    const failure = outcome.ok === false ? outcome.failure : undefined;
     recordMcpToolCall({
         actor,
         mcpAuth,
         tool: definition.name,
         isWrite,
-        outcome: outcome.ok ? 'success' : outcome.failure.kind,
+        outcome: failure ? failure.kind : 'success',
         ...(target ? { target } : {}),
-        ...(outcome.ok
-            ? {}
-            : { errorCode: outcome.failure.auditCode ?? String(outcome.failure.code) }),
+        ...(failure ? { errorCode: failure.auditCode ?? String(failure.code) } : {}),
         ...(contentLength === undefined ? {} : { contentLength }),
         ...(details ? { details } : {})
     });
@@ -301,21 +330,37 @@ export interface HandleMcpToolCallArgs<TSchema extends z.ZodObject, TData> {
     readonly definition: ToolDefinition<TSchema, TData>;
     /** The raw `tools/call` arguments, NOT yet validated. */
     readonly input: unknown;
-    /** The SDK's request context (carries the verified caller). */
-    readonly ctx: McpCallerSource;
+    /** The SDK's request context (carries the verified caller and the confirmation facts). */
+    readonly ctx: McpCallerSource & McpElicitationSource;
 }
 
 /**
  * Serves one MCP call of a tool. Never throws.
  *
+ * Only a real request context (with the SDK's `mcpReq`, first overload) can
+ * get the `input_required` result of a covered tool asking the human to
+ * confirm (HOS-2247). A context without `mcpReq` cannot declare the
+ * capability, so it always answers a plain tool result (second overload, also
+ * what `ReturnType<typeof handleMcpToolCall>` names).
+ *
  * @param args - Definition, raw arguments and SDK context
- * @returns The MCP tool result
+ * @returns The MCP tool result, or the `input_required` result
  */
+export function handleMcpToolCall<TSchema extends z.ZodObject, TData>(
+    args: HandleMcpToolCallArgs<TSchema, TData> & {
+        readonly ctx: { readonly mcpReq: NonNullable<McpElicitationSource['mcpReq']> };
+    }
+): Promise<CallToolResult | InputRequiredResult>;
+export function handleMcpToolCall<TSchema extends z.ZodObject, TData>(
+    args: HandleMcpToolCallArgs<TSchema, TData> & {
+        readonly ctx: McpCallerSource & { readonly mcpReq?: undefined };
+    }
+): Promise<CallToolResult>;
 export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
     definition,
     input: rawInput,
     ctx
-}: HandleMcpToolCallArgs<TSchema, TData>): Promise<CallToolResult> {
+}: HandleMcpToolCallArgs<TSchema, TData>): Promise<CallToolResult | InputRequiredResult> {
     try {
         const { actor, mcpAuth } = getMcpCaller({ ctx });
 
@@ -327,22 +372,34 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
             return renderOutcome({ ok: false, failure: buildRateLimitFailure() });
         }
 
+        const confirmation = readElicitationContext({ ctx });
         // Once per call: every portal link of the answer carries the user's web
         // language. Falls back to `es`, never throws.
         const locale = await resolveRecipientLocale({ userId: actor.id });
-
+        const context: ToolContext = {
+            channel: 'mcp',
+            clientId: mcpAuth.clientId,
+            locale,
+            ...(confirmation === undefined ? {} : { confirmation })
+        };
         const parsed = parseToolInput({ definition, input: rawInput, locale });
-        const outcome: ToolRunOutcome<TData> = parsed.ok
-            ? await executeTool({
-                  definition,
-                  actor,
-                  input: parsed.input,
-                  context: { channel: 'mcp', clientId: mcpAuth.clientId, locale }
-              })
+        const outcome: ConfirmableToolRunOutcome<TData> = parsed.ok
+            ? await executeConfirmableTool({ definition, actor, input: parsed.input, context })
             : parsed;
 
-        recordToolCall({ definition, actor, mcpAuth, parsed, outcome });
+        recordToolCall({ definition, actor, mcpAuth, parsed, outcome, context });
 
+        if (outcome.ok === false) {
+            // A refused retry never leaves its state usable (HOS-2247 L2).
+            await discardUnsettledConfirmation({ tool: definition.name, confirmation });
+        }
+        if (outcome.ok === 'confirmation_required') {
+            // Tools ask only when the context says the client can show the
+            // form; anything else is a wiring bug, and nothing was written.
+            return confirmation === undefined
+                ? unexpectedResult()
+                : renderConfirmationRequest({ request: outcome.request });
+        }
         return renderOutcome(outcome);
     } catch (error) {
         try {

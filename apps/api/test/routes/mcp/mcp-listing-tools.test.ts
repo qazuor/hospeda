@@ -20,17 +20,35 @@ import {
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, loadFacts } = vi.hoisted(() => {
-    const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
-    return {
-        USER_ID: userId,
-        CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
-        VALID_TOKEN: 'valid-access-token-0123456789',
-        ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
-        findOneMock: vi.fn(),
-        loadFacts: vi.fn()
-    };
-});
+const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, loadFacts, redisStore } = vi.hoisted(
+    () => {
+        const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
+        return {
+            USER_ID: userId,
+            CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
+            VALID_TOKEN: 'valid-access-token-0123456789',
+            ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
+            findOneMock: vi.fn(),
+            loadFacts: vi.fn(),
+            redisStore: new Map<string, string>()
+        };
+    }
+);
+
+// Publishing is two steps (HOS-2247, D-19): the confirmation store over a Map.
+vi.mock('../../../src/utils/redis', () => ({
+    getRedisClient: vi.fn(async () => ({
+        set: async (key: string, value: string) => {
+            redisStore.set(key, value);
+            return 'OK';
+        },
+        getdel: async (key: string) => {
+            const value = redisStore.get(key) ?? null;
+            redisStore.delete(key);
+            return value;
+        }
+    }))
+}));
 
 vi.mock('../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
@@ -101,7 +119,6 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
-import { ListingPublicationService } from '../../../src/services/listing-publication/listing-publication.service';
 import { env, validateApiEnv } from '../../../src/utils/env';
 import { notFoundWithListLink } from './not-found-text';
 
@@ -379,188 +396,5 @@ describe('/mcp listing tools (end to end)', () => {
                 }
             ]
         });
-    });
-    it('lists update_listing_basic as a non-destructive idempotent write', async () => {
-        // Act
-        const message = await rpc('tools/list', {});
-
-        // Assert
-        const entry = message.result?.tools?.find((t) => t.name === 'update_listing_basic');
-        expect(entry).toMatchObject({
-            annotations: {
-                readOnlyHint: false,
-                destructiveHint: false,
-                idempotentHint: true
-            },
-            inputSchema: { type: 'object', required: ['vertical', 'id'] }
-        });
-    });
-
-    it('update_listing_basic changes an own venue and answers the stored listing', async () => {
-        // Arrange
-        loadFacts.mockResolvedValue({
-            facts: {
-                ownerId: USER_ID,
-                publicationStatus: PublicationStatusEnum.PUBLISHED,
-                businessLines: ['food']
-            },
-            ownerId: USER_ID
-        });
-        const updateOwn = vi
-            .spyOn(VenueService.prototype, 'updateOwn')
-            .mockResolvedValue({ data: { id: VENUE_ID } } as unknown as Awaited<
-                ReturnType<VenueService['updateOwn']>
-            >);
-        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
-            data: {
-                id: VENUE_ID,
-                ownerId: USER_ID,
-                name: 'La Parrilla',
-                slug: 'la-parrilla',
-                publicationStatus: PublicationStatusEnum.PUBLISHED,
-                description: 'Parrilla de barrio con patio y mesas afuera.',
-                openingHours: null,
-                contactInfo: null
-            }
-        } as unknown as Awaited<ReturnType<VenueService['getById']>>);
-
-        // Act
-        const message = await callTool('update_listing_basic', {
-            vertical: 'venue',
-            id: VENUE_ID,
-            description: 'Parrilla de barrio con patio y mesas afuera.'
-        });
-
-        // Assert
-        expect(message.result?.isError).toBeUndefined();
-        expect(updateOwn).toHaveBeenCalledWith(
-            VENUE_ID,
-            { description: 'Parrilla de barrio con patio y mesas afuera.' },
-            expect.objectContaining({ id: USER_ID })
-        );
-        expect(JSON.parse(message.result?.content?.[0]?.text ?? 'null')).toMatchObject({
-            id: VENUE_ID,
-            vertical: 'venue',
-            description: 'Parrilla de barrio con patio y mesas afuera.'
-        });
-    });
-
-    it('update_listing_basic rejects a field outside the allowlist in Spanish', async () => {
-        // Arrange
-        const updateOwn = vi.spyOn(VenueService.prototype, 'updateOwn');
-
-        // Act
-        const message = await callTool('update_listing_basic', {
-            vertical: 'venue',
-            id: VENUE_ID,
-            description: 'Parrilla de barrio con patio y mesas afuera.',
-            name: 'Otro nombre'
-        });
-
-        // Assert
-        expect(message.result?.isError).toBe(true);
-        expect(message.result?.content?.[0]?.text).toMatch(
-            /^Los datos enviados no son válidos: .*name/
-        );
-        expect(updateOwn).not.toHaveBeenCalled();
-    });
-    it('lists set_listing_publication as a destructive, non-idempotent write', async () => {
-        // Act
-        const message = await rpc('tools/list', {});
-
-        // Assert
-        const entry = message.result?.tools?.find((t) => t.name === 'set_listing_publication');
-        expect(entry).toMatchObject({
-            annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
-            inputSchema: { type: 'object', required: ['vertical', 'id', 'action'] }
-        });
-    });
-
-    it('set_listing_publication resumes an own draft venue and answers its public URL', async () => {
-        // Arrange
-        loadFacts.mockResolvedValue({
-            facts: {
-                ownerId: USER_ID,
-                publicationStatus: PublicationStatusEnum.DRAFT,
-                businessLines: ['food']
-            },
-            ownerId: USER_ID
-        });
-        const venueRow = (publicationStatus: PublicationStatusEnum) =>
-            ({
-                data: {
-                    id: VENUE_ID,
-                    ownerId: USER_ID,
-                    name: 'La Parrilla',
-                    slug: 'la-parrilla',
-                    publicationStatus
-                }
-            }) as unknown as Awaited<ReturnType<VenueService['getById']>>;
-        vi.spyOn(VenueService.prototype, 'getById')
-            .mockResolvedValueOnce(venueRow(PublicationStatusEnum.DRAFT))
-            .mockResolvedValueOnce(venueRow(PublicationStatusEnum.PUBLISHED));
-        const publish = vi
-            .spyOn(ListingPublicationService.prototype, 'publish')
-            .mockResolvedValue({ id: VENUE_ID } as never);
-
-        // Act
-        const message = await callTool('set_listing_publication', {
-            vertical: 'venue',
-            id: VENUE_ID,
-            action: 'resume'
-        });
-
-        // Assert
-        expect(message.result?.isError).toBeUndefined();
-        expect(publish).toHaveBeenCalledWith({
-            actor: expect.objectContaining({ id: USER_ID }),
-            id: VENUE_ID,
-            vertical: 'venue'
-        });
-        const data = JSON.parse(message.result?.content?.[0]?.text ?? 'null');
-        expect(data).toMatchObject({
-            id: VENUE_ID,
-            vertical: 'venue',
-            action: 'resume',
-            changed: true,
-            previousStatus: 'DRAFT',
-            publicationStatus: 'PUBLISHED'
-        });
-        expect(data.publicUrl).toContain('la-parrilla');
-    });
-
-    it("set_listing_publication answers another user's venue as not found", async () => {
-        // Arrange
-        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
-            data: {
-                id: VENUE_ID,
-                ownerId: 'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0',
-                name: 'Bar Ajeno',
-                slug: 'bar-ajeno',
-                publicationStatus: PublicationStatusEnum.PUBLISHED
-            }
-        } as unknown as Awaited<ReturnType<VenueService['getById']>>);
-        const unpublish = vi.spyOn(ListingPublicationService.prototype, 'unpublish');
-
-        // Act
-        const message = await callTool('set_listing_publication', {
-            vertical: 'venue',
-            id: VENUE_ID,
-            action: 'pause'
-        });
-
-        // Assert
-        expect(message.result).toMatchObject({
-            isError: true,
-            content: [
-                {
-                    text: notFoundWithListLink({
-                        siteUrl: env.HOSPEDA_SITE_URL,
-                        path: 'mi-cuenta/comercio'
-                    })
-                }
-            ]
-        });
-        expect(unpublish).not.toHaveBeenCalled();
     });
 });

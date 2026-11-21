@@ -11,6 +11,11 @@ import {
     experiencePriceUnitLabel,
     formatContextMoney
 } from '../../../services/ai-context/listing-labels';
+import {
+    blockForConfirmation,
+    quoteForConfirmation,
+    sanitizeForConfirmation
+} from '../confirmation-text';
 import type { CreateListingInput } from './create-listing-input';
 import { listingTypeLabel } from './listing-creation-catalog';
 
@@ -77,4 +82,113 @@ export function priceLabelOf({ input }: { readonly input: CreateListingInput }):
         ? ` ${experiencePriceUnitLabel({ unit: input.priceUnit, locale: 'es' }).label}`
         : '';
     return `Desde ${amount}${unit}`;
+}
+
+/** Spanish name of each vertical, as the portal names it (also the publish form's). */
+export const VERTICAL_LABELS: Readonly<Record<CreateListingInput['vertical'], string>> = {
+    [VerticalEnum.ACCOMMODATION]: 'Alojamiento',
+    [VerticalEnum.VENUE]: 'Comer y salir',
+    [VerticalEnum.EXPERIENCE]: 'Experiencia'
+};
+
+/** Server-built labels of the preview record, listed with the facts. */
+const FACT_FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
+    ['typeLabel', 'Tipo'],
+    ['destinationName', 'Ciudad'],
+    ['priceLabel', 'Precio']
+];
+
+/**
+ * Fields the user (through the model) wrote, each a quoted one-line value. Each
+ * cap is the create schemas' maximum, so the form shows everything written.
+ */
+const TEXT_FIELD_LABELS: ReadonlyArray<readonly [string, string, number]> = [
+    ['name', 'Nombre', 100],
+    ['maxGuests', 'Huéspedes como máximo', 20],
+    ['bedrooms', 'Dormitorios', 20],
+    ['bathrooms', 'Baños', 20],
+    ['beds', 'Camas', 20],
+    ['businessLines', 'Líneas de negocio', 120]
+];
+
+/**
+ * The long fields, shown as blocks (wrapped, every line prefixed), capped at the
+ * create schemas' maximum so the form shows everything written (HOS-2247 L1).
+ */
+const BLOCK_FIELD_LABELS: ReadonlyArray<readonly [string, string, number]> = [
+    ['summary', 'Resumen', 300],
+    ['description', 'Descripción', 2000]
+];
+
+/** Renders a preview value as text; anything else is left out. */
+function fieldText(value: unknown): string | undefined {
+    if (typeof value === 'string' || typeof value === 'number') {
+        return String(value);
+    }
+    if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
+        return value.join(', ');
+    }
+    return undefined;
+}
+
+/**
+ * The text the client's confirmation form shows the human (HOS-2247, AC-C64):
+ * the listing as the preview shows it, and the location exactly as the commit
+ * will write it, the resolved point included.
+ *
+ * The facts the server resolved come FIRST (vertical, type, city, price, map
+ * point, warning). The values the model supplied follow, each sanitized and
+ * quoted on one line, and the summary and description last, as blocks whose
+ * every line is prefixed (`confirmation-text.ts`), so no value can fake a line
+ * of the message. Every cap is the schema maximum: the form shows all it writes.
+ *
+ * @param args - The vertical, the preview record and the location the preview resolved
+ * @returns The Spanish form message
+ */
+export function createListingConfirmationMessage(args: {
+    readonly vertical: CreateListingInput['vertical'];
+    readonly listing: Readonly<Record<string, unknown>>;
+    readonly point: { readonly lat: number; readonly lng: number } | null;
+    readonly street?: string;
+    readonly number?: string;
+    readonly duplicateAddressWarning?: string;
+}): string {
+    const facts = FACT_FIELD_LABELS.flatMap(([key, label]) => {
+        const text = fieldText(args.listing[key]);
+        return text === undefined ? [] : [`${label}: ${quoteForConfirmation({ text })}`];
+    });
+    const location = [
+        args.point === null
+            ? 'Ubicación en el mapa: sin marcar (se puede marcar después en el editor)'
+            : `Ubicación en el mapa: ${args.point.lat}, ${args.point.lng} (verificala en https://www.google.com/maps?q=${args.point.lat},${args.point.lng})`,
+        ...(args.duplicateAddressWarning === undefined
+            ? []
+            : [
+                  `Atención: ${sanitizeForConfirmation({ text: args.duplicateAddressWarning, maxLength: 300 })}`
+              ])
+    ];
+    const address = [args.street, args.number].filter((part) => part !== undefined).join(' ');
+    const written = [
+        ...TEXT_FIELD_LABELS.flatMap(([key, label, maxLength]) => {
+            const text = fieldText(args.listing[key]);
+            return text === undefined
+                ? []
+                : [`${label}: ${quoteForConfirmation({ text, maxLength })}`];
+        }),
+        ...(address === '' ? [] : [`Dirección: ${quoteForConfirmation({ text: address })}`])
+    ];
+    const blocks = BLOCK_FIELD_LABELS.flatMap(([key, label, maxLength]) => {
+        const text = fieldText(args.listing[key]);
+        return text === undefined ? [] : [`${label}:`, blockForConfirmation({ text, maxLength })];
+    });
+    return [
+        'Vas a crear esta publicación en Hospeda como BORRADOR (no se publica).',
+        `Categoría: ${VERTICAL_LABELS[args.vertical]}`,
+        ...facts,
+        ...location,
+        'Datos de la publicación:',
+        ...written,
+        ...blocks,
+        '¿Confirmás que se cree?'
+    ].join('\n');
 }

@@ -23,7 +23,9 @@ const LOCALES = ['es', 'en', 'pt'] as const;
  */
 const NON_SERVICE_CODES: Readonly<Record<Exclude<ToolFailure['code'], ServiceErrorCode>, true>> = {
     RATE_LIMIT_EXCEEDED: true,
-    UNEXPECTED: true
+    UNEXPECTED: true,
+    USER_CANCELLED: true,
+    USER_DECLINED: true
 };
 
 /**

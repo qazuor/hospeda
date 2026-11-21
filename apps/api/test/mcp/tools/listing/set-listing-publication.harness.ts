@@ -4,13 +4,19 @@
  * coverage, effective set). Each test file keeps its own `vi.mock` calls,
  * which vitest hoists per file; this module only fills the mocks they hand in.
  *
+ * Since publishing is two steps (HOS-2247, D-19) it also holds the in-memory
+ * Redis fake the confirmation store runs over, and {@link throughPreview},
+ * which confirms a publish preview with its token the way a model would after
+ * the user said yes.
+ *
  * @module test/mcp/tools/listing/set-listing-publication.harness
  */
 
 import { type PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
-import type { Mock } from 'vitest';
+import { type Mock, vi } from 'vitest';
+import type { ToolRunOutcome } from '../../../../src/mcp/tools/run-tool';
 
 /** The listing-access port mocks a test file declares. */
 export interface ListingAccessPortMocks {
@@ -36,9 +42,66 @@ const CAPABILITIES: Readonly<Record<Vertical, readonly string[]>> = {
 };
 
 const OWNER_ID = '1f2e3d4c-5b6a-4789-8abc-def012345678';
+const CLIENT = 'https://claude.ai/oauth/mcp-client-metadata';
+
+/** In-memory Redis fake with TTL driven by an injected clock. */
+function makeFakeRedis() {
+    let nowMs = 0;
+    const data = new Map<string, { value: string; expiresAt: number }>();
+    return {
+        redis: {
+            set: vi.fn(async (key: string, value: string, _ex: string, seconds: number) => {
+                data.set(key, { value, expiresAt: nowMs + seconds * 1000 });
+                return 'OK';
+            }),
+            getdel: vi.fn(async (key: string) => {
+                const entry = data.get(key);
+                data.delete(key);
+                return entry && entry.expiresAt > nowMs ? entry.value : null;
+            })
+        },
+        data,
+        advance: (ms: number) => {
+            nowMs += ms;
+        }
+    };
+}
+
+/** Narrows a success payload to a publish preview (token flow). */
+function previewTokenOf(data: unknown): string | undefined {
+    if (typeof data !== 'object' || data === null || !('status' in data)) {
+        return undefined;
+    }
+    return data.status === 'confirmation_required' &&
+        'confirmationToken' in data &&
+        typeof data.confirmationToken === 'string'
+        ? data.confirmationToken
+        : undefined;
+}
+
+/**
+ * Runs a call; when it answers a publish preview, confirms it with its token
+ * (the second call a model makes once the user said yes). Any other outcome is
+ * returned as is, so one-step calls and refusals read exactly as before.
+ */
+async function throughPreview<TData>(
+    run: (input: Record<string, unknown>) => Promise<ToolRunOutcome<TData>>,
+    input: Record<string, unknown>
+): Promise<ToolRunOutcome<TData>> {
+    const first = await run(input);
+    if (!first.ok) {
+        return first;
+    }
+    const token = previewTokenOf(first.data);
+    return token === undefined ? first : run({ ...input, confirmationToken: token });
+}
 
 export const harness = {
     OWNER_ID,
+    CLIENT,
+    makeFakeRedis,
+    previewTokenOf,
+    throughPreview,
     OTHER_ID: '2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d',
     LISTING_ID: '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7',
     VERTICALS,

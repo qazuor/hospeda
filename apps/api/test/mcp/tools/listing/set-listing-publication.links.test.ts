@@ -29,7 +29,13 @@ const mocks = vi.hoisted(() => ({
     coverage: vi.fn(),
     effectiveSet: vi.fn(),
     preTrialDraftLimits: vi.fn(),
-    subscribeDestination: vi.fn()
+    subscribeDestination: vi.fn(),
+    redis: undefined as unknown
+}));
+
+// Publishing is two steps (HOS-2247, D-19): the token store runs over a fake.
+vi.mock('../../../../src/utils/redis', () => ({
+    getRedisClient: vi.fn(async () => mocks.redis)
 }));
 
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
@@ -105,12 +111,17 @@ function givenPublishRejects(vertical: Vertical, error: unknown) {
 
 /** Runs `resume` and returns the failure. */
 async function failureOf(vertical: Vertical, action: 'pause' | 'resume' = 'resume') {
-    const outcome = await runTool({
-        definition: setListingPublicationTool,
-        actor: actorFor(OWNER_ID),
-        input: { vertical, id: LISTING_ID, action },
-        context: { channel: 'mcp' }
-    });
+    // A publish refusal of the service shows on the confirmed second call.
+    const outcome = await harness.throughPreview(
+        (input) =>
+            runTool({
+                definition: setListingPublicationTool,
+                actor: actorFor(OWNER_ID),
+                input,
+                context: { channel: 'mcp', clientId: harness.CLIENT }
+            }),
+        { vertical, id: LISTING_ID, action }
+    );
     if (outcome.ok) throw new Error('expected a failure');
     return outcome.failure;
 }
@@ -146,6 +157,7 @@ describe('set_listing_publication — portal links on refusals', () => {
     beforeEach(() => {
         env.HOSPEDA_SITE_URL = SITE;
         vi.clearAllMocks();
+        mocks.redis = harness.makeFakeRedis().redis;
         harness.givenBilling(mocks, { covered: true, granted: true });
     });
 

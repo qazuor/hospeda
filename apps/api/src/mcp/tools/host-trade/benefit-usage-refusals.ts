@@ -11,6 +11,7 @@
 
 import { ServiceErrorCode } from '@repo/schemas';
 import { entityNotFoundError } from '@repo/service-core';
+import { ELICITATION_REASON_MESSAGES } from '../elicitation-confirmation';
 import type { ToolErrorPayload, ToolHandlerResult, ToolRefusalLink } from '../tool-definition';
 
 /** Reason of the refusal for a usage that is no longer PENDING. */
@@ -22,6 +23,7 @@ export const BENEFIT_USAGE_CONFIRMATION_UNAVAILABLE_REASON = 'CONFIRMATION_UNAVA
 
 /** Spanish messages for the reasons the usage tools can answer with. */
 export const BENEFIT_USAGE_REASON_MESSAGES: Readonly<Record<string, string>> = {
+    ...ELICITATION_REASON_MESSAGES,
     [BENEFIT_USAGE_NOT_PENDING_REASON]:
         'Ese uso ya no está pendiente (ya se confirmó, se rechazó o venció), así que no se puede responder. No se cambió nada.',
     [BENEFIT_USAGE_CONFIRMATION_INVALID_REASON]:

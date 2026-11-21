@@ -29,7 +29,12 @@ import { z } from 'zod';
 import { isGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { attachRefusalAction } from './refusal-action';
-import type { ToolContext, ToolDefinition, ToolErrorPayload } from './tool-definition';
+import type {
+    ToolConfirmationRequest,
+    ToolContext,
+    ToolDefinition,
+    ToolErrorPayload
+} from './tool-definition';
 import {
     formatValidationMessage,
     type ToolFailure,
@@ -41,6 +46,14 @@ import {
 export type ToolRunOutcome<TData> =
     | { readonly ok: true; readonly data: TData }
     | { readonly ok: false; readonly failure: ToolFailure };
+
+/**
+ * Result of {@link executeConfirmableTool}: a {@link ToolRunOutcome}, or the
+ * out-of-band confirmation a covered tool asks the client for (HOS-2247).
+ */
+export type ConfirmableToolRunOutcome<TData> =
+    | ToolRunOutcome<TData>
+    | { readonly ok: 'confirmation_required'; readonly request: ToolConfirmationRequest };
 
 /** Arguments for {@link executeTool}. RO-RO. */
 export interface ExecuteToolArgs<TSchema extends z.ZodObject, TData> {
@@ -97,23 +110,24 @@ function failWith(input: {
 
 /**
  * Runs a tool on validated input: authentication, person state, handler, and
- * error mapping. Never throws.
+ * error mapping. Never throws. A handler that resolves to a confirmation
+ * request is passed through as `confirmation_required`.
  *
  * @param args - Definition, actor, validated input and context
- * @returns The data, or a user-facing failure
+ * @returns The data, a user-facing failure, or a confirmation request
  *
  * @example
  * ```typescript
- * const outcome = await executeTool({ definition, actor, input, context: { channel: 'mcp' } });
- * if (!outcome.ok) show(outcome.failure.message);
+ * const outcome = await executeConfirmableTool({ definition, actor, input, context });
+ * if (outcome.ok === 'confirmation_required') askTheHuman(outcome.request);
  * ```
  */
-export async function executeTool<TSchema extends z.ZodObject, TData>({
+export async function executeConfirmableTool<TSchema extends z.ZodObject, TData>({
     definition,
     actor,
     input,
     context
-}: ExecuteToolArgs<TSchema, TData>): Promise<ToolRunOutcome<TData>> {
+}: ExecuteToolArgs<TSchema, TData>): Promise<ConfirmableToolRunOutcome<TData>> {
     const { name } = definition;
 
     if (isGuestActor(actor)) {
@@ -140,6 +154,9 @@ export async function executeTool<TSchema extends z.ZodObject, TData>({
 
     try {
         const result = await definition.handler({ actor, input, context });
+        if ('needsConfirmation' in result && result.needsConfirmation !== undefined) {
+            return { ok: 'confirmation_required', request: result.needsConfirmation };
+        }
         if (result.error) {
             return {
                 ok: false,
@@ -175,6 +192,39 @@ export async function executeTool<TSchema extends z.ZodObject, TData>({
         logUnexpected({ tool: name, code: 'UNEXPECTED', error });
         return { ok: false, failure: unexpectedToolFailure() };
     }
+}
+
+/**
+ * Runs a tool on validated input: authentication, person state, handler, and
+ * error mapping. Never throws.
+ *
+ * For callers that cannot ask a human out of band (the HOS-2185 agent, tests):
+ * such a caller passes no `context.confirmation`, so no tool asks for one. A
+ * confirmation request that still appears is a wiring bug, answered with the
+ * generic failure (nothing was written: a tool asks BEFORE writing).
+ *
+ * @param args - Definition, actor, validated input and context
+ * @returns The data, or a user-facing failure
+ *
+ * @example
+ * ```typescript
+ * const outcome = await executeTool({ definition, actor, input, context: { channel: 'mcp' } });
+ * if (!outcome.ok) show(outcome.failure.message);
+ * ```
+ */
+export async function executeTool<TSchema extends z.ZodObject, TData>(
+    args: ExecuteToolArgs<TSchema, TData>
+): Promise<ToolRunOutcome<TData>> {
+    const outcome = await executeConfirmableTool(args);
+    if (outcome.ok === 'confirmation_required') {
+        logUnexpected({
+            tool: args.definition.name,
+            code: 'CONFIRMATION_WITHOUT_CHANNEL',
+            error: new Error('Tool asked for an out-of-band confirmation the caller cannot show')
+        });
+        return { ok: false, failure: unexpectedToolFailure() };
+    }
+    return outcome;
 }
 
 /**
