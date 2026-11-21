@@ -66,6 +66,18 @@ export function isVenueListing(listing: { readonly vertical: VenueOrExperience }
     return listing.vertical === VENUE_VERTICAL;
 }
 
+/**
+ * Thrown by {@link fetchOwnerListings} when the owner's listings could not be
+ * read and there is nothing to show (HOS-2421). Callers render an error with a
+ * retry action, never the "you have no listings" empty state.
+ */
+export class OwnerListingsUnavailableError extends Error {
+    constructor() {
+        super('Owner listings could not be loaded');
+        this.name = 'OwnerListingsUnavailableError';
+    }
+}
+
 type ListResponse = { readonly listings: readonly OwnerListingSummary[] };
 
 /**
@@ -74,8 +86,12 @@ type ListResponse = { readonly listings: readonly OwnerListingSummary[] };
  * @param cookieHeader - Raw `Cookie` header from the SSR request, forwarded so
  *   the protected endpoints can resolve the session (browser callers may omit
  *   it and rely on `credentials: 'include'`).
- * @returns The merged list of owner listing summaries (empty when the owner
- *   has none or every vertical request fails).
+ * @returns The merged list of owner listing summaries (empty only when the
+ *   owner really has none).
+ * @throws {OwnerListingsUnavailableError} When a vertical request failed and
+ *   nothing was loaded, so an empty result would be indistinguishable from
+ *   "this owner has no listings" (HOS-2421). A failure of one vertical while
+ *   the other returned listings still degrades to the partial list.
  */
 export async function fetchOwnerListings({
     cookieHeader
@@ -93,6 +109,9 @@ export async function fetchOwnerListings({
     }
     if (experience.ok) {
         listings.push(...experience.data.listings);
+    }
+    if (listings.length === 0 && (!venue.ok || !experience.ok)) {
+        throw new OwnerListingsUnavailableError();
     }
     return listings;
 }
@@ -163,6 +182,7 @@ export interface OwnerListingSummaryWithState extends OwnerListingSummary {
  *
  * @param cookieHeader - Raw `Cookie` header from the SSR request.
  * @returns The merged, enriched list.
+ * @throws {OwnerListingsUnavailableError} See {@link fetchOwnerListings}.
  */
 export async function fetchOwnerListingsWithState({
     cookieHeader

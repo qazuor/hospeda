@@ -236,9 +236,8 @@ async function awaitIdentityOccupant(input: {
 /**
  * A1: buys one addon with a durable purchase identity and a provider call after commit.
  *
- * A one-time (`UNA_VEZ`) addon is paid on a payment page unless the caller asks for the card
- * order explicitly (`oneTimeChannel: 'ORDER'`, kept only for T-7's removal), so a caller that
- * names no channel can never reopen the order path.
+ * A one-time (`UNA_VEZ`) addon is always paid on a provider payment page (HOS-2179); the card
+ * order path was retired by T-7.
  */
 export async function purchaseAddon(
     input: PurchaseAddonInput,
@@ -268,7 +267,7 @@ async function purchaseAddonOnce(
             'Target must be null for person or global addons'
         );
     const now = ports.clock.now();
-    const pagePurchase = chargeKindOf(product) === 'UNA_VEZ' && request.oneTimeChannel !== 'ORDER';
+    const pagePurchase = chargeKindOf(product) === 'UNA_VEZ';
     const deadlines =
         chargeKindOf(product) === 'PERIODICO' || pagePurchase
             ? await getCurrentBillingDeadlines()
@@ -348,13 +347,6 @@ async function purchaseAddonOnce(
                     operation: PAYMENT_PAGE_OPERATION,
                     subjectId: instance.id,
                     request: paymentPageRequestOf(request)
-                });
-                created = { instanceId: instance.id };
-            } else if (product.chargeKind === 'UNA_VEZ') {
-                await tx.insert(idempotencyKeys).values({
-                    key: `order:${request.orderRequestId}`,
-                    operation: 'ORDER_CREATE',
-                    subjectId: instance.id
                 });
                 created = { instanceId: instance.id };
             } else if (deadlines) {

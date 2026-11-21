@@ -70,6 +70,10 @@ describe.
 
 ### 1.4 Cómo se cobra el `UNA_VEZ`: por `/v1/orders`, sin preapproval
 
+> **Reemplazado por HOS-2179** (`.specs/HOS-2179-addons-pago-unico-checkout-pro/spec.md`). Desde
+> T-7 el `UNA_VEZ` se cobra en la página de pago del proveedor: no hay orden, ni token de tarjeta, ni
+> `A7`. Lo que sigue se conserva como registro del diseño anterior; no describe el código vigente.
+
 > **Corrección de diseño, FASE 8 completa, `F-8CB1-008`.** `A2` decía *«De única vez: su propio
 > cobro»* (`B/03` §8) y ningún capítulo decía **cuál**: el contrato del proveedor (`B/06`) sólo
 > tenía `preapproval`.

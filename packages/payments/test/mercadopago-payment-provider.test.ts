@@ -38,19 +38,6 @@ const VALID_CALLS: readonly {
         input: { authorizationId: 'a', amount: ARS, reference: 'c' }
     },
     {
-        method: 'chargeOnce',
-        capability: 'charge',
-        input: {
-            reference: 'purchase',
-            idempotencyKey: 'purchase-key',
-            amount: ARS,
-            payerEmail: 'buyer@example.test',
-            paymentToken: 'token',
-            paymentBrand: 'master',
-            paymentKind: 'credit'
-        }
-    },
-    {
         method: 'changeAmount',
         capability: 'changeAmount',
         input: { authorizationId: 'a', amount: ARS }
@@ -63,25 +50,10 @@ const VALID_CALLS: readonly {
         capability: 'refund',
         input: { chargeId: 'c', amount: ARS, reference: 'r' }
     },
-    {
-        method: 'refundOrder',
-        capability: 'refund',
-        input: { orderId: 'o', reference: 'r', scope: { kind: 'total' } }
-    },
     { method: 'readAuthorization', capability: 'read', input: { authorizationId: 'a' } },
     { method: 'searchAuthorizations', capability: 'read', input: {} },
     { method: 'readCharge', capability: 'read', input: { chargeId: 'c' } },
     { method: 'listCharges', capability: 'read', input: { authorizationId: 'a' } },
-    { method: 'readOrder', capability: 'read', input: { orderId: 'o' } },
-    {
-        method: 'searchOrders',
-        capability: 'read',
-        input: {
-            reference: 'r',
-            createdFrom: '2026-10-01T00:00:00.000Z',
-            createdTo: '2026-10-29T00:00:00.000Z'
-        }
-    },
     { method: 'decodeNotice', capability: 'notify', input: { headers: {}, body: '{}' } }
 ];
 
@@ -133,8 +105,8 @@ describe('MercadoPagoPaymentProvider', () => {
         });
     });
 
-    it('covers all sixteen interface methods in this table', () => {
-        expect(VALID_CALLS).toHaveLength(16);
+    it('covers twelve of the sixteen interface methods (the page and charge-search ones have their own files)', () => {
+        expect(VALID_CALLS).toHaveLength(12);
     });
 
     it.each(VALID_CALLS)('$method validates its input first', async ({ method, capability }) => {
@@ -201,13 +173,6 @@ describe('MercadoPagoPaymentProvider', () => {
             await adapter.readCharge({ chargeId: charge.chargeId });
             await adapter.listCharges({ authorizationId: second.authorizationId });
             await adapter.refund({ chargeId: charge.chargeId, amount: ARS, reference: 'refund' });
-            const order = fake.placeOrder({ reference: 'table-order', paid: true });
-            await adapter.readOrder({ orderId: order.orderId });
-            await adapter.searchOrders({
-                reference: 'table-order',
-                createdFrom: '2026-10-01T00:00:00.000Z',
-                createdTo: '2026-10-29T00:00:00.000Z'
-            });
             await expect(
                 adapter.charge({
                     authorizationId: second.authorizationId,
@@ -221,7 +186,7 @@ describe('MercadoPagoPaymentProvider', () => {
                     body: '{"type":"payment","data":{"id":"table-charge"}}'
                 })
             ).resolves.toMatchObject({ resourceKind: 'charge', resourceId: 'table-charge' });
-            expect(VALID_CALLS).toHaveLength(16);
+            expect(VALID_CALLS).toHaveLength(12);
         } finally {
             await server.close();
         }
