@@ -3,7 +3,7 @@
  * route, against a real PostgreSQL and the `canCharge` SIMULATOR of the
  * billing-verticals contract (H7): while `puedeCobrarle` answers yes, a listing
  * stays outside `PURGED` or a partner presence holds content, the closure is
- * refused with 409 and writes NOTHING (the user row, its credentials and the
+ * refused with 422 and writes NOTHING (the user row, its credentials and the
  * audit log are untouched); once nothing blocks, it passes.
  */
 import { BillingForVerticalsSimulator } from '@repo/billing-verticals-contract/testing';
@@ -171,7 +171,7 @@ describe('TEST:V8a:12 action 24 is refused while something can still charge, a l
         'a CANCEL_SCHEDULED whose cancellation no re-read confirmed',
         'a terminal one cancelled by the provider within PLAZO:16',
         'an open CANCELACIÓN_SIN_CONFIRMAR mark'
-    ])('refuses with 409 ACCOUNT_CAN_STILL_BE_CHARGED for %s and writes nothing', async () => {
+    ])('refuses with 422 ACCOUNT_CAN_STILL_BE_CHARGED for %s and writes nothing', async () => {
         // Arrange
         const juan = await account();
         const { id: adminId } = await createOwner();
@@ -192,15 +192,15 @@ describe('TEST:V8a:12 action 24 is refused while something can still charge, a l
             partnerPresenceWithContent: false,
             ready: false
         });
-        expect(response.status).toBe(409);
-        expect(response.body.error?.code).toBe('ALREADY_EXISTS');
+        expect(response.status).toBe(422);
+        expect(response.body.error?.code).toBe('VALIDATION_ERROR');
         expect(response.body.error?.reason).toBe('ACCOUNT_CAN_STILL_BE_CHARGED');
         expect(await footprint(juan)).toEqual(before);
         expect(before.accounts).toBe(1);
         expect(before.events).toBe(0);
     });
 
-    it('refuses with 409 ACCOUNT_HAS_LISTINGS while a DRAFT listing remains', async () => {
+    it('refuses with 422 ACCOUNT_HAS_LISTINGS while a DRAFT listing remains', async () => {
         const juan = await account();
         const { id: adminId } = await createOwner();
         createdUsers.push(adminId);
@@ -216,12 +216,12 @@ describe('TEST:V8a:12 action 24 is refused while something can still charge, a l
             partnerPresenceWithContent: false,
             ready: false
         });
-        expect(response.status).toBe(409);
+        expect(response.status).toBe(422);
         expect(response.body.error?.reason).toBe('ACCOUNT_HAS_LISTINGS');
         expect(await footprint(juan)).toEqual(before);
     });
 
-    it('refuses with 409 ACCOUNT_HAS_PARTNER_PRESENCE while the presence has a logo', async () => {
+    it('refuses with 422 ACCOUNT_HAS_PARTNER_PRESENCE while the presence has a logo', async () => {
         const juan = await account();
         const { id: adminId } = await createOwner();
         createdUsers.push(adminId);
@@ -230,7 +230,7 @@ describe('TEST:V8a:12 action 24 is refused while something can still charge, a l
 
         const response = await call({ method: 'POST', userId: juan, adminId });
 
-        expect(response.status).toBe(409);
+        expect(response.status).toBe(422);
         expect(response.body.error?.reason).toBe('ACCOUNT_HAS_PARTNER_PRESENCE');
         expect(await footprint(juan)).toEqual(before);
     });

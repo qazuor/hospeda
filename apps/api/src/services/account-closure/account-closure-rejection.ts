@@ -9,7 +9,7 @@ export const ACCOUNT_CLOSURE_REJECTION_REASONS = [
     'ACCOUNT_HAS_PARTNER_PRESENCE'
 ] as const;
 
-/** Machine-readable `error.reason` of a 409 refusal of action 24 (H11). */
+/** Machine-readable `error.reason` of a 422 refusal of action 24 (H11). */
 export type AccountClosureRejectionReason = (typeof ACCOUNT_CLOSURE_REJECTION_REASONS)[number];
 
 /** What action 24 re-reads, under its locks, before deciding. */

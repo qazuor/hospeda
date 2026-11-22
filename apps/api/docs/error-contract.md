@@ -918,9 +918,11 @@ there never reveals whether the account exists.
 | Target holds an effective permission the actor lacks (an ADMIN closing a SUPER_ADMIN) | **403** | `FORBIDDEN` | `SUBJECT_OUTRANKS_ACTOR` |
 | `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
 | Account does not exist, or is already closed (`deleted_at` set) | **404** | `NOT_FOUND` | — |
-| `canCharge` (`puedeCobrarle`) answers yes | **409** | `ALREADY_EXISTS` | `ACCOUNT_CAN_STILL_BE_CHARGED` |
-| A listing with `deleted_at IS NULL` is outside `PURGED` | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_LISTINGS` |
-| The live partner presence still holds content | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_PARTNER_PRESENCE` |
+| `canCharge` (`puedeCobrarle`) answers yes | **422** | `VALIDATION_ERROR` | `ACCOUNT_CAN_STILL_BE_CHARGED` |
+| A listing with `deleted_at IS NULL` is outside `PURGED` | **422** | `VALIDATION_ERROR` | `ACCOUNT_HAS_LISTINGS` |
+| The live partner presence still holds content | **422** | `VALIDATION_ERROR` | `ACCOUNT_HAS_PARTNER_PRESENCE` |
+
+The three refusals are unmet business rules (a manual step is still missing), not duplicates, so they answer 422 `VALIDATION_ERROR` and keep `reason` (HOS-2246). The admin dialog reads `reason` to name the missing step and reads the preview again.
 
 `SUBJECT_OUTRANKS_ACTOR` (Coord-235) is decided inside the closure
 transaction, right after the account row is locked and before anything else is

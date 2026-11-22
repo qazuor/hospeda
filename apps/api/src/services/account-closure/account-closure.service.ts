@@ -138,7 +138,7 @@ export class AccountClosureService {
      *
      * @throws {ServiceError} FORBIDDEN at step 3 or for a system account;
      *   VALIDATION_ERROR for a blank reason; NOT_FOUND for a missing or already
-     *   closed account; ALREADY_EXISTS (409) with `reason` naming the first
+     *   closed account; VALIDATION_ERROR (422 at the route) with `reason` naming the first
      *   missing manual step when something still blocks.
      */
     async closeOnRequest(input: {
@@ -161,7 +161,7 @@ export class AccountClosureService {
             const rejection = selectAccountClosureRejection(read).reason;
             if (rejection !== null) {
                 throw new ServiceError(
-                    ServiceErrorCode.ALREADY_EXISTS,
+                    ServiceErrorCode.VALIDATION_ERROR,
                     ACCOUNT_CLOSURE_REJECTION_MESSAGES[rejection],
                     {
                         canCharge: read.canCharge,

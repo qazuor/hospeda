@@ -4,7 +4,7 @@
  * closure waits on billing's REAL `canCharge`: a live subscription, a
  * `CANCEL_SCHEDULED` whose cancellation no re-read confirmed, a
  * `CHARGE_DECLINED` inside PLAZO:16 counted from `provider_link.cancelled_seen_at`
- * and an open `CANCELACION_SIN_CONFIRMAR` mark all refuse with 409 and write
+ * and an open `CANCELACION_SIN_CONFIRMAR` mark all refuse with 422 and write
  * nothing; once Mercado Pago's cancellation is confirmed (and, for the declined
  * one, PLAZO:16 has elapsed), the closure goes through.
  *
@@ -155,7 +155,7 @@ async function call(input: {
     return { status: response.status, body };
 }
 
-/** Asserts the 409 refusal of action 24 for billing, with nothing written. */
+/** Asserts the 422 refusal of action 24 for billing, with nothing written. */
 async function expectRefusedForCharge(userId: string): Promise<void> {
     const adminId = await superAdmin();
     const before = await footprint(userId);
@@ -173,8 +173,8 @@ async function expectRefusedForCharge(userId: string): Promise<void> {
         partnerPresenceWithContent: false,
         ready: false
     });
-    expect(response.status).toBe(409);
-    expect(response.body.error?.code).toBe('ALREADY_EXISTS');
+    expect(response.status).toBe(422);
+    expect(response.body.error?.code).toBe('VALIDATION_ERROR');
     expect(response.body.error?.reason).toBe('ACCOUNT_CAN_STILL_BE_CHARGED');
     expect(await footprint(userId)).toEqual(before);
     expect(before.accounts).toBe(1);
@@ -227,7 +227,7 @@ afterEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('AC:B4:5 AC:B4:6 US:B4:3 action 24 waits on the real canCharge (HOS-1534)', () => {
-    it('(a) refuses with 409 while an ACTIVE subscription remains, and writes nothing', async () => {
+    it('(a) refuses with 422 while an ACTIVE subscription remains, and writes nothing', async () => {
         // Arrange
         const juan = await account();
         await subscription({ userId: juan, status: 'ACTIVE' });
