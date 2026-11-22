@@ -4,8 +4,11 @@
  * COMPLEMENTO charge. The charge's own values are captured by the caller from the row it wrote;
  * the add-on identity is read after commit. Both never throw (P-9).
  */
+import { createLogger } from '@repo/logger';
 import { type AddonFactListing, emitAddonFact } from '../addon/addon-fact-emit';
 import type { BillingFactSink } from '../facts/billing-fact-sink';
+
+const logger = createLogger('addon-charge-facts');
 
 /** One add-on charge the credit committed, captured inside its transaction. */
 export interface CreditedAddonCharge {
@@ -58,9 +61,12 @@ export async function emitAddonChargeCredited(input: {
 
 /**
  * Emits `addon_charge_declined` for a rejected COMPLEMENTO charge. The row keeps its state: a
- * COMPLEMENTO never enters grace (§1.2), so the event has no `next_state` (T-8).
+ * COMPLEMENTO never enters grace (§1.2), so the event has no `next_state` (T-8). The caller calls
+ * it only when its own call wrote the rejection (P-3'). The first-charge read runs here, inside
+ * the guard, so a failed read is a log line and never escapes into `recordChargeFact`.
  *
  * @param input.complementSubscriptionId - The COMPLEMENTO the charge belongs to
+ * @param input.isFirstCharge - Reads whether the COMPLEMENTO has no credited payment yet
  * @param input.billingFacts - The sink
  */
 export async function emitAddonChargeRejected(input: {
@@ -69,11 +75,21 @@ export async function emitAddonChargeRejected(input: {
     readonly amountMinor: number;
     readonly currency: string;
     readonly occurredAt: Date;
-    readonly isFirstCharge: boolean;
+    readonly isFirstCharge: () => Promise<boolean>;
     readonly hasRetryWindow: boolean;
     readonly billingFacts: BillingFactSink | undefined;
 }): Promise<void> {
     if (input.currency !== 'ARS') return;
+    let isFirstCharge: boolean;
+    try {
+        isFirstCharge = await input.isFirstCharge();
+    } catch (error) {
+        logger.error(
+            { paymentId: input.paymentId, error },
+            'First-charge read failed; addon_charge_declined not emitted'
+        );
+        return;
+    }
     await emitAddonFact({
         billingFacts: input.billingFacts,
         source: { complementSubscriptionId: input.complementSubscriptionId },
@@ -85,7 +101,7 @@ export async function emitAddonChargeRejected(input: {
             paymentId: input.paymentId,
             amountMinor: input.amountMinor,
             currency: 'ARS',
-            isFirstCharge: input.isFirstCharge,
+            isFirstCharge,
             hasRetryWindow: input.hasRetryWindow
         })
     });

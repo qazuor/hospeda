@@ -155,6 +155,8 @@ export async function recordChargeFact(
     if (!linked) return { outcome: 'NO_SUBSCRIPTION', authorizationId: charge.authorizationId };
 
     let paymentId: string;
+    // HOS-1883 P-3': whether THIS call inserted the payment fact (a replay hits the unique key).
+    let insertedByThisCall = false;
     try {
         const inserted = await getDb().transaction(async (tx) =>
             tx.transaction(async (savepoint) => {
@@ -181,6 +183,7 @@ export async function recordChargeFact(
                 'PAYMENT_FACT_INSERT_RETURNING_EMPTY'
             );
         paymentId = inserted.id;
+        insertedByThisCall = true;
     } catch (error) {
         const cause = extractPostgresErrorCause(error);
         if (cause?.code !== '23505' || cause.constraint !== PAYMENT_FACT_CONSTRAINT) throw error;
@@ -390,17 +393,21 @@ export async function recordChargeFact(
         });
     }
     // HOS-1883: a rejected COMPLEMENTO charge leaves the row as it is (§1.2) and is reported as
-    // `addon_charge_declined`; it never reaches `billing_*` (P-10).
-    if (recordedPayment && linked.subscription.class === 'COMPLEMENTO')
+    // `addon_charge_declined`; it never reaches `billing_*` (P-10). P-3': only the call that wrote
+    // the rejection emits it, that is the one that inserted the fact or failed the payment now;
+    // a redelivery or a later cron pass of the same charge writes neither and emits nothing.
+    const wroteRejection = insertedByThisCall || result.terminalRejection?.outcome === 'FAILED';
+    if (recordedPayment && linked.subscription.class === 'COMPLEMENTO' && wroteRejection)
         await emitAddonChargeRejected({
             complementSubscriptionId: linked.subscription.id,
             paymentId,
             amountMinor: recordedPayment.amount,
             currency: recordedPayment.currency,
             occurredAt: recordedPayment.factAt,
-            isFirstCharge: !(await creditedPaymentsFromLedger.hasCreditedPayment({
-                subscriptionId: linked.subscription.id
-            })),
+            isFirstCharge: async () =>
+                !(await creditedPaymentsFromLedger.hasCreditedPayment({
+                    subscriptionId: linked.subscription.id
+                })),
             hasRetryWindow: !isRejectedWithoutRetryWindow({ charge }),
             billingFacts: ports.billingFacts
         });
