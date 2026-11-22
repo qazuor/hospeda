@@ -19,6 +19,9 @@
  * The preview informs and decides nothing: the closure re-reads everything under
  * its own locks. A 409 therefore means the account changed since the dialog
  * opened; the dialog says so and reads the preview again, without retrying.
+ * A precondition that still blocks answers 422 `VALIDATION_ERROR` with
+ * `error.reason` (HOS-2246): the dialog names that reason with the same copy as
+ * the blocked list and reads the preview again, without retrying.
  *
  * Gated by `USER_CLOSE_ON_REQUEST` (a permission, never a role).
  */
@@ -55,8 +58,34 @@ const FORBIDDEN_STATUS = 403;
 /** HTTP status for an account that is gone or already closed. */
 const NOT_FOUND_STATUS = 404;
 
+/** HTTP status the closure answers when a precondition still blocks (`error.reason`). */
+const PRECONDITION_UNMET_STATUS = 422;
+
+/** `error.reason` of a refused precondition, mapped to its `blocked.*` copy key. */
+const REFUSAL_REASON_KEYS = {
+    ACCOUNT_CAN_STILL_BE_CHARGED: 'canCharge',
+    ACCOUNT_HAS_LISTINGS: 'listings',
+    ACCOUNT_HAS_PARTNER_PRESENCE: 'partnerPresence'
+} as const;
+
+/** Key under `accountCloseOnRequest.blocked` for a refused precondition. */
+type RefusalKey = (typeof REFUSAL_REASON_KEYS)[keyof typeof REFUSAL_REASON_KEYS];
+
 /** Message the dialog shows after a refused closure, if any. */
-type ClosureNotice = 'stateChanged' | 'forbidden' | null;
+type ClosureNotice = 'stateChanged' | 'forbidden' | RefusalKey | null;
+
+/**
+ * Reads the refused precondition out of a 422 body, `null` when it is not one.
+ *
+ * @param body - The raw response body kept by `ApiError`.
+ */
+function readRefusalKey(body: unknown): RefusalKey | null {
+    const reason = (body as { error?: { reason?: unknown } } | undefined)?.error?.reason;
+    if (typeof reason !== 'string') return null;
+    return Object.hasOwn(REFUSAL_REASON_KEYS, reason)
+        ? REFUSAL_REASON_KEYS[reason as keyof typeof REFUSAL_REASON_KEYS]
+        : null;
+}
 
 /** Props for {@link AccountCloseOnRequestCard}. RO-RO pattern. */
 export interface AccountCloseOnRequestCardProps {
@@ -119,6 +148,15 @@ export function AccountCloseOnRequestCard({ userId, onClosed }: AccountCloseOnRe
                 await preview.refetch();
                 return;
             }
+            if (isApiError(error) && error.status === PRECONDITION_UNMET_STATUS) {
+                const refusal = readRefusalKey(error.body);
+                if (refusal !== null) {
+                    // A precondition still blocks: the account was NOT closed.
+                    setNotice(refusal);
+                    await preview.refetch();
+                    return;
+                }
+            }
             if (isApiError(error) && error.status === FORBIDDEN_STATUS) {
                 setNotice('forbidden');
                 return;
@@ -159,7 +197,10 @@ export function AccountCloseOnRequestCard({ userId, onClosed }: AccountCloseOnRe
                         </AlertDialogTitle>
                         <AlertDialogDescription asChild>
                             <div className="space-y-2">
-                                <ClosureNoticeLine notice={notice} />
+                                <ClosureNoticeLine
+                                    notice={notice}
+                                    listingsNotPurged={preview.data?.listingsNotPurged ?? 0}
+                                />
                                 <PreviewBody
                                     isLoading={preview.isLoading}
                                     error={preview.error}
@@ -215,9 +256,27 @@ export function AccountCloseOnRequestCard({ userId, onClosed }: AccountCloseOnRe
 }
 
 /** The line a refused closure leaves in the dialog. */
-function ClosureNoticeLine({ notice }: { readonly notice: ClosureNotice }) {
+function ClosureNoticeLine({
+    notice,
+    listingsNotPurged
+}: {
+    readonly notice: ClosureNotice;
+    readonly listingsNotPurged: number;
+}) {
     const { t } = useTranslations();
     if (notice === null) return null;
+    const text =
+        notice === 'stateChanged'
+            ? t('admin-entities.accountCloseOnRequest.stateChanged')
+            : notice === 'forbidden'
+              ? t('admin-entities.accountCloseOnRequest.forbidden')
+              : notice === 'listings'
+                ? t('admin-entities.accountCloseOnRequest.blocked.listings', {
+                      count: String(listingsNotPurged)
+                  })
+                : notice === 'canCharge'
+                  ? t('admin-entities.accountCloseOnRequest.blocked.canCharge')
+                  : t('admin-entities.accountCloseOnRequest.blocked.partnerPresence');
     return (
         <p
             role="alert"
@@ -228,11 +287,7 @@ function ClosureNoticeLine({ notice }: { readonly notice: ClosureNotice }) {
                 size={16}
                 className="mt-0.5 shrink-0"
             />
-            <span>
-                {notice === 'stateChanged'
-                    ? t('admin-entities.accountCloseOnRequest.stateChanged')
-                    : t('admin-entities.accountCloseOnRequest.forbidden')}
-            </span>
+            <span>{text}</span>
         </p>
     );
 }
