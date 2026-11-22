@@ -6,7 +6,10 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HelpSearch } from '../../../../src/components/account/help/HelpSearch.client';
+import {
+    HelpSearch,
+    helpSearchAnnouncement
+} from '../../../../src/components/account/help/HelpSearch.client';
 import { HELP_AUDIENCE_CHANGED_EVENT } from '../../../../src/lib/help/help-audience';
 import {
     listLocalizedHelpArticles,
@@ -87,14 +90,59 @@ describe('HelpSearch', () => {
         type('zzqx yyqw');
 
         // Assert
-        const status = screen.getByRole('status');
-        expect(within(status).getByText('No encontramos ayuda para eso')).toBeInTheDocument();
+        const message = screen
+            .getAllByText('No encontramos ayuda para eso')
+            .find((element) => !element.hasAttribute('aria-live'));
+        const box = message?.parentElement as HTMLElement;
         expect(
-            within(status)
+            within(box)
                 .getAllByRole('link')
                 .map((link) => link.getAttribute('href'))
         ).toEqual(['/es/preguntas-frecuentes/', '/es/contacto/']);
         expect(resultIds()).toEqual([]);
+    });
+
+    it('announces the no-match sentence in the live region, not silence (HOS-2552)', () => {
+        // Arrange
+        const { container } = renderSearch();
+
+        // Act
+        type('zzqx yyqw');
+
+        // Assert
+        const live = container.querySelector('[aria-live="polite"]');
+        expect(live?.textContent).toBe('No encontramos ayuda para eso');
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('has a «Buscar» button and the same placeholder as the article search (HOS-2552)', () => {
+        // Arrange
+        renderSearch();
+        type('fotos');
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+        // Assert
+        expect(screen.getByLabelText('Buscar en la ayuda')).toHaveAttribute(
+            'placeholder',
+            'Por ejemplo: cómo subo fotos'
+        );
+        expect(document.activeElement?.getAttribute('href')).toMatch(/^\/es\/mi-cuenta\/ayuda\//);
+    });
+
+    it('carries the filtered audience into the result links (HOS-2552)', () => {
+        // Arrange
+        renderSearch('host');
+
+        // Act
+        type('fotos');
+
+        // Assert
+        const photos = screen
+            .getAllByRole('link')
+            .find((link) => link.getAttribute('href')?.startsWith('/es/mi-cuenta/ayuda/photos/'));
+        expect(photos?.getAttribute('href')).toBe('/es/mi-cuenta/ayuda/photos/?para=host');
     });
 
     it('shows nothing below two characters', () => {
@@ -114,6 +162,12 @@ describe('HelpSearch', () => {
         // Assert
         const live = container.querySelector('[aria-live="polite"]');
         expect(live?.textContent).toMatch(/^\d+ resultados?$/);
+    });
+
+    it('announces nothing below two characters', () => {
+        const { container } = renderSearch();
+        type('f');
+        expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe('');
     });
 
     it('clears on Escape', () => {
@@ -189,5 +243,27 @@ describe('HelpSearch', () => {
             />
         );
         expect(resultIds()).toContain('photos');
+    });
+});
+
+describe('helpSearchAnnouncement', () => {
+    const countText = (count: number) => `${count} resultados`;
+
+    it('is empty before a searchable query', () => {
+        expect(
+            helpSearchAnnouncement({ searched: false, count: 0, countText, noMatchText: 'nada' })
+        ).toBe('');
+    });
+
+    it('announces the count when there are results', () => {
+        expect(
+            helpSearchAnnouncement({ searched: true, count: 3, countText, noMatchText: 'nada' })
+        ).toBe('3 resultados');
+    });
+
+    it('announces the no-match sentence on zero results', () => {
+        expect(
+            helpSearchAnnouncement({ searched: true, count: 0, countText, noMatchText: 'nada' })
+        ).toBe('nada');
     });
 });

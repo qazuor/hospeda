@@ -24,7 +24,8 @@ import {
     HELP_AUDIENCE_LABEL_KEYS,
     type HelpAudienceEventDetail,
     parseHelpAudience,
-    readSelectedHelpAudience
+    readSelectedHelpAudience,
+    withHelpAudienceParam
 } from '@/lib/help/help-audience-shared';
 import type { HelpSearchEntry } from '@/lib/help/help-catalog';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -84,6 +85,34 @@ export function findHelpResults({
 }
 
 /**
+ * What the polite live region announces: the result count, or the no-match
+ * sentence when a real query found nothing (an empty region announces nothing,
+ * which leaves a screen-reader user guessing). Nothing below two characters.
+ *
+ * @param args.searched - Whether the query is long enough to search
+ * @param args.count - How many results were found
+ * @param args.countText - The localized «N resultados» for a count
+ * @param args.noMatchText - The localized «No encontramos ayuda para eso»
+ * @returns The announcement, or `''`
+ */
+export function helpSearchAnnouncement({
+    searched,
+    count,
+    countText,
+    noMatchText
+}: {
+    readonly searched: boolean;
+    readonly count: number;
+    readonly countText: (count: number) => string;
+    readonly noMatchText: string;
+}): string {
+    if (!searched) {
+        return '';
+    }
+    return count > 0 ? countText(count) : noMatchText;
+}
+
+/**
  * Help landing search island.
  *
  * @param props - See {@link HelpSearchProps}
@@ -131,7 +160,16 @@ export function HelpSearch({
         <search className={styles.search}>
             <form
                 className={styles.form}
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={(event) => {
+                    // Results already follow every keystroke; the button only
+                    // moves the reader to the first one (same affordance as the
+                    // article page's search, which submits to this landing).
+                    event.preventDefault();
+                    const first = (
+                        event.currentTarget.parentElement ?? document
+                    ).querySelector<HTMLAnchorElement>('[data-help-result] a');
+                    first?.focus();
+                }}
             >
                 <label
                     className={styles.label}
@@ -139,21 +177,29 @@ export function HelpSearch({
                 >
                     {t('account.help.search.label')}
                 </label>
-                <input
-                    id={inputId}
-                    className={styles.input}
-                    type="search"
-                    name="q"
-                    autoComplete="off"
-                    value={query}
-                    placeholder={t('account.help.search.placeholder')}
-                    onChange={(event) => setQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Escape') {
-                            setQuery('');
-                        }
-                    }}
-                />
+                <div className={styles.row}>
+                    <input
+                        id={inputId}
+                        className={styles.input}
+                        type="search"
+                        name="q"
+                        autoComplete="off"
+                        value={query}
+                        placeholder={t('account.help.search.placeholder')}
+                        onChange={(event) => setQuery(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
+                                setQuery('');
+                            }
+                        }}
+                    />
+                    <button
+                        className={styles.button}
+                        type="submit"
+                    >
+                        {t('account.help.search.submit')}
+                    </button>
+                </div>
                 <label className={styles.toggle}>
                     <input
                         type="checkbox"
@@ -165,12 +211,16 @@ export function HelpSearch({
             </form>
 
             <p
-                className={styles.status}
+                className="sr-only"
                 aria-live="polite"
+                data-help-search-status
             >
-                {searched && results.length > 0
-                    ? tPlural('account.help.search.results', results.length)
-                    : ''}
+                {helpSearchAnnouncement({
+                    searched,
+                    count: results.length,
+                    countText: (count) => tPlural('account.help.search.results', count),
+                    noMatchText: t('account.help.search.noMatch')
+                })}
             </p>
 
             {searched && results.length > 0 && (
@@ -179,10 +229,15 @@ export function HelpSearch({
                         <li
                             key={entry.id}
                             className={styles.result}
+                            data-help-result
                         >
                             <a
                                 className={styles.resultLink}
-                                href={articlePaths[entry.id]}
+                                href={withHelpAudienceParam({
+                                    href: articlePaths[entry.id] ?? '',
+                                    audience: onlyMine ? audience : undefined,
+                                    audiences: entry.audiences
+                                })}
                             >
                                 {entry.title}
                             </a>
@@ -206,10 +261,7 @@ export function HelpSearch({
             )}
 
             {searched && results.length === 0 && (
-                <div
-                    className={styles.empty}
-                    role="status"
-                >
+                <div className={styles.empty}>
                     <p className={styles.emptyTitle}>{t('account.help.search.noMatch')}</p>
                     <p className={styles.emptyLinks}>
                         <a href={faqPath}>{t('account.help.fallback.faq')}</a>
