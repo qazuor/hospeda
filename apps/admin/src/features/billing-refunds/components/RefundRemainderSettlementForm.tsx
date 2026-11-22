@@ -91,6 +91,11 @@ export function RefundRemainderSettlementForm({
         setErrorKey(null);
     }, [pickedId]);
     const trimmedId = (picker ? picker.value : refundId).trim();
+    // The list refetching can empty the picked id while the confirm step shows: never confirm a blank id.
+    const idIsValid = RefundIdSchema.safeParse(trimmedId).success;
+    useEffect(() => {
+        if (!idIsValid) setConfirming(false);
+    }, [idIsValid]);
     const body: RefundRemainderSettlementRequest = {
         amount: Math.round(Number(amount) * 100),
         reference: reference.trim(),

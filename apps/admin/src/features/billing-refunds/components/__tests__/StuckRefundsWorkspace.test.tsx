@@ -8,6 +8,7 @@ import type { StuckRefund } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildStuckRefundsPath } from '../../hooks/useStuckRefunds';
+import { formatProposedRefundAmount } from '../../refund-amount';
 import { formatStuckRefundAge } from '../../stuck-refund-format';
 import { StuckRefundsWorkspace } from '../StuckRefundsWorkspace';
 
@@ -22,7 +23,9 @@ function translate(key: string, params?: Record<string, unknown>): string {
     const text = key
         .split('.')
         .slice(1)
-        .reduce((obj: any, part) => obj?.[part], es) as string | undefined;
+        .reduce<unknown>((obj, part) => (obj as Record<string, unknown> | undefined)?.[part], es) as
+        | string
+        | undefined;
     return Object.entries(params ?? {}).reduce(
         (out, [name, value]) => out.replace(`{{${name}}}`, String(value)),
         text ?? key
@@ -118,7 +121,12 @@ describe('StuckRefundsWorkspace', () => {
         expect(screen.getAllByTestId('stuck-refund')).toHaveLength(3);
         const settle = row(SETTLE_ID);
         expect(within(settle).getByTestId('stuck-refund-calls')).toHaveTextContent('hace 30 h');
-        expect(within(settle).getByTestId('stuck-refund-accepted')).toHaveTextContent('40');
+        // The currency format uses a non-breaking space, which the matcher does not equate with ' '.
+        const accepted = copy.stuck.accepted.replace(
+            '{{amount}}',
+            formatProposedRefundAmount({ amountMinor: 4000, currency: 'ARS', locale: 'es' })
+        );
+        expect(within(settle).getByTestId('stuck-refund-accepted').textContent).toBe(accepted);
         expect(within(settle).getAllByRole('button')).toHaveLength(1);
         expect(
             within(settle).getByRole('button', { name: copy.stuck.actions.SETTLE_REMAINDER })
@@ -204,6 +212,32 @@ describe('StuckRefundsWorkspace', () => {
         expect(screen.queryByTestId('refund-remainder-settlement')).toBeNull();
         expect(screen.queryByTestId('refund-remainder-settlement-by-id')).toBeNull();
         expect(within(row(RETRY_ID)).getByRole('button')).toBeTruthy();
+    });
+
+    it('goes back to the review step instead of confirming a blank id when the list drops the picked refund', async () => {
+        // Arrange: pick a refund and reach the confirm step.
+        const { rerender } = render(<StuckRefundsWorkspace />);
+        fireEvent.click(
+            within(row(RETRY_ID)).getByRole('button', { name: copy.stuck.actions.RETRY })
+        );
+        fireEvent.click(
+            within(retryForm()).getByRole('button', { name: copy.providerRetry.review })
+        );
+        expect(
+            within(retryForm()).getByRole('button', { name: copy.providerRetry.confirm })
+        ).toBeTruthy();
+
+        // Act: a refetch settles that refund, so it leaves the list and the picker empties.
+        state.items = [stuck({ refundId: SETTLE_ID, suggestedAction: 'SETTLE_REMAINDER' })];
+        rerender(<StuckRefundsWorkspace />);
+
+        // Assert: no confirm button is left to send an empty id.
+        await waitFor(() =>
+            expect(
+                within(retryForm()).queryByRole('button', { name: copy.providerRetry.confirm })
+            ).toBeNull()
+        );
+        expect(state.retry).not.toHaveBeenCalled();
     });
 
     it('keeps the by-id fallback, which still submits a typed refund id', async () => {

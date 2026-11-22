@@ -106,6 +106,11 @@ export function RefundProviderCallRetryForm({
         setErrorKey(null);
     }, [pickedId]);
     const trimmedId = (picker ? picker.value : refundId).trim();
+    // The list refetching can empty the picked id while the confirm step shows: never confirm a blank id.
+    const idIsValid = RefundIdSchema.safeParse(trimmedId).success;
+    useEffect(() => {
+        if (!idIsValid) setConfirming(false);
+    }, [idIsValid]);
     const valid = RefundIdSchema.safeParse(trimmedId).success;
     const retry = async () => {
         setErrorKey(null);
