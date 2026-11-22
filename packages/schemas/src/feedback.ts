@@ -14,6 +14,7 @@
  * } from '@repo/schemas';
  * ```
  */
+import './zod-runtime-config.js';
 import { z } from 'zod';
 
 /**
