@@ -42,7 +42,7 @@ vi.mock('@/hooks/use-tour-state', () => ({
 /** Renders every venue-tour target except the menu QR anchor. */
 function mountAnchors({ withVenueQr }: { readonly withVenueQr: boolean }): void {
     document.body.innerHTML = `
-        <a data-tour="comercio-listings"></a>
+        <a data-tour="comercio-listings-venue"></a>
         <div data-tour="listings"></div>
         <div data-tour="listing-views"></div>
         ${withVenueQr ? '<div data-tour="venue-qr"></div>' : ''}
@@ -94,7 +94,9 @@ describe('TourController — listing step copy without a menu (HOS-2073)', () =>
 
         await waitFor(() => expect(driverMock).toHaveBeenCalledTimes(1));
 
-        const description = driverStepDescription({ selector: '[data-tour="comercio-listings"]' });
+        const description = driverStepDescription({
+            selector: '[data-tour="comercio-listings-venue"]'
+        });
         expect(description).toBeTruthy();
         expect(description).not.toMatch(/men[uú]|carta/i);
     });
@@ -113,9 +115,9 @@ describe('TourController — listing step copy without a menu (HOS-2073)', () =>
         await waitFor(() => expect(driverMock).toHaveBeenCalledTimes(1));
 
         // HOS-2093: the es copy names the offering «carta o barra», not «menú».
-        expect(driverStepDescription({ selector: '[data-tour="comercio-listings"]' })).toMatch(
-            /carta/i
-        );
+        expect(
+            driverStepDescription({ selector: '[data-tour="comercio-listings-venue"]' })
+        ).toMatch(/carta/i);
     });
 });
 
@@ -145,7 +147,7 @@ describe('TourController — steps without a destination (HOS-1856)', () => {
 
         const elements = driverStepElements();
         expect(elements).not.toContain('[data-tour="venue-qr"]');
-        expect(elements).toContain('[data-tour="comercio-listings"]');
+        expect(elements).toContain('[data-tour="comercio-listings-venue"]');
         expect(elements).toContain('[data-tour="listings"]');
         expect(elements).toContain('[data-tour="listing-views"]');
     });

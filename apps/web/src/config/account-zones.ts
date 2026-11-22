@@ -4,8 +4,8 @@
  *
  * - The PERSONAL zone covers `/mi-cuenta/`, the profile pages and the former
  *   tourist pages. Its sidebar shows «Inicio», «Mi perfil» and «Mis viajes».
- * - The BUSINESS zone covers the host, comercio, editorial, partner and
- *   provider pages. Its sidebar shows «← Mi cuenta» and the business verticals
+ * - The BUSINESS zone covers the host, «Comer y salir», «Experiencias»,
+ *   editorial, partner and provider pages. Its sidebar shows «← Mi cuenta» and the business verticals
  *   the person has.
  *
  * The header user menu lists one «Administrar …» shortcut per business vertical
@@ -23,7 +23,13 @@ import type { IconProps } from '@repo/icons';
 import { BuildingIcon, CompassIcon, PostIcon, StarIcon, VenueIcon, WrenchIcon } from '@repo/icons';
 import { type BusinessVerticalId, PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
-import { AI_ASSISTANTS_NAV_ITEM_ID, type NavGroup } from '@/config/navigation';
+import {
+    AI_ASSISTANTS_NAV_ITEM_ID,
+    EXPERIENCE_LISTINGS_GROUP_ID,
+    type NavGroup,
+    VENUE_LISTINGS_GROUP_ID
+} from '@/config/navigation';
+import { ownerListPath } from '@/lib/listing/owner-list-vertical';
 
 /** Id of the personal «Inicio» group (holds the `/mi-cuenta/` link). */
 export const HOME_GROUP_ID = 'inicio';
@@ -44,13 +50,14 @@ export const PROFILE_NAV_ITEM_IDS = [
 ] as const;
 
 /**
- * The business groups, in display order (Alojamientos, Comer y salir +
- * Experiencias, Editorial, Partner, Proveedor). `comercio` covers both venue
- * and experience owners until HOS-2559 splits the page.
+ * The business groups, in display order (Alojamientos, Comer y salir,
+ * Experiencias, Editorial, Partner, Proveedor). «Comer y salir» and
+ * «Experiencias» are separate areas since HOS-2559.
  */
 export const BUSINESS_GROUP_IDS = [
     'anfitrion',
-    'comercio',
+    VENUE_LISTINGS_GROUP_ID,
+    EXPERIENCE_LISTINGS_GROUP_ID,
     'editorial',
     PARTNER_GROUP_ID,
     'proveedor'
@@ -107,7 +114,7 @@ export interface BusinessShortcut {
  * `BUSINESS_VERTICAL_IDS`):
  *
  * - Alojamientos: the `anfitrion` area.
- * - Comer y salir / Experiencias: both open `/mi-cuenta/comercio` until HOS-2559.
+ * - Comer y salir / Experiencias: each opens its own list (HOS-2559).
  * - Editorial: «Mis publicaciones», or «Mis eventos» for an account that can
  *   only create events.
  * - Partner / Proveedor: their self-service pages.
@@ -123,13 +130,13 @@ export const BUSINESS_SHORTCUTS: readonly BusinessShortcut[] = [
         id: 'venues',
         i18nKey: 'account.nav.manageVenues',
         icon: VenueIcon,
-        targets: [{ href: 'mi-cuenta/comercio' }]
+        targets: [{ href: ownerListPath({ vertical: 'venue' }) }]
     },
     {
         id: 'experiences',
         i18nKey: 'account.nav.manageExperiences',
         icon: CompassIcon,
-        targets: [{ href: 'mi-cuenta/comercio' }]
+        targets: [{ href: ownerListPath({ vertical: 'experience' }) }]
     },
     {
         id: 'editorial',

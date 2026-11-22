@@ -222,7 +222,7 @@ describe('MobileMenu — account block (HOS-131 §6.5, HOS-2551)', () => {
         await waitFor(() => {
             expect(
                 screen.getByRole('link', { name: /administrar comer y salir/i })
-            ).toHaveAttribute('href', '/es/mi-cuenta/comercio/');
+            ).toHaveAttribute('href', '/es/mi-cuenta/comercio/?vertical=venue');
         });
         expect(
             screen.queryByRole('link', { name: /administrar alojamientos/i })

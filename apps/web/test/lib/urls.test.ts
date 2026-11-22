@@ -32,6 +32,20 @@ describe('buildUrl', () => {
         expect(buildUrl({ locale: 'es', path: 'mi-cuenta/editar' })).toBe('/es/mi-cuenta/editar/');
     });
 
+    it('keeps a query string after the trailing slash (HOS-2559)', () => {
+        // Arrange / Act / Assert
+        expect(buildUrl({ locale: 'es', path: 'mi-cuenta/comercio?vertical=venue' })).toBe(
+            '/es/mi-cuenta/comercio/?vertical=venue'
+        );
+        expect(buildUrl({ locale: 'en', path: 'mi-cuenta/comercio/?vertical=experience' })).toBe(
+            '/en/mi-cuenta/comercio/?vertical=experience'
+        );
+    });
+
+    it('keeps a fragment after the trailing slash', () => {
+        expect(buildUrl({ locale: 'pt', path: 'ayuda#seccion' })).toBe('/pt/ayuda/#seccion');
+    });
+
     it('should handle root path', () => {
         const result = buildUrl({ locale: 'en', path: '/' });
         expect(result).toMatch(/^\/en\//);

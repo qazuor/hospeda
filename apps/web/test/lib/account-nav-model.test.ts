@@ -42,7 +42,8 @@ describe('buildAccountNavModel: groups per role set', () => {
         const model = buildAccountNavModel({ ...BASE, roles: ['HOST', 'VENUE_OWNER'] });
         const ids = groupIds(model);
         expect(ids).toContain('anfitrion');
-        expect(ids).toContain('comercio');
+        expect(ids).toContain('comercio-venue');
+        expect(ids).not.toContain('comercio-experience');
         expect(ids.at(-1)).toBe('turista');
     });
 
@@ -323,7 +324,7 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
                 shellFor({ roles: ['HOST', 'VENUE_OWNER'], activeSection: 'mi-cuenta' })
             );
             expect(ids).not.toContain('properties');
-            expect(ids).not.toContain('comercio-listings');
+            expect(ids).not.toContain('venue-listings');
             expect(ids).not.toContain('provider');
         });
 
@@ -366,7 +367,8 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
             'promociones',
             'directorio-proveedores',
             'usos-de-beneficio',
-            'comercio',
+            'comercio-venue',
+            'comercio-experience',
             'publicaciones',
             'eventos',
             'partner',
@@ -381,7 +383,12 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
                 activeSection: 'publicaciones',
                 ownsHostTradeListing: true
             });
-            expect(groupIds(shell)).toEqual(['anfitrion', 'comercio', 'editorial', 'proveedor']);
+            expect(groupIds(shell)).toEqual([
+                'anfitrion',
+                'comercio-venue',
+                'editorial',
+                'proveedor'
+            ]);
             expect(
                 shell.groups
                     .filter((entry) => entry.shellDefaultOpen)

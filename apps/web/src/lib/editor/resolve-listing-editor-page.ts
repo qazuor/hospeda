@@ -36,6 +36,7 @@ import {
 } from '@/lib/editor/listing-editor-registry';
 import { isListingEditorVertical } from '@/lib/editor/listing-editor-sections';
 import type { SupportedLocale } from '@/lib/i18n';
+import { ownerListPath } from '@/lib/listing/owner-list-vertical';
 import {
     fetchOwnerListingDetail,
     type ListingDetail,
@@ -133,7 +134,9 @@ export async function resolveListingEditorPage({
     const isStaff = user.roles.includes('ADMIN') || user.roles.includes('SUPER_ADMIN');
     const ownsListing = detail !== null && detail.ownerId === user.id;
     if (!detail || (!ownsListing && !isStaff)) {
-        return { redirect: astro.redirect(buildUrl({ locale, path: 'mi-cuenta/comercio' })) };
+        return {
+            redirect: astro.redirect(buildUrl({ locale, path: ownerListPath({ vertical }) }))
+        };
     }
 
     // Leaf 5.1 (DEC-FAC-033): the registry is derived from the catalog filtered
@@ -149,7 +152,7 @@ export async function resolveListingEditorPage({
             error: buildListingEditorErrorResponse({
                 locale,
                 retryHref: astro.url.pathname,
-                backHref: buildUrl({ locale, path: 'mi-cuenta/comercio' })
+                backHref: buildUrl({ locale, path: ownerListPath({ vertical }) })
             })
         };
     }
