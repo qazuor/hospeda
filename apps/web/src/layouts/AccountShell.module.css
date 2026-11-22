@@ -54,9 +54,10 @@
 
     .sidebar {
         position: sticky;
-        inset-block-start: 3.5rem;
+        /* Below the 64px account header (HOS-2550). */
+        inset-block-start: 4rem;
         display: block;
-        max-block-size: calc(100dvh - 3.5rem);
+        max-block-size: calc(100dvh - 4rem);
         overflow-y: auto;
         /* Tight inline padding (start 8px, end 4px beside the scrollbar) and a
            stable gutter: the 240px column must fit the longest label on one

@@ -2065,6 +2065,15 @@
         "breadcrumbs": "Breadcrumb",
         "gallery": {
             "title": "Component kit"
+        },
+        "chrome": {
+            "siteNav": "Site navigation",
+            "helpCenter": "Help center",
+            "helpGroup": "Help",
+            "whatsNew": "What's new",
+            "publish": "List with us",
+            "footerNav": "Site links",
+            "legalNav": "Legal links"
         }
     }
 }

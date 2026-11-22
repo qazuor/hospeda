@@ -30,9 +30,6 @@ export const HOME_GROUP_ID = 'inicio';
 /** Id of the personal «Mi perfil» group. */
 export const PROFILE_GROUP_ID = 'perfil';
 
-/** Id of the header-less group holding the interim personal entries. */
-export const INTERIM_GROUP_ID = 'extras';
-
 /** Id of the partner business group. */
 export const PARTNER_GROUP_ID = 'partner';
 
@@ -44,13 +41,6 @@ export const PROFILE_NAV_ITEM_IDS = [
     'newsletter',
     AI_ASSISTANTS_NAV_ITEM_ID
 ] as const;
-
-/**
- * Personal entries the sidebar still lists after «Mis viajes». HOS-2550 moves
- * «Qué hay de nuevo» and «Ayuda» to header icons; until then the sidebar is
- * the only link to `/mi-cuenta/novedades` and `/mi-cuenta/ayuda`.
- */
-export const INTERIM_PERSONAL_NAV_ITEM_IDS = ['whatsNew', 'help'] as const;
 
 /**
  * The business groups, in display order (Alojamientos, Comer y salir +

@@ -14,7 +14,8 @@
  * `/mi-cuenta/` sits on top of the business verticals.
  *
  * Count pills are the EXISTING islands, passed as named slots from the Astro
- * shell (`whatsNewCount`, `benefitUsagesCount`, `aiAssistantsReveal`).
+ * shell (`benefitUsagesCount`, `aiAssistantsReveal`). «Qué hay de nuevo» left
+ * the sidebar for a header icon (HOS-2550), and its pill with it.
  *
  * @module components/account/ui/AccountSidebar
  */
@@ -37,8 +38,6 @@ export interface AccountSidebarProps {
     readonly lockedItemIds?: ReadonlySet<string>;
     /** Icon per item id (the server passes component references; optional). */
     readonly icons?: Readonly<Record<string, ComponentType<IconProps>>>;
-    /** Slot after the «Novedades» label (an existing count-pill island). */
-    readonly whatsNewCount?: ReactNode;
     /** Slot after the «Usos de beneficio» label. */
     readonly benefitUsagesCount?: ReactNode;
     /** Slot after the AI-assistants label (the reveal island). */
@@ -125,7 +124,6 @@ export function AccountSidebar({
     locale,
     lockedItemIds,
     icons,
-    whatsNewCount,
     benefitUsagesCount,
     aiAssistantsReveal,
     revealedItemIds,
@@ -134,13 +132,11 @@ export function AccountSidebar({
     const t = createT(locale);
     const lockedLabel = t('account.ui.sidebar.lockedLabel');
     const afterFor = (id: string): ReactNode =>
-        id === 'whatsNew'
-            ? whatsNewCount
-            : id === 'benefitUsages'
-              ? benefitUsagesCount
-              : id === 'aiAssistants'
-                ? aiAssistantsReveal
-                : undefined;
+        id === 'benefitUsages'
+            ? benefitUsagesCount
+            : id === 'aiAssistants'
+              ? aiAssistantsReveal
+              : undefined;
 
     return (
         <nav

@@ -23,7 +23,6 @@
 import { HamburgerIcon } from '@repo/icons';
 import { type MouseEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
-import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { ACCOUNT_NAV_ICONS } from '@/lib/account-nav-icons';
 import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
@@ -198,7 +197,6 @@ export function AccountBar({ view, locale }: AccountBarProps) {
                         locale={locale}
                         icons={ACCOUNT_NAV_ICONS}
                         revealedItemIds={revealed}
-                        whatsNewCount={<WhatsNewCountPill locale={locale} />}
                         benefitUsagesCount={<BenefitUsagesCountPill locale={locale} />}
                     />
                 </div>

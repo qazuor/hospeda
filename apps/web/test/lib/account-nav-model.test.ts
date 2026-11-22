@@ -184,10 +184,10 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
         shell.groups.find((entry) => entry.group.id === id)?.items.map((item) => item.item.id);
 
     describe('personal zone', () => {
-        it('a client sees Inicio, Mi perfil (with AI assistants), Mis viajes and the interim entries', () => {
+        it('a client sees Inicio, Mi perfil (with AI assistants) and Mis viajes', () => {
             const shell = shellFor({ roles: ['HOST'], activeSection: 'editar' });
             expect(shell.mode).toBe('personal');
-            expect(groupIds(shell)).toEqual(['inicio', 'perfil', 'turista', 'extras']);
+            expect(groupIds(shell)).toEqual(['inicio', 'perfil', 'turista']);
             expect(itemsOf(shell, 'inicio')).toEqual(['dashboard']);
             expect(itemsOf(shell, 'perfil')).toEqual([
                 'editProfile',
@@ -205,7 +205,18 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
                 'reviews',
                 'inbox'
             ]);
-            expect(itemsOf(shell, 'extras')).toEqual(['whatsNew', 'help']);
+        });
+
+        it.each([
+            ['HOST', 'editar'],
+            ['USER', 'mi-cuenta'],
+            ['USER', 'novedades'],
+            ['HOST', 'ayuda'],
+            ['HOST', 'propiedades']
+        ])('a %s on %s gets no «Qué hay de nuevo» or «Ayuda» entry: they are header icons (HOS-2550)', (role, activeSection) => {
+            const ids = itemIds(shellFor({ roles: [role], activeSection }));
+            expect(ids).not.toContain('whatsNew');
+            expect(ids).not.toContain('help');
         });
 
         it('labels the zone groups Inicio, Mi perfil and Mis viajes', () => {
