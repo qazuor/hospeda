@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4618, #4636
+    {
+        id: '2026-11-20-buy-one-time-highlights-in-store',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ya podés comprar destaques de pago único en la tienda',
+            en: 'You can now buy one-time highlights in the store',
+            pt: 'Agora você pode comprar destaques de pagamento único na loja'
+        },
+        body: {
+            es: 'En **Comprar complementos** elegís un impulso de visibilidad de 7 o 30 días y la ficha que querés destacar, y pagás una sola vez en Mercado Pago, sin cargar la tarjeta en Hospeda. Si la ficha no está publicada, te avisamos antes de pagar.',
+            en: 'In **Buy add-ons** you pick a 7- or 30-day visibility boost and the listing you want to highlight, and pay once on Mercado Pago, without entering your card on Hospeda. If the listing is not published, we tell you before you pay.',
+            pt: 'Em **Comprar complementos** você escolhe um impulso de visibilidade de 7 ou 30 dias e o anúncio que quer destacar, e paga uma só vez no Mercado Pago, sem informar o cartão no Hospeda. Se o anúncio não estiver publicado, avisamos antes de pagar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4645
     {
         id: '2026-11-21-settle-remainder-other-refund-waiting',
