@@ -88,6 +88,27 @@ const view = buildSidebarView({ model: navModel, locale });
 				{aiAssistantsHidden && <AiAssistantsNavReveal slot="aiAssistantsReveal" client:idle />}
 			</AccountSidebar>
 		</aside>
+		{/* Applies the remembered open/closed nav state BEFORE first paint (HOS-2549), so a
+		    remembered-open area does not collapse and expand on every navigation. Static
+		    body, so the csp-soft-nav-hashes integration hashes it at build (no nonce, CSP
+		    untouched). Keep the storage key in sync with ACCOUNT_NAV_STORAGE_KEY: pinned
+		    by test/layouts/account-shell.test.ts. */}
+		<script is:inline data-astro-rerun>
+			(function () {
+				try {
+					var raw = localStorage.getItem('hospeda:account-nav:v1');
+					if (!raw) return;
+					var stored = JSON.parse(raw);
+					if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return;
+					var groups = document.querySelectorAll('[data-account-sidebar] details[data-nav-group]');
+					for (var i = 0; i < groups.length; i++) {
+						var d = groups[i];
+						var v = stored[d.getAttribute('data-nav-group')];
+						if (typeof v === 'boolean' && d.getAttribute('data-contains-active') !== 'true') d.open = v;
+					}
+				} catch (e) {}
+			})();
+		</script>
 
 		<div class={styles.content} data-account-content data-template={resolvedTemplate}>
 			<slot />
@@ -96,41 +117,14 @@ const view = buildSidebarView({ model: navModel, locale });
 </BaseLayout>
 
 <script>
-	import { ACCOUNT_NAV_STORAGE_KEY, parseStoredNavState } from '@/lib/account-nav-collapse';
+	import { applyStoredNavState } from '@/lib/account-nav-collapse';
 
 	/**
 	 * Layers the remembered open/closed state of each nav area on top of the
-	 * server-rendered `open` defaults (HOS-2124). The area holding the current
-	 * page is never closed. Storage access is wrapped in try/catch.
+	 * server-rendered `open` defaults (HOS-2124, HOS-2549). Storage access is
+	 * wrapped in try/catch inside the helper.
 	 */
-	function initAccountNavGroups(): void {
-		const groups = document.querySelectorAll<HTMLDetailsElement>('[data-account-sidebar] details[data-nav-group]');
-		if (groups.length === 0) return;
-		let raw: string | null = null;
-		try {
-			raw = localStorage.getItem(ACCOUNT_NAV_STORAGE_KEY);
-		} catch {
-			raw = null;
-		}
-		const stored = parseStoredNavState({ raw });
-		for (const details of groups) {
-			const id = details.dataset.navGroup;
-			if (!id) continue;
-			const remembered = stored[id];
-			if (typeof remembered === 'boolean' && details.dataset.containsActive !== 'true') {
-				details.open = remembered;
-			}
-			details.querySelector('summary')?.addEventListener('click', () => {
-				const next = !details.open;
-				try {
-					const current = parseStoredNavState({ raw: localStorage.getItem(ACCOUNT_NAV_STORAGE_KEY) });
-					localStorage.setItem(ACCOUNT_NAV_STORAGE_KEY, JSON.stringify({ ...current, [id]: next }));
-				} catch {
-					// Storage unavailable: the choice just won't be remembered.
-				}
-			});
-		}
-	}
-
-	document.addEventListener('astro:page-load', initAccountNavGroups);
+	document.addEventListener('astro:page-load', () => {
+		applyStoredNavState({ root: document, storage: () => localStorage });
+	});
 </script>

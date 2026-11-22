@@ -80,7 +80,7 @@ export function buildSidebarView({
             label: t(entry.group.i18nKey),
             suppressHeader: entry.suppressHeader,
             containsActive: entry.containsActive,
-            open: entry.defaultOpen,
+            open: entry.shellDefaultOpen,
             items: entry.items.map((item) => ({
                 id: item.item.id,
                 label: t(item.item.i18nKey),

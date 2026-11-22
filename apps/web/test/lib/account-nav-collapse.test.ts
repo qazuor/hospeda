@@ -3,18 +3,21 @@
  * @description Unit tests for the collapsible account-nav helpers (HOS-2124).
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NavGroup } from '../../src/config/navigation';
 import { PROVIDER_NAV_GROUP } from '../../src/config/navigation';
 import {
+    ACCOUNT_NAV_STORAGE_KEY,
+    applyStoredNavState,
     parseStoredNavState,
     placeProviderGroup,
-    resolveGroupDefaultOpen
+    resolveGroupDefaultOpen,
+    resolveShellGroupOpen
 } from '../../src/lib/account-nav-collapse';
 
 const group = (id: string): NavGroup => ({ id, i18nKey: `k.${id}`, items: [] });
 
-describe('resolveGroupDefaultOpen', () => {
+describe('resolveGroupDefaultOpen (legacy layout)', () => {
     it('collapses turista when the user has another area besides cuenta', () => {
         expect(
             resolveGroupDefaultOpen({
@@ -60,13 +63,42 @@ describe('resolveGroupDefaultOpen', () => {
             })
         ).toBe(true);
     });
+});
 
-    it('counts proveedor as an area that collapses turista', () => {
+describe('resolveShellGroupOpen', () => {
+    it('opens the group that holds the current page', () => {
         expect(
-            resolveGroupDefaultOpen({
-                groupId: 'turista',
-                visibleGroupIds: ['cuenta', 'proveedor', 'turista'],
-                containsActive: false
+            resolveShellGroupOpen({
+                containsActive: true,
+                anyGroupContainsActive: true,
+                isFirstHeadedGroup: false
+            })
+        ).toBe(true);
+    });
+
+    it('closes the others when some group holds the page', () => {
+        expect(
+            resolveShellGroupOpen({
+                containsActive: false,
+                anyGroupContainsActive: true,
+                isFirstHeadedGroup: true
+            })
+        ).toBe(false);
+    });
+
+    it('opens the first headed group when no group holds the page', () => {
+        expect(
+            resolveShellGroupOpen({
+                containsActive: false,
+                anyGroupContainsActive: false,
+                isFirstHeadedGroup: true
+            })
+        ).toBe(true);
+        expect(
+            resolveShellGroupOpen({
+                containsActive: false,
+                anyGroupContainsActive: false,
+                isFirstHeadedGroup: false
             })
         ).toBe(false);
     });
@@ -109,5 +141,85 @@ describe('parseStoredNavState', () => {
 
     it('drops non-boolean values', () => {
         expect(parseStoredNavState({ raw: '{"a":1,"b":true,"c":"yes"}' })).toEqual({ b: true });
+    });
+});
+
+describe('applyStoredNavState', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    function mount(): void {
+        document.body.innerHTML = `
+            <nav data-account-sidebar>
+                <details data-nav-group="cuenta" data-contains-active="true" open><summary>c</summary></details>
+                <details data-nav-group="anfitrion"><summary>a</summary></details>
+            </nav>`;
+    }
+    const group = (id: string) =>
+        document.querySelector<HTMLDetailsElement>(
+            `details[data-nav-group="${id}"]`
+        ) as HTMLDetailsElement;
+
+    function memoryStorage(initial?: string) {
+        const data = new Map<string, string>();
+        if (initial) data.set(ACCOUNT_NAV_STORAGE_KEY, initial);
+        return {
+            getItem: (k: string) => data.get(k) ?? null,
+            setItem: (k: string, v: string) => void data.set(k, v)
+        };
+    }
+
+    it('opens a remembered group but never closes the active one', () => {
+        mount();
+        const storage = memoryStorage('{"anfitrion":true,"cuenta":false}');
+        applyStoredNavState({ root: document, storage: () => storage });
+        expect(group('anfitrion').open).toBe(true);
+        expect(group('cuenta').open).toBe(true);
+    });
+
+    it('persists a toggle made from the summary', () => {
+        mount();
+        const storage = memoryStorage();
+        applyStoredNavState({ root: document, storage: () => storage });
+        group('anfitrion').querySelector('summary')?.click();
+        expect(JSON.parse(storage.getItem(ACCOUNT_NAV_STORAGE_KEY) ?? '{}')).toEqual({
+            anfitrion: true
+        });
+    });
+
+    it('survives a storage getter that throws on every access', () => {
+        mount();
+        expect(() =>
+            applyStoredNavState({
+                root: document,
+                storage: () => {
+                    throw new Error('SecurityError');
+                }
+            })
+        ).not.toThrow();
+        expect(() => group('anfitrion').querySelector('summary')?.click()).not.toThrow();
+        expect(group('cuenta').open).toBe(true);
+    });
+
+    it('ignores a stored value that contradicts the active group', () => {
+        mount();
+        applyStoredNavState({
+            root: document,
+            storage: () => memoryStorage('{"cuenta":false}')
+        });
+        expect(group('cuenta').open).toBe(true);
+    });
+
+    it('falls back to the rendered defaults when storage throws', () => {
+        mount();
+        const broken = () => {
+            throw new Error('denied');
+        };
+        const spy = vi.fn(broken);
+        expect(() => applyStoredNavState({ root: document, storage: spy })).not.toThrow();
+        expect(group('anfitrion').open).toBe(false);
+        expect(() => group('anfitrion').querySelector('summary')?.click()).not.toThrow();
+        expect(group('cuenta').open).toBe(true);
     });
 });

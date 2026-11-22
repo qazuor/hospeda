@@ -9,7 +9,7 @@
 
 import type { NavGroup } from '@/config/navigation';
 
-/** Id of the Tourist area, the only one that can start collapsed. */
+/** Id of the Tourist area, the only one that can start collapsed in the legacy layout. */
 export const TOURIST_GROUP_ID = 'turista';
 
 /** Id of the base Account area. */
@@ -32,12 +32,15 @@ export interface ResolveGroupDefaultOpenParams {
 }
 
 /**
- * Decides whether an area renders open on the server (no JS, no stored state).
+ * LEGACY default (`AccountLayout.astro`): decides whether an area renders open
+ * on the server (no JS, no stored state).
  *
  * - The area holding the current page is always open.
  * - Every area is open by default, except Tourist, which starts collapsed
  *   unless the user has no other area besides Cuenta (then collapsing it would
  *   hide the only thing they can do).
+ *
+ * The kit shell (`AccountShell.astro`) uses {@link resolveShellGroupOpen}.
  *
  * @param params - `{ groupId, visibleGroupIds, containsActive }` (RO-RO).
  * @returns `true` when the `<details>` should carry the `open` attribute.
@@ -53,6 +56,35 @@ export function resolveGroupDefaultOpen({
         (id) => id !== ACCOUNT_GROUP_ID && id !== TOURIST_GROUP_ID
     );
     return !hasOtherArea;
+}
+
+/** Input for `resolveShellGroupOpen`. */
+export interface ResolveShellGroupOpenParams {
+    /** Whether the current page belongs to this group. */
+    readonly containsActive: boolean;
+    /** Whether ANY group holds the current page. */
+    readonly anyGroupContainsActive: boolean;
+    /** Whether this is the first group that renders a header. */
+    readonly isFirstHeadedGroup: boolean;
+}
+
+/**
+ * Default for the kit shell (HOS-2549): only the area holding the current page
+ * renders open, which keeps the desktop sidebar short. When no group holds the
+ * current page (pages whose `activeSection` matches no nav item, such as
+ * `publica`, `partner` or `aliados`) the first headed group opens instead, so
+ * the sidebar never renders fully collapsed.
+ *
+ * @param params - See {@link ResolveShellGroupOpenParams}.
+ * @returns `true` when the `<details>` should carry the `open` attribute.
+ */
+export function resolveShellGroupOpen({
+    containsActive,
+    anyGroupContainsActive,
+    isFirstHeadedGroup
+}: ResolveShellGroupOpenParams): boolean {
+    if (containsActive) return true;
+    return !anyGroupContainsActive && isFirstHeadedGroup;
 }
 
 /** Input for `placeProviderGroup`. */
@@ -99,5 +131,54 @@ export function parseStoredNavState({ raw }: { readonly raw: string | null }): S
         return result;
     } catch {
         return {};
+    }
+}
+
+/**
+ * Layers the remembered open/closed state onto the rendered `<details>` groups
+ * and remembers every later toggle. The group holding the current page is
+ * never closed by a remembered value. Every storage access is wrapped in
+ * try/catch: when storage fails the server-rendered defaults stand.
+ *
+ * @param params - `{ root, storage }` (RO-RO). `storage` is a getter so a
+ *   throwing `localStorage` accessor is caught here too.
+ */
+export function applyStoredNavState({
+    root,
+    storage
+}: {
+    readonly root: ParentNode;
+    readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>;
+}): void {
+    const groups = root.querySelectorAll<HTMLDetailsElement>(
+        '[data-account-sidebar] details[data-nav-group]'
+    );
+    if (groups.length === 0) return;
+    let raw: string | null = null;
+    try {
+        raw = storage().getItem(ACCOUNT_NAV_STORAGE_KEY);
+    } catch {
+        raw = null;
+    }
+    const stored = parseStoredNavState({ raw });
+    for (const details of groups) {
+        const id = details.dataset.navGroup;
+        if (!id) continue;
+        const remembered = stored[id];
+        if (typeof remembered === 'boolean' && details.dataset.containsActive !== 'true') {
+            details.open = remembered;
+        }
+        details.querySelector('summary')?.addEventListener('click', () => {
+            const next = !details.open;
+            try {
+                const store = storage();
+                const current = parseStoredNavState({
+                    raw: store.getItem(ACCOUNT_NAV_STORAGE_KEY)
+                });
+                store.setItem(ACCOUNT_NAV_STORAGE_KEY, JSON.stringify({ ...current, [id]: next }));
+            } catch {
+                // Storage unavailable: the choice just won't be remembered.
+            }
+        });
     }
 }

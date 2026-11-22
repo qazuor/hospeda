@@ -14,6 +14,7 @@ import {
     DEFAULT_ACCOUNT_SHELL_TEMPLATE,
     resolveShellTemplate
 } from '../../src/components/account/ui';
+import { ACCOUNT_NAV_STORAGE_KEY } from '../../src/lib/account-nav-collapse';
 
 const read = (file: string) => readFileSync(resolve(__dirname, '../../src', file), 'utf8');
 const shell = read('layouts/AccountShell.astro');
@@ -42,6 +43,11 @@ describe('resolveShellTemplate', () => {
 });
 
 describe('AccountShell.astro', () => {
+    it('applies the remembered nav state before paint with a static inline script (HOS-2549)', () => {
+        expect(shell).toContain('<script is:inline data-astro-rerun>');
+        expect(shell).toContain(`localStorage.getItem('${ACCOUNT_NAV_STORAGE_KEY}')`);
+    });
+
     it('uses the account chrome and composes the kit pieces', () => {
         expect(shell).toContain('slot="chrome-header"');
         expect(shell).toContain('<AccountBar client:media="(max-width: 63.99rem)"');
