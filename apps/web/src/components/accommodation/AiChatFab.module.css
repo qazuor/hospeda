@@ -24,6 +24,19 @@
         box-shadow 0.2s ease;
 }
 
+.icon {
+    position: relative;
+    display: flex;
+}
+
+/* The sparkle badge anchors to the bubble, not to the (static in the dock) button. */
+.sparkle {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    pointer-events: none;
+}
+
 @media (max-width: 767px) {
     .fab {
         display: none;
