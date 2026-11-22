@@ -264,6 +264,7 @@ export async function emitPausedAddonCoverageRemoved(input: {
     readonly subscriptionId: string;
     readonly cancelled: Parameters<typeof emitAddonCoverageRemoved>[0]['cancelled'];
     readonly coverageNotices: CoverageNotices;
+    readonly end: Parameters<typeof emitAddonCoverageRemoved>[0]['end'];
 }): Promise<void> {
     try {
         await emitAddonCoverageRemoved(input);

@@ -105,13 +105,21 @@ export async function expireAddonInstances(
                         clause: 'ORPHANED',
                         coverageVerticals: result.coverageVerticals,
                         complementSubscriptionId: null,
-                        providerCancellation: null
+                        providerCancellation: null,
+                        ending: {
+                            origin: 'ACTIVE',
+                            paid: result.instance.titleAnchorId === null,
+                            complement: null,
+                            endedAt: now
+                        }
                     }
                 ],
                 coverageNotices: {
                     emitCoverageChanged: (notice) =>
                         ports.coverageNotices.emitCoverageChanged(notice)
-                }
+                },
+                // HOS-1883 T-4: the natural FIXED_DAYS expiry is not churn and emits nothing.
+                end: 'NOT_AN_END'
             });
         } catch (error) {
             failed++;

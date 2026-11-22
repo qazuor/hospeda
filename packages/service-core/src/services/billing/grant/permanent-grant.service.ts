@@ -34,6 +34,7 @@ import {
     runS20InTransaction,
     type S20ProviderResult
 } from './permanent-grant-s20.js';
+import { emitS20GrantedFreeFacts } from './permanent-grant-s20-facts.js';
 
 /**
  * Creates a permanent grant with its initial vertical anchors and applies S13
@@ -155,7 +156,13 @@ export async function grantPermanentGrant(
     if (committed.result.orphanedAddons.length > 0)
         await emitAddonCoverageRemoved({
             cancelled: committed.result.orphanedAddons,
-            coverageNotices: ports.coverageNotices
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            }
         });
     if (committed.result.orphanedAddons.length > 0)
         await cancelAddonComplementsAtProvider(
@@ -163,6 +170,12 @@ export async function grantPermanentGrant(
             ports
         );
     const addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
+    await emitS20GrantedFreeFacts({
+        rows: committed.s20.rows,
+        now,
+        billingFacts: ports.billingFacts,
+        listing: ports.orphanhood.listing
+    });
     return {
         permanentGrantId: committed.grantId,
         anchorIds: committed.anchorIds,
@@ -327,7 +340,13 @@ export async function anchorPermanentGrantVertical(
     if (committed.result.orphanedAddons.length > 0)
         await emitAddonCoverageRemoved({
             cancelled: committed.result.orphanedAddons,
-            coverageNotices: ports.coverageNotices
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            }
         });
     if (committed.result.orphanedAddons.length > 0)
         await cancelAddonComplementsAtProvider(
@@ -335,6 +354,12 @@ export async function anchorPermanentGrantVertical(
             ports
         );
     const addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
+    await emitS20GrantedFreeFacts({
+        rows: committed.s20.rows,
+        now,
+        billingFacts: ports.billingFacts,
+        listing: ports.orphanhood.listing
+    });
     return {
         anchorId: committed.anchorId,
         cancelledSubscriptionIds: committed.result.cancelled.map(

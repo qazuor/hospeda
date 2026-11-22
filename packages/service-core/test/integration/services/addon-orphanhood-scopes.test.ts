@@ -211,7 +211,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 clause: 'ORPHANED',
                 coverageVerticals: input.coverageVerticals,
                 complementSubscriptionId: null,
-                providerCancellation: null
+                providerCancellation: null,
+                ending: {
+                    origin: 'ACTIVE',
+                    paid: true,
+                    complement: null,
+                    endedAt: new Date()
+                }
             });
             const cancelled = [
                 addon({ ownerId: owner, coverageVerticals: [V, W] }),
@@ -228,7 +234,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     async emitCoverageChanged(event) {
                         events.push(event);
                     }
-                }
+                },
+                end: 'NOT_AN_END'
             });
             const failing = emitAddonCoverageRemoved({
                 cancelled,
@@ -236,7 +243,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     async emitCoverageChanged() {
                         throw new Error('listener down');
                     }
-                }
+                },
+                end: 'NOT_AN_END'
             });
 
             // Assert

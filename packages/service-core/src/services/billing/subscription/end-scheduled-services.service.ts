@@ -150,10 +150,15 @@ function errorMessage(error: unknown): string {
 /** The after-commit halves of A5 for what one row's transaction cancelled. */
 async function afterA5Commit(
     cancelled: readonly CancelledAddon[],
-    ports: EndScheduledServicesPorts
+    ports: EndScheduledServicesPorts,
+    path: 'ORPHANED' | 'SERVICE_END'
 ): Promise<void> {
     if (cancelled.length === 0) return;
-    await emitAddonCoverageRemoved({ cancelled, coverageNotices: ports.coverageNotices });
+    await emitAddonCoverageRemoved({
+        cancelled,
+        coverageNotices: ports.coverageNotices,
+        end: { path, actorKind: 'SYSTEM', billingFacts: ports.billingFacts, listing: ports.listing }
+    });
     await cancelAddonComplementsAtProvider(
         { cancelled },
         {
@@ -250,7 +255,7 @@ export async function endScheduledServices(
                     ended: [result],
                     coverageNotices: ports.coverageNotices
                 });
-                await afterA5Commit(result.cancelled, ports);
+                await afterA5Commit(result.cancelled, ports, 'ORPHANED');
                 try {
                     await pauseComplementsS32(
                         {
@@ -304,7 +309,7 @@ export async function endScheduledServices(
                 applyS12ToComplement({ tx, subscriptionId, now }, orphanhood)
             );
             if (result.outcome === 'CANCELLED') complements.cancelled += 1;
-            if (result.withdrawn) await afterA5Commit([result.withdrawn], ports);
+            if (result.withdrawn) await afterA5Commit([result.withdrawn], ports, 'SERVICE_END');
             rows.push({
                 subscriptionId,
                 phase: 'COMPLEMENTO',

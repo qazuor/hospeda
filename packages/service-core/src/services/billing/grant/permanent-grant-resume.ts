@@ -31,6 +31,7 @@ import {
     runS20InTransaction,
     type S20ProviderResult
 } from './permanent-grant-s20.js';
+import { emitS20GrantedFreeFacts } from './permanent-grant-s20-facts.js';
 
 /**
  * Re-run the complete grant act for newly affected rows (TRANS:B:S13).
@@ -173,10 +174,22 @@ export async function resumePermanentGrant(
         }));
     const providerResult = await cancelS13AtProvider({ rows: principalRows }, ports);
     const addonProviderCalls = await cancelS20AtProvider({ rows: complementRows }, ports);
+    await emitS20GrantedFreeFacts({
+        rows: committed.s20.rows,
+        now,
+        billingFacts: ports.billingFacts,
+        listing: ports.orphanhood.listing
+    });
     if (committed.local.orphanedAddons.length > 0) {
         await emitAddonCoverageRemoved({
             cancelled: committed.local.orphanedAddons,
-            coverageNotices: ports.coverageNotices
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            }
         });
         await cancelAddonComplementsAtProvider(
             { cancelled: committed.local.orphanedAddons },

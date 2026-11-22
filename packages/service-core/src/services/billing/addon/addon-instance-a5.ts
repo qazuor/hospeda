@@ -10,7 +10,6 @@
  * half that calls the provider or enqueues mail; it holds no transaction.
  */
 import { randomUUID } from 'node:crypto';
-import type { Clock } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
     and,
@@ -23,28 +22,28 @@ import {
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import type { CoverageNotices } from '../payment/payment-ports';
-import {
-    type CancelOurAuthorizationOutcome,
-    cancelOurAuthorization
-} from '../reconciliation/cancel-our-authorization';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { applyS21 } from '../subscription/complement-s21';
 import { S21_CAUSES, type S21Cause } from '../subscription/complement-s21-charge';
-import type { BeforeCancelNotice } from '../subscription/start-subscription.service';
 import {
-    type CancellationSeenAnnotator,
-    noCancellationSeenAnnotation,
-    recordAuthorizationSeenAlive,
-    recordCancellationSeen
-} from '../subscription/subscription-billing-ports';
+    type AddonEndFact,
+    type AddonEnding,
+    emitAddonEndingFacts
+} from './addon-coverage-removed';
 import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
 import { findOrphanhoodCandidates, isAddonInstanceOrphaned } from './addon-orphanhood';
 import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
+
+export type { AddonEndFact, AddonEnding } from './addon-coverage-removed';
+export {
+    type AddonProviderCancellationPorts,
+    type AddonProviderCancellationResult,
+    cancelAddonComplementsAtProvider
+} from './addon-provider-cancellation';
 
 const logger = createLogger('addon-instance-a5');
 
@@ -74,6 +73,8 @@ export interface CancelledAddon {
         readonly userId: string;
         readonly authorizationId: string;
     } | null;
+    /** What the act did, for the ending's analytics fact (HOS-1883 §5.3). */
+    readonly ending: AddonEnding;
 }
 
 /** What A5 did. */
@@ -191,7 +192,7 @@ export async function applyA5(
         tx
     });
 
-    const providerCancellation = instance.complementSubscriptionId
+    const closed = instance.complementSubscriptionId
         ? await closeComplement({
               tx,
               complementSubscriptionId: instance.complementSubscriptionId,
@@ -222,7 +223,13 @@ export async function applyA5(
             clause: input.clause,
             coverageVerticals,
             complementSubscriptionId: instance.complementSubscriptionId,
-            providerCancellation
+            providerCancellation: closed?.providerCancellation ?? null,
+            ending: {
+                origin: from,
+                paid: instance.titleAnchorId === null,
+                complement: closed?.complement ?? null,
+                endedAt: now
+            }
         }
     };
 }
@@ -233,7 +240,10 @@ async function closeComplement(input: {
     readonly complementSubscriptionId: string;
     readonly now: Date;
     readonly s21Cause?: S21Cause;
-}): Promise<CancelledAddon['providerCancellation']> {
+}): Promise<{
+    readonly providerCancellation: CancelledAddon['providerCancellation'];
+    readonly complement: NonNullable<AddonEnding['complement']>;
+}> {
     const { tx, complementSubscriptionId, now } = input;
     const s21 = await applyS21({
         tx,
@@ -241,8 +251,10 @@ async function closeComplement(input: {
         now,
         cause: input.s21Cause
     });
-    if (s21.outcome !== 'CANCELLED') return null;
-    const [complement] = await tx
+    if (s21.outcome !== 'CANCELLED')
+        return { providerCancellation: null, complement: { outcome: s21.outcome } };
+    const complement = { outcome: 'CANCELLED' as const, from: s21.from };
+    const [row] = await tx
         .select({
             userId: subscriptions.userId,
             paymentMethod: subscriptions.paymentMethod,
@@ -252,8 +264,8 @@ async function closeComplement(input: {
         .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
         .where(eq(subscriptions.id, complementSubscriptionId))
         .limit(1);
-    if (!complement?.authorizationId || complement.paymentMethod !== 'CARD' || !complement.userId)
-        return null;
+    if (!row?.authorizationId || row.paymentMethod !== 'CARD' || !row.userId)
+        return { providerCancellation: null, complement };
     await recordProviderCancellationDecided({
         subscriptionId: complementSubscriptionId,
         transition: 'A5',
@@ -264,9 +276,12 @@ async function closeComplement(input: {
         tx
     });
     return {
-        subscriptionId: complementSubscriptionId,
-        userId: complement.userId,
-        authorizationId: complement.authorizationId
+        providerCancellation: {
+            subscriptionId: complementSubscriptionId,
+            userId: row.userId,
+            authorizationId: row.authorizationId
+        },
+        complement
     };
 }
 
@@ -351,25 +366,23 @@ export async function runOrphanhood(
 }
 
 /** Whether the subscription is still one of the six live rows (the trigger did not happen). */
-function isStillLive(status: string): boolean {
-    return (LIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
-}
-
 /**
- * After the caller's commit: one `REMOVED` `ADDON` coverage notice per `(owner, vertical)` of
- * the cancelled instances (notas I-7), without repeating. A failure is logged and never
- * propagated: the commit already happened and nothing is undone. This call is what makes `A5`
- * a `turns-off` writer `via: notice` for G5.
+ * After the caller's commit: one `REMOVED` `ADDON` coverage notice per `(owner, vertical)` of the
+ * cancelled instances (notas I-7), without repeating, then the analytics fact each ending owes
+ * (HOS-1883). A failure is logged and never propagated: the commit already happened. This call
+ * is what makes `A5` a `turns-off` writer `via: notice` for G5.
  *
- * @param input.cancelled - What `runOrphanhood`/`applyA5` cancelled
+ * @param input.cancelled - What `runOrphanhood`/`applyA5`/`applyA6` cancelled
  * @param input.coverageNotices - The coverage notice port
+ * @param input.end - The call site's ending path, or `NOT_AN_END` (required, T-5)
  */
 export async function emitAddonCoverageRemoved(input: {
     readonly cancelled: readonly CancelledAddon[];
     readonly coverageNotices: CoverageNotices;
+    readonly end: AddonEndFact;
 }): Promise<void> {
     const seen = new Set<string>();
-    for (const addon of input.cancelled) {
+    for (const addon of input.cancelled)
         for (const raw of addon.coverageVerticals) {
             const key = `${addon.ownerId}|${raw}`;
             if (seen.has(key)) continue;
@@ -396,87 +409,9 @@ export async function emitAddonCoverageRemoved(input: {
                 );
             }
         }
-    }
+    await emitAddonEndingFacts({ cancelled: input.cancelled, end: input.end });
 }
 
-/** Ports of {@link cancelAddonComplementsAtProvider}; `cancellationSeen` defaults to the no-op. */
-export interface AddonProviderCancellationPorts {
-    readonly provider: PaymentProvider;
-    readonly clock: Clock;
-    readonly beforeCancelNotice: BeforeCancelNotice;
-    readonly cancellationSeen?: CancellationSeenAnnotator;
-}
-
-/** One complement's provider half; `escalated` when our notice is undeliverable and it called. */
-export interface AddonProviderCancellationResult {
-    readonly subscriptionId: string;
-    readonly cancelCall: 'SENT' | 'NOT_NEEDED' | 'NOTICE_PENDING' | 'FAILED';
-    readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
-}
-
-/** What each outcome of the shared cancellation helper means for A5. Exhaustive. */
-const CALL_BY_OUTCOME: Readonly<
-    Record<CancelOurAuthorizationOutcome, AddonProviderCancellationResult['cancelCall']>
-> = {
-    ALREADY_CANCELLED: 'NOT_NEEDED',
-    NOTICE_PENDING: 'NOTICE_PENDING',
-    CALL_FAILED: 'FAILED',
-    CONFIRMED: 'SENT',
-    SENT_UNCONFIRMED: 'SENT'
-};
-
-/**
- * A5's provider half (AC:B5:27), after the commit, in no transaction: per decided complement, a
- * re-read by id and its annotation, then `cancelOurAuthorization` with `ADDON_CANCELLED` (notice
- * first, ONE call). Never throws nor undoes: the sweep retries the decision, same kind (I-1).
- *
- * @param input.cancelled - What `runOrphanhood`/`applyA5` cancelled
- * @param ports - Provider, clock, our notice and the optional seen-annotator
- * @returns `{ results }`: one per complement with a recorded decision
- */
-export async function cancelAddonComplementsAtProvider(
-    input: { readonly cancelled: readonly CancelledAddon[] },
-    ports: AddonProviderCancellationPorts
-): Promise<{ readonly results: readonly AddonProviderCancellationResult[] }> {
-    const { provider, clock } = ports;
-    const annotator = ports.cancellationSeen ?? noCancellationSeenAnnotation;
-    const results: AddonProviderCancellationResult[] = [];
-    for (const { providerCancellation: target } of input.cancelled) {
-        if (!target) continue;
-        const { subscriptionId, authorizationId } = target;
-        try {
-            const act = { kind: 'decision' as const, startedAt: clock.now() };
-            actStartInstant({ act });
-            const read = await provider.readAuthorization({ authorizationId });
-            const { snapshot, readAt } = assertFreshForAct({ read, act });
-            const annotate =
-                snapshot.status === 'cancelled'
-                    ? recordCancellationSeen
-                    : recordAuthorizationSeenAlive;
-            await annotate({ annotator, subscriptionId, seenAt: readAt });
-            let notice: Awaited<ReturnType<BeforeCancelNotice['beforeCancel']>> | undefined;
-            const beforeCancelNotice: BeforeCancelNotice = {
-                beforeCancel: async (args) => {
-                    notice = await ports.beforeCancelNotice.beforeCancel(args);
-                    return notice;
-                }
-            };
-            const { outcome } = await cancelOurAuthorization(
-                { ...target, kind: 'ADDON_CANCELLED', prior: { read, act } },
-                { provider, clock, beforeCancelNotice }
-            );
-            if (outcome === 'CONFIRMED')
-                await recordCancellationSeen({ annotator, subscriptionId, seenAt: clock.now() });
-            const cancelCall = CALL_BY_OUTCOME[outcome];
-            const escalated =
-                notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED' ? notice : undefined;
-            if (escalated)
-                logger.warn({ subscriptionId, notice }, 'A5 notice undeliverable; called');
-            results.push({ subscriptionId, cancelCall, ...(escalated ? { escalated } : {}) });
-        } catch (error) {
-            logger.error({ subscriptionId, error }, 'A5 provider cancel failed; the sweep retries');
-            results.push({ subscriptionId, cancelCall: 'FAILED' });
-        }
-    }
-    return { results };
+function isStillLive(status: string): boolean {
+    return (LIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
 }

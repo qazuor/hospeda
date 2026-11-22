@@ -38,6 +38,7 @@ function ports(
         clock: { now: () => new Date() },
         planPolicy,
         provider,
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: notices },
         orphanhood: {

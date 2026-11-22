@@ -289,6 +289,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planPolicy: currentFloorPolicy,
                     clock: { now: () => revokeNow },
                     provider: fake,
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {

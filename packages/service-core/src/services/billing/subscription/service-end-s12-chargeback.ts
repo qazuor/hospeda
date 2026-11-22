@@ -262,7 +262,13 @@ export async function applyS12ByChargeback(
     try {
         await emitAddonCoverageRemoved({
             cancelled: committed.cancelled,
-            coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
+            coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            }
         });
     } catch (error) {
         logger.error(

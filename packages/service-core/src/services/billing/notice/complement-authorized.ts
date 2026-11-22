@@ -60,7 +60,8 @@ export async function activateAuthorizedPending(
     if (activated.outcome !== 'ACTIVATED') return false;
     await emitAddonCoverageAdded({
         activated: [activated],
-        coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
+        coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices,
+        fact: { billingFacts: ports.billingFacts, listing: complements.listing }
     });
     return true;
 }

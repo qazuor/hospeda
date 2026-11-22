@@ -210,7 +210,13 @@ export async function revokePermanentGrant(
     if (committed.cancelled.length > 0)
         await emitAddonCoverageRemoved({
             cancelled: committed.cancelled,
-            coverageNotices: ports.coverageNotices
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'GRANT_REVOKED',
+                actorKind: 'ADMIN',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            }
         });
     const provider =
         committed.cancelled.length > 0

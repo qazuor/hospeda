@@ -4,7 +4,7 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import { CancellationReasonEnum } from '@repo/schemas';
 import ts from 'typescript';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { cancelPausedSubscription } from '../../../src/services/billing/subscription/cancel-paused-subscription.service.js';
 import { previewSubscriptionCancellation } from '../../../src/services/billing/subscription/cancellation-preview.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -78,7 +78,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:25 S22 committed analytic
     it('emits the complete DIRECT_FROM_PAUSED fact for a direct cancellation', async () => {
         const fake = fakeProvider();
         const seeded = await seedPausedCancellation({ fake });
-        const facts: BillingFact[] = [];
+        const facts: SinkFact[] = [];
         const result = await cancelPausedSubscription(
             {
                 actor: owner(seeded.userId),
@@ -118,7 +118,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:25 S22 committed analytic
     });
 
     it('emits CANCEL_SCHEDULED on CREDIT and keeps the same outcome without a sink', async () => {
-        const facts: BillingFact[] = [];
+        const facts: SinkFact[] = [];
         const firstChargeAt = new Date('2026-12-01T00:00:00.000Z');
         const firstFake = fakeProvider();
         const first = await seedPausedCancellation({

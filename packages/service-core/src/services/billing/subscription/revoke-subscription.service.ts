@@ -386,7 +386,16 @@ export async function revokeSubscription(
         });
     await emitRemoved({ reading, coverageNotices: ports.coverageNotices });
     const provider = await cancelAtProvider({ reading, ports });
-    await emitAddonCoverageRemoved({ cancelled, coverageNotices: ports.coverageNotices });
+    await emitAddonCoverageRemoved({
+        cancelled,
+        coverageNotices: ports.coverageNotices,
+        end: {
+            path: 'ORPHANED',
+            actorKind: 'SYSTEM',
+            billingFacts: ports.billingFacts,
+            listing: ports.orphanhood.listing
+        }
+    });
     const addonCancelCalls = (
         await cancelAddonComplementsAtProvider(
             { cancelled },

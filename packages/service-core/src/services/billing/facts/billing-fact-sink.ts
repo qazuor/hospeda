@@ -1,5 +1,6 @@
 import { createLogger } from '@repo/logger';
 import type { VerticalEnum } from '@repo/schemas';
+import type { AddonFact } from './addon-fact';
 
 const logger = createLogger('billing-fact-sink');
 type Vertical = VerticalEnum;
@@ -118,29 +119,38 @@ export type BillingFact =
               | 'OTHER';
       });
 
+/** Where a fact's log line points: its subscription, or its add-on instance when it has none. */
+/** Every fact a {@link BillingFactSink} accepts: HOS-1878's and the add-on facts (HOS-1883). */
+export type SinkFact = BillingFact | AddonFact;
+
+function factSubject(fact: SinkFact): {
+    readonly subscriptionId?: string;
+    readonly addonInstanceId?: string;
+} {
+    if (fact.subscriptionId) return { subscriptionId: fact.subscriptionId };
+    return 'addonInstanceId' in fact ? { addonInstanceId: fact.addonInstanceId } : {};
+}
+
 export interface BillingFactSink {
-    /** Receives one committed billing fact. */
-    emit(fact: BillingFact): void;
+    /** Receives one committed billing or add-on fact (HOS-1883 widened it to add-on facts). */
+    emit(fact: SinkFact): void;
 }
 /** Default sink that logs when billing facts have no configured consumer. */
 export const unwiredBillingFacts: BillingFactSink = {
     emit(fact) {
-        logger.error(
-            { kind: fact.kind, subscriptionId: fact.subscriptionId },
-            'Billing fact has no sink'
-        );
+        logger.error({ kind: fact.kind, ...factSubject(fact) }, 'Billing fact has no sink');
     }
 };
 /** Emits a billing fact and logs sink failures without interrupting the transition.
  * @param input.sink - Optional fact sink; defaults to the unwired logger.
  * @param input.fact - Committed billing fact to emit.
  */
-export function emitBillingFact(input: { sink?: BillingFactSink; fact: BillingFact }): void {
+export function emitBillingFact(input: { sink?: BillingFactSink; fact: SinkFact }): void {
     try {
         (input.sink ?? unwiredBillingFacts).emit(input.fact);
     } catch (error) {
         logger.error(
-            { kind: input.fact.kind, subscriptionId: input.fact.subscriptionId, error },
+            { kind: input.fact.kind, ...factSubject(input.fact), error },
             'Billing fact sink failed'
         );
     }

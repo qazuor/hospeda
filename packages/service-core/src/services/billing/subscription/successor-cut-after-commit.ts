@@ -74,6 +74,8 @@ export async function completeSuccessorCut(
         readonly scheduledChangeApplier?: ScheduledChangeApplier;
         readonly complements?: ComplementPolicyPorts;
         readonly cancellationSeen?: CancellationSeenAnnotator;
+        /** HOS-1883: derives a `LISTING` add-on's vertical for its ending fact. */
+        readonly orphanhood?: Pick<AddonOrphanhoodPorts, 'listing'>;
     }
 ): Promise<{
     readonly providerCall: 'CONFIRMED' | 'ALREADY_CANCELLED' | 'NONE' | 'DEFERRED_TO_SWEEP';
@@ -156,7 +158,13 @@ export async function completeSuccessorCut(
         if (notices && cut.cancelledAddons.length > 0)
             await emitAddonCoverageRemoved({
                 cancelled: cut.cancelledAddons,
-                coverageNotices: notices
+                coverageNotices: notices,
+                end: {
+                    path: 'ORPHANED',
+                    actorKind: 'SYSTEM',
+                    billingFacts: ports.billingFacts,
+                    listing: ports.orphanhood?.listing
+                }
             });
     } catch (error) {
         logger.error(

@@ -13,6 +13,7 @@ import {
 import { createLogger } from '@repo/logger';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { creditPayment } from '../payment/credit-payment.service';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
@@ -31,6 +32,8 @@ const logger = createLogger('addon-a2-one-time-activation');
 export type OneTimeActivationPorts = A5Ports & {
     readonly clock: Clock;
     readonly coverageNotices?: CoverageNotices;
+    /** HOS-1883: where `addon_activated` and `addon_charge_succeeded` go. */
+    readonly billingFacts?: BillingFactSink;
 };
 
 /** What the one-time activation did. */
@@ -219,11 +222,17 @@ export async function activateOneTimeInstance(
     if (!activated) return { outcome: 'NOT_APPLICABLE' };
     await creditPayment(
         { paymentId: activated.paymentId, chargeCreatedAt: input.chargeCreatedAt },
-        { clock: ports.clock, coverageNotices: ports.coverageNotices }
+        {
+            clock: ports.clock,
+            coverageNotices: ports.coverageNotices,
+            billingFacts: ports.billingFacts,
+            listing: ports.listing
+        }
     );
     await emitAddonCoverageAdded({
         activated: [activated],
-        coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
+        coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices,
+        fact: { billingFacts: ports.billingFacts, listing: ports.listing }
     });
     return { outcome: 'ACTIVATED', paymentId: activated.paymentId };
 }

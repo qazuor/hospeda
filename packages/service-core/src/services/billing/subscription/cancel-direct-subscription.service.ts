@@ -349,7 +349,16 @@ export async function cancelDirectSubscription(
         );
     const provider = await cancelAtProvider({ reading, ports });
     try {
-        await emitAddonCoverageRemoved({ cancelled, coverageNotices: ports.coverageNotices });
+        await emitAddonCoverageRemoved({
+            cancelled,
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            }
+        });
     } catch (error) {
         logger.error(
             { subscriptionId: reading.subscriptionId, error },

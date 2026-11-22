@@ -35,6 +35,7 @@ export async function freeChoiceFixture(
         planPolicy: currentFloorPolicy,
         clock: f.ports.clock,
         provider: f.fake,
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: {
             emitCoverageChanged: async (notice: (typeof notices)[number]) => {
@@ -63,7 +64,8 @@ export async function freeChoiceFixture(
             clock: f.ports.clock,
             addonPolicy: f.ports.addonPolicy,
             listing: f.ports.listing,
-            coverageNotices: grantPorts.coverageNotices
+            coverageNotices: grantPorts.coverageNotices,
+            billingFacts: { emit: () => undefined }
         },
         freeInput: (orderRequestId = crypto.randomUUID(), targetId: string | null = null) => ({
             ownerId: f.ownerId,

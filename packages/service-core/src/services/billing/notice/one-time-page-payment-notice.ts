@@ -3,6 +3,7 @@ import { addonInstances, addonProducts, and, eq, getDb, idempotencyKeys, payment
 import type { PaymentProvider } from '@repo/payments';
 import { confirmOneTimePagePayment } from '../addon/addon-instance-a2-one-time-page.js';
 import { PAYMENT_PAGE_OPERATION } from '../addon/one-time-payment-page.js';
+import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { executeConfirmedRefundsOnNotice } from './refund-execution-on-notice.js';
@@ -37,6 +38,8 @@ export interface OneTimePagePaymentNoticePorts {
     readonly coverageNotices?: CoverageNotices;
     /** The anchored addon policy and listing readers A2 activates with. */
     readonly complements?: ComplementPolicyPorts;
+    /** HOS-1883: the add-on facts of the activation this notice confirms. */
+    readonly billingFacts?: BillingFactSink;
 }
 
 /** Raised when a page purchase could not be decided, so the provider delivers the notice again. */
@@ -126,7 +129,8 @@ export async function routeOneTimePagePaymentNotice(
             listing: ports.complements.listing,
             ...(ports.coverageNotices === undefined
                 ? {}
-                : { coverageNotices: ports.coverageNotices })
+                : { coverageNotices: ports.coverageNotices }),
+            billingFacts: ports.billingFacts
         }
     );
     switch (result.outcome) {

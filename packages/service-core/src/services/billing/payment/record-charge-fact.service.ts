@@ -29,6 +29,7 @@ import { exitGraceOnCreditedPayment } from '../subscription/exit-grace.service';
 import type { ReactivateSuspendedResult } from '../subscription/reactivate-suspended.service';
 import { reactivateSuspendedOnCreditedPayment } from '../subscription/reactivate-suspended.service';
 import type { ScheduledChangeApplier } from '../subscription/subscription-billing-ports';
+import { emitAddonChargeRejected } from './addon-charge-facts';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
 import type { FailPaymentResult } from './fail-payment.service';
@@ -388,5 +389,20 @@ export async function recordChargeFact(
             }
         });
     }
+    // HOS-1883: a rejected COMPLEMENTO charge leaves the row as it is (§1.2) and is reported as
+    // `addon_charge_declined`; it never reaches `billing_*` (P-10).
+    if (recordedPayment && linked.subscription.class === 'COMPLEMENTO')
+        await emitAddonChargeRejected({
+            complementSubscriptionId: linked.subscription.id,
+            paymentId,
+            amountMinor: recordedPayment.amount,
+            currency: recordedPayment.currency,
+            occurredAt: recordedPayment.factAt,
+            isFirstCharge: !(await creditedPaymentsFromLedger.hasCreditedPayment({
+                subscriptionId: linked.subscription.id
+            })),
+            hasRetryWindow: !isRejectedWithoutRetryWindow({ charge }),
+            billingFacts: ports.billingFacts
+        });
     return result;
 }
