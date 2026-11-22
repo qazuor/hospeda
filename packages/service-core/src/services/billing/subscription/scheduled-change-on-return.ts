@@ -8,6 +8,8 @@ const inputSchema = z.strictObject({ subscriptionId: z.uuid(), now: z.date() });
 export interface DueScheduledChange {
     readonly id: string;
     readonly effectiveAt: Date;
+    /** The plan version S38 moves the row to. */
+    readonly targetPlanVersionId: string;
 }
 
 /**
@@ -28,7 +30,8 @@ export async function findDueScheduledChange(input: {
     const [due] = await input.tx
         .select({
             id: subscriptionScheduledChanges.id,
-            effectiveAt: subscriptionScheduledChanges.effectiveAt
+            effectiveAt: subscriptionScheduledChanges.effectiveAt,
+            targetPlanVersionId: subscriptionScheduledChanges.targetPlanVersionId
         })
         .from(subscriptionScheduledChanges)
         .where(

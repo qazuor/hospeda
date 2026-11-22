@@ -30,7 +30,7 @@ import {
     returnPresenceKind,
     type S7SideEffects
 } from './late-manual-payment-return-plan';
-import { findDueScheduledChange } from './scheduled-change-on-return';
+import { type DueScheduledChange, findDueScheduledChange } from './scheduled-change-on-return';
 
 /** Reads which listings fail the publish completeness predicate (composed in apps/api). */
 export type ReadIncompleteListingIds = (args: {
@@ -116,6 +116,13 @@ async function readListingPresence(input: {
                 row.publicationStatus === PublicationStatusEnum.ARCHIVED
         )
         .map((row) => row.id);
+    const ordered = listings
+        .filter(
+            (row) =>
+                returning.includes(row.id) ||
+                row.publicationStatus === PublicationStatusEnum.PUBLISHED
+        )
+        .map((row) => row.id);
     const incomplete =
         returning.length > 0 && input.ports.readIncompleteListingIds
             ? await input.ports.readIncompleteListingIds({ vertical, listingIds: returning })
@@ -123,11 +130,8 @@ async function readListingPresence(input: {
     const publishedAt = await listingPublicationModel.readPublicationInstants({
         tx,
         vertical,
-        listingIds: returning
+        listingIds: ordered
     });
-    const publishedCount = listings.filter(
-        (row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED
-    ).length;
     return {
         kind: 'LISTINGS',
         vertical,
@@ -142,8 +146,7 @@ async function readListingPresence(input: {
             archiveOrigins,
             incompleteIds: new Set(incomplete.keys()),
             publishedAt,
-            limit,
-            publishedCount
+            limit
         })
     };
 }
@@ -233,26 +236,23 @@ export async function readLateManualPaymentPresence(input: {
 
 /**
  * Reads the other three S7 effects (`register-late-manual-payment.service.ts:317`, `:359`,
- * `:364-382`) through the same selectors the real path runs. Read-only.
+ * `:364-382`) through the same selectors the real path runs. Read-only. The subject's
+ * `planVersionId` must already be the plan the row returns on (see
+ * {@link readLateManualPaymentReturn}).
  *
  * @param input.tx - A read transaction
- * @param input.subject - The suspended subscription
- * @param input.now - The act's instant
+ * @param input.subject - The suspended subscription, on its returning plan
+ * @param input.dueScheduledChange - The due change S38 applies on return, or null
  * @param input.ports - Optional integrations
  * @returns The three effects
  */
 export async function readS7SideEffects(input: {
     readonly tx: DrizzleClient;
     readonly subject: ReturnSubject;
-    readonly now: Date;
+    readonly dueScheduledChange: DueScheduledChange | null;
     readonly ports: LateManualPaymentReturnPorts;
 }): Promise<S7SideEffects> {
     const { tx, subject } = input;
-    const dueScheduledChange = await findDueScheduledChange({
-        subscriptionId: subject.id,
-        now: input.now,
-        tx
-    });
     const targets =
         subject.userId && subject.vertical && input.ports.complements
             ? (
@@ -294,6 +294,55 @@ export async function readS7SideEffects(input: {
         cancellableTouristVipIds: vipRows
             .map((row) => row.subscription.id)
             .filter((id) => id !== subject.id),
-        dueScheduledChange
+        dueScheduledChange: input.dueScheduledChange
     });
+}
+
+/** What the S7 return brings back and its other three effects. */
+export interface LateManualPaymentReturn {
+    readonly presence: LateManualPaymentPresence;
+    readonly s7Effects: S7SideEffects;
+}
+
+/**
+ * Reads the whole S7 return of the MP4 confirmation. S7 hands a due scheduled change to
+ * S38 inside its transaction, before the coverage reconciler runs PB7, so everything the
+ * plan decides — the publication quota, the partner page, Tourist VIP inheritance — is
+ * read from the change's `targetPlanVersionId` when one is due, and from the row's own
+ * plan otherwise (HOS-1640 review I1). Read-only.
+ *
+ * @param input.tx - A read transaction
+ * @param input.subject - The suspended subscription
+ * @param input.now - The act's instant
+ * @param input.ports - Optional integrations
+ * @returns Presence and effects
+ */
+export async function readLateManualPaymentReturn(input: {
+    readonly tx: DrizzleClient;
+    readonly subject: ReturnSubject;
+    readonly now: Date;
+    readonly ports: LateManualPaymentReturnPorts;
+}): Promise<LateManualPaymentReturn> {
+    const dueScheduledChange = await findDueScheduledChange({
+        subscriptionId: input.subject.id,
+        now: input.now,
+        tx: input.tx
+    });
+    const subject: ReturnSubject = {
+        ...input.subject,
+        planVersionId: dueScheduledChange?.targetPlanVersionId ?? input.subject.planVersionId
+    };
+    return {
+        presence: await readLateManualPaymentPresence({
+            tx: input.tx,
+            subject,
+            ports: input.ports
+        }),
+        s7Effects: await readS7SideEffects({
+            tx: input.tx,
+            subject,
+            dueScheduledChange,
+            ports: input.ports
+        })
+    };
 }

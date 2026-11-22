@@ -25,8 +25,7 @@ import { resumeComplementsS33 } from './complement-resume-s33';
 import {
     type LateManualPaymentPresence,
     type LateManualPaymentReturnPorts,
-    readLateManualPaymentPresence,
-    readS7SideEffects
+    readLateManualPaymentReturn
 } from './late-manual-payment-return-facts';
 import type { S7SideEffects } from './late-manual-payment-return-plan';
 import { checkLatePaymentConditions } from './late-payment-conditions';
@@ -231,7 +230,10 @@ export async function previewLateManualPaymentRegistration(
             planVersionId: checked.subscription.planVersionId
         };
         const returnPorts = ports.returnPorts ?? {};
-        const reactivates = effect === 'S7';
+        const returned =
+            effect === 'S7'
+                ? await readLateManualPaymentReturn({ tx, subject, now, ports: returnPorts })
+                : null;
         return {
             subscriptionId: checked.subscription.id,
             manualPaymentId: checked.installment.id,
@@ -242,12 +244,8 @@ export async function previewLateManualPaymentRegistration(
             periodCase: period.periodCase,
             nextChargeOverdue: period.nextChargeAt.getTime() <= now.getTime(),
             vertical: checked.subscription.vertical,
-            presence: reactivates
-                ? await readLateManualPaymentPresence({ tx, subject, ports: returnPorts })
-                : null,
-            s7Effects: reactivates
-                ? await readS7SideEffects({ tx, subject, now, ports: returnPorts })
-                : null
+            presence: returned?.presence ?? null,
+            s7Effects: returned?.s7Effects ?? null
         };
     });
 }
