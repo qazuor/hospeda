@@ -67,6 +67,7 @@ export * from './media.schema.js';
 export * from './media-upload.schema.js';
 export * from './moderation.schema.js';
 export * from './opening-hours.schema.js';
+export * from './owner-listing-dashboard.schema.js';
 // Skip pagination.schema.js to avoid `BaseSearchSchema` conflict with base.schema.js,
 // but re-export the non-conflicting schemas: multi-sort primitives and pagination result shapes.
 export {
