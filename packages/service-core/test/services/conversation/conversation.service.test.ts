@@ -477,8 +477,7 @@ describe('ConversationService', () => {
 
             // select returns the existing pending row (unverified duplicate)
             const selectChain = makeSelectChainMock([existingPendingRow]);
-            const updateChain = makeUpdateChainMock([]);
-            mockGetDb.mockReturnValue({ select: selectChain.select, update: updateChain.update });
+            mockGetDb.mockReturnValue({ select: selectChain.select });
 
             // Act
             const result = await service.initiateAnonymous(ACTOR, {
@@ -494,7 +493,7 @@ describe('ConversationService', () => {
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
         });
 
-        it('replaces the pending row booking fields with the re-submitted ones (HOS-2534)', async () => {
+        it('never writes to the pending row when re-submitted with other dates (HOS-2534)', async () => {
             // Arrange
             asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
             asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
@@ -506,7 +505,12 @@ describe('ConversationService', () => {
             });
             const selectChain = makeSelectChainMock([pendingRow]);
             const updateChain = makeUpdateChainMock([]);
-            mockGetDb.mockReturnValue({ select: selectChain.select, update: updateChain.update });
+            const insertChain = makeInsertChainMock([]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                update: updateChain.update,
+                insert: insertChain.insert
+            });
 
             // Act
             const result = await service.initiateAnonymous(ACTOR, {
@@ -522,11 +526,9 @@ describe('ConversationService', () => {
             // Assert
             expectSuccess(result);
             expect(result.data?.status).toBe('resent');
-            expect(updateChain.set).toHaveBeenCalledWith({
-                checkIn: '2027-01-09',
-                checkOut: '2027-01-11',
-                guests: 3
-            });
+            // First submission wins until verified: no write of any kind.
+            expect(updateChain.update).not.toHaveBeenCalled();
+            expect(insertChain.insert).not.toHaveBeenCalled();
         });
 
         it('should throw ALREADY_EXISTS for a verified duplicate conversation', async () => {

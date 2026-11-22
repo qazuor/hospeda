@@ -112,7 +112,7 @@ describe('conversation initiate: inquiry booking fields (HOS-2534)', () => {
             expect(row?.guests).toBeNull();
         });
 
-        it('replaces the stored fields when the visitor re-submits before verifying', async () => {
+        it('keeps the original fields when the same email re-submits other ones before verifying', async () => {
             const email = `ana-resubmit-${Date.now()}@example.test`;
             const submit = (extra: Record<string, unknown>) =>
                 app.request(PUBLIC_URL, {
@@ -141,9 +141,11 @@ describe('conversation initiate: inquiry booking fields (HOS-2534)', () => {
             const rows = await getDb().select().from(conversations);
             expect(rows).toHaveLength(1);
             expect(rows[0]?.id).toBe(secondData.conversationId);
-            expect(rows[0]?.checkIn).toBe('2027-01-09');
-            expect(rows[0]?.checkOut).toBe('2027-01-11');
-            expect(rows[0]?.guests).toBe(4);
+            // First submission wins until verified: an unauthenticated re-submit
+            // must not be able to rewrite someone else's pending conversation.
+            expect(rows[0]?.checkIn).toBe('2026-12-12');
+            expect(rows[0]?.checkOut).toBe('2026-12-15');
+            expect(rows[0]?.guests).toBe(2);
         });
 
         it.each([
