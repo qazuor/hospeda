@@ -78,6 +78,17 @@ export function isSettledExternallyResult(value: unknown): boolean {
     return hasOutcome(value, SETTLED_EXTERNALLY);
 }
 
+/** The columns every tally reads for one call. */
+const refundCallColumns = {
+    idempotencyKey: refundCalls.idempotencyKey,
+    providerRefundId: refundCalls.providerRefundId,
+    addonInstanceId: refundCalls.addonInstanceId,
+    amount: refundCalls.amount,
+    createdAt: refundCalls.createdAt,
+    completedAt: idempotencyKeys.completedAt,
+    result: idempotencyKeys.result
+};
+
 /**
  * Reads and classifies the provider calls of one refund: accepted (it carries a
  * `provider_refund_id`), rejected (completed with a `REJECTED` result and no id) or
@@ -93,18 +104,47 @@ export async function readRefundCallTally(input: {
     readonly refundId: string;
 }): Promise<RefundCallTally> {
     const calls: readonly RefundCallRow[] = await input.db
-        .select({
-            idempotencyKey: refundCalls.idempotencyKey,
-            providerRefundId: refundCalls.providerRefundId,
-            addonInstanceId: refundCalls.addonInstanceId,
-            amount: refundCalls.amount,
-            createdAt: refundCalls.createdAt,
-            completedAt: idempotencyKeys.completedAt,
-            result: idempotencyKeys.result
-        })
+        .select(refundCallColumns)
         .from(refundCalls)
         .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
         .where(eq(refundCalls.refundId, input.refundId));
+    return tallyRefundCalls(calls);
+}
+
+/**
+ * HOS-2560 — {@link readRefundCallTally} for several refunds in one read, with the same
+ * classification. A refund with no call gets an empty tally.
+ *
+ * @param input.db - The connection or transaction to read with.
+ * @param input.refundIds - The refunds whose calls are read.
+ * @returns One tally per requested refund id.
+ */
+export async function readRefundCallTallies(input: {
+    readonly db: DrizzleClient;
+    readonly refundIds: readonly string[];
+}): Promise<ReadonlyMap<string, RefundCallTally>> {
+    if (input.refundIds.length === 0) return new Map();
+    const rows = await input.db
+        .select({ refundId: refundCalls.refundId, ...refundCallColumns })
+        .from(refundCalls)
+        .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
+        .where(inArray(refundCalls.refundId, [...input.refundIds]));
+    const byRefund = new Map<string, RefundCallRow[]>();
+    for (const { refundId, ...call } of rows) {
+        const list = byRefund.get(refundId) ?? [];
+        list.push(call);
+        byRefund.set(refundId, list);
+    }
+    return new Map(
+        input.refundIds.map((refundId) => [
+            refundId,
+            tallyRefundCalls(byRefund.get(refundId) ?? [])
+        ])
+    );
+}
+
+/** Classifies already-read calls into a {@link RefundCallTally}. */
+function tallyRefundCalls(calls: readonly RefundCallRow[]): RefundCallTally {
     const accepted = calls.filter((call) => call.providerRefundId !== null);
     const unanswered = calls.filter(isUnanswered);
     return {
