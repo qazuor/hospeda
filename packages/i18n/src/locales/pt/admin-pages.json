@@ -2252,11 +2252,11 @@
         "searchLabel": "Buscar e-mails",
         "searchPlaceholder": "Buscar por nome, chave ou id",
         "audienceFilterLabel": "Destinatário",
-        "staffBadge": "Staff",
+        "staffBadge": "Equipe",
         "audiences": {
             "all": "Todos",
             "user": "Usuários",
-            "staff": "Staff"
+            "staff": "Equipe"
         },
         "domainFilterLabel": "Filtrar por domínio",
         "clearFilters": "Limpar filtros",

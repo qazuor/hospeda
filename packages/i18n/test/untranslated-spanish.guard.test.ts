@@ -77,6 +77,9 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Dom: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
     '{{count}} de {{max}} caracteres': ['pt'],
+    // HOS-2565 email previewer audience filter: "Staff" is the owner's term in es and the English word; "Todos" is the same in Brazilian Portuguese.
+    Staff: ['en'],
+    Todos: ['pt'],
     // Same word in Brazilian Portuguese / English (HOS-2413 Mi Cuenta kit: status words, counter, error prefix).
     'Error:': ['en'],
     Abandonada: ['pt'],
