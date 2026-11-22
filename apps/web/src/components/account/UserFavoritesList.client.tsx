@@ -34,6 +34,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
+import { resolveCollectionsGateMessage } from '@/lib/billing/plan-name-list';
 import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -202,6 +203,11 @@ interface UserFavoritesListProps {
     readonly locale: SupportedLocale;
     /** API base URL (PUBLIC_API_URL from env) */
     readonly apiUrl: string;
+    /**
+     * HOS-2544: catalog names of the plans that carry collections, read by the SSR page.
+     * Empty when the catalog could not be read: the gate then names no plan.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -217,7 +223,7 @@ interface UserFavoritesListProps {
  * - Optimistic DELETE with revert-on-error.
  * - Tab panel split: "Sin colección" section + "Mis colecciones" section.
  */
-export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
+export function UserFavoritesList({ locale, apiUrl, gatePlanNames = [] }: UserFavoritesListProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
@@ -790,10 +796,11 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                             {t('account.favorites.collections.upgrade.title', 'Colecciones')}
                         </p>
                         <p className={styles.collectionsUpgradeMessage}>
-                            {t(
-                                'account.favorites.collections.upgrade.message',
-                                'Las colecciones están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
-                            )}
+                            {resolveCollectionsGateMessage({
+                                locale,
+                                planNames: gatePlanNames,
+                                t
+                            })}
                         </p>
                         <a
                             href={upgradeHref}

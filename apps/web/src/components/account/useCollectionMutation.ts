@@ -19,6 +19,7 @@ import {
     userBookmarkCollectionsApi
 } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
+import { resolveCollectionsGateMessage } from '@/lib/billing/plan-name-list';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
@@ -70,12 +71,15 @@ const HTTP_CONFLICT = 409;
 export function useCollectionMutation({
     collectionId,
     callbacks,
-    locale
+    locale,
+    gatePlanNames = []
 }: {
     readonly collectionId?: string;
     readonly callbacks: CollectionMutationCallbacks;
     /** Locale for translating API error codes. Optional for back-compat. */
     readonly locale?: SupportedLocale;
+    /** HOS-2544: catalog names of the plans that carry collections, read by the SSR page. */
+    readonly gatePlanNames?: readonly string[];
 }): UseCollectionMutationResult {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -143,16 +147,13 @@ export function useCollectionMutation({
                     // locale gets the translated copy — mirrors the key/
                     // fallback already used by the sibling upgrade cartel in
                     // UserFavoritesList.client.tsx (HOS-899).
-                    const entitlementFallback =
-                        'Las colecciones están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.';
                     addToast({
                         type: 'error',
-                        message: locale
-                            ? createT(locale)(
-                                  'account.favorites.collections.upgrade.message',
-                                  entitlementFallback
-                              )
-                            : entitlementFallback
+                        message: resolveCollectionsGateMessage({
+                            locale: locale ?? 'es',
+                            planNames: gatePlanNames,
+                            t: createT(locale ?? 'es')
+                        })
                     });
                     return false;
                 }
@@ -180,7 +181,7 @@ export function useCollectionMutation({
                 setIsSubmitting(false);
             }
         },
-        [collectionId, callbacks, locale]
+        [collectionId, callbacks, locale, gatePlanNames]
     );
 
     return { isSubmitting, submit };

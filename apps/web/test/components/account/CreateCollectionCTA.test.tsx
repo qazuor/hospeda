@@ -30,7 +30,8 @@ vi.mock('../../../src/lib/i18n', () => ({
     createT:
         () =>
         (key: string, fallback?: string, params?: Record<string, unknown>): string => {
-            const text = fallback ?? key;
+            // No fallback (a plural key): echo key + params so plan names stay assertable.
+            const text = fallback ?? `${key} ${JSON.stringify(params ?? {})}`;
             if (!params) return text;
             return Object.entries(params).reduce(
                 (acc, [name, value]) => acc.replace(`{{${name}}}`, String(value)),
@@ -71,6 +72,28 @@ vi.mock('../../../src/components/account/CreateEditCollectionModal.client', () =
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
+describe('CreateCollectionCTA plan gate (HOS-2544)', () => {
+    it('names the catalog plan it receives, whatever it is called, never a hardcoded Plus', () => {
+        // Arrange + Act
+        render(
+            <CreateCollectionCTA
+                locale="es"
+                isAtLimit={false}
+                maxCollections={0}
+                accessDenied
+                gatePlanNames={['Explorador']}
+            />
+        );
+
+        // Assert
+        const button = screen.getByRole('button', { name: /Explorador/ });
+        expect(button).toBeDisabled();
+        const message = screen.getByText(/Explorador/);
+        expect(message.textContent).toContain('upgrade.message_one');
+        expect(message.textContent).not.toMatch(/Plus/);
+    });
+});
+
 describe('CreateCollectionCTA', () => {
     it('disables the button with the entitlement-required message when accessDenied is true', () => {
         // Arrange + Act
@@ -84,9 +107,11 @@ describe('CreateCollectionCTA', () => {
         );
 
         // Assert
-        const button = screen.getByRole('button', { name: /planes Plus y VIP/i });
+        const button = screen.getByRole('button', {
+            name: /no están incluidas en tu plan actual/i
+        });
         expect(button).toBeDisabled();
-        expect(screen.getByText(/planes Plus y VIP/i)).toBeInTheDocument();
+        expect(screen.getByText(/no están incluidas en tu plan actual/i)).toBeInTheDocument();
         // The limit-reached copy must not appear — this is what distinguishes
         // the two disabled reasons.
         expect(screen.queryByText(/alcanzaste el máximo/i)).not.toBeInTheDocument();
@@ -106,7 +131,7 @@ describe('CreateCollectionCTA', () => {
         const button = screen.getByRole('button', { name: /alcanzaste el máximo/i });
         expect(button).toBeDisabled();
         expect(screen.getByText(/alcanzaste el máximo/i)).toBeInTheDocument();
-        expect(screen.queryByText(/planes Plus y VIP/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/no están incluidas en tu plan actual/i)).not.toBeInTheDocument();
     });
 
     it('accessDenied wins over isAtLimit when both are true', () => {
@@ -121,7 +146,7 @@ describe('CreateCollectionCTA', () => {
         );
 
         // Assert: entitlement message shown, not the limit one.
-        expect(screen.getByText(/planes Plus y VIP/i)).toBeInTheDocument();
+        expect(screen.getByText(/no están incluidas en tu plan actual/i)).toBeInTheDocument();
         expect(screen.queryByText(/alcanzaste el máximo/i)).not.toBeInTheDocument();
     });
 
@@ -141,7 +166,7 @@ describe('CreateCollectionCTA', () => {
         fireEvent.click(button);
 
         // Assert: no disabled-state copy leaked in.
-        expect(screen.queryByText(/planes Plus y VIP/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/no están incluidas en tu plan actual/i)).not.toBeInTheDocument();
         expect(screen.queryByText(/alcanzaste el máximo/i)).not.toBeInTheDocument();
     });
 

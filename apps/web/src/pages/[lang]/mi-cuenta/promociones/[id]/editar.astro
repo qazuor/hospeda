@@ -27,6 +27,8 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { PromotionForm } from '@/components/host/PromotionForm.client';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 
 export const prerender = false;
 
@@ -35,6 +37,13 @@ const { t } = createTranslations(locale);
 
 const title = t('host.promotions.actions.edit', 'Editar promoción');
 const description = t('host.promotions.pageDescription', 'Gestioná tus promociones y descuentos');
+
+// HOS-2544: the audience hint names the catalog plans that carry exclusive deals. The
+// catalog reader is server-only, so the names are read here and handed to the island.
+const audiencePlanNames = planNamesWithEntitlement({
+    result: await fetchPublicPlans({ vertical: 'tourist' }),
+    entitlement: EntitlementKeyEnum.EXCLUSIVE_DEALS
+});
 
 // Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
 const user = Astro.locals.user;
@@ -53,6 +62,6 @@ if (!promotionId) {
     <AccountPageHeader title={title} description={description} />
 
     <AccountSectionCard>
-        <PromotionForm client:load locale={locale} mode="edit" promotionId={promotionId} />
+        <PromotionForm client:load locale={locale} mode="edit" promotionId={promotionId} audiencePlanNames={audiencePlanNames} />
     </AccountSectionCard>
 </AccountLayout>

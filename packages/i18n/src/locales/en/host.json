@@ -892,7 +892,9 @@
             "accommodationIdLoading": "Loading properties...",
             "accommodationIdHint": "Select a property or leave 'All my properties' to apply the promotion to all.",
             "vipOnly": "VIP plan exclusive",
-            "vipOnlyHint": "If enabled, only VIP-plan tourists will see this deal. If left off, both Plus and VIP tourists see it."
+            "vipOnlyHint_one": "If enabled, only VIP-plan tourists will see this deal. If left off, tourists on the {{plans}} plan see it.",
+            "vipOnlyHint_other": "If enabled, only VIP-plan tourists will see this deal. If left off, tourists on the {{plans}} plans see it.",
+            "vipOnlyHintNoPlans": "If enabled, only VIP-plan tourists will see this deal. If left off, every tourist with access to exclusive deals sees it."
         },
         "discountTypes": {
             "percentage": "Percentage",

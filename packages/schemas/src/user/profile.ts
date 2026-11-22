@@ -180,11 +180,51 @@ export const ProfileEditSchema = z.strictObject({
     // but off-domain URL (e.g. `https://fb.com/me`) that passed client
     // validation and was then rejected by the server with a confusing 400.
     // Aligning the regexes keeps client and server in lockstep (BETA-34).
-    facebookUrl: z.union([z.literal(''), z.string().url().regex(FacebookUrlRegex)]).optional(),
-    instagramUrl: z.union([z.literal(''), z.string().url().regex(InstagramUrlRegex)]).optional(),
-    twitterUrl: z.union([z.literal(''), z.string().url().regex(TwitterUrlRegex)]).optional(),
-    linkedinUrl: z.union([z.literal(''), z.string().url().regex(LinkedInUrlRegex)]).optional(),
-    youtubeUrl: z.union([z.literal(''), z.string().url().regex(YouTubeUrlRegex)]).optional(),
+    facebookUrl: z
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .url({ message: 'zodError.common.social.facebook.invalid' })
+                .regex(FacebookUrlRegex, { message: 'zodError.common.social.facebook.pattern' })
+        ])
+        .optional(),
+    instagramUrl: z
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .url({ message: 'zodError.common.social.instagram.invalid' })
+                .regex(InstagramUrlRegex, { message: 'zodError.common.social.instagram.pattern' })
+        ])
+        .optional(),
+    twitterUrl: z
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .url({ message: 'zodError.common.social.twitter.invalid' })
+                .regex(TwitterUrlRegex, { message: 'zodError.common.social.twitter.pattern' })
+        ])
+        .optional(),
+    linkedinUrl: z
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .url({ message: 'zodError.common.social.linkedIn.invalid' })
+                .regex(LinkedInUrlRegex, { message: 'zodError.common.social.linkedIn.pattern' })
+        ])
+        .optional(),
+    youtubeUrl: z
+        .union([
+            z.literal(''),
+            z
+                .string()
+                .url({ message: 'zodError.common.social.youtube.invalid' })
+                .regex(YouTubeUrlRegex, { message: 'zodError.common.social.youtube.pattern' })
+        ])
+        .optional(),
 
     // Postal address fields — all strings; `''` clears.
     addressLine1: z.string().max(200).optional(),
