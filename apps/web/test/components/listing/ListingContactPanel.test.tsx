@@ -458,7 +458,7 @@ describe('ListingContactPanel', () => {
         expect(fetchMock).toHaveBeenCalledOnce();
     });
 
-    it('submits a valid anonymous inquiry with dates and guests in the message only', async () => {
+    it('submits a valid anonymous inquiry with dates and guests as fields and in the message', async () => {
         const fetchMock = vi
             .fn()
             .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
@@ -483,7 +483,50 @@ describe('ListingContactPanel', () => {
             accommodationId: props.accommodation.id,
             guestName: 'Ana',
             guestEmail: 'ana@example.test',
-            message: 'Hola, ¿está disponible del 9/1 al 11/1 para 4 personas?'
+            message: 'Hola, ¿está disponible del 9/1 al 11/1 para 4 personas?',
+            checkIn: '2027-01-09',
+            checkOut: '2027-01-11',
+            guests: 4
         });
+    });
+
+    it('sends only the booking fields the visitor filled (HOS-2534)', async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+        vi.stubGlobal('fetch', fetchMock);
+        render(<ListingContactPanel {...props} />);
+        const dialog = within(openPanel());
+
+        fireEvent.input(dialog.getByLabelText('Huéspedes'), { target: { value: '2' } });
+        fillGuestIdentity({ dialog });
+        await act(async () =>
+            fireEvent.click(dialog.getByRole('button', { name: t('conversations.form.submit') }))
+        );
+
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body.guests).toBe(2);
+        expect(body).not.toHaveProperty('checkIn');
+        expect(body).not.toHaveProperty('checkOut');
+        expect(CreateConversationAnonSchema.safeParse(body).success).toBe(true);
+    });
+
+    it('sends no booking fields when the visitor filled none (HOS-2534)', async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+        vi.stubGlobal('fetch', fetchMock);
+        render(<ListingContactPanel {...props} />);
+        const dialog = within(openPanel());
+
+        fillGuestIdentity({ dialog });
+        await act(async () =>
+            fireEvent.click(dialog.getByRole('button', { name: t('conversations.form.submit') }))
+        );
+
+        const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+        expect(body).not.toHaveProperty('checkIn');
+        expect(body).not.toHaveProperty('checkOut');
+        expect(body).not.toHaveProperty('guests');
     });
 });
