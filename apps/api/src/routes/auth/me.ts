@@ -1,12 +1,13 @@
 import { UserModel } from '@repo/db';
 import { AuthMeResponseSchema, PermissionEnum } from '@repo/schemas';
-import { HostTradeService } from '@repo/service-core';
+import { HostTradeService, PartnerService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createGuestActor, isGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 
 const hostTradeService = new HostTradeService({ logger: apiLogger });
+const partnerService = new PartnerService({ logger: apiLogger });
 
 /**
  * Builds the `/auth/me` payload from the actor the middleware resolved.
@@ -16,7 +17,7 @@ const hostTradeService = new HostTradeService({ logger: apiLogger });
  * protected routes.
  *
  * @param c - The request context carrying the resolved actor.
- * @returns The actor, its auth status, and the two derived account flags.
+ * @returns The actor, its auth status, and the derived account flags.
  */
 export async function handleAuthMe(c: Context) {
     try {
@@ -68,11 +69,27 @@ export async function handleAuthMe(c: Context) {
             }
         }
 
+        // Whether this account owns a LIVE partner listing (HOS-2551): same
+        // placement and reasoning as `ownsHostTradeListing` above. A revoked or
+        // soft-deleted partner does not count (`ownsActivePartner`). The probe
+        // is a one-row indexed existence check, paid by authenticated callers
+        // only, and non-blocking: a failure reads as "owns none".
+        let ownsPartner = false;
+        if (isAuthenticated) {
+            try {
+                const own = await partnerService.ownsActivePartner(actor);
+                ownsPartner = own.data?.owns === true;
+            } catch {
+                // Non-blocking: default false
+            }
+        }
+
         const result = {
             actor: filteredActor,
             isAuthenticated,
             passwordChangeRequired,
-            ownsHostTradeListing
+            ownsHostTradeListing,
+            ownsPartner
         };
         apiLogger.debug({ message: 'AuthMe: Returning result', result });
         return result;
@@ -87,7 +104,8 @@ export async function handleAuthMe(c: Context) {
             actor: createGuestActor(),
             isAuthenticated: false,
             passwordChangeRequired: false,
-            ownsHostTradeListing: false
+            ownsHostTradeListing: false,
+            ownsPartner: false
         };
     }
 }
