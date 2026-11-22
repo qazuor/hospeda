@@ -297,7 +297,8 @@ describe('TEST:B13a:19 the confirmation says what comes back and what does not',
             ['ARCHIVED_DRAFT', 'Borrador viejo'],
             ['PURGED', 'Cabaña purgada'],
             ['NO_SLOT', 'Sin cupo'],
-            ['LOWERED_BY_SURPLUS', 'Sobrante']
+            ['LOWERED_BY_SURPLUS', 'Sobrante'],
+            ['LOCATION_CONFLICT', 'Misma dirección']
         ].map(([outcome, name], index) => ({
             id: `4444444${index}-4444-4444-8444-444444444444`,
             name,
