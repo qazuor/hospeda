@@ -6,6 +6,7 @@
  * Rate limits:
  * - IP:    10 requests / 10 minutes
  * - Email: 5 requests / hour (keyed by the normalized guest email)
+ * - Email + accommodation: 3 requests / hour (HOS-2568)
  */
 import { AnalyticsEvents } from '@repo/analytics';
 import { accommodations, eq, getDb } from '@repo/db';
@@ -108,6 +109,28 @@ const emailRateLimiter = createKeyedRateLimitMiddleware({
 });
 
 /**
+ * Email + accommodation keyed limiter (HOS-2568): at most 3 verification emails per
+ * address per listing per hour.
+ *
+ * Every submit (new or `resent`) sends a verification email to an address the caller
+ * only has to type, so this caps how often one person can be mailed about one listing,
+ * on top of the broader per-email cap above.
+ */
+const emailAccommodationRateLimiter = createKeyedRateLimitMiddleware({
+    requests: 3,
+    windowMs: 60 * 60 * 1000,
+    keyPrefix: 'conv:initiate:email-accommodation',
+    keyExtractor: (c: Context) => {
+        const body = c.get('_validatedBody' as never) as
+            | { guestEmail?: string; accommodationId?: string }
+            | undefined;
+        if (!body?.guestEmail || !body.accommodationId) return null;
+        const email = body.guestEmail.toLowerCase().trim();
+        return email.length > 0 ? `${email}|${body.accommodationId}` : null;
+    }
+});
+
+/**
  * Inline body validation middleware.
  * Parses and validates the JSON body against `CreateConversationAnonSchema`.
  * Stores the validated body in context under `_validatedBody` for downstream use.
@@ -142,6 +165,9 @@ async function validateBody(c: Context, next: () => Promise<void>): Promise<Resp
 
     // TYPE-WORKAROUND: storing the Zod-validated body on a non-standard ctx property to pass it to the handler without a ContextVariableMap entry; cast widens to a writable record.
     (c as unknown as Record<string, unknown>)._validatedBody = parseResult.data;
+    // The keyed limiters read it through `c.get`; a bare property is invisible to it, which
+    // left the per-email limiter without a key (HOS-2568).
+    c.set('_validatedBody' as never, parseResult.data as never);
     await next();
     return undefined;
 }
@@ -293,4 +319,4 @@ async function handler(c: Context): Promise<Response> {
 /** Public conversation initiation router. */
 export const initiatePublicConversationRoute = createRouter()
     .use('*', ipRateLimiter)
-    .post('/', validateBody, emailRateLimiter, handler);
+    .post('/', validateBody, emailRateLimiter, emailAccommodationRateLimiter, handler);
