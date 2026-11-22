@@ -8,7 +8,9 @@ import {
     resolveDashboardFreeCard,
     resolveDashboardPlanStat,
     resolveDashboardTrialStat,
-    resolvePlanStatusLabel
+    resolvePlanActionText,
+    resolvePlanStatusLabel,
+    statusNeedsAction
 } from '../../../src/lib/billing/dashboard-plan-stat';
 
 const plan = {
@@ -229,5 +231,107 @@ describe('isPlanActive', () => {
         [null, 'cancelled', false]
     ])('subscriptionStatus %s / status %s -> %s', (subscriptionStatus, status, expected) => {
         expect(isPlanActive({ info: { status, subscriptionStatus } })).toBe(expected);
+    });
+});
+
+describe('HOS-2553 subscription card with every subscription', () => {
+    const sub = (slug: string, status: string) => ({
+        slug,
+        name: slug.toUpperCase(),
+        status,
+        vertical: 'accommodation'
+    });
+    const planNames = { 'owner-basico': 'Básico' };
+
+    it('lists the one declined subscription as a single plan with its exact status', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: { ...plan, status: 'CHARGE_DECLINED' },
+            activeSubscriptionsCount: 1,
+            subscriptions: [sub('owner-basico', 'CHARGE_DECLINED')] as never,
+            planNames
+        });
+        expect(stat).toEqual({ kind: 'single', label: 'Básico', statusKey: 'charge-declined' });
+    });
+
+    it('maps the waiting checkout to its own status key', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: { ...plan, status: 'PENDING_AUTHORIZATION' },
+            activeSubscriptionsCount: 1,
+            planNames
+        });
+        expect(stat).toMatchObject({ kind: 'single', statusKey: 'pending-authorization' });
+    });
+
+    it('shows three subscriptions with plan and status and no "Ver todas"', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: null,
+            activeSubscriptionsCount: 3,
+            subscriptions: [
+                sub('owner-basico', 'ACTIVE'),
+                sub('venue-pro', 'CHARGE_DECLINED'),
+                sub('experience-basico', 'PENDING_AUTHORIZATION')
+            ] as never,
+            planNames
+        });
+        expect(stat).toEqual({
+            kind: 'list',
+            total: 3,
+            hasMore: false,
+            rows: [
+                { label: 'Básico', statusKey: 'active' },
+                { label: 'VENUE-PRO', statusKey: 'charge-declined' },
+                { label: 'EXPERIENCE-BASICO', statusKey: 'pending-authorization' }
+            ]
+        });
+    });
+
+    it('caps the list at three and offers "Ver todas" with four', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: null,
+            activeSubscriptionsCount: 4,
+            subscriptions: ['a', 'b', 'c', 'd'].map((slug) => sub(slug, 'ACTIVE')) as never,
+            planNames: {}
+        });
+        expect(stat).toMatchObject({ kind: 'list', total: 4, hasMore: true });
+        expect(stat.kind === 'list' && stat.rows).toHaveLength(3);
+    });
+
+    it('keeps the count fallback for an API that predates the subscriptions field', () => {
+        expect(
+            resolveDashboardPlanStat({ plan: null, activeSubscriptionsCount: 2, planNames: {} })
+        ).toEqual({ kind: 'multiple', count: 2 });
+    });
+
+    it('flags only the two unsettled statuses as needing action', () => {
+        expect(statusNeedsAction({ statusKey: 'charge-declined' })).toBe(true);
+        expect(statusNeedsAction({ statusKey: 'pending-authorization' })).toBe(true);
+        expect(statusNeedsAction({ statusKey: 'active' })).toBe(false);
+        expect(statusNeedsAction({ statusKey: 'grace-period' })).toBe(false);
+    });
+});
+
+describe('HOS-2553 host dashboard labels for the unsettled statuses', () => {
+    const t = (key: string) => key;
+    const info = (subscriptionStatus: string) => ({
+        status: 'past_due',
+        subscriptionStatus,
+        serviceEndsAt: null
+    });
+
+    it.each([
+        ['CHARGE_DECLINED', 'host.dashboard.plan.chargeDeclined'],
+        ['PENDING_AUTHORIZATION', 'host.dashboard.plan.pendingAuthorization']
+    ])('labels %s with its own text instead of "Inactivo"', (status, key) => {
+        expect(resolvePlanStatusLabel({ info: info(status), t, formatDate: () => null })).toBe(key);
+    });
+
+    it('adds an action line for both and none for an active plan', () => {
+        expect(resolvePlanActionText({ info: info('CHARGE_DECLINED'), t })).toBe(
+            'host.dashboard.plan.chargeDeclinedAction'
+        );
+        expect(resolvePlanActionText({ info: info('PENDING_AUTHORIZATION'), t })).toBe(
+            'host.dashboard.plan.pendingAuthorizationAction'
+        );
+        expect(resolvePlanActionText({ info: info('ACTIVE'), t })).toBeNull();
     });
 });

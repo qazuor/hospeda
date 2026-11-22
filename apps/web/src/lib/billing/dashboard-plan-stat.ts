@@ -1,4 +1,9 @@
-import { TrialStatusEnum, type TrialSummaryResponse, type UserStatsResponse } from '@repo/schemas';
+import {
+    type OwnPlanStatus,
+    TrialStatusEnum,
+    type TrialSummaryResponse,
+    type UserStatsResponse
+} from '@repo/schemas';
 
 /** Plan catalog slugs that have dashboard name translations. */
 export const DASHBOARD_PLAN_SLUGS = [
@@ -17,42 +22,93 @@ export const DASHBOARD_PLAN_SLUGS = [
     'partner-gold'
 ] as const;
 
-/** Resolve API stats into a renderable free, multiple, or single-plan dashboard state. */
+/** Key of the label a subscription status uses on the account dashboard card. */
+export type DashboardStatusKey =
+    | 'active'
+    | 'grace-period'
+    | 'suspended'
+    | 'cancel-scheduled'
+    | 'paused'
+    | 'charge-declined'
+    | 'pending-authorization';
+
+/** Exact subscription status to its card label key; one entry per `OWN_PLAN_STATUSES` value. */
+const STATUS_KEY_BY_STATUS = {
+    ACTIVE: 'active',
+    GRACE_PERIOD: 'grace-period',
+    SUSPENDED: 'suspended',
+    CANCEL_SCHEDULED: 'cancel-scheduled',
+    PAUSED: 'paused',
+    CHARGE_DECLINED: 'charge-declined',
+    PENDING_AUTHORIZATION: 'pending-authorization'
+} as const satisfies Record<OwnPlanStatus, DashboardStatusKey>;
+
+/** Most subscriptions the `/mi-cuenta/` card lists before it offers "Ver todas" (HOS-2553). */
+export const MAX_CARD_SUBSCRIPTIONS = 3;
+
+/**
+ * Whether a status needs the owner to DO something (HOS-2553): the card then adds a
+ * line saying what, next to the link to the subscription page.
+ *
+ * @param input.statusKey - The card label key of the status.
+ * @returns `true` for a declined charge and for a checkout waiting for authorization.
+ */
+export function statusNeedsAction(input: { readonly statusKey: DashboardStatusKey }): boolean {
+    return input.statusKey === 'charge-declined' || input.statusKey === 'pending-authorization';
+}
+
+/** One subscription row of the `/mi-cuenta/` card. */
+export interface DashboardSubscriptionRow {
+    /** Plan name, read from the catalog (translated when the slug has a name). */
+    readonly label: string;
+    /** Exact status label key. */
+    readonly statusKey: DashboardStatusKey;
+}
+
+/** Resolve API stats into a renderable free, multiple, list, or single-plan dashboard state. */
 export function resolveDashboardPlanStat(input: {
     readonly plan: UserStatsResponse['plan'];
     readonly activeSubscriptionsCount: UserStatsResponse['activeSubscriptionsCount'];
     readonly planNames: Readonly<Record<string, string>>;
+    /** Every live subscription (HOS-2553). Absent when the API predates the field. */
+    readonly subscriptions?: UserStatsResponse['subscriptions'];
 }):
     | { readonly kind: 'free' }
     | { readonly kind: 'multiple'; readonly count: number }
     | {
+          readonly kind: 'list';
+          readonly rows: readonly DashboardSubscriptionRow[];
+          readonly total: number;
+          readonly hasMore: boolean;
+      }
+    | {
           readonly kind: 'single';
           readonly label: string;
-          readonly statusKey:
-              | 'active'
-              | 'grace-period'
-              | 'suspended'
-              | 'cancel-scheduled'
-              | 'paused';
+          readonly statusKey: DashboardStatusKey;
       } {
-    const { plan, activeSubscriptionsCount, planNames } = input;
+    const { plan, activeSubscriptionsCount, planNames, subscriptions = [] } = input;
+    const labelFor = (item: { readonly slug: string; readonly name: string }): string =>
+        planNames[item.slug] && planNames[item.slug] !== item.slug
+            ? (planNames[item.slug] as string)
+            : item.name;
+    if (subscriptions.length >= 2) {
+        return {
+            kind: 'list',
+            rows: subscriptions.slice(0, MAX_CARD_SUBSCRIPTIONS).map((item) => ({
+                label: labelFor(item),
+                statusKey: STATUS_KEY_BY_STATUS[item.status]
+            })),
+            total: subscriptions.length,
+            hasMore: subscriptions.length > MAX_CARD_SUBSCRIPTIONS
+        };
+    }
     if (activeSubscriptionsCount >= 2) return { kind: 'multiple', count: activeSubscriptionsCount };
     if (!plan) return { kind: 'free' };
 
-    const statusKeys = {
-        ACTIVE: 'active',
-        GRACE_PERIOD: 'grace-period',
-        SUSPENDED: 'suspended',
-        CANCEL_SCHEDULED: 'cancel-scheduled',
-        PAUSED: 'paused'
-    } as const;
     return {
         kind: 'single',
-        label:
-            planNames[plan.slug] && planNames[plan.slug] !== plan.slug
-                ? planNames[plan.slug]
-                : plan.name,
-        statusKey: statusKeys[plan.status]
+        label: labelFor(plan),
+        statusKey: STATUS_KEY_BY_STATUS[plan.status]
     };
 }
 
@@ -173,6 +229,10 @@ export function resolvePlanStatusLabel(input: {
             return t('host.dashboard.plan.gracePeriod', 'Pago pendiente');
         case 'SUSPENDED':
             return t('host.dashboard.plan.suspended', 'Suspendida');
+        case 'CHARGE_DECLINED':
+            return t('host.dashboard.plan.chargeDeclined', 'Cobro rechazado');
+        case 'PENDING_AUTHORIZATION':
+            return t('host.dashboard.plan.pendingAuthorization', 'Esperando autorización');
         case 'PAUSED':
             return t('host.dashboard.plan.paused', 'Pausada');
         case 'CANCEL_SCHEDULED': {
@@ -211,4 +271,32 @@ export function isPlanActive(input: {
     return info.subscriptionStatus === null
         ? info.status === 'active'
         : info.subscriptionStatus === 'ACTIVE';
+}
+
+/**
+ * The line the host dashboard adds under the plan badge when the owner has to act
+ * (HOS-2553), or `null` for a status that needs nothing.
+ *
+ * @param input.info - The dashboard plan (`subscriptionStatus`).
+ * @param input.t - Translator returning the fallback when a key is missing.
+ * @returns What to do, in the owner's language, or `null`.
+ */
+export function resolvePlanActionText(input: {
+    readonly info: { readonly subscriptionStatus: string | null };
+    readonly t: (key: string, fallback: string) => string;
+}): string | null {
+    switch (input.info.subscriptionStatus) {
+        case 'CHARGE_DECLINED':
+            return input.t(
+                'host.dashboard.plan.chargeDeclinedAction',
+                'Mercado Pago rechazó el cobro. Revisá tu medio de pago para no perder tu plan.'
+            );
+        case 'PENDING_AUTHORIZATION':
+            return input.t(
+                'host.dashboard.plan.pendingAuthorizationAction',
+                'Falta que autorices el pago en Mercado Pago para activar tu plan.'
+            );
+        default:
+            return null;
+    }
 }
