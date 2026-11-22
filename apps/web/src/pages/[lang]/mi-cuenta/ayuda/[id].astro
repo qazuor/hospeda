@@ -385,16 +385,17 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 
 	/*
 	 * Anchor jumps land below the sticky navbar through the global
-	 * `html { scroll-padding-top }`; no extra scroll-margin from 48rem up, or the
-	 * two add up and the heading lands ~200px down (HOS-2552). Below 48rem
-	 * (AccountLayout's mobile range) the account nav bar also sticks under the
-	 * navbar, so headings add its height. No shared variable exposes that
-	 * height: 52px = the toggle's 12px padding twice + one 24px line + 2px
-	 * border, plus 2px of air; keep it in step with `.account-page__toggle`.
+	 * `html { scroll-padding-top }` (navbar + 8px of air); no extra scroll-margin
+	 * from 64rem up, or the two add up and the heading lands ~200px down
+	 * (HOS-2552). Below 64rem the account bar (AccountBar, 3rem) also sticks under
+	 * the navbar, so headings add exactly its height (HOS-2563). Keep the value in
+	 * step with `block-size` in `AccountBar.module.css` (pinned by
+	 * test/pages/help-pages.test.ts); the bar is border-box, so 3rem is the
+	 * rendered height, border included.
 	 * Mobile-first: the closed breakpoint list (HOS-2469) only allows min-width.
 	 */
 	.help-article {
-		--help-account-bar-height: 52px;
+		--help-account-bar-height: 3rem;
 	}
 
 	.help-article__h2,
@@ -431,7 +432,7 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 		margin-bottom: var(--space-4);
 	}
 
-	@media (min-width: 48rem) {
+	@media (min-width: 64rem) {
 		.help-article__h2,
 		.help-article__prose :global(h3) {
 			scroll-margin-top: 0;
