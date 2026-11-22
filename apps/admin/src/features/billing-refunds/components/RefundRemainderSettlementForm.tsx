@@ -2,7 +2,9 @@
  * @file RefundRemainderSettlementForm.tsx
  * Action 14 over a `CONFIRMED` refund the provider accepted only in part (HOS-2406), or stuck on a
  * provider call unanswered for more than 24 hours that «Retry with MP» no longer resends (HOS-2538):
- * the person records what they refunded by hand from the MP panel, and the refund closes.
+ * the person records what they refunded by hand from the MP panel, and the refund closes. With a
+ * `picker` the refund is chosen from the stuck-refund list (HOS-2560); without one its id is typed
+ * by hand («Operar por ID»).
  */
 
 import type { TranslationKey } from '@repo/i18n';
@@ -10,7 +12,7 @@ import {
     type RefundRemainderSettlementRequest,
     RefundRemainderSettlementRequestSchema
 } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +23,7 @@ import {
     readAction14Rejection
 } from '../../billing-reconciliation/components/action14-shared';
 import { useSettleRefundRemainder } from '../hooks/useSettleRefundRemainder';
+import { StuckRefundPicker, type StuckRefundPickerProps } from './StuckRefundPicker';
 
 /** Rejections only the remainder settlement answers; the rest reuse action 14's messages. */
 const REMAINDER_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
@@ -59,8 +62,16 @@ export function readRemainderRejection({ error }: { readonly error: unknown }): 
     );
 }
 
-/** Renders the remainder settlement form. */
-export function RefundRemainderSettlementForm() {
+/**
+ * Renders the remainder settlement form.
+ *
+ * @param props.picker - Picks the refund from the stuck-refund list; when absent the id is typed.
+ */
+export function RefundRemainderSettlementForm({
+    picker
+}: {
+    readonly picker?: StuckRefundPickerProps;
+} = {}) {
     const { t, locale } = useTranslations();
     const mutation = useSettleRefundRemainder();
     const [refundId, setRefundId] = useState('');
@@ -70,7 +81,21 @@ export function RefundRemainderSettlementForm() {
     const [confirming, setConfirming] = useState(false);
     const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
     const [result, setResult] = useState<string | null>(null);
-    const trimmedId = refundId.trim();
+    const pickedId = picker?.value ?? '';
+    // A refund picked from the list (a row's action or the selector) starts a fresh decision; the
+    // selection going empty, as when a settled refund leaves the list, keeps the last outcome shown.
+    useEffect(() => {
+        if (pickedId === '') return;
+        setResult(null);
+        setConfirming(false);
+        setErrorKey(null);
+    }, [pickedId]);
+    const trimmedId = (picker ? picker.value : refundId).trim();
+    // The list refetching can empty the picked id while the confirm step shows: never confirm a blank id.
+    const idIsValid = RefundIdSchema.safeParse(trimmedId).success;
+    useEffect(() => {
+        if (!idIsValid) setConfirming(false);
+    }, [idIsValid]);
     const body: RefundRemainderSettlementRequest = {
         amount: Math.round(Number(amount) * 100),
         reference: reference.trim(),
@@ -100,7 +125,9 @@ export function RefundRemainderSettlementForm() {
         <Card>
             <CardContent className="space-y-3 pt-6">
                 <section
-                    data-testid="refund-remainder-settlement"
+                    data-testid={
+                        picker ? 'refund-remainder-settlement' : 'refund-remainder-settlement-by-id'
+                    }
                     className="space-y-3"
                 >
                     <h2 className="font-semibold">
@@ -137,11 +164,15 @@ export function RefundRemainderSettlementForm() {
                         </div>
                     ) : (
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <Action14Field
-                                label={t('admin-billing.proposedRefunds.remainder.refundId')}
-                                value={refundId}
-                                onChange={setRefundId}
-                            />
+                            {picker ? (
+                                <StuckRefundPicker {...picker} />
+                            ) : (
+                                <Action14Field
+                                    label={t('admin-billing.proposedRefunds.remainder.refundId')}
+                                    value={refundId}
+                                    onChange={setRefundId}
+                                />
+                            )}
                             <Action14Field
                                 label={t('admin-billing.proposedRefunds.remainder.amount')}
                                 value={amount}

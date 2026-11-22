@@ -2383,6 +2383,37 @@
                 "REFUND_RETRY_IN_PROGRESS": "A retry of this refund is already running. Wait for it to finish and check its result.",
                 "REFUND_CALL_TOO_OLD_TO_RETRY": "The unanswered call was sent more than 24 hours ago and the charge shows no refund to bind it to, so it is not resent (nothing was sent or recorded). Check the charge in the Mercado Pago panel, refund from there whatever is still owed, and record it with action 14 in «Settle the remainder» on this screen: the refund closes and the call is answered (refunds runbook, §8 step 0)."
             }
+        },
+        "stuck": {
+            "title": "Stuck refunds",
+            "description": "Confirmed refunds left waiting on Mercado Pago: a call got no answer, or MP accepted it but it does not show as credited yet. Each one comes with the suggested action; the action validates everything again before doing anything.",
+            "loading": "Loading stuck refunds...",
+            "error": "Could not load the stuck refunds.",
+            "empty": "There are no stuck refunds.",
+            "pagination": "Stuck refunds pagination",
+            "createdAt": "Created on",
+            "calls": "Unanswered calls: {{count}} of {{total}}",
+            "oldestUnanswered": "the oldest {{age}}",
+            "accepted": "MP accepted {{amount}}",
+            "noAction": "No panel action can take it right now: if the call is recent, wait until it is 24 hours old; otherwise follow the refunds runbook (§8).",
+            "actions": {
+                "RETRY": "Retry with MP",
+                "SETTLE_REMAINDER": "Settle the rest"
+            },
+            "age": {
+                "minutes": "{{count}} min ago",
+                "hours": "{{count}} h ago",
+                "days": "{{count}} d ago"
+            }
+        },
+        "picker": {
+            "label": "Stuck refund",
+            "placeholder": "Choose a refund",
+            "empty": "There are no stuck refunds to choose from. If yours is not listed, use «Operate by ID» at the bottom."
+        },
+        "operateById": {
+            "title": "Operate by ID",
+            "description": "For a refund the list does not show: paste its ID by hand."
         }
     },
     "subscriptionCancellation": {
