@@ -438,12 +438,18 @@ const newStyle =
       overflow-wrap: anywhere;
     }
 
+    /* Long titles wrap to 5 lines at the desktop-derived size; use the h3 step. */
+    .detail-header--mobile-gallery .detail-header__name {
+      font-size: var(--text-h3, 1.25rem);
+    }
+
     .detail-header--mobile-gallery .detail-header__rating {
       grid-area: rating;
     }
 
+    /* Compare aligns with the first title line, not the whole wrapped block. */
     :global(.wave-header) .detail-header--mobile-gallery .detail-header__favorite {
-      align-self: center;
+      align-self: start;
       order: 0;
     }
 

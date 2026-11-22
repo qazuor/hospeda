@@ -49,8 +49,6 @@ interface Props {
      * host-mode CTA. `undefined` (env var not configured) hides both.
      */
     readonly adminPanelUrl: string | undefined;
-    /** Whether the MCP feature is on (HOS-2184 T-028); `undefined` when unknown. */
-    readonly mcpEnabled?: boolean;
 }
 
 const {
@@ -61,8 +59,7 @@ const {
     homeHref,
     initialUser,
     initialRoles,
-    adminPanelUrl,
-    mcpEnabled
+    adminPanelUrl
 } = Astro.props;
 ---
 
@@ -84,5 +81,4 @@ const {
     initialUser={initialUser}
     initialRoles={initialRoles}
     adminPanelUrl={adminPanelUrl}
-    mcpEnabled={mcpEnabled}
 />

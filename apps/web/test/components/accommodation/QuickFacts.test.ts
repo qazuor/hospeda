@@ -9,17 +9,26 @@ const source = readFileSync(
 );
 
 describe('QuickFacts mobile summary', () => {
-    it('shows the compact facts in one line at 767px and retains the desktop pills', () => {
+    it('shows the compact facts on mobile and retains the desktop pills', () => {
         const mobileStyles = source.split('@media (max-width: 767px)')[1];
 
         expect(mobileStyles).toMatch(/\.quick-facts\s*\{\s*display: none/);
-        expect(mobileStyles).toMatch(
-            /\.quick-facts__compact\s*\{[^}]*display: block;[^}]*overflow-x: auto;[^}]*white-space: nowrap;/
-        );
-        expect(source).toMatch(
-            /class="quick-facts__compact"[^>]*>\s*\{compactFacts\.join\(' · '\)\}/
-        );
         expect(source).toMatch(/\.quick-facts__compact\s*\{\s*display: none/);
+    });
+
+    it('wraps a long row between facts instead of clipping it', () => {
+        const mobileStyles = source.split('@media (max-width: 767px)')[1] ?? '';
+        const row = mobileStyles.match(/\.quick-facts__compact\s*\{[^}]*\}/)?.[0] ?? '';
+
+        // Regression: the row used `white-space: nowrap` + `overflow-x: auto`,
+        // which hid the last facts (minimum stay) off the right edge.
+        expect(row).toContain('flex-wrap: wrap;');
+        expect(row).not.toContain('nowrap');
+        expect(row).not.toContain('overflow-x');
+        expect(mobileStyles).toMatch(/\.quick-facts__compact-item\s*\{[^}]*white-space: nowrap;/);
+        expect(source).toMatch(
+            /compactFacts\.map\(\(fact, index\) => \(\s*<span class="quick-facts__compact-item">\{index < compactFacts\.length - 1 \? `\$\{fact\} ·` : fact\}<\/span>/
+        );
     });
 
     it.each([
@@ -44,18 +53,15 @@ describe('QuickFacts mobile summary', () => {
         expect(row).toBe(expected);
     });
 
-    it('gives the compact facts scroller a tab stop, accessible name and visible focus ring', () => {
-        const scroller = source.match(/<div\s+class="quick-facts__compact"[^>]*>/)?.[0];
-        const mobileStyles = source.split('@media (max-width: 767px)')[1];
+    it('names the compact facts group and no longer makes it a tab stop', () => {
+        const group = source.match(/<div\s+class="quick-facts__compact"[^>]*>/)?.[0];
 
-        expect.soft(scroller).toContain('tabindex="0"');
-        expect.soft(scroller).toContain('role="group"');
+        // Nothing scrolls any more, so a tab stop would be an empty stop.
+        expect.soft(group).not.toContain('tabindex');
+        expect.soft(group).toContain('role="group"');
         expect
-            .soft(scroller)
+            .soft(group)
             .toContain("aria-label={t('accommodations.detail.quickFacts.scrollLabel')}");
-        expect(mobileStyles).toMatch(
-            /\.quick-facts__compact:focus-visible\s*\{[^}]*outline: 2px solid var\(--brand-primary\);/
-        );
     });
 
     it.each([

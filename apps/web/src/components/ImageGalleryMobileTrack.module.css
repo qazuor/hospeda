@@ -91,6 +91,15 @@
     z-index: 1;
 }
 
+/* Favorite matches the share/back overlay buttons: 44px, no border, card shadow.
+   Scoped to the gallery overlay; cards keep the 40px FavoriteButton. */
+.actions .favorite {
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    box-shadow: var(--shadow-card);
+}
+
 .counter,
 .dots {
     inset-block-end: var(--space-3);

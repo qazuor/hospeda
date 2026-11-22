@@ -498,6 +498,41 @@ export class PartnerService extends BaseCrudService<
     }
 
     /**
+     * Whether the calling account owns a LIVE partner listing (HOS-2551): one
+     * that is neither revoked nor soft-deleted. `/auth/me` reports it as
+     * `ownsPartner` so the web can show the partner menu shortcut and sidebar
+     * entry without a second round trip.
+     *
+     * Same ownership rule as {@link getOwn} (auth-only, scoped to the actor's
+     * own id, an anonymous actor owns nothing), but a cheap one-row existence
+     * probe instead of a hydrated read. A revoked partner does NOT count: its
+     * page still answers through `getOwn`, but it no longer gets a nav entry.
+     *
+     * @param actor - The actor.
+     * @param ctx - Optional service execution context.
+     * @returns `{ owns }`.
+     */
+    public async ownsActivePartner(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ owns: boolean }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'ownsActivePartner',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validatedInput, a) => {
+                const ownerUserId = resolvePartnerOwnerUserId(a);
+                if (ownerUserId === null) {
+                    return { owns: false };
+                }
+                const owns = await this.model.existsActiveForOwner({ ownerUserId, tx: ctx?.tx });
+                return { owns };
+            }
+        });
+    }
+
+    /**
      * The partner listing owned by the calling account, or null (HOS-278 D3).
      *
      * Auth-only by design, exactly like its `host_trades` sibling: an approved
