@@ -189,3 +189,26 @@ export function resolvePlanStatusLabel(input: {
                 : t('host.dashboard.plan.inactive', 'Inactivo');
     }
 }
+
+/**
+ * Whether the host dashboard plan is in good standing (active badge style).
+ *
+ * Compares the EXACT subscription status (`ACTIVE`) when the API sent it, and the
+ * coarse legacy status (`active`, lowercase) only for an API that predates it.
+ * The two vocabularies differ in case, so they must never be compared with the
+ * same literal (HOS-2543).
+ *
+ * @param input.info - The dashboard plan (`subscriptionStatus`, legacy `status`).
+ * @returns `true` when the plan is active.
+ */
+export function isPlanActive(input: {
+    readonly info: {
+        readonly status: string;
+        readonly subscriptionStatus: string | null;
+    };
+}): boolean {
+    const { info } = input;
+    return info.subscriptionStatus === null
+        ? info.status === 'active'
+        : info.subscriptionStatus === 'ACTIVE';
+}

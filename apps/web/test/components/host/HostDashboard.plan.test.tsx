@@ -17,11 +17,12 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 
 import { HostDashboard } from '../../../src/components/host/HostDashboard.client';
 
-const dashboard = (plan: Record<string, unknown> | null) => ({
+const dashboard = (plan: Record<string, unknown> | null, planUnavailable = false) => ({
     properties: { total: 1, published: 1, draft: 0, archived: 0 },
     plan,
     unreadConversations: 0,
-    unavailable: []
+    unavailable: [],
+    planUnavailable
 });
 
 const plan = (over: Record<string, unknown>) => ({
@@ -69,11 +70,39 @@ describe('HOS-2543 host dashboard subscription card', () => {
                 plan({
                     subscriptionStatus: 'CANCEL_SCHEDULED',
                     status: 'cancelled',
-                    serviceEndsAt: '2026-12-31T15:00:00.000Z'
+                    // 01:30 UTC is still 30 Dec in Buenos Aires: pins the site time zone
+                    serviceEndsAt: '2026-12-31T01:30:00.000Z'
                 })
             )
         });
         render(<HostDashboard locale="es" />);
-        expect(await screen.findByText(/Baja programada hasta el .*2026/)).toBeTruthy();
+        expect(
+            await screen.findByText('Baja programada hasta el 30 de diciembre de 2026')
+        ).toBeTruthy();
+    });
+
+    it('shows «No disponible», not «Sin suscripción activa», when the plan read failed', async () => {
+        mockHostDashboardGet.mockResolvedValue({ ok: true, data: dashboard(null, true) });
+        render(<HostDashboard locale="es" />);
+        expect(await screen.findByTestId('host-dashboard-plan-unavailable')).toBeTruthy();
+        expect(screen.getByText('No disponible')).toBeTruthy();
+        expect(screen.queryByText('Sin suscripción activa')).toBeNull();
+    });
+
+    it('still shows «Sin suscripción activa» when the read worked and there is no plan', async () => {
+        mockHostDashboardGet.mockResolvedValue({ ok: true, data: dashboard(null, false) });
+        render(<HostDashboard locale="es" />);
+        expect(await screen.findByText('Sin suscripción activa')).toBeTruthy();
+        expect(screen.queryByText('No disponible')).toBeNull();
+    });
+
+    it('does not use the warning style for an active plan from an API without subscriptionStatus', async () => {
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: dashboard(plan({ subscriptionStatus: undefined, status: 'active' }))
+        });
+        render(<HostDashboard locale="es" />);
+        const badge = await screen.findByText('Activo');
+        expect(badge.className).not.toContain('planBadgeWarning');
     });
 });

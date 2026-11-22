@@ -128,6 +128,8 @@ export interface HostDashboardData {
         readonly serviceEndsAt: string | null;
         readonly isTrial: boolean;
     } | null;
+    /** `true` when the API could not read the plan, so `planInfo: null` is "unknown" (HOS-2543). */
+    readonly planUnavailable: boolean;
     readonly unreadCount: number;
     readonly quickActions: ReadonlyArray<{
         readonly label: string;

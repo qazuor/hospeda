@@ -19,6 +19,7 @@ import { transformHostDashboard } from '@/lib/api/transforms';
 import type { HostDashboardData } from '@/lib/api/types';
 import { visibleApiMessage } from '@/lib/api-errors';
 import {
+    isPlanActive,
     resolveDashboardFreeCard,
     resolveDashboardTrialStat,
     resolvePlanStatusLabel
@@ -261,9 +262,7 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                             <p className={styles.planName}>{data.planInfo.name}</p>
                             <span
                                 className={`${styles.planBadge} ${
-                                    data.planInfo.isTrial ||
-                                    (data.planInfo.subscriptionStatus ?? data.planInfo.status) !==
-                                        'ACTIVE'
+                                    data.planInfo.isTrial || !isPlanActive({ info: data.planInfo })
                                         ? styles.planBadgeWarning
                                         : styles.planBadgeActive
                                 }`}
@@ -288,6 +287,13 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                                 </p>
                             ) : null}
                         </>
+                    ) : data.planUnavailable ? (
+                        <p
+                            className={styles.planEmpty}
+                            data-testid="host-dashboard-plan-unavailable"
+                        >
+                            {t('account.pages.dashboard.stats.unavailable', 'No disponible')}
+                        </p>
                     ) : (
                         <p className={styles.planEmpty}>
                             {t('host.dashboard.widgets.noPlan', 'Sin suscripción activa')}

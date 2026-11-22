@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     DASHBOARD_PLAN_SLUGS,
+    isPlanActive,
     parsePlanNames,
     resolveDashboardFreeCard,
     resolveDashboardPlanStat,
@@ -216,5 +217,17 @@ describe('HOS-2543 resolvePlanStatusLabel', () => {
                 formatDate
             })
         ).toBe('host.dashboard.plan.inactive');
+    });
+});
+
+describe('isPlanActive', () => {
+    it.each([
+        ['ACTIVE', 'active', true],
+        ['GRACE_PERIOD', 'past_due', false],
+        ['PAUSED', 'cancelled', false],
+        [null, 'active', true],
+        [null, 'cancelled', false]
+    ])('subscriptionStatus %s / status %s -> %s', (subscriptionStatus, status, expected) => {
+        expect(isPlanActive({ info: { status, subscriptionStatus } })).toBe(expected);
     });
 });

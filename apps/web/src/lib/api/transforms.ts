@@ -1366,6 +1366,7 @@ export function transformHostDashboard({
                   isTrial: Boolean(plan.isTrial)
               }
             : null,
+        planUnavailable: item.planUnavailable === true,
         unreadCount: Number(item.unreadConversations ?? 0),
         quickActions: [
             { label: 'Mis propiedades', href: 'mi-cuenta/propiedades', icon: 'building' },
