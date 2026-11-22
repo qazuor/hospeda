@@ -281,7 +281,7 @@
             "why": "AC:B12:10 (HOS-1615): the retired-version list counts the subscriptions still anchored to each version over LIVE_SUBSCRIPTION_STATUSES; it only reads, never writes status."
         },
         {
-            "file": "apps/api/src/routes/billing-subscription/read-own-declined-signups.ts",
+            "file": "packages/service-core/src/services/billing/subscription/declined-signup-notices.ts",
             "symbol": "selectDeclinedSignupNotices",
             "row": null,
             "subject": "subscription",

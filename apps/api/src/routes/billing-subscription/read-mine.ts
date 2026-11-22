@@ -26,17 +26,23 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
             readOwnDeclinedSignups(userId)
         ]);
         return {
-            subscriptions: subscriptions.map(({ planVersionId: _planVersionId, ...row }) => ({
-                ...row,
-                serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
-                graceEndsAt: row.graceEndsAt?.toISOString() ?? null,
-                createdAt: row.createdAt.toISOString(),
-                plan: row.plan,
-                nextCharge: row.nextCharge
-                    ? { ...row.nextCharge, at: row.nextCharge.at.toISOString() }
-                    : null,
-                paidAfterCancellation: row.paidAfterCancellation
-            })),
+            // HOS-2553: a declined signup is told ONCE, by `declinedSignups`. That notice
+            // follows the same rule the reader applies to `CHARGE_DECLINED` rows and carries
+            // the retry (plan, billing option, declared email); a row here would repeat it
+            // with no action. The list keeps the checkout waiting for authorization.
+            subscriptions: subscriptions
+                .filter((row) => row.status !== 'CHARGE_DECLINED')
+                .map(({ planVersionId: _planVersionId, ...row }) => ({
+                    ...row,
+                    serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
+                    graceEndsAt: row.graceEndsAt?.toISOString() ?? null,
+                    createdAt: row.createdAt.toISOString(),
+                    plan: row.plan,
+                    nextCharge: row.nextCharge
+                        ? { ...row.nextCharge, at: row.nextCharge.at.toISOString() }
+                        : null,
+                    paidAfterCancellation: row.paidAfterCancellation
+                })),
             deferredCourtesies,
             declinedSignups: declined.map((notice) => ({
                 ...notice,

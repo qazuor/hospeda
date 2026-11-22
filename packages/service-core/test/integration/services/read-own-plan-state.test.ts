@@ -14,6 +14,8 @@ import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from
 import { providerHarness } from './support/complement-fixtures.js';
 import { retirePauseRows, seedPausePrincipal } from './support/pause-fixtures.js';
 
+const DAY_MS = 86_400_000;
+
 afterEach(retirePauseRows);
 afterAll(closeServiceTestPool);
 
@@ -89,17 +91,11 @@ describe.skipIf(!isServiceTestDbAvailable())('readOwnSubscriptions (HOS-2328)', 
         expect(pendingRows).toEqual([]);
     });
 
-    it('HOS-2553: reads CHARGE_DECLINED and PENDING_AUTHORIZATION only when asked, never a succession checkout', async () => {
-        // Arrange: a declined origin, its open succession checkout, and an owner whose
+    it('HOS-2553: reads a recent CHARGE_DECLINED and PENDING_AUTHORIZATION only when asked', async () => {
+        // Arrange: an owner whose only row is a decline from now, and an owner whose
         // only row is an initial checkout waiting for authorization
         const harness = providerHarness();
         const declined = await seedPausePrincipal({ harness, status: 'CHARGE_DECLINED' });
-        const successorCheckout = await seedPausePrincipal({
-            harness,
-            userId: declined.userId,
-            succeedsId: declined.subscriptionId,
-            status: 'PENDING_AUTHORIZATION'
-        });
         const waiting = await seedPausePrincipal({ harness, status: 'PENDING_AUTHORIZATION' });
         const now = new Date();
 
@@ -121,10 +117,70 @@ describe.skipIf(!isServiceTestDbAvailable())('readOwnSubscriptions (HOS-2328)', 
         expect(withUnsettled.subscriptions.map((row) => [row.id, row.status])).toEqual([
             [declined.subscriptionId, 'CHARGE_DECLINED']
         ]);
-        expect(withUnsettled.subscriptions.map((row) => row.id)).not.toContain(
-            successorCheckout.subscriptionId
-        );
         expect(waitingRows.map((row) => row.status)).toEqual(['PENDING_AUTHORIZATION']);
+    });
+
+    it('HOS-2553: never lists a succession checkout, nor a decline whose vertical has a live checkout', async () => {
+        // Arrange: a declined origin with an open succession checkout
+        const harness = providerHarness();
+        const declined = await seedPausePrincipal({ harness, status: 'CHARGE_DECLINED' });
+        const successorCheckout = await seedPausePrincipal({
+            harness,
+            userId: declined.userId,
+            succeedsId: declined.subscriptionId,
+            status: 'PENDING_AUTHORIZATION'
+        });
+
+        // Act
+        const rows = await readOwnSubscriptions({
+            userId: declined.userId,
+            now: new Date(),
+            includeUnsettled: true
+        });
+
+        // Assert
+        expect(rows.map((row) => row.id)).not.toContain(successorCheckout.subscriptionId);
+        expect(rows.map((row) => row.id)).not.toContain(declined.subscriptionId);
+    });
+
+    it('HOS-2553: drops an old decline that sits next to an ACTIVE subscription in the same vertical', async () => {
+        // Arrange: the first signup was declined, the second one is paying
+        const harness = providerHarness();
+        const declined = await seedPausePrincipal({ harness, status: 'CHARGE_DECLINED' });
+        const active = await seedPausePrincipal({ harness, userId: declined.userId });
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ createdAt: new Date(Date.now() - 2 * DAY_MS) })
+            .where(eq(subscriptions.id, declined.subscriptionId));
+
+        // Act
+        const rows = await readOwnSubscriptions({
+            userId: declined.userId,
+            now: new Date(),
+            includeUnsettled: true
+        });
+
+        // Assert
+        expect(rows.map((row) => [row.id, row.status])).toEqual([
+            [active.subscriptionId, 'ACTIVE']
+        ]);
+    });
+
+    it('HOS-2553: hides a decline older than seven days even with nothing live', async () => {
+        // Arrange
+        const harness = providerHarness();
+        const declined = await seedPausePrincipal({ harness, status: 'CHARGE_DECLINED' });
+        const now = new Date(Date.now() + 8 * DAY_MS);
+
+        // Act
+        const rows = await readOwnSubscriptions({
+            userId: declined.userId,
+            now,
+            includeUnsettled: true
+        });
+
+        // Assert
+        expect(rows).toEqual([]);
     });
 
     it('leaves out a row that stopped being PRINCIPAL', async () => {

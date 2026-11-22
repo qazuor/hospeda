@@ -43,6 +43,7 @@ import { ServiceError } from '../../../types';
 import { readLivePromos } from '../promo/live-promos';
 import { createCutExpectedAmountPolicy } from '../reconciliation/sweep/comparisons/expected-amount';
 import { computeCourtesyBalanceMonths } from './courtesy-balance';
+import { readOwnDeclinedSignupNotices } from './declined-signup-notices';
 import { PAID_AFTER_CANCELLATION_TEMPLATE } from './paid-after-cancellation-notice';
 import { readResumableCheckoutUrl } from './resolve-live-commitment';
 
@@ -68,6 +69,8 @@ const SETTLED_STATUSES: readonly string[] = [
  * Principal statuses an owner must still be TOLD about (HOS-2553): the checkout is
  * waiting for authorization, or the provider declined the charge. They have no
  * self-service surface, so only callers that opt in with `includeUnsettled` see them.
+ * `CHARGE_DECLINED` is terminal and kept forever, so a declined row is kept only when
+ * the declined-signup rule (`declined-signup-notices.ts`) still shows it.
  */
 const UNSETTLED_STATUSES: readonly string[] = ['PENDING_AUTHORIZATION', 'CHARGE_DECLINED'];
 
@@ -80,6 +83,9 @@ const UNSETTLED_STATUSES: readonly string[] = ['PENDING_AUTHORIZATION', 'CHARGE_
  * subscriptions (HOS-2553). Default `false`: Mi suscripcion and the assistant keep reading
  * only the settled ones. A `PENDING_AUTHORIZATION` row with a predecessor is a succession
  * checkout, already reported on the predecessor's `succession`, so it is never listed twice.
+ * A `CHARGE_DECLINED` row is listed only under the declined-signup rule (the vertical's last
+ * attempt, declined less than seven days ago, no live subscription in that vertical), so an
+ * old decline never sits next to, or shadows, a live subscription.
  * @returns One row per live principal subscription, oldest first.
  * @throws ServiceError `INTERNAL_ERROR` on a billing option cycle or currency outside the contract.
  */
@@ -95,7 +101,7 @@ export async function readOwnSubscriptions(input: {
             : SETTLED_STATUSES
         ).includes(status)
     );
-    const rows = await getDb()
+    const candidateRows = await getDb()
         .select({
             subscription: subscriptions,
             id: subscriptions.id,
@@ -134,6 +140,16 @@ export async function readOwnSubscriptions(input: {
             )
         )
         .orderBy(asc(subscriptions.createdAt), asc(subscriptions.id));
+    const shownDeclinedIds = candidateRows.some((row) => row.status === 'CHARGE_DECLINED')
+        ? new Set(
+              (await readOwnDeclinedSignupNotices({ userId, now })).map(
+                  (notice) => notice.subscriptionId
+              )
+          )
+        : new Set<string>();
+    const rows = candidateRows.filter(
+        (row) => row.status !== 'CHARGE_DECLINED' || shownDeclinedIds.has(row.id)
+    );
     const ids = rows.map(({ id }) => id);
     const openPauses =
         ids.length === 0

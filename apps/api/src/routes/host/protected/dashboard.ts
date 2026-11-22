@@ -186,9 +186,14 @@ async function resolvePlan(input: {
             // never as "no subscription".
             includeUnsettled: true
         });
+        // HOS-2553: the reader already drops a decline that sits next to a live
+        // subscription; this keeps a declined row from ever shadowing a live one here.
+        const preferLive = <T extends { readonly status: string }>(rows: readonly T[]) =>
+            rows.find((row) => row.status !== 'CHARGE_DECLINED') ?? rows[0];
         const chosen =
-            subscriptions.find((row) => row.vertical === VerticalEnum.ACCOMMODATION) ??
-            subscriptions[0];
+            preferLive(
+                subscriptions.filter((row) => row.vertical === VerticalEnum.ACCOMMODATION)
+            ) ?? preferLive(subscriptions);
         if (!chosen) return { plan: null, degraded: false };
         const parsedStatus = OwnPlanStatusSchema.safeParse(chosen.status);
         if (!parsedStatus.success) {

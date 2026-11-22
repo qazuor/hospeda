@@ -390,6 +390,24 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             expect(body.data.plan.status).toBe(coarse);
         });
 
+        it('never lets an older declined row shadow a live subscription in the same vertical (HOS-2553)', async () => {
+            // Arrange: oldest first, as the reader returns them
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [
+                    principal({ id: 'old-decline', status: 'CHARGE_DECLINED' }),
+                    principal({ id: 'paying', status: 'ACTIVE' })
+                ],
+                deferredCourtesies: []
+            });
+
+            // Act
+            const body = await (await buildApp().request('/dashboard')).json();
+
+            // Assert
+            expect(body.data.plan.subscriptionStatus).toBe('ACTIVE');
+            expect(body.data.plan.status).toBe('active');
+        });
+
         it('asks the reader for the unsettled statuses so they never read as no subscription (HOS-2553)', async () => {
             await buildApp().request('/dashboard');
             expect(readOwnPlanStateMock).toHaveBeenCalledWith(
