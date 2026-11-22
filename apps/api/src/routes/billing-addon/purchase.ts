@@ -13,14 +13,6 @@ import { answerAddonProviderError, answerPurchaseRefusal } from './purchase-reje
 import { addonPurchaseReturnUrl } from './purchase-return-url';
 
 /**
- * Buy an addon for the current actor. A recurring addon gets its provider checkout; a one-time
- * (`UNA_VEZ`) addon gets a Mercado Pago payment page (HOS-2179 §5.1). Either way the answer
- * carries the sanitized link to redirect to, and no payment data ever reaches this route: the
- * request schema is strict and has no field for it (§6.2). The provider is called after A1
- * commits, outside its transaction.
- */
-
-/**
  * HOS-1883: emits `addon_checkout_started` for a purchase A1 just created (only after its
  * provider authorization or payment page succeeded: a refusal throws before this point) and
  * strips the fact, which is never part of the answer.
@@ -32,6 +24,13 @@ function withoutStartedFact(result: PurchaseAddonResult): PurchaseAddonResult {
     return answer;
 }
 
+/**
+ * Buy an addon for the current actor. A recurring addon gets its provider checkout; a one-time
+ * (`UNA_VEZ`) addon gets a Mercado Pago payment page (HOS-2179 §5.1). Either way the answer
+ * carries the sanitized link to redirect to, and no payment data ever reaches this route: the
+ * request schema is strict and has no field for it (§6.2). The provider is called after A1
+ * commits, outside its transaction.
+ */
 export const protectedAddonPurchaseRoute = createProtectedRoute({
     method: 'post',
     path: '/purchases',

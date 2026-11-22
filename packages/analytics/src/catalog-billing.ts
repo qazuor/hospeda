@@ -228,6 +228,11 @@ export const AddonAnalyticsEventSchemas = {
     }),
     addon_cancelled: z.object({
         ...addonCommon,
+        /**
+         * `GRANT_REVOKED` stays in the enum (owner decision, HOS-1883) but no flow emits it today:
+         * a grant revocation only ends free (grant-titled) instances, and a free instance owes no
+         * `addon_cancelled` (AC-7). It is kept so a future paid case needs no schema change.
+         */
         path: z.enum([
             'OWNER_WITHDREW',
             'SERVICE_END',
