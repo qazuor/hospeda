@@ -89,6 +89,44 @@ describe.skipIf(!isServiceTestDbAvailable())('readOwnSubscriptions (HOS-2328)', 
         expect(pendingRows).toEqual([]);
     });
 
+    it('HOS-2553: reads CHARGE_DECLINED and PENDING_AUTHORIZATION only when asked, never a succession checkout', async () => {
+        // Arrange: a declined origin, its open succession checkout, and an owner whose
+        // only row is an initial checkout waiting for authorization
+        const harness = providerHarness();
+        const declined = await seedPausePrincipal({ harness, status: 'CHARGE_DECLINED' });
+        const successorCheckout = await seedPausePrincipal({
+            harness,
+            userId: declined.userId,
+            succeedsId: declined.subscriptionId,
+            status: 'PENDING_AUTHORIZATION'
+        });
+        const waiting = await seedPausePrincipal({ harness, status: 'PENDING_AUTHORIZATION' });
+        const now = new Date();
+
+        // Act
+        const settledOnly = await readOwnSubscriptions({ userId: declined.userId, now });
+        const withUnsettled = await readOwnPlanState({
+            userId: declined.userId,
+            now,
+            includeUnsettled: true
+        });
+        const waitingRows = await readOwnSubscriptions({
+            userId: waiting.userId,
+            now,
+            includeUnsettled: true
+        });
+
+        // Assert
+        expect(settledOnly).toEqual([]);
+        expect(withUnsettled.subscriptions.map((row) => [row.id, row.status])).toEqual([
+            [declined.subscriptionId, 'CHARGE_DECLINED']
+        ]);
+        expect(withUnsettled.subscriptions.map((row) => row.id)).not.toContain(
+            successorCheckout.subscriptionId
+        );
+        expect(waitingRows.map((row) => row.status)).toEqual(['PENDING_AUTHORIZATION']);
+    });
+
     it('leaves out a row that stopped being PRINCIPAL', async () => {
         // Arrange
         const harness = providerHarness();

@@ -147,18 +147,17 @@ describe('TEST:1756:1-7 user stats plan summary', () => {
         'CANCEL_SCHEDULED',
         // HOS-2543 owner decision (2026-11-22): the card shows the exact status, so a
         // PAUSED principal is counted and reported as PAUSED instead of hidden.
-        'PAUSED'
+        'PAUSED',
+        // HOS-2553: the two unsettled states are told to the owner, never hidden.
+        'PENDING_AUTHORIZATION',
+        'CHARGE_DECLINED'
     ] as const)('TEST:1756:4 counts %s', async (status) => {
         const row = await seedSelfState(status);
         const data = await readStats(row.ownerId);
         expect(data.activeSubscriptionsCount).toBe(1);
         expect((data.plan as { status: string }).status).toBe(status);
     });
-    it.each([
-        // PENDING_AUTHORIZATION and CANCELLED stay excluded (HOS-2553 scope).
-        'PENDING_AUTHORIZATION',
-        'CANCELLED'
-    ] as const)('TEST:1756:4 excludes %s', async (status) => {
+    it.each(['CANCELLED'] as const)('TEST:1756:4 excludes %s', async (status) => {
         const row = await seedSelfState(status);
         const data = await readStats(row.ownerId);
         expect(data.activeSubscriptionsCount).toBe(0);
