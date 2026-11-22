@@ -37,11 +37,14 @@ const compactFacts = [
 {compactFacts.length > 0 && (
   <div
     class="quick-facts__compact"
-    tabindex="0"
     role="group"
     aria-label={t('accommodations.detail.quickFacts.scrollLabel')}
   >
-    {compactFacts.join(' · ')}
+    {/* Each fact is unbreakable and carries its trailing separator, so a long
+        row wraps BETWEEN facts and the dot stays with the fact before it. */}
+    {compactFacts.map((fact, index) => (
+      <span class="quick-facts__compact-item">{index < compactFacts.length - 1 ? `${fact} ·` : fact}</span>
+    ))}
   </div>
 )}
 
@@ -143,17 +146,19 @@ const compactFacts = [
     .quick-facts {
       display: none;
     }
+    /* Wraps to a second line instead of clipping: a horizontal scroller hid
+       the last facts (the minimum stay) and nobody discovered the swipe. */
     .quick-facts__compact {
-      display: block;
-      overflow-x: auto;
-      white-space: nowrap;
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 0.3em;
+      row-gap: var(--space-1);
       margin: 0;
       font-size: 0.875rem;
       color: var(--core-muted-foreground);
     }
-    .quick-facts__compact:focus-visible {
-      outline: 2px solid var(--brand-primary);
-      outline-offset: -2px;
+    .quick-facts__compact-item {
+      white-space: nowrap;
     }
   }
 </style>
