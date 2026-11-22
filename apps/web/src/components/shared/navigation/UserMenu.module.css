@@ -196,6 +196,22 @@
     text-decoration: underline;
 }
 
+/* «Administración» block (HOS-2551): a titled list of business shortcuts. */
+.adminSection {
+    padding-top: 10px;
+}
+
+.sectionTitle {
+    margin: 0;
+    padding: 0 16px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 .menuList {
     list-style: none;
     margin: 0;

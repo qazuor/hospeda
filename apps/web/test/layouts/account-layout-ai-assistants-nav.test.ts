@@ -42,14 +42,13 @@ describe('AI assistants nav entry', () => {
         expect(ids('avatar')).not.toContain(AI_ASSISTANTS_NAV_ITEM_ID);
     });
 
-    it('is appended to the curated menu selection only when asked', () => {
-        const without = getCuratedAccountNav({ permissions: [] });
-        const withIt = getCuratedAccountNav({ permissions: [], includeAiAssistants: true });
-
-        expect(without.shortcutItems.map((item) => item.id)).not.toContain(
-            AI_ASSISTANTS_NAV_ITEM_ID
-        );
-        expect(withIt.shortcutItems.at(-1)?.id).toBe(AI_ASSISTANTS_NAV_ITEM_ID);
+    it('is never part of the header menus (HOS-2551)', () => {
+        const nav = getCuratedAccountNav({
+            permissions: ['accommodation.create'],
+            ownsHostTradeListing: true
+        });
+        const ids = [nav.dashboardItem?.id, ...nav.adminItems.map((item) => item.id)];
+        expect(ids).not.toContain(AI_ASSISTANTS_NAV_ITEM_ID);
     });
 });
 
@@ -61,8 +60,8 @@ describe('AccountLayout gating of the AI assistants entry', () => {
         expect(layout).toMatch(/<AiAssistantsNavReveal client:idle \/>/);
     });
 
-    it('passes the flag to both menus mounted by the header', () => {
+    it('no longer passes the flag to the header menus, which do not list the entry (HOS-2551)', () => {
         const header = readFileSync(resolve(__dirname, '../../src/layouts/Header.astro'), 'utf8');
-        expect(header.match(/mcpEnabled=\{mcpEnabled\}/g)).toHaveLength(2);
+        expect(header).not.toContain('mcpEnabled');
     });
 });

@@ -16,11 +16,12 @@
  * parses the session on routes that explicitly require it; SSG pages would
  * otherwise see every visitor as a guest.
  *
- * Nav items (identity "Mi cuenta" link + shortcuts: Favoritos, ONE
- * business-panel shortcut, Suscripción) are the curated set from
- * `ACCOUNT_NAV_GROUPS` / `getCuratedAccountNav` (HOS-131 §6.4) — this
- * component is NOT the source of truth for those items, it only resolves
- * `dashboardItem`/`shortcutItems` and renders them. The admin-panel session
+ * Nav items (HOS-2551): the identity "Mi cuenta" link, then an
+ * «Administración» block with one «Administrar …» shortcut per business
+ * vertical the user has. They come from `getCuratedAccountNav`
+ * (`@/lib/nav-avatar`, shared with `MobileMenu.client.tsx`) — this component
+ * is NOT the source of truth for those items, it only renders them. Profile
+ * entries, favorites and «Asistentes de IA» live in the account sidebar. The admin-panel session
  * link is built by the shared `buildAdminPanelItem` (`@/lib/admin-panel-link`,
  * also used by `MobileMenu.client.tsx`'s session zone).
  *
@@ -32,11 +33,10 @@
 
 import { ChevronDownIcon, LogoutIcon } from '@repo/icons';
 import type { JSX } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
-import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
 import {
     identifyUser,
@@ -50,7 +50,7 @@ import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { getCuratedAccountNav } from '@/lib/nav-avatar';
+import { ADMINISTRATION_LABEL_KEY, getCuratedAccountNav } from '@/lib/nav-avatar';
 import { clearThemeSyncMarker } from '@/lib/theme';
 import { buildUrl } from '@/lib/urls';
 import styles from './UserMenu.module.css';
@@ -66,12 +66,6 @@ export type UserMenuUser = AuthMeUser;
 export type UserMenuVariant = 'hero' | 'scrolled';
 
 export interface UserMenuProps {
-    /**
-     * Whether the MCP feature is on, known by the server that mounts the menu.
-     * Omit when unknown: the "Asistentes de IA" entry then follows the
-     * connection-count rule (HOS-2184 T-028).
-     */
-    readonly mcpEnabled?: boolean;
     /**
      * Initial user data from server. Pass `null` for guest visitors.
      * The component still hits `/auth/me` on mount to refine permissions
@@ -185,18 +179,20 @@ export function UserMenu({
     locale,
     currentPath,
     variant = 'scrolled',
-    adminPanelUrl,
-    mcpEnabled
+    adminPanelUrl
 }: UserMenuProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const adminHeadingId = useId();
     const menuRef = useRef<HTMLDivElement>(null);
     const texts = TEXTS[locale] ?? TEXTS.es;
     const { t } = createTranslations(locale);
 
     // SSR-reconciling mode (see the hook's JSDoc) — this is the component
     // responsible for the `data-user-authenticated` attribute.
-    const { user, permissions, roles } = useAccountPermissions({ initialUser });
+    const { user, permissions, roles, ownsHostTradeListing, ownsPartner } = useAccountPermissions({
+        initialUser
+    });
 
     // ── Umami identify ──────────────────────────────────────────────────
     // Fires whenever `user` resolves to a known, authenticated id (from the
@@ -319,19 +315,17 @@ export function UserMenu({
         }
     }, [locale]);
 
-    // ── Curated nav (identity + shortcuts, HOS-131 §6.4) ─────────────────
+    // ── Account nav (identity + «Administración», HOS-2551) ──────────────
     // Fail-closed while permissions are loading: `permissions ?? []` hides
-    // the gated business shortcut until the real list resolves. `dashboard`,
-    // `favorites`, and `subscription` have no `requiredPermission`, so they
-    // stay visible for any authenticated user regardless of loading state.
-    const showAiAssistants = useAiAssistantsEntry({ mcpEnabled, enabled: user !== null });
+    // every gated shortcut until the real list resolves.
     const avatarNav = useMemo(
         () =>
             getCuratedAccountNav({
                 permissions: permissions ?? [],
-                includeAiAssistants: showAiAssistants
+                ownsHostTradeListing,
+                ownsPartner
             }),
-        [permissions, showAiAssistants]
+        [permissions, ownsHostTradeListing, ownsPartner]
     );
 
     // ── Admin panel session item ──────────────────────────────────────────
@@ -425,29 +419,45 @@ export function UserMenu({
                         )}
                     </div>
 
-                    {/* Shortcuts zone: Favoritos, business shortcut, Suscripción */}
-                    <ul className={styles.menuList}>
-                        {avatarNav.shortcutItems.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                                <li key={item.id}>
-                                    <a
-                                        href={buildUrl({ locale, path: item.href })}
-                                        role="menuitem"
-                                        onClick={() => setIsOpen(false)}
-                                        className={styles.menuLink}
-                                    >
-                                        <Icon
-                                            size={18}
-                                            weight="regular"
-                                            aria-hidden="true"
-                                        />
-                                        <span>{t(item.i18nKey)}</span>
-                                    </a>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                    {/* «Administración» (HOS-2551): one shortcut per business vertical */}
+                    {avatarNav.adminItems.length > 0 && (
+                        // biome-ignore lint/a11y/useSemanticElements: a <fieldset> is not allowed inside role="menu"; WAI-ARIA's grouped menu pattern uses role="group" with aria-labelledby.
+                        <div
+                            role="group"
+                            className={styles.adminSection}
+                            aria-labelledby={adminHeadingId}
+                        >
+                            <p
+                                id={adminHeadingId}
+                                className={styles.sectionTitle}
+                            >
+                                {t(ADMINISTRATION_LABEL_KEY)}
+                            </p>
+                            <ul className={styles.menuList}>
+                                {avatarNav.adminItems.map((item) => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <li key={item.id}>
+                                            <a
+                                                href={buildUrl({ locale, path: item.href })}
+                                                role="menuitem"
+                                                onClick={() => setIsOpen(false)}
+                                                className={styles.menuLink}
+                                                data-admin-shortcut={item.id}
+                                            >
+                                                <Icon
+                                                    size={18}
+                                                    weight="regular"
+                                                    aria-hidden="true"
+                                                />
+                                                <span>{t(item.i18nKey)}</span>
+                                            </a>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    )}
 
                     <hr className={styles.divider} />
 

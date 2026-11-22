@@ -16,7 +16,10 @@
 
 import { describe, expect, it, vi } from 'vitest';
 
-const { mockGetOwn } = vi.hoisted(() => ({ mockGetOwn: vi.fn() }));
+const { mockGetOwn, mockOwnsActivePartner } = vi.hoisted(() => ({
+    mockGetOwn: vi.fn(),
+    mockOwnsActivePartner: vi.fn()
+}));
 
 // PARTIAL mocks, via `importOriginal`. Replacing either barrel wholesale takes
 // the suite down at load time — `@repo/db` alone is imported by half the
@@ -26,6 +29,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     HostTradeService: class {
         getOwn = mockGetOwn;
+    },
+    PartnerService: class {
+        ownsActivePartner = mockOwnsActivePartner;
     }
 }));
 
@@ -83,6 +89,53 @@ describe('GET /auth/me — ownsHostTradeListing (H-158)', () => {
         const result = await handleAuthMe(ctxWith(AUTHENTICATED));
 
         expect(result.ownsHostTradeListing).toBe(false);
+        expect(result.isAuthenticated).toBe(true);
+    });
+});
+
+describe('GET /auth/me — ownsPartner (HOS-2551)', () => {
+    it('reports true when the account owns a live partner', async () => {
+        mockGetOwn.mockResolvedValue({ data: { trade: null } });
+        mockOwnsActivePartner.mockResolvedValue({ data: { owns: true } });
+
+        const result = await handleAuthMe(ctxWith(AUTHENTICATED));
+
+        expect(result.ownsPartner).toBe(true);
+    });
+
+    it('reports false when the account owns none', async () => {
+        mockOwnsActivePartner.mockResolvedValue({ data: { owns: false } });
+
+        const result = await handleAuthMe(ctxWith(AUTHENTICATED));
+
+        expect(result.ownsPartner).toBe(false);
+    });
+
+    it('reports false when the partner probe throws (non-blocking)', async () => {
+        mockOwnsActivePartner.mockRejectedValue(new Error('db down'));
+
+        const result = await handleAuthMe(ctxWith(AUTHENTICATED));
+
+        expect(result.ownsPartner).toBe(false);
+        expect(result.isAuthenticated).toBe(true);
+    });
+
+    it('does NOT probe for a guest', async () => {
+        mockOwnsActivePartner.mockReset();
+
+        const result = await handleAuthMe(ctxWith(GUEST));
+
+        expect(mockOwnsActivePartner).not.toHaveBeenCalled();
+        expect(result.ownsPartner).toBe(false);
+    });
+
+    it('degrades to false, and still answers, when the probe fails', async () => {
+        mockGetOwn.mockResolvedValue({ data: { trade: null } });
+        mockOwnsActivePartner.mockRejectedValue(new Error('db down'));
+
+        const result = await handleAuthMe(ctxWith(AUTHENTICATED));
+
+        expect(result.ownsPartner).toBe(false);
         expect(result.isAuthenticated).toBe(true);
     });
 });

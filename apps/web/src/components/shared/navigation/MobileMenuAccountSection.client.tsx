@@ -28,7 +28,7 @@ import type { MouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { PUBLISH_CTA_OPTIONS } from '@/config/discovery-doors';
-import type { NavItem as AccountNavItem } from '@/config/navigation';
+import type { NavItem } from '@/config/navigation';
 import { getInitials as getInitialsShared } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -43,6 +43,9 @@ interface MobileMenuAccountSectionUser {
 }
 
 /** Props for `MobileMenuAccountSection`. */
+/** What one account link needs (a nav item or an «Administrar …» shortcut, HOS-2551). */
+export type MobileAccountNavItem = Pick<NavItem, 'id' | 'i18nKey' | 'href' | 'icon'>;
+
 export interface MobileMenuAccountSectionProps {
     /** Active locale — used for the guest sign-in link and curated-item hrefs. */
     readonly locale: SupportedLocale;
@@ -52,8 +55,8 @@ export interface MobileMenuAccountSectionProps {
     readonly isOpen: boolean;
     /** Authenticated user data (`null`/`undefined` when not logged in). */
     readonly user?: MobileMenuAccountSectionUser | null;
-    /** The curated account nav items (HOS-131 §6.5 mobile "option A") — same selector as UserMenu's avatar dropdown. */
-    readonly curatedAccountItems: readonly AccountNavItem[];
+    /** The account nav items (HOS-131 §6.5 mobile "option A") — same selector as UserMenu's avatar dropdown. */
+    readonly curatedAccountItems: readonly MobileAccountNavItem[];
     /** Resolved "Cerrar sesión" label. */
     readonly signOutLabel: string;
     /** Resolved "Cerrando sesión…" loading label. */
