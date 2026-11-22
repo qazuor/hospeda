@@ -266,11 +266,13 @@ export interface VerificationEmailPayload {
     readonly accommodationName: string;
     readonly locale: 'es' | 'en' | 'pt';
     /**
-     * The inquiry text this link will deliver once confirmed (HOS-2568). Shown in the
-     * email so the person sees exactly what they are confirming. Plain text: the
-     * template escapes it.
+     * The inquiry text this link will deliver once confirmed (HOS-2568). The recipient
+     * address is unverified, so the mailer must NOT render it in full: show a short
+     * neutralized excerpt only.
      */
     readonly message?: string;
+    /** Phone the guest declared; the mailer renders it masked. */
+    readonly guestPhone?: string | null;
 }
 
 /**
@@ -1704,7 +1706,7 @@ export class ConversationService extends BaseService {
                 guestName,
                 accommodationName,
                 locale,
-                ...(inquiry ? { message: inquiry.message } : {})
+                ...(inquiry ? { message: inquiry.message, guestPhone: inquiry.guestPhone } : {})
             });
         } catch (error) {
             this.logger.error(

@@ -2,6 +2,7 @@ import { Section, Text } from '@react-email/components';
 import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
+import { buildInquiryExcerpt, maskPhone } from './inquiry-excerpt.js';
 
 /**
  * Props for ConversationVerify email template.
@@ -17,10 +18,13 @@ export interface ConversationVerifyProps {
     /** Email locale — does not alter content (copy is in Spanish) but included for caller parity */
     locale: 'es' | 'en' | 'pt';
     /**
-     * The inquiry text this link will deliver (HOS-2568). Shown so the person sees exactly
-     * what they are confirming; React escapes it, so it is safe to render as plain text.
+     * The inquiry text this link will deliver (HOS-2568). Never rendered in full: the email
+     * goes to an unverified address, so only a short excerpt with links, emails and phone
+     * numbers neutralized is shown (see `buildInquiryExcerpt`).
      */
     message?: string;
+    /** Phone the guest declared. Rendered masked, last three digits only. */
+    guestPhone?: string | null;
 }
 
 /**
@@ -35,23 +39,34 @@ export function ConversationVerify({
     accommodationName,
     verificationUrl,
     guestName,
-    message
+    message,
+    guestPhone
 }: ConversationVerifyProps) {
+    const { excerpt } = buildInquiryExcerpt({ message: message ?? '' });
+    const { masked: maskedPhone } = maskPhone({ phone: guestPhone ?? '' });
+    // The name is typed by an unverified guest too: same neutralization as the excerpt.
+    const safeName = buildInquiryExcerpt({ message: guestName }).excerpt;
+
     return (
         <EmailLayout previewText="Verificá tu email para continuar la conversación — Hospeda">
             <Heading>Verificá tu dirección de email</Heading>
 
-            <Text style={styles.greeting}>Hola {guestName},</Text>
+            <Text style={styles.greeting}>Hola {safeName},</Text>
 
             <Text style={styles.paragraph}>
                 Recibimos tu consulta sobre <strong>{accommodationName}</strong>. Para poder
                 enviarla al anfitrión, necesitamos confirmar que el email es tuyo.
             </Text>
 
-            {message ? (
+            {excerpt ? (
                 <Section style={styles.messageBox}>
-                    <Text style={styles.messageLabel}>Tu consulta</Text>
-                    <Text style={styles.messageText}>{message}</Text>
+                    <Text style={styles.messageLabel}>Resumen de tu consulta</Text>
+                    <Text style={styles.messageText}>Alojamiento: {accommodationName}</Text>
+                    <Text style={styles.messageText}>Nombre: {safeName}</Text>
+                    {maskedPhone ? (
+                        <Text style={styles.messageText}>Teléfono: {maskedPhone}</Text>
+                    ) : null}
+                    <Text style={styles.messageText}>Mensaje: {excerpt}</Text>
                 </Section>
             ) : null}
 
@@ -110,8 +125,7 @@ const styles = {
         color: '#1e293b',
         fontSize: '15px',
         lineHeight: '22px',
-        margin: '0',
-        whiteSpace: 'pre-wrap' as const
+        margin: '0 0 4px'
     },
     buttonContainer: {
         margin: '32px 0',

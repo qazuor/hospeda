@@ -72,7 +72,7 @@ describe('ConversationVerify', () => {
     });
 });
 
-describe('ConversationVerify inquiry message (HOS-2568)', () => {
+describe('ConversationVerify inquiry summary (HOS-2568)', () => {
     const baseProps: ConversationVerifyProps = {
         accommodationName: 'Hostería del Río',
         verificationUrl: 'https://hospeda.com.ar/verify?token=abc123',
@@ -80,27 +80,66 @@ describe('ConversationVerify inquiry message (HOS-2568)', () => {
         locale: 'es'
     };
 
-    it('shows the message the link will deliver', () => {
+    it('shows listing, name, masked phone and an excerpt of the message', () => {
         const html = renderToStaticMarkup(
-            ConversationVerify({ ...baseProps, message: '¿Hay lugar en enero?' })
+            ConversationVerify({
+                ...baseProps,
+                guestPhone: '+54 3442 123456',
+                message: '¿Hay lugar en enero?'
+            })
         );
 
-        expect(html).toContain('Tu consulta');
+        expect(html).toContain('Resumen de tu consulta');
+        expect(html).toContain('Hostería del Río');
+        expect(html).toContain('Laura Gómez');
+        expect(html).toContain('*** 456');
+        expect(html).not.toContain('123456');
         expect(html).toContain('¿Hay lugar en enero?');
+    });
+
+    it('never renders the full message: long text is cut with an ellipsis', () => {
+        const long = `${'palabra '.repeat(60)}FINAL-SECRETO`;
+        const html = renderToStaticMarkup(ConversationVerify({ ...baseProps, message: long }));
+
+        expect(html).not.toContain('FINAL-SECRETO');
+        expect(html).toContain('…');
+    });
+
+    it('neutralizes links, emails and phone numbers in the message', () => {
+        const html = renderToStaticMarkup(
+            ConversationVerify({
+                ...baseProps,
+                message: 'Mirá https://evil.test/x escribime a ana@evil.test o al 3442-123456'
+            })
+        );
+
+        expect(html).not.toContain('evil.test');
+        expect(html).not.toContain('3442-123456');
+        expect(html).toContain('[enlace]');
+        expect(html).toContain('[email]');
+        expect(html).toContain('[teléfono]');
     });
 
     it('escapes markup in the message', () => {
         const html = renderToStaticMarkup(
-            ConversationVerify({ ...baseProps, message: '<script>alert(1)</script>' })
+            ConversationVerify({ ...baseProps, message: '<script>alert(1)</script> hola' })
         );
 
         expect(html).not.toContain('<script>alert(1)</script>');
         expect(html).toContain('&lt;script&gt;');
     });
 
-    it('omits the section when there is no message', () => {
+    it('neutralizes links typed as the guest name', () => {
+        const html = renderToStaticMarkup(
+            ConversationVerify({ ...baseProps, guestName: 'Visitá http://evil.test ya' })
+        );
+
+        expect(html).not.toContain('evil.test');
+    });
+
+    it('omits the summary when there is no message', () => {
         const html = renderToStaticMarkup(ConversationVerify(baseProps));
 
-        expect(html).not.toContain('Tu consulta');
+        expect(html).not.toContain('Resumen de tu consulta');
     });
 });

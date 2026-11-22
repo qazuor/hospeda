@@ -88,7 +88,8 @@ export function createConversationMailer(): ConversationMailer | undefined {
                     verificationUrl: payload.verificationUrl,
                     guestName: payload.guestName,
                     locale: payload.locale,
-                    message: payload.message
+                    message: payload.message,
+                    guestPhone: payload.guestPhone
                 })
             });
 
