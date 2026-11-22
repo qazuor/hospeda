@@ -77,3 +77,52 @@ export function readSelectedHelpAudience({
     const query = search ?? (typeof window === 'undefined' ? '' : window.location.search);
     return parseHelpAudience({ value: new URLSearchParams(query).get(HELP_AUDIENCE_PARAM) });
 }
+
+/**
+ * The audience level of the article breadcrumb: the tab the reader came from
+ * (`?para=`), when the article is written for it. Unknown means no level —
+ * never the article's first audience, which names somebody else's tab for
+ * most readers. URL-driven, so the page stays session-blind (D-H4).
+ *
+ * @param args.para - The parsed `?para=` value
+ * @param args.audiences - The article's audiences
+ * @returns The audience, or `undefined` for a breadcrumb without that level
+ */
+export function helpCrumbAudience({
+    para,
+    audiences
+}: {
+    readonly para: HelpAudience | undefined;
+    readonly audiences: readonly HelpAudience[];
+}): HelpAudience | undefined {
+    return para !== undefined && audiences.includes(para) ? para : undefined;
+}
+
+/**
+ * An article link that keeps the reader's tab: `?para=<audience>` is added
+ * when the target article is written for that audience, so the next
+ * breadcrumb shows it too.
+ *
+ * @param args.href - The article path (may carry a `#anchor`)
+ * @param args.audience - The reader's tab, when known
+ * @param args.audiences - The target article's audiences
+ * @returns The href, with `?para=` before any hash when it applies
+ */
+export function withHelpAudienceParam({
+    href,
+    audience,
+    audiences
+}: {
+    readonly href: string;
+    readonly audience: HelpAudience | undefined;
+    readonly audiences: readonly HelpAudience[];
+}): string {
+    if (audience === undefined || !audiences.includes(audience)) {
+        return href;
+    }
+    const hashAt = href.indexOf('#');
+    const path = hashAt === -1 ? href : href.slice(0, hashAt);
+    const hash = hashAt === -1 ? '' : href.slice(hashAt);
+    const separator = path.includes('?') ? '&' : '?';
+    return `${path}${separator}${HELP_AUDIENCE_PARAM}=${encodeURIComponent(audience)}${hash}`;
+}

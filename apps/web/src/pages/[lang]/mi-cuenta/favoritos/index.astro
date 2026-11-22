@@ -17,6 +17,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import { webLogger } from '@/lib/logger';
 import type { BookmarkCollectionUsage } from '@/lib/api';
 
@@ -30,6 +32,13 @@ if (!user) {
 const { t } = createTranslations(locale);
 const title = t('account.pages.favorites.title', 'Favoritos');
 const apiUrl = getApiUrl();
+
+// HOS-2544: the collections gate names the catalog plans that carry collections. The
+// catalog reader is server-only, so the names are read here and handed to the islands.
+const gatePlanNames = planNamesWithEntitlement({
+	result: await fetchPublicPlans({ vertical: 'tourist' }),
+	entitlement: EntitlementKeyEnum.CAN_USE_COLLECTIONS
+});
 
 // ---------------------------------------------------------------------------
 // Server-side fetch: collection usage counter.
@@ -126,10 +135,11 @@ const isAtLimit =
 				isAtLimit={isAtLimit}
 				maxCollections={collectionUsage?.max ?? 0}
 				accessDenied={collectionsAccessDenied}
+				gatePlanNames={gatePlanNames}
 			/>
 		</div>
 
-		<UserFavoritesList client:load locale={locale} apiUrl={apiUrl} />
+		<UserFavoritesList client:load locale={locale} apiUrl={apiUrl} gatePlanNames={gatePlanNames} />
 	</AccountSectionCard>
 </AccountLayout>
 

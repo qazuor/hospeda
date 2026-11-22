@@ -892,7 +892,9 @@
             "accommodationIdLoading": "Cargando propiedades...",
             "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas.",
             "vipOnly": "Exclusiva para plan VIP",
-            "vipOnlyHint": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven turistas Plus y VIP."
+            "vipOnlyHint_one": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven los turistas con el plan {{plans}}.",
+            "vipOnlyHint_other": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven los turistas con los planes {{plans}}.",
+            "vipOnlyHintNoPlans": "Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven todos los turistas con acceso a las ofertas exclusivas."
         },
         "discountTypes": {
             "percentage": "Porcentaje",
@@ -999,7 +1001,12 @@
             "trial": "Prueba gratuita",
             "active": "Activo",
             "inactive": "Inactivo",
-            "noPlan": "Sin plan"
+            "noPlan": "Sin plan",
+            "gracePeriod": "Pago pendiente",
+            "suspended": "Suspendida",
+            "cancelScheduled": "Baja programada hasta el {{date}}",
+            "cancelScheduledNoDate": "Baja programada",
+            "paused": "Pausada"
         },
         "widgets": {
             "properties": "Tus propiedades",

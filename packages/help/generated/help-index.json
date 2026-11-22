@@ -1,5 +1,5 @@
 {
-  "contentHash": "d290ee5a6ecf553f2f70956760eed010f5a442abbe5cb05fce80f20953109159",
+  "contentHash": "593be7161434ffdd59ae6ac37999bb9b3a717ec9b7fb536c81cbca1302c08d2a",
   "locales": {
     "es": [
       {
@@ -786,10 +786,10 @@
           "change-plan",
           "photos"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-22",
         "sections": {
           "canDo": "Encontrar cómo se hace algo en tu cuenta sin salir de {{link:help|Ayuda}}: buscar por palabras, ver los artículos de lo que publicás y abrir la ayuda de la pantalla en la que estás.",
-          "expect": "- La pestaña que se abre primero es la de lo que publicás. Podés cambiarla cuando quieras.\n- Cada artículo tiene siempre las mismas partes: qué podés hacer, cómo se hace, qué esperar, qué no esperar y problemas comunes. Al final hay artículos relacionados.\n- El botón «?» abre la ayuda en otra pestaña, así no perdés lo que estabas cargando.",
+          "expect": "- La pestaña que se abre primero es la de lo que publicás. Podés cambiarla cuando quieras.\n- Cada artículo tiene siempre las mismas partes: qué podés hacer, cómo se hace, qué esperar, qué no esperar y problemas comunes. Al final hay artículos relacionados.\n- El botón «?» abre la ayuda en otra pestaña, así no perdés lo que estabas cargando. Dentro de la ayuda se abre en la misma pestaña.",
           "howTo": {
             "after": "",
             "steps": [
@@ -1009,10 +1009,10 @@
           "create-listing",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-22",
         "sections": {
           "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
-          "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- En alojamientos la galería tiene {{limit:max_photos_per_accommodation:accommodation}}, y el editor te avisa cuántas fotos te quedan.",
+          "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.",
           "howTo": {
             "after": "",
             "steps": [

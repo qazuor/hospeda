@@ -68,6 +68,56 @@ export function nextTabIndex({
     }
 }
 
+/**
+ * The horizontal scroll that brings a tab fully into view in a scrollable
+ * tablist (narrow screens keep the five tabs on one row, HOS-2552). Moves as
+ * little as possible: a tab already in view keeps the current scroll.
+ *
+ * @param args.tabStart - The tab's left edge, in tablist content coordinates
+ * @param args.tabWidth - The tab's width
+ * @param args.viewStart - The tablist's current `scrollLeft`
+ * @param args.viewWidth - The tablist's visible width (`clientWidth`)
+ * @returns The `scrollLeft` to set
+ */
+export function tabScrollLeft({
+    tabStart,
+    tabWidth,
+    viewStart,
+    viewWidth
+}: {
+    readonly tabStart: number;
+    readonly tabWidth: number;
+    readonly viewStart: number;
+    readonly viewWidth: number;
+}): number {
+    if (tabStart < viewStart) {
+        return tabStart;
+    }
+    const tabEnd = tabStart + tabWidth;
+    if (tabEnd > viewStart + viewWidth) {
+        return Math.min(tabStart, tabEnd - viewWidth);
+    }
+    return viewStart;
+}
+
+/** Scrolls the tablist (never the page) so the tab is fully visible. */
+function revealTab({
+    tablist,
+    tab
+}: {
+    readonly tablist: HTMLElement;
+    readonly tab: HTMLElement;
+}): void {
+    const listBox = tablist.getBoundingClientRect();
+    const tabBox = tab.getBoundingClientRect();
+    tablist.scrollLeft = tabScrollLeft({
+        tabStart: tabBox.left - listBox.left + tablist.scrollLeft,
+        tabWidth: tabBox.width,
+        viewStart: tablist.scrollLeft,
+        viewWidth: tablist.clientWidth
+    });
+}
+
 /** Writes `?para=<audience>` into the current URL without a navigation. */
 function writeAudienceParam({ audience }: { readonly audience: HelpAudience }): void {
     try {
@@ -124,8 +174,9 @@ export function initHelpTabs({ root, eventTarget = window }: InitHelpTabsArgs): 
             }
         }
         root.dataset.selected = audience;
+        revealTab({ tablist, tab: target });
         if (focus) {
-            target.focus();
+            target.focus({ preventScroll: true });
         }
         if (fromUser) {
             writeAudienceParam({ audience });

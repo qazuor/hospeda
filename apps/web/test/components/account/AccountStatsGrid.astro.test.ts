@@ -123,6 +123,8 @@ describe('TEST:1756:12 AccountStatsGrid subscription labels', () => {
         expect(status).toContain('data-label-grace-period=');
         expect(status).toContain('data-label-suspended=');
         expect(status).toContain('data-label-cancel-scheduled=');
+        // HOS-2543: a PAUSED subscription shows its own label, not an "active" one.
+        expect(status).toContain('data-label-paused=');
     });
 });
 

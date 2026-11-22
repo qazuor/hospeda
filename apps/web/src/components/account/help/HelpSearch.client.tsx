@@ -14,17 +14,19 @@
  *
  * Hydration: `client:idle`. The server renders the same markup, including the
  * results of an initial `?q=` (SSR-first), so the list never appears only after
- * hydration.
+ * hydration. Only the polite live region waits for hydration, so that its text
+ * is a change a screen reader announces (HOS-2552).
  */
 
 import { type HelpAudience, searchOwnerHelp } from '@repo/help';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
     HELP_AUDIENCE_CHANGED_EVENT,
     HELP_AUDIENCE_LABEL_KEYS,
     type HelpAudienceEventDetail,
     parseHelpAudience,
-    readSelectedHelpAudience
+    readSelectedHelpAudience,
+    withHelpAudienceParam
 } from '@/lib/help/help-audience-shared';
 import type { HelpSearchEntry } from '@/lib/help/help-catalog';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -84,6 +86,34 @@ export function findHelpResults({
 }
 
 /**
+ * What the polite live region announces: the result count, or the no-match
+ * sentence when a real query found nothing (an empty region announces nothing,
+ * which leaves a screen-reader user guessing). Nothing below two characters.
+ *
+ * @param args.searched - Whether the query is long enough to search
+ * @param args.count - How many results were found
+ * @param args.countText - The localized «N resultados» for a count
+ * @param args.noMatchText - The localized «No encontramos ayuda para eso»
+ * @returns The announcement, or `''`
+ */
+export function helpSearchAnnouncement({
+    searched,
+    count,
+    countText,
+    noMatchText
+}: {
+    readonly searched: boolean;
+    readonly count: number;
+    readonly countText: (count: number) => string;
+    readonly noMatchText: string;
+}): string {
+    if (!searched) {
+        return '';
+    }
+    return count > 0 ? countText(count) : noMatchText;
+}
+
+/**
  * Help landing search island.
  *
  * @param props - See {@link HelpSearchProps}
@@ -103,6 +133,17 @@ export function HelpSearch({
     const [query, setQuery] = useState(initialQuery);
     const [onlyMine, setOnlyMine] = useState(true);
     const [audience, setAudience] = useState<HelpAudience>(initialAudience);
+    // The live region renders empty on the server and on the first client
+    // render, then fills after hydration: text that is already in the HTML
+    // when the page loads (an initial `?q=` with no match) is never announced.
+    const [hydrated, setHydrated] = useState(false);
+    // Flipped by «Buscar» on a fruitless query, to make the region re-announce.
+    const [repeat, setRepeat] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setHydrated(true);
+    }, []);
 
     useEffect(() => {
         const current = readSelectedHelpAudience();
@@ -131,7 +172,26 @@ export function HelpSearch({
         <search className={styles.search}>
             <form
                 className={styles.form}
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={(event) => {
+                    // Results already follow every keystroke; the button moves
+                    // the reader to the first one (same affordance as the
+                    // article page's search, which submits to this landing).
+                    // With nothing to show it returns focus to the input and
+                    // repeats the announcement, so the press is never silent.
+                    // Without JS the form is a plain GET to this page.
+                    event.preventDefault();
+                    const first = (
+                        event.currentTarget.parentElement ?? document
+                    ).querySelector<HTMLAnchorElement>('[data-help-result] a');
+                    if (first !== null) {
+                        first.focus();
+                        return;
+                    }
+                    inputRef.current?.focus();
+                    if (searched) {
+                        setRepeat((value) => !value);
+                    }
+                }}
             >
                 <label
                     className={styles.label}
@@ -139,20 +199,34 @@ export function HelpSearch({
                 >
                     {t('account.help.search.label')}
                 </label>
+                <div className={styles.row}>
+                    <input
+                        ref={inputRef}
+                        id={inputId}
+                        className={styles.input}
+                        type="search"
+                        name="q"
+                        autoComplete="off"
+                        value={query}
+                        placeholder={t('account.help.search.placeholder')}
+                        onChange={(event) => setQuery(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
+                                setQuery('');
+                            }
+                        }}
+                    />
+                    <button
+                        className={styles.button}
+                        type="submit"
+                    >
+                        {t('account.help.search.submit')}
+                    </button>
+                </div>
                 <input
-                    id={inputId}
-                    className={styles.input}
-                    type="search"
-                    name="q"
-                    autoComplete="off"
-                    value={query}
-                    placeholder={t('account.help.search.placeholder')}
-                    onChange={(event) => setQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                        if (event.key === 'Escape') {
-                            setQuery('');
-                        }
-                    }}
+                    type="hidden"
+                    name="para"
+                    value={audience}
                 />
                 <label className={styles.toggle}>
                     <input
@@ -165,11 +239,17 @@ export function HelpSearch({
             </form>
 
             <p
-                className={styles.status}
+                className="sr-only"
                 aria-live="polite"
+                data-help-search-status
             >
-                {searched && results.length > 0
-                    ? tPlural('account.help.search.results', results.length)
+                {hydrated
+                    ? `${helpSearchAnnouncement({
+                          searched,
+                          count: results.length,
+                          countText: (count) => tPlural('account.help.search.results', count),
+                          noMatchText: t('account.help.search.noMatch')
+                      })}${repeat ? '\u00a0' : ''}`
                     : ''}
             </p>
 
@@ -179,10 +259,17 @@ export function HelpSearch({
                         <li
                             key={entry.id}
                             className={styles.result}
+                            data-help-result
                         >
                             <a
                                 className={styles.resultLink}
-                                href={articlePaths[entry.id]}
+                                href={withHelpAudienceParam({
+                                    href: articlePaths[entry.id] ?? '',
+                                    // The selected tab, filter on or off, so the
+                                    // article breadcrumb keeps the reader's level.
+                                    audience,
+                                    audiences: entry.audiences
+                                })}
                             >
                                 {entry.title}
                             </a>
@@ -206,10 +293,7 @@ export function HelpSearch({
             )}
 
             {searched && results.length === 0 && (
-                <div
-                    className={styles.empty}
-                    role="status"
-                >
+                <div className={styles.empty}>
                     <p className={styles.emptyTitle}>{t('account.help.search.noMatch')}</p>
                     <p className={styles.emptyLinks}>
                         <a href={faqPath}>{t('account.help.fallback.faq')}</a>

@@ -1,11 +1,11 @@
 import { and, asc, eq, getDb, inArray, plans, planVersions, subscriptions } from '@repo/db';
-import { AccountPlanSummarySchema, ServiceErrorCode } from '@repo/schemas';
+import { AccountPlanSummarySchema, OWN_PLAN_STATUSES, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { z } from 'zod';
 import { z as zod } from 'zod';
 
 /** Live principal statuses mirrored from service-core `read-own-plan-state.ts`. */
-const LIVE_STATUSES = ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED'] as const;
+const LIVE_STATUSES = OWN_PLAN_STATUSES;
 const LiveStatusSchema = zod.enum(LIVE_STATUSES);
 
 type AccountPlanSummary = z.infer<typeof AccountPlanSummarySchema>;

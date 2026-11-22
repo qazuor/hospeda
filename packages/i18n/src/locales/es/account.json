@@ -919,7 +919,9 @@
             "assignSuccess": "Movido a {{name}}",
             "upgrade": {
                 "title": "Colecciones",
-                "message": "Las colecciones están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+                "message_one": "Las colecciones están disponibles en el plan {{plans}}. Actualizá tu plan para acceder.",
+                "message_other": "Las colecciones están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
+                "messageNoPlans": "Las colecciones no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
                 "cta": "Ver planes"
             }
         },
@@ -1061,6 +1063,7 @@
                 "gracePeriodStatus": "Pago pendiente",
                 "suspendedStatus": "Suspendida",
                 "cancelScheduledStatus": "Baja programada",
+                "pausedStatus": "Pausada",
                 "multipleSubscriptions_one": "{{count}} suscripción activa",
                 "multipleSubscriptions_other": "{{count}} suscripciones activas",
                 "properties": "Mis propiedades",
@@ -1941,10 +1944,16 @@
             "onlySpanish": "Este artículo por ahora está disponible solo en español.",
             "limitNeutral": "el tope de tu plan",
             "unlimited": "sin tope",
-            "title": "Ayuda: {{title}}"
+            "title": "Ayuda: {{title}}",
+            "editorSectionLabel": {
+                "accommodation": "{{label}} de tu alojamiento",
+                "venue": "{{label}} de tu comercio",
+                "experience": "{{label}} de tu experiencia"
+            }
         },
         "link": {
-            "ariaLabel": "Ayuda: {{title}} (se abre en una pestaña nueva)"
+            "ariaLabel": "Ayuda: {{title}} (se abre en una pestaña nueva)",
+            "ariaLabelSameTab": "Ayuda: {{title}}"
         }
     },
     "ui": {

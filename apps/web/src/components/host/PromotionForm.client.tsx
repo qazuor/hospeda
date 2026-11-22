@@ -35,6 +35,7 @@ import { type ChangeEvent, type FormEvent, useEffect, useId, useState } from 're
 import { ownerPromotionApi, protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotion } from '@/lib/api/transforms';
 import type { OwnerPromotionData } from '@/lib/api/types';
+import { resolvePromotionAudienceHint } from '@/lib/billing/plan-name-list';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -55,6 +56,11 @@ export interface PromotionFormProps {
     readonly initialData?: OwnerPromotionData;
     /** Required in edit mode: the promotion's UUID to update. */
     readonly promotionId?: string;
+    /**
+     * HOS-2544: catalog names of the tourist plans that carry exclusive deals, read by the SSR
+     * page (the catalog reader is server-only). Empty when the catalog could not be read.
+     */
+    readonly audiencePlanNames?: readonly string[];
 }
 
 type FormFields = {
@@ -133,7 +139,13 @@ type AccommodationsLoadState =
  * on mount and shows a loading indicator until data arrives.
  * Success: redirects to /{locale}/mi-cuenta/promociones/.
  */
-export function PromotionForm({ locale, mode, initialData, promotionId }: PromotionFormProps) {
+export function PromotionForm({
+    locale,
+    mode,
+    initialData,
+    promotionId,
+    audiencePlanNames = []
+}: PromotionFormProps) {
     const { t } = createTranslations(locale);
 
     const titleId = useId();
@@ -894,10 +906,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                     id={`${vipOnlyId}-hint`}
                     className="form-hint"
                 >
-                    {t(
-                        'host.promotions.fields.vipOnlyHint',
-                        'Si la activás, esta promoción solo la van a ver los turistas con plan VIP. Si la dejás apagada, la ven turistas Plus y VIP.'
-                    )}
+                    {resolvePromotionAudienceHint({ locale, planNames: audiencePlanNames, t })}
                 </p>
             </div>
 

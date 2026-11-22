@@ -892,7 +892,9 @@
             "accommodationIdLoading": "Carregando imóveis...",
             "accommodationIdHint": "Selecione um imóvel ou deixe 'Todos os meus imóveis' para aplicar a promoção a todos.",
             "vipOnly": "Exclusiva para plano VIP",
-            "vipOnlyHint": "Se ativada, somente turistas com plano VIP verão esta oferta. Se desativada, turistas Plus e VIP a veem."
+            "vipOnlyHint_one": "Se ativada, somente turistas com plano VIP verão esta oferta. Se desativada, os turistas com o plano {{plans}} a veem.",
+            "vipOnlyHint_other": "Se ativada, somente turistas com plano VIP verão esta oferta. Se desativada, os turistas com os planos {{plans}} a veem.",
+            "vipOnlyHintNoPlans": "Se ativada, somente turistas com plano VIP verão esta oferta. Se desativada, todos os turistas com acesso às ofertas exclusivas a veem."
         },
         "discountTypes": {
             "percentage": "Porcentagem",
@@ -999,7 +1001,12 @@
             "trial": "Teste gratuito",
             "active": "Ativo",
             "inactive": "Inativo",
-            "noPlan": "Sem plano"
+            "noPlan": "Sem plano",
+            "gracePeriod": "Pagamento pendente",
+            "suspended": "Suspensa",
+            "cancelScheduled": "Cancelamento agendado até {{date}}",
+            "cancelScheduledNoDate": "Cancelamento agendado",
+            "paused": "Pausada"
         },
         "widgets": {
             "properties": "Suas propriedades",

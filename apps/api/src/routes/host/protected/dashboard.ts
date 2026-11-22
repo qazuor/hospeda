@@ -1,7 +1,7 @@
 /**
  * Host Dashboard Protected Endpoint
  *
- * Single aggregation endpoint returning property counts, null plan info,
+ * Single aggregation endpoint returning property counts, plan info,
  * and unread conversation count for the authenticated host user.
  *
  * Dashboard statistics require the owner's effective view_basic_stats capability.
@@ -9,12 +9,23 @@
  * GET /api/v1/protected/host/dashboard
  */
 
-import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import {
+    OwnPlanStatusSchema,
+    PublicationStatusEnum,
+    ServiceErrorCode,
+    VerticalEnum
+} from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
+import {
+    AccommodationService,
+    ConversationService,
+    readOwnPlanState,
+    ServiceError
+} from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { getClock } from '../../../utils/clock';
 import { env } from '../../../utils/env';
 import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
@@ -36,7 +47,12 @@ export const HostDashboardResponseSchema = z.object({
         .object({
             slug: z.string(),
             name: z.string(),
+            /** Coarse legacy status, kept for existing consumers (mobile). */
             status: z.enum(['active', 'trial', 'cancelled', 'expired', 'past_due']),
+            /** Exact status of the live principal subscription (HOS-2543). */
+            subscriptionStatus: OwnPlanStatusSchema,
+            /** ISO end of service; set for a scheduled cancellation, `null` otherwise. */
+            serviceEndsAt: z.string().nullable(),
             isTrial: z.boolean()
         })
         .nullable(),
@@ -46,7 +62,13 @@ export const HostDashboardResponseSchema = z.object({
      * (HOS-2424). The numeric fields stay present for contract compatibility,
      * but a client must show these as "not available", never as a real 0.
      */
-    unavailable: z.array(z.enum(['properties', 'unreadConversations']))
+    unavailable: z.array(z.enum(['properties', 'unreadConversations'])),
+    /**
+     * `true` only when the plan read FAILED, so `plan: null` means "unknown" and
+     * not "no subscription" (HOS-2543). A separate boolean, not a new `unavailable`
+     * value: older mobile builds validate `unavailable` against a closed enum.
+     */
+    planUnavailable: z.boolean()
 });
 
 export type HostDashboardResponse = z.infer<typeof HostDashboardResponseSchema>;
@@ -120,12 +142,74 @@ async function resolveProperties(input: { actor: Actor }): Promise<{
     }
 }
 
+/** Subscription status -> the dashboard's coarse plan status. */
+const PLAN_STATUS_BY_SUBSCRIPTION_STATUS: Readonly<
+    Record<string, HostDashboardPlan['status'] | undefined>
+> = {
+    ACTIVE: 'active',
+    GRACE_PERIOD: 'past_due',
+    SUSPENDED: 'past_due',
+    CANCEL_SCHEDULED: 'cancelled',
+    PAUSED: 'cancelled'
+};
+
 /**
- * The plan section was removed with the legacy billing system (HOS-1416);
- * the response field stays (nullable) so the client contract does not break
- * and always reads null now.
+ * Resolve the owner's plan from the live PRINCIPAL subscription (HOS-2543).
+ *
+ * Reads through `readOwnPlanState`, the same reader behind Mi suscripcion, so the
+ * plan name comes from the catalog (`plan.name`) and never from a constant.
+ * The accommodation principal wins; any other live principal is the fallback.
+ * The exact subscription status is returned in `subscriptionStatus` (one label per
+ * status on the card); `status` stays as the coarse legacy value. `isTrial` is always false: the trial is Hospeda's own state machine and the
+ * client reads it separately.
+ *
+ * FAIL-SAFE: a failed read degrades to `plan: null` with `degraded: true` (the
+ * card then shows "not available" instead of "no subscription"), never a 500.
+ *
+ * @param input - `{ actor }` whose `id` is the owner.
+ * @returns `{ plan, degraded }`: the plan summary (`null` when the owner has no
+ * live principal) and whether `null` is a read-failure fallback.
  */
-const DASHBOARD_PLAN: HostDashboardPlan | null = null;
+async function resolvePlan(input: {
+    actor: Actor;
+}): Promise<{ plan: HostDashboardPlan | null; degraded: boolean }> {
+    const { actor } = input;
+    try {
+        const { subscriptions } = await readOwnPlanState({
+            userId: actor.id,
+            now: getClock().clock.now()
+        });
+        const chosen =
+            subscriptions.find((row) => row.vertical === VerticalEnum.ACCOMMODATION) ??
+            subscriptions[0];
+        if (!chosen) return { plan: null, degraded: false };
+        const parsedStatus = OwnPlanStatusSchema.safeParse(chosen.status);
+        if (!parsedStatus.success) {
+            apiLogger.warn(
+                { actorId: actor.id, status: chosen.status },
+                'Host dashboard: live subscription has an unexpected status — plan null'
+            );
+            return { plan: null, degraded: false };
+        }
+        return {
+            plan: {
+                slug: chosen.plan.slug,
+                name: chosen.plan.name,
+                status: PLAN_STATUS_BY_SUBSCRIPTION_STATUS[chosen.status] ?? 'active',
+                subscriptionStatus: parsedStatus.data,
+                serviceEndsAt: chosen.serviceEndsAt?.toISOString() ?? null,
+                isTrial: false
+            },
+            degraded: false
+        };
+    } catch (error) {
+        apiLogger.warn(
+            { actorId: actor.id, error: String(error) },
+            'Host dashboard: plan read threw — degrading plan to null'
+        );
+        return { plan: null, degraded: true };
+    }
+}
 
 /**
  * Resolve the coarse unread-conversations count for the owner.
@@ -187,18 +271,18 @@ async function resolveUnreadConversations(input: {
  *
  * Returns aggregated host dashboard data:
  * - Property counts (total, published, draft, archived) scoped to the owner
- * - Plan info: always null since HOS-1416 (legacy billing removed)
+ * - Plan info: the live PRINCIPAL subscription's catalog plan (HOS-2543), null when none
  * - Unread conversations count (coarse approximation)
  *
- * The dashboard requires view_basic_stats; its plan field remains null because
- * a plan summary is a separate data read, not an authorization gate.
+ * The dashboard requires view_basic_stats; the plan summary is a separate data
+ * read, not an authorization gate.
  */
 export const hostDashboardRoute = createProtectedRoute({
     method: 'get',
     path: '/dashboard',
     summary: 'Host Dashboard',
     description:
-        'Returns aggregated host dashboard data: property counts, a null plan field, and unread conversation count. ' +
+        'Returns aggregated host dashboard data: property counts, the plan summary, and unread conversation count. ' +
         'Requires VIEW_BASIC_STATS entitlement.',
     tags: ['Host', 'Dashboard'],
     responseSchema: HostDashboardResponseSchema,
@@ -220,8 +304,7 @@ export const hostDashboardRoute = createProtectedRoute({
                 degraded: propertiesDegraded
             } = await resolveProperties({ actor });
 
-            // Section 2 (plan) was removed with the legacy billing system
-            // (HOS-1416); the field always reads null now.
+            const { plan, degraded: planDegraded } = await resolvePlan({ actor });
             const unread = await resolveUnreadConversations({
                 actor,
                 accommodationIds
@@ -235,9 +318,10 @@ export const hostDashboardRoute = createProtectedRoute({
 
             const response: HostDashboardResponse = {
                 properties,
-                plan: DASHBOARD_PLAN,
+                plan,
                 unreadConversations: unread.count,
-                unavailable
+                unavailable,
+                planUnavailable: planDegraded
             };
 
             return response;

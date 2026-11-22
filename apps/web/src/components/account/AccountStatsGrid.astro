@@ -62,6 +62,7 @@ const statCompStatus = t('account.pages.dashboard.stats.compStatus', 'Bonificado
 const statGracePeriodStatus = t('account.pages.dashboard.stats.gracePeriodStatus', 'Pago pendiente');
 const statSuspendedStatus = t('account.pages.dashboard.stats.suspendedStatus', 'Suspendida');
 const statCancelScheduledStatus = t('account.pages.dashboard.stats.cancelScheduledStatus', 'Baja programada');
+const statPausedStatus = t('account.pages.dashboard.stats.pausedStatus', 'Pausada');
 const planNames = Object.fromEntries(
     DASHBOARD_PLAN_SLUGS.map((slug) => [slug, getPlanName({ plan: { slug, name: slug, description: '' }, t })])
 );
@@ -236,6 +237,7 @@ const statListingsHiddenOther = t(
             data-label-grace-period={statGracePeriodStatus}
             data-label-suspended={statSuspendedStatus}
             data-label-cancel-scheduled={statCancelScheduledStatus}
+            data-label-paused={statPausedStatus}
             data-label-free={statFreeStatus}
             data-label-trial-ends-on={statTrialEndsOn}
             aria-live="polite"

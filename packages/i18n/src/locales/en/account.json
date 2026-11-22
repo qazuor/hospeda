@@ -919,7 +919,9 @@
             "assignSuccess": "Movido a {{name}}",
             "upgrade": {
                 "title": "Collections",
-                "message": "Collections are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+                "message_one": "Collections are available on the {{plans}} plan. Upgrade your plan to access this feature.",
+                "message_other": "Collections are available on the {{plans}} plans. Upgrade your plan to access this feature.",
+                "messageNoPlans": "Collections are not included in your current plan. Upgrade your plan to access this feature.",
                 "cta": "View plans"
             }
         },
@@ -1061,6 +1063,7 @@
                 "gracePeriodStatus": "Payment pending",
                 "suspendedStatus": "Suspended",
                 "cancelScheduledStatus": "Cancellation scheduled",
+                "pausedStatus": "Paused",
                 "multipleSubscriptions_one": "{{count}} active subscription",
                 "multipleSubscriptions_other": "{{count}} active subscriptions",
                 "properties": "My properties",
@@ -1941,10 +1944,16 @@
             "onlySpanish": "This article is only available in Spanish for now.",
             "limitNeutral": "your plan limit",
             "unlimited": "no limit",
-            "title": "Help: {{title}}"
+            "title": "Help: {{title}}",
+            "editorSectionLabel": {
+                "accommodation": "{{label}} of your accommodation",
+                "venue": "{{label}} of your venue",
+                "experience": "{{label}} of your experience"
+            }
         },
         "link": {
-            "ariaLabel": "Help: {{title}} (opens in a new tab)"
+            "ariaLabel": "Help: {{title}} (opens in a new tab)",
+            "ariaLabelSameTab": "Help: {{title}}"
         }
     },
     "ui": {

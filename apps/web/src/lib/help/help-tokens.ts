@@ -16,6 +16,7 @@
 
 import {
     type HelpArticle,
+    type HelpAudience,
     type HelpDestination,
     type HelpToken,
     replaceHelpTokens,
@@ -29,6 +30,7 @@ import {
     type PortalLocale
 } from '@repo/portal-routes';
 import { buildUrl } from '@/lib/urls';
+import { withHelpAudienceParam } from './help-audience-shared';
 
 /** Placeholder origin: only the path of the built URL is kept. */
 const PATH_ONLY_ORIGIN = 'http://hospeda.invalid';
@@ -134,6 +136,13 @@ export interface ResolveHelpTokensForWebArgs {
     readonly neutralLimitText: string;
     /** The title of another article, used when an `article` token has no label. */
     readonly titleOf: (id: string) => string | undefined;
+    /**
+     * The reader's tab (a validated `?para=`). When set, an `article` link
+     * carries it to a target written for that audience (HOS-2552).
+     */
+    readonly readerAudience?: HelpAudience;
+    /** The audiences of another article, for {@link ResolveHelpTokensForWebArgs.readerAudience}. */
+    readonly audiencesOf?: (id: string) => readonly HelpAudience[] | undefined;
 }
 
 /** Resolves one token, or keeps it as written when it cannot be resolved. */
@@ -162,7 +171,11 @@ function resolveOne({
     }
     const [id = '', anchor] = token.args;
     const label = token.label ?? titleOf(id) ?? id;
-    const href = helpArticlePath({ id, locale, anchor });
+    const href = withHelpAudienceParam({
+        href: helpArticlePath({ id, locale, anchor }),
+        audience: args.readerAudience,
+        audiences: args.audiencesOf?.(id) ?? []
+    });
     return `<a href="${escapeHelpHtml({ text: href })}">${escapeHelpHtml({ text: label })}</a>`;
 }
 
