@@ -56,6 +56,10 @@ const listInputSchema = z.object({
  *   (HOS-2406). Accepted it all but not yet credited: the retry, which only runs RF3 again
  *   (its `REEXECUTE` mode).
  *
+ * The hint is advisory. It does not check `OTHER_REFUND_CALL_UNANSWERED`, the 180-day provider
+ * window, or whether the accepted money is already credited (`ACCEPTED_PART_NOT_ACCREDITED`): the
+ * actions revalidate all of that when they run.
+ *
  * @param input.tally - The refund's call tally.
  * @param input.refundAmount - The refund amount, in cents.
  * @param input.now - The current instant, from the injected clock.
