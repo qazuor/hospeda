@@ -44,7 +44,7 @@ covers:
   - "limit:max_photos_per_accommodation"
 entryFor:
   - "section:accommodation.fotos"
-reviewedAt: "2026-11-20"
+reviewedAt: "2026-11-22"
 ---
 
 ## Qué podés hacer
@@ -68,7 +68,7 @@ En alojamientos también podés reordenar la galería y elegir la portada.
 
 - Cada cambio se guarda al instante, sin un botón de guardar.
 - La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.
-- En alojamientos la galería tiene {{limit:max_photos_per_accommodation:accommodation}}, y el editor te avisa cuántas fotos te quedan.
+- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.
 
 ## Qué NO esperar
 
