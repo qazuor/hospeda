@@ -1,7 +1,11 @@
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
-import { getCuratedAccountNav, pickBusinessShortcut } from '../../src/lib/nav-avatar';
+import {
+    getCuratedAccountNav,
+    getPersonalAccountNav,
+    pickBusinessShortcut
+} from '../../src/lib/nav-avatar';
 
 describe('pickBusinessShortcut', () => {
     it('picks hostDashboard for a user with ACCOMMODATION_CREATE', () => {
@@ -86,5 +90,29 @@ describe('getCuratedAccountNav', () => {
         expect(ids).not.toContain('reviews');
         expect(ids).not.toContain('newsletter');
         expect(ids).not.toContain('preferences');
+    });
+});
+
+describe('getPersonalAccountNav (HOS-2551)', () => {
+    it('returns the personal entries in order, AI assistants last', () => {
+        const { items } = getPersonalAccountNav({ includeAiAssistants: true });
+        expect(items.map((item) => item.id)).toEqual([
+            'editProfile',
+            'subscription',
+            'preferences',
+            'newsletter',
+            'aiAssistants'
+        ]);
+    });
+
+    it('drops AI assistants when the caller does not include it', () => {
+        const { items } = getPersonalAccountNav({ includeAiAssistants: false });
+        expect(items.map((item) => item.id)).not.toContain('aiAssistants');
+        expect(items).toHaveLength(4);
+    });
+
+    it('keeps the identity link to the areas home', () => {
+        const { dashboardItem } = getPersonalAccountNav({ includeAiAssistants: false });
+        expect(dashboardItem?.href).toBe('mi-cuenta');
     });
 });

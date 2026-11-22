@@ -20,8 +20,10 @@
 import {
     ACCOUNT_NAV_GROUPS,
     AI_ASSISTANTS_NAV_ITEM_ID,
+    DASHBOARD_NAV_ITEM_ID,
     getNavForSurface,
-    type NavItem
+    type NavItem,
+    PERSONAL_NAV_ITEM_IDS
 } from '@/config/navigation';
 import { isVisibleByPermissions } from '@/lib/nav-gating';
 
@@ -154,4 +156,42 @@ export function getCuratedAccountNav({
     ].filter((item): item is NavItem => item !== null);
 
     return { dashboardItem, shortcutItems };
+}
+
+/** Input for `getPersonalAccountNav`. */
+export interface GetPersonalAccountNavParams {
+    /**
+     * Include the "Asistentes de IA" entry (HOS-2184 T-028). The caller decides
+     * with `useAiAssistantsEntry`; it is not permission-gated.
+     */
+    readonly includeAiAssistants: boolean;
+}
+
+/** Output of `getPersonalAccountNav`. */
+export interface PersonalAccountNav {
+    /** The identity-zone "Mi cuenta" link (the areas home), or `null` if unavailable. */
+    readonly dashboardItem: NavItem | null;
+    /** The personal entries, in `PERSONAL_NAV_ITEM_IDS` order. */
+    readonly items: readonly NavItem[];
+}
+
+/**
+ * Resolves the header user menu's links (HOS-2551): the identity "Mi cuenta"
+ * link plus the personal entries, in order: Editar perfil, Suscripción,
+ * Preferencias, Boletín de novedades and, when the caller allows it,
+ * Asistentes de IA. None of them is permission-gated.
+ *
+ * @param params - `{ includeAiAssistants }` (RO-RO).
+ * @returns `{ dashboardItem, items }`.
+ */
+export function getPersonalAccountNav({
+    includeAiAssistants
+}: GetPersonalAccountNavParams): PersonalAccountNav {
+    const items = PERSONAL_NAV_ITEM_IDS.filter(
+        (id) => includeAiAssistants || id !== AI_ASSISTANTS_NAV_ITEM_ID
+    ).flatMap((id) => {
+        const item = findAccountNavItemById(id);
+        return item ? [item] : [];
+    });
+    return { dashboardItem: findAccountNavItemById(DASHBOARD_NAV_ITEM_ID) ?? null, items };
 }

@@ -148,23 +148,47 @@ describe('UserMenu — authenticated render', () => {
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
-    it('shows the curated always-on items (identity "Mi cuenta" link, Favoritos, Suscripción — HOS-131 §6.4)', () => {
-        renderMenu();
+    it('lists the identity "Mi cuenta" link and the personal entries in order (HOS-2551)', () => {
+        renderMenu({ mcpEnabled: true });
         open();
-        expect(screen.getByRole('menuitem', { name: /^mi cuenta$/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /^favoritos$/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /^suscripción$/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /^mi cuenta$/i })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/'
+        );
+        const labels = screen
+            .getAllByRole('menuitem')
+            .map((item) => item.textContent?.trim())
+            .filter(
+                (label) =>
+                    label !== 'Mi cuenta' && !/modo anfitrión|administración/i.test(label ?? '')
+            );
+        expect(labels).toEqual([
+            'Editar perfil',
+            'Suscripción',
+            'Preferencias',
+            'Boletín de novedades',
+            'Asistentes de IA',
+            'Cerrar sesión'
+        ]);
     });
 
-    it('does NOT show non-curated sidebar-only items (messages, reviews, newsletter, preferences)', () => {
+    it('omits "Asistentes de IA" when the entry does not qualify', () => {
+        renderMenu({ mcpEnabled: false });
+        open();
+        expect(
+            screen.getByRole('menuitem', { name: /^boletín de novedades$/i })
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole('menuitem', { name: /asistentes de ia/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('does NOT show area items (favorites, messages, reviews — HOS-2551)', () => {
         renderMenu();
         open();
+        expect(screen.queryByRole('menuitem', { name: /^favoritos$/i })).not.toBeInTheDocument();
         expect(screen.queryByRole('menuitem', { name: /mis consultas/i })).not.toBeInTheDocument();
         expect(screen.queryByRole('menuitem', { name: /mis reseñas/i })).not.toBeInTheDocument();
-        expect(
-            screen.queryByRole('menuitem', { name: /boletín de novedades/i })
-        ).not.toBeInTheDocument();
-        expect(screen.queryByRole('menuitem', { name: /preferencias/i })).not.toBeInTheDocument();
     });
 });
 
@@ -178,66 +202,7 @@ describe('UserMenu — permission-gated items', () => {
         sessionStorage.clear();
     });
 
-    it('hides the business shortcut (Panel del anfitrión) while permissions are loading', () => {
-        global.fetch = vi.fn(
-            () =>
-                new Promise(() => {
-                    // Never resolves — simulates pending /auth/me
-                })
-        ) as unknown as typeof fetch;
-        renderMenu();
-        open();
-        expect(
-            screen.queryByRole('menuitem', { name: /panel del anfitrión/i })
-        ).not.toBeInTheDocument();
-        expect(screen.queryByRole('menuitem', { name: /mi comercio/i })).not.toBeInTheDocument();
-    });
-
-    it('shows the "Panel del anfitrión" business shortcut for users with accommodation.create permission', async () => {
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: true,
-                user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['accommodation.create'],
-                roles: ['USER', 'HOST'],
-                cachedAt: Date.now()
-            })
-        );
-        renderMenu();
-        await waitFor(() => {
-            open();
-            expect(
-                screen.getByRole('menuitem', { name: /panel del anfitrión/i })
-            ).toBeInTheDocument();
-            expect(
-                screen.queryByRole('menuitem', { name: /mi comercio/i })
-            ).not.toBeInTheDocument();
-        });
-    });
-
-    it('shows the "Mi comercio" business shortcut for users with only venue.editOwn permission', async () => {
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: true,
-                user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['venue.editOwn'],
-                roles: ['USER', 'VENUE_OWNER'],
-                cachedAt: Date.now()
-            })
-        );
-        renderMenu();
-        await waitFor(() => {
-            open();
-            expect(screen.getByRole('menuitem', { name: /mi comercio/i })).toBeInTheDocument();
-            expect(
-                screen.queryByRole('menuitem', { name: /panel del anfitrión/i })
-            ).not.toBeInTheDocument();
-        });
-    });
-
-    it('prioritizes "Panel del anfitrión" over "Mi comercio" when the user has both business permissions', async () => {
+    it('shows no business shortcut, even with host and venue permissions (HOS-2551)', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
@@ -251,13 +216,12 @@ describe('UserMenu — permission-gated items', () => {
         renderMenu();
         await waitFor(() => {
             open();
-            expect(
-                screen.getByRole('menuitem', { name: /panel del anfitrión/i })
-            ).toBeInTheDocument();
-            expect(
-                screen.queryByRole('menuitem', { name: /mi comercio/i })
-            ).not.toBeInTheDocument();
+            expect(screen.getByRole('menuitem', { name: /^editar perfil$/i })).toBeInTheDocument();
         });
+        expect(
+            screen.queryByRole('menuitem', { name: /panel del anfitrión/i })
+        ).not.toBeInTheDocument();
+        expect(screen.queryByRole('menuitem', { name: /mi comercio/i })).not.toBeInTheDocument();
     });
 
     it('shows "Modo anfitrión" for HOST users (access.panelAdmin without access.apiAdmin)', async () => {
@@ -370,7 +334,7 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Cached User', email: 'cached@example.com' },
-                permissions: ['accommodation.create'],
+                permissions: ['accommodation.create', 'access.panelAdmin'],
                 roles: ['USER', 'HOST'],
                 cachedAt: Date.now()
             })
@@ -383,14 +347,12 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
             initialUser: { id: 'u1', name: 'Cached User', email: 'cached@example.com' }
         });
 
-        // Permission-gated item (business shortcut) should appear from the
+        // Permission-gated item (the admin-panel link) should appear from the
         // cached permissions without waiting for any network call.
         const trigger = screen.getByRole('button', { name: /abrir menú de cuenta/i });
         fireEvent.click(trigger);
         await waitFor(() => {
-            expect(
-                screen.getByRole('menuitem', { name: /panel del anfitrión/i })
-            ).toBeInTheDocument();
+            expect(screen.getByRole('menuitem', { name: /modo anfitrión/i })).toBeInTheDocument();
         });
 
         expect(fetchMock).not.toHaveBeenCalled();

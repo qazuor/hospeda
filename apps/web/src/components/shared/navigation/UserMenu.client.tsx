@@ -16,11 +16,12 @@
  * parses the session on routes that explicitly require it; SSG pages would
  * otherwise see every visitor as a guest.
  *
- * Nav items (identity "Mi cuenta" link + shortcuts: Favoritos, ONE
- * business-panel shortcut, Suscripción) are the curated set from
- * `ACCOUNT_NAV_GROUPS` / `getCuratedAccountNav` (HOS-131 §6.4) — this
- * component is NOT the source of truth for those items, it only resolves
- * `dashboardItem`/`shortcutItems` and renders them. The admin-panel session
+ * Nav items (identity "Mi cuenta" link + the personal entries: Editar
+ * perfil, Suscripción, Preferencias, Boletín de novedades, Asistentes de IA)
+ * come from `ACCOUNT_NAV_GROUPS` / `getPersonalAccountNav` (HOS-2551: the
+ * personal half of the account lives here, the areas live in the account
+ * sidebar) — this component is NOT the source of truth for those items, it
+ * only resolves `dashboardItem`/`items` and renders them. The admin-panel session
  * link is built by the shared `buildAdminPanelItem` (`@/lib/admin-panel-link`,
  * also used by `MobileMenu.client.tsx`'s session zone).
  *
@@ -50,7 +51,7 @@ import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { getCuratedAccountNav } from '@/lib/nav-avatar';
+import { getPersonalAccountNav } from '@/lib/nav-avatar';
 import { clearThemeSyncMarker } from '@/lib/theme';
 import { buildUrl } from '@/lib/urls';
 import styles from './UserMenu.module.css';
@@ -319,19 +320,13 @@ export function UserMenu({
         }
     }, [locale]);
 
-    // ── Curated nav (identity + shortcuts, HOS-131 §6.4) ─────────────────
-    // Fail-closed while permissions are loading: `permissions ?? []` hides
-    // the gated business shortcut until the real list resolves. `dashboard`,
-    // `favorites`, and `subscription` have no `requiredPermission`, so they
-    // stay visible for any authenticated user regardless of loading state.
+    // ── Personal nav (identity + personal entries, HOS-2551) ─────────────
+    // None of these entries is permission-gated, so they render for any
+    // authenticated user while permissions are still loading.
     const showAiAssistants = useAiAssistantsEntry({ mcpEnabled, enabled: user !== null });
     const avatarNav = useMemo(
-        () =>
-            getCuratedAccountNav({
-                permissions: permissions ?? [],
-                includeAiAssistants: showAiAssistants
-            }),
-        [permissions, showAiAssistants]
+        () => getPersonalAccountNav({ includeAiAssistants: showAiAssistants }),
+        [showAiAssistants]
     );
 
     // ── Admin panel session item ──────────────────────────────────────────
@@ -425,9 +420,9 @@ export function UserMenu({
                         )}
                     </div>
 
-                    {/* Shortcuts zone: Favoritos, business shortcut, Suscripción */}
+                    {/* Personal zone (HOS-2551): profile, subscription, preferences, newsletter, AI */}
                     <ul className={styles.menuList}>
-                        {avatarNav.shortcutItems.map((item) => {
+                        {avatarNav.items.map((item) => {
                             const Icon = item.icon;
                             return (
                                 <li key={item.id}>
