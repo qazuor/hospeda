@@ -2833,6 +2833,76 @@
             "planChange": "Cambiar plan",
             "courtesy": "Cortesía temporal",
             "noPermissions": "No tenés permisos para operar esta suscripción."
+        },
+        "lateManualPayment": {
+            "title": "Cuotas declaradas impagas",
+            "description": "Registrá acá una transferencia que llegó después de declarar el impago (MP4). Antes de confirmar vas a ver qué paga, qué devuelve la reapertura y qué no.",
+            "loading": "Leyendo las cuotas…",
+            "error": "No se pudieron leer las cuotas.",
+            "empty": "No hay cuotas declaradas impagas.",
+            "installment": "Cuota del período que arranca el {date}",
+            "review": "Revisar",
+            "previewLoading": "Calculando qué pasa al registrar…",
+            "proofRef": "Referencia del comprobante (opcional)",
+            "confirm": "Registrar el pago",
+            "back": "Volver",
+            "resultS7": "Pago registrado: la suscripción volvió a estar activa. Próxima cuota: {nextChargeAt}.",
+            "resultS19": "Pago registrado y retenido por la sucesión en curso: no reactiva la suscripción. Próxima cuota: {nextChargeAt}.",
+            "periodTitle": "Qué paga esta transferencia",
+            "periodCases": {
+                "WITHIN_PERIOD": "Paga el período propio de la cuota, que arrancó el {periodStart} y todavía no terminó. La próxima cuota es la del {nextChargeAt}, el día en que termina.",
+                "REIMPUTED": "El período propio de la cuota (desde el {periodStart}) ya había terminado: el pago se reimputa al período que arranca hoy ({reimputedStart}) y la próxima cuota se abre dentro de un ciclo, el {nextChargeAt}.",
+                "C5_FALLBACK": "El período propio de la cuota ya había terminado, pero el que arranca hoy ya está cubierto: el pago vuelve al período original (desde el {periodStart}). La próxima cuota es la del {nextChargeAt}."
+            },
+            "nextChargeOverdue": "Ojo: esa próxima cuota ya está vencida.",
+            "s19Title": "Esta suscripción es la predecesora de una sucesión en curso",
+            "s19Body": "El pago NO la reactiva: queda pendiente y lo resuelve el cierre de la sucesión. Paga el período original de la cuota y deja escrita la próxima cuota; lo demás lo decide el cierre.",
+            "returnsTitle": "Qué vuelve y qué no",
+            "serviceReturns": "Vuelve el servicio: la suscripción pasa a activa.",
+            "noPresence": "Esta vertical no tiene presencia pública: vuelve sólo el servicio.",
+            "limit": "Cupo de publicación del plan: {limit}.",
+            "noLimit": "El plan no declara cupo de publicación: ninguna ficha vuelve sola.",
+            "noListings": "La cuenta no tiene fichas en esta vertical.",
+            "listingOutcomes": {
+                "RETURNS": "vuelve publicada",
+                "NO_SLOT": "no vuelve: el cupo del plan no le alcanza",
+                "INCOMPLETE": "no vuelve: le faltan datos para publicarse",
+                "ARCHIVED_DRAFT": "no vuelve sola: se archivó siendo borrador",
+                "PURGED": "no vuelve: su contenido ya se borró y es final",
+                "MODERATED": "no vuelve: la bajó un admin y sólo un admin la levanta",
+                "ALREADY_PUBLISHED": "ya está publicada",
+                "DRAFT": "sigue como borrador"
+            },
+            "partnerOutcomes": {
+                "GOLD_PAGE_RETURNS": "Vuelve la página gold de {name}.",
+                "CAROUSEL_RETURNS": "Vuelve la presencia de {name} en el carrusel; el plan no incluye página propia.",
+                "REVOKED": "{name} está revocado: su página sigue respondiendo 410 y el pago no lo cambia.",
+                "NO_PARTNER": "La cuenta no tiene un partner asociado: no vuelve ninguna página.",
+                "NO_PRESENCE": "El plan no incluye presencia de partner."
+            },
+            "effectsTitle": "Además, al reactivar",
+            "effects": {
+                "complementsResumed": "Se reanudan los complementos recurrentes pausados ({count}).",
+                "complementsSkipped": "Complementos pausados sin tarjeta vinculada que no se reanudan solos: {count}.",
+                "noComplements": "No hay complementos recurrentes pausados para reanudar.",
+                "touristVipCancels": "Se cancela el Turista VIP pago, porque el plan ya lo incluye (sin reintegro).",
+                "noTouristVip": "No hay Turista VIP heredado para cancelar.",
+                "scheduledChange": "Se aplica el cambio de plan programado que venció el {date}.",
+                "noScheduledChange": "No hay cambio de plan programado vencido."
+            },
+            "rejections": {
+                "SUBSCRIPTION_NOT_FOUND": "No encontramos la suscripción.",
+                "MANUAL_PAYMENT_NOT_FOUND": "No encontramos esa cuota en esta suscripción.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "No podés registrar este pago.",
+                "MANUAL_PAYMENT_NOT_MANUAL": "Esta suscripción no se cobra a mano.",
+                "MANUAL_PAYMENT_NOT_DECLARED_UNPAID": "La cuota ya no está declarada impaga.",
+                "MANUAL_PAYMENT_NOT_SUSPENDED": "La suscripción ya no está suspendida.",
+                "MANUAL_PAYMENT_CONDITION_FAILED": "El pago no cumple las condiciones para reabrir la suscripción.",
+                "MANUAL_PAYMENT_COVERAGE_CONFLICT": "El período que pagaría ya está cubierto.",
+                "RETAINED_PAYMENT": "Ya hay un pago retenido para esta suscripción.",
+                "LOST_RACE": "La suscripción cambió mientras confirmabas. Volvé a revisar.",
+                "generic": "No se pudo completar la acción."
+            }
         }
     }
 }

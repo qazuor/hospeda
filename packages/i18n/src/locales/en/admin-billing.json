@@ -2833,6 +2833,76 @@
             "planChange": "Change plan",
             "courtesy": "Temporary courtesy",
             "noPermissions": "You do not have permission to operate this subscription."
+        },
+        "lateManualPayment": {
+            "title": "Installments declared unpaid",
+            "description": "Register here a transfer that arrived after the installment was declared unpaid (MP4). Before confirming you will see what it pays, what the reopening brings back and what it does not.",
+            "loading": "Reading the installments…",
+            "error": "The installments could not be read.",
+            "empty": "There are no installments declared unpaid.",
+            "installment": "Installment for the period starting {date}",
+            "review": "Review",
+            "previewLoading": "Working out what registering will do…",
+            "proofRef": "Proof of payment reference (optional)",
+            "confirm": "Register the payment",
+            "back": "Back",
+            "resultS7": "Payment registered: the subscription is active again. Next installment: {nextChargeAt}.",
+            "resultS19": "Payment registered and held by the succession in progress: it does not reactivate the subscription. Next installment: {nextChargeAt}.",
+            "periodTitle": "What this transfer pays for",
+            "periodCases": {
+                "WITHIN_PERIOD": "It pays the installment's own period, which started on {periodStart} and has not ended yet. The next installment is the one on {nextChargeAt}, the day it ends.",
+                "REIMPUTED": "The installment's own period (from {periodStart}) had already ended: the payment is moved to the period starting today ({reimputedStart}) and the next installment opens one cycle from now, on {nextChargeAt}.",
+                "C5_FALLBACK": "The installment's own period had already ended, but the one starting today is already covered: the payment goes back to the original period (from {periodStart}). The next installment is the one on {nextChargeAt}."
+            },
+            "nextChargeOverdue": "Heads up: that next installment is already overdue.",
+            "s19Title": "This subscription is the predecessor of a succession in progress",
+            "s19Body": "The payment does NOT reactivate it: it stays pending and the succession's close resolves it. It pays the installment's original period and records the next installment; the close decides the rest.",
+            "returnsTitle": "What comes back and what does not",
+            "serviceReturns": "The service comes back: the subscription becomes active.",
+            "noPresence": "This vertical has no public presence: only the service comes back.",
+            "limit": "The plan's publication quota: {limit}.",
+            "noLimit": "The plan declares no publication quota: no listing comes back on its own.",
+            "noListings": "The account has no listings in this vertical.",
+            "listingOutcomes": {
+                "RETURNS": "comes back published",
+                "NO_SLOT": "does not come back: the plan's quota is not enough",
+                "INCOMPLETE": "does not come back: it is missing data required to publish",
+                "ARCHIVED_DRAFT": "does not come back on its own: it was archived as a draft",
+                "PURGED": "does not come back: its content was already deleted, permanently",
+                "MODERATED": "does not come back: an admin took it down and only an admin can lift it",
+                "ALREADY_PUBLISHED": "is already published",
+                "DRAFT": "stays a draft"
+            },
+            "partnerOutcomes": {
+                "GOLD_PAGE_RETURNS": "{name}'s gold page comes back.",
+                "CAROUSEL_RETURNS": "{name}'s carousel presence comes back; the plan includes no page of its own.",
+                "REVOKED": "{name} is revoked: its page keeps answering 410 and the payment does not change that.",
+                "NO_PARTNER": "The account has no partner: no page comes back.",
+                "NO_PRESENCE": "The plan includes no partner presence."
+            },
+            "effectsTitle": "Also, on reactivation",
+            "effects": {
+                "complementsResumed": "Paused recurring add-ons are resumed ({count}).",
+                "complementsSkipped": "Paused add-ons without a linked card that do not resume on their own: {count}.",
+                "noComplements": "There are no paused recurring add-ons to resume.",
+                "touristVipCancels": "The paid Tourist VIP is cancelled, because the plan already includes it (no refund).",
+                "noTouristVip": "There is no inherited Tourist VIP to cancel.",
+                "scheduledChange": "The scheduled plan change that came due on {date} is applied.",
+                "noScheduledChange": "There is no overdue scheduled plan change."
+            },
+            "rejections": {
+                "SUBSCRIPTION_NOT_FOUND": "We could not find the subscription.",
+                "MANUAL_PAYMENT_NOT_FOUND": "We could not find that installment in this subscription.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "You cannot register this payment.",
+                "MANUAL_PAYMENT_NOT_MANUAL": "This subscription is not charged by hand.",
+                "MANUAL_PAYMENT_NOT_DECLARED_UNPAID": "The installment is no longer declared unpaid.",
+                "MANUAL_PAYMENT_NOT_SUSPENDED": "The subscription is no longer suspended.",
+                "MANUAL_PAYMENT_CONDITION_FAILED": "The payment does not meet the conditions to reopen the subscription.",
+                "MANUAL_PAYMENT_COVERAGE_CONFLICT": "The period it would pay for is already covered.",
+                "RETAINED_PAYMENT": "There is already a held payment for this subscription.",
+                "LOST_RACE": "The subscription changed while you were confirming. Review it again.",
+                "generic": "The action could not be completed."
+            }
         }
     }
 }
