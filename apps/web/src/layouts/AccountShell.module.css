@@ -10,7 +10,11 @@
 }
 
 .bar {
-    display: block;
+    /* The wrapper must not generate a box below 64rem (HOS-2563). The sticky
+       AccountBar lives inside the island (itself display: contents), so a block
+       wrapper exactly as tall as the bar would be its containing block and leave
+       it no room to travel. With contents, .shell becomes the containing block. */
+    display: contents;
 }
 
 .sidebar {
