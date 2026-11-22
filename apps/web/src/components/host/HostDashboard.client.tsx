@@ -1,372 +1,171 @@
 /**
  * @file HostDashboard.client.tsx
- * @description Host dashboard React island with 4 widget slots.
+ * @description The host dashboard's live part (HOS-2474, D19 «sin duplicación»).
  *
- * Fetches data from the protected host dashboard endpoint on mount and
- * renders property summary, plan info, unread messages, and quick actions.
+ * Reads `GET /protected/host/dashboard` once and draws:
+ * - a StatGrid with the host's properties and unread OWNER conversations, each
+ *   card with its own error state («—» plus retry, never `0`, HOS-2424);
+ * - an onboarding EmptyState for a host who has no property yet;
+ * - a LockedState naming the catalog plans when the plan lacks the dashboard
+ *   entitlement (HOS-2214: never a raw «Entitlement required»).
+ *
+ * The account plan summary is NOT here: it lives on the general dashboard.
  *
  * @example
  * ```astro
- * <HostDashboard client:load locale={locale} />
+ * <HostDashboard client:load locale={locale} planNames={names} plansHref={href} />
  * ```
  */
 
-import { BuildingIcon, ChatIcon, CreditCardIcon, MegaphoneIcon } from '@repo/icons';
-import type { TrialSummaryResponse } from '@repo/schemas';
+import { BuildingIcon, ChatIcon } from '@repo/icons';
 import { type JSX, useCallback, useEffect, useState } from 'react';
-import { hostDashboardApi, publishApi } from '@/lib/api/endpoints-protected';
-import { transformHostDashboard } from '@/lib/api/transforms';
-import type { HostDashboardData } from '@/lib/api/types';
-import { visibleApiMessage } from '@/lib/api-errors';
 import {
-    isPlanActive,
-    resolveDashboardFreeCard,
-    resolveDashboardTrialStat,
-    resolvePlanStatusLabel
-} from '@/lib/billing/dashboard-plan-stat';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { formatNoticeInstant } from '@/lib/listing/listing-notices';
+    type AsyncResult,
+    EmptyState,
+    LinkButton,
+    LockedState,
+    Section,
+    StatCard,
+    StatGrid,
+    type StatValue
+} from '@/components/account/ui';
+import {
+    type HostDashboardOutcome,
+    resolveHostDashboardOutcome
+} from '@/lib/account/host-dashboard';
+import { hostDashboardApi } from '@/lib/api/endpoints-protected';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { AnalyticsSection } from './AnalyticsSection.client';
-import styles from './HostDashboard.module.css';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
+/** Props of {@link HostDashboard}. */
 export interface HostDashboardProps {
-    /** Active UI locale for i18n and URL building */
+    /** Active UI locale for i18n and URL building. */
     readonly locale: SupportedLocale;
+    /** Catalog names of the plans that grant the dashboard (read on the server). */
+    readonly planNames: readonly string[];
+    /** Where «Ver planes» goes. */
+    readonly plansHref: string;
 }
 
-type DashboardState =
-    | { readonly status: 'loading' }
-    | {
-          readonly status: 'ready';
-          readonly data: HostDashboardData;
-          readonly trialSummaries: readonly TrialSummaryResponse[];
-      }
-    | { readonly status: 'error'; readonly message: string };
-
-/** Read the accommodation trial summary without allowing a failure to reject. */
-async function readTrialSummaries(): Promise<readonly TrialSummaryResponse[]> {
-    try {
-        const result = await publishApi.trialSummary({ vertical: 'accommodation' });
-        return result.ok ? [result.data] : [];
-    } catch {
-        return [];
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Quick action config
-// ---------------------------------------------------------------------------
-
-interface QuickAction {
-    readonly key: string;
-    readonly labelKey: string;
-    readonly href: string;
-    readonly icon: typeof BuildingIcon;
-}
-
-const QUICK_ACTIONS: ReadonlyArray<QuickAction> = [
-    {
-        key: 'properties',
-        labelKey: 'host.dashboard.quickActions.properties',
-        href: 'mi-cuenta/propiedades',
-        icon: BuildingIcon
-    },
-    {
-        key: 'promotions',
-        labelKey: 'host.dashboard.quickActions.promotions',
-        href: 'mi-cuenta/promociones',
-        icon: MegaphoneIcon
-    },
-    {
-        key: 'messages',
-        labelKey: 'host.dashboard.quickActions.messages',
-        href: 'mi-cuenta/consultas-propietario',
-        icon: ChatIcon
-    },
-    {
-        key: 'subscription',
-        labelKey: 'host.dashboard.quickActions.subscription',
-        href: 'mi-cuenta/suscripcion',
-        icon: CreditCardIcon
-    }
-];
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+type HostState = { readonly kind: 'loading' } | HostDashboardOutcome;
+type ReadyState = Extract<HostDashboardOutcome, { kind: 'ready' }>;
 
 /**
- * Host dashboard island — shows aggregated host data in a 4-widget layout.
+ * Host dashboard island.
  *
- * @example
- * ```astro
- * <HostDashboard client:load locale={locale} />
- * ```
+ * @param props - See {@link HostDashboardProps}.
+ * @returns The stats, the onboarding or the lock, and the analytics.
  */
-export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
-    const { t } = createTranslations(locale);
-    const [state, setState] = useState<DashboardState>({ status: 'loading' });
+export function HostDashboard({ locale, planNames, plansHref }: HostDashboardProps): JSX.Element {
+    const t = createT(locale);
+    const [state, setState] = useState<HostState>({ kind: 'loading' });
 
-    // ── Fetch dashboard data ──────────────────────────────────────────────
-    // biome-ignore lint/correctness/useExhaustiveDependencies: t is a stable translation function bound to a fixed locale; including it would loop the effect (Maximum update depth)
-    const fetchDashboard = useCallback(async () => {
-        setState({ status: 'loading' });
+    const load = useCallback(async () => {
+        setState({ kind: 'loading' });
         try {
-            const [result, trialSummaries] = await Promise.all([
-                hostDashboardApi.get(),
-                readTrialSummaries()
-            ]);
-            if (!result.ok) {
-                setState({
-                    status: 'error',
-                    message:
-                        visibleApiMessage({ error: result.error }) ??
-                        t('host.dashboard.error', 'Error al cargar el panel')
-                });
-                return;
-            }
-            // TYPE-WORKAROUND: api response shape not inferred from generic
-            const data = transformHostDashboard({
-                item: result.data as unknown as Record<string, unknown>
-            });
-            setState({ status: 'ready', data, trialSummaries });
-        } catch (err) {
-            setState({
-                status: 'error',
-                message:
-                    err instanceof Error
-                        ? err.message
-                        : t('host.dashboard.error', 'Error al cargar el panel')
-            });
+            const result = await hostDashboardApi.get();
+            setState(resolveHostDashboardOutcome({ result }));
+        } catch {
+            setState({ kind: 'error' });
         }
     }, []);
 
     useEffect(() => {
-        void fetchDashboard();
-    }, [fetchDashboard]);
+        void load();
+    }, [load]);
 
-    // ── Render: loading ───────────────────────────────────────────────────
-    if (state.status === 'loading') {
+    if (state.kind === 'locked') {
         return (
-            <div className={styles.dashboard}>
-                <div className={styles.skeletonGrid}>
-                    {[1, 2, 3, 4].map((i) => (
-                        <div
-                            key={i}
-                            className={styles.skeletonWidget}
-                            aria-hidden="true"
-                        />
-                    ))}
-                </div>
-            </div>
+            <Section
+                title={t('host.dashboard.summaryTitle')}
+                helpId="section:host.dashboard#locked"
+            >
+                <LockedState
+                    locale={locale}
+                    reason={{
+                        kind: 'plan',
+                        feature: t('host.dashboard.locked.feature'),
+                        description: t('host.dashboard.locked.description'),
+                        plans: planNames.map((name) => ({ name })),
+                        plansHref
+                    }}
+                />
+            </Section>
         );
     }
 
-    // ── Render: error ─────────────────────────────────────────────────────
-    if (state.status === 'error') {
-        return (
-            <div className={styles.dashboard}>
-                <div
-                    className={styles.errorWidget}
-                    role="alert"
-                >
-                    <p className={styles.errorText}>{state.message}</p>
-                    <button
-                        type="button"
-                        onClick={() => void fetchDashboard()}
-                        className={styles.retryButton}
-                    >
-                        {t('host.dashboard.retry', 'Reintentar')}
-                    </button>
-                </div>
-            </div>
-        );
-    }
+    const retry = () => void load();
+    /** One card's state: an untrustworthy (`null`) value is an error, never a zero. */
+    const cardState = (pick: (ready: ReadyState) => StatValue | null): AsyncResult<StatValue> => {
+        if (state.kind === 'loading') return { status: 'loading' };
+        if (state.kind === 'error') return { status: 'error', retry };
+        const data = pick(state);
+        return data === null ? { status: 'error', retry } : { status: 'ready', data };
+    };
 
-    // ── Render: ready ─────────────────────────────────────────────────────
-    const { data, trialSummaries } = state;
-    const trialStat = resolveDashboardTrialStat({ summaries: trialSummaries });
-    const freeCard = resolveDashboardFreeCard({
-        trialSummaries,
-        labels: {
-            free: t('host.dashboard.widgets.noPlan', 'Sin suscripción activa'),
-            trial: t('host.dashboard.plan.trial', 'Prueba gratuita'),
-            trialEndsOn: t('account.pages.dashboard.stats.trialEndsOn', 'Hasta el {{date}}')
-        },
-        formatDate: (iso) => formatNoticeInstant({ iso, locale })
-    });
-
-    const planBadge = data.planInfo
-        ? data.planInfo.isTrial
-            ? t('host.dashboard.plan.trial', 'Prueba gratuita')
-            : resolvePlanStatusLabel({
-                  info: data.planInfo,
-                  t,
-                  formatDate: (iso) => formatNoticeInstant({ iso, locale })
-              })
-        : t('host.dashboard.plan.noPlan', 'Sin plan');
+    const propertiesState = cardState(({ properties }) =>
+        properties === null
+            ? null
+            : {
+                  value: properties.total,
+                  hint: t('host.dashboard.widgets.propertiesHint', undefined, {
+                      published: properties.published,
+                      draft: properties.draft
+                  })
+              }
+    );
+    const unreadState = cardState(({ unread }) => (unread === null ? null : { value: unread }));
+    const isEmpty = state.kind === 'ready' && state.properties?.total === 0;
 
     return (
-        <div className={styles.dashboard}>
-            <div className={styles.widgetGrid}>
-                {/* ── Widget 1: Property summary ── */}
-                <div className={styles.widget}>
-                    <h2 className={styles.widgetTitle}>
-                        {t('host.dashboard.widgets.properties', 'Tus propiedades')}
-                    </h2>
-                    <div className={styles.statList}>
-                        <div className={styles.statRow}>
-                            <span className={styles.statLabel}>
-                                {t('host.dashboard.widgets.total', 'Total')}
-                            </span>
-                            <span className={styles.statValue}>{data.propertySummary.total}</span>
-                        </div>
-                        <div className={styles.statRow}>
-                            <span className={styles.statLabel}>
-                                {t('host.dashboard.widgets.published', 'Publicadas')}
-                            </span>
-                            <span className={styles.statValueAccent}>
-                                {data.propertySummary.published}
-                            </span>
-                        </div>
-                        <div className={styles.statRow}>
-                            <span className={styles.statLabel}>
-                                {t('host.dashboard.widgets.draft', 'Borradores')}
-                            </span>
-                            <span className={styles.statValueMuted}>
-                                {data.propertySummary.draft}
-                            </span>
-                        </div>
-                    </div>
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/propiedades' })}
-                        className={styles.widgetLink}
-                    >
-                        {t('host.dashboard.widgets.manage', 'Gestionar')}
-                    </a>
-                </div>
+        <>
+            <StatGrid helpId="section:host.dashboard#stats">
+                <StatCard
+                    id="hostProperties"
+                    label={t('host.dashboard.widgets.properties')}
+                    state={propertiesState}
+                    locale={locale}
+                    icon={<BuildingIcon size={20} />}
+                    link={{
+                        href: buildUrl({ locale, path: 'mi-cuenta/propiedades' }),
+                        label: t('host.dashboard.widgets.manage')
+                    }}
+                />
+                <StatCard
+                    id="hostUnreadMessages"
+                    label={t('host.dashboard.widgets.messages')}
+                    state={unreadState}
+                    locale={locale}
+                    icon={<ChatIcon size={20} />}
+                    link={{
+                        // The OWNER inbox, never the guest one (HOS-2418).
+                        href: buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }),
+                        label: t('host.dashboard.widgets.viewAll')
+                    }}
+                />
+            </StatGrid>
 
-                {/* ── Widget 2: Plan info ── */}
-                <div className={styles.widget}>
-                    <h2 className={styles.widgetTitle}>
-                        {t('host.dashboard.widgets.plan', 'Tu suscripción')}
-                    </h2>
-                    {data.planInfo ? (
-                        <>
-                            <p className={styles.planName}>{data.planInfo.name}</p>
-                            <span
-                                className={`${styles.planBadge} ${
-                                    data.planInfo.isTrial || !isPlanActive({ info: data.planInfo })
-                                        ? styles.planBadgeWarning
-                                        : styles.planBadgeActive
-                                }`}
-                            >
-                                {planBadge}
-                            </span>
-                        </>
-                    ) : trialStat.kind === 'trial' ? (
-                        <>
-                            <p
-                                className={styles.planName}
-                                data-testid="host-dashboard-plan-trial"
-                            >
-                                {freeCard.value}
-                            </p>
-                            {freeCard.statusText ? (
-                                <p
-                                    className={styles.planTrialEnds}
-                                    data-testid="host-dashboard-trial-ends"
-                                >
-                                    {freeCard.statusText}
-                                </p>
-                            ) : null}
-                        </>
-                    ) : data.planUnavailable ? (
-                        <p
-                            className={styles.planEmpty}
-                            data-testid="host-dashboard-plan-unavailable"
-                        >
-                            {t('account.pages.dashboard.stats.unavailable', 'No disponible')}
-                        </p>
-                    ) : (
-                        <p className={styles.planEmpty}>
-                            {t('host.dashboard.widgets.noPlan', 'Sin suscripción activa')}
-                        </p>
-                    )}
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
-                        className={styles.widgetLink}
-                    >
-                        {t('host.dashboard.widgets.manage', 'Gestionar')}
-                    </a>
-                </div>
+            {isEmpty ? (
+                <Section
+                    title={t('host.dashboard.onboarding.sectionTitle')}
+                    helpId="section:host.dashboard#onboarding"
+                >
+                    <EmptyState
+                        variant="compact"
+                        icon={<BuildingIcon size={32} />}
+                        title={t('host.dashboard.onboarding.title')}
+                        description={t('host.dashboard.onboarding.description')}
+                        action={
+                            <LinkButton href={buildUrl({ locale, path: 'mi-cuenta/propiedades' })}>
+                                {t('host.dashboard.onboarding.action')}
+                            </LinkButton>
+                        }
+                    />
+                </Section>
+            ) : null}
 
-                {/* ── Widget 3: Unread messages ── */}
-                <div className={styles.widget}>
-                    <h2 className={styles.widgetTitle}>
-                        {t('host.dashboard.widgets.messages', 'Mensajes')}
-                    </h2>
-                    <p className={styles.messageCount}>
-                        {data.unreadCount > 0 ? (
-                            <>
-                                <span className={styles.unreadBadge}>{data.unreadCount}</span>{' '}
-                                {data.unreadCount === 1
-                                    ? t(
-                                          'host.dashboard.widgets.unread.singular',
-                                          'mensaje sin leer'
-                                      )
-                                    : t(
-                                          'host.dashboard.widgets.unread.plural',
-                                          'mensajes sin leer'
-                                      )}
-                            </>
-                        ) : (
-                            t('host.dashboard.widgets.unread.none', 'No tenés mensajes nuevos')
-                        )}
-                    </p>
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })}
-                        className={styles.widgetLink}
-                    >
-                        {t('host.dashboard.widgets.viewAll', 'Ver todos')}
-                    </a>
-                </div>
-
-                {/* ── Widget 4: Quick actions ── */}
-                <div className={styles.widget}>
-                    <h2 className={styles.widgetTitle}>
-                        {t('host.dashboard.widgets.quickActions', 'Acciones rápidas')}
-                    </h2>
-                    <ul className={styles.quickActionList}>
-                        {QUICK_ACTIONS.map((action) => {
-                            const Icon = action.icon;
-                            return (
-                                <li key={action.key}>
-                                    <a
-                                        href={buildUrl({ locale, path: action.href })}
-                                        className={styles.quickActionLink}
-                                    >
-                                        <Icon
-                                            size={18}
-                                            aria-hidden="true"
-                                        />
-                                        <span>{t(action.labelKey, action.key)}</span>
-                                    </a>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
-            </div>
-
-            {/* ── Analytics section ── */}
-            <AnalyticsSection locale={locale} />
-        </div>
+            {state.kind === 'ready' && !isEmpty ? <AnalyticsSection locale={locale} /> : null}
+        </>
     );
 }

@@ -202,11 +202,6 @@
         "font-size": 20,
         "radius": 10
     },
-    "apps/web/src/components/host/HostDashboard.module.css": {
-        "color": 6,
-        "font-size": 13,
-        "radius": 8
-    },
     "apps/web/src/components/host/PromotionList.module.css": {
         "color": 20,
         "font-size": 16,

@@ -38,9 +38,6 @@
     "apps/web/src/components/account/editor/content-editor-layout.module.css": {
         "media": 1
     },
-    "apps/web/src/components/host/HostDashboard.module.css": {
-        "media": 2
-    },
     "apps/web/src/components/host/PromotionForm.module.css": {
         "media": 1
     },
