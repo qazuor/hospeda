@@ -266,6 +266,33 @@ describe('TEST:V8a:11 action 24 confirmation (unit)', () => {
         expect(onClosed).not.toHaveBeenCalled();
     });
 
+    it('a 422 with a precondition reason names that reason and reads the preview again, without retrying', async () => {
+        // Arrange
+        mutateAsync.mockRejectedValue(
+            new ApiError('refused', {
+                status: 422,
+                body: {
+                    success: false,
+                    error: { code: 'VALIDATION_ERROR', reason: 'ACCOUNT_CAN_STILL_BE_CHARGED' }
+                }
+            })
+        );
+        const { onClosed } = renderCard();
+        const { user } = await openDialog();
+
+        // Act
+        await user.type(screen.getByTestId('account-close-on-request-reason'), 'pedido');
+        await user.click(screen.getByTestId('account-close-on-request-confirm'));
+
+        // Assert
+        expect(await screen.findByTestId('account-close-on-request-notice')).toHaveTextContent(
+            'una suscripción que todavía puede cobrar'
+        );
+        expect(refetch).toHaveBeenCalledTimes(1);
+        expect(mutateAsync).toHaveBeenCalledTimes(1);
+        expect(onClosed).not.toHaveBeenCalled();
+    });
+
     it('a 403 on the preview says it is done by another team account, with no action', async () => {
         // Arrange
         previewState.data = undefined;

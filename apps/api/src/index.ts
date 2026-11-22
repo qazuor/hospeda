@@ -9,6 +9,7 @@ import {
     registerModerationMonitoringHooks
 } from '@repo/content-moderation/engine/index';
 import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
+import { configureEmailAssets } from '@repo/email';
 import { configureLogger, LogFormat, LogLevel, registerCaptureHook } from '@repo/logger';
 import {
     getIndexNowService,
@@ -63,6 +64,12 @@ import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 
 // Validate environment variables before starting the server
 validateApiEnv();
+
+// HOS-2540: the email logo is served by the deployment's own web origin (staging
+// serves it, production may not yet). Runs before the cron scheduler, the outbox
+// sender and the admin previewer can render a single email; they all live in this
+// one process (tsup builds a single entry).
+configureEmailAssets({ siteUrl: env.HOSPEDA_SITE_URL });
 
 // Apply the global logger LEVEL and output FORMAT at server bootstrap (both are
 // process-wide settings). Previously only FORMAT was wired, so the level stayed

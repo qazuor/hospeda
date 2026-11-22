@@ -150,10 +150,20 @@ describe('Footer.astro', () => {
             expect(src).toContain('footer__nav-heading');
         });
 
-        it('all nav columns default to open so content is visible without JS', () => {
+        it('all nav columns ship open so content is visible without JS and on tablet+', () => {
             const openMatches = src.match(/<details class="footer__nav-col" open>/g);
             expect(openMatches).not.toBeNull();
             expect((openMatches ?? []).length).toBe(3);
+        });
+
+        it('collapses the nav accordions by default on mobile (<768px) via script', () => {
+            expect(src).toContain('window.matchMedia("(max-width: 47.99rem)")');
+            expect(src).toContain('col.open = !isMobile');
+            expect(src).toContain('footerMobileQuery.addEventListener("change"');
+        });
+
+        it('keeps accordion summary rows at a 44px minimum tap target on mobile', () => {
+            expect(src).toMatch(/\.footer__nav-heading \{\s*min-height: 2\.75rem;/);
         });
 
         it('disables accordion behaviour on tablet+ via pointer-events: none', () => {

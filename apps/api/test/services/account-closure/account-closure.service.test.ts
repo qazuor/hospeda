@@ -159,7 +159,7 @@ describe('TEST:V8a:12 the account closure decides in one transaction', () => {
         [true, 0, true, 'ACCOUNT_CAN_STILL_BE_CHARGED'],
         [false, 2, true, 'ACCOUNT_HAS_LISTINGS'],
         [true, 3, true, 'ACCOUNT_CAN_STILL_BE_CHARGED']
-    ] as const)('canCharge=%s listings=%s presence=%s is refused with 409 %s and writes nothing', async (canCharge, listings, presence, expected) => {
+    ] as const)('canCharge=%s listings=%s presence=%s is refused with 422 %s and writes nothing', async (canCharge, listings, presence, expected) => {
         // Arrange
         arrange({ canCharge, listings, presence });
 
@@ -167,7 +167,7 @@ describe('TEST:V8a:12 the account closure decides in one transaction', () => {
         const error = await closeError();
 
         // Assert
-        expect(error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+        expect(error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(error?.reason).toBe(expected);
         expect(mocks.closeAccount).not.toHaveBeenCalled();
         expect(mocks.insert).not.toHaveBeenCalled();
