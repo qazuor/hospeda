@@ -60,13 +60,14 @@ async function initiate(args: {
     readonly listingId: string;
     readonly email: string;
     readonly message: string;
+    readonly guestName?: string;
 }): Promise<{ status: number; conversationId: string; result: string }> {
     const response = await app.request('/api/v1/public/conversations/initiate', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
         body: JSON.stringify({
             accommodationId: args.listingId,
-            guestName: GUEST_NAME,
+            guestName: args.guestName ?? GUEST_NAME,
             guestEmail: args.email,
             message: args.message
         })
@@ -89,6 +90,7 @@ async function initiate(args: {
 async function mintToken(args: {
     readonly conversationId: string;
     readonly message?: string;
+    readonly guestName?: string;
     readonly payloadHash?: string | null;
     readonly expiresIn?: string | number;
 }): Promise<string> {
@@ -97,7 +99,7 @@ async function mintToken(args: {
         hash = args.payloadHash;
     } else if (args.message !== undefined) {
         hash = computeInquiryPayloadHash({
-            payload: { message: args.message, guestName: GUEST_NAME }
+            payload: { message: args.message, guestName: args.guestName ?? GUEST_NAME }
         }).hash;
     }
     return new SignJWT({
@@ -277,6 +279,38 @@ describe('HOS-2568 anonymous inquiry message', () => {
 
         const thread = await ownerThread({ ownerId, conversationId: id });
         expect(thread.data?.messages?.map((m) => m.body)).toEqual(['TEXTO B (victima)']);
+    });
+
+    it('covers the declared name in the binding: changing the name invalidates the old link', async () => {
+        const { listingId } = await createFixture();
+        const email = `guest-${randomUUID()}@example.test`;
+        const first = await initiate({
+            listingId,
+            email,
+            message: 'Mismo texto',
+            guestName: 'Nombre Uno'
+        });
+        await initiate({ listingId, email, message: 'Mismo texto', guestName: 'Nombre Dos' });
+
+        const oldLink = await verify(
+            await mintToken({
+                conversationId: first.conversationId,
+                message: 'Mismo texto',
+                guestName: 'Nombre Uno'
+            })
+        );
+        expect(redirectTarget(oldLink)).toContain('verify-expired');
+        expect(await readMessages(first.conversationId)).toHaveLength(0);
+
+        const newLink = await verify(
+            await mintToken({
+                conversationId: first.conversationId,
+                message: 'Mismo texto',
+                guestName: 'Nombre Dos'
+            })
+        );
+        expect(redirectTarget(newLink)).not.toContain('verify-expired');
+        expect(await readMessages(first.conversationId)).toHaveLength(1);
     });
 
     it('rejects a token with a tampered hash or with no hash claim while a message is held', async () => {
