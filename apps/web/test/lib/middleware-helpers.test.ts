@@ -1750,3 +1750,19 @@ describe('HOS-838: onboarding redirects carry the interrupted destination', () =
         });
     });
 });
+
+describe('signin return path keeps the query and stays same-origin (HOS-2555)', () => {
+    it('accepts a relative path carrying a query string', async () => {
+        const { resolveSafeReturnPath } = await import('../../src/lib/auth-redirect');
+        expect(
+            resolveSafeReturnPath({ rawReturn: '/es/mi-cuenta/propiedades/?page=2', locale: 'es' })
+        ).toBe('/es/mi-cuenta/propiedades/?page=2');
+    });
+
+    it('still rejects open-redirect shapes', async () => {
+        const { resolveSafeReturnPath } = await import('../../src/lib/auth-redirect');
+        for (const rawReturn of ['//evil.com/?a=1', 'https://evil.com/?a=1', '/\\evil.com']) {
+            expect(resolveSafeReturnPath({ rawReturn, locale: 'es' })).toBe('/es/mi-cuenta/');
+        }
+    });
+});
