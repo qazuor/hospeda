@@ -12,7 +12,8 @@
  *   POST /api/v1/protected/conversations/initiate
  */
 
-import { conversations, eq, getDb } from '@repo/db';
+import { createHash } from 'node:crypto';
+import { conversationAccessTokens, conversations, eq, getDb } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -111,6 +112,40 @@ describe('conversation initiate: inquiry booking fields (HOS-2534)', () => {
             expect(row?.guests).toBeNull();
         });
 
+        it('replaces the stored fields when the visitor re-submits before verifying', async () => {
+            const email = `ana-resubmit-${Date.now()}@example.test`;
+            const submit = (extra: Record<string, unknown>) =>
+                app.request(PUBLIC_URL, {
+                    method: 'POST',
+                    headers: publicHeaders,
+                    body: JSON.stringify({ ...anonBody(extra), guestEmail: email })
+                });
+
+            const first = await submit({
+                checkIn: '2026-12-12',
+                checkOut: '2026-12-15',
+                guests: 2
+            });
+            const second = await submit({
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 4
+            });
+
+            expect(first.status).toBe(200);
+            expect(second.status).toBe(200);
+            const secondData = (
+                (await second.json()) as { data: { status: string; conversationId: string } }
+            ).data;
+            expect(secondData.status).toBe('resent');
+            const rows = await getDb().select().from(conversations);
+            expect(rows).toHaveLength(1);
+            expect(rows[0]?.id).toBe(secondData.conversationId);
+            expect(rows[0]?.checkIn).toBe('2027-01-09');
+            expect(rows[0]?.checkOut).toBe('2027-01-11');
+            expect(rows[0]?.guests).toBe(4);
+        });
+
         it.each([
             ['check-out not after check-in', { checkIn: '2026-12-15', checkOut: '2026-12-12' }],
             ['check-out equal to check-in', { checkIn: '2026-12-15', checkOut: '2026-12-15' }],
@@ -184,6 +219,74 @@ describe('conversation initiate: inquiry booking fields (HOS-2534)', () => {
             const body = (await res.json()) as { error: { code: string } };
             expect(body.error.code).toBe('VALIDATION_ERROR');
             expect(await getDb().select().from(conversations)).toHaveLength(0);
+        });
+    });
+
+    describe('read-back', () => {
+        const createWithDates = async () => {
+            const res = await app.request(PROTECTED_URL, {
+                method: 'POST',
+                headers: guestHeaders,
+                body: JSON.stringify({
+                    accommodationId: accommodation.id,
+                    message: 'Hola',
+                    checkIn: '2026-12-12',
+                    checkOut: '2026-12-15',
+                    guests: 2
+                })
+            });
+            expect(res.status).toBe(201);
+            return ((await res.json()) as { data: { conversationId: string } }).data.conversationId;
+        };
+
+        it('exposes the three fields in the owner thread response', async () => {
+            const conversationId = await createWithDates();
+            const ownerHeaders = buildMockActorHeaders({
+                actorId: accommodation.ownerId,
+                permissions: [
+                    PermissionEnum.CONVERSATION_VIEW_OWN,
+                    PermissionEnum.CONVERSATION_REPLY_OWN
+                ]
+            });
+
+            const res = await app.request(
+                `/api/v1/protected/conversations/owner/${conversationId}`,
+                { method: 'GET', headers: ownerHeaders }
+            );
+
+            expect(res.status).toBe(200);
+            const { data } = (await res.json()) as {
+                data: { conversation: Record<string, unknown> };
+            };
+            expect(data.conversation.checkIn).toBe('2026-12-12');
+            expect(data.conversation.checkOut).toBe('2026-12-15');
+            expect(data.conversation.guests).toBe(2);
+        });
+
+        it('does not leak the fields through the anonymous guest thread', async () => {
+            const conversationId = await createWithDates();
+            const rawToken = 'f2-2534-guest-token';
+            await getDb()
+                .insert(conversationAccessTokens)
+                .values({
+                    conversationId,
+                    tokenHash: createHash('sha256').update(rawToken).digest('hex'),
+                    expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+                });
+
+            const res = await app.request(`/api/v1/public/conversations/guest/${rawToken}`, {
+                method: 'GET',
+                headers: publicHeaders
+            });
+
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            const { data } = body as { data: { conversation: Record<string, unknown> } };
+            expect(data.conversation.id).toBe(conversationId);
+            for (const key of ['checkIn', 'checkOut', 'guests']) {
+                expect(data.conversation).not.toHaveProperty(key);
+            }
+            expect(JSON.stringify(body)).not.toContain('2026-12-12');
         });
     });
 });
