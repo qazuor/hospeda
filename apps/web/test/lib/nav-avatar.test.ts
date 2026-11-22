@@ -1,90 +1,75 @@
+/**
+ * Tests for the header user menu's account links (HOS-2551).
+ */
+
 import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { getCuratedAccountNav } from '../../src/lib/nav-avatar';
 
-import { getCuratedAccountNav, pickBusinessShortcut } from '../../src/lib/nav-avatar';
-
-describe('pickBusinessShortcut', () => {
-    it('picks hostDashboard for a user with ACCOMMODATION_CREATE', () => {
-        const { item } = pickBusinessShortcut({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE]
-        });
-        expect(item?.id).toBe('hostDashboard');
-    });
-
-    it('picks the listings shortcut for a user with only VENUE_EDIT_OWN', () => {
-        const { item } = pickBusinessShortcut({
-            permissions: [PermissionEnum.VENUE_EDIT_OWN]
-        });
-        expect(item?.id).toBe('comercio-listings');
-    });
-
-    it('prioritizes hostDashboard over the listings shortcut when the user has both permissions', () => {
-        const { item } = pickBusinessShortcut({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.VENUE_EDIT_OWN]
-        });
-        expect(item?.id).toBe('hostDashboard');
-    });
-
-    it('returns null when the user has neither business permission', () => {
-        const { item } = pickBusinessShortcut({ permissions: [] });
-        expect(item).toBeNull();
-    });
-
-    it('fails closed (null) while permissions are still loading (caller passes [])', () => {
-        const { item } = pickBusinessShortcut({ permissions: [] });
-        expect(item).toBeNull();
-    });
-});
+const adminIds = (params: Parameters<typeof getCuratedAccountNav>[0]) =>
+    getCuratedAccountNav(params).adminItems.map((item) => item.id);
 
 describe('getCuratedAccountNav', () => {
-    it('always resolves the dashboard item as the identity-zone "Mi cuenta" link', () => {
+    it('always returns the «Mi cuenta» identity link to /mi-cuenta/', () => {
         const { dashboardItem } = getCuratedAccountNav({ permissions: [] });
         expect(dashboardItem?.id).toBe('dashboard');
+        expect(dashboardItem?.href).toBe('mi-cuenta');
     });
 
-    it('orders shortcuts as favorites, then subscription when the user has no business permission', () => {
-        const { shortcutItems } = getCuratedAccountNav({ permissions: [] });
-        expect(shortcutItems.map((item) => item.id)).toEqual(['favorites', 'subscription']);
+    it('gives a pure tourist no «Administración» shortcut', () => {
+        expect(adminIds({ permissions: [] })).toEqual([]);
     });
 
-    it('inserts the business shortcut between favorites and subscription for a host', () => {
-        const { shortcutItems } = getCuratedAccountNav({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE]
+    it('lists one shortcut per vertical, in the owner order', () => {
+        const { adminItems } = getCuratedAccountNav({
+            permissions: [
+                PermissionEnum.ACCOMMODATION_CREATE,
+                PermissionEnum.VENUE_EDIT_OWN,
+                PermissionEnum.EXPERIENCE_EDIT_OWN,
+                PermissionEnum.POST_CREATE
+            ],
+            ownsHostTradeListing: true,
+            ownsPartner: true
         });
-        expect(shortcutItems.map((item) => item.id)).toEqual([
-            'favorites',
-            'hostDashboard',
-            'subscription'
+        expect(adminItems.map((item) => [item.id, item.href])).toEqual([
+            ['accommodations', 'mi-cuenta/host-dashboard'],
+            ['venues', 'mi-cuenta/comercio'],
+            ['experiences', 'mi-cuenta/comercio'],
+            ['editorial', 'mi-cuenta/publicaciones'],
+            ['partner', 'mi-cuenta/partner'],
+            ['provider', 'mi-cuenta/proveedor']
         ]);
     });
 
-    it('inserts the listings shortcut for a venue/experience-only owner', () => {
-        const { shortcutItems } = getCuratedAccountNav({
-            permissions: [PermissionEnum.VENUE_EDIT_OWN]
+    it('phrases every shortcut as managing', () => {
+        const { adminItems } = getCuratedAccountNav({
+            permissions: [PermissionEnum.ACCOMMODATION_CREATE],
+            ownsHostTradeListing: true
         });
-        expect(shortcutItems.map((item) => item.id)).toEqual([
-            'favorites',
-            'comercio-listings',
-            'subscription'
+        expect(adminItems.map((item) => item.i18nKey)).toEqual([
+            'account.nav.manageAccommodations',
+            'account.nav.manageProvider'
         ]);
     });
 
-    it('never shows both business shortcuts even when the user has both permissions', () => {
-        const { shortcutItems } = getCuratedAccountNav({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.VENUE_EDIT_OWN]
-        });
-        expect(shortcutItems.filter((item) => item.id === 'hostDashboard')).toHaveLength(1);
-        expect(shortcutItems.filter((item) => item.id === 'comercio-listings')).toHaveLength(0);
+    it('gates venues and experiences by their own permission', () => {
+        expect(adminIds({ permissions: [PermissionEnum.VENUE_EDIT_OWN] })).toEqual(['venues']);
+        expect(adminIds({ permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN] })).toEqual([
+            'experiences'
+        ]);
     });
 
-    it('never leaks non-curated items (e.g. properties, reviews, newsletter)', () => {
-        const { dashboardItem, shortcutItems } = getCuratedAccountNav({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.VENUE_EDIT_OWN]
+    it('sends an events-only editor to «Mis eventos»', () => {
+        const { adminItems } = getCuratedAccountNav({
+            permissions: [PermissionEnum.EVENT_CREATE]
         });
-        const ids = [dashboardItem?.id, ...shortcutItems.map((item) => item.id)];
-        expect(ids).not.toContain('properties');
-        expect(ids).not.toContain('reviews');
-        expect(ids).not.toContain('newsletter');
-        expect(ids).not.toContain('preferences');
+        expect(adminItems.map((item) => [item.id, item.href])).toEqual([
+            ['editorial', 'mi-cuenta/eventos']
+        ]);
+    });
+
+    it('gates partner and provider by row ownership, never by permission', () => {
+        expect(adminIds({ permissions: [], ownsHostTradeListing: true })).toEqual(['provider']);
+        expect(adminIds({ permissions: [], ownsPartner: true })).toEqual(['partner']);
     });
 });

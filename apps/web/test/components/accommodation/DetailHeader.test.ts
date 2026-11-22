@@ -369,3 +369,32 @@ describe('DetailHeader.astro — HOS-85 T-010: DetailCompareButton island', () =
         });
     });
 });
+
+describe('accommodation mobile header spacing regressions (F1)', () => {
+    const page = readFileSync(
+        resolve(__dirname, '../../../src/pages/[lang]/alojamientos/[slug].astro'),
+        'utf8'
+    );
+    const mobileStyles = src.match(/@media \(max-width: 767px\)[\s\S]*?(?=@media|<\/style>)/)?.[0];
+
+    it('gives the content band top padding when the breadcrumbs are hidden (expanded only)', () => {
+        expect(page).toMatch(
+            /:global\(\.wave-header:not\(\.wave-header--compact\) \.wave-header__bar:has\(\.acc-detail-breadcrumbs\) \.wave-header__content\)\s*\{\s*padding-top: var\(--space-6/
+        );
+    });
+
+    it('removes the page-background strip above the full-bleed gallery on this page only', () => {
+        expect(page).toMatch(
+            /:global\(\.wave-header \.detail-page:has\(\.acc-detail\)\)\s*\{\s*padding-top: 0;/
+        );
+    });
+
+    it('shrinks the mobile title and aligns Compare to its first line', () => {
+        expect(mobileStyles).toMatch(
+            /\.detail-header--mobile-gallery \.detail-header__name\s*\{\s*font-size: var\(--text-h3/
+        );
+        expect(mobileStyles).toMatch(
+            /\.detail-header--mobile-gallery \.detail-header__favorite\s*\{\s*align-self: start;/
+        );
+    });
+});

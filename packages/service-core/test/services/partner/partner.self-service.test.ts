@@ -16,6 +16,7 @@ import {
     PartnerContentReviewStateEnum,
     PartnerTypeEnum,
     PermissionEnum,
+    RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
@@ -321,5 +322,48 @@ describe('PartnerService.updateOwn — ownership', () => {
         // Assert
         const where = (model.update as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
         expect(where).toEqual({ id: PARTNER_ID });
+    });
+});
+
+describe('PartnerService.ownsActivePartner (HOS-2551)', () => {
+    it('reports true when the model finds a live partner for the actor', async () => {
+        // Arrange
+        const existsActiveForOwner = vi.fn(async () => true);
+        const { service } = buildService({ existsActiveForOwner });
+
+        // Act
+        const result = await service.ownsActivePartner(partnerActor);
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(result.data?.owns).toBe(true);
+        expect(existsActiveForOwner).toHaveBeenCalledWith(
+            expect.objectContaining({ ownerUserId: partnerActor.id })
+        );
+    });
+
+    it('reports false when the actor owns no live partner (none, revoked or deleted)', async () => {
+        // Arrange
+        const { service } = buildService({ existsActiveForOwner: vi.fn(async () => false) });
+
+        // Act
+        const result = await service.ownsActivePartner(partnerActor);
+
+        // Assert
+        expect(result.data?.owns).toBe(false);
+    });
+
+    it('never queries for an anonymous actor', async () => {
+        // Arrange
+        const existsActiveForOwner = vi.fn(async () => true);
+        const { service } = buildService({ existsActiveForOwner });
+        const guest = createActor({ roles: [RoleEnum.GUEST], permissions: [] });
+
+        // Act
+        const result = await service.ownsActivePartner(guest);
+
+        // Assert
+        expect(result.data?.owns).toBe(false);
+        expect(existsActiveForOwner).not.toHaveBeenCalled();
     });
 });
