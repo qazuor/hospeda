@@ -125,6 +125,11 @@ interface AccommodationsListingMapProps {
      * Defaults to 'es'.
      */
     readonly locale?: SupportedLocale;
+    /**
+     * HOS-2554: catalog names of the plans that carry comparison, read by the SSR page (the
+     * catalog reader is server-only). Empty when it could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 export function AccommodationsListingMap({
@@ -151,7 +156,8 @@ export function AccommodationsListingMap({
     showSidebar = false,
     sidebarI18n,
     extraSearchParams,
-    locale = 'es'
+    locale = 'es',
+    gatePlanNames = []
 }: AccommodationsListingMapProps) {
     const { items, isFetching, onBoundsChange } = useViewportSearch({
         initialItems,
@@ -395,6 +401,7 @@ export function AccommodationsListingMap({
                     onCardHover={setHoveredItemId}
                     onCardSelect={handleCardSelect}
                     locale={locale}
+                    gatePlanNames={gatePlanNames}
                     isFetching={isFetching}
                     i18n={{
                         resultsHeading: sidebarI18n.resultsHeading,

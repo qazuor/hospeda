@@ -45,6 +45,8 @@ import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracke
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
 import { getApiUrl } from '@/lib/env';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -360,6 +362,11 @@ if (bookmarkCountResult.status === 'fulfilled') {
 // inherits, so the WhatsApp upsell audience is always a free-tier tourist — point
 // at the tourist pricing page, not the owner one (BETA-201).
 const whatsappPlansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
+// HOS-2554: the WhatsApp upsell names the catalog plans that show the number. The catalog
+// is public (not per-user), so reading it here keeps this page session-blind.
+const whatsappGatePlanNames = await getGatePlanNames({
+    entitlement: EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY
+});
 const panelId = 'listing-contact-panel';
 const contactPrice = {
     amount: accommodation.price?.price ?? null,
@@ -782,6 +789,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         price={contactPrice}
         hasWhatsapp={accommodation.hasWhatsapp}
         whatsappPlansHref={whatsappPlansHref}
+        gatePlanNames={whatsappGatePlanNames}
         phone={accommodation.contactInfo?.phone}
         email={accommodation.contactInfo?.email}
         capacity={accommodation.extraInfo?.capacity}
@@ -821,6 +829,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                         accommodationId={accommodation.id}
                         accommodationName={accommodation.name}
                         plansHref={whatsappPlansHref}
+                        gatePlanNames={whatsappGatePlanNames}
                         locale={locale}
                     />
                 )}

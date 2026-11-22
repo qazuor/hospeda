@@ -26,6 +26,7 @@
 import { ColumnIcon } from '@repo/icons';
 import type { FC, MouseEvent } from 'react';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
+import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -56,6 +57,11 @@ export interface CompareButtonProps {
     readonly variant?: CompareButtonVariant;
     /** Locale for aria-label and toast messaging. Defaults to `es`. */
     readonly locale?: SupportedLocale;
+    /**
+     * HOS-2554: catalog names of the plans that carry this feature, read server-side and
+     * handed down (the catalog reader is server-only). Empty when it could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
     /** Additional CSS classes forwarded to the root button element. */
     readonly className?: string;
 }
@@ -87,6 +93,7 @@ export const CompareButton: FC<CompareButtonProps> = ({
     accommodationThumbnailUrl,
     variant = 'standalone',
     locale = 'es',
+    gatePlanNames = [],
     className
 }) => {
     const { t, tPlural } = createTranslations(locale);
@@ -147,10 +154,13 @@ export const CompareButton: FC<CompareButtonProps> = ({
         if (result.reason === 'upsell') {
             addToast({
                 type: 'info',
-                message: t(
-                    'accommodations.comparison.upsell.message',
-                    'Comparar alojamientos está disponible en los planes Plus y VIP.'
-                ),
+                message: resolvePlanGateMessage({
+                    keyBase: 'accommodations.comparison.upsell.message',
+                    locale,
+                    noPlansFallback: 'Comparar alojamientos no está incluido en tu plan actual.',
+                    planNames: gatePlanNames,
+                    t
+                }),
                 action: {
                     label: t('accommodations.comparison.upsell.cta', 'Ver planes'),
                     href: pricingHref
