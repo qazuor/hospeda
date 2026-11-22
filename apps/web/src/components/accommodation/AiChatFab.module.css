@@ -25,6 +25,20 @@
 }
 
 /*
+ * Wrapper that fills the whole button and is the badge's containing block. The
+ * dock FAB must stay `position: static` (mobile-floating-dock guard), so the
+ * badge anchors to this inner box instead of the button.
+ */
+.icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/*
  * AI badge: a small filled accent circle with a white sparkle and a ring in the
  * surface color so it separates from the blue button. It sits on the FAB's
  * top-right corner, overlapping by about a third. Absolutely positioned, so the
@@ -55,10 +69,7 @@
 
     :global([data-mobile-dock]) .fab {
         display: flex;
-        /* relative so the AI badge anchors to the button's corner */
-        position: relative;
-        /* reset the desktop offsets, which relative positioning would apply */
-        inset: auto;
+        position: static;
         width: 44px;
         height: 44px;
     }
