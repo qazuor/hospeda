@@ -1,5 +1,5 @@
 {
-  "contentHash": "593be7161434ffdd59ae6ac37999bb9b3a717ec9b7fb536c81cbca1302c08d2a",
+  "contentHash": "b9230a7b1dd48da57273545238d469b771af909b982bfb4aac6374d925c23dbf",
   "locales": {
     "es": [
       {
@@ -793,15 +793,15 @@
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Ayuda» desde el menú de tu cuenta.",
+              "Entrá a «Ayuda» con el botón «?» de arriba de todo, en el encabezado de tu cuenta. Está siempre, en todas las pantallas.",
               "Escribí en el buscador lo que querés hacer, con tus palabras. Los resultados aparecen mientras escribís, desde la segunda letra.",
               "Si dejás marcado «Solo para mi tipo de cuenta», ves solo los artículos de la pestaña elegida. Desmarcalo para buscar en todos.",
               "Para ver todo lo que hay, elegí la pestaña de lo que publicás: alojamientos, comer y salir, experiencias, proveedores o aliados.",
-              "En las pantallas de tu cuenta, tocá el botón «?» que está al lado del título para abrir en otra pestaña la ayuda de esa pantalla.",
+              "En las pantallas de tu cuenta, tocá el botón «?» que está al lado del título para abrir en otra pestaña la ayuda de esa pantalla. El «?» del encabezado abre la ayuda general; el del título, la de esa pantalla.",
               "Dentro de un artículo, usá el índice para ir directo a una parte."
             ]
           },
-          "notExpect": "- Que todas las pantallas tengan el botón «?»: aparece solo donde ya hay un artículo para esa pantalla.\n- Que la ayuda haga cambios en tu cuenta: solo explica cómo hacerlos. Para que un asistente los haga por vos, mirá {{article:ai-assistants|cómo conectar un asistente de IA}}.",
+          "notExpect": "- Que todas las pantallas tengan el botón «?» al lado del título: aparece solo donde ya hay un artículo para esa pantalla. El «?» del encabezado sí está siempre.\n- Que la ayuda haga cambios en tu cuenta: solo explica cómo hacerlos. Para que un asistente los haga por vos, mirá {{article:ai-assistants|cómo conectar un asistente de IA}}.",
           "troubleshooting": "### No encuentro lo que busco {#no-encuentro}\n\nProbá con otras palabras o desmarcá «Solo para mi tipo de cuenta». Si igual no aparece, mirá las {{link:faq|preguntas frecuentes}} o {{link:contact|escribinos}}.\n\n### El artículo está en español {#en-espanol}\n\nAlgunos artículos todavía no están traducidos. Mientras tanto se muestran en español, con un aviso arriba."
         },
         "summary": "Buscá una respuesta, elegí la pestaña de lo que publicás, abrí la ayuda de cada pantalla con el botón «?» y leé un artículo por partes.",
