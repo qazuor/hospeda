@@ -2,7 +2,9 @@
 
 import { OWN_PLAN_STATUSES } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SUBSCRIPTION_STATUSES } from '../../../../../../packages/db/src/schemas/vertical/subscription.dbschema';
+
+const { SUBSCRIPTION_STATUSES } =
+    await vi.importActual<typeof import('@repo/db/schemas')>('@repo/db/schemas');
 
 const rowsRef: { current: unknown[] } = { current: [] };
 const inArraySpy = vi.fn();
