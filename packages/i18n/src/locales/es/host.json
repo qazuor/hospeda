@@ -1023,13 +1023,25 @@
                 "none": "No tenés mensajes nuevos"
             },
             "viewAll": "Ver todos",
-            "quickActions": "Acciones rápidas"
+            "quickActions": "Acciones rápidas",
+            "propertiesHint": "{{published}} publicadas · {{draft}} borradores"
         },
         "quickActions": {
             "properties": "Propiedades",
             "promotions": "Promociones",
             "messages": "Mensajes",
             "subscription": "Suscripción"
+        },
+        "summaryTitle": "Resumen de tus propiedades",
+        "locked": {
+            "feature": "Tablero de anfitrión",
+            "description": "Los números de tus propiedades vienen con estos planes."
+        },
+        "onboarding": {
+            "sectionTitle": "Primeros pasos",
+            "title": "Todavía no cargaste ninguna propiedad",
+            "description": "Cargá tu primera propiedad para empezar a recibir consultas.",
+            "action": "Cargar una propiedad"
         }
     },
     "pages": {

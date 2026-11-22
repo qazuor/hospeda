@@ -1023,13 +1023,25 @@
                 "none": "Você não tem mensagens novas"
             },
             "viewAll": "Ver todas",
-            "quickActions": "Ações rápidas"
+            "quickActions": "Ações rápidas",
+            "propertiesHint": "{{published}} publicadas · {{draft}} rascunhos"
         },
         "quickActions": {
             "properties": "Propriedades",
             "promotions": "Promoções",
             "messages": "Mensagens",
             "subscription": "Assinatura"
+        },
+        "summaryTitle": "Resumo das suas propriedades",
+        "locked": {
+            "feature": "Painel de anfitrião",
+            "description": "Os números das suas propriedades vêm com estes planos."
+        },
+        "onboarding": {
+            "sectionTitle": "Primeiros passos",
+            "title": "Você ainda não cadastrou nenhuma propriedade",
+            "description": "Cadastre sua primeira propriedade para começar a receber consultas.",
+            "action": "Cadastrar uma propriedade"
         }
     },
     "pages": {

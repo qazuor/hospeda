@@ -1,10 +1,4 @@
 {
-    "apps/web/src/components/account/AccountSectionCards.astro": {
-        "media": 2
-    },
-    "apps/web/src/components/account/AccountStatsGrid.astro": {
-        "media": 2
-    },
     "apps/web/src/components/account/AlertsList.module.css": {
         "media": 1
     },
@@ -102,9 +96,6 @@
         "media": 3
     },
     "apps/web/src/pages/[lang]/mi-cuenta/favoritos/index.astro": {
-        "media": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/index.astro": {
         "media": 1
     },
     "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {

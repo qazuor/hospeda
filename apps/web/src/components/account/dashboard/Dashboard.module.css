@@ -1,0 +1,30 @@
+/* Dashboard.module.css — page layout shared by the account dashboards
+   (HOS-2473..2477). Flat Sections stacked with one gap; no decoration. */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rows > li + li {
+    border-block-start: 1px solid var(--border);
+}
+
+.identity {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}

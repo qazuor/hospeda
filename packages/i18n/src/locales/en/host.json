@@ -1023,13 +1023,25 @@
                 "none": "You have no new messages"
             },
             "viewAll": "View all",
-            "quickActions": "Quick actions"
+            "quickActions": "Quick actions",
+            "propertiesHint": "{{published}} published · {{draft}} drafts"
         },
         "quickActions": {
             "properties": "Properties",
             "promotions": "Promotions",
             "messages": "Messages",
             "subscription": "Subscription"
+        },
+        "summaryTitle": "Your properties at a glance",
+        "locked": {
+            "feature": "Host dashboard",
+            "description": "Your properties' numbers come with these plans."
+        },
+        "onboarding": {
+            "sectionTitle": "Getting started",
+            "title": "You haven't added a property yet",
+            "description": "Add your first property to start receiving inquiries.",
+            "action": "Add a property"
         }
     },
     "pages": {

@@ -170,7 +170,9 @@
         "provider": "Minha ficha de fornecedor",
         "repeatTour": "Repetir tour",
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
-        "help": "Ajuda"
+        "help": "Ajuda",
+        "venueDashboard": "Painel de locais",
+        "experienceDashboard": "Painel de experiências"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -1044,7 +1046,9 @@
                 "recommendations": "Sugestões",
                 "recommendationsDesc": "Acomodações escolhidas para você",
                 "myListingDesc": "Gerencie sua ficha, suas fotos e sua assinatura",
-                "myMessagesListingDesc": "Consultas que você recebe sobre seu comércio"
+                "myMessagesListingDesc": "Consultas que você recebe sobre seu comércio",
+                "venueDashboardDesc": "Seus locais e as visitas deles",
+                "experienceDashboardDesc": "Suas experiências e as visitas delas"
             },
             "stats": {
                 "favorites": "Meus favoritos",
@@ -1081,7 +1085,8 @@
                 "viewReviews": "Ver minhas avaliações",
                 "viewSubscription": "Ver minha assinatura"
             },
-            "sectionsLabel": "Seções"
+            "sectionsLabel": "Seções",
+            "linksTitle": "Atalhos"
         },
         "editProfile": {
             "title": "Editar perfil",
@@ -1764,7 +1769,8 @@
         "pageSubtitle": "Gerencie sua presença como parceiro da Hospeda",
         "empty": {
             "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em \"Seja parceiro\" e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
-            "cta": "Ir para Seja parceiro"
+            "cta": "Ir para Seja parceiro",
+            "title": "Sua ficha de parceiro"
         },
         "status": {
             "empty": "Sua candidatura foi aprovada. Preencha seu logo e seus textos para que um admin os revise. Você ainda não está publicado.",
@@ -1812,13 +1818,15 @@
                 "linkedIn": "LinkedIn",
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
-            }
+            },
+            "sectionTitle": "Dados da sua ficha"
         },
         "presence": {
             "hidden": "Enquanto isso, sua página aparece como inexistente para o público.",
             "notDeleted": "Nada foi apagado: seu perfil e seus dados continuam salvos.",
             "returnsAlone": "Sua presença volta sozinha quando você recuperar o plano que a concede.",
-            "moderated": "Um administrador moderou sua presença. Mesmo com o plano, ela não aparecerá até que a moderação seja suspensa."
+            "moderated": "Um administrador moderou sua presença. Mesmo com o plano, ela não aparecerá até que a moderação seja suspensa.",
+            "title": "Sua presença está oculta"
         },
         "installment": {
             "title": "Sua parcela a pagar",
@@ -1827,6 +1835,17 @@
             "amountPending": "A equipe vai confirmar o valor junto com os dados para a transferência.",
             "dueOn": "Vence em {{date}}",
             "howToPay": "O pagamento é por transferência bancária. A equipe da Hospeda vai te enviar por e-mail os dados para a transferência. Quando registrarmos o pagamento, sua assinatura fica em dia."
+        },
+        "nextAction": {
+            "title": "Próximo passo"
+        },
+        "statusPill": {
+            "revoked": "Removida",
+            "active": "Ativa",
+            "approved": "Aprovada",
+            "underReview": "Em revisão",
+            "rejected": "Com alterações pedidas",
+            "draft": "Rascunho"
         }
     },
     "partnerStats": {
@@ -2065,6 +2084,41 @@
         "breadcrumbs": "Caminho de navegação",
         "gallery": {
             "title": "Kit de componentes"
+        },
+        "stat": {
+            "unavailable": "Dado indisponível"
         }
+    },
+    "ownerDashboard": {
+        "venue": {
+            "title": "Painel de locais",
+            "description": "Como estão seus locais na Hospeda.",
+            "listingsLabel": "Seus locais",
+            "listingsLink": "Ver meus locais",
+            "listingsLinkDesc": "Edite, publique ou arquive seus anúncios",
+            "newListing": "Publicar um local",
+            "onboardingSection": "Primeiros passos",
+            "onboardingTitle": "Você ainda não publicou nenhum local",
+            "onboardingDescription": "Cadastre seu primeiro local para que os viajantes o encontrem.",
+            "trafficLockedFeature": "Visitas aos seus locais"
+        },
+        "experience": {
+            "title": "Painel de experiências",
+            "description": "Como estão suas experiências na Hospeda.",
+            "listingsLabel": "Suas experiências",
+            "listingsLink": "Ver minhas experiências",
+            "listingsLinkDesc": "Edite, publique ou arquive seus anúncios",
+            "newListing": "Publicar uma experiência",
+            "onboardingSection": "Primeiros passos",
+            "onboardingTitle": "Você ainda não publicou nenhuma experiência",
+            "onboardingDescription": "Cadastre sua primeira experiência para que os viajantes a encontrem.",
+            "trafficLockedFeature": "Visitas às suas experiências"
+        },
+        "listingsHint": "{{published}} publicados · {{draft}} rascunhos",
+        "manage": "Gerenciar",
+        "quickActions": "Ações rápidas",
+        "trafficLabel": "Visualizações",
+        "trafficHint": "nos últimos {{days}} dias · {{unique}} pessoas",
+        "trafficLockedDescription": "As visitas aos seus anúncios vêm com estes planos."
     }
 }

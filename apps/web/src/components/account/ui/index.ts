@@ -26,6 +26,13 @@ export {
     formatSavedTime
 } from './AutoSaveChip';
 export {
+    Avatar,
+    type AvatarProps,
+    type AvatarSize,
+    avatarInitials,
+    avatarPalette
+} from './Avatar';
+export {
     ACCOUNT_SHELL_TEMPLATES,
     type AccountShellTemplate,
     DEFAULT_ACCOUNT_SHELL_TEMPLATE,
@@ -50,6 +57,7 @@ export { type FieldContextValue, joinDescribedBy, useFieldControl } from './fiel
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
+export { ListRow, type ListRowActions, type ListRowProps } from './ListRow';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
 export { type Breadcrumb, PageHeader, type PageHeaderProps } from './PageHeader';
@@ -60,6 +68,13 @@ export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radi
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton';
+export {
+    StatCard,
+    type StatCardProps,
+    StatGrid,
+    type StatGridProps,
+    type StatValue
+} from './StatCard';
 export { CountPill, type CountPillProps, StatusPill, type StatusPillProps } from './StatusPill';
 export { StickySaveBar, type StickySaveBarProps } from './StickySaveBar';
 export {
