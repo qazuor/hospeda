@@ -29,6 +29,7 @@ import { createTranslations } from '@/lib/i18n';
 import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasEventsNavAccess } from '@/lib/nav-gating';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
@@ -50,7 +51,7 @@ let event: ReturnType<typeof transformEventEditDetail> | null = null;
 if (canManageEvents) {
     const eventId = Astro.params.id;
     if (!eventId) {
-        return Astro.redirect(listUrl);
+        return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'events' }));
     }
 
     // -----------------------------------------------------------------------
@@ -66,7 +67,7 @@ if (canManageEvents) {
         // purpose: telling the two apart would confirm the existence of another
         // author's event to someone who may not read it.
         logger.error('[mi-cuenta/eventos/editar] Failed to fetch event', result.error.message);
-        return Astro.redirect(listUrl);
+        return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'events' }));
     }
 
     event = transformEventEditDetail({ item: result.data });

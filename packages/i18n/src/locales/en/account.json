@@ -1889,7 +1889,10 @@
             "account": "Back to my account",
             "messages": "Back to my inquiries",
             "ownerMessages": "Back to my property inquiries",
-            "listings": "Back to my listings"
+            "listings": "Back to my listings",
+            "properties": "Back to my properties",
+            "events": "Back to my events",
+            "posts": "Back to my posts"
         }
     },
     "help": {

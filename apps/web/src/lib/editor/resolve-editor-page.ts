@@ -10,6 +10,7 @@
  */
 
 import type { AstroGlobal } from 'astro';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import {
     type AccommodationEditorData,
     type EditorDataNeed,
@@ -57,10 +58,13 @@ export async function resolveEditorPage({
         };
     }
 
-    const propertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
     const accommodationId = astro.params.id;
     if (!accommodationId) {
-        return { redirect: astro.redirect(propertiesUrl) };
+        return {
+            redirect: await astro.rewrite(
+                buildAccountNotFoundTarget({ locale, back: 'properties' })
+            )
+        };
     }
 
     // An unknown slug must not render a page claiming to be a section that does
@@ -81,10 +85,13 @@ export async function resolveEditorPage({
     });
 
     if (result.status !== 'ok') {
-        // Both `redirect` (not yours / gone) and `error` land on the property
-        // list: there is no useful editor to show either way, and an error page
-        // for "this is not your listing" would be misleading.
-        return { redirect: astro.redirect(propertiesUrl) };
+        // HOS-2556: a missing id and somebody else's id are indistinguishable
+        // and render the in-layout 404 (same as the conversation threads).
+        return {
+            redirect: await astro.rewrite(
+                buildAccountNotFoundTarget({ locale, back: 'properties' })
+            )
+        };
     }
 
     return {
