@@ -261,12 +261,18 @@ const houseRulePolicies = showEventsCta
     : venue.policies;
 
 // --- Mobile contact bar (HOS-2532) ---
-// No price, no form, no WhatsApp in the bar or its panel (HOS-1076). A published
+// No price and no form. The panel carries WhatsApp only through the HOS-2256 gate
+// (`venue.whatsapp`), never a number read off contactInfo or socials (HOS-1076). A published
 // menu link wins («Ver carta»); otherwise «Contactar» opens the social links; with
 // neither, there is no bar. The in-page block is a superset of both, so the bar's
 // no-JS fallback anchor always has a target.
 const contactChannels = buildVenueChannels({ socialNetworks: venue.socialNetworks });
-const contactMode = resolveVenueContactMode({ menuUrl: venue.menuUrl, channels: contactChannels });
+const contactMode = resolveVenueContactMode({
+    menuUrl: venue.menuUrl,
+    channels: contactChannels,
+    // Same gate as the page's own WhatsApp button (HOS-2256).
+    hasWhatsapp: Boolean(venue.whatsapp)
+});
 const contactPanelId = 'listing-contact-panel';
 
 const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
@@ -611,6 +617,9 @@ const breadcrumbItems = [
             vertical="venue"
             locale={locale}
             channels={contactChannels}
+            whatsapp={venue.whatsapp ?? null}
+            venueName={venue.name}
+            signInHref={reviewSignInHref}
         />
     )}
 </DetailLayout>
@@ -624,6 +633,19 @@ const breadcrumbItems = [
     @media (max-width: 767px) {
         :global(.wave-header__breadcrumbs:has(.venue-detail-breadcrumbs)) {
             display: none;
+        }
+
+        /* The hidden breadcrumbs carried the band's top padding, so without this
+           the badges sit flush under the navbar. Expanded state only: the compact
+           state sets its own padding-top. */
+        :global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.venue-detail-breadcrumbs) .wave-header__content) {
+            padding-top: var(--space-6, 1.5rem);
+        }
+
+        /* The full-bleed mobile gallery meets the blue header directly: drop the
+           page-background strip DetailLayout leaves above the body. */
+        :global(.wave-header .detail-page:has(.venue-detail)) {
+            padding-top: 0;
         }
     }
 

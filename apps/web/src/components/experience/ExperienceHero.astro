@@ -385,8 +385,10 @@ const isNew = experience.createdAt
             font-size: 12px;
         }
 
+        /* Long titles wrap to 5 lines at the desktop-derived size; use the h3 step. */
         .exp-hero--mobile-gallery .exp-hero__name {
             overflow-wrap: anywhere;
+            font-size: var(--text-h3, 1.25rem);
         }
     }
 

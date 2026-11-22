@@ -447,6 +447,19 @@ const breadcrumbItems = [
         :global(.wave-header__breadcrumbs:has(.exp-detail-breadcrumbs)) {
             display: none;
         }
+
+        /* The hidden breadcrumbs carried the band's top padding, so without this
+           the badges sit flush under the navbar. Expanded state only: the compact
+           state sets its own padding-top. */
+        :global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.exp-detail-breadcrumbs) .wave-header__content) {
+            padding-top: var(--space-6, 1.5rem);
+        }
+
+        /* The full-bleed mobile gallery meets the blue header directly: drop the
+           page-background strip DetailLayout leaves above the body. */
+        :global(.wave-header .detail-page:has(.exp-detail)) {
+            padding-top: 0;
+        }
     }
 
     .exp-detail {
