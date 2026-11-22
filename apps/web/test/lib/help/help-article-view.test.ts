@@ -21,7 +21,11 @@ const VERTICAL_NOUNS = {
     experience: 'experiencia'
 } as const;
 
-const viewOf = (id: string, locale: 'es' | 'en' = 'es') => {
+const viewOf = (
+    id: string,
+    locale: 'es' | 'en' = 'es',
+    readerAudience?: 'host' | 'venue' | 'experience' | 'provider' | 'partner'
+) => {
     const found = findLocalizedHelpArticle({ id, locale });
     if (found === undefined) throw new Error(`no article ${id}`);
     return buildHelpArticleView({
@@ -30,7 +34,8 @@ const viewOf = (id: string, locale: 'es' | 'en' = 'es') => {
         contentLocale: found.contentLocale,
         neutralLimitText: 'el tope de tu plan',
         editorSectionLabel: ({ label, vertical }) => `${label} de tu ${VERTICAL_NOUNS[vertical]}`,
-        siteOrigin: SITE
+        siteOrigin: SITE,
+        readerAudience
     });
 };
 
@@ -221,5 +226,30 @@ describe('{{limit}} sentences (HOS-2552)', () => {
         // «…: 15.» and «…: sin tope.» must all be sentences.
         expect(before).toMatch(/: $/);
         expect(after).toMatch(/^[.;,]?$/);
+    });
+});
+
+describe("in-body article links keep the reader's tab (HOS-2552)", () => {
+    const bodyHrefs = (html: string): string[] =>
+        [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1] ?? '');
+
+    it('adds ?para= to a link whose target is written for that audience', () => {
+        // Act
+        const html = viewOf('photos', 'es', 'host')
+            .sections.map((section) => section.html)
+            .join('\n');
+
+        // Assert
+        expect(bodyHrefs(html)).toContain('/es/mi-cuenta/ayuda/publish-requirements/?para=host');
+        expect(bodyHrefs(html)).toContain(
+            '/es/mi-cuenta/ayuda/create-listing/?para=host#como-se-hace'
+        );
+    });
+
+    it('adds nothing without a validated audience', () => {
+        const html = viewOf('photos')
+            .sections.map((section) => section.html)
+            .join('\n');
+        expect(html).not.toContain('para=');
     });
 });

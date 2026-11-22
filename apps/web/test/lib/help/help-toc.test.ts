@@ -146,4 +146,43 @@ describe('initHelpToc', () => {
         expect(afterJump).toBe('#c');
         expect(currentHref(navs[0])).toBe('#b');
     });
+
+    it('releases the pin on any pointer press (scrollbar drag, middle-click autoscroll)', () => {
+        // Arrange
+        const navs = mount();
+        placeHeadings({ a: -800, b: 0, c: 300 });
+        cleanup = initHelpToc({ navs });
+        navs[0]?.querySelector<HTMLAnchorElement>('a[href="#c"]')?.click();
+
+        // Act
+        document.documentElement.dispatchEvent(new Event('pointerdown'));
+        scroll();
+
+        // Assert
+        expect(currentHref(navs[0])).toBe('#b');
+    });
+
+    it('starts pinned to the section the URL hash names', () => {
+        // Arrange: «C» is a late section that never reaches the line
+        window.history.replaceState(null, '', '/es/mi-cuenta/ayuda/photos/#c');
+        const navs = mount();
+        placeHeadings({ a: -800, b: 0, c: 300 });
+
+        // Act
+        cleanup = initHelpToc({ navs });
+        scroll();
+
+        // Assert
+        expect(currentHref(navs[0])).toBe('#c');
+        window.history.replaceState(null, '', '/es/mi-cuenta/ayuda/photos/');
+    });
+
+    it('ignores a hash that names no section of the index', () => {
+        window.history.replaceState(null, '', '/es/mi-cuenta/ayuda/photos/#nope');
+        const navs = mount();
+        placeHeadings({ a: -800, b: 0, c: 300 });
+        cleanup = initHelpToc({ navs });
+        expect(currentHref(navs[0])).toBe('#b');
+        window.history.replaceState(null, '', '/es/mi-cuenta/ayuda/photos/');
+    });
 });

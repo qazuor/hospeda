@@ -12,8 +12,10 @@
  * (HOS-2552).
  *
  * A click on an index link marks its section at once and keeps it marked until
- * the reader scrolls on their own: the last sections of a page may never reach
- * the line, since the page cannot scroll past its end.
+ * the reader scrolls on their own (wheel, touch, a key, or any pointer press,
+ * which covers dragging the scrollbar and middle-click autoscroll): the last
+ * sections of a page may never reach the line, since the page cannot scroll
+ * past its end. Opening the page with `#<section>` starts pinned the same way.
  *
  * Without JavaScript the index is a plain list of links, which is all the
  * reader needs.
@@ -84,6 +86,15 @@ export function pickHelpTocCurrent({
     return current;
 }
 
+/** The id a `location.hash` names, `''` when none or malformed. */
+function hashId({ hash }: { readonly hash: string }): string {
+    try {
+        return decodeURIComponent(hash.slice(1));
+    } catch {
+        return '';
+    }
+}
+
 /** Reads a CSS length in pixels, `0` when it is not one. */
 function pixels(value: string): number {
     const parsed = Number.parseFloat(value);
@@ -112,8 +123,9 @@ export function initHelpToc({ navs, win = window }: InitHelpTocArgs): () => void
         return () => undefined;
     }
 
-    /** Set by an index click; cleared by the reader's own scrolling input. */
-    let pinned = false;
+    /** Set by an index click or an initial hash; cleared by the reader's own input. */
+    const initialHash = hashId({ hash: win.location.hash });
+    let pinned = initialHash !== '' && ids.includes(initialHash);
     let frame: number | undefined;
 
     const update = (): void => {
@@ -154,20 +166,29 @@ export function initHelpToc({ navs, win = window }: InitHelpTocArgs): () => void
     };
 
     const userScrollEvents = ['wheel', 'touchstart', 'keydown'] as const;
+    const root = doc.documentElement;
     win.addEventListener('scroll', onScroll, { passive: true });
     for (const name of userScrollEvents) {
         win.addEventListener(name, onUserScroll, { passive: true });
     }
+    // Capture phase on the root: a press on the scrollbar or a middle-click
+    // releases the pin before the nav's own click can set it again.
+    root.addEventListener('pointerdown', onUserScroll, { capture: true, passive: true });
     for (const nav of navs) {
         nav.addEventListener('click', onClick);
     }
-    update();
+    if (pinned) {
+        markHelpTocCurrent({ navs, id: initialHash });
+    } else {
+        update();
+    }
 
     return () => {
         win.removeEventListener('scroll', onScroll);
         for (const name of userScrollEvents) {
             win.removeEventListener(name, onUserScroll);
         }
+        root.removeEventListener('pointerdown', onUserScroll, { capture: true });
         for (const nav of navs) {
             nav.removeEventListener('click', onClick);
         }

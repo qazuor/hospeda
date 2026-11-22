@@ -47,6 +47,11 @@ const { article, contentLocale, isFallback } = found;
 const { t } = createTranslations(locale);
 const contentT = createTranslations(contentLocale).t;
 
+const para = parseHelpAudience({ value: Astro.url.searchParams.get('para') });
+// The reader's tab comes from the URL (the landing links carry `?para=`);
+// unknown means no audience level, never the article's first audience.
+const crumbAudience = helpCrumbAudience({ para, audiences: article.audiences });
+
 const view = buildHelpArticleView({
 	article,
 	locale,
@@ -55,12 +60,9 @@ const view = buildHelpArticleView({
 	editorSectionLabel: ({ label, vertical }) =>
 		contentT(`account.help.article.editorSectionLabel.${vertical}`, undefined, { label }),
 	siteOrigin: getSiteUrl(),
+	readerAudience: crumbAudience,
 });
 
-const para = parseHelpAudience({ value: Astro.url.searchParams.get('para') });
-// The reader's tab comes from the URL (the landing links carry `?para=`);
-// unknown means no audience level, never the article's first audience.
-const crumbAudience = helpCrumbAudience({ para, audiences: article.audiences });
 const landingPath = buildUrl({ locale, path: 'mi-cuenta/ayuda' });
 const reviewedOn = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
 	new Date(`${article.reviewedAt}T00:00:00Z`),
@@ -383,12 +385,26 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 
 	/*
 	 * Anchor jumps land below the sticky navbar through the global
-	 * `html { scroll-padding-top }`; no extra scroll-margin here, or the two
-	 * add up and the heading lands ~200px down (HOS-2552).
+	 * `html { scroll-padding-top }`; no extra scroll-margin on desktop, or the
+	 * two add up and the heading lands ~200px down (HOS-2552). Up to 768px
+	 * (AccountLayout's mobile breakpoint) the account nav bar also sticks under
+	 * the navbar, so headings add its height. No shared variable exposes that
+	 * height: 52px = the toggle's 12px padding twice + one 24px line + 2px
+	 * border, plus 2px of air; keep it in step with `.account-page__toggle`.
 	 */
+	@media (max-width: 768px) {
+		.help-article {
+			--help-account-bar-height: 52px;
+		}
+
+		.help-article__h2,
+		.help-article__prose :global(h3) {
+			scroll-margin-top: var(--help-account-bar-height);
+		}
+	}
 
 	/* Small screens: a tighter header so the article starts higher (HOS-2552). */
-	@media (max-width: 47.99rem) {
+	@media (max-width: 768px) {
 		.help-crumbs__list {
 			margin-bottom: var(--space-2);
 		}

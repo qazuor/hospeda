@@ -99,6 +99,8 @@ export interface BuildHelpArticleViewArgs {
     }) => string;
     /** Site origin for the sanitizer. */
     readonly siteOrigin: string;
+    /** The reader's tab (a validated `?para=`); in-body article links carry it. */
+    readonly readerAudience?: HelpAudience;
 }
 
 /** The verticals an editor-section destination can name. */
@@ -225,7 +227,8 @@ export function buildHelpArticleView({
     contentLocale,
     neutralLimitText,
     editorSectionLabel,
-    siteOrigin
+    siteOrigin,
+    readerAudience
 }: BuildHelpArticleViewArgs): HelpArticleView {
     const headings =
         HELP_SECTION_HEADINGS[contentLocale] ?? HELP_SECTION_HEADINGS[HELP_SOURCE_LOCALE];
@@ -233,8 +236,18 @@ export function buildHelpArticleView({
         HELP_RELATED_HEADINGS[contentLocale] ?? HELP_RELATED_HEADINGS[HELP_SOURCE_LOCALE] ?? '';
     const titleOf = (id: string): string | undefined =>
         findLocalizedHelpArticle({ id, locale })?.article.title;
+    const audiencesOf = (id: string): readonly HelpAudience[] | undefined =>
+        findLocalizedHelpArticle({ id, locale })?.article.audiences;
     const resolve = (text: string): string =>
-        resolveHelpTokensForWeb({ text, article, locale, neutralLimitText, titleOf });
+        resolveHelpTokensForWeb({
+            text,
+            article,
+            locale,
+            neutralLimitText,
+            titleOf,
+            readerAudience,
+            audiencesOf
+        });
     const render = (markdown: string): string =>
         renderHelpMarkdown({ markdown: resolve(markdown), siteOrigin });
 
