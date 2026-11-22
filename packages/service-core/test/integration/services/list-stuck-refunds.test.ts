@@ -202,7 +202,9 @@ describe('HOS-2560 listStuckRefunds', () => {
             await refundOnPayment({ createdAt: at(1) });
         }
 
-        // Act: the whole list in pages of 100 as ground truth, then its last pages of 2.
+        // Act: the whole list in pages of 100 as ground truth, then every page of 2.
+        // The shared DB may hold foreign rows (other files), so nothing below
+        // assumes where this test's rows sit in the global order.
         const wholeIds: string[] = [];
         let total = 0;
         for (let page = 1; page === 1 || wholeIds.length < total; page++) {
@@ -213,18 +215,20 @@ describe('HOS-2560 listStuckRefunds', () => {
         }
         const lastPage = Math.ceil(total / 2);
         const paged: string[] = [];
-        let totalByPage = -1;
-        for (let page = lastPage - 2; page <= lastPage; page++) {
+        const totalsByPage: number[] = [];
+        for (let page = 1; page <= lastPage; page++) {
             const result = await listStuckRefunds({ page, pageSize: 2, now: NOW });
-            totalByPage = result.total;
+            totalsByPage.push(result.total);
             paged.push(...result.items.map((item) => item.refundId));
         }
 
-        // Assert
+        // Assert: pagination is consistent with the whole list (no gaps, no duplicates).
         expect(wholeIds).toHaveLength(total);
-        expect(totalByPage).toBe(total);
-        expect(wholeIds.slice(-5)).toEqual(stuck);
-        expect(paged).toEqual(wholeIds.slice((lastPage - 3) * 2));
+        expect(new Set(wholeIds).size).toBe(total);
+        expect(totalsByPage.every((value) => value === total)).toBe(true);
+        expect(paged).toEqual(wholeIds);
+        // Assert: this test's own rows all appear, oldest first, whatever interleaves.
+        expect(wholeIds.filter((id) => stuck.includes(id))).toEqual(stuck);
     });
 
     it.skipIf(skip)('refuses invalid pagination with a typed error', async () => {
