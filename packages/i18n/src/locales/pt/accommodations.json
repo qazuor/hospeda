@@ -441,6 +441,11 @@
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Ligar", "email": "E-mail" },
                 "trust": "Sua consulta vai direto para o anfitrião. Sem comissões."
             },
+            "channels": {
+                "title": "Contato",
+                "website": "Site",
+                "social": "Redes sociais"
+            },
             "fields": { "checkIn": "Chegada", "checkOut": "Saída", "guests": "Hóspedes" },
             "errors": {
                 "checkOutAfterCheckIn": "A saída deve ser depois da chegada",
