@@ -16,7 +16,11 @@ import {
     venues
 } from '@repo/db';
 import { EntitlementKeyEnum, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
-import { PUBLICATION_LIMIT_KEYS, type PublicationVertical } from '@repo/verticals';
+import {
+    PUBLICATION_LIMIT_KEYS,
+    type PublicationVertical,
+    type RestorationPlace
+} from '@repo/verticals';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import type { ComplementPolicyPorts } from './complement-ports';
 import { isResumableAtProvider } from './complement-resume-s33';
@@ -77,6 +81,46 @@ const LISTING_TABLES = {
     [VerticalEnum.EXPERIENCE]: () => experiences
 } as const;
 
+/**
+ * The HOS-1810 one-address rule's tables: the verticals `setPublicationStatus` checks
+ * (`listing-publication.model.ts` LOCATION_RULE_VERTICALS). Experiences have no key.
+ */
+const LOCATION_TABLES = {
+    [VerticalEnum.ACCOMMODATION]: () => accommodations,
+    [VerticalEnum.VENUE]: () => venues
+} as const;
+
+/**
+ * Reads each listing's place with the exact predicate of `setPublicationStatus`: an
+ * exception exempts a listing only while it was granted for its current key.
+ */
+async function readPlaces(input: {
+    readonly tx: DrizzleClient;
+    readonly vertical: PublicationVertical;
+    readonly ids: readonly string[];
+}): Promise<ReadonlyMap<string, RestorationPlace> | undefined> {
+    if (input.vertical === VerticalEnum.EXPERIENCE || input.ids.length === 0) return undefined;
+    const table = LOCATION_TABLES[input.vertical]();
+    const rows = await input.tx
+        .select({
+            id: table.id,
+            key: table.locationKey,
+            exceptionAt: table.locationExceptionAt,
+            exceptionKey: table.locationExceptionKey
+        })
+        .from(table)
+        .where(inArray(table.id, [...input.ids]));
+    return new Map(
+        rows.map((row) => [
+            row.id,
+            {
+                key: row.key,
+                exempt: row.exceptionAt !== null && row.exceptionKey === row.key
+            }
+        ])
+    );
+}
+
 async function readListingPresence(input: {
     readonly tx: DrizzleClient;
     readonly vertical: PublicationVertical;
@@ -132,6 +176,7 @@ async function readListingPresence(input: {
         vertical,
         listingIds: ordered
     });
+    const places = await readPlaces({ tx, vertical, ids: ordered });
     return {
         kind: 'LISTINGS',
         vertical,
@@ -146,7 +191,8 @@ async function readListingPresence(input: {
             archiveOrigins,
             incompleteIds: new Set(incomplete.keys()),
             publishedAt,
-            limit
+            limit,
+            ...(places ? { places } : {})
         })
     };
 }

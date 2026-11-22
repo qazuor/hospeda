@@ -1,4 +1,5 @@
 import {
+    accommodations,
     billingOptions,
     inArray,
     listingPublicationModel,
@@ -254,6 +255,42 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1640 MP4 preview reads (real D
             touristVip: { cancels: false, subscriptionIds: [] },
             scheduledChange: null
         });
+    });
+
+    it('B1: a candidate at the same place as an earlier one is LOCATION_CONFLICT and the slot goes on', async () => {
+        // Arrange
+        const { seeded, userId, ids } = await seedListings();
+        const pro = await seedPlanChangeTargetWithLimit({
+            sourcePlanVersionId: seeded.planVersionId,
+            targetLimit: 3
+        });
+        const db = getServiceTestDb();
+        const key = `hos-1640-${crypto.randomUUID()}`;
+        await db
+            .update(accommodations)
+            .set({ locationKey: key })
+            .where(inArray(accommodations.id, [ids.newest, ids.middle]));
+
+        // Act
+        const result = await readLateManualPaymentReturn({
+            tx: db,
+            subject: {
+                id: seeded.predecessor.id,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                planVersionId: pro.planVersionId
+            },
+            now,
+            ports: ports(ids.incomplete)
+        });
+
+        // Assert
+        if (result.presence.kind !== 'LISTINGS') throw new Error('expected listings');
+        const outcome = outcomes(result.presence.listings);
+        expect(outcome[ids.newest]).toBe('RETURNS');
+        expect(outcome[ids.middle]).toBe('LOCATION_CONFLICT');
+        expect(outcome[ids.oldest]).toBe('RETURNS');
+        expect(outcome[ids.archivedPublic]).toBe('NO_SLOT');
     });
 
     it('I1: a due Pro→Básico downgrade brings back only the Básico quota', async () => {

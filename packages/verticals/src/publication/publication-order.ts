@@ -81,24 +81,63 @@ export function isRestorableArchiveOrigin(input: {
     );
 }
 
+/** Where a listing sits for the HOS-1810 one-address rule. */
+export interface RestorationPlace {
+    /** The normalized place key, or null (a null key never collides). */
+    readonly key: string | null;
+    /** An exception granted for the CURRENT key exempts the listing from the rule. */
+    readonly exempt: boolean;
+}
+
 /**
- * Splits the listings that may return when coverage comes back into the ones that
- * regain a slot and the ones the quota leaves out, in {@link orderRestorationCandidates}
- * order. A null `available` means the declared limit is absent, and then nothing
- * returns — the same rule `recalculateCoverage` applies.
+ * Previews the reconciler's restore loop (`recalculateCoverage`, PB7) without writing: in
+ * {@link orderRestorationCandidates} order, each candidate takes a free slot unless the
+ * HOS-1810 one-address rule would make its status write answer "not changed" — then it
+ * keeps no slot and the next candidate is tried, exactly as the loop does. A null
+ * `available` means the declared limit is absent, and then nothing returns. Read-only and
+ * for previews only: the reconciler keeps its own effectful loop, because only the write
+ * knows the outcome for sure.
  *
  * @param input.entries - Eligible candidates (complete, restorable)
  * @param input.available - Free publication slots, or null when no limit is declared
- * @returns The restoring and the left-out entries
+ * @param input.places - Place of each listing (candidates and published ones), if known
+ * @param input.publishedIds - Listings that stay PUBLISHED while the loop runs
+ * @returns The restoring, the location-blocked and the left-out entries
  */
 export function planRestoration(input: {
     readonly entries: readonly PublicationQueueEntry[];
     readonly available: number | null;
+    readonly places?: ReadonlyMap<string, RestorationPlace>;
+    readonly publishedIds?: readonly string[];
 }): {
     readonly restoring: readonly PublicationQueueEntry[];
+    readonly locationConflict: readonly PublicationQueueEntry[];
     readonly withoutSlot: readonly PublicationQueueEntry[];
 } {
     const ordered = orderRestorationCandidates({ entries: input.entries });
-    const slots = input.available === null ? 0 : Math.max(0, input.available);
-    return { restoring: ordered.slice(0, slots), withoutSlot: ordered.slice(slots) };
+    let slots = input.available === null ? 0 : Math.max(0, input.available);
+    const taken = new Set<string>();
+    const occupy = (id: string) => {
+        const place = input.places?.get(id);
+        if (place?.key && !place.exempt) taken.add(place.key);
+    };
+    for (const id of input.publishedIds ?? []) occupy(id);
+    const restoring: PublicationQueueEntry[] = [];
+    const locationConflict: PublicationQueueEntry[] = [];
+    const withoutSlot: PublicationQueueEntry[] = [];
+    for (const candidate of ordered) {
+        if (slots <= 0) {
+            withoutSlot.push(candidate);
+            continue;
+        }
+        const place = input.places?.get(candidate.id);
+        if (place?.key && !place.exempt && taken.has(place.key)) {
+            locationConflict.push(candidate);
+            continue;
+        }
+        restoring.push(candidate);
+        occupy(candidate.id);
+        slots -= 1;
+    }
+    return { restoring, locationConflict, withoutSlot };
 }
