@@ -31,10 +31,9 @@ import { transformPostEditDetail } from '@/lib/api/transforms';
 import type { PostDestinationOption } from '@/components/post/editor/DetailsSection.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasPostsNavAccess } from '@/lib/nav-gating';
-import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
+import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
 import { buildUrl } from '@/lib/urls';
 import btn from '@/components/account/AccountButton.module.css';
 
@@ -54,28 +53,19 @@ if (!hasPostsNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 
-const postId = Astro.params.id;
-if (!postId) {
-    return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'posts' }));
+// HOS-2556: a missing id, an unknown id and another author's id all answer the
+// same in-layout 404 (see resolveAuthoredEditorItem).
+const loaded = await resolveAuthoredEditorItem({
+    astro: Astro,
+    back: 'posts',
+    fetchById: postEditApi.getById,
+    logTag: '[mi-cuenta/publicaciones/editar]'
+});
+if (loaded.notFound) {
+    return loaded.notFound;
 }
 
-// ---------------------------------------------------------------------------
-// Server-side fetch: the post itself (author-scoped) + the destination catalog.
-// ---------------------------------------------------------------------------
-
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-
-const result = await postEditApi.getById({ id: postId, cookieHeader });
-
-if (!result.ok) {
-    // 403 (not the author) and 404 (no such post) land in the same place on
-    // purpose: telling the two apart would confirm the existence of another
-    // author's post to someone who may not read it.
-    logger.error('[mi-cuenta/publicaciones/editar] Failed to fetch post', result.error.message);
-    return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'posts' }));
-}
-
-const post = transformPostEditDetail({ item: result.data });
+const post = transformPostEditDetail({ item: loaded.item });
 
 // Optional catalog for the related-destination select. A failed fetch hides the
 // field rather than failing the page — the field is optional, so its absence

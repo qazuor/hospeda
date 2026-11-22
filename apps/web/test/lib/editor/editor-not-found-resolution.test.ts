@@ -23,6 +23,7 @@ vi.mock('@/lib/listing/owner-listings', async (importOriginal) => ({
     fetchOwnerListingDetail: fetchOwnerListingDetailMock
 }));
 
+import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 
@@ -84,18 +85,89 @@ describe('resolveListingEditorPage (comercio / experiencia) answers the in-layou
     });
 });
 
-describe('event and post editors rewrite to the in-layout 404 (HOS-2556)', () => {
-    const read = (rel: string): string => readFileSync(resolve(__dirname, '../../..', rel), 'utf8');
-    const PAGES = 'src/pages/[lang]/mi-cuenta';
+describe('event and post editors answer the in-layout 404 (HOS-2556)', () => {
+    const NOT_FOUND = {
+        events: '/es/mi-cuenta/no-encontrado/?back=events',
+        posts: '/es/mi-cuenta/no-encontrado/?back=posts'
+    } as const;
+
+    function makeEditorAstro(id: string | undefined) {
+        const astro = makeAstro({});
+        return { ...astro, params: { id } };
+    }
+
+    const notFoundError = { ok: false, error: { status: 404, message: 'Not found' } } as const;
+    const foreignError = { ok: false, error: { status: 403, message: 'Forbidden' } } as const;
+
+    describe.each(['events', 'posts'] as const)('%s editor', (back) => {
+        it('rewrites a missing id, an unknown id and a foreign id to the same target', async () => {
+            // Arrange
+            const fetchById = vi
+                .fn()
+                .mockResolvedValueOnce(notFoundError)
+                .mockResolvedValueOnce(foreignError);
+            const cases = [undefined, 'unknown-id', 'foreign-id'].map(makeEditorAstro);
+
+            // Act
+            const results = [];
+            for (const astro of cases) {
+                results.push(
+                    await resolveAuthoredEditorItem({
+                        astro: astro as never,
+                        back,
+                        fetchById,
+                        logTag: '[test]'
+                    })
+                );
+            }
+
+            // Assert
+            for (const [index, astro] of cases.entries()) {
+                expect(astro.rewrite).toHaveBeenCalledWith(NOT_FOUND[back]);
+                expect(astro.redirect).not.toHaveBeenCalled();
+                expect(results[index]?.notFound?.status).toBe(404);
+                expect(results[index]?.notFound?.headers.get('x-rewrite')).toBe(NOT_FOUND[back]);
+                expect(results[index]?.item).toBeUndefined();
+            }
+            // The missing id never reaches the API; the other two do, with their own id.
+            expect(fetchById.mock.calls.map(([input]) => input.id)).toEqual([
+                'unknown-id',
+                'foreign-id'
+            ]);
+        });
+
+        it('returns the item and no rewrite when the author owns it', async () => {
+            // Arrange
+            const fetchById = vi.fn().mockResolvedValue({ ok: true, data: { id: 'mine' } });
+            const astro = makeEditorAstro('mine');
+
+            // Act
+            const result = await resolveAuthoredEditorItem({
+                astro: astro as never,
+                back,
+                fetchById,
+                logTag: '[test]'
+            });
+
+            // Assert
+            expect(result.item).toEqual({ id: 'mine' });
+            expect(result.notFound).toBeUndefined();
+            expect(astro.rewrite).not.toHaveBeenCalled();
+        });
+    });
 
     it.each([
-        [`${PAGES}/eventos/[id]/editar.astro`, "back: 'events'"],
-        [`${PAGES}/publicaciones/[id]/editar.astro`, "back: 'posts'"]
-    ])('%s rewrites on a missing id and on a failed fetch', (rel, backArg) => {
-        const source = read(rel);
-        expect(
-            source.split(`Astro.rewrite(buildAccountNotFoundTarget({ locale, ${backArg} }))`)
-        ).toHaveLength(3);
+        ['eventos/[id]/editar.astro', "back: 'events'", 'eventEditApi.getById'],
+        ['publicaciones/[id]/editar.astro', "back: 'posts'", 'postEditApi.getById']
+    ])('%s delegates to the resolver with its own section and read', (page, backArg, read) => {
+        const source = readFileSync(
+            resolve(__dirname, '../../../src/pages/[lang]/mi-cuenta', page),
+            'utf8'
+        );
+        expect(source).toContain('await resolveAuthoredEditorItem({');
+        expect(source).toContain(backArg);
+        expect(source).toContain(`fetchById: ${read}`);
+        expect(source).toMatch(/return loaded\.notFound;/);
         expect(source).not.toMatch(/Astro\.redirect\(listUrl\)/);
     });
 });
