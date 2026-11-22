@@ -229,7 +229,9 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
         expect(response.status).toBe(200);
         expect(mocks.readOwnPlanState).toHaveBeenCalledWith({
             userId: OWNER_ID,
-            now: expect.any(Date)
+            now: expect.any(Date),
+            // HOS-2553: Mi suscripcion also shows the two unsettled states.
+            includeUnsettled: true
         });
         expect(JSON.stringify(body.data)).toBe(FROZEN_BODY);
         expect(JSON.stringify(body.data)).not.toContain('planVersionId');

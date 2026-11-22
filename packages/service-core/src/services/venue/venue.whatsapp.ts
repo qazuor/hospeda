@@ -46,6 +46,34 @@ export function readVenueWhatsappNumber({
 }
 
 /**
+ * The visibility a write must add so a WhatsApp number never lands undecided
+ * (HOS-2557, owner decision: the default is `PUBLIC`).
+ *
+ * Single source for every write path (editor, API, MCP tools). It adds the default
+ * only when the write sets a number AND carries no visibility AND nothing is stored;
+ * an explicit choice (including an explicit `null`) and a stored choice are never
+ * overridden.
+ *
+ * @param params.contactInfo - The `contact_info` of the write, if it carries one.
+ * @param params.visibility - The visibility of the write (`undefined` when absent).
+ * @param params.stored - The stored visibility; `null` for a create or an undecided row.
+ * @returns `{ whatsappVisibility: PUBLIC }` to merge into the patch, or `{}`.
+ */
+export function resolveDefaultWhatsappVisibility({
+    contactInfo,
+    visibility,
+    stored
+}: {
+    readonly contactInfo: unknown;
+    readonly visibility: VenueWhatsappVisibilityEnum | null | undefined;
+    readonly stored: VenueWhatsappVisibilityEnum | null | undefined;
+}): { readonly whatsappVisibility?: VenueWhatsappVisibilityEnum } {
+    if (visibility !== undefined || (stored ?? null) !== null) return {};
+    if (readVenueWhatsappNumber({ contactInfo }) === null) return {};
+    return { whatsappVisibility: VenueWhatsappVisibilityEnum.PUBLIC };
+}
+
+/**
  * Decides the WhatsApp block of the PUBLIC venue payload.
  *
  * @param params.contactInfo - The stored `contact_info` blob.

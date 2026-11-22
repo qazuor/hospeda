@@ -1006,7 +1006,11 @@
             "suspended": "Suspended",
             "cancelScheduled": "Cancellation scheduled until {{date}}",
             "cancelScheduledNoDate": "Cancellation scheduled",
-            "paused": "Paused"
+            "paused": "Paused",
+            "chargeDeclined": "Charge declined",
+            "pendingAuthorization": "Waiting for authorization",
+            "chargeDeclinedAction": "Mercado Pago declined the charge. Check your payment method so you do not lose your plan.",
+            "pendingAuthorizationAction": "You still need to authorize the payment in Mercado Pago to activate your plan."
         },
         "widgets": {
             "properties": "Your properties",

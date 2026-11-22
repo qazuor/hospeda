@@ -19,6 +19,9 @@ vi.mock('@repo/db', () => {
         and: (...args: unknown[]) => args,
         asc: (column: unknown) => column,
         eq: (...args: unknown[]) => args,
+        isNull: (...args: unknown[]) => args,
+        ne: (...args: unknown[]) => args,
+        or: (...args: unknown[]) => args,
         inArray: (...args: unknown[]) => {
             inArraySpy(...args);
             return args;
@@ -70,6 +73,37 @@ describe('readAccountPlanSummary', () => {
     it('returns plan null with the count when there are several live principals', async () => {
         rowsRef.current = [row('ACTIVE'), row('PAUSED', 'venue-basico')];
         const result = await readAccountPlanSummary({ userId: 'u1' });
-        expect(result).toEqual({ plan: null, activeSubscriptionsCount: 2 });
+        expect(result.plan).toBeNull();
+        expect(result.activeSubscriptionsCount).toBe(2);
+        expect(result.subscriptions.map((item) => item.status)).toEqual(['ACTIVE', 'PAUSED']);
+    });
+
+    it('lists CHARGE_DECLINED and PENDING_AUTHORIZATION as live (HOS-2553)', async () => {
+        // Arrange
+        rowsRef.current = [row('CHARGE_DECLINED'), row('PENDING_AUTHORIZATION', 'venue-basico')];
+
+        // Act
+        const result = await readAccountPlanSummary({ userId: 'u1' });
+
+        // Assert
+        expect(
+            inArraySpy.mock.calls.some(
+                ([, statuses]) =>
+                    statuses.includes('CHARGE_DECLINED') &&
+                    statuses.includes('PENDING_AUTHORIZATION')
+            )
+        ).toBe(true);
+        expect(result.activeSubscriptionsCount).toBe(2);
+        expect(result.subscriptions.map((item) => item.status)).toEqual([
+            'CHARGE_DECLINED',
+            'PENDING_AUTHORIZATION'
+        ]);
+    });
+
+    it('returns the single declined subscription as the plan, not as none', async () => {
+        rowsRef.current = [row('CHARGE_DECLINED')];
+        const result = await readAccountPlanSummary({ userId: 'u1' });
+        expect(result.plan?.status).toBe('CHARGE_DECLINED');
+        expect(result.subscriptions).toHaveLength(1);
     });
 });

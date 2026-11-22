@@ -150,7 +150,11 @@ const PLAN_STATUS_BY_SUBSCRIPTION_STATUS: Readonly<
     GRACE_PERIOD: 'past_due',
     SUSPENDED: 'past_due',
     CANCEL_SCHEDULED: 'cancelled',
-    PAUSED: 'cancelled'
+    PAUSED: 'cancelled',
+    // HOS-2553: neither is "active" nor "cancelled" for the mobile enum, which is closed
+    // (active | past_due | cancelled). The exact value travels in `subscriptionStatus`.
+    PENDING_AUTHORIZATION: 'past_due',
+    CHARGE_DECLINED: 'past_due'
 };
 
 /**
@@ -177,7 +181,10 @@ async function resolvePlan(input: {
     try {
         const { subscriptions } = await readOwnPlanState({
             userId: actor.id,
-            now: getClock().clock.now()
+            now: getClock().clock.now(),
+            // HOS-2553: a declined charge or an unauthorized checkout must show as such,
+            // never as "no subscription".
+            includeUnsettled: true
         });
         const chosen =
             subscriptions.find((row) => row.vertical === VerticalEnum.ACCOMMODATION) ??

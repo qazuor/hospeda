@@ -1006,7 +1006,11 @@
             "suspended": "Suspendida",
             "cancelScheduled": "Baja programada hasta el {{date}}",
             "cancelScheduledNoDate": "Baja programada",
-            "paused": "Pausada"
+            "paused": "Pausada",
+            "chargeDeclined": "Cobro rechazado",
+            "pendingAuthorization": "Esperando autorización",
+            "chargeDeclinedAction": "Mercado Pago rechazó el cobro. Revisá tu medio de pago para no perder tu plan.",
+            "pendingAuthorizationAction": "Falta que autorices el pago en Mercado Pago para activar tu plan."
         },
         "widgets": {
             "properties": "Tus propiedades",
