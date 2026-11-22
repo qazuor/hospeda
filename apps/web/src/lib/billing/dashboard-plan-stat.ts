@@ -289,7 +289,7 @@ export function resolvePlanActionText(input: {
         case 'CHARGE_DECLINED':
             return input.t(
                 'host.dashboard.plan.chargeDeclinedAction',
-                'Mercado Pago rechazó el cobro. Revisá tu medio de pago para no perder tu plan.'
+                'Mercado Pago no aprobó el pago y no se cobró nada. Podés volver a intentarlo con otro medio de pago desde Mi suscripción.'
             );
         case 'PENDING_AUTHORIZATION':
             return input.t(

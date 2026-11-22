@@ -1070,7 +1070,7 @@
                 "pausedStatus": "Pausada",
                 "chargeDeclinedStatus": "Cobrança recusada",
                 "pendingAuthorizationStatus": "Aguardando autorização",
-                "chargeDeclinedAction": "O Mercado Pago recusou a cobrança. Revise seu meio de pagamento para não perder seu plano.",
+                "chargeDeclinedAction": "O Mercado Pago não aprovou o pagamento e nada foi cobrado. Você pode tentar de novo com outro meio de pagamento em Minha assinatura.",
                 "pendingAuthorizationAction": "Falta você autorizar o pagamento no Mercado Pago para ativar seu plano.",
                 "viewAllSubscriptions": "Ver todas as assinaturas",
                 "multipleSubscriptions_one": "{{count}} assinatura ativa",

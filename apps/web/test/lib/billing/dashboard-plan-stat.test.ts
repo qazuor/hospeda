@@ -335,3 +335,53 @@ describe('HOS-2553 host dashboard labels for the unsettled statuses', () => {
         expect(resolvePlanActionText({ info: info('ACTIVE'), t })).toBeNull();
     });
 });
+
+/** Read one locale namespace file as a plain object. */
+function readLocale(locale: string, namespace: string): Record<string, unknown> {
+    const file = path.resolve(
+        __dirname,
+        '../../../../../packages/i18n/src/locales',
+        locale,
+        `${namespace}.json`
+    );
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, unknown>;
+}
+
+/** Walk a dotted key through a parsed locale object. */
+function at(source: Record<string, unknown>, dotted: string): string {
+    const value = dotted
+        .split('.')
+        .reduce<unknown>(
+            (node, part) =>
+                node && typeof node === 'object'
+                    ? (node as Record<string, unknown>)[part]
+                    : undefined,
+            source
+        );
+    if (typeof value !== 'string') throw new Error(`Missing key ${dotted}`);
+    return value;
+}
+
+describe('HOS-2553 declined sign-up action copy', () => {
+    // A declined sign-up never started a plan, so the copy cannot threaten to take one away.
+    const LOSE_PLAN = {
+        es: /perder tu plan|plan siga activo/i,
+        en: /lose your plan|plan stays active/i,
+        pt: /perder seu plano|plano continue ativo/i
+    } as const;
+    const RETRY = { es: /intent/i, en: /try/i, pt: /tent/i } as const;
+    const KEYS = [
+        ['host', 'dashboard.plan.chargeDeclinedAction'],
+        ['account', 'pages.dashboard.stats.chargeDeclinedAction']
+    ] as const;
+
+    it.each(
+        (['es', 'en', 'pt'] as const).flatMap((locale) =>
+            KEYS.map(([namespace, key]) => [locale, namespace, key] as const)
+        )
+    )('%s %s.%s offers a retry and does not speak of losing a plan', (locale, namespace, key) => {
+        const copy = at(readLocale(locale, namespace), key);
+        expect(copy).not.toMatch(LOSE_PLAN[locale]);
+        expect(copy).toMatch(RETRY[locale]);
+    });
+});
