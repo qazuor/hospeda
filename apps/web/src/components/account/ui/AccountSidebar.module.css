@@ -80,6 +80,9 @@
     align-items: center;
     gap: var(--space-3);
     min-block-size: var(--control-h-lg);
+    /* Block padding so a label that wraps to two lines keeps air above and
+       below instead of touching the row edges. */
+    padding-block: var(--space-2);
     padding-inline: var(--space-3);
     border-radius: var(--radius-control);
     color: var(--core-foreground);
@@ -113,6 +116,8 @@
     align-items: center;
     gap: var(--space-2);
     min-inline-size: 0;
+    /* Even line lengths when a long label wraps. */
+    text-wrap: balance;
 }
 
 .lock {
@@ -147,10 +152,10 @@
     border: 0;
 }
 
-/* Desktop density (HOS-2549). Touch targets stay at --control-h-lg (44px) in
-   the mobile drawer; from 64rem the links tighten to 32px rows so the sidebar
-   fits a laptop viewport, while each area keeps a clear title and the space
-   between blocks. */
+/* Desktop density (HOS-2549, retuned). Touch targets stay at --control-h-lg
+   (44px) in the mobile drawer; from 64rem the links use 36px rows with a 4px
+   gap (a 40px pitch, between the original 48px and the too-tight 32px), while
+   each area keeps a clear title and the space between blocks. */
 @media (min-width: 64rem) {
     .nav {
         gap: var(--space-5);
@@ -158,6 +163,12 @@
 
     .group {
         gap: 0;
+    }
+
+    .backLink,
+    .summary,
+    .doorsLabel {
+        padding-inline: var(--space-2);
     }
 
     .summary {
@@ -171,12 +182,22 @@
     }
 
     .list {
-        gap: 0;
+        gap: var(--space-1);
     }
 
+    /* A label that still wraps keeps its icon on the first line. With 8px
+       block padding and a 20px line, a one-line row is exactly 36px, so
+       flex-start centres it the same as before. */
     .link {
-        min-block-size: var(--space-8);
+        align-items: flex-start;
+        min-block-size: var(--space-9);
         gap: var(--space-2);
+        padding-inline: var(--space-2);
+    }
+
+    .icon {
+        align-items: center;
+        block-size: 1.25rem;
     }
 
     .doors {

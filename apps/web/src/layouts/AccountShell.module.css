@@ -58,7 +58,12 @@
         display: block;
         max-block-size: calc(100dvh - 3.5rem);
         overflow-y: auto;
-        padding: var(--space-4) var(--space-3);
+        /* Tight inline padding (start 8px, end 4px beside the scrollbar) and a
+           stable gutter: the 240px column must fit the longest label on one
+           line, and the scrollbar appearing must not reflow the labels. */
+        padding-block: var(--space-4);
+        padding-inline: var(--space-2) var(--space-1);
+        scrollbar-gutter: stable;
         border-inline-end: 1px solid var(--border);
 
         /* Thin, discreet scrollbar (HOS-2549) plus a fade at the edge that
