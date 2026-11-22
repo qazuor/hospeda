@@ -10,8 +10,13 @@
  *   consent page);
  * - `/oauth2/consent` `accept: true` → 403; `accept: false` still returns the
  *   assistant its `access_denied`;
- * - `/oauth2/token` (code exchange and refresh) → no token;
- * - `/mcp` with a token issued earlier → 403 `FORBIDDEN`.
+ * - `/oauth2/token` (code exchange and refresh) → no token, WHEN the
+ *   authorization or the token request named the MCP `resource` (the token is
+ *   then a JWT and `customAccessTokenClaims` runs). Without any `resource` the
+ *   provider mints an opaque token and the issuance gate does not run; `/mcp`
+ *   answers 401 to that token;
+ * - `/mcp` with a token issued earlier → 403 `FORBIDDEN` (the authoritative gate);
+ * - the device-code grant is not offered at all.
  *
  * A client by permission (host) and a client by row ownership alone (provider)
  * are let through.
@@ -408,6 +413,133 @@ describe('HOS-2562: AI assistants only for real clients', () => {
         expect(((await call.json()) as { error: { code: string } }).error.code).toBe('FORBIDDEN');
         expect(refresh.status).toBe(403);
         expect(((await refresh.json()) as { access_token?: string }).access_token).toBeUndefined();
+    });
+
+    describe('token requests without `resource`', () => {
+        it('refuses the code exchange when the authorization bound the resource', async () => {
+            // Arrange: a code authorized WITH `resource`, exchanged WITHOUT it
+            becomeHost();
+            const pkce = createPkcePair();
+            const code = await getCode(pkce.challenge);
+            becomeTourist();
+
+            // Act
+            const res = await postToken({
+                grant_type: 'authorization_code',
+                code,
+                redirect_uri: REDIRECT_URI,
+                client_id: state.clientId,
+                code_verifier: pkce.verifier
+            });
+            const body = (await res.json()) as { access_token?: string; error?: string };
+
+            // Assert: the bound resource still makes a JWT, so the gate runs
+            expect(res.status).toBe(403);
+            expect(body.access_token).toBeUndefined();
+            expect(body.error).toBe('access_denied');
+        });
+
+        it('refuses the refresh when the authorization bound the resource', async () => {
+            // Arrange
+            becomeHost();
+            const pkce = createPkcePair();
+            const issued = await exchange(await getCode(pkce.challenge), pkce.verifier);
+            const tokens = (await issued.json()) as { refresh_token: string };
+            becomeTourist();
+
+            // Act
+            const refresh = await postToken({
+                grant_type: 'refresh_token',
+                refresh_token: tokens.refresh_token,
+                client_id: state.clientId
+            });
+
+            // Assert
+            expect(refresh.status).toBe(403);
+            expect(
+                ((await refresh.json()) as { access_token?: string }).access_token
+            ).toBeUndefined();
+        });
+
+        it('issues an OPAQUE token when no step named the resource, and /mcp refuses it', async () => {
+            // Arrange: authorize WITHOUT `resource` while a client. With no
+            // audience the provider mints an opaque token and never calls
+            // `customAccessTokenClaims`, so the issuance gate does not run. This
+            // test pins that gap so the docblocks cannot claim more than it.
+            becomeHost();
+            const pkce = createPkcePair();
+            const query = new URLSearchParams({
+                response_type: 'code',
+                client_id: state.clientId,
+                redirect_uri: REDIRECT_URI,
+                scope: 'openid offline_access',
+                state: 'state-2',
+                code_challenge: pkce.challenge,
+                code_challenge_method: 'S256'
+            });
+            const authorized = await app().request(`${ISSUER}/oauth2/authorize?${query}`, {
+                headers: { cookie: state.cookie, 'user-agent': 'vitest' }
+            });
+            let callback = new URL(authorized.headers.get('location') as string);
+            if (`${callback.origin}${callback.pathname}` !== REDIRECT_URI) {
+                const consent = await postJson(
+                    '/api/auth/oauth2/consent',
+                    { accept: true, oauth_query: callback.search.slice(1) },
+                    { cookie: state.cookie }
+                );
+                callback = new URL(((await consent.json()) as { url: string }).url);
+            }
+            becomeTourist();
+
+            // Act
+            const res = await postToken({
+                grant_type: 'authorization_code',
+                code: callback.searchParams.get('code') as string,
+                redirect_uri: REDIRECT_URI,
+                client_id: state.clientId,
+                code_verifier: pkce.verifier
+            });
+            const tokens = (await res.json()) as { access_token: string; refresh_token: string };
+            const refresh = await postToken({
+                grant_type: 'refresh_token',
+                refresh_token: tokens.refresh_token,
+                client_id: state.clientId
+            });
+            const refreshed = (await refresh.json()) as { access_token: string };
+
+            // Assert: issued (not a JWT), and useless where it matters — the
+            // per-request `/mcp` check is the authoritative gate.
+            expect(res.status).toBe(200);
+            expect(tokens.access_token.split('.')).toHaveLength(1);
+            expect(refresh.status).toBe(200);
+            expect((await mcpInitialize(tokens.access_token)).status).toBe(401);
+            expect((await mcpInitialize(refreshed.access_token)).status).toBe(401);
+        });
+    });
+
+    it('offers no device-code grant: no /device/code, unsupported at /oauth2/token, not advertised', async () => {
+        // Act
+        const deviceCode = await postJson('/api/auth/device/code', { client_id: state.clientId });
+        const deviceToken = await postToken({
+            grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+            device_code: 'any',
+            client_id: state.clientId
+        });
+        const metadata = await app().request(
+            `${API}/.well-known/oauth-authorization-server/api/auth`,
+            { headers: { 'user-agent': 'vitest' } }
+        );
+        const document = (await metadata.json()) as Record<string, unknown>;
+
+        // Assert
+        expect(deviceCode.status).toBe(404);
+        expect(deviceToken.status).toBe(400);
+        expect(((await deviceToken.json()) as { error?: string }).error).toBe(
+            'unsupported_grant_type'
+        );
+        expect(metadata.status).toBe(200);
+        expect(document.device_authorization_endpoint).toBeUndefined();
+        expect(document.grant_types_supported).toEqual(['authorization_code', 'refresh_token']);
     });
 
     it('lets a client by row ownership alone (a provider, no permission) through', async () => {

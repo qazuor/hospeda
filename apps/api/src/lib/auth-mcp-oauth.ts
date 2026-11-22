@@ -285,9 +285,14 @@ export interface BuildMcpOAuthProviderOptionsArgs {
  *   omit `application_type` register a loopback callback.
  * - `validateRedirectUri` narrows the provider's own matching: a URI must
  *   match the client's registration AND be on the MCP allowlist.
- * - `customAccessTokenClaims` adds no claim: it is the HOS-2562 gate. It throws
- *   for a user who is not a real client, so no access token is issued for
- *   them, neither at the code exchange nor at a refresh.
+ * - `customAccessTokenClaims` adds no claim: it is the HOS-2562 issuance
+ *   gate. It throws for a user who is not a real client. The provider runs it
+ *   only when minting a JWT (a `resource` was bound at authorize or named on
+ *   the token request), which covers the code exchange and the refresh of
+ *   every MCP-audience token. An authorization that never names a resource
+ *   gets an opaque token without running it; `/mcp` refuses that token (401).
+ *   The authoritative gate is the per-request «real client» check in
+ *   `mcpAuthMiddleware` (`middlewares/mcp-auth.ts`).
  *
  * @param args - Resource URL and web origin
  * @returns Options to pass to `oauthProvider()`

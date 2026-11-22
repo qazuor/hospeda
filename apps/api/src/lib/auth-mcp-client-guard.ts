@@ -17,12 +17,24 @@
  *    no `/oauth2/authorize` request reaches a `before` hook. A denial
  *    (`accept: false`) passes, so the assistant gets its `access_denied`.
  * 3. Token issuance: `customAccessTokenClaims` throws for a non-client
- *    ({@link assertMcpRealClientForToken}). Covers the code exchange AND every
- *    refresh, so even the resumed-after-sign-in path with a stored consent ends
- *    with no token. This is the gate the other two only make friendlier.
+ *    ({@link assertMcpRealClientForToken}). The provider calls it only when it
+ *    mints a JWT, i.e. when the authorization or the token request named the
+ *    MCP `resource`. Proven for the code exchange and the refresh, with and
+ *    without `resource` on the token request, as long as the authorization
+ *    bound it (`mcp-oauth-real-client.test.ts`). When NO step names a resource
+ *    the provider mints an opaque token and never calls the hook: a code or
+ *    refresh token obtained while a client still yields a token after the
+ *    account stops being one. That token carries no MCP audience, so `/mcp`
+ *    answers 401 to it (pinned by the same test).
  *
- * The answer is OAuth's own: `403` with `error: "access_denied"`. Every
- * `/mcp` request is checked again by `mcpAuthMiddleware` (HOS-2562 step 6).
+ * The answer is OAuth's own: `403` with `error: "access_denied"`. The
+ * AUTHORITATIVE gate is the per-request check in `mcpAuthMiddleware`
+ * (`middlewares/mcp-auth.ts`, «real client» step, HOS-2562 step 6): every
+ * `/mcp` request needs an MCP-audience JWT AND a user who is a real client at
+ * that moment. The three points above refuse earlier and more politely; none
+ * of them is what makes the rule hold. The device-code grant is not offered
+ * (no `oauthDeviceAuthorization()` plugin; the token endpoint answers
+ * `unsupported_grant_type`).
  */
 
 import type { BetterAuthPlugin } from 'better-auth';
@@ -117,7 +129,9 @@ export interface AssertMcpRealClientForTokenArgs {
 
 /**
  * The token-issuance gate, run from `customAccessTokenClaims`: throws for a
- * token that would act for anybody but a real client. Every MCP token acts for
+ * token that would act for anybody but a real client. The provider calls it
+ * only for JWT access tokens (a `resource` was named); opaque tokens skip it
+ * and are refused by `/mcp` instead (see the file header). Every MCP token acts for
  * a user (`client_credentials` is not offered), so a missing user is refused.
  *
  * @param args - The user and the check
