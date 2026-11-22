@@ -17,8 +17,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import { adminSubscriptionDetailQueryKey } from './useAdminSubscriptionDetail';
 
-const BASE = '/api/v1/admin/billing-subscription';
-
 /**
  * Builds the path of a subscription's installment list.
  *
@@ -30,7 +28,7 @@ export function buildManualPaymentsPath({
 }: {
     readonly subscriptionId: string;
 }): string {
-    return `${BASE}/${encodeURIComponent(subscriptionId)}/manual-payments`;
+    return `/api/v1/admin/billing-subscription/${encodeURIComponent(subscriptionId)}/manual-payments`;
 }
 
 /**
@@ -46,7 +44,7 @@ export function buildLateManualPaymentPath({
     readonly subscriptionId: string;
     readonly manualPaymentId: string;
 }): string {
-    return `${buildManualPaymentsPath({ subscriptionId })}/${encodeURIComponent(manualPaymentId)}/register-late`;
+    return `/api/v1/admin/billing-subscription/${encodeURIComponent(subscriptionId)}/manual-payments/${encodeURIComponent(manualPaymentId)}/register-late`;
 }
 
 /**
