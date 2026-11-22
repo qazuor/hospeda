@@ -12,6 +12,7 @@ function tree(options: {
     retiredSrc?: boolean;
     retiredCatalog?: boolean;
     missingDoc?: boolean;
+    producer?: 'service' | 'adapter-only' | 'none';
 }): string {
     const root = mkdtempSync(join(tmpdir(), 'analytics-emitter-'));
     trees.push(root);
@@ -20,6 +21,22 @@ function tree(options: {
     mkdirSync(join(root, 'apps/api/src'), { recursive: true });
     mkdirSync(join(root, 'docs/analytics'), { recursive: true });
     mkdirSync(join(root, 'scripts'), { recursive: true });
+    const facts = join(root, 'packages/service-core/src/services/billing/facts');
+    mkdirSync(facts, { recursive: true });
+    mkdirSync(join(root, 'apps/api/src/utils/analytics'), { recursive: true });
+    writeFileSync(join(facts, 'billing-fact-sink.ts'), 'export type BillingFact = never;\n');
+    writeFileSync(
+        join(facts, 'addon-fact.ts'),
+        "export type AddonFact = { readonly kind: 'ADDON_ACTIVATED' };\n"
+    );
+    const producer = "export const fact = { kind: 'ADDON_ACTIVATED' };\n";
+    if ((options.producer ?? 'service') === 'service')
+        writeFileSync(join(facts, '../addon-producer.ts'), producer);
+    if (options.producer === 'adapter-only')
+        writeFileSync(
+            join(root, 'apps/api/src/utils/analytics/analytics-facts-addon.ts'),
+            producer
+        );
     writeFileSync(
         join(root, 'packages/analytics/src/catalog.ts'),
         `export const AnalyticsEvents = {\n    billingGraceEntered: 'billing_grace_entered'${options.missingDoc ? ",\n    trialStarted: 'trial_started'" : ''}\n};\n${options.retiredCatalog ? "export const retiredProbe = 'subscription_created';\n" : ''}`
@@ -132,6 +149,38 @@ describe('analytics catalog emitter guard (TEST:1878:17)', () => {
         const result = run({ root, minScannedFiles: 1, minCatalogKeys: 1 });
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain('subscription_created');
+    });
+    it('fails when a declared fact kind has no producer (HOS-1883)', () => {
+        const result = run({
+            root: tree({ producer: 'none' }),
+            minScannedFiles: 1,
+            minCatalogKeys: 1
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('fact kind ADDON_ACTIVATED has no production producer');
+    });
+    it('does not count the adapter as a producer of a fact kind (HOS-1883)', () => {
+        const result = run({
+            root: tree({ producer: 'adapter-only' }),
+            minScannedFiles: 1,
+            minCatalogKeys: 1
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('fact kind ADDON_ACTIVATED has no production producer');
+    });
+    it('requires a docs row for an addon_* catalog event (HOS-1883)', () => {
+        const root = tree({});
+        writeFileSync(
+            join(root, 'packages/analytics/src/catalog.ts'),
+            "export const AnalyticsEvents = {\n    billingGraceEntered: 'billing_grace_entered',\n    addonActivated: 'addon_activated'\n};\nvoid 'addon_activated';\n"
+        );
+        writeFileSync(
+            join(root, 'apps/api/src/emitter.ts'),
+            "import { AnalyticsEvents } from '@repo/analytics';\nvoid AnalyticsEvents.billingGraceEntered;\nvoid AnalyticsEvents.addonActivated;\n"
+        );
+        const result = run({ root, minScannedFiles: 1, minCatalogKeys: 1 });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('missing docs row for addon_activated');
     });
     it('passes against the real repository tree', () => {
         expect(run().exitCode).toBe(0);
