@@ -77,6 +77,7 @@ export function KitGalleryFeedback({ locale, openOverlay }: KitGalleryFeedbackPr
         model: buildAccountNavModel({
             roles: ['USER', 'HOST'],
             ownsHostTradeListing: false,
+            ownsPartner: false,
             mcpEnabled: true,
             activeSection: 'editar'
         })

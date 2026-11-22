@@ -76,6 +76,12 @@ describe('AccountLayout — provider nav door (H-158)', () => {
         );
     });
 
+    it('reads ownsPartner off the session too and passes it to the model (HOS-2551)', () => {
+        expect(source).toContain('Astro.locals.user?.ownsPartner === true');
+        expect(source).not.toContain('partnersApi');
+        expect(source).toMatch(/buildAccountNavModel\(\{[^}]*ownsPartner/);
+    });
+
     it('reads the flag through optional chaining, so a guest never trips it', () => {
         // `Astro.locals.user` is null for a guest; `?.` yields undefined and
         // the `=== true` comparison makes that a hard false rather than a

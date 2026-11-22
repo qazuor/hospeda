@@ -136,6 +136,18 @@
         "groupListings": "Área comercial",
         "groupEditorial": "Área editorial",
         "groupProvider": "Área do fornecedor",
+        "groupProfile": "Meu perfil",
+        "groupTrips": "Minhas viagens",
+        "groupPartner": "Área do parceiro",
+        "home": "Início",
+        "partner": "Minha ficha de parceiro",
+        "administration": "Administração",
+        "manageAccommodations": "Gerenciar acomodações",
+        "manageVenues": "Gerenciar Comer e sair",
+        "manageExperiences": "Gerenciar experiências",
+        "manageEditorial": "Gerenciar conteúdo editorial",
+        "managePartner": "Gerenciar ficha de parceiro",
+        "manageProvider": "Gerenciar ficha de fornecedor",
         "dashboard": "Minha conta",
         "editProfile": "Editar perfil",
         "subscription": "Assinatura",
@@ -2047,7 +2059,8 @@
         },
         "sidebar": {
             "lockedLabel": "Requer um plano superior",
-            "label": "Navegação da Minha conta"
+            "label": "Navegação da Minha conta",
+            "backToAccount": "Minha conta"
         },
         "breadcrumbs": "Caminho de navegação",
         "gallery": {
