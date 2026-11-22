@@ -1,0 +1,153 @@
+/**
+ * Gallery group: data lists and conversations (HOS-2481).
+ *
+ * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
+ *
+ * @module components/account/kit-gallery/KitGalleryData
+ */
+
+import {
+    Button,
+    Composer,
+    ConversationThread,
+    CountPill,
+    DataList,
+    ListRow,
+    MessageBubble,
+    type ThreadMessage
+} from '@/components/account/ui';
+import styles from './KitGallery.module.css';
+import type { GalleryGroupProps } from './KitGalleryActions';
+import { Visual } from './Visual';
+
+const MESSAGES: readonly ThreadMessage[] = [
+    {
+        id: 'm1',
+        senderType: 'guest',
+        body: 'Hola, ¿tienen lugar del 12 al 15 de enero para dos personas?',
+        createdAt: '2026-11-20T14:05:00.000Z'
+    },
+    {
+        id: 'm2',
+        senderType: 'owner',
+        body: 'Hola. Sí, tenemos la cabaña chica libre esas noches.',
+        createdAt: '2026-11-20T15:30:00.000Z'
+    },
+    {
+        id: 'm3',
+        senderType: 'system',
+        body: 'La conversación se reabrió.',
+        createdAt: '2026-11-20T15:31:00.000Z'
+    },
+    {
+        id: 'm4',
+        senderType: 'guest',
+        body: 'Genial, ¿aceptan mascotas?',
+        createdAt: '2026-11-20T16:00:00.000Z',
+        delivery: 'failed'
+    }
+];
+
+/**
+ * DataList with ListRows, the thread from both viewers, a bubble and the composer.
+ *
+ * @param props - See {@link GalleryGroupProps}.
+ * @returns The group.
+ */
+export function KitGalleryData({ locale }: GalleryGroupProps) {
+    return (
+        <section className={styles.group}>
+            <h2 className={styles.groupTitle}>Data lists and conversations</h2>
+            <div className={styles.grid}>
+                <Visual name="DataList/rows">
+                    <DataList label="Consultas">
+                        <ListRow
+                            href="#kit"
+                            title="Cabañas del Río"
+                            meta="Cabaña chica"
+                            description="Hola, ¿tienen lugar del 12 al 15 de enero?"
+                            trailing={
+                                <>
+                                    <span>20 nov</span>
+                                    <CountPill
+                                        count={2}
+                                        label="2 sin leer"
+                                        variant="solid"
+                                    />
+                                </>
+                            }
+                            emphasis
+                        />
+                        <ListRow
+                            href="#kit"
+                            title="Hostel Centro"
+                            description="Gracias por la respuesta."
+                            trailing={<span>18 nov</span>}
+                        />
+                        <ListRow
+                            title="Casa de campo"
+                            meta="Sin enlace, con dos acciones"
+                            actions={[
+                                <Button
+                                    key="open"
+                                    size="sm"
+                                    variant="secondary"
+                                >
+                                    Abrir
+                                </Button>,
+                                <Button
+                                    key="archive"
+                                    size="sm"
+                                    variant="ghost"
+                                >
+                                    Archivar
+                                </Button>
+                            ]}
+                        />
+                    </DataList>
+                </Visual>
+                <Visual name="ConversationThread/guest">
+                    <ConversationThread
+                        viewer="guest"
+                        messages={MESSAGES}
+                        locale={locale}
+                        onRetry={() => undefined}
+                    />
+                </Visual>
+                <Visual name="ConversationThread/owner">
+                    <ConversationThread
+                        viewer="owner"
+                        messages={MESSAGES.slice(0, 3)}
+                        locale={locale}
+                    />
+                </Visual>
+                <Visual name="MessageBubble/sending">
+                    <ol className={styles.stack}>
+                        <MessageBubble
+                            side="mine"
+                            body="Mensaje en camino"
+                            senderLabel="Vos"
+                            sentAt="2026-11-20T16:00:00.000Z"
+                            sentAtLabel="20 nov 13:00"
+                            locale={locale}
+                            delivery="sending"
+                        />
+                    </ol>
+                </Visual>
+                <Visual name="Composer/default">
+                    <Composer
+                        locale={locale}
+                        onSend={() => undefined}
+                    />
+                </Visual>
+                <Visual name="Composer/error">
+                    <Composer
+                        locale={locale}
+                        onSend={() => undefined}
+                        error="Enviaste demasiados mensajes. Esperá un momento."
+                    />
+                </Visual>
+            </div>
+        </section>
+    );
+}

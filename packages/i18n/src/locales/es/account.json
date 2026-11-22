@@ -2073,6 +2073,23 @@
         "breadcrumbs": "Ruta de navegación",
         "gallery": {
             "title": "Kit de componentes"
+        },
+        "thread": {
+            "label": "Mensajes de la conversación",
+            "you": "Vos",
+            "sender": {
+                "guest": "Huésped",
+                "owner": "Anfitrión",
+                "system": "Mensaje del sistema"
+            },
+            "sending": "Enviando…",
+            "failed": "No se pudo enviar",
+            "retry": "Reintentar"
+        },
+        "composer": {
+            "label": "Tu mensaje",
+            "placeholder": "Escribí tu mensaje…",
+            "send": "Enviar"
         }
     }
 }

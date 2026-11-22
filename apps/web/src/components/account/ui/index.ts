@@ -40,7 +40,16 @@ export {
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
+export { Composer, type ComposerProps } from './Composer';
 export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog';
+export {
+    ConversationThread,
+    type ConversationThreadProps,
+    formatMessageTime,
+    type ThreadMessage,
+    type ThreadViewer
+} from './ConversationThread';
+export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
@@ -51,8 +60,15 @@ export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-a
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { type KeyValueItem, KeyValueList, type KeyValueListProps } from './KeyValueList';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
+export { ListRow, type ListRowActions, type ListRowProps } from './ListRow';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
+export {
+    MessageBubble,
+    type MessageBubbleProps,
+    type MessageBubbleSide,
+    type MessageDelivery
+} from './MessageBubble';
 export { type Breadcrumb, PageHeader, type PageHeaderProps } from './PageHeader';
 export { type LoadMoreResult, Pagination, type PaginationProps } from './Pagination';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
