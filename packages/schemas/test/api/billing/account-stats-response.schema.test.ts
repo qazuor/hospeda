@@ -20,13 +20,23 @@ describe('TEST:1756:8 user stats response schema', () => {
         ).toBe(true);
     });
 
+    it('accepts PAUSED as an exact plan status (HOS-2543)', () => {
+        expect(
+            UserStatsResponseSchema.safeParse({
+                ...base,
+                activeSubscriptionsCount: 1,
+                plan: { slug: 'x', name: 'X', status: 'PAUSED', vertical: 'accommodation' }
+            }).success
+        ).toBe(true);
+    });
+
     it.each([
         { ...base },
         { bookmarkCount: 0, reviewCount: 0, plan: null },
         {
             ...base,
             activeSubscriptionsCount: 1,
-            plan: { slug: 'x', name: 'X', status: 'PAUSED', vertical: 'accommodation' }
+            plan: { slug: 'x', name: 'X', status: 'CANCELLED', vertical: 'accommodation' }
         },
         { ...base, plan: null, activeSubscriptionsCount: -1 },
         { ...base, plan: null, activeSubscriptionsCount: 1.5 }

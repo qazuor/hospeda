@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { renderMarkdownToHtml } from '../../../src/lib/whats-new/render-markdown';
 
@@ -10,6 +10,31 @@ describe('renderMarkdownToHtml', () => {
         expect(html).toContain('Hola');
         expect(html).toContain('uno');
         expect(html).toContain('dos');
+    });
+
+    it('never adds a <style> element to the document (HOS-2545, CSP style-src)', () => {
+        // Arrange. TipTap appends its stylesheet and removes it again on destroy(),
+        // so the head looks clean afterwards: watch the insertion itself.
+        const inserted: string[] = [];
+        const record = (node: Node): void => {
+            if (node instanceof HTMLStyleElement) inserted.push(node.outerHTML.slice(0, 40));
+        };
+        const append = vi.spyOn(document.head, 'appendChild').mockImplementation(((node: Node) => {
+            record(node);
+            return node;
+        }) as typeof document.head.appendChild);
+        const insert = vi.spyOn(document.head, 'insertBefore').mockImplementation(((node: Node) => {
+            record(node);
+            return node;
+        }) as typeof document.head.insertBefore);
+
+        // Act
+        renderMarkdownToHtml('**Hola**');
+
+        // Assert
+        append.mockRestore();
+        insert.mockRestore();
+        expect(inserted).toEqual([]);
     });
 
     it('sanitizes script tags', () => {

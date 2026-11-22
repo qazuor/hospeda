@@ -543,7 +543,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     active: 'data-label-active',
                     'grace-period': 'data-label-grace-period',
                     suspended: 'data-label-suspended',
-                    'cancel-scheduled': 'data-label-cancel-scheduled'
+                    'cancel-scheduled': 'data-label-cancel-scheduled',
+                    paused: 'data-label-paused'
                 } as const;
                 let subscriptionValue: string;
                 let statusAttribute: string | null = null;

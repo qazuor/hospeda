@@ -1360,9 +1360,13 @@ export function transformHostDashboard({
             ? {
                   name: String(plan.name ?? ''),
                   status: String(plan.status ?? ''),
+                  subscriptionStatus:
+                      typeof plan.subscriptionStatus === 'string' ? plan.subscriptionStatus : null,
+                  serviceEndsAt: typeof plan.serviceEndsAt === 'string' ? plan.serviceEndsAt : null,
                   isTrial: Boolean(plan.isTrial)
               }
             : null,
+        planUnavailable: item.planUnavailable === true,
         unreadCount: Number(item.unreadConversations ?? 0),
         quickActions: [
             { label: 'Mis propiedades', href: 'mi-cuenta/propiedades', icon: 'building' },

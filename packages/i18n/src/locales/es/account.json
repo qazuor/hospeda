@@ -1051,6 +1051,7 @@
                 "gracePeriodStatus": "Pago pendiente",
                 "suspendedStatus": "Suspendida",
                 "cancelScheduledStatus": "Baja programada",
+                "pausedStatus": "Pausada",
                 "multipleSubscriptions_one": "{{count}} suscripción activa",
                 "multipleSubscriptions_other": "{{count}} suscripciones activas",
                 "properties": "Mis propiedades",

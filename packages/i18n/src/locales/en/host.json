@@ -1001,7 +1001,12 @@
             "trial": "Free trial",
             "active": "Active",
             "inactive": "Inactive",
-            "noPlan": "No plan"
+            "noPlan": "No plan",
+            "gracePeriod": "Payment pending",
+            "suspended": "Suspended",
+            "cancelScheduled": "Cancellation scheduled until {{date}}",
+            "cancelScheduledNoDate": "Cancellation scheduled",
+            "paused": "Paused"
         },
         "widgets": {
             "properties": "Your properties",

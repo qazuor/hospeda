@@ -21,11 +21,13 @@ import type { AppBindings } from '../../../src/types';
 
 const getByOwnerMock = vi.fn();
 const getUnreadCountMock = vi.fn();
+const readOwnPlanStateMock = vi.fn();
 
 vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
     return {
         ...actual,
+        readOwnPlanState: (...args: unknown[]) => readOwnPlanStateMock(...args),
         AccommodationService: class {
             getByOwner = getByOwnerMock;
         },
@@ -34,6 +36,10 @@ vi.mock('@repo/service-core', async (importActual) => {
         }
     };
 });
+
+vi.mock('../../../src/utils/clock', () => ({
+    getClock: () => ({ clock: { now: () => new Date('2026-11-22T12:00:00Z') } })
+}));
 
 vi.mock('../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
@@ -64,6 +70,8 @@ function ok(accommodations: Array<{ id: string; publicationStatus: PublicationSt
 beforeEach(() => {
     getByOwnerMock.mockReset();
     getUnreadCountMock.mockReset();
+    readOwnPlanStateMock.mockReset();
+    readOwnPlanStateMock.mockResolvedValue({ subscriptions: [], deferredCourtesies: [] });
 
     // Default: no accommodations and no unread conversations.
     getByOwnerMock.mockResolvedValue(ok([]));
@@ -330,6 +338,125 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                 draft: 0,
                 archived: 0
             });
+        });
+    });
+
+    describe('plan (HOS-2543)', () => {
+        const principal = (over: Record<string, unknown>) => ({
+            id: 's1',
+            vertical: 'accommodation',
+            status: 'ACTIVE',
+            plan: { slug: 'basic', name: 'Basic' },
+            ...over
+        });
+
+        it('returns the catalog plan of the live PRINCIPAL subscription', async () => {
+            // Arrange
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({})],
+                deferredCourtesies: []
+            });
+
+            // Act
+            const res = await buildApp().request('/dashboard');
+            const body = await res.json();
+
+            // Assert
+            expect(body.data.plan).toEqual({
+                slug: 'basic',
+                name: 'Basic',
+                status: 'active',
+                subscriptionStatus: 'ACTIVE',
+                serviceEndsAt: null,
+                isTrial: false
+            });
+        });
+
+        it.each([
+            ['ACTIVE', 'ACTIVE', 'active'],
+            ['GRACE_PERIOD', 'GRACE_PERIOD', 'past_due'],
+            ['SUSPENDED', 'SUSPENDED', 'past_due'],
+            ['CANCEL_SCHEDULED', 'CANCEL_SCHEDULED', 'cancelled'],
+            ['PAUSED', 'PAUSED', 'cancelled']
+        ])('returns the exact status %s without collapsing it', async (status, expected, coarse) => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({ status })],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan.subscriptionStatus).toBe(expected);
+            expect(body.data.plan.status).toBe(coarse);
+        });
+
+        it('returns the end of service for a scheduled cancellation', async () => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [
+                    principal({
+                        status: 'CANCEL_SCHEDULED',
+                        serviceEndsAt: new Date('2026-12-31T00:00:00.000Z')
+                    })
+                ],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan.serviceEndsAt).toBe('2026-12-31T00:00:00.000Z');
+        });
+
+        it('degrades to plan null when the status is not one the card can show', async () => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({ status: 'ABANDONED' })],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan).toBeNull();
+        });
+
+        it('prefers the accommodation principal over another vertical', async () => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [
+                    principal({ id: 'v', vertical: 'venue', plan: { slug: 'v', name: 'Venue' } }),
+                    principal({})
+                ],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan.slug).toBe('basic');
+        });
+
+        it('maps GRACE_PERIOD to past_due', async () => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({ status: 'GRACE_PERIOD' })],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan.status).toBe('past_due');
+        });
+
+        it('returns plan null when there is no live principal', async () => {
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan).toBeNull();
+        });
+
+        it('degrades to plan null (not 500) when the plan read throws', async () => {
+            readOwnPlanStateMock.mockRejectedValue(new Error('db down'));
+            const res = await buildApp().request('/dashboard');
+            const body = await res.json();
+            expect(res.status).toBe(200);
+            expect(body.data.plan).toBeNull();
+            expect(body.data.planUnavailable).toBe(true);
+        });
+
+        it('keeps planUnavailable false when the read succeeds, with or without a plan', async () => {
+            const none = await (await buildApp().request('/dashboard')).json();
+            expect(none.data.plan).toBeNull();
+            expect(none.data.planUnavailable).toBe(false);
+
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({})],
+                deferredCourtesies: []
+            });
+            const some = await (await buildApp().request('/dashboard')).json();
+            expect(some.data.planUnavailable).toBe(false);
         });
     });
 
