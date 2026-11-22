@@ -24,16 +24,27 @@
         box-shadow 0.2s ease;
 }
 
-.icon {
-    position: relative;
-    display: flex;
-}
-
-/* The sparkle badge anchors to the bubble, not to the (static in the dock) button. */
-.sparkle {
+/*
+ * AI badge: a small filled accent circle with a white sparkle and a ring in the
+ * surface color so it separates from the blue button. It sits on the FAB's
+ * top-right corner, overlapping by about a third. Absolutely positioned, so the
+ * button keeps its own 44px/56px hit area; no ancestor clips it (the dock row and
+ * the FAB set no overflow).
+ */
+.badge {
     position: absolute;
-    top: -5px;
+    top: -6px;
     right: -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    border: 2px solid var(--core-background, #ffffff);
+    border-radius: 50%;
+    background-color: var(--brand-accent, #f97316);
+    color: var(--accent-foreground, #ffffff);
     pointer-events: none;
 }
 
@@ -44,7 +55,10 @@
 
     :global([data-mobile-dock]) .fab {
         display: flex;
-        position: static;
+        /* relative so the AI badge anchors to the button's corner */
+        position: relative;
+        /* reset the desktop offsets, which relative positioning would apply */
+        inset: auto;
         width: 44px;
         height: 44px;
     }

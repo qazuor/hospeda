@@ -47,15 +47,17 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
             aria-label={resolveAiChatCopy({ t, entityType, suffix: 'fabLabel' })}
             data-dock-item
         >
-            <span className={styles.icon}>
-                <ChatIcon
-                    size={24}
-                    weight="regular"
-                    aria-hidden="true"
-                />
+            <ChatIcon
+                size={24}
+                weight="regular"
+                aria-hidden="true"
+            />
+            <span
+                className={styles.badge}
+                data-testid="ai-chat-fab-badge"
+            >
                 <SparkleIcon
-                    className={styles.sparkle}
-                    size={12}
+                    size={10}
                     weight="fill"
                     aria-hidden="true"
                     data-testid="ai-chat-fab-sparkle"

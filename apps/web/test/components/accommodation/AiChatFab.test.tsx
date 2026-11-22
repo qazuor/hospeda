@@ -22,7 +22,9 @@ describe('AiChatFab (HOS-2561)', () => {
 
         const button = screen.getByRole('button', { name: 'Ask AI' });
         const sparkle = screen.getByTestId('ai-chat-fab-sparkle');
-        expect(button).toContainElement(sparkle);
+        const badge = screen.getByTestId('ai-chat-fab-badge');
+        expect(button).toContainElement(badge);
+        expect(badge).toContainElement(sparkle);
         expect(sparkle).toHaveAttribute('aria-hidden', 'true');
         expect(button.querySelectorAll('svg')).toHaveLength(2);
     });

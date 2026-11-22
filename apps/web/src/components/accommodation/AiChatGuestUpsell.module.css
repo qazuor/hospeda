@@ -29,18 +29,26 @@
 .examples {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
+/* Plain, non-interactive examples: muted text with quote marks, no chip. */
 .example {
-    padding: 8px 12px;
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--surface-warm, #fef7f0);
     font-size: 14px;
-    color: var(--core-foreground, #111827);
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--core-muted-foreground, #6b7280);
+}
+
+.example::before {
+    content: "\201C";
+}
+
+.example::after {
+    content: "\201D";
 }
 
 .free {

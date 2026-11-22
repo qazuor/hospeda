@@ -91,10 +91,10 @@ describe('AiChatWidget mobile dock (TEST:1768:19)', () => {
         await waitFor(() => expect(document.activeElement).toBe(fab));
     });
 
-    it('preserves desktop FAB positioning and uses a static mobile dock rule', () => {
+    it('preserves desktop FAB positioning and uses an in-flow (relative) mobile dock rule so the badge anchors to the button', () => {
         expect(CSS_SOURCE).toContain('position: fixed;');
         expect(CSS_SOURCE).toContain('@media (max-width: 767px)');
         expect(CSS_SOURCE).toContain(':global([data-mobile-dock]) .fab');
-        expect(CSS_SOURCE).toContain('position: static;');
+        expect(CSS_SOURCE).toContain('position: relative;');
     });
 });
