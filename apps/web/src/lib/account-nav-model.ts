@@ -57,8 +57,8 @@ export interface AccountNavModelInput {
     /** Row-ownership answer for the provider group (HOS-278 AC-7). */
     readonly ownsHostTradeListing: boolean;
     /**
-     * Row-ownership answer for the partner group (HOS-2551). Optional: no
-     * session field carries it yet, so it defaults to `false`.
+     * Row-ownership answer for the partner group (HOS-2551), from
+     * `SessionUser.ownsPartner`. Optional: absent defaults to `false`.
      */
     readonly ownsPartner?: boolean;
     /** Whether the MCP feature is on (the AI-assistants entry is gated on it). */

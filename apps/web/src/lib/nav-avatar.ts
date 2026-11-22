@@ -28,8 +28,8 @@ export interface GetCuratedAccountNavParams {
     /** Whether the account owns a host-trade listing (provider shortcut). */
     readonly ownsHostTradeListing?: boolean;
     /**
-     * Whether the account owns a partner row (partner shortcut). No client
-     * source carries it yet, so callers leave it `false`.
+     * Whether the account owns a live partner row (partner shortcut). Comes
+     * from `/auth/me` through `useAccountPermissions`; absent reads as `false`.
      */
     readonly ownsPartner?: boolean;
 }
