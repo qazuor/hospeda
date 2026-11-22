@@ -50,6 +50,21 @@ export function resolveProviderContact({
     const href = resolveContactHref(display);
     if (href.startsWith('tel:')) return { channel: 'phone', href, display };
 
-    const isWhatsApp = /^https?:\/\/(wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com)\b/i.test(href);
-    return { channel: isWhatsApp ? 'whatsapp' : 'web', href, display };
+    // `href` already passed the shared scheme allow-list inside
+    // `resolveContactHref`; only the host decides the channel here.
+    return { channel: isWhatsAppHost({ href }) ? 'whatsapp' : 'web', href, display };
+}
+
+const WHATSAPP_HOSTS: ReadonlySet<string> = new Set([
+    'wa.me',
+    'api.whatsapp.com',
+    'chat.whatsapp.com'
+]);
+
+function isWhatsAppHost({ href }: { readonly href: string }): boolean {
+    try {
+        return WHATSAPP_HOSTS.has(new URL(href).hostname.toLowerCase());
+    } catch {
+        return false;
+    }
 }
