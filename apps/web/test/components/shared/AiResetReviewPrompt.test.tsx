@@ -59,6 +59,8 @@ function listResponse({ review }: { readonly review: readonly object[] | null })
     } as Response;
 }
 
+const CLIENT_SESSION = { isAuthenticated: true, permissions: ['accommodation.create'] };
+
 function status(code: number): Response {
     return { ok: code >= 200 && code < 300, status: code, json: async () => ({}) } as Response;
 }
@@ -80,7 +82,8 @@ describe('AiResetReviewPrompt', () => {
     beforeEach(() => {
         resetAiConnectionCount();
         vi.stubGlobal('fetch', vi.fn());
-        readCachedAuthMeMock.mockReset().mockReturnValue({ isAuthenticated: true });
+        // A real client (HOS-2562): a host, by permission.
+        readCachedAuthMeMock.mockReset().mockReturnValue(CLIENT_SESSION);
         fetchAuthMeMock.mockReset().mockResolvedValue({ isAuthenticated: false });
         addToastMock.mockReset();
     });
@@ -105,6 +108,34 @@ describe('AiResetReviewPrompt', () => {
             screen.getByRole('link', { name: 'Ver mis asistentes de IA' }).getAttribute('href')
         ).toBe('/es/mi-cuenta/asistentes-ia/');
         expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe(LIST_URL);
+    });
+
+    it('asks a pure tourist too, but offers no link to the AI assistants page (HOS-2562)', async () => {
+        readCachedAuthMeMock.mockReturnValue({
+            isAuthenticated: true,
+            permissions: ['accommodation.review.create'],
+            ownsHostTradeListing: false,
+            ownsPartner: false
+        });
+        vi.mocked(fetch).mockResolvedValueOnce(listResponse({ review: [CONNECTION] }));
+
+        mount();
+
+        expect(await screen.findByRole('button', { name: 'Desconectar asistentes' })).toBeTruthy();
+        expect(screen.queryByRole('link', { name: 'Ver mis asistentes de IA' })).toBeNull();
+    });
+
+    it('offers the link to a client by row ownership alone (a provider)', async () => {
+        readCachedAuthMeMock.mockReturnValue({
+            isAuthenticated: true,
+            permissions: [],
+            ownsHostTradeListing: true
+        });
+        vi.mocked(fetch).mockResolvedValueOnce(listResponse({ review: [CONNECTION] }));
+
+        mount();
+
+        expect(await screen.findByRole('link', { name: 'Ver mis asistentes de IA' })).toBeTruthy();
     });
 
     it('uses the singular copy for one assistant', async () => {
@@ -152,7 +183,7 @@ describe('AiResetReviewPrompt', () => {
 
     it('falls back to /auth/me when nothing is cached', async () => {
         readCachedAuthMeMock.mockReturnValue(null);
-        fetchAuthMeMock.mockResolvedValue({ isAuthenticated: true });
+        fetchAuthMeMock.mockResolvedValue(CLIENT_SESSION);
         vi.mocked(fetch).mockResolvedValueOnce(listResponse({ review: [CONNECTION] }));
 
         mount();

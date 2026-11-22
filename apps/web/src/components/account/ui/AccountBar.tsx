@@ -21,9 +21,8 @@
  */
 
 import { HamburgerIcon } from '@repo/icons';
-import { type MouseEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type MouseEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
-import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { ACCOUNT_NAV_ICONS } from '@/lib/account-nav-icons';
 import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
 import { createT, type SupportedLocale } from '@/lib/i18n';
@@ -71,13 +70,6 @@ export function AccountBar({ view, locale }: AccountBarProps) {
     const sentinel = useRef<HTMLDivElement>(null);
     const historyReleaseRef = useRef<(() => void) | null>(null);
     const drawerId = useId();
-    // The AI-assistants entry renders `hidden` when MCP is off; reveal the
-    // drawer's own copy in React (the DOM-querying island only finds the first).
-    const hasHiddenAi = view.groups.some((group) =>
-        group.items.some((item) => item.id === 'aiAssistants' && item.hidden)
-    );
-    const aiVisible = useAiAssistantsEntry({ mcpEnabled: false, enabled: hasHiddenAi });
-    const revealed = useMemo(() => new Set(aiVisible ? ['aiAssistants'] : []), [aiVisible]);
     const menuLabel = t('account.menu');
     const accountLabel = t('account.title');
 
@@ -196,7 +188,6 @@ export function AccountBar({ view, locale }: AccountBarProps) {
                         view={view}
                         locale={locale}
                         icons={ACCOUNT_NAV_ICONS}
-                        revealedItemIds={revealed}
                         benefitUsagesCount={<BenefitUsagesCountPill locale={locale} />}
                     />
                 </div>

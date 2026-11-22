@@ -211,3 +211,21 @@ export function isFollowableRedirectUrl({ raw }: { readonly raw: unknown }): boo
         return false;
     }
 }
+
+/** Why the consent screen cannot be used. `notAClient`: HOS-2562 refusal. */
+export type ConsentErrorKind =
+    | 'invalidRequest'
+    | 'clientNotFound'
+    | 'loadFailed'
+    | 'submitFailed'
+    | 'notAClient';
+
+/** Spanish fallback of each `auth.consent.errors.<kind>` message. */
+export const CONSENT_ERROR_FALLBACKS: Readonly<Record<ConsentErrorKind, string>> = {
+    invalidRequest:
+        'El enlace de autorización no es válido o venció. Volvé a iniciar la conexión desde tu asistente.',
+    clientNotFound: 'No encontramos la aplicación que pide acceso.',
+    loadFailed: 'No pudimos cargar la solicitud. Probá de nuevo.',
+    submitFailed: 'No pudimos completar la autorización. Probá de nuevo.',
+    notAClient: 'Los asistentes de IA son solo para cuentas que administran un negocio en Hospeda.'
+};

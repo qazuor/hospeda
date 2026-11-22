@@ -24,12 +24,7 @@ import {
     PROFILE_GROUP_ID,
     PROFILE_NAV_ITEM_IDS
 } from '@/config/account-zones';
-import {
-    ACCOUNT_NAV_GROUPS,
-    AI_ASSISTANTS_NAV_ITEM_ID,
-    DASHBOARD_NAV_ITEM_ID,
-    PROVIDER_NAV_GROUP
-} from '@/config/navigation';
+import { ACCOUNT_NAV_GROUPS, DASHBOARD_NAV_ITEM_ID, PROVIDER_NAV_GROUP } from '@/config/navigation';
 import {
     ACCOUNT_GROUP_ID,
     resolveShellGroupOpen,
@@ -65,8 +60,6 @@ export interface BuildShellNavModelParams {
     readonly activeSection: string;
     /** Whether the account owns a partner row (adds the partner group). */
     readonly ownsPartner: boolean;
-    /** Whether the person is a real client (has a business vertical). */
-    readonly isClient: boolean;
 }
 
 /** i18n key of the «Inicio» label of the `/mi-cuenta/` link. */
@@ -157,8 +150,7 @@ function partnerGroup({ activeSection }: { readonly activeSection: string }): Ac
         return {
             item,
             sectionKey,
-            active: sectionKey === activeSection,
-            hiddenUntilRevealed: false
+            active: sectionKey === activeSection
         };
     });
     return {
@@ -205,30 +197,27 @@ function businessZone({
 
 /**
  * Builds the personal zone: «Inicio», «Mi perfil» («Asistentes de IA» only
- * for a real client), «Mis viajes», then the doors.
+ * when `buildAccountNavModel` kept it: a real client with MCP on, HOS-2562),
+ * «Mis viajes», then the doors.
  * Only the titled group holding the current page opens; when the current
  * page sits in a header-less group (or none), every titled group opens.
  */
 function personalZone({
     groups,
-    doors,
-    isClient
-}: Pick<BuildShellNavModelParams, 'groups' | 'doors' | 'isClient'>): AccountShellNavModel {
+    doors
+}: Pick<BuildShellNavModelParams, 'groups' | 'doors'>): AccountShellNavModel {
     const account = groups.find((entry) => entry.group.id === ACCOUNT_GROUP_ID);
     const tourist = groups.find((entry) => entry.group.id === TOURIST_GROUP_ID);
     const home = pick({ source: account, ids: [DASHBOARD_NAV_ITEM_ID] }).map((entry) => ({
         ...entry,
         item: { ...entry.item, i18nKey: HOME_LABEL_KEY }
     }));
-    const profileIds = PROFILE_NAV_ITEM_IDS.filter(
-        (id) => isClient || id !== AI_ASSISTANTS_NAV_ITEM_ID
-    );
     const zone = [
         groupOf({ id: HOME_GROUP_ID, i18nKey: HOME_LABEL_KEY, items: home, suppressHeader: true }),
         groupOf({
             id: PROFILE_GROUP_ID,
             i18nKey: PROFILE_LABEL_KEY,
-            items: pick({ source: account, ids: profileIds }),
+            items: pick({ source: account, ids: PROFILE_NAV_ITEM_IDS }),
             suppressHeader: false
         }),
         groupOf({
@@ -261,11 +250,10 @@ export function buildShellNavModel({
     groups,
     doors,
     activeSection,
-    ownsPartner,
-    isClient
+    ownsPartner
 }: BuildShellNavModelParams): AccountShellNavModel {
     if (BUSINESS_SECTION_KEYS.has(activeSection)) {
         return businessZone({ groups, activeSection, ownsPartner });
     }
-    return personalZone({ groups, doors, isClient });
+    return personalZone({ groups, doors });
 }

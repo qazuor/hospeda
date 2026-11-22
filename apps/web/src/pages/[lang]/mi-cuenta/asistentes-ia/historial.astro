@@ -6,9 +6,12 @@
  * @route /{lang}/mi-cuenta/asistentes-ia/historial/
  * @rendering SSR
  *
- * Session-blind: the server renders the same shell for every user. The list
- * is fetched by the `AiActivityHistory` island in the browser, and the API
- * only ever returns the session user's rows. The API's portal route map links
+ * The server reads the session for ONE thing: the HOS-2562 gate. Only a real
+ * client (a person with a business vertical) may open it; anybody else gets
+ * the in-layout 404 (`no-encontrado`), like the assistants page. Past that
+ * gate the shell is the same for every client. The list is fetched by the
+ * `AiActivityHistory` island in the browser, and the API only ever returns
+ * the session user's rows. The API's portal route map links
  * here as `aiAssistantsHistory` (`check-portal-routes`).
  *
  * Hydration: `client:load`, not `client:idle` / `client:visible`. The list is
@@ -28,8 +31,21 @@ import { getApiUrl } from '@/lib/env';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
+import { canUseAiAssistants } from '@/lib/ai-assistants-access';
 
 const locale: SupportedLocale = Astro.locals.locale;
+const user = Astro.locals.user;
+
+if (!user) {
+	return Astro.redirect(
+		buildLoginRedirect({ locale, currentUrl: buildUrl({ locale, path: 'mi-cuenta/asistentes-ia/historial' }) }),
+	);
+}
+
+if (!canUseAiAssistants({ user })) {
+	return Astro.rewrite(buildAccountNotFoundTarget({ locale }));
+}
 
 const { t } = createTranslations(locale);
 const title = t('account.aiAssistants.activity.title', 'Historial de tus asistentes');

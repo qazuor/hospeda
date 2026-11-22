@@ -1,5 +1,5 @@
 {
-  "contentHash": "b9230a7b1dd48da57273545238d469b771af909b982bfb4aac6374d925c23dbf",
+  "contentHash": "2fe6ead04262a78229f09e8e5951b33c72e4df8d4f292c22025ac25aed13f40b",
   "locales": {
     "es": [
       {
@@ -112,7 +112,7 @@
           "amenities",
           "help-center"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-22",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
           "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.",
@@ -128,7 +128,7 @@
               "Si ves el aviso de que la conexión de nuevos asistentes está pausada, por ahora no se pueden conectar más, pero sí desconectar los que ya tenés."
             ]
           },
-          "notExpect": "- Conectar asistentes nuevos mientras la conexión está pausada; los que ya tenés se pueden desconectar igual.\n- Que el asistente haga cambios sin pedirte confirmación en las acciones que la piden.",
+          "notExpect": "- Usarlo con una cuenta que no administra ningún negocio en Hospeda: los asistentes de IA son solo para cuentas con alojamientos, comercios, experiencias, publicaciones, ficha de aliado o ficha de proveedor.\n- Conectar asistentes nuevos mientras la conexión está pausada; los que ya tenés se pueden desconectar igual.\n- Que el asistente haga cambios sin pedirte confirmación en las acciones que la piden.",
           "troubleshooting": "### Cambié la contraseña {#cambie-contrasena}\n\nEl sitio te pregunta si querés desconectar también los asistentes conectados.\n\n### El asistente no encuentra la dirección {#direccion}\n\nCopiá de nuevo la dirección del servidor MCP desde {{link:aiAssistants|Asistentes de IA}} y pegala completa."
         },
         "summary": "Cómo conectar Claude, ChatGPT, Gemini u otro asistente compatible con MCP, y cómo desconectarlo.",

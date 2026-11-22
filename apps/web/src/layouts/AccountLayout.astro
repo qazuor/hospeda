@@ -21,11 +21,9 @@ import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsa
 import BaseLayout from './BaseLayout.astro';
 import AccountShell from './AccountShell.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
-import { AI_ASSISTANTS_NAV_ITEM_ID } from '@/config/navigation';
 import { buildAccountNavModel } from '@/lib/account-nav-model';
 import type { AccountShellTemplate } from '@/components/account/ui/account-shell-template';
 import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
-import { AiAssistantsNavReveal } from '@/components/account/AiAssistantsNavReveal.client';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -69,14 +67,16 @@ const resolvedDescription = description ?? t('account.description');
 const userRoles = Astro.locals.user?.roles ?? null;
 
 /**
- * HOS-2184 T-028: the "Asistentes de IA" entry. With the MCP feature on it is
- * shown to everyone. With it off it is still rendered, but `hidden`, and the
- * `AiAssistantsNavReveal` island un-hides it when the user has at least one
- * connection to disconnect. Rendering it server-side keeps this layout's scoped
- * styles and keeps the page session-blind. The flag comes from a short-lived
- * cached lookup against the API, so it costs no round trip on most requests.
+ * HOS-2562: the "Asistentes de IA" entry is listed only for a real client (a
+ * person with a business vertical, decided by the shared `isRealClient` rule
+ * from the EFFECTIVE permissions and the ownership facts) and only while the
+ * MCP feature is on. Anybody else gets no entry at all: no hidden copy and no
+ * reveal island (the HOS-2430 reveal is gone). The flag comes from a
+ * short-lived cached lookup against the API, so it costs no round trip on
+ * most requests.
  */
 const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
+const userPermissions = Astro.locals.user?.permissions ?? [];
 
 /**
  * The provider self-service nav entry ("Mi ficha de proveedor", H-158) is
@@ -96,6 +96,7 @@ const ownsPartner = Astro.locals.user?.ownsPartner === true;
 
 const navModel = buildAccountNavModel({
 	roles: userRoles,
+	permissions: userPermissions,
 	ownsHostTradeListing,
 	ownsPartner,
 	mcpEnabled,
@@ -118,7 +119,6 @@ const activeLabel = t(navModel.activeLabelKey);
 		title={resolvedTitle}
 		description={resolvedDescription}
 		template={template}
-		aiAssistantsHidden={!mcpEnabled}
 	>
 		<slot name="head-early" slot="head-early" />
 		<slot />
@@ -182,16 +182,11 @@ const activeLabel = t(navModel.activeLabelKey);
 								</summary>
 							)}
 							<ul class="account-nav__list">
-								{entry.items.map(({ item, active, hiddenUntilRevealed }) => {
+								{entry.items.map(({ item, active }) => {
 									const Icon = item.icon;
 
 									return (
-									<li
-										class="account-nav__item"
-										{...(hiddenUntilRevealed
-											? { 'data-ai-assistants-entry': '', hidden: true }
-											: {})}
-									>
+									<li class="account-nav__item">
 										<a
 											href={buildUrl({ locale, path: item.href })}
 											class:list={[
@@ -208,7 +203,6 @@ const activeLabel = t(navModel.activeLabelKey);
 												{t(item.i18nKey)}
 												{item.id === 'whatsNew' && <WhatsNewCountPill locale={locale} client:idle />}
 												{item.id === 'benefitUsages' && <BenefitUsagesCountPill locale={locale} client:idle />}
-												{item.id === AI_ASSISTANTS_NAV_ITEM_ID && !mcpEnabled && <AiAssistantsNavReveal client:idle />}
 											</span>
 										</a>
 									</li>

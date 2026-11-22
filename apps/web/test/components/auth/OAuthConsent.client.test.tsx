@@ -32,6 +32,11 @@ vi.mock('../../../src/lib/auth-client', () => ({
     }
 }));
 vi.mock('../../../src/lib/auth-cache', () => ({ clearCachedAuthMe: vi.fn() }));
+// HOS-2562: whether the session is a real client (default: yes).
+const canUseMock = vi.fn();
+vi.mock('../../../src/lib/ai-assistants-access', () => ({
+    fetchCanUseAiAssistants: (...args: unknown[]) => canUseMock(...args)
+}));
 
 const SEARCH =
     '?client_id=abc&scope=openid+email+calendar.write&redirect_uri=https%3A%2F%2Fclaude.ai%2Fcb' +
@@ -62,6 +67,8 @@ describe('OAuthConsent', () => {
         });
         signOutMock.mockReset();
         signOutMock.mockResolvedValue({});
+        canUseMock.mockReset();
+        canUseMock.mockResolvedValue(true);
         replaceMock.mockReset();
         assignMock.mockReset();
         setLocation(SEARCH);
@@ -228,6 +235,42 @@ describe('OAuthConsent', () => {
 
         // Assert
         expect(await screen.findByRole('button', { name: 'Permitir' })).toBeEnabled();
+    });
+
+    it('shows a pure tourist the refusal: no Allow button, no link to AI assistants (HOS-2562)', async () => {
+        // Arrange
+        fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
+        canUseMock.mockResolvedValue(false);
+
+        // Act
+        render(<OAuthConsent locale="es" />);
+
+        // Assert
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Los asistentes de IA son solo para cuentas que administran un negocio'
+        );
+        expect(screen.queryByRole('button', { name: 'Permitir' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+        expect(screen.queryByRole('link', { name: 'Asistentes de IA' })).toBeNull();
+    });
+
+    it('shows the refusal when the server answers 403 to the consent (HOS-2562)', async () => {
+        // Arrange: the browser could not tell (no /auth/me session), the server can
+        fetchMock
+            .mockResolvedValueOnce(clientResponse({ client_name: 'Claude' }))
+            .mockResolvedValueOnce({ data: null, error: { status: 403 } });
+        canUseMock.mockResolvedValue(null);
+        render(<OAuthConsent locale="es" />);
+
+        // Act
+        fireEvent.click(await screen.findByRole('button', { name: 'Permitir' }));
+
+        // Assert
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Los asistentes de IA son solo para cuentas que administran un negocio'
+        );
+        expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+        expect(assignMock).not.toHaveBeenCalled();
     });
 
     it('sends a signed-out visitor to sign-in with the request preserved', async () => {
