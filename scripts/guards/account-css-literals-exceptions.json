@@ -131,9 +131,8 @@
         "font-size": 15
     },
     "apps/web/src/components/account/SearchHistoryList.module.css": {
-        "color": 5,
-        "font-size": 12,
-        "radius": 1
+        "color": 4,
+        "font-size": 12
     },
     "apps/web/src/components/account/SetPassword.module.css": {
         "color": 7,
@@ -477,7 +476,6 @@
         "shadow": 1
     },
     "apps/web/src/components/newsletter/NewsletterPreferences.module.css": {
-        "color": 10,
         "font-size": 4,
         "radius": 2,
         "shadow": 1
@@ -590,10 +588,6 @@
     "apps/web/src/pages/[lang]/mi-cuenta/index.astro": {
         "font-size": 4,
         "shadow": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/preferencias/index.astro": {
-        "font-size": 3,
-        "shadow": 1
     },
     "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
         "color": 13

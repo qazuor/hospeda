@@ -152,8 +152,8 @@
         "editProfile": "Editar perfil",
         "subscription": "Assinatura",
         "preferences": "Preferências",
-        "newsletter": "Newsletter",
-        "whatsNew": "O que há de novo",
+        "newsletter": "Newsletter por e-mail",
+        "whatsNew": "Novidades do Hospeda",
         "aiAssistants": "Assistentes de IA",
         "favorites": "Favoritos",
         "searchHistory": "Histórico de buscas",
@@ -334,7 +334,8 @@
             "appearance": "Aparência",
             "notifications": "Notificações",
             "onboarding": "Onboarding",
-            "newsletter": "Boletim de novidades"
+            "newsletter": "Newsletter por e-mail",
+            "searchHistory": "Histórico de buscas"
         },
         "onboarding": {
             "restartTour": "Repetir tour de boas-vindas",
@@ -367,7 +368,7 @@
             "description": "Idioma de la plataforma web"
         },
         "newsletter": {
-            "label": "Receber newsletter",
+            "label": "Receber a newsletter por e-mail",
             "description": "Recibir novedades, ofertas y destinos destacados"
         },
         "errors": {
@@ -382,6 +383,10 @@
             "title": "Resumo semanal de perguntas à IA",
             "label": "Receber o resumo semanal",
             "description": "Um e-mail às segundas com as perguntas que o assistente dos seus anúncios não conseguiu responder. Se não houver nenhuma, não enviamos."
+        },
+        "changeInPreferences": "Alterar em Preferências",
+        "searchHistory": {
+            "planFallback": "Plano superior"
         }
     },
     "aiAssistants": {
@@ -1138,7 +1143,7 @@
             }
         },
         "whatsNew": {
-            "title": "Novidades",
+            "title": "Novidades do Hospeda",
             "desc": "Novidades e atualizações da plataforma"
         },
         "searchHistory": {
@@ -1159,7 +1164,7 @@
         }
     },
     "newsletter": {
-        "title": "Newsletter",
+        "title": "Newsletter por e-mail",
         "loading": "Carregando preferências…",
         "statusLabel": "Status",
         "statusActive": "Ativo",

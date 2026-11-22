@@ -152,8 +152,8 @@
         "editProfile": "Edit profile",
         "subscription": "Subscription",
         "preferences": "Preferences",
-        "newsletter": "Newsletter",
-        "whatsNew": "What's new",
+        "newsletter": "Email newsletter",
+        "whatsNew": "Hospeda updates",
         "aiAssistants": "AI assistants",
         "favorites": "Favorites",
         "searchHistory": "Search history",
@@ -334,7 +334,8 @@
             "appearance": "Appearance",
             "notifications": "Notifications",
             "onboarding": "Onboarding",
-            "newsletter": "Newsletter"
+            "newsletter": "Email newsletter",
+            "searchHistory": "Search history"
         },
         "onboarding": {
             "restartTour": "Repeat welcome tour",
@@ -367,7 +368,7 @@
             "description": "Idioma de la plataforma web"
         },
         "newsletter": {
-            "label": "Receive newsletter",
+            "label": "Receive the email newsletter",
             "description": "Recibir novedades, ofertas y destinos destacados"
         },
         "errors": {
@@ -382,6 +383,10 @@
             "title": "Weekly AI questions digest",
             "label": "Receive the weekly digest",
             "description": "An email on Mondays with the questions your listings' assistant could not answer. If there were none, we do not write."
+        },
+        "changeInPreferences": "Change in Preferences",
+        "searchHistory": {
+            "planFallback": "Higher plan"
         }
     },
     "aiAssistants": {
@@ -1138,7 +1143,7 @@
             }
         },
         "whatsNew": {
-            "title": "What's New",
+            "title": "Hospeda updates",
             "desc": "News and platform updates"
         },
         "searchHistory": {
@@ -1159,7 +1164,7 @@
         }
     },
     "newsletter": {
-        "title": "Newsletter",
+        "title": "Email newsletter",
         "loading": "Loading preferences…",
         "statusLabel": "Status",
         "statusActive": "Active",

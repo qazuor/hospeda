@@ -152,8 +152,8 @@
         "editProfile": "Editar perfil",
         "subscription": "Suscripción",
         "preferences": "Preferencias",
-        "newsletter": "Boletín de novedades",
-        "whatsNew": "Qué hay de nuevo",
+        "newsletter": "Newsletter por mail",
+        "whatsNew": "Novedades de Hospeda",
         "aiAssistants": "Asistentes de IA",
         "favorites": "Favoritos",
         "searchHistory": "Historial de búsquedas",
@@ -334,7 +334,8 @@
             "appearance": "Apariencia",
             "notifications": "Notificaciones",
             "onboarding": "Onboarding",
-            "newsletter": "Boletín de novedades"
+            "newsletter": "Newsletter por mail",
+            "searchHistory": "Historial de búsquedas"
         },
         "onboarding": {
             "restartTour": "Repetir tour de bienvenida",
@@ -367,7 +368,7 @@
             "description": "Idioma de la plataforma web"
         },
         "newsletter": {
-            "label": "Recibir el boletín de novedades",
+            "label": "Recibir el newsletter por mail",
             "description": "Recibir novedades, ofertas y destinos destacados"
         },
         "errors": {
@@ -382,6 +383,10 @@
             "title": "Resumen semanal de preguntas a la IA",
             "label": "Recibir el resumen semanal",
             "description": "Un mail los lunes con las preguntas que el asistente de tus fichas no pudo responder. Si no hubo ninguna, no te escribimos."
+        },
+        "changeInPreferences": "Cambiar en Preferencias",
+        "searchHistory": {
+            "planFallback": "Plan superior"
         }
     },
     "aiAssistants": {
@@ -1138,7 +1143,7 @@
             }
         },
         "whatsNew": {
-            "title": "Novedades",
+            "title": "Novedades de Hospeda",
             "desc": "Novedades y actualizaciones de la plataforma"
         },
         "searchHistory": {
@@ -1159,7 +1164,7 @@
         }
     },
     "newsletter": {
-        "title": "Boletín de novedades",
+        "title": "Newsletter por mail",
         "loading": "Cargando preferencias…",
         "statusLabel": "Estado",
         "statusActive": "Activo",
