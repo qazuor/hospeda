@@ -43,9 +43,11 @@ import {
 import type { HostConversationResponseRate } from '@repo/schemas';
 import {
     ConversationStatusEnum,
+    InquiryBookingFieldsShape,
     MessageSenderTypeEnum,
     NotificationRecipientSideEnum,
     PermissionEnum,
+    refineInquiryDates,
     ServiceErrorCode
 } from '@repo/schemas';
 import { getLocalDayWindow } from '@repo/utils';
@@ -122,21 +124,27 @@ const ALLOWED_TRANSITIONS: Readonly<
 // Input schemas (Zod — internal only)
 // ---------------------------------------------------------------------------
 
-const InitiateAnonymousInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    guestName: z.string().min(1).max(100),
-    guestEmail: z.string().email().max(255),
-    guestPhone: z.string().max(50).optional(),
-    message: z.string().min(1).max(5000),
-    locale: z.string().max(10).optional()
-});
+const InitiateAnonymousInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        guestName: z.string().min(1).max(100),
+        guestEmail: z.string().email().max(255),
+        guestPhone: z.string().max(50).optional(),
+        message: z.string().min(1).max(5000),
+        locale: z.string().max(10).optional(),
+        ...InquiryBookingFieldsShape
+    })
+    .refine(refineInquiryDates, { message: 'checkOut must be after checkIn', path: ['checkOut'] });
 
-const InitiateAuthenticatedInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    message: z.string().min(1).max(5000),
-    locale: z.string().max(10).optional(),
-    urlLang: z.string().max(10).optional()
-});
+const InitiateAuthenticatedInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        message: z.string().min(1).max(5000),
+        locale: z.string().max(10).optional(),
+        urlLang: z.string().max(10).optional(),
+        ...InquiryBookingFieldsShape
+    })
+    .refine(refineInquiryDates, { message: 'checkOut must be after checkIn', path: ['checkOut'] });
 
 const GetThreadInputSchema = z.object({
     conversationId: z.string().uuid(),
@@ -455,6 +463,9 @@ export class ConversationService extends BaseService {
             guestPhone?: string;
             message: string;
             locale?: string;
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<InitiateAnonymousResult>> {
@@ -539,7 +550,10 @@ export class ConversationService extends BaseService {
                         anonymousPhone: validated.guestPhone,
                         anonymousEmailVerified: false,
                         status: 'PENDING_VERIFICATION' as const,
-                        locale
+                        locale,
+                        checkIn: validated.checkIn,
+                        checkOut: validated.checkOut,
+                        guests: validated.guests
                     } satisfies InsertConversation)
                     .returning();
 
@@ -594,6 +608,9 @@ export class ConversationService extends BaseService {
             message: string;
             locale?: string;
             urlLang?: string;
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<InitiateAuthenticatedResult>> {
@@ -664,6 +681,9 @@ export class ConversationService extends BaseService {
                                 userId: validatedActor.id,
                                 status: 'PENDING_OWNER' as const,
                                 locale,
+                                checkIn: validated.checkIn,
+                                checkOut: validated.checkOut,
+                                guests: validated.guests,
                                 createdById: validatedActor.id,
                                 updatedById: validatedActor.id
                             } satisfies InsertConversation)

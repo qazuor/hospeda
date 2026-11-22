@@ -165,6 +165,9 @@ async function handler(c: Context): Promise<Response> {
             guestPhone?: string;
             message: string;
             locale?: string;
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
         };
 
         const analyticsContext = await resolveAccommodationAnalyticsContext(body.accommodationId);
@@ -178,7 +181,10 @@ async function handler(c: Context): Promise<Response> {
             guestEmail: body.guestEmail,
             guestPhone: body.guestPhone,
             message: body.message,
-            locale: body.locale
+            locale: body.locale,
+            checkIn: body.checkIn,
+            checkOut: body.checkOut,
+            guests: body.guests
         });
 
         if (result.error) {
