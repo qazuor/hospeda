@@ -47,7 +47,8 @@ export const ManualPaymentRegistrationResponseSchema = z.strictObject({
 export const LateManualPaymentPeriodCaseSchema = z.enum([
     'WITHIN_PERIOD',
     'REIMPUTED',
-    'C5_FALLBACK'
+    'C5_FALLBACK',
+    'ORIGINAL_PERIOD'
 ]);
 
 /** What happens to one listing when the S7 return's coverage comes back (PB4/PB5/PB7/PB9). */
@@ -59,6 +60,7 @@ export const LateManualPaymentListingOutcomeSchema = z.enum([
     'PURGED',
     'MODERATED',
     'ALREADY_PUBLISHED',
+    'LOWERED_BY_SURPLUS',
     'DRAFT'
 ]);
 

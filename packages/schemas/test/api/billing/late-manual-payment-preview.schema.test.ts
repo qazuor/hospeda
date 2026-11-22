@@ -50,7 +50,7 @@ describe('HOS-1640 LateManualPaymentPreviewResponseSchema', () => {
         const value = {
             ...base,
             effect: 'S19',
-            periodCase: 'WITHIN_PERIOD',
+            periodCase: 'ORIGINAL_PERIOD',
             nextChargeOverdue: true,
             presence: null,
             s7Effects: null
