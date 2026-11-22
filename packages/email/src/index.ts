@@ -12,6 +12,8 @@
 export type { CreateEmailClientInput, EmailClient } from './client.js';
 // Client
 export { createEmailClient } from './client.js';
+export type { ConfigureEmailAssetsInput } from './email-assets.js';
+export { configureEmailAssets, resetEmailAssets, resolveEmailLogoUrl } from './email-assets.js';
 export type { RenderEmailBodiesInput, RenderedEmailBodies } from './render.js';
 // Rendering
 export { renderEmailBodies } from './render.js';

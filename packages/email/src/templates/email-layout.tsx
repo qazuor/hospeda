@@ -13,22 +13,20 @@ import {
 } from '@react-email/components';
 import { emailPalette } from '@repo/design-tokens';
 import type { ReactNode } from 'react';
+import { EMAIL_LOGO_PATH, EMAIL_PUBLIC_SITE_URL, resolveEmailLogoUrl } from '../email-assets.js';
 
-/**
- * Public site origin used for every absolute URL the layout renders.
- *
- * Hard-coded on purpose (HOS-2519 §5.1): templates do not pass `siteUrl` to the
- * layout, and the emails always point at production.
- */
-export const EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar';
+export { EMAIL_PUBLIC_SITE_URL };
 
 /**
  * Hosted PNG logo shown in the header (HOS-2519 OQ-1).
  *
- * Served from `apps/web/public/email/hospeda-logo@2x.png`. It only resolves once
- * that file reaches production; until then clients show the styled `alt` text.
+ * Served from `apps/web/public/email/hospeda-logo@2x.png`.
+ *
+ * This constant is the PRODUCTION default only. The layout renders
+ * `resolveEmailLogoUrl()`, which follows the origin the host app configured with
+ * `configureEmailAssets` (HOS-2540), so staging emails load the logo from staging.
  */
-export const EMAIL_LOGO_URL = `${EMAIL_PUBLIC_SITE_URL}/email/hospeda-logo@2x.png`;
+export const EMAIL_LOGO_URL = `${EMAIL_PUBLIC_SITE_URL}${EMAIL_LOGO_PATH}`;
 
 /** Rendered logo width in CSS pixels (the asset is 2x: 360x108). */
 export const EMAIL_LOGO_WIDTH = 180;
@@ -117,7 +115,7 @@ export function EmailLayout({ previewText, children, footerLink = 'none' }: Emai
                     <Row data-skip-in-text="true">
                         <Column style={styles.header}>
                             <Img
-                                src={EMAIL_LOGO_URL}
+                                src={resolveEmailLogoUrl()}
                                 width={EMAIL_LOGO_WIDTH}
                                 height={EMAIL_LOGO_HEIGHT}
                                 alt="Hospeda"
