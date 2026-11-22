@@ -126,12 +126,6 @@
         "radius": 6,
         "shadow": 5
     },
-    "apps/web/src/components/account/ProfileEditForm.module.css": {
-        "color": 4,
-        "font-size": 9,
-        "radius": 3,
-        "shadow": 2
-    },
     "apps/web/src/components/account/RecommendationsFeed.module.css": {
         "color": 1,
         "font-size": 15

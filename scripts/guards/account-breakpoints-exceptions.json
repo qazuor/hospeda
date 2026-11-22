@@ -23,9 +23,6 @@
     "apps/web/src/components/account/ProfileCompletion.module.css": {
         "media": 3
     },
-    "apps/web/src/components/account/ProfileEditForm.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/RecommendationsFeed.module.css": {
         "media": 2
     },

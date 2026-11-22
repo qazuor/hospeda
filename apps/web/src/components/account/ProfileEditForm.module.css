@@ -1,284 +1,99 @@
-/* ProfileEditForm.module.css */
-/* Scoped styles for the ProfileEditForm React island. */
-/* ALL values use CSS custom properties from global.css. */
+/* ProfileEditForm.module.css — layout only; every surface is a kit piece. */
 
 .form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-6, 24px);
+    gap: var(--space-5);
 }
-
-/* ── Section card ──────────────────────────────────────────────────────── */
-/* Canonical "section card" recipe — shared across /mi-cuenta pages via */
-/* AccountSection.module.css (BETA-143 5c). This is the source these values */
-/* were extracted from; keep visual parity with the shared module. */
-
-.section {
-    composes: card from "./AccountSection.module.css";
-}
-
-.sectionTitle {
-    composes: cardTitle from "./AccountSection.module.css";
-}
-
-/* ── Fields grid ───────────────────────────────────────────────────────── */
 
 .grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--space-4, 16px);
+    gap: var(--space-4);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 48rem) {
     .grid {
         grid-template-columns: 1fr 1fr;
     }
 
-    .fullWidth {
+    .full {
         grid-column: 1 / -1;
     }
 }
 
-/* ── Field ─────────────────────────────────────────────────────────────── */
-
-.field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 4px);
-}
-
-.label {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--core-foreground);
-}
-
-.required {
-    color: var(--destructive, oklch(0.6 0.2 25));
-    margin-left: 2px;
-}
-
-.input,
-.textarea {
-    width: 100%;
-    padding: var(--space-2, 8px) var(--space-3, 12px);
-    background-color: var(--core-background);
-    color: var(--core-foreground);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    transition:
-        border-color var(--duration-normal, 0.4s) ease,
-        box-shadow var(--duration-normal, 0.4s) ease;
-    box-sizing: border-box;
-}
-
-.input:focus-visible,
-.textarea:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px var(--brand-primary-a15);
-}
-
-.input.inputError,
-.textarea.inputError {
-    border-color: var(--destructive, oklch(0.6 0.2 25));
-}
-
-.input.inputError:focus-visible,
-.textarea.inputError:focus-visible {
-    box-shadow: 0 0 0 3px var(--destructive-a15);
-}
-
-.textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.errorMsg {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--destructive, oklch(0.6 0.2 25));
-    margin: 0;
-}
-
-.hint {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground);
-    margin: 0;
-}
-
-/* ── Public-profile consent block (HOS-375 §6.7) ───────────────────────── */
-/* Sits BELOW `.grid` inside the social section, so it spans the full card    */
-/* width at every breakpoint instead of becoming a third grid cell. The       */
-/* separator is what stops "publish these on the internet" from reading as    */
-/* just another field.                                                       */
-
-.consentBlock {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 8px);
-    margin-top: var(--space-4, 16px);
-    padding-top: var(--space-4, 16px);
-    border-top: 1px solid var(--border);
-}
-
-.checkboxLabel {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-2, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--core-foreground);
-    cursor: pointer;
-}
-
-.checkbox {
-    /* Nudged down so the box aligns with the cap height of the first line
-       rather than the line box, which reads misaligned on a two-line label. */
-    margin-top: 2px;
-    flex-shrink: 0;
-    accent-color: var(--brand-primary);
-    cursor: pointer;
-}
-
-.consentHelp {
-    composes: hint;
-    /* Indented to the label's text so the consent copy reads as belonging to
-       the checkbox rather than to the section. */
-    padding-left: calc(var(--space-2, 8px) + 1rem);
-    max-width: 65ch;
-}
-
-/* ── Avatar preview (T-036) ────────────────────────────────────────────── */
-
 .avatarRow {
     display: flex;
     align-items: center;
-    gap: var(--space-4, 16px);
-    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-block-end: var(--space-4);
 }
 
-.avatarPreviewWrap {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2px solid var(--border);
-    background-color: var(--surface-warm);
-    flex-shrink: 0;
+.avatarPreview {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    width: 5rem;
+    height: 5rem;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background: var(--muted);
+    color: var(--core-foreground);
+    font: var(--app-section);
 }
 
-.avatarPreviewImg {
+.avatarImg {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
-}
-
-.avatarPreviewInitials {
-    font-family: var(--font-heading);
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--surface-warm-foreground);
-    background-color: var(--brand-primary);
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
 }
 
 .avatarActions {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 8px);
+    align-items: flex-start;
+    gap: var(--space-2);
 }
 
-.avatarUploadBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-    padding: var(--space-2, 8px) var(--space-3, 12px);
-    background-color: var(--core-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-foreground);
-    cursor: pointer;
-    transition:
-        background-color var(--duration-normal, 0.4s) ease,
-        border-color var(--duration-normal, 0.4s) ease;
-}
-
-.avatarUploadBtn:hover {
-    background-color: var(--surface-warm);
-    border-color: var(--brand-primary);
-}
-
-.avatarUploadBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.avatarHiddenInput {
-    display: none;
-}
-
-.avatarUploading {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
+.avatarStatus {
+    margin: 0;
+    font: var(--app-meta);
     color: var(--core-muted-foreground);
 }
 
-/* ── Form feedback banner ──────────────────────────────────────────────── */
-
-.feedbackBanner {
-    padding: var(--space-3, 12px) var(--space-4, 16px);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
+.hiddenInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
-.feedbackBannerSuccess {
-    background-color: var(--brand-primary-a10);
-    color: var(--brand-primary);
-    border: 1px solid var(--brand-primary-a25);
-}
-
-.feedbackBannerError {
-    background-color: var(--destructive-a10);
-    color: var(--destructive, oklch(0.6 0.2 25));
-    border: 1px solid var(--destructive-a25);
-}
-
-/* ── Submit row ────────────────────────────────────────────────────────── */
-
-.submitRow {
+.consent {
     display: flex;
-    justify-content: flex-end;
-    gap: var(--space-3, 12px);
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
 }
 
-.submitBtn {
-    composes: primary from "./AccountButton.module.css";
+.consentHelp {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
 }
 
-.securityLink {
-    display: inline-block;
-    font-weight: 600;
-    color: var(--brand-primary);
-    text-decoration: underline;
-    text-underline-offset: 3px;
+.securityBody {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.securityText {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-foreground);
 }

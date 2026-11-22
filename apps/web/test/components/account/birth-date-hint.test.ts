@@ -15,14 +15,16 @@ const profileCompletion = readFileSync(
 );
 
 const profileEdit = readFileSync(
-    resolve(__dirname, '../../../src/components/account/ProfileEditPersonalSection.tsx'),
+    resolve(__dirname, '../../../src/components/account/ProfileEditIdentitySection.tsx'),
     'utf8'
 );
 
 function birthDateBlock(src: string): string {
     // Pull the JSX block that starts at `id="(pc-)?birthDate"` and runs
     // through the closing tag so the assertions live near the input.
-    const match = src.match(/id=(?:"pc-birthDate"|"birthDate")[\s\S]*?\/>/);
+    const match = src.match(
+        /id=(?:"pc-birthDate"|"birthDate")[\s\S]*?\/>|name="birthDate"[\s\S]*?\/>/
+    );
     return match?.[0] ?? '';
 }
 
@@ -47,6 +49,12 @@ describe('birth-date input (SPEC-113 dd/mm/yyyy hint)', () => {
     });
 
     it('ProfileEdit hint mentions dd/mm/yyyy', () => {
-        expect(profileEdit).toContain('dd/mm/yyyy');
+        // The copy lives in the catalog; the section reads it through this key.
+        expect(profileEdit).toContain('account.editProfile.fields.birthDateHint');
+        const es = readFileSync(
+            resolve(__dirname, '../../../../../packages/i18n/src/locales/es/account.json'),
+            'utf8'
+        );
+        expect(es).toMatch(/"birthDateHint": "[^"]*dd\/mm\/yyyy/);
     });
 });

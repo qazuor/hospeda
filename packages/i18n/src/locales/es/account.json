@@ -1086,6 +1086,9 @@
         "editProfile": {
             "title": "Editar perfil",
             "description": "Actualizá tu información personal y preferencias de cuenta.",
+            "identitySection": "Tu identidad",
+            "contactSection": "Contacto y ubicación",
+            "aboutSection": "Sobre vos",
             "avatarSection": "Foto de perfil",
             "personalSection": "Información personal",
             "extrasSection": "Más sobre vos",
