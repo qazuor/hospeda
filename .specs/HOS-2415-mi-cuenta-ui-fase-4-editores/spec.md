@@ -51,7 +51,7 @@ smokeLabels:
 
 ## 1. Summary
 
-Phase 4 unifies the accommodation editor and the commerce (venue / experience)
+Phase 4 unifies the accommodation editor and the listing (venue / experience)
 editor VISUALLY, following option A of the audit («unify the field and visual
 layer») plus the three sibling fusions the owner pulled into the epic
 (location, contact, hub). It does not unify the form engines (D7: a single form
@@ -64,7 +64,7 @@ engine is a post-epic issue).
 - **Section content, for 24 pages:** field kit, MediaManager (visual), Repeater,
   HoursEditor, translations look, reputation, and the location / contact / hub
   fusions. The remaining 8 sections (accommodation calendar, capacity-price,
-  policies, SEO, AI questions; commerce night info, promotions, AI questions)
+  policies, SEO, AI questions; listing night info, promotions, AI questions)
   get the new shell here and their content in phase 5 (HOS-2503, HOS-2504).
 
 ## 2. Problem
@@ -77,7 +77,7 @@ From the audit and `origin/staging` `60a5ac14ca`:
   nav disappears and mobile users must return to the hub for each section.
 - **No fixed save bar, three save models with no signal.** Accommodation uses
   `ActionBar.client` (59 lines) at the bottom; seven sections save the page,
-  photos/FAQ/calendar/reputation/video save per action; commerce has a diff +
+  photos/FAQ/calendar/reputation/video save per action; listing has a diff +
   guard form, carta/menú/eventos with their own Guardar and no guard
   (`VenueMenuManager.client.tsx` 1,589 lines, bug #20), and per-action photos,
   FAQ and promotions.
@@ -129,10 +129,10 @@ From the audit and `origin/staging` `60a5ac14ca`:
   data/price/services/practical (HOS-2498), AI questions + translations
   (HOS-2500). Here they get the shared visual layer only (MediaManager skin,
   Repeater, field kit, translation look).
-- **NG-3.** Unifying the translation MODEL (commerce to «generate with AI +
+- **NG-3.** Unifying the translation MODEL (listing to «generate with AI +
   edit»): separate spec (D10 «traducciones: mismo aspecto»).
 - **NG-4.** Content of accommodation calendar, capacity-price, policies, SEO, AI
-  questions, and commerce night info, promotions, AI questions (phase 5). They
+  questions, and listing night info, promotions, AI questions (phase 5). They
   DO get the shell, nav and save signal here.
 - **NG-5.** Event and post editors under `eventos/[id]/editar` and
   `publicaciones/[id]/editar` (HOS-2505, phase 5).
@@ -149,17 +149,17 @@ From the audit and `origin/staging` `60a5ac14ca`:
 |---|---|---|
 | `layouts/EditorShellLayout.astro` | 146 | wraps `AccountLayout`; `AccountPageHeader`, `Breadcrumbs`, `EditorRouteNav`; one `@media (min-width: 1100px)` |
 | `layouts/EditorSectionLayout.astro` | 68 | accommodation section wrapper |
-| `layouts/ListingEditorSectionLayout.astro` | 64 | commerce section wrapper |
+| `layouts/ListingEditorSectionLayout.astro` | 64 | listing section wrapper |
 | `components/host/editor/EditorHub.astro` | 196 | hub, already shared by both editors |
 | `components/host/editor/EditorRouteNav.astro` | 158 | route nav column |
 | `components/host/editor/EditorSectionNav.client.tsx` | 153 | section nav island |
 | `components/host/editor/ActionBar.client.tsx` | 59 | bottom save bar (accommodation) |
 | `lib/editor/editor-registry` | — | section registry + visibility |
-| `components/listing/HiddenByBusinessLinesSummary.client.tsx` | 229 | commerce hub notice |
+| `components/listing/HiddenByBusinessLinesSummary.client.tsx` | 229 | listing hub notice |
 
 No completeness meter exists as a component; completeness logic lives in
 `use-publish-ready-prompt.ts` (accommodation) and inside `ListingEditor.client.tsx`
-and `listing/editor/BasicInfoSection.client.tsx` (commerce).
+and `listing/editor/BasicInfoSection.client.tsx` (listing).
 
 ### 5.2 Section inventory and phase assignment
 
@@ -178,7 +178,7 @@ Accommodation (`propiedades/[id]/editar/*`, `EditorSectionLayout`):
 | `reputacion` | `ExternalReputationSection` 1,101 | kit, split, distinct busy/idle | 2515 |
 | `calendario`, `capacidad-precio`, `politicas`, `seo`, `preguntas-ia` | 826 / 200 / 132 / 73 / `AiQuestionsPanel` 536 | shell + save signal only | 2486, 2487 (content: HOS-2503) |
 
-Commerce (`comercio/[vertical]/[id]/editar/*`, `ListingEditorSectionLayout`,
+Listing (`comercio/[vertical]/[id]/editar/*`, `ListingEditorSectionLayout`,
 most pages mount `ListingEditor.client.tsx`):
 
 | Page | Component today (lines) | Phase-4 work | Child |
@@ -201,7 +201,7 @@ most pages mount `ListingEditor.client.tsx`):
 | `de-noche`, `promociones`, `preguntas-ia` | 419 / `VenuePromotionsManager` 489 / `AiQuestionsPanel` | shell + save signal only | 2486, 2487 (content: HOS-2504, HOS-2503) |
 
 Totals: 32 editor pages get the shell; 24 get their content migrated here
-(9 accommodation including the hub, 15 commerce including the hub); 8 move to
+(9 accommodation including the hub, 15 listing including the hub); 8 move to
 phase 5.
 
 ### 5.3 Mechanisms to reuse
@@ -228,9 +228,9 @@ the editor registry, `sectionHelpAnchor` (`lib/help/help-entry`).
   (`complete | incomplete | locked | hidden`), and «n/N». Locked sections show
   a lock and stay navigable (the section renders LockedState).
 - **Hub (fusion IN).** One `EditorHub` for both editors, same width, rows of
-  56px (the audit's good pattern), each row with a `StatusPill`; the commerce
+  56px (the audit's good pattern), each row with a `StatusPill`; the listing
   badge CSS copy is deleted. `CompletenessMeter` reads the completeness the
-  editors already compute (accommodation `use-publish-ready-prompt`, commerce
+  editors already compute (accommodation `use-publish-ready-prompt`, listing
   the `ListingEditor` checklist); a shared pure function maps both to
   `{ done, total, missing: SectionId[] }`, and each missing item links to its
   section.
@@ -273,7 +273,7 @@ the editor registry, `sectionHelpAnchor` (`lib/help/help-entry`).
 - One visual layer (`MediaManager` skin + `PhotoGrid` tile) applied to
   `PhotoSection` and `MediaSection`, each keeping its own logic hooks.
 - Upload states, `useConfirm` before delete (HOS-2429), `AutoSaveChip`, alt-text
-  warning visible in both. Reorder and alt for commerce are NOT added here (that
+  warning visible in both. Reorder and alt for listing are NOT added here (that
   is HOS-2495, post_v1).
 - Plan-limit loading never hangs (HOS-2442 behaviour pinned) and an
   entitlement error renders LockedState.
@@ -419,7 +419,7 @@ point); `host-venue`.
 - **R-4.** Map on two new surfaces adds bundle weight. Mitigation: `client:visible`
   and the existing lazy chunk; no new library (NG-7).
 - **R-5.** Help slugs drift during fusions. Mitigation: AC-13.
-- **R-6.** `ListingEditor.client.tsx` (1,201) dispatches all commerce sections;
+- **R-6.** `ListingEditor.client.tsx` (1,201) dispatches all listing sections;
   touching it for the save model risks conflicts with every other phase-4 PR.
   Mitigation: PR-1 lands the registry `saveModel` and the shell first; later
   PRs only touch their section renderer.
@@ -446,7 +446,7 @@ point); `host-venue`.
   in phase 3 (HOS-2414). No editor work depends on it.
 
 Assumptions:
-- **A-1.** Menú del día and eventos (commerce) are fully done here (HOS-2487 +
+- **A-1.** Menú del día and eventos (listing) are fully done here (HOS-2487 +
   HOS-2490 already cover them); HOS-2504 drops them and keeps night info,
   promotions and the `comercio/nuevo` 404.
 - **A-2.** Reputation lives in HOS-2515 only; HOS-2503 drops it.
@@ -465,7 +465,7 @@ All PRs target `epic/HOS-2409-mi-cuenta-ui`, at most 2 open, titles
 | PR | Scope | Children |
 |---|---|---|
 | PR-1 | Shell: EditorSectionNav, EditorSwitcher, shared hub + CompletenessMeter, PageHeader, registry `saveModel`, StickySaveBar/AutoSaveChip wiring for all 32 pages | 2486, 2493, 2499, 2487 (wiring) |
-| PR-2 | Field kit on accommodation + commerce form sections; contact fusion; reputation | 2488, 2497, 2515 |
+| PR-2 | Field kit on accommodation + listing form sections; contact fusion; reputation | 2488, 2497, 2515 |
 | PR-3 | Location fusion with map; HoursEditor | 2496, 2491 |
 | PR-4 | MediaManager skin; translations look | 2489, 2492 |
 | PR-5 | Repeater; FAQ ×2, carta, menú del día, eventos to the bar with guard | 2490, 2487 (managers) |

@@ -109,7 +109,7 @@ only when its last consumer goes, HOS-2508).
 - Translated `aria-label`s; back is a labelled `PageHeader back`.
 
 **Properties — `propiedades` (HOS-2483)**
-- `ListingCard` (shared with commerce): one primary action visible, the other
+- `ListingCard` (shared with listing): one primary action visible, the other
   four in a `Menu`; status as `StatusPill`.
 - One `Alert` per state (preparing host, trial, cap reached in `info` tone, not
   error: HOS-2425/2443).
@@ -118,7 +118,7 @@ only when its last consumer goes, HOS-2508).
 - ✗ `PropertyCard.astro` here (it has 11 consumers; the others go in phases 4-5),
   `AccountPagination.astro`, shared `EmptyState.astro`, `AccountButton.module.css`.
 
-**Commerce lists — `comercio` (HOS-2484)**
+**Listing lists — `comercio` (HOS-2484)**
 - Two nav items «Mis locales» and «Mis experiencias» (D20) pointing at
   `mi-cuenta/comercio/?vertical=venue|experience` (A-4); each filters its
   vertical; the group header follows `suppressHeaderWhenSingle`.

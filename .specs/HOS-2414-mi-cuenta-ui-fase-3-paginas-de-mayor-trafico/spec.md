@@ -29,7 +29,7 @@ related:
   - HOS-2418   # phase-1 fix: host dashboard links to the guest inbox
   - HOS-2419   # phase-1 fix: chat bubbles inverted
   - HOS-2420   # phase-1 fix: «Sin colección» filters only the current page
-  - HOS-2421   # phase-1 fix: commerce false empty
+  - HOS-2421   # phase-1 fix: listing false empty
   - HOS-2422   # phase-1 fix: guest inbox false empty
   - HOS-2423   # phase-1 fix: collection page lacks venues/experiences
   - HOS-2424   # phase-1 fix: dashboard «0» on failure
@@ -62,7 +62,7 @@ It changes page CONTENT for the first time: phase 2 only changed the chrome.
 
 - **16 existing pages** move to the kit: general dashboard, host dashboard,
   edit profile, preferences, favorites, collection detail, both inboxes with
-  their threads, properties, commerce list, subscription, add-ons, provider
+  their threads, properties, listing list, subscription, add-ons, provider
   detail and the partner page.
 - **2 new pages**: a venue-owner dashboard and an experience-owner dashboard
   (D19 «tableros por vertical»). The partner dashboard reuses the partner page.
@@ -86,7 +86,7 @@ From the audit (staging `b66bf18705`) and re-verified on `origin/staging`
   `propiedades/index.astro` is 629 lines over `PropertyCard.astro` (585 lines,
   11 consumers); `comercio/index.astro` is 612 lines.
 - **Failures read as empty or zero** on the dashboard, the guest inbox and the
-  commerce list (phase-1 fixes HOS-2421/2422/2424 patch the logic; this phase
+  listing list (phase-1 fixes HOS-2421/2422/2424 patch the logic; this phase
   makes the UI unable to regress by using `AsyncRegion`).
 - **Inconsistent gates.** The host dashboard shows a raw «Entitlement required»
   to a host without a plan (HOS-2214); favorites shows two upsells and a
@@ -130,7 +130,7 @@ From the audit (staging `b66bf18705`) and re-verified on `origin/staging`
 
 ## 4. Non-goals
 
-- **NG-1.** Editors (accommodation and commerce sections, hub, nav, save bar):
+- **NG-1.** Editors (accommodation and listing sections, hub, nav, save bar):
   phase 4 (HOS-2415).
 - **NG-2.** P2/P3 pages: phase 5 (HOS-2416). Newsletter and search history are
   touched here ONLY to remove their own switch (G-5); their full migration is
@@ -239,7 +239,7 @@ owns the pages it lists there.
 | ListRow / DataList | HOS-2473 / HOS-2481 | rows in a grid from 40rem container, stacked below; > 2 actions → Menu |
 | Avatar | HOS-2473 | initials fallback (replaces 4 copies) |
 | Menu (overflow) | HOS-2483 | WAI-ARIA menu button, labelled trigger |
-| ListingCard | HOS-2483 | shared with commerce; vertical as prop |
+| ListingCard | HOS-2483 | shared with listing; vertical as prop |
 | EntityCard | HOS-2480 | favorites, collections, recommendations (phase 5) |
 | ConversationThread + MessageBubble + Composer | HOS-2481 | `viewer: 'guest' \| 'owner'`; optimistic send |
 | KeyValueList | HOS-2485 | `<dl>` |
@@ -306,7 +306,7 @@ was its last consumer (`AccountStatsGrid`, `AccountSectionCards`,
   one `h1` from `PageHeader`, uses `Section` for every surface, and imports none
   of the §6.3 legacy primitives (checked by a test that greps the page closure).
 - **AC-2.** Every async region in scope is an `AsyncRegion`. Tests force a fetch
-  failure on the dashboard stats, guest inbox, owner inbox, commerce list and
+  failure on the dashboard stats, guest inbox, owner inbox, listing list and
   favorites and assert an `ErrorState` with retry, never an empty state or «0».
 - **AC-3.** Host without plan, favorites without plan, history row without plan
   and a dashboard widget without entitlement each render `LockedState`; a test
@@ -318,8 +318,8 @@ was its last consumer (`AccountStatsGrid`, `AccountSectionCards`,
   account setting; newsletter and history link to Preferences.
 - **AC-6.** Favorites: the «Sin colección» filter paginates server-side (e2e
   from HOS-2420 kept green); «Crear colección» and «Mover» agree on the lock.
-- **AC-7.** Properties and commerce: no silent cap (e2e with > 50 seeded
-  listings shows a next page); one primary action per card; commerce makes one
+- **AC-7.** Properties and listing: no silent cap (e2e with > 50 seeded
+  listings shows a next page); one primary action per card; listing makes one
   list request (network assertion).
 - **AC-8.** Nav shows «Mis locales», «Mis experiencias» and «Complementos» per
   role; add-ons highlights its own item; the subscription tabs are `NavTabs`.
@@ -442,7 +442,7 @@ All PRs target `epic/HOS-2409-mi-cuenta-ui`, at most 2 open at once, titles
 | PR-2 | Edit profile, preferences consolidation, provider detail | 2478, 2479, 2472 | staging |
 | PR-3 | DataList, ConversationThread, Composer + both inboxes | 2481, 2482 | staging |
 | PR-4 | EntityCard + favorites and collection split | 2480 | staging |
-| PR-5 | Menu, ListingCard, KeyValueList, PlanSummary, Stepper + properties, commerce lists + nav, subscription and add-ons | 2483, 2484, 2485 | billing |
+| PR-5 | Menu, ListingCard, KeyValueList, PlanSummary, Stepper + properties, listing lists + nav, subscription and add-ons | 2483, 2484, 2485 | billing |
 | PR-6 | Venue and experience stats endpoints (service, route, tests) + venue, experience and partner dashboards | 2475, 2476, 2477 | staging |
 
 Six PRs, one over the epic's «4-5 per phase» guideline: PR-5 bundles every

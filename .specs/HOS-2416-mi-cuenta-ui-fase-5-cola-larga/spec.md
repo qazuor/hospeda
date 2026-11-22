@@ -9,7 +9,7 @@ children:
   - HOS-2501   # profile & settings long tail + focus pages (FocusShell)
   - HOS-2502   # reviews, alliances, directory, benefit usages, AI assistants
   - HOS-2503   # host editor sections: calendar, capacity, policies, SEO, AI questions (reputation moved to HOS-2515)
-  - HOS-2504   # commerce: night info, promotions, `comercio/nuevo` 404 (+ `no-encontrado`)
+  - HOS-2504   # listing: night info, promotions, `comercio/nuevo` 404 (+ `no-encontrado`)
   - HOS-2505   # events, posts and promotions triplets + provider tabs
   - HOS-2506   # partner logo upload with preview (D13)
   - HOS-2507   # exclusive deals page to the kit (D21)
@@ -51,7 +51,7 @@ turning both CSS guards into hard rules with empty exception lists.
   `no-encontrado`.
 - **8 editor sections** whose content phase 4 left (they already have the new
   shell): accommodation calendar, capacity-price, policies, SEO, AI questions;
-  commerce night info, promotions, AI questions.
+  listing night info, promotions, AI questions.
 - **Retirement**: zero imports of the legacy primitives, zero entries in both
   exception lists, zero dead CSS.
 
@@ -152,13 +152,13 @@ turning both CSS guards into hard rules with empty exception lists.
 | acc. `capacidad-precio` | `forms/CapacityPricingForm` 200 | field kit, InputGroup «ARS», no duplicate legends | 2503 |
 | acc. `politicas` | `forms/PoliciesForm` 132 | field kit | 2503 |
 | acc. `seo` | `forms/SeoForm` 73 | field kit, Textarea counter | 2503 |
-| acc. + commerce `preguntas-ia` | `AiQuestionsPanel` 536 (shared) | kit primitives, split | 2503 |
-| commerce `de-noche` | `NightInfoSection` 419 | FormSection + segmented Tabs | 2504 |
-| commerce `promociones` | `VenuePromotionsManager` 489 | DataList, StatusPill, Button, Skeleton, ConfirmDialog, LockedState when the plan lacks promotions | 2504 |
+| acc. + listing `preguntas-ia` | `AiQuestionsPanel` 536 (shared) | kit primitives, split | 2503 |
+| listing `de-noche` | `NightInfoSection` 419 | FormSection + segmented Tabs | 2504 |
+| listing `promociones` | `VenuePromotionsManager` 489 | DataList, StatusPill, Button, Skeleton, ConfirmDialog, LockedState when the plan lacks promotions | 2504 |
 
 (`preguntas-ia` is one shared component serving two pages; 8 pages in total.)
 
-Assignment notes: reputation left HOS-2503 for HOS-2515 (owner 20/11); commerce
+Assignment notes: reputation left HOS-2503 for HOS-2515 (owner 20/11); listing
 menú del día and eventos are done in phase 4 (HOS-2415 A-1), so HOS-2504 keeps
 only night info, promotions and the 404s.
 
@@ -331,7 +331,7 @@ rules say.
 | PR-1 | FocusShell + profile/settings long tail | 2501 |
 | PR-2 | Tourist long tail + exclusive deals (RatingStars, FilterChips, CopyField) | 2502, 2507 |
 | PR-3 | MyContentList, ContentCard, events/posts/promotions triplets, provider tabs | 2505 |
-| PR-4 | Remaining editor sections (host and commerce), 404s, `no-encontrado` | 2503, 2504 |
+| PR-4 | Remaining editor sections (host and listing), 404s, `no-encontrado` | 2503, 2504 |
 | PR-5 | Partner logo upload | 2506 |
 | PR-6 | Retirement + guards to zero (last, after every other PR of phases 3-5) | 2508 |
 
@@ -349,7 +349,7 @@ editor shell). HOS-2508 always goes last.
 | 3 | HOS-2507 | Exclusive deals to the kit | D21 | area-web | PR-2 |
 | 4 | HOS-2505 | Events, posts, promotions and provider tabs | long tail | area-web | PR-3 |
 | 5 | HOS-2503 | Remaining host sections (calendar, capacity, policies, SEO, AI questions); reputation removed, it lives in HOS-2515 (phase 4) | long tail | area-web | PR-4 |
-| 6 | HOS-2504 | Remaining commerce (night info, promotions, 404 of `comercio/nuevo`) plus `mi-cuenta/no-encontrado`; menú del día and eventos removed, they live in HOS-2487/HOS-2490 (phase 4) | long tail | area-web | PR-4 |
+| 6 | HOS-2504 | Remaining listing (night info, promotions, 404 of `comercio/nuevo`) plus `mi-cuenta/no-encontrado`; menú del día and eventos removed, they live in HOS-2487/HOS-2490 (phase 4) | long tail | area-web | PR-4 |
 | 7 | HOS-2506 | Partner logo upload with preview (`@repo/media`, `logoUrl`) | D13 | area-web | PR-5 |
 | 8 | HOS-2508 | Retire legacy components and CSS; guards to zero | closes the epic | area-web | PR-6 |
 
