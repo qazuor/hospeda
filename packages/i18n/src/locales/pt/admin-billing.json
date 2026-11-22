@@ -2841,7 +2841,7 @@
             "error": "Não foi possível ler as parcelas.",
             "empty": "Não há parcelas declaradas não pagas.",
             "installment": "Parcela do período que começa em {date}",
-            "review": "Revisar",
+            "review": "Conferir",
             "previewLoading": "Calculando o que acontece ao registrar…",
             "proofRef": "Referência do comprovante (opcional)",
             "confirm": "Registrar o pagamento",
