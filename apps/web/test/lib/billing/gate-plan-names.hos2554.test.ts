@@ -7,6 +7,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FetchPlansResult, PublicPlanData } from '../../../src/lib/billing/fetch-plans';
 import {
+    CATALOG_FAILURE_TTL_MS,
+    CATALOG_TTL_MS,
     clearGatePlanCatalogCache,
     getGatePlanNames
 } from '../../../src/lib/billing/gate-plan-names';
@@ -59,11 +61,33 @@ describe('getGatePlanNames (HOS-2554)', () => {
         expect(fetchPublicPlans).toHaveBeenCalledTimes(1);
     });
 
-    it('names no plan on a failed read and retries on the next call', async () => {
-        fetchPublicPlans.mockResolvedValueOnce({ ok: false, error: 'down' });
-        expect(await getGatePlanNames({ entitlement: 'x' })).toEqual([]);
-        await Promise.resolve();
-        fetchPublicPlans.mockResolvedValueOnce({ ok: true, plans: [plan('B', ['x'])] });
+    it('names no plan on a failed read and reuses the failure for the short window only', async () => {
+        // Arrange
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-11-22T12:00:00Z'));
+        fetchPublicPlans.mockResolvedValue({ ok: false, error: 'down' });
+
+        // Act: a page of many cards while the API is down
+        const first = await getGatePlanNames({ entitlement: 'x' });
+        await Promise.all([1, 2, 3, 4, 5].map(() => getGatePlanNames({ entitlement: 'x' })));
+        vi.advanceTimersByTime(CATALOG_FAILURE_TTL_MS - 1);
+        await getGatePlanNames({ entitlement: 'x' });
+
+        // Assert: one fetch for the whole failure window
+        expect(first).toEqual([]);
+        expect(fetchPublicPlans).toHaveBeenCalledTimes(1);
+
+        // Act: past the failure window the API has recovered
+        vi.advanceTimersByTime(2);
+        fetchPublicPlans.mockResolvedValue({ ok: true, plans: [plan('B', ['x'])] });
+
+        // Assert
         expect(await getGatePlanNames({ entitlement: 'x' })).toEqual(['B']);
+        expect(fetchPublicPlans).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps the failure window much shorter than the success window', () => {
+        expect(CATALOG_FAILURE_TTL_MS).toBeLessThan(CATALOG_TTL_MS);
+        expect(CATALOG_FAILURE_TTL_MS).toBeGreaterThan(0);
     });
 });
