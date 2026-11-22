@@ -34,7 +34,7 @@ describe('AccountSidebar', () => {
     });
 
     it('opens the group that holds the active page and marks the item with aria-current', () => {
-        const view = viewFor(['HOST'], 'propiedades');
+        const view = viewFor(['HOST', 'EDITOR'], 'propiedades');
         const { container } = render(
             <AccountSidebar
                 view={view}
@@ -70,7 +70,6 @@ describe('AccountSidebar', () => {
 
     it.each([
         'publica',
-        'partner',
         'aliados'
     ])('opens the first group when the page %s matches no nav item', (section) => {
         const view = viewFor(['HOST'], section);
@@ -145,8 +144,8 @@ describe('AccountSidebar', () => {
     });
 });
 
-describe('AccountSidebar: personal and area pages (HOS-2551)', () => {
-    it('on a personal page shows «Mis áreas» on top, then only the personal entries', () => {
+describe('AccountSidebar: personal and business zones (HOS-2551)', () => {
+    it('on a personal page shows Inicio, Mi perfil and Mis viajes, with no back link', () => {
         const { container } = render(
             <AccountSidebar
                 view={viewFor(['HOST'], 'editar')}
@@ -155,52 +154,52 @@ describe('AccountSidebar: personal and area pages (HOS-2551)', () => {
         );
         const nav = container.querySelector('[data-account-sidebar]') as Element;
         expect(nav).toHaveAttribute('data-nav-mode', 'personal');
+        expect(nav.querySelector('[data-back-link]')).toBeNull();
         const links = [...nav.querySelectorAll('a')];
-        expect(links[0]).toHaveAttribute('data-areas-link');
         expect(links[0]).toHaveAttribute('href', '/es/mi-cuenta/');
-        expect(links[0]).toHaveTextContent('Mis áreas');
-        expect(links.slice(1).map((link) => link.getAttribute('href'))).toEqual([
-            '/es/mi-cuenta/editar/',
-            '/es/mi-cuenta/suscripcion/',
-            '/es/mi-cuenta/preferencias/',
-            '/es/mi-cuenta/newsletter/',
-            '/es/mi-cuenta/asistentes-ia/',
-            '/es/mi-cuenta/novedades/',
-            '/es/mi-cuenta/ayuda/'
-        ]);
-        expect(nav.querySelector('details')).toBeNull();
+        expect(links[0]).toHaveTextContent('Inicio');
+        expect(screen.getByText('Mi perfil')).toBeInTheDocument();
+        expect(screen.getByText('Mis viajes')).toBeInTheDocument();
+        const hrefs = links.map((link) => link.getAttribute('href'));
+        expect(hrefs).toContain('/es/mi-cuenta/asistentes-ia/');
+        expect(hrefs).toContain('/es/mi-cuenta/favoritos/');
+        expect(hrefs).not.toContain('/es/mi-cuenta/propiedades/');
     });
 
-    it('on an area page shows no «Mis áreas» link and no personal entry', () => {
+    it('on a business page shows «← Mi cuenta» on top and only the verticals', () => {
         const { container } = render(
             <AccountSidebar
-                view={viewFor(['HOST'], 'propiedades')}
+                view={viewFor(['HOST', 'EDITOR'], 'propiedades')}
                 locale="es"
             />
         );
         const nav = container.querySelector('[data-account-sidebar]') as Element;
-        expect(nav).toHaveAttribute('data-nav-mode', 'areas');
-        expect(nav.querySelector('[data-areas-link]')).toBeNull();
-        const hrefs = [...nav.querySelectorAll('a')].map((link) => link.getAttribute('href'));
+        expect(nav).toHaveAttribute('data-nav-mode', 'business');
+        const links = [...nav.querySelectorAll('a')];
+        expect(links[0]).toHaveAttribute('data-back-link');
+        expect(links[0]).toHaveAttribute('href', '/es/mi-cuenta/');
+        expect(links[0]).toHaveTextContent('Mi cuenta');
+        const hrefs = links.map((link) => link.getAttribute('href'));
         expect(hrefs).not.toContain('/es/mi-cuenta/editar/');
-        expect(hrefs).not.toContain('/es/mi-cuenta/ayuda/');
-        expect(hrefs).not.toContain('/es/mi-cuenta/novedades/');
+        expect(hrefs).not.toContain('/es/mi-cuenta/favoritos/');
+        expect(
+            [...nav.querySelectorAll('details[data-nav-group]')].map((el) =>
+                el.getAttribute('data-nav-group')
+            )
+        ).toEqual(['anfitrion', 'editorial']);
     });
 
-    it('a pure tourist sees the tourist items as a flat list without a group title', () => {
-        const view = viewFor(['USER'], 'favoritos');
+    it('a pure tourist sees no AI assistants and no business vertical', () => {
         const { container } = render(
             <AccountSidebar
-                view={view}
+                view={viewFor(['USER'], 'mi-cuenta')}
                 locale="es"
             />
         );
-        expect(container.querySelector('details')).toBeNull();
-        expect(screen.queryByText('Área turista')).toBeNull();
-        expect(container.querySelector('a[aria-current="page"]')).toHaveAttribute(
-            'href',
-            '/es/mi-cuenta/favoritos/'
-        );
+        const hrefs = [...container.querySelectorAll('a')].map((link) => link.getAttribute('href'));
+        expect(hrefs).not.toContain('/es/mi-cuenta/asistentes-ia/');
+        expect(hrefs).not.toContain('/es/mi-cuenta/host-dashboard/');
+        expect(hrefs).toContain('/es/mi-cuenta/favoritos/');
     });
 });
 

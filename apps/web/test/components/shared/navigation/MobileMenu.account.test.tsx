@@ -112,7 +112,7 @@ function openAccountMenu() {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
+describe('MobileMenu — account block (HOS-131 §6.5, HOS-2551)', () => {
     beforeEach(() => {
         sessionStorage.clear();
     });
@@ -122,7 +122,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         sessionStorage.clear();
     });
 
-    it('shows the identity "Mi cuenta" link, Favoritos, and Suscripción while permissions are loading (no gating)', () => {
+    it('shows the identity "Mi cuenta" link while permissions are loading, and no profile or favorites link (HOS-2551)', () => {
         global.fetch = vi.fn(
             () =>
                 new Promise(() => {
@@ -133,9 +133,13 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         renderMenu();
         openAccountMenu();
 
-        expect(screen.getByRole('link', { name: /mi cuenta/i })).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: /^favoritos$/i })).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: /^suscripción$/i })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /mi cuenta/i })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/'
+        );
+        expect(screen.queryByRole('link', { name: /^favoritos$/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /^suscripción$/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /asistentes de ia/i })).not.toBeInTheDocument();
     });
 
     it('hides the business shortcut while permissions are loading (fail-closed)', () => {
@@ -150,9 +154,8 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         openAccountMenu();
 
         expect(
-            screen.queryByRole('link', { name: /panel del anfitrión/i })
+            screen.queryByRole('link', { name: /administrar alojamientos/i })
         ).not.toBeInTheDocument();
-        expect(screen.queryByRole('link', { name: /mi comercio/i })).not.toBeInTheDocument();
     });
 
     it('does NOT show non-curated sidebar-only links (reviews, preferences)', () => {
@@ -170,7 +173,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         expect(screen.queryByRole('link', { name: /^preferencias$/i })).not.toBeInTheDocument();
     });
 
-    it('shows the "Panel del anfitrión" business shortcut once accommodation.create resolves from the cache', async () => {
+    it('shows «Administrar alojamientos» once accommodation.create resolves from the cache', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
@@ -188,14 +191,19 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         openAccountMenu();
 
         await waitFor(() => {
-            expect(screen.getByRole('link', { name: /panel del anfitrión/i })).toBeInTheDocument();
+            expect(screen.getByRole('link', { name: /administrar alojamientos/i })).toHaveAttribute(
+                'href',
+                '/es/mi-cuenta/host-dashboard/'
+            );
         });
-        expect(screen.queryByRole('link', { name: /mi comercio/i })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: /administrar comer y salir/i })
+        ).not.toBeInTheDocument();
         // Cache was fresh and authenticated — no network round-trip needed.
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('shows the "Mi comercio" business shortcut for venue/experience-only owners', async () => {
+    it('shows «Administrar Comer y salir» for a venue-only owner', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
@@ -212,14 +220,16 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         openAccountMenu();
 
         await waitFor(() => {
-            expect(screen.getByRole('link', { name: /mi comercio/i })).toBeInTheDocument();
+            expect(
+                screen.getByRole('link', { name: /administrar comer y salir/i })
+            ).toHaveAttribute('href', '/es/mi-cuenta/comercio/');
         });
         expect(
-            screen.queryByRole('link', { name: /panel del anfitrión/i })
+            screen.queryByRole('link', { name: /administrar alojamientos/i })
         ).not.toBeInTheDocument();
     });
 
-    it('prioritizes "Panel del anfitrión" over "Mi comercio" when the user has both permissions', async () => {
+    it('lists one shortcut per vertical when the user has several (HOS-2551)', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
@@ -236,9 +246,13 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         openAccountMenu();
 
         await waitFor(() => {
-            expect(screen.getByRole('link', { name: /panel del anfitrión/i })).toBeInTheDocument();
+            expect(
+                screen.getByRole('link', { name: /administrar alojamientos/i })
+            ).toBeInTheDocument();
         });
-        expect(screen.queryByRole('link', { name: /mi comercio/i })).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /administrar comer y salir/i })
+        ).toBeInTheDocument();
     });
 
     it('fetches permissions from /auth/me when no cache is present', async () => {
@@ -257,7 +271,9 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         openAccountMenu();
 
         await waitFor(() => {
-            expect(screen.getByRole('link', { name: /panel del anfitrión/i })).toBeInTheDocument();
+            expect(
+                screen.getByRole('link', { name: /administrar alojamientos/i })
+            ).toBeInTheDocument();
         });
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });

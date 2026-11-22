@@ -108,37 +108,15 @@ export interface NavGroup {
  * Both desktop surfaces (`sidebar`, `mobile`) render the full navigation.
  * The `avatar` dropdown curates a subset (spec §6.4) — only `dashboard`,
  * `favorites`, and `subscription` opt into it via `CURATED_SURFACES` below.
- * The single business-panel shortcut (`hostDashboard` / `comercio-listings`, spec
- * §6.4 "one, by priority") is NOT selected via surface membership — it's
- * picked at render time by `pickBusinessShortcut` (`src/lib/nav-avatar.ts`),
- * so those two items intentionally keep `FULL_SURFACES` here.
+ * HOS-2551: the avatar menu now reads only `dashboard` from that subset; its
+ * «Administrar …» shortcuts come from `BUSINESS_SHORTCUTS`
+ * (`src/config/account-zones.ts`) through `getCuratedAccountNav`.
  */
 /** Id of the AI assistants nav item, which the sidebar gates on the MCP feature. */
 export const AI_ASSISTANTS_NAV_ITEM_ID = 'aiAssistants';
 
-/** Id of the `/mi-cuenta/` entry: the areas home (HOS-2551). */
+/** Id of the `/mi-cuenta/` entry: the account home (HOS-2551). */
 export const DASHBOARD_NAV_ITEM_ID = 'dashboard';
-
-/**
- * The PERSONAL account entries, in display order (HOS-2551). The header user
- * menu lists exactly these (then «Cerrar sesión»), and on a personal page the
- * account sidebar lists them too. Every id belongs to the `cuenta` group.
- */
-export const PERSONAL_NAV_ITEM_IDS = [
-    'editProfile',
-    'subscription',
-    'preferences',
-    'newsletter',
-    AI_ASSISTANTS_NAV_ITEM_ID
-] as const;
-
-/**
- * Personal entries that only the sidebar still lists, after
- * {@link PERSONAL_NAV_ITEM_IDS}. HOS-2550 moves «Qué hay de nuevo» and «Ayuda»
- * to header icons; until it ships, the personal sidebar is the only link to
- * `/mi-cuenta/novedades` and `/mi-cuenta/ayuda`, so they stay there.
- */
-export const INTERIM_PERSONAL_NAV_ITEM_IDS = ['whatsNew', 'help'] as const;
 
 const FULL_SURFACES: readonly NavSurface[] = ['sidebar', 'mobile'];
 
@@ -215,10 +193,9 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             {
                 // HOS-2184 T-028. Gated, not always shown: with the MCP feature on
                 // it is shown to everyone, with it off only to users who still have
-                // connections. The sidebar renders it from here; the avatar and
-                // mobile menus append it through
-                // `getCuratedAccountNav({ includeAiAssistants })` (it stays off the
-                // `avatar` surface so that surface keeps its three fixed items).
+                // connections. HOS-2551: only the sidebar renders it, and only for
+                // a real client (an account with a business vertical); the avatar
+                // and mobile menus no longer list it.
                 id: AI_ASSISTANTS_NAV_ITEM_ID,
                 i18nKey: 'account.nav.aiAssistants',
                 href: AI_ASSISTANTS_PATH,

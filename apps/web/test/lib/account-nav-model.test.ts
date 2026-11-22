@@ -154,72 +154,111 @@ describe('buildAccountNavModel: gated entries', () => {
     });
 });
 
-describe('buildAccountNavModel: shell split (HOS-2551)', () => {
-    const shellFor = (
-        roles: readonly string[],
-        activeSection: string,
-        ownsHostTradeListing = false
-    ) =>
-        buildAccountNavModel({ roles, ownsHostTradeListing, mcpEnabled: true, activeSection })
-            .shell;
-    const shellGroupIds = (shell: ReturnType<typeof shellFor>) =>
-        shell.groups.map((entry) => entry.group.id);
-    const shellItemIds = (shell: ReturnType<typeof shellFor>) =>
+describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
+    interface ShellInput {
+        readonly roles: readonly string[];
+        readonly activeSection: string;
+        readonly ownsHostTradeListing?: boolean;
+        readonly ownsPartner?: boolean;
+        readonly mcpEnabled?: boolean;
+    }
+    const shellFor = ({
+        roles,
+        activeSection,
+        ownsHostTradeListing = false,
+        ownsPartner = false,
+        mcpEnabled = true
+    }: ShellInput) =>
+        buildAccountNavModel({
+            roles,
+            ownsHostTradeListing,
+            ownsPartner,
+            mcpEnabled,
+            activeSection
+        }).shell;
+    type Shell = ReturnType<typeof shellFor>;
+    const groupIds = (shell: Shell) => shell.groups.map((entry) => entry.group.id);
+    const itemIds = (shell: Shell) =>
         shell.groups.flatMap((entry) => entry.items.map((item) => item.item.id));
+    const itemsOf = (shell: Shell, id: string) =>
+        shell.groups.find((entry) => entry.group.id === id)?.items.map((item) => item.item.id);
 
-    describe('personal page', () => {
-        it('lists only the personal entries, in order, as one header-less open group', () => {
-            const shell = shellFor(['HOST', 'VENUE_OWNER'], 'editar');
+    describe('personal zone', () => {
+        it('a client sees Inicio, Mi perfil (with AI assistants), Mis viajes and the interim entries', () => {
+            const shell = shellFor({ roles: ['HOST'], activeSection: 'editar' });
             expect(shell.mode).toBe('personal');
-            expect(shell.groups).toHaveLength(1);
-            expect(shell.groups[0]?.suppressHeader).toBe(true);
-            expect(shell.groups[0]?.shellDefaultOpen).toBe(true);
-            expect(shellItemIds(shell)).toEqual([
+            expect(groupIds(shell)).toEqual(['inicio', 'perfil', 'turista', 'extras']);
+            expect(itemsOf(shell, 'inicio')).toEqual(['dashboard']);
+            expect(itemsOf(shell, 'perfil')).toEqual([
                 'editProfile',
                 'subscription',
                 'preferences',
                 'newsletter',
-                'aiAssistants',
-                'whatsNew',
-                'help'
+                'aiAssistants'
             ]);
+            expect(itemsOf(shell, 'turista')).toEqual([
+                'favorites',
+                'searchHistory',
+                'alerts',
+                'exclusiveDeals',
+                'recommendations',
+                'reviews',
+                'inbox'
+            ]);
+            expect(itemsOf(shell, 'extras')).toEqual(['whatsNew', 'help']);
         });
 
-        it('marks the current entry active and shows no discovery door', () => {
-            const shell = shellFor(['USER'], 'preferencias');
-            const active = shell.groups
-                .flatMap((entry) => entry.items)
-                .filter((item) => item.active);
-            expect(active.map((item) => item.item.id)).toEqual(['preferences']);
-            expect(shell.doors).toEqual([]);
+        it('labels the zone groups Inicio, Mi perfil and Mis viajes', () => {
+            const shell = shellFor({ roles: ['HOST'], activeSection: 'editar' });
+            const keyOf = (id: string) =>
+                shell.groups.find((entry) => entry.group.id === id)?.group.i18nKey;
+            expect(keyOf('perfil')).toBe('account.nav.groupProfile');
+            expect(keyOf('turista')).toBe('account.nav.groupTrips');
+            expect(shell.groups[0]?.items[0]?.item.i18nKey).toBe('account.nav.home');
+            expect(shell.groups[0]?.suppressHeader).toBe(true);
         });
 
-        it('never lists the areas home or an area entry', () => {
-            const ids = shellItemIds(shellFor(['HOST'], 'editar'));
-            expect(ids).not.toContain('dashboard');
-            expect(ids).not.toContain('properties');
-            expect(ids).not.toContain('favorites');
+        it('opens only the group holding the current page and keeps the doors', () => {
+            const model = buildAccountNavModel({
+                roles: ['HOST'],
+                ownsHostTradeListing: false,
+                mcpEnabled: true,
+                activeSection: 'favoritos'
+            });
+            const open = model.shell.groups.filter((entry) => entry.shellDefaultOpen);
+            expect(open.map((entry) => entry.group.id)).toEqual(['turista']);
+            expect(model.shell.doors).toEqual(model.doors);
         });
 
         it.each([
+            'mi-cuenta',
             'editar',
             'suscripcion',
             'preferencias',
             'newsletter',
             'asistentes-ia',
             'novedades',
-            'ayuda'
-        ])('treats activeSection=%s as a personal page', (activeSection) => {
-            expect(shellFor(['USER'], activeSection).mode).toBe('personal');
+            'ayuda',
+            'favoritos',
+            'messages',
+            'resenas',
+            'publica',
+            'aliados'
+        ])('treats activeSection=%s as the personal zone', (activeSection) => {
+            expect(shellFor({ roles: ['HOST'], activeSection }).mode).toBe('personal');
+        });
+
+        it('never lists a business entry', () => {
+            const ids = itemIds(
+                shellFor({ roles: ['HOST', 'VENUE_OWNER'], activeSection: 'mi-cuenta' })
+            );
+            expect(ids).not.toContain('properties');
+            expect(ids).not.toContain('comercio-listings');
+            expect(ids).not.toContain('provider');
         });
 
         it('keeps the AI-assistants entry hidden until revealed when MCP is off', () => {
-            const shell = buildAccountNavModel({
-                roles: ['USER'],
-                ownsHostTradeListing: false,
-                mcpEnabled: false,
-                activeSection: 'editar'
-            }).shell;
+            const shell = shellFor({ roles: ['HOST'], activeSection: 'editar', mcpEnabled: false });
             const ai = shell.groups
                 .flatMap((entry) => entry.items)
                 .find((item) => item.item.id === 'aiAssistants');
@@ -227,72 +266,96 @@ describe('buildAccountNavModel: shell split (HOS-2551)', () => {
         });
     });
 
-    describe('area page', () => {
-        it('lists only the areas the person has, with the current group open', () => {
-            const shell = shellFor(['HOST', 'VENUE_OWNER'], 'propiedades');
-            expect(shell.mode).toBe('areas');
-            expect(shellGroupIds(shell)).toEqual(['anfitrion', 'comercio', 'turista']);
-            const open = shell.groups.filter((entry) => entry.shellDefaultOpen);
-            expect(open.map((entry) => entry.group.id)).toEqual(['anfitrion']);
-            expect(shell.groups.find((entry) => entry.group.id === 'turista')?.suppressHeader).toBe(
-                false
-            );
+    describe('pure tourist', () => {
+        it('sees only the personal zone, without AI assistants', () => {
+            const shell = shellFor({ roles: ['USER'], activeSection: 'mi-cuenta' });
+            expect(shell.mode).toBe('personal');
+            expect(itemsOf(shell, 'perfil')).toEqual([
+                'editProfile',
+                'subscription',
+                'preferences',
+                'newsletter'
+            ]);
+            expect(itemIds(shell)).not.toContain('aiAssistants');
         });
 
-        it('lists no personal entry', () => {
-            const ids = shellItemIds(shellFor(['HOST'], 'favoritos'));
-            expect(ids).not.toContain('editProfile');
-            expect(ids).not.toContain('whatsNew');
-            expect(ids).not.toContain('help');
+        it('does not see AI assistants even on the AI assistants page', () => {
+            const shell = shellFor({ roles: ['USER'], activeSection: 'asistentes-ia' });
+            expect(itemIds(shell)).not.toContain('aiAssistants');
         });
 
-        it('treats the areas home /mi-cuenta/ as an area page and opens the first headed area', () => {
-            const shell = shellFor(['HOST'], 'mi-cuenta');
-            expect(shell.mode).toBe('areas');
-            expect(shellItemIds(shell)).not.toContain('dashboard');
-            const open = shell.groups.filter((entry) => entry.shellDefaultOpen);
-            expect(open.map((entry) => entry.group.id)).toEqual(['anfitrion']);
-        });
-
-        it('keeps the discovery doors with the areas', () => {
-            const model = buildAccountNavModel({
-                roles: ['USER'],
-                ownsHostTradeListing: false,
-                mcpEnabled: true,
-                activeSection: 'mi-cuenta'
-            });
-            expect(model.shell.doors).toEqual(model.doors);
-        });
-
-        it('leaves the legacy groups untouched (cuenta still first)', () => {
-            const model = buildAccountNavModel({
-                roles: ['HOST'],
-                ownsHostTradeListing: false,
-                mcpEnabled: true,
-                activeSection: 'propiedades'
-            });
-            expect(model.groups[0]?.group.id).toBe('cuenta');
+        it('on a business page sees no vertical at all', () => {
+            const shell = shellFor({ roles: ['USER'], activeSection: 'propiedades' });
+            expect(shell.mode).toBe('business');
+            expect(shell.groups).toEqual([]);
         });
     });
 
-    describe('single-area account', () => {
+    describe('business zone', () => {
         it.each([
-            'mi-cuenta',
-            'favoritos'
-        ])('a pure tourist on %s sees the tourist items as a flat list', (activeSection) => {
-            const shell = shellFor(['USER'], activeSection);
-            expect(shell.mode).toBe('areas');
-            expect(shellGroupIds(shell)).toEqual(['turista']);
-            expect(shell.groups[0]?.suppressHeader).toBe(true);
-            expect(shellItemIds(shell)).toContain('favorites');
+            'host-dashboard',
+            'propiedades',
+            'owner-messages',
+            'promociones',
+            'directorio-proveedores',
+            'usos-de-beneficio',
+            'comercio',
+            'publicaciones',
+            'eventos',
+            'partner',
+            'proveedor'
+        ])('treats activeSection=%s as the business zone', (activeSection) => {
+            expect(shellFor({ roles: ['HOST'], activeSection }).mode).toBe('business');
         });
 
-        it('a tourist who also owns a provider listing has two areas, tourist headed', () => {
-            const shell = shellFor(['USER'], 'favoritos', true);
-            expect(shellGroupIds(shell)).toEqual(['proveedor', 'turista']);
-            expect(shell.groups.find((entry) => entry.group.id === 'turista')?.suppressHeader).toBe(
-                false
-            );
+        it('lists only the verticals the person has, current group open, no doors', () => {
+            const shell = shellFor({
+                roles: ['HOST', 'VENUE_OWNER', 'EDITOR'],
+                activeSection: 'publicaciones',
+                ownsHostTradeListing: true
+            });
+            expect(groupIds(shell)).toEqual(['anfitrion', 'comercio', 'editorial', 'proveedor']);
+            expect(
+                shell.groups
+                    .filter((entry) => entry.shellDefaultOpen)
+                    .map((entry) => entry.group.id)
+            ).toEqual(['editorial']);
+            expect(shell.doors).toEqual([]);
+            expect(itemIds(shell)).not.toContain('favorites');
+            expect(itemIds(shell)).not.toContain('editProfile');
+        });
+
+        it('adds the partner group when the account owns a partner row', () => {
+            const model = buildAccountNavModel({
+                roles: ['HOST'],
+                ownsHostTradeListing: false,
+                ownsPartner: true,
+                mcpEnabled: true,
+                activeSection: 'partner'
+            });
+            expect(groupIds(model.shell)).toEqual(['anfitrion', 'partner']);
+            expect(model.activeLabelKey).toBe('account.nav.partner');
+        });
+
+        it('renders a single vertical header-less', () => {
+            const shell = shellFor({ roles: ['HOST'], activeSection: 'propiedades' });
+            expect(groupIds(shell)).toEqual(['anfitrion']);
+            expect(shell.groups[0]?.suppressHeader).toBe(true);
+        });
+
+        it('a provider-only account sees its provider entry and counts as a client', () => {
+            const business = shellFor({
+                roles: ['USER'],
+                activeSection: 'proveedor',
+                ownsHostTradeListing: true
+            });
+            expect(itemIds(business)).toEqual(['provider']);
+            const personal = shellFor({
+                roles: ['USER'],
+                activeSection: 'editar',
+                ownsHostTradeListing: true
+            });
+            expect(itemIds(personal)).toContain('aiAssistants');
         });
     });
 });

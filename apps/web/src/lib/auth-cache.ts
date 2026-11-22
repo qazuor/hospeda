@@ -51,6 +51,13 @@ export interface AuthMeSnapshot {
      * consumers must ask `roles.includes(X)`.
      */
     readonly roles: ReadonlyArray<string>;
+    /**
+     * Whether the account owns a host-trade directory listing (provider,
+     * H-158), from the top-level `ownsHostTradeListing` of `/auth/me`. Optional
+     * so a snapshot written by an older bundle still reads (as `false`).
+     * HOS-2551: gates the «Administrar ficha de proveedor» menu shortcut.
+     */
+    readonly ownsHostTradeListing?: boolean;
     readonly cachedAt: number;
 }
 
@@ -134,6 +141,8 @@ interface AuthMeResponseBody {
             readonly permissions?: ReadonlyArray<string>;
         };
         readonly isAuthenticated?: boolean;
+        /** H-158: top-level, computed for authenticated callers only. */
+        readonly ownsHostTradeListing?: boolean;
     };
 }
 
@@ -246,6 +255,7 @@ async function performAuthMeFetch({ apiUrl }: FetchAuthMeParams): Promise<AuthMe
                     : null,
             permissions: actor?.permissions ?? [],
             roles: isAuthenticated && Array.isArray(actor?.roles) ? actor.roles : [],
+            ownsHostTradeListing: isAuthenticated && json.data?.ownsHostTradeListing === true,
             cachedAt: Date.now()
         };
     } catch {

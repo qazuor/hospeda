@@ -148,47 +148,36 @@ describe('UserMenu — authenticated render', () => {
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
-    it('lists the identity "Mi cuenta" link and the personal entries in order (HOS-2551)', () => {
-        renderMenu({ mcpEnabled: true });
+    it('a pure tourist sees Mi cuenta, language, theme and sign out only (HOS-2551)', async () => {
+        renderMenu({});
+        await waitFor(() => expect(global.fetch).toHaveBeenCalled());
         open();
         expect(screen.getByRole('menuitem', { name: /^mi cuenta$/i })).toHaveAttribute(
             'href',
             '/es/mi-cuenta/'
         );
-        const labels = screen
-            .getAllByRole('menuitem')
-            .map((item) => item.textContent?.trim())
-            .filter(
-                (label) =>
-                    label !== 'Mi cuenta' && !/modo anfitrión|administración/i.test(label ?? '')
-            );
-        expect(labels).toEqual([
-            'Editar perfil',
-            'Suscripción',
-            'Preferencias',
-            'Boletín de novedades',
-            'Asistentes de IA',
+        expect(screen.getAllByRole('menuitem').map((item) => item.textContent?.trim())).toEqual([
+            'Mi cuenta',
             'Cerrar sesión'
         ]);
+        expect(screen.queryByText('Administración')).not.toBeInTheDocument();
+        expect(screen.getByText('Idioma')).toBeInTheDocument();
+        expect(screen.getByText('Tema')).toBeInTheDocument();
     });
 
-    it('omits "Asistentes de IA" when the entry does not qualify', () => {
-        renderMenu({ mcpEnabled: false });
-        open();
-        expect(
-            screen.getByRole('menuitem', { name: /^boletín de novedades$/i })
-        ).toBeInTheDocument();
-        expect(
-            screen.queryByRole('menuitem', { name: /asistentes de ia/i })
-        ).not.toBeInTheDocument();
-    });
-
-    it('does NOT show area items (favorites, messages, reviews — HOS-2551)', () => {
+    it('lists no profile entry, favorites or AI assistants (HOS-2551)', () => {
         renderMenu();
         open();
-        expect(screen.queryByRole('menuitem', { name: /^favoritos$/i })).not.toBeInTheDocument();
-        expect(screen.queryByRole('menuitem', { name: /mis consultas/i })).not.toBeInTheDocument();
-        expect(screen.queryByRole('menuitem', { name: /mis reseñas/i })).not.toBeInTheDocument();
+        for (const name of [
+            /editar perfil/i,
+            /^suscripción$/i,
+            /^preferencias$/i,
+            /boletín de novedades/i,
+            /asistentes de ia/i,
+            /^favoritos$/i
+        ]) {
+            expect(screen.queryByRole('menuitem', { name })).not.toBeInTheDocument();
+        }
     });
 });
 
@@ -202,26 +191,81 @@ describe('UserMenu — permission-gated items', () => {
         sessionStorage.clear();
     });
 
-    it('shows no business shortcut, even with host and venue permissions (HOS-2551)', async () => {
+    it('hides every «Administrar …» shortcut while permissions are loading', () => {
+        global.fetch = vi.fn(
+            () =>
+                new Promise(() => {
+                    // Never resolves — simulates pending /auth/me
+                })
+        ) as unknown as typeof fetch;
+        renderMenu();
+        open();
+        expect(screen.queryByText('Administración')).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('menuitem', { name: /administrar alojamientos/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('lists one «Administrar …» shortcut per vertical under «Administración» (HOS-2551)', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['accommodation.create', 'venue.editOwn'],
-                roles: ['USER', 'HOST', 'VENUE_OWNER'],
+                permissions: [
+                    'accommodation.create',
+                    'venue.editOwn',
+                    'experience.editOwn',
+                    'post.create'
+                ],
+                roles: ['USER', 'HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
+                ownsHostTradeListing: true,
                 cachedAt: Date.now()
             })
         );
         renderMenu();
         await waitFor(() => {
             open();
-            expect(screen.getByRole('menuitem', { name: /^editar perfil$/i })).toBeInTheDocument();
+            expect(screen.getByRole('group', { name: 'Administración' })).toBeInTheDocument();
+        });
+        const group = screen.getByRole('group', { name: 'Administración' });
+        const links = [...group.querySelectorAll('a')].map((link) => [
+            link.textContent?.trim(),
+            link.getAttribute('href')
+        ]);
+        expect(links).toEqual([
+            ['Administrar alojamientos', '/es/mi-cuenta/host-dashboard/'],
+            ['Administrar Comer y salir', '/es/mi-cuenta/comercio/'],
+            ['Administrar experiencias', '/es/mi-cuenta/comercio/'],
+            ['Administrar contenido editorial', '/es/mi-cuenta/publicaciones/'],
+            ['Administrar ficha de proveedor', '/es/mi-cuenta/proveedor/']
+        ]);
+    });
+
+    it('shows only «Administrar experiencias» for an experience-only owner', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
+                permissions: ['experience.editOwn'],
+                roles: ['USER', 'EXPERIENCE_OWNER'],
+                cachedAt: Date.now()
+            })
+        );
+        renderMenu();
+        await waitFor(() => {
+            open();
+            expect(
+                screen.getByRole('menuitem', { name: /administrar experiencias/i })
+            ).toBeInTheDocument();
         });
         expect(
-            screen.queryByRole('menuitem', { name: /panel del anfitrión/i })
+            screen.queryByRole('menuitem', { name: /administrar comer y salir/i })
         ).not.toBeInTheDocument();
-        expect(screen.queryByRole('menuitem', { name: /mi comercio/i })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('menuitem', { name: /administrar alojamientos/i })
+        ).not.toBeInTheDocument();
     });
 
     it('shows "Modo anfitrión" for HOST users (access.panelAdmin without access.apiAdmin)', async () => {

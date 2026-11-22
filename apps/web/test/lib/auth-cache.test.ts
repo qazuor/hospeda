@@ -121,6 +121,26 @@ describe('fetchAuthMe', () => {
         expect(snapshot.roles).toEqual(['USER', 'HOST']);
     });
 
+    it.each([
+        [true, true, true],
+        [undefined, true, false],
+        [true, false, false]
+    ])('maps ownsHostTradeListing=%s (authenticated=%s) to %s (HOS-2551)', async (owns, isAuthenticated, expected) => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: { id: 'u1', roles: ['USER'], permissions: [] },
+                    isAuthenticated,
+                    ownsHostTradeListing: owns
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        const snapshot = await fetchAuthMe();
+        expect(snapshot.ownsHostTradeListing).toBe(expected);
+    });
+
     it('resolves to a guest snapshot on a non-ok response', async () => {
         global.fetch = vi.fn().mockResolvedValue({ ok: false }) as unknown as typeof fetch;
 

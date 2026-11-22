@@ -11,8 +11,8 @@
  * Applies a body scroll lock while open and releases it on close.
  * Traps focus on the close button when the menu opens.
  *
- * The account accordion (identity "Mi cuenta" link + Favoritos + ONE
- * business-panel shortcut + Suscripción) renders the SAME curated set as
+ * The account accordion (identity "Mi cuenta" link + one «Administrar …»
+ * shortcut per business vertical, HOS-2551) renders the SAME set as
  * the avatar dropdown (`UserMenu.client.tsx`), via `getCuratedAccountNav`
  * (HOS-131 §6.5 mobile "option A" — one curated set, not two divergent
  * lists). The session zone (sign-out, and — staff only — the admin-panel
@@ -54,9 +54,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { IconButton } from '@/components/ui/IconButtonReact';
-import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
-import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import { type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
@@ -67,7 +65,10 @@ import { createTranslations } from '@/lib/i18n';
 import { getCuratedAccountNav } from '@/lib/nav-avatar';
 import { clearThemeSyncMarker } from '@/lib/theme';
 import styles from './MobileMenu.module.css';
-import { MobileMenuAccountSection } from './MobileMenuAccountSection.client';
+import {
+    type MobileAccountNavItem,
+    MobileMenuAccountSection
+} from './MobileMenuAccountSection.client';
 import { MobileMenuNavList } from './MobileMenuNavList.client';
 
 // ---------------------------------------------------------------------------
@@ -136,12 +137,6 @@ interface MobileMenuProps {
      * by the owner CTA any more — see HOS-311 in the body.
      */
     readonly adminPanelUrl?: string;
-    /**
-     * Whether the MCP feature is on, known by the server that mounts the menu.
-     * Omit when unknown: the "Asistentes de IA" entry then follows the
-     * connection-count rule (HOS-2184 T-028).
-     */
-    readonly mcpEnabled?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,8 +169,7 @@ export function MobileMenu({
     homeHref,
     initialUser,
     initialRoles,
-    adminPanelUrl,
-    mcpEnabled
+    adminPanelUrl
 }: MobileMenuProps) {
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
@@ -200,7 +194,7 @@ export function MobileMenu({
     // `syncAuthenticatedAttribute: false` — UserMenu (client:load, mounted
     // on every page) is the single owner of `<html data-user-authenticated>`;
     // this island must not become a second writer of the same attribute.
-    const { user, permissions } = useAccountPermissions({
+    const { user, permissions, ownsHostTradeListing } = useAccountPermissions({
         initialUser,
         initialRoles,
         syncAuthenticatedAttribute: false
@@ -216,25 +210,24 @@ export function MobileMenu({
         : null;
 
     // ------------------------------------------------------------------
-    // Curated account nav (identity "Mi cuenta" link + Favoritos + business
-    // shortcut + Suscripción) — the SAME curated set as UserMenu's avatar
+    // Account nav (identity "Mi cuenta" link + one «Administrar …» shortcut
+    // per business vertical, HOS-2551) — the SAME set as UserMenu's avatar
     // dropdown (HOS-131 §6.5 mobile "option A"). Fail-closed while
     // `permissions` is still loading via `permissions ?? []`.
     // ------------------------------------------------------------------
-    const showAiAssistants = useAiAssistantsEntry({ mcpEnabled, enabled: user !== null });
     const avatarNav = useMemo(
         () =>
             getCuratedAccountNav({
                 permissions: permissions ?? [],
-                includeAiAssistants: showAiAssistants
+                ownsHostTradeListing
             }),
-        [permissions, showAiAssistants]
+        [permissions, ownsHostTradeListing]
     );
     const curatedAccountItems = useMemo(
-        () =>
-            [avatarNav.dashboardItem, ...avatarNav.shortcutItems].filter(
-                (item): item is AccountNavItem => item !== null
-            ),
+        (): readonly MobileAccountNavItem[] =>
+            avatarNav.dashboardItem
+                ? [avatarNav.dashboardItem, ...avatarNav.adminItems]
+                : avatarNav.adminItems,
         [avatarNav]
     );
 

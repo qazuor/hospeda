@@ -117,7 +117,7 @@ describe('AccountBar', () => {
         expect(drawerLinks.length).toBeGreaterThan(0);
     });
 
-    it('shows «Mis áreas» and only the personal entries in the drawer on a personal page (HOS-2551)', async () => {
+    it('shows only the personal zone in the drawer on a personal page (HOS-2551)', async () => {
         const user = userEvent.setup();
         render(
             <AccountBar
@@ -127,11 +127,12 @@ describe('AccountBar', () => {
         );
         await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
         const dialog = await screen.findByRole('dialog');
-        expect(dialog.querySelector('[data-areas-link]')).toHaveAttribute('href', '/es/mi-cuenta/');
+        expect(dialog.querySelector('[data-back-link]')).toBeNull();
+        expect(hrefsIn(dialog)).toContain('/es/mi-cuenta/favoritos/');
         expect(hrefsIn(dialog)).not.toContain('/es/mi-cuenta/propiedades/');
     });
 
-    it('shows only the areas in the drawer on an area page (HOS-2551)', async () => {
+    it('shows «← Mi cuenta» and only the verticals in the drawer on a business page (HOS-2551)', async () => {
         const user = userEvent.setup();
         render(
             <AccountBar
@@ -141,7 +142,7 @@ describe('AccountBar', () => {
         );
         await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
         const dialog = await screen.findByRole('dialog');
-        expect(dialog.querySelector('[data-areas-link]')).toBeNull();
+        expect(dialog.querySelector('[data-back-link]')).toHaveAttribute('href', '/es/mi-cuenta/');
         expect(hrefsIn(dialog)).toContain('/es/mi-cuenta/propiedades/');
         expect(hrefsIn(dialog)).not.toContain('/es/mi-cuenta/editar/');
     });
@@ -172,8 +173,8 @@ describe('AccountBar', () => {
         );
         await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
         const dialog = await screen.findByRole('dialog');
-        const firstLink = dialog.querySelector('a') as HTMLElement;
-        expect(firstLink.querySelector('svg')).not.toBeNull();
+        const firstEntry = dialog.querySelector('li a') as HTMLElement;
+        expect(firstEntry.querySelector('svg')).not.toBeNull();
         expect(screen.getByTestId('benefit-pill').closest('a')).not.toBeNull();
         unmount();
 

@@ -7,9 +7,8 @@
  * and the hydrated mobile `AccountDrawer`, and they list the same groups by
  * construction.
  *
- * It renders the kit shell's split view (HOS-2551, `model.shell`): on a
- * personal page the personal entries under a «Mis áreas» link, anywhere else
- * only the areas.
+ * It renders the kit shell's zoned view (HOS-2551, `model.shell`): the
+ * personal zone, or the business zone under a «← Mi cuenta» link.
  *
  * @module components/account/ui/account-sidebar-view
  */
@@ -53,10 +52,10 @@ export interface SidebarGroupView {
 
 /** The whole sidebar view. */
 export interface SidebarView {
-    /** Which half of the account it shows (HOS-2551). */
+    /** Which zone of the account it shows (HOS-2551). */
     readonly mode: AccountNavMode;
-    /** The «Mis áreas» link to `/mi-cuenta/`, shown on top on a personal page only. */
-    readonly areasLink: SidebarItemView | null;
+    /** The «← Mi cuenta» link to `/mi-cuenta/`, on top of the business zone only. */
+    readonly backLink: SidebarItemView | null;
     /** Nav groups, in order. */
     readonly groups: readonly SidebarGroupView[];
     /** Translated label of the discovery-doors block. */
@@ -86,11 +85,11 @@ export function buildSidebarView({
     const { shell } = model;
     return {
         mode: shell.mode,
-        areasLink:
-            shell.mode === 'personal'
+        backLink:
+            shell.mode === 'business'
                 ? {
                       id: DASHBOARD_NAV_ITEM_ID,
-                      label: t('account.ui.sidebar.areasLink'),
+                      label: t('account.ui.sidebar.backToAccount'),
                       href: buildUrl({ locale, path: 'mi-cuenta' }),
                       active: false,
                       hidden: false

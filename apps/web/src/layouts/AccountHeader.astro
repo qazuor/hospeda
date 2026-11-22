@@ -21,7 +21,6 @@ import { PublishMenu } from '@/components/shared/navigation/PublishMenu.client';
 import { UserMenu } from '@/components/shared/navigation/UserMenu.client';
 import IconButton from '@/components/shared/ui/IconButton.astro';
 import { getAdminUrl } from '@/lib/env';
-import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -75,7 +74,6 @@ const initialUser = serverUser
 		}
 	: null;
 const adminPanelUrl = getAdminUrl();
-const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
 ---
 
 <header data-account-header class="account-header" role="banner">
@@ -98,7 +96,6 @@ const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
 				currentPath={currentPath}
 				variant="scrolled"
 				adminPanelUrl={adminPanelUrl}
-				mcpEnabled={mcpEnabled}
 			/>
 			<IconButton
 				ariaLabel={t('nav.openMenu', 'Open navigation menu')}
@@ -122,7 +119,6 @@ const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
 	initialUser={initialUser}
 	initialRoles={serverUser?.roles ?? []}
 	adminPanelUrl={adminPanelUrl}
-	mcpEnabled={mcpEnabled}
 />
 
 <style>

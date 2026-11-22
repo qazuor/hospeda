@@ -93,13 +93,18 @@ export interface UseAccountPermissionsResult {
      * fails closed in both cases (HOS-296).
      */
     readonly roles: ReadonlyArray<string>;
+    /**
+     * Whether the account owns a host-trade directory listing (HOS-2551).
+     * `false` for guests and while still resolving (fail-closed).
+     */
+    readonly ownsHostTradeListing: boolean;
 }
 
 /**
  * Resolves the current visitor's `/auth/me` snapshot on mount, cache-first.
  *
  * @param params - `{ initialUser?, skip? }` (RO-RO). See the two modes above.
- * @returns `{ user, permissions, roles }`.
+ * @returns `{ user, permissions, roles, ownsHostTradeListing }`.
  */
 export function useAccountPermissions({
     initialUser,
@@ -110,6 +115,7 @@ export function useAccountPermissions({
     const [user, setUser] = useState<AuthMeUser | null>(initialUser ?? null);
     const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
     const [roles, setRoles] = useState<ReadonlyArray<string>>(initialRoles ?? []);
+    const [ownsHostTradeListing, setOwnsHostTradeListing] = useState(false);
 
     // `initialUser === undefined` means the caller never passed it (simple
     // mode) — distinct from explicitly passing `null` for a guest
@@ -138,6 +144,7 @@ export function useAccountPermissions({
             setUser(cached.user);
             setPermissions(cached.permissions);
             setRoles(cached.roles);
+            setOwnsHostTradeListing(cached.ownsHostTradeListing === true);
             if (shouldSyncAttribute) {
                 document.documentElement.setAttribute(
                     'data-user-authenticated',
@@ -156,6 +163,7 @@ export function useAccountPermissions({
                 setUser(snapshot.user);
                 setPermissions(snapshot.permissions);
                 setRoles(snapshot.roles);
+                setOwnsHostTradeListing(snapshot.ownsHostTradeListing === true);
                 if (shouldSyncAttribute) {
                     document.documentElement.setAttribute(
                         'data-user-authenticated',
@@ -173,5 +181,5 @@ export function useAccountPermissions({
         };
     }, [skip]);
 
-    return { user, permissions, roles };
+    return { user, permissions, roles, ownsHostTradeListing };
 }

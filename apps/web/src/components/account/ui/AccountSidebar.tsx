@@ -10,8 +10,8 @@
  * separate (D20) and «Complementos» appears as its own item (D15) whenever the
  * config declares it.
  *
- * On a personal page (HOS-2551, `view.areasLink`) a «← Mis áreas» link to
- * `/mi-cuenta/` sits on top of the personal entries.
+ * On a business page (HOS-2551, `view.backLink`) a «← Mi cuenta» link to
+ * `/mi-cuenta/` sits on top of the business verticals.
  *
  * Count pills are the EXISTING islands, passed as named slots from the Astro
  * shell (`whatsNewCount`, `benefitUsagesCount`, `aiAssistantsReveal`).
@@ -149,14 +149,14 @@ export function AccountSidebar({
             data-account-sidebar=""
             data-nav-mode={view.mode}
         >
-            {view.areasLink ? (
+            {view.backLink ? (
                 <a
-                    href={view.areasLink.href}
-                    className={styles.areasLink}
-                    data-areas-link=""
+                    href={view.backLink.href}
+                    className={styles.backLink}
+                    data-back-link=""
                 >
                     <span aria-hidden="true">←</span>
-                    <span>{view.areasLink.label}</span>
+                    <span>{view.backLink.label}</span>
                 </a>
             ) : null}
             {view.groups.map((group) => {
