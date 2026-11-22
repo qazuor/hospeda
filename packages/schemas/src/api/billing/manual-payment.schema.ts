@@ -55,6 +55,7 @@ export const LateManualPaymentPeriodCaseSchema = z.enum([
 export const LateManualPaymentListingOutcomeSchema = z.enum([
     'RETURNS',
     'NO_SLOT',
+    'LOCATION_CONFLICT',
     'INCOMPLETE',
     'ARCHIVED_DRAFT',
     'PURGED',
