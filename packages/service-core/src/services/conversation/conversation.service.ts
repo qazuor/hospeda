@@ -65,6 +65,7 @@ import {
     checkCanUpdateStatus,
     checkCanViewConversation
 } from './conversation.permissions.js';
+import { computeInquiryPayloadHash, inquiryHashesMatch } from './inquiry-payload-hash.js';
 import { MessageService } from './message.service.js';
 import { NotificationScheduleService } from './notification-schedule.service.js';
 
@@ -264,6 +265,12 @@ export interface VerificationEmailPayload {
     readonly guestName: string;
     readonly accommodationName: string;
     readonly locale: 'es' | 'en' | 'pt';
+    /**
+     * The inquiry text this link will deliver once confirmed (HOS-2568). Shown in the
+     * email so the person sees exactly what they are confirming. Plain text: the
+     * template escapes it.
+     */
+    readonly message?: string;
 }
 
 /**
@@ -519,12 +526,35 @@ export class ConversationService extends BaseService {
                     .limit(1);
 
                 if (pendingRow) {
+                    // HOS-2568: last submission wins. Each submit replaces the held payload
+                    // and sends a link bound to THAT payload (hash in the JWT), so a link
+                    // can only ever deliver the payload it was issued for. First-wins would
+                    // let a stranger park text under someone else's email and have it
+                    // delivered when the real owner of the email verifies.
+                    await db
+                        .update(conversations)
+                        .set({
+                            pendingMessage: validated.message,
+                            anonymousName: validated.guestName,
+                            anonymousPhone: validated.guestPhone ?? null,
+                            updatedAt: new Date()
+                        })
+                        .where(
+                            and(
+                                eq(conversations.id, pendingRow.id),
+                                eq(conversations.status, 'PENDING_VERIFICATION' as const)
+                            )
+                        );
                     await this.sendVerificationEmail(
                         pendingRow.id,
                         normalizedEmail,
                         validated.guestName,
                         accommodation.name,
-                        locale as 'es' | 'en' | 'pt'
+                        locale as 'es' | 'en' | 'pt',
+                        {
+                            message: validated.message,
+                            guestPhone: validated.guestPhone
+                        }
                     );
                     return { status: 'resent', conversationId: pendingRow.id };
                 }
@@ -538,8 +568,8 @@ export class ConversationService extends BaseService {
                         anonymousEmail: normalizedEmail,
                         anonymousPhone: validated.guestPhone,
                         anonymousEmailVerified: false,
-                        // HOS-2568: held here until the email is verified. Only ever
-                        // written on creation, never on the `resent` path above.
+                        // HOS-2568: held here until the email is verified; replaced by
+                        // the `resent` path (last submission wins, link bound by hash).
                         pendingMessage: validated.message,
                         status: 'PENDING_VERIFICATION' as const,
                         locale
@@ -558,7 +588,8 @@ export class ConversationService extends BaseService {
                     normalizedEmail,
                     validated.guestName,
                     accommodation.name,
-                    locale as 'es' | 'en' | 'pt'
+                    locale as 'es' | 'en' | 'pt',
+                    { message: validated.message, guestPhone: validated.guestPhone }
                 );
 
                 return {
@@ -1632,10 +1663,25 @@ export class ConversationService extends BaseService {
         guestEmail: string,
         guestName: string,
         accommodationName: string,
-        locale: 'es' | 'en' | 'pt' = 'es'
+        locale: 'es' | 'en' | 'pt' = 'es',
+        inquiry?: { readonly message: string; readonly guestPhone?: string | null }
     ): Promise<void> {
         const secret = this._getJwtSecret();
-        const jwt = await new SignJWT({ conversationId, email: guestEmail })
+        // HOS-2568: bind the link to the payload it confirms.
+        const payloadHash = inquiry
+            ? computeInquiryPayloadHash({
+                  payload: {
+                      message: inquiry.message,
+                      guestName,
+                      guestPhone: inquiry.guestPhone
+                  }
+              }).hash
+            : undefined;
+        const jwt = await new SignJWT({
+            conversationId,
+            email: guestEmail,
+            ...(payloadHash ? { payloadHash } : {})
+        })
             .setProtectedHeader({ alg: 'HS256' })
             .setExpirationTime('24h')
             .sign(secret);
@@ -1657,7 +1703,8 @@ export class ConversationService extends BaseService {
                 verificationUrl,
                 guestName,
                 accommodationName,
-                locale
+                locale,
+                ...(inquiry ? { message: inquiry.message } : {})
             });
         } catch (error) {
             this.logger.error(
@@ -1706,9 +1753,11 @@ export class ConversationService extends BaseService {
             execute: async (validated, validatedActor) => {
                 const secret = this._getJwtSecret();
                 let conversationId: string;
+                let tokenPayloadHash: unknown;
 
                 try {
                     const { payload } = await jwtVerify(validated.verificationToken, secret);
+                    tokenPayloadHash = (payload as Record<string, unknown>).payloadHash;
                     const convId = (payload as Record<string, unknown>).conversationId;
                     if (typeof convId !== 'string') {
                         throw new ServiceError(
@@ -1760,6 +1809,33 @@ export class ConversationService extends BaseService {
                     return { conversationId, rawToken: tokenResult.data.rawToken };
                 }
 
+                // HOS-2568: the link delivers only the payload it was issued for. A stored
+                // payload whose hash differs from the one in the token was replaced by a
+                // later submission (or the token was tampered with): stale, deliver nothing
+                // and leave the status untouched. Rows without a held message (created
+                // before the fix) have nothing to deliver and keep verifying as before.
+                const heldMessage = conversation.pendingMessage;
+                if (heldMessage) {
+                    const { hash: expectedHash } = computeInquiryPayloadHash({
+                        payload: {
+                            message: heldMessage,
+                            guestName: conversation.anonymousName ?? '',
+                            guestPhone: conversation.anonymousPhone
+                        }
+                    });
+                    if (
+                        !inquiryHashesMatch({ expected: expectedHash, actual: tokenPayloadHash })
+                            .matches
+                    ) {
+                        throw new ServiceError(
+                            ServiceErrorCode.UNAUTHORIZED,
+                            'Invalid email verification token',
+                            undefined,
+                            'VERIFICATION_TOKEN_INVALID'
+                        );
+                    }
+                }
+
                 // Primary path: PENDING_VERIFICATION → PENDING_OWNER
                 const rawToken = await withServiceTransaction(async (txCtx) => {
                     const now = new Date();
@@ -1780,10 +1856,44 @@ export class ConversationService extends BaseService {
                         .where(
                             and(
                                 eq(conversations.id, conversationId),
-                                eq(conversations.status, 'PENDING_VERIFICATION' as const)
+                                eq(conversations.status, 'PENDING_VERIFICATION' as const),
+                                // The payload verified above is still the one stored: a
+                                // submission landing in between must not be delivered
+                                // under this link.
+                                heldMessage
+                                    ? and(
+                                          eq(conversations.pendingMessage, heldMessage),
+                                          eq(
+                                              conversations.anonymousName,
+                                              conversation.anonymousName ?? ''
+                                          ),
+                                          conversation.anonymousPhone
+                                              ? eq(
+                                                    conversations.anonymousPhone,
+                                                    conversation.anonymousPhone
+                                                )
+                                              : isNull(conversations.anonymousPhone)
+                                      )
+                                    : isNull(conversations.pendingMessage)
                             )
                         )
                         .returning({ id: conversations.id });
+
+                    if (claimed.length === 0) {
+                        const [current] = await tx
+                            .select({ status: conversations.status })
+                            .from(conversations)
+                            .where(eq(conversations.id, conversationId))
+                            .limit(1);
+                        if (current?.status === 'PENDING_VERIFICATION') {
+                            throw new ServiceError(
+                                ServiceErrorCode.UNAUTHORIZED,
+                                'Invalid email verification token',
+                                undefined,
+                                'VERIFICATION_TOKEN_INVALID'
+                            );
+                        }
+                    }
 
                     // HOS-2568: deliver the guest's held message as their first message, with
                     // the same counter semantics as `initiateAuthenticated` (no user id: the

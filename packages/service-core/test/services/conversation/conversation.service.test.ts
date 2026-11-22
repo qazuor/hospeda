@@ -108,6 +108,7 @@ import * as jose from 'jose';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { AccessTokenService } from '../../../src/services/conversation/access-token.service.js';
 import { ConversationService } from '../../../src/services/conversation/conversation.service.js';
+import { computeInquiryPayloadHash } from '../../../src/services/conversation/inquiry-payload-hash.js';
 import type { MessageService } from '../../../src/services/conversation/message.service.js';
 import type { NotificationScheduleService } from '../../../src/services/conversation/notification-schedule.service.js';
 import { withServiceTransaction } from '../../../src/utils/transaction.js';
@@ -406,14 +407,14 @@ describe('ConversationService', () => {
             );
         });
 
-        it('HOS-2568: first submission wins, a resent never writes the message', async () => {
+        it('HOS-2568: a resent replaces the held payload and mails a link bound to it', async () => {
             // Arrange
             asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
             asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
                 null
             );
             const selectChain = makeSelectChainMock([
-                makeConversation({ pendingMessage: 'Consulta original' })
+                makeConversation({ pendingMessage: 'Texto del atacante' })
             ]);
             const insertChain = makeInsertChainMock([]);
             const updateChain = makeUpdateChainMock([]);
@@ -426,16 +427,27 @@ describe('ConversationService', () => {
             // Act
             const result = await service.initiateAnonymous(ACTOR, {
                 accommodationId: ACCOMMODATION_ID,
-                guestName: 'Otra Persona',
+                guestName: 'Ana García',
                 guestEmail: 'ana@example.com',
-                message: 'Texto reescrito por un tercero'
+                message: 'Texto de la víctima'
             });
 
             // Assert
             expectSuccess(result);
             expect(result.data?.status).toBe('resent');
             expect(insertChain.insert).not.toHaveBeenCalled();
-            expect(updateChain.update).not.toHaveBeenCalled();
+            expect(updateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({ pendingMessage: 'Texto de la víctima' })
+            );
+            const expectedHash = computeInquiryPayloadHash({
+                payload: { message: 'Texto de la víctima', guestName: 'Ana García' }
+            }).hash;
+            expect(jose.SignJWT).toHaveBeenCalledWith(
+                expect.objectContaining({ payloadHash: expectedHash })
+            );
+            expect(SERVICE_DEPS.mailer?.sendVerificationEmail).toHaveBeenCalledWith(
+                expect.objectContaining({ message: 'Texto de la víctima' })
+            );
         });
 
         it('should re-send email and return status=resent for unverified duplicate', async () => {
@@ -454,7 +466,10 @@ describe('ConversationService', () => {
 
             // select returns the existing pending row (unverified duplicate)
             const selectChain = makeSelectChainMock([existingPendingRow]);
-            mockGetDb.mockReturnValue({ select: selectChain.select });
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                update: makeUpdateChainMock([]).update
+            });
 
             // Act
             const result = await service.initiateAnonymous(ACTOR, {
@@ -705,16 +720,31 @@ describe('ConversationService', () => {
         async function verifyWithRecordingTx(args: {
             readonly pendingMessage: string | null;
             readonly claimed: boolean;
+            /** Hash carried by the token; defaults to the hash of the stored payload. */
+            readonly tokenHash?: string | null;
+            /** Status the row has when the claim finds nothing to flip. */
+            readonly statusAfterMiss?: string;
         }) {
             asMock(conversationModelMock.findById).mockResolvedValue(
                 makeConversation({ pendingMessage: args.pendingMessage })
             );
+            const storedHash = args.pendingMessage
+                ? computeInquiryPayloadHash({
+                      payload: { message: args.pendingMessage, guestName: 'Ana García' }
+                  }).hash
+                : undefined;
+            const claim = args.tokenHash === undefined ? storedHash : (args.tokenHash ?? undefined);
             asMock(jose.jwtVerify).mockResolvedValue({
-                payload: { conversationId: CONVERSATION_ID, email: 'ana@example.com' }
+                payload: {
+                    conversationId: CONVERSATION_ID,
+                    email: 'ana@example.com',
+                    ...(claim ? { payloadHash: claim } : {})
+                }
             });
             const setCalls: Array<Record<string, unknown>> = [];
             const insertedValues: Array<Record<string, unknown>> = [];
-            asMock(withServiceTransaction).mockImplementationOnce(
+            const originalTx = asMock(withServiceTransaction).getMockImplementation();
+            asMock(withServiceTransaction).mockImplementation(
                 async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) => {
                     const fakeTx = {
                         update: vi.fn().mockReturnValue({
@@ -731,6 +761,17 @@ describe('ConversationService', () => {
                                 };
                             })
                         }),
+                        select: vi.fn().mockReturnValue({
+                            from: vi.fn().mockReturnValue({
+                                where: vi.fn().mockReturnValue({
+                                    limit: vi
+                                        .fn()
+                                        .mockResolvedValue([
+                                            { status: args.statusAfterMiss ?? 'PENDING_OWNER' }
+                                        ])
+                                })
+                            })
+                        }),
                         insert: vi.fn().mockReturnValue({
                             values: vi
                                 .fn()
@@ -743,9 +784,15 @@ describe('ConversationService', () => {
                     return fn({ tx: fakeTx, hookState: {} });
                 }
             );
-            const result = await service.verifyEmailToken(ACTOR, {
-                verificationToken: 'mock.jwt.token'
-            });
+            let result: Awaited<ReturnType<typeof service.verifyEmailToken>>;
+            try {
+                result = await service.verifyEmailToken(ACTOR, {
+                    verificationToken: 'mock.jwt.token'
+                });
+            } finally {
+                // Pre-transaction rejections never enter the fake: restore the default.
+                if (originalTx) asMock(withServiceTransaction).mockImplementation(originalTx);
+            }
             return { result, setCalls, insertedValues };
         }
 
@@ -787,6 +834,50 @@ describe('ConversationService', () => {
             });
 
             expectSuccess(result);
+            expect(insertedValues).toHaveLength(0);
+        });
+
+        it('HOS-2568: a stale link (hash of an older payload) delivers nothing and does not flip', async () => {
+            const staleHash = computeInquiryPayloadHash({
+                payload: { message: 'Texto del atacante', guestName: 'Ana García' }
+            }).hash;
+
+            const { result, insertedValues, setCalls } = await verifyWithRecordingTx({
+                pendingMessage: 'Texto de la víctima',
+                claimed: true,
+                tokenHash: staleHash
+            });
+
+            expect(result.error?.code).toBe('UNAUTHORIZED');
+            expect(result.error?.reason).toBe('VERIFICATION_TOKEN_INVALID');
+            expect(insertedValues).toHaveLength(0);
+            expect(setCalls).toHaveLength(0);
+            expect(notificationScheduleMock.upsertForMessage).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['a tampered hash', 'f'.repeat(64)],
+            ['no hash claim at all', null]
+        ])('HOS-2568: rejects a token with %s when a message is held', async (_label, tokenHash) => {
+            const { result, insertedValues, setCalls } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola',
+                claimed: true,
+                tokenHash
+            });
+
+            expect(result.error?.reason).toBe('VERIFICATION_TOKEN_INVALID');
+            expect(insertedValues).toHaveLength(0);
+            expect(setCalls).toHaveLength(0);
+        });
+
+        it('HOS-2568: a payload swapped after the hash check (claim misses) is rejected', async () => {
+            const { result, insertedValues } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola',
+                claimed: false,
+                statusAfterMiss: 'PENDING_VERIFICATION'
+            });
+
+            expect(result.error?.reason).toBe('VERIFICATION_TOKEN_INVALID');
             expect(insertedValues).toHaveLength(0);
         });
 
