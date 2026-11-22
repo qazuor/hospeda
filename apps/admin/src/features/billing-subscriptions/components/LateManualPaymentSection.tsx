@@ -64,7 +64,10 @@ export function readLateManualPaymentRejection({
     );
 }
 
-/** Renders the section for manual-payment subscriptions only, behind MP4's permission. */
+/**
+ * Renders the section for manual-payment subscriptions only, behind MP4's permission and
+ * the inspect permission the installment list requires.
+ */
 export function LateManualPaymentSection({
     subscriptionId,
     paymentMethod
@@ -73,8 +76,15 @@ export function LateManualPaymentSection({
     readonly paymentMethod: 'CARD' | 'MANUAL' | null;
 }) {
     if (paymentMethod !== 'MANUAL') return null;
+    // The installment list needs inspect and MP4 needs its own permission; both are required.
     return (
-        <PermissionGate permissions={[PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT]}>
+        <PermissionGate
+            permissions={[
+                PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+                PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT
+            ]}
+            requireAll
+        >
             <SectionBody subscriptionId={subscriptionId} />
         </PermissionGate>
     );
@@ -166,7 +176,12 @@ function SectionBody({ subscriptionId }: { readonly subscriptionId: string }) {
                     </div>
                     <div className="flex gap-2">
                         <Button
-                            disabled={!preview.data || register.isPending}
+                            disabled={
+                                !preview.data ||
+                                preview.isError ||
+                                preview.isFetching ||
+                                register.isPending
+                            }
                             onClick={() => void confirm()}
                         >
                             {t('admin-billing.subscriptionAdmin.lateManualPayment.confirm')}

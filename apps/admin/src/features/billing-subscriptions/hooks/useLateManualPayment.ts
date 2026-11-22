@@ -15,6 +15,7 @@ import {
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
+import { isApiError } from '@/lib/errors';
 import { adminSubscriptionDetailQueryKey } from './useAdminSubscriptionDetail';
 
 /**
@@ -88,6 +89,39 @@ export function useDeclaredUnpaidInstallments({
 }
 
 /**
+ * Query key prefix of a subscription's MP4 confirmations.
+ *
+ * @param input - The subscription id.
+ * @returns A tuple query key.
+ */
+export function lateManualPaymentPreviewQueryKey({
+    subscriptionId
+}: {
+    readonly subscriptionId: string;
+}): readonly unknown[] {
+    return ['admin-billing-subscriptions', 'late-manual-payment-preview', subscriptionId] as const;
+}
+
+/** MP4 rejections that mean the screen is reading a stale installment or subscription. */
+const STALE_REJECTIONS: ReadonlySet<string> = new Set([
+    'LOST_RACE',
+    'MANUAL_PAYMENT_NOT_DECLARED_UNPAID',
+    'MANUAL_PAYMENT_NOT_SUSPENDED'
+]);
+
+/**
+ * Whether an MP4 error says the state moved under the screen.
+ *
+ * @param input - The thrown error.
+ * @returns True for a stale-state rejection.
+ */
+export function isStaleLateManualPaymentRejection({ error }: { readonly error: unknown }): boolean {
+    const payload = isApiError(error) ? error.body : null;
+    const reason = (payload as { error?: { reason?: string } } | null)?.error?.reason;
+    return reason !== undefined && STALE_REJECTIONS.has(reason);
+}
+
+/**
  * Reads the MP4 confirmation of one installment. Read-only: nothing is written.
  *
  * @param input - The subscription id and the selected installment, or null.
@@ -101,12 +135,7 @@ export function useLateManualPaymentPreview({
     readonly manualPaymentId: string | null;
 }) {
     return useQuery({
-        queryKey: [
-            'admin-billing-subscriptions',
-            'late-manual-payment-preview',
-            subscriptionId,
-            manualPaymentId
-        ] as const,
+        queryKey: [...lateManualPaymentPreviewQueryKey({ subscriptionId }), manualPaymentId],
         queryFn: async (): Promise<LateManualPaymentPreviewResponse> => {
             const response = await fetchApi<{ data: LateManualPaymentPreviewResponse }>({
                 path: buildLateManualPaymentPath({
@@ -123,7 +152,9 @@ export function useLateManualPaymentPreview({
 }
 
 /**
- * Registers a late manual payment (MP4) and refreshes the detail and the installment list.
+ * Registers a late manual payment (MP4) and refreshes the detail, the installment list and
+ * the confirmation — also after a stale-state rejection (`LOST_RACE`, no longer declared
+ * unpaid, no longer suspended), so the screen does not keep offering a gone installment.
  *
  * @param input - The subscription id.
  * @returns A TanStack Query mutation taking the installment and an optional proof reference.
@@ -134,6 +165,16 @@ export function useRegisterLateManualPayment({
     readonly subscriptionId: string;
 }) {
     const queryClient = useQueryClient();
+    const refresh = () =>
+        Promise.all([
+            queryClient.invalidateQueries({ queryKey: manualPaymentsQueryKey({ subscriptionId }) }),
+            queryClient.invalidateQueries({
+                queryKey: lateManualPaymentPreviewQueryKey({ subscriptionId })
+            }),
+            queryClient.invalidateQueries({
+                queryKey: adminSubscriptionDetailQueryKey({ subscriptionId })
+            })
+        ]);
     return useMutation({
         mutationFn: async ({
             manualPaymentId,
@@ -151,14 +192,10 @@ export function useRegisterLateManualPayment({
             return response.data.data;
         },
         onSuccess: async () => {
-            await Promise.all([
-                queryClient.invalidateQueries({
-                    queryKey: manualPaymentsQueryKey({ subscriptionId })
-                }),
-                queryClient.invalidateQueries({
-                    queryKey: adminSubscriptionDetailQueryKey({ subscriptionId })
-                })
-            ]);
+            await refresh();
+        },
+        onError: async (error) => {
+            if (isStaleLateManualPaymentRejection({ error })) await refresh();
         }
     });
 }

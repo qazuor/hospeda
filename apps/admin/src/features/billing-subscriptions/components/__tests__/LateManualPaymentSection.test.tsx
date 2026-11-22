@@ -133,7 +133,10 @@ async function openReview() {
 }
 
 beforeEach(() => {
-    state.permissions = [PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT];
+    state.permissions = [
+        PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+        PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT
+    ];
     state.fetchApi.mockReset();
 });
 
@@ -150,9 +153,13 @@ describe('HOS-1640 manual installments section', () => {
         expect(state.fetchApi).not.toHaveBeenCalled();
     });
 
-    it('is not rendered without the MP4 permission', () => {
+    it.each([
+        [[]],
+        [[PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT]],
+        [[PermissionEnum.BILLING_SUBSCRIPTION_INSPECT]]
+    ])('N7: is not rendered unless both inspect and MP4 are granted (%o)', (granted) => {
         // Arrange
-        state.permissions = [];
+        state.permissions = granted;
         arrangeApi(basePreview);
 
         // Act
@@ -160,6 +167,7 @@ describe('HOS-1640 manual installments section', () => {
 
         // Assert
         expect(screen.queryByTestId('late-manual-payment-section')).toBeNull();
+        expect(state.fetchApi).not.toHaveBeenCalled();
     });
 
     it('lists only the installments declared unpaid', async () => {
@@ -249,9 +257,16 @@ describe('TEST:B13a:19 the confirmation says what period it pays', () => {
         expect(screen.getByRole('note').textContent).toBe(L.nextChargeOverdue);
     });
 
-    it('S19: says the payment does not reactivate and shows no S7 effects', async () => {
+    it('S19: says the payment does not reactivate, covers the original period, and shows no S7 effects', async () => {
         // Arrange
-        arrangeApi({ ...basePreview, effect: 'S19', presence: null, s7Effects: null });
+        arrangeApi({
+            ...basePreview,
+            effect: 'S19',
+            periodCase: 'ORIGINAL_PERIOD',
+            nextChargeOverdue: true,
+            presence: null,
+            s7Effects: null
+        });
         renderSection();
 
         // Act
@@ -259,6 +274,16 @@ describe('TEST:B13a:19 the confirmation says what period it pays', () => {
 
         // Assert
         expect(screen.getByTestId('late-manual-payment-s19').textContent).toContain(L.s19Body);
+        expect(screen.getByTestId('late-manual-payment-period').textContent).toBe(
+            L.periodCases.ORIGINAL_PERIOD.replace('{periodStart}', '2026-08-03').replaceAll(
+                '{nextChargeAt}',
+                '2026-09-03'
+            )
+        );
+        expect(screen.getByTestId('late-manual-payment-period').textContent).not.toContain(
+            'todavía no terminó'
+        );
+        expect(screen.getByRole('note').textContent).toBe(L.nextChargeOverdue);
         expect(screen.queryByTestId('late-manual-payment-effects')).toBeNull();
         expect(screen.queryByText(L.serviceReturns)).toBeNull();
     });
@@ -271,7 +296,8 @@ describe('TEST:B13a:19 the confirmation says what comes back and what does not',
             ['RETURNS', 'Casa del Río'],
             ['ARCHIVED_DRAFT', 'Borrador viejo'],
             ['PURGED', 'Cabaña purgada'],
-            ['NO_SLOT', 'Sin cupo']
+            ['NO_SLOT', 'Sin cupo'],
+            ['LOWERED_BY_SURPLUS', 'Sobrante']
         ].map(([outcome, name], index) => ({
             id: `4444444${index}-4444-4444-8444-444444444444`,
             name,
@@ -420,5 +446,60 @@ describe('HOS-1640 MP4 rejections', () => {
         await waitFor(() =>
             expect(screen.getByRole('alert').textContent).toBe(L.rejections.LOST_RACE)
         );
+    });
+
+    it.each([
+        'LOST_RACE',
+        'MANUAL_PAYMENT_NOT_DECLARED_UNPAID'
+    ])('N5: a stale %s refetches the installments and the confirmation', async (reason) => {
+        // Arrange
+        arrangeApi(basePreview);
+        const original = state.fetchApi.getMockImplementation();
+        state.fetchApi.mockImplementation(async (input: { path: string; method?: string }) => {
+            if (input.method === 'POST')
+                throw new ApiError('conflict', { status: 409, body: { error: { reason } } });
+            return original?.(input);
+        });
+        renderSection();
+        await openReview();
+        const reads = (path: string) =>
+            state.fetchApi.mock.calls.filter(
+                ([call]) =>
+                    (call as { path: string; method?: string }).path === path &&
+                    !(call as { method?: string }).method
+            ).length;
+        const listBefore = reads(LIST_PATH);
+        const previewBefore = reads(MP4_PATH);
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: L.confirm }));
+
+        // Assert
+        await waitFor(() => expect(reads(LIST_PATH)).toBeGreaterThan(listBefore));
+        await waitFor(() => expect(reads(MP4_PATH)).toBeGreaterThan(previewBefore));
+    });
+
+    it('N4: Confirm stays disabled when the confirmation could not be read', async () => {
+        // Arrange
+        arrangeApi(basePreview);
+        const original = state.fetchApi.getMockImplementation();
+        state.fetchApi.mockImplementation(async (input: { path: string; method?: string }) => {
+            if (input.path === MP4_PATH && !input.method)
+                throw new ApiError('conflict', {
+                    status: 409,
+                    body: { error: { reason: 'MANUAL_PAYMENT_NOT_DECLARED_UNPAID' } }
+                });
+            return original?.(input);
+        });
+        renderSection();
+
+        // Act
+        fireEvent.click(await screen.findByRole('button', { name: L.review }));
+
+        // Assert
+        expect(await screen.findByRole('alert')).toBeTruthy();
+        expect(
+            (screen.getByRole('button', { name: L.confirm }) as HTMLButtonElement).disabled
+        ).toBe(true);
     });
 });
