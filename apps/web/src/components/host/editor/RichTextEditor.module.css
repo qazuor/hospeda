@@ -131,11 +131,13 @@
 }
 
 .editorContent :global(img.ProseMirror-separator) {
+    /* biome-ignore-start lint/complexity/noImportantStyles: copied verbatim from ProseMirror's base CSS (prosemirror-view/style/prosemirror.css), which must beat any img rule to keep the separator invisible */
     display: inline !important;
     border: none !important;
     margin: 0 !important;
     width: 0 !important;
     height: 0 !important;
+    /* biome-ignore-end lint/complexity/noImportantStyles: end of ProseMirror base CSS */
 }
 
 .editorContent :global(.ProseMirror-gapcursor) {
