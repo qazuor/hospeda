@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4414
+    {
+        id: '2026-11-16-owners-can-downgrade-their-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Ya podés bajar de plan sin que te lo rechacen',
+            en: 'You can now move to a lower plan without being turned down',
+            pt: 'Agora você pode passar para um plano menor sem ser recusado'
+        },
+        body: {
+            es: 'Si pagás con tarjeta, podés pedir un plan más chico desde Mi suscripción. El cambio queda programado para tu próxima fecha de cobro, el próximo cobro ya sale al precio nuevo y mientras tanto conservás todo lo de tu plan actual.',
+            en: 'If you pay by card, you can ask for a smaller plan from My subscription. The change is scheduled for your next charge date, the next charge already comes at the new price, and until then you keep everything in your current plan.',
+            pt: 'Se você paga com cartão, pode pedir um plano menor em Minha assinatura. A mudança fica programada para a sua próxima data de cobrança, a próxima cobrança já sai com o preço novo e, até lá, você mantém tudo o que o seu plano atual oferece.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4618, #4636
     {
         id: '2026-11-20-buy-one-time-highlights-in-store',
@@ -203,21 +221,6 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             es: 'Si se te venció el link de pago de un destaque y lo reintentás desde dos pestañas a la vez, las dos te llevan al mismo pago de Mercado Pago, en lugar de que una muestre un error.',
             en: 'If the payment link for a highlight expired and you retry it from two tabs at once, both take you to the same Mercado Pago payment instead of one showing an error.',
             pt: 'Se o link de pagamento de um destaque venceu e você tenta de novo em duas abas ao mesmo tempo, as duas levam ao mesmo pagamento do Mercado Pago, em vez de uma mostrar um erro.'
-    // origin: #4414
-    {
-        id: '2026-11-16-owners-can-downgrade-their-plan',
-        publishedAt: 'on-promotion',
-        highlight: false,
-        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
-        title: {
-            es: 'Ya podés bajar de plan sin que te lo rechacen',
-            en: 'You can now move to a lower plan without being turned down',
-            pt: 'Agora você pode passar para um plano menor sem ser recusado'
-        },
-        body: {
-            es: 'Si pagás con tarjeta, podés pedir un plan más chico desde Mi suscripción. El cambio queda programado para tu próxima fecha de cobro, el próximo cobro ya sale al precio nuevo y mientras tanto conservás todo lo de tu plan actual.',
-            en: 'If you pay by card, you can ask for a smaller plan from My subscription. The change is scheduled for your next charge date, the next charge already comes at the new price, and until then you keep everything in your current plan.',
-            pt: 'Se você paga com cartão, pode pedir um plano menor em Minha assinatura. A mudança fica programada para a sua próxima data de cobrança, a próxima cobrança já sai com o preço novo e, até lá, você mantém tudo o que o seu plano atual oferece.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
