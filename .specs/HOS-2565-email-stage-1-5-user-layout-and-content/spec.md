@@ -525,14 +525,10 @@ export type ReconciliationReasonLabelResolver = (input: { readonly reason: strin
 | R-10 | Enriching the staff mails adds a DB read at send time | Same batched reader as the summary, optional, never blocks (AC-3.9) |
 | R-11 | The "Gestioná tus avisos" link promises control the page does not give for most mails (§2.6) | Neutral wording (it does not say "darte de baja"). OQ-1 |
 
-## 12. Open questions for the owner
+## 12. Owner decisions (resolved 2026-11-22)
 
-- **OQ-1 The "Gestioná tus avisos" link on mails the page does not control.** Today `/es/mi-cuenta/preferencias/` only governs the AI questions digest and the newsletter (§2.6). Options:
-  1. **(Recommended)** Show it on every user mail with an account holder, as requested. The neutral wording promises nothing it cannot do, and `packages/email/CLAUDE.md`'s rule is updated to say so. Wiring the page to `PreferenceService` becomes a follow-up issue.
-  2. Show it only on the mails the page controls today (just the AI digest), until the follow-up lands.
-- **OQ-2 Where the design draft is reviewed.** Options:
-  1. **(Recommended)** Screenshots plus HTML from the PR-4 branch, posted on HOS-2565 (D15). There is no extra PR, and unapproved design never reaches staging.
-  2. An extra small PR that ships the user variant behind a preview-only switch in the staging previewer, so the owner can click through all 112 user mails himself. It costs one more PR and a dormant code path in production until PR-4 flips it.
+- **OQ-1 The "Gestioná tus avisos" link → show it on every user mail with an account holder.** The neutral wording promises nothing the page cannot do, and `packages/email/CLAUDE.md`'s rule is updated to say so. Wiring `/es/mi-cuenta/preferencias/` to `PreferenceService` is the follow-up HOS-2567. Rejected: showing it only on the AI digest until the follow-up lands, and dropping it for now.
+- **OQ-2 Where the design draft is reviewed → screenshots plus HTML from the PR-4 branch, posted on HOS-2565 (D15).** There is no extra PR, and unapproved design never reaches staging. Rejected: a preview-only switch shipped to the staging previewer.
 
 ## 13. Implementation plan: PR split
 
