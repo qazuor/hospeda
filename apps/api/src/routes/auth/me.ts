@@ -59,30 +59,31 @@ export async function handleAuthMe(c: Context) {
         // Non-blocking: an account whose listing cannot be read is treated
         // as owning none. The consequence is a missing nav entry, never a
         // broken account page, and the entry reappears on the next render.
-        let ownsHostTradeListing = false;
-        if (isAuthenticated) {
+        //
+        // Same placement and reasoning for whether it owns a LIVE partner
+        // listing (HOS-2551). A revoked or soft-deleted partner does not count
+        // (`ownsActivePartner`, a one-row indexed existence check).
+        //
+        // Both probes run in parallel, each swallowing its own failure.
+        const probeHostTrade = async (): Promise<boolean> => {
             try {
                 const own = await hostTradeService.getOwn(actor);
-                ownsHostTradeListing = own.data?.trade != null;
+                return own.data?.trade != null;
             } catch {
-                // Non-blocking: default false
+                return false;
             }
-        }
-
-        // Whether this account owns a LIVE partner listing (HOS-2551): same
-        // placement and reasoning as `ownsHostTradeListing` above. A revoked or
-        // soft-deleted partner does not count (`ownsActivePartner`). The probe
-        // is a one-row indexed existence check, paid by authenticated callers
-        // only, and non-blocking: a failure reads as "owns none".
-        let ownsPartner = false;
-        if (isAuthenticated) {
+        };
+        const probePartner = async (): Promise<boolean> => {
             try {
                 const own = await partnerService.ownsActivePartner(actor);
-                ownsPartner = own.data?.owns === true;
+                return own.data?.owns === true;
             } catch {
-                // Non-blocking: default false
+                return false;
             }
-        }
+        };
+        const [ownsHostTradeListing, ownsPartner] = isAuthenticated
+            ? await Promise.all([probeHostTrade(), probePartner()])
+            : [false, false];
 
         const result = {
             actor: filteredActor,

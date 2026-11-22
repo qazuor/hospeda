@@ -111,15 +111,13 @@ describe('GET /auth/me — ownsPartner (HOS-2551)', () => {
         expect(result.ownsPartner).toBe(false);
     });
 
-    it('reports false for a revoked partner (the service probe excludes revoked rows)', async () => {
-        // `ownsActivePartner` answers false for a revoked or soft-deleted row;
-        // the predicate itself is pinned in @repo/db
-        // (partner-active-owned-condition.test.ts).
-        mockOwnsActivePartner.mockResolvedValue({ data: { owns: false } });
+    it('reports false when the partner probe throws (non-blocking)', async () => {
+        mockOwnsActivePartner.mockRejectedValue(new Error('db down'));
 
         const result = await handleAuthMe(ctxWith(AUTHENTICATED));
 
         expect(result.ownsPartner).toBe(false);
+        expect(result.isAuthenticated).toBe(true);
     });
 
     it('does NOT probe for a guest', async () => {
