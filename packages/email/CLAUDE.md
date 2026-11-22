@@ -70,7 +70,7 @@ What it renders (HOS-2519 §5.1):
 - A centered card, `width="100%"`, `max-width: 600px`, fluid down to 320px with no media query.
 - Outlook desktop (Word) ignores `max-width` and padding on `<table>` styles, so the card sits in an MSO-only 600px "ghost table" (`<!--[if mso]>` comments, each emitted from an empty wrapper `<div>` because React cannot render a bare comment), and every section's padding, background and the accent border live on the `<td>` (`Row`/`Column`), not on the table.
 - The footer links carry `data-layout-link="home"` / `"preferences"` so tests can tell layout chrome from body links.
-- A white header with the hosted PNG logo (`EMAIL_LOGO_URL`, `EMAIL_LOGO_WIDTH` x `EMAIL_LOGO_HEIGHT`, `alt="Hospeda"` styled as a wordmark so a blocked image still reads as the brand), the tagline "Turismo en el Litoral" and a 4px brand accent bar. The header carries `data-skip-in-text="true"`, which React Email's plain-text conversion honours: the text part starts at the body copy.
+- A white header with the hosted PNG logo (`resolveEmailLogoUrl()`, `EMAIL_LOGO_WIDTH` x `EMAIL_LOGO_HEIGHT`, `alt="Hospeda"` styled as a wordmark so a blocked image still reads as the brand), the tagline "Turismo en el Litoral" and a 4px brand accent bar. The header carries `data-skip-in-text="true"`, which React Email's plain-text conversion honours: the text part starts at the body copy.
 - Body padding `32px 24px`; templates keep their own typography.
 - Footer: divider, "Hospeda - Turismo en el Litoral", the platform description line, a `hospeda.com.ar` link to the home, and the optional preferences link.
 
@@ -78,12 +78,12 @@ Rules that keep it email-client-safe:
 
 - Inline styles only. No flexbox, grid, CSS variables, `oklch()`, web fonts, `<style>`-dependent layout or SVG.
 - Colors come from `emailPalette` in `@repo/design-tokens`: hex literals derived from the brand tokens, with a test there that fails on drift. Never hard-code a new brand hex in the layout.
-- Absolute URLs come from module constants (`EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar'`, `EMAIL_LOGO_URL`, `EMAIL_PREFERENCES_URL`), never from `siteUrl`: emails always point at production.
+- Absolute URLs come from module constants (`EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar'`, `EMAIL_PREFERENCES_URL`), never from `siteUrl`: emails always point at production. The ONE exception is the logo, whose origin follows the deployment (see below).
 - Keep it lean: Gmail clips messages over 102 KB. `apps/api/test/services/email-preview/email-catalog-layout.test.ts` asserts every catalog email stays under 90 KB, plus the AC-1.2/2.1/3.2 checks on every scenario.
 
 ### The logo asset
 
-`EMAIL_LOGO_URL` is `https://hospeda.com.ar/email/hospeda-logo@2x.png`, served from `apps/web/public/email/hospeda-logo@2x.png` (360x108 PNG, rendered at 180x54). It only resolves once the file reaches production; until then clients show the styled `alt` text. If the asset changes, keep `EMAIL_LOGO_WIDTH`/`EMAIL_LOGO_HEIGHT` at the asset's aspect ratio (Outlook desktop honours the `height` attribute).
+The PNG lives in `apps/web/public/email/hospeda-logo@2x.png` (360x108, rendered at 180x54), so each deployment serves its own copy. The layout renders `resolveEmailLogoUrl()`, which follows the origin set by `configureEmailAssets({ siteUrl })` (HOS-2540). The host app calls it once at startup with its validated site URL (`apps/api/src/index.ts`, `HOSPEDA_SITE_URL`); the default is production, so an app that never configures it gets `EMAIL_LOGO_URL` (`https://hospeda.com.ar/email/hospeda-logo@2x.png`, kept as the production default constant). `siteUrl` must be an absolute http(s) URL (`TypeError` otherwise); a trailing slash is stripped. Tests call `resetEmailAssets()` to restore the default. Only the logo follows it: the footer link and `EMAIL_PREFERENCES_URL` stay on production. If the asset changes, keep `EMAIL_LOGO_WIDTH`/`EMAIL_LOGO_HEIGHT` at the asset's aspect ratio (Outlook desktop honours the `height` attribute).
 
 ### `footerLink="preferences"`: when it is allowed
 

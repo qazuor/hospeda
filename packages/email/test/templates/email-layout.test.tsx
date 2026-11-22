@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { configureEmailAssets, resetEmailAssets } from '../../src/email-assets.js';
 import { renderEmailBodies } from '../../src/render.js';
 import {
     EMAIL_LOGO_HEIGHT,
@@ -19,6 +20,10 @@ const TAGLINE = 'Turismo en el Litoral</p>';
  * Unit tests for the unified EmailLayout (HOS-2519 §5.1).
  */
 describe('EmailLayout', () => {
+    afterEach(() => {
+        resetEmailAssets();
+    });
+
     it('renders children inside one Spanish, light-only document', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
@@ -190,5 +195,94 @@ describe('EmailLayout', () => {
         expect(text).toContain(PREFERENCES_TEXT);
         expect(text).not.toContain(EMAIL_LOGO_URL);
         expect(text.replace(FOOTER_BRAND_LINE, '')).not.toContain('Turismo en el Litoral');
+    });
+
+    describe('logo origin (HOS-2540)', () => {
+        const render = async () =>
+            renderEmailBodies({
+                react: (
+                    <EmailLayout footerLink="preferences">
+                        <p>x</p>
+                    </EmailLayout>
+                )
+            });
+
+        it('uses the production logo URL by default', async () => {
+            // Act
+            const { html } = await render();
+
+            // Assert
+            expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-logo@2x.png"');
+        });
+
+        it('follows the configured origin and strips a trailing slash', async () => {
+            // Arrange
+            configureEmailAssets({ siteUrl: 'https://staging.hospeda.com.ar/' });
+
+            // Act
+            const { html, text } = await render();
+
+            // Assert
+            expect(html).toContain(
+                'src="https://staging.hospeda.com.ar/email/hospeda-logo@2x.png"'
+            );
+            expect(html).not.toContain('src="https://hospeda.com.ar/email/');
+            expect(text).not.toContain('hospeda-logo');
+        });
+
+        it('keeps the footer and preferences links on production', async () => {
+            // Arrange
+            configureEmailAssets({ siteUrl: 'https://staging.hospeda.com.ar' });
+
+            // Act
+            const { html } = await render();
+
+            // Assert
+            expect(html).toContain('href="https://hospeda.com.ar"');
+            expect(html).toContain(`href="${EMAIL_PREFERENCES_URL}"`);
+            expect(EMAIL_LOGO_URL).toBe('https://hospeda.com.ar/email/hospeda-logo@2x.png');
+        });
+
+        it.each([
+            '',
+            '   ',
+            'not a url',
+            '/relative/path',
+            'ftp://hospeda.com.ar',
+            'javascript:alert(1)'
+        ])('throws TypeError for invalid siteUrl %j', (siteUrl) => {
+            // Act & Assert
+            expect(() => configureEmailAssets({ siteUrl })).toThrow(TypeError);
+        });
+
+        it('throws TypeError for a non-string siteUrl', () => {
+            // Act & Assert
+            // @ts-expect-error Testing runtime validation
+            expect(() => configureEmailAssets({ siteUrl: 123 })).toThrow(TypeError);
+        });
+
+        it('keeps the previous origin when configuration is rejected', async () => {
+            // Arrange
+            configureEmailAssets({ siteUrl: 'https://staging.hospeda.com.ar' });
+
+            // Act
+            expect(() => configureEmailAssets({ siteUrl: 'nope' })).toThrow(TypeError);
+            const { html } = await render();
+
+            // Assert
+            expect(html).toContain('src="https://staging.hospeda.com.ar/email/');
+        });
+
+        it('restores the production default after reset', async () => {
+            // Arrange
+            configureEmailAssets({ siteUrl: 'https://staging.hospeda.com.ar' });
+
+            // Act
+            resetEmailAssets();
+            const { html } = await render();
+
+            // Assert
+            expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-logo@2x.png"');
+        });
     });
 });
