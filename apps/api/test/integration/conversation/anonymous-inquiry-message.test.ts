@@ -12,6 +12,7 @@
 import { randomUUID } from 'node:crypto';
 import { getDb, sql } from '@repo/db';
 import { PermissionEnum, PublicationStatusEnum } from '@repo/schemas';
+import { computeInquiryPayloadHash } from '@repo/service-core';
 import { SignJWT } from 'jose';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -28,6 +29,7 @@ import {
 const app = initApp();
 const createdListings: string[] = [];
 const createdUsers: string[] = [];
+const GUEST_NAME = 'Ana Visitante';
 
 interface ConversationRow {
     readonly status: string;
@@ -64,7 +66,7 @@ async function initiate(args: {
         headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
         body: JSON.stringify({
             accommodationId: args.listingId,
-            guestName: 'Ana Visitante',
+            guestName: GUEST_NAME,
             guestEmail: args.email,
             message: args.message
         })
@@ -79,15 +81,37 @@ async function initiate(args: {
     };
 }
 
-/** Mints the verification JWT the email would carry. */
+/**
+ * Mints the verification JWT the email would carry. By default it is bound to the payload
+ * of `message` (the claim `ConversationService.sendVerificationEmail` signs); pass
+ * `payloadHash` to override it (`null` omits the claim) and `expiresIn` to age it.
+ */
 async function mintToken(args: {
     readonly conversationId: string;
-    readonly expiresIn?: string;
+    readonly message?: string;
+    readonly payloadHash?: string | null;
+    readonly expiresIn?: string | number;
 }): Promise<string> {
-    return new SignJWT({ conversationId: args.conversationId })
+    let hash: string | null = null;
+    if (args.payloadHash !== undefined) {
+        hash = args.payloadHash;
+    } else if (args.message !== undefined) {
+        hash = computeInquiryPayloadHash({
+            payload: { message: args.message, guestName: GUEST_NAME }
+        }).hash;
+    }
+    return new SignJWT({
+        conversationId: args.conversationId,
+        ...(hash ? { payloadHash: hash } : {})
+    })
         .setProtectedHeader({ alg: 'HS256' })
         .setExpirationTime(args.expiresIn ?? '24h')
         .sign(new TextEncoder().encode(process.env.HOSPEDA_BETTER_AUTH_SECRET));
+}
+
+/** Location a verify response redirected to. */
+function redirectTarget(response: Response): string {
+    return response.headers.get('location') ?? '';
 }
 
 /** Calls the verify route with a token. */
@@ -192,8 +216,15 @@ describe('HOS-2568 anonymous inquiry message', () => {
         expect(pending.pending_message).toBe('Hola, ¿hay lugar en enero?');
         expect(pending.guest_message_count).toBe(0);
 
-        const verified = await verify(await mintToken({ conversationId: created.conversationId }));
+        const verified = await verify(
+            await mintToken({
+                conversationId: created.conversationId,
+                message: 'Hola, ¿hay lugar en enero?'
+            })
+        );
         expect(verified.status).toBe(302);
+        expect(redirectTarget(verified)).toContain('/guest/messages/');
+        expect(redirectTarget(verified)).not.toContain('verify-expired');
 
         const row = await readConversation(created.conversationId);
         expect(row.status).toBe('PENDING_OWNER');
@@ -216,27 +247,57 @@ describe('HOS-2568 anonymous inquiry message', () => {
         expect(thread.data?.conversation).not.toHaveProperty('pendingMessage');
     });
 
-    it('first submission wins: a re-submit with other text keeps the original', async () => {
-        const { listingId } = await createFixture();
-        const email = `guest-${randomUUID()}@example.test`;
+    it('binds delivery to the clicked link: attacker text A, then victim text B', async () => {
+        const { ownerId, listingId } = await createFixture();
+        const email = `victim-${randomUUID()}@example.test`;
 
-        const first = await initiate({ listingId, email, message: 'Consulta original' });
-        const second = await initiate({
-            listingId,
-            email,
-            message: 'Texto escrito por otra persona'
-        });
-        expect(second.result).toBe('resent');
-        expect(second.conversationId).toBe(first.conversationId);
+        // A stranger types the victim's email with hostile text, then the victim submits
+        // their real inquiry: same row, last submission wins.
+        const attacker = await initiate({ listingId, email, message: 'TEXTO A (atacante)' });
+        const victim = await initiate({ listingId, email, message: 'TEXTO B (victima)' });
+        expect(victim.result).toBe('resent');
+        expect(victim.conversationId).toBe(attacker.conversationId);
+        const id = victim.conversationId;
+        expect((await readConversation(id)).pending_message).toBe('TEXTO B (victima)');
 
-        expect((await readConversation(first.conversationId)).pending_message).toBe(
-            'Consulta original'
+        // A's link is stale: nothing delivered, status untouched.
+        const stale = await verify(
+            await mintToken({ conversationId: id, message: 'TEXTO A (atacante)' })
         );
+        expect(redirectTarget(stale)).toContain('verify-expired');
+        expect(await readMessages(id)).toHaveLength(0);
+        expect((await readConversation(id)).status).toBe('PENDING_VERIFICATION');
 
-        await verify(await mintToken({ conversationId: first.conversationId }));
-        expect((await readMessages(first.conversationId)).map((m) => m.body)).toEqual([
-            'Consulta original'
-        ]);
+        // B's link delivers exactly B.
+        const good = await verify(
+            await mintToken({ conversationId: id, message: 'TEXTO B (victima)' })
+        );
+        expect(redirectTarget(good)).not.toContain('verify-expired');
+        expect((await readMessages(id)).map((m) => m.body)).toEqual(['TEXTO B (victima)']);
+
+        const thread = await ownerThread({ ownerId, conversationId: id });
+        expect(thread.data?.messages?.map((m) => m.body)).toEqual(['TEXTO B (victima)']);
+    });
+
+    it('rejects a token with a tampered hash or with no hash claim while a message is held', async () => {
+        const { listingId } = await createFixture();
+        const created = await initiate({
+            listingId,
+            email: `guest-${randomUUID()}@example.test`,
+            message: 'Consulta real'
+        });
+
+        for (const payloadHash of ['f'.repeat(64), null]) {
+            const response = await verify(
+                await mintToken({ conversationId: created.conversationId, payloadHash })
+            );
+            expect(redirectTarget(response)).toContain('verify-expired');
+        }
+
+        expect(await readMessages(created.conversationId)).toHaveLength(0);
+        const row = await readConversation(created.conversationId);
+        expect(row.status).toBe('PENDING_VERIFICATION');
+        expect(row.pending_message).toBe('Consulta real');
     });
 
     it('verifying twice does not duplicate the message or the counters', async () => {
@@ -246,7 +307,10 @@ describe('HOS-2568 anonymous inquiry message', () => {
             email: `guest-${randomUUID()}@example.test`,
             message: 'Una sola vez'
         });
-        const token = await mintToken({ conversationId: created.conversationId });
+        const token = await mintToken({
+            conversationId: created.conversationId,
+            message: 'Una sola vez'
+        });
 
         await verify(token);
         await verify(token);
@@ -263,10 +327,11 @@ describe('HOS-2568 anonymous inquiry message', () => {
             email: `guest-${randomUUID()}@example.test`,
             message: 'No debe salir'
         });
-        const expired = await new SignJWT({ conversationId: created.conversationId })
-            .setProtectedHeader({ alg: 'HS256' })
-            .setExpirationTime(Math.floor(Date.now() / 1000) - 60)
-            .sign(new TextEncoder().encode(process.env.HOSPEDA_BETTER_AUTH_SECRET));
+        const expired = await mintToken({
+            conversationId: created.conversationId,
+            message: 'No debe salir',
+            expiresIn: Math.floor(Date.now() / 1000) - 60
+        });
 
         await verify(expired);
 
