@@ -14,8 +14,7 @@
  * Same HTML for every reader (D-H4): it reads only the anchor and the locale.
  */
 
-import { findHelpEntry, helpLinkOpensNewTab } from '@/lib/help/help-entry';
-import { helpArticlePath } from '@/lib/help/help-tokens';
+import { findHelpEntry, helpLinkAttributes } from '@/lib/help/help-entry';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -28,18 +27,17 @@ interface Props {
 const { anchor, locale } = Astro.props;
 const entry = findHelpEntry({ anchor, locale });
 const { t } = createTranslations(locale);
-const newTab = entry !== undefined && helpLinkOpensNewTab({ anchor: anchor ?? '' });
+const link =
+	entry === undefined ? undefined : helpLinkAttributes({ anchor: anchor ?? '', entry, locale, t });
 ---
 
-{entry !== undefined && (
+{entry !== undefined && link !== undefined && (
 	<a
 		class="help-link"
-		href={helpArticlePath({ id: entry.id, locale })}
-		target={newTab ? '_blank' : undefined}
-		rel={newTab ? 'noopener' : undefined}
-		aria-label={t(newTab ? 'account.help.link.ariaLabel' : 'account.help.link.ariaLabelSameTab', undefined, {
-			title: entry.title,
-		})}
+		href={link.href}
+		target={link.target}
+		rel={link.rel}
+		aria-label={link.ariaLabel}
 		data-help-link={entry.id}
 	>
 		<span class="help-link__mark" aria-hidden="true">?</span>

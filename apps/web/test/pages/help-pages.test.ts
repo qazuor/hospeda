@@ -133,8 +133,17 @@ describe('help article (web-ui §4)', () => {
         expect(ARTICLE).toContain("{t('account.help.search.submit')}");
     });
 
-    it('adds no scroll-margin on top of the global scroll-padding (HOS-2552)', () => {
+    it('adds no literal scroll-margin on top of the global scroll-padding (HOS-2552)', () => {
         expect(ARTICLE).not.toMatch(/scroll-margin-top:\s*\d/);
+    });
+
+    it('on mobile, headings clear the sticky account nav bar too (HOS-2552)', () => {
+        expect(ARTICLE).toMatch(
+            /@media \(max-width: 768px\) \{[^@]*scroll-margin-top: var\(--help-account-bar-height\);/
+        );
+        expect(LAYOUT).toMatch(
+            /@media \(max-width: 768px\)[\s\S]*\.account-page__nav \{\s*position: sticky;/
+        );
     });
 
     it('renders a side index and a mobile details index', () => {
@@ -156,17 +165,20 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
         expect(SHELL).toContain('helpAnchor={helpAnchor}');
     });
 
-    it('HelpLink renders nothing without an entry and opens in a new tab outside help', () => {
-        expect(HELP_LINK).toContain('{entry !== undefined && (');
-        expect(HELP_LINK).toContain('helpLinkOpensNewTab({ anchor:');
-        expect(HELP_LINK).toContain("target={newTab ? '_blank' : undefined}");
-        expect(HELP_LINK).toContain("rel={newTab ? 'noopener' : undefined}");
-    });
-
-    it('inside help the «?» names no new tab in its accessible name (HOS-2552)', () => {
-        expect(HELP_LINK).toContain(
-            "newTab ? 'account.help.link.ariaLabel' : 'account.help.link.ariaLabelSameTab'"
-        );
+    it('HelpLink renders nothing without an entry and puts helpLinkAttributes on its <a>', () => {
+        // The new-tab rule itself is tested as behaviour in help-entry.test.ts
+        // (helpLinkAttributes); here only that the component uses all of it.
+        expect(HELP_LINK).toContain('{entry !== undefined && link !== undefined && (');
+        expect(HELP_LINK).toContain('helpLinkAttributes({ anchor:');
+        for (const attribute of [
+            'href={link.href}',
+            'target={link.target}',
+            'rel={link.rel}',
+            'aria-label={link.ariaLabel}'
+        ]) {
+            expect(HELP_LINK).toContain(attribute);
+        }
+        expect(HELP_LINK).not.toMatch(/target="|rel="|helpLinkOpensNewTab\(/);
     });
 
     it.each(

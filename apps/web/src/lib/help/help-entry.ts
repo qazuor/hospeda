@@ -11,7 +11,9 @@
  */
 
 import { HELP_INDEX, HELP_SOURCE_LOCALE, type HelpLocale } from '@repo/help';
+import type { TranslationFn } from '@/lib/i18n';
 import { findLocalizedHelpArticle } from './help-catalog';
+import { helpArticlePath } from './help-tokens';
 
 /** The only route prefix whose pages carry a «?» (AC-21). */
 export const HELP_LINK_ROUTE_PREFIX = 'mi-cuenta';
@@ -47,6 +49,48 @@ export const HELP_CENTER_ROUTE = `${HELP_LINK_ROUTE_PREFIX}/ayuda`;
 export function helpLinkOpensNewTab({ anchor }: { readonly anchor: string }): boolean {
     const page = `page:${HELP_CENTER_ROUTE}`;
     return anchor !== page && !anchor.startsWith(`${page}/`);
+}
+
+/** The link attributes of a «?» button. */
+export interface HelpLinkAttributes {
+    readonly href: string;
+    readonly target: '_blank' | undefined;
+    readonly rel: 'noopener' | undefined;
+    readonly ariaLabel: string;
+}
+
+/**
+ * Everything `HelpLink.astro` puts on its `<a>`, so the new-tab rule is tested
+ * as behaviour rather than as source text (HOS-2552).
+ *
+ * @param args.anchor - The «?» anchor
+ * @param args.entry - The article it opens
+ * @param args.locale - The page locale
+ * @param args.t - The page translator
+ * @returns `href`, `target`, `rel` and the accessible name
+ */
+export function helpLinkAttributes({
+    anchor,
+    entry,
+    locale,
+    t
+}: {
+    readonly anchor: string;
+    readonly entry: HelpEntry;
+    readonly locale: HelpLocale;
+    readonly t: TranslationFn;
+}): HelpLinkAttributes {
+    const newTab = helpLinkOpensNewTab({ anchor });
+    return {
+        href: helpArticlePath({ id: entry.id, locale }),
+        target: newTab ? '_blank' : undefined,
+        rel: newTab ? 'noopener' : undefined,
+        ariaLabel: t(
+            newTab ? 'account.help.link.ariaLabel' : 'account.help.link.ariaLabelSameTab',
+            undefined,
+            { title: entry.title }
+        )
+    };
 }
 
 /**
