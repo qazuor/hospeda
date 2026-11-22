@@ -34,6 +34,7 @@ import { createTranslations } from '@/lib/i18n';
 import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasPostsNavAccess } from '@/lib/nav-gating';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { buildUrl } from '@/lib/urls';
 import btn from '@/components/account/AccountButton.module.css';
 
@@ -55,7 +56,7 @@ if (!hasPostsNavAccess({ roles: user.roles })) {
 
 const postId = Astro.params.id;
 if (!postId) {
-    return Astro.redirect(listUrl);
+    return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'posts' }));
 }
 
 // ---------------------------------------------------------------------------
@@ -71,7 +72,7 @@ if (!result.ok) {
     // purpose: telling the two apart would confirm the existence of another
     // author's post to someone who may not read it.
     logger.error('[mi-cuenta/publicaciones/editar] Failed to fetch post', result.error.message);
-    return Astro.redirect(listUrl);
+    return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'posts' }));
 }
 
 const post = transformPostEditDetail({ item: result.data });

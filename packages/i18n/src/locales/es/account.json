@@ -1901,7 +1901,10 @@
             "account": "Volver a mi cuenta",
             "messages": "Volver a mis consultas",
             "ownerMessages": "Volver a las consultas de mis propiedades",
-            "listings": "Volver a mis publicaciones"
+            "listings": "Volver a mis publicaciones",
+            "properties": "Volver a mis propiedades",
+            "events": "Volver a mis eventos",
+            "posts": "Volver a mis publicaciones de blog"
         }
     },
     "help": {
