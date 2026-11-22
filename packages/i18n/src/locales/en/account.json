@@ -2075,6 +2075,8 @@
             "helpCenter": "Help center",
             "helpGroup": "Help",
             "whatsNew": "What's new",
+            "whatsNewUnread_one": "What's new, {{count}} unread update",
+            "whatsNewUnread_other": "What's new, {{count}} unread updates",
             "publish": "List with us",
             "footerNav": "Site links",
             "legalNav": "Legal links"

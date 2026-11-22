@@ -88,6 +88,8 @@ describe('AccountHeader.astro (HOS-2413, HOS-2550)', () => {
         expect(header).toContain('href={actions.help.href}');
         expect(header).toContain("ariaLabel={t('account.ui.chrome.whatsNew')}");
         expect(header).toContain('href={actions.whatsNew.href}');
-        expect(header).toContain('<WhatsNewCountPill locale={locale} client:idle />');
+        expect(header).toContain(
+            '<WhatsNewCountPill locale={locale} labelsParentLink client:idle />'
+        );
     });
 });
