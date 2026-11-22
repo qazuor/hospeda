@@ -774,8 +774,12 @@
             "paidAfterCancellationAddons": "A cobrança dos complementos recorrentes desta assinatura também foi interrompida: você continua vendo-os até {{date}}.",
             "deferredCourtesy_one": "Você tem 1 mês restante, que começa a contar quando você concluir o pagamento.",
             "deferredCourtesy_other": "Você tem {{count}} meses restantes, que começam a contar quando você concluir o pagamento.",
+            "pendingAuthorizationTodo": "Falta você autorizar o pagamento no Mercado Pago para ativar seu plano. Até lá, esta assinatura não dá serviço.",
+            "chargeDeclinedTodo": "O Mercado Pago recusou a cobrança. Revise ou troque o meio de pagamento no Mercado Pago para que a cobrança seja tentada de novo; enquanto isso não podemos garantir que seu plano continue ativo.",
             "status": {
                 "ACTIVE": "Ativa",
+                "PENDING_AUTHORIZATION": "Aguardando autorização",
+                "CHARGE_DECLINED": "Cobrança recusada",
                 "GRACE_PERIOD": "Pagamento pendente",
                 "PAUSED": "Pausada",
                 "SUSPENDED": "Suspensa",

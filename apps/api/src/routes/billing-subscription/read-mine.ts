@@ -20,7 +20,9 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
         // HOS-2328: the shared plan-state reader (also behind `get_my_plan`). Its
         // `planVersionId` is for the assistant; this response does not carry it.
         const [{ subscriptions, deferredCourtesies }, declined] = await Promise.all([
-            readOwnPlanState({ userId, now: getClock().clock.now() }),
+            // HOS-2553: this page also tells about a declined charge and a checkout
+            // waiting for authorization; `get_my_plan` keeps reading the settled ones only.
+            readOwnPlanState({ userId, now: getClock().clock.now(), includeUnsettled: true }),
             readOwnDeclinedSignups(userId)
         ]);
         return {
