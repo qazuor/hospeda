@@ -1323,7 +1323,9 @@
         "empty": {
             "title": "No saved searches",
             "body": "You don't have any saved searches yet.",
-            "upsellBody": "Your searches will appear here when you have an active Plus or VIP plan."
+            "upsellBody_one": "Your searches will appear here when you have the {{plans}} plan active.",
+            "upsellBody_other": "Your searches will appear here when you have any of the {{plans}} plans active.",
+            "upsellBodyNoPlans": "Your searches will appear here when your plan includes search history."
         },
         "clearAll": "Clear all",
         "clearAllInline": "Yes, clear all",
@@ -1357,8 +1359,7 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filter",
             "filterCount_other": "{{count}} filters"
-        },
-        "entitlementRequired": "This feature is available to Plus and VIP subscribers."
+        }
     },
     "alerts": {
         "loading": "Loading alerts...",
@@ -1402,7 +1403,9 @@
         },
         "upgrade": {
             "title": "Exclusive deals",
-            "message": "Exclusive deals are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+            "message_one": "Exclusive deals are available on the {{plans}} plan. Upgrade your plan to access this feature.",
+            "message_other": "Exclusive deals are available on the {{plans}} plans. Upgrade your plan to access this feature.",
+            "messageNoPlans": "Exclusive deals are not included in your current plan. Upgrade your plan to access this feature.",
             "cta": "View plans"
         },
         "listLabel": "Your exclusive deals",
@@ -1430,7 +1433,9 @@
         },
         "upgrade": {
             "title": "Suggestions for you",
-            "message": "Personalized suggestions are available on the Plus and VIP plans. Upgrade your plan to access them.",
+            "message_one": "Personalized suggestions are available on the {{plans}} plan. Upgrade your plan to access them.",
+            "message_other": "Personalized suggestions are available on the {{plans}} plans. Upgrade your plan to access them.",
+            "messageNoPlans": "Personalized suggestions are not included in your current plan. Upgrade your plan to access them.",
             "cta": "View plans"
         }
     },

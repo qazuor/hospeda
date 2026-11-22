@@ -1323,7 +1323,9 @@
         "empty": {
             "title": "Sin búsquedas guardadas",
             "body": "Todavía no tenés búsquedas guardadas.",
-            "upsellBody": "Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo."
+            "upsellBody_one": "Tus búsquedas aparecerán acá cuando tengas activo el plan {{plans}}.",
+            "upsellBody_other": "Tus búsquedas aparecerán acá cuando tengas activo alguno de los planes {{plans}}.",
+            "upsellBodyNoPlans": "Tus búsquedas aparecerán acá cuando tu plan incluya el historial de búsquedas."
         },
         "clearAll": "Borrar todo",
         "clearAllInline": "Sí, borrar todo",
@@ -1357,8 +1359,7 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filtro",
             "filterCount_other": "{{count}} filtros"
-        },
-        "entitlementRequired": "Esta función está disponible para suscriptores Plus y VIP."
+        }
     },
     "alerts": {
         "loading": "Cargando alertas...",
@@ -1402,7 +1403,9 @@
         },
         "upgrade": {
             "title": "Ofertas exclusivas",
-            "message": "Las ofertas exclusivas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "message_one": "Las ofertas exclusivas están disponibles en el plan {{plans}}. Actualizá tu plan para acceder.",
+            "message_other": "Las ofertas exclusivas están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
+            "messageNoPlans": "Las ofertas exclusivas no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         },
         "listLabel": "Tus ofertas exclusivas",
@@ -1438,7 +1441,9 @@
         },
         "upgrade": {
             "title": "Sugerencias para vos",
-            "message": "Las sugerencias personalizadas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "message_one": "Las sugerencias personalizadas están disponibles en el plan {{plans}}. Actualizá tu plan para acceder.",
+            "message_other": "Las sugerencias personalizadas están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
+            "messageNoPlans": "Las sugerencias personalizadas no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         }
     },

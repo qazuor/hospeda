@@ -24,7 +24,9 @@ const REQUIRED_FEATURE_KEYS = [
     'empty.title',
     'empty.body',
     'upgrade.title',
-    'upgrade.message',
+    'upgrade.message_one',
+    'upgrade.message_other',
+    'upgrade.messageNoPlans',
     'upgrade.cta',
     'listLabel',
     'item.vipBadge'
