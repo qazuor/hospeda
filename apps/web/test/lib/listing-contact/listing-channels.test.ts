@@ -100,7 +100,25 @@ describe('resolveVenueContactMode', () => {
         });
     });
 
-    it('renders no bar with neither menu nor socials', () => {
+    it('renders the panel when WhatsApp is the only channel', () => {
+        expect(resolveVenueContactMode({ menuUrl: null, channels: [], hasWhatsapp: true })).toEqual(
+            {
+                kind: 'panel'
+            }
+        );
+    });
+
+    it('still prefers the menu link over a WhatsApp-only panel', () => {
+        expect(
+            resolveVenueContactMode({
+                menuUrl: 'https://bar.com/carta',
+                channels: [],
+                hasWhatsapp: true
+            })
+        ).toEqual({ kind: 'menu', href: 'https://bar.com/carta' });
+    });
+
+    it('renders no bar with neither menu, socials nor WhatsApp', () => {
         expect(resolveVenueContactMode({ menuUrl: undefined, channels: [] })).toEqual({
             kind: 'none'
         });

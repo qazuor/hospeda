@@ -55,15 +55,25 @@ describe('experience and venue contact surfaces carry no WhatsApp', () => {
         expect(experiencePage).toContain('hasWhatsapp={false}');
     });
 
-    it('the channel-only panel and builders have no WhatsApp element', () => {
-        expect(panel).not.toMatch(/whatsapp|wa\.me/i);
-        expect(channelsLib).not.toMatch(/whatsapp|wa\.me/i);
+    it('the channel builders have no WhatsApp element', () => {
+        expect(channelsLib.replaceAll('hasWhatsapp', '')).not.toMatch(/whatsapp|wa\.me/i);
     });
 
-    it('the venue page never feeds WhatsApp to the bar or the panel', () => {
+    it('the panel reaches WhatsApp only through the HOS-2256 button, for venues, never building a link itself', () => {
+        expect(panel).toContain("vertical === 'venue' && whatsapp");
+        expect(panel).toContain('<VenueWhatsAppButton');
+        expect(panel).not.toMatch(/wa\.me|buildWhatsAppLink|contactInfo|socialNetworks/);
+    });
+
+    it('the venue page hands the panel the HOS-2256 state, never a number or a form', () => {
+        expect(venuePage).toContain('whatsapp={venue.whatsapp ?? null}');
+        expect(venuePage).toContain('hasWhatsapp: Boolean(venue.whatsapp)');
+        expect(venuePage).not.toMatch(/wa\.me|buildWhatsAppLink/);
+    });
+
+    it('the venue page never feeds WhatsApp to the dock bar button', () => {
         expect(venuePage).toContain('hasWhatsapp={false}');
         expect(venuePage).not.toMatch(/hasWhatsapp=\{(?!false\})/);
-        expect(venuePage).not.toMatch(/WhatsAppContact(?!\s*,)\b(?<!VenueWhatsAppContact)/);
     });
 
     it('the shared actions render the WhatsApp control for accommodation only', () => {
@@ -92,5 +102,48 @@ describe('experience and venue contact bar presence (AC-2.8, AC-2.9)', () => {
         expect(venuePage).toMatch(/contactMode\.kind !== 'none' &&/);
         expect(venuePage).toMatch(/contactMode\.kind === 'panel' &&/);
         expect(venuePage).toContain('price={null}');
+    });
+});
+
+describe('experience and venue mobile header spacing (same fixes as accommodation F1)', () => {
+    const cases = [
+        {
+            name: 'experience',
+            page: 'pages/[lang]/experiencias/[slug].astro',
+            cls: 'exp-detail',
+            header: 'components/experience/ExperienceHero.astro',
+            hdr: 'exp-hero'
+        },
+        {
+            name: 'venue',
+            page: 'pages/[lang]/comer-y-salir/[slug].astro',
+            cls: 'venue-detail',
+            header: 'components/venue/VenueDetailHeader.astro',
+            hdr: 'venue-detail-header'
+        }
+    ] as const;
+
+    it.each(cases)('$name page pads the band under hidden breadcrumbs and drops the gray strip', ({
+        page,
+        cls
+    }) => {
+        const source = read(page);
+
+        expect(source).toContain(
+            `:global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.${cls}-breadcrumbs) .wave-header__content)`
+        );
+        expect(source).toMatch(
+            new RegExp(
+                `:global\\(\\.wave-header \\.detail-page:has\\(\\.${cls}\\)\\)\\s*\\{\\s*padding-top: 0;`
+            )
+        );
+    });
+
+    it.each(cases)('$name header uses the h3 step for the mobile title', ({ header, hdr }) => {
+        expect(read(header)).toMatch(
+            new RegExp(
+                `\\.${hdr}--mobile-gallery \\.${hdr}__name\\s*\\{[^}]*font-size: var\\(--text-h3`
+            )
+        );
     });
 });

@@ -1,10 +1,19 @@
-import { act, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ListingChannelsPanel } from '@/components/listing/contact/ListingChannelsPanel.client';
 import { isListingContactPanelReady } from '@/components/listing/contact/listing-contact-readiness';
 import { resetDialogHistoryForTests } from '@/lib/dialog-history';
 import type { ListingChannel } from '@/lib/listing-contact/listing-channels';
 import { openListingContactPanel } from '@/lib/listing-contact/listing-contact-events';
+
+const { trackEvent } = vi.hoisted(() => ({ trackEvent: vi.fn() }));
+vi.mock('@/lib/analytics/umami-client', () => ({ trackEvent }));
+vi.mock('@/hooks/use-account-permissions', () => ({
+    useAccountPermissions: () => ({ user: null })
+}));
+vi.mock('@/lib/api/endpoints-protected', () => ({
+    protectedVenuesApi: { getWhatsApp: vi.fn() }
+}));
 
 const channels: readonly ListingChannel[] = [
     { kind: 'phone', href: 'tel:+543447412233', text: '+54 3447 412233', external: false },
@@ -100,5 +109,77 @@ describe('ListingChannelsPanel', () => {
             'social'
         );
         expect(dialog.queryByText(/\$/)).not.toBeInTheDocument();
+    });
+
+    describe('venue WhatsApp (HOS-2256 gate)', () => {
+        const venue = {
+            ...base,
+            listingId: 'ven-1',
+            vertical: 'venue',
+            venueName: 'Bar Uno',
+            signInHref: '/es/auth/signin/',
+            channels: []
+        } as const;
+
+        it('shows no WhatsApp row without the HOS-2256 state', () => {
+            render(<ListingChannelsPanel {...venue} />);
+            act(() => openListingContactPanel({ origin: 'bar' }));
+
+            expect(screen.queryByText(/whatsapp/i)).not.toBeInTheDocument();
+        });
+
+        it('shows the public wa.me link and reports it as whatsapp from the panel', () => {
+            render(
+                <ListingChannelsPanel
+                    {...venue}
+                    whatsapp={{ mode: 'PUBLIC', number: '+5493442123456' }}
+                />
+            );
+            act(() => openListingContactPanel({ origin: 'bar' }));
+
+            const link = within(screen.getByRole('dialog')).getByRole('link', {
+                name: /whatsapp/i
+            });
+            expect(link.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5493442123456/);
+            fireEvent.click(link);
+            expect(trackEvent).toHaveBeenLastCalledWith('listing_contact_clicked', {
+                listing_id: 'ven-1',
+                vertical: 'venue',
+                channel: 'whatsapp',
+                origin: 'panel',
+                locale: 'es'
+            });
+        });
+
+        it('sends an anonymous visitor of a logged-in-only venue to sign in without reporting a contact', () => {
+            trackEvent.mockClear();
+            render(
+                <ListingChannelsPanel
+                    {...venue}
+                    whatsapp={{ mode: 'LOGGED_IN_ONLY' }}
+                />
+            );
+            act(() => openListingContactPanel({ origin: 'bar' }));
+
+            const link = within(screen.getByRole('dialog')).getByRole('link', {
+                name: /sesión/i
+            });
+            expect(link).toHaveAttribute('href', '/es/auth/signin/');
+            fireEvent.click(link);
+            expect(trackEvent).not.toHaveBeenCalled();
+        });
+
+        it('never renders WhatsApp for an experience, even if handed the state', () => {
+            render(
+                <ListingChannelsPanel
+                    {...base}
+                    channels={channels}
+                    whatsapp={{ mode: 'PUBLIC', number: '+5493442123456' }}
+                />
+            );
+            act(() => openListingContactPanel({ origin: 'bar' }));
+
+            expect(screen.queryByText(/whatsapp/i)).not.toBeInTheDocument();
+        });
     });
 });

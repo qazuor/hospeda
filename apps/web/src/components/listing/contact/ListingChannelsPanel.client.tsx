@@ -12,6 +12,10 @@ import {
 import type { ReactNode } from 'react';
 import { useEffect, useId, useState } from 'react';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
+import type { VenueWhatsAppButtonMode } from '@/components/venue/VenueWhatsAppButton.client';
+import { VenueWhatsAppButton } from '@/components/venue/VenueWhatsAppButton.client';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { ListingChannel } from '@/lib/listing-contact/listing-channels';
@@ -31,6 +35,14 @@ export interface ListingChannelsPanelProps {
     readonly channels: readonly ListingChannel[];
     /** Shown above the channels when the vertical has a price (experience). */
     readonly price?: ListingContactPrice;
+    /**
+     * Venue only: the HOS-2256 WhatsApp state from the public payload. When set, the
+     * same gated button the page shows is rendered as a row; `null` or absent means none.
+     */
+    readonly whatsapp?: VenueWhatsAppButtonMode | null;
+    readonly venueName?: string;
+    /** Sign-in URL returning to this page, for the logged-in-only WhatsApp mode. */
+    readonly signInHref?: string;
 }
 
 const NETWORK_ICONS = {
@@ -63,7 +75,10 @@ export function ListingChannelsPanel({
     vertical,
     locale,
     channels,
-    price = null
+    price = null,
+    whatsapp = null,
+    venueName = '',
+    signInHref = ''
 }: ListingChannelsPanelProps) {
     const [open, setOpen] = useState(false);
     const titleId = useId();
@@ -139,6 +154,38 @@ export function ListingChannelsPanel({
                         </li>
                     ))}
                 </ul>
+                {vertical === 'venue' && whatsapp && (
+                    // Only the resolved wa.me link carries the interaction attribute; the
+                    // sign-in link does not, so it is never reported as a contact.
+                    // biome-ignore lint/a11y/noStaticElementInteractions: delegated tracking for the child link.
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: the child link is the keyboard-operable control.
+                    <div
+                        className={styles.whatsapp}
+                        onClick={(event) => {
+                            const target = event.target;
+                            if (
+                                target instanceof Element &&
+                                target.closest('a[data-interaction-kind="WHATSAPP_CLICK"]')
+                            ) {
+                                trackEvent(WebEvents.ListingContactClicked, {
+                                    listing_id: listingId,
+                                    vertical,
+                                    channel: 'whatsapp',
+                                    origin: 'panel',
+                                    locale
+                                });
+                            }
+                        }}
+                    >
+                        <VenueWhatsAppButton
+                            venueId={listingId}
+                            venueName={venueName}
+                            whatsapp={whatsapp}
+                            signInHref={signInHref}
+                            locale={locale}
+                        />
+                    </div>
+                )}
             </DialogBody>
         </Dialog>
     );

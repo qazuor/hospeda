@@ -118,18 +118,21 @@ export type VenueContactMode =
  * Decides what the venue bar's primary button does.
  *
  * @returns `menu` when the owner published a safe `menuUrl`, `panel` when only
- * social links exist, `none` when the bar must not render at all.
+ * social links and/or the WhatsApp button exist, `none` when the bar must not render at all.
  */
 export function resolveVenueContactMode({
     menuUrl,
-    channels
+    channels,
+    hasWhatsapp = false
 }: {
     readonly menuUrl: string | null | undefined;
     readonly channels: readonly ListingChannel[];
+    /** Whether the HOS-2256 gate shows the venue WhatsApp button (`venue.whatsapp` is set). */
+    readonly hasWhatsapp?: boolean;
 }): VenueContactMode {
     const href = resolveSafeExternalUrl(menuUrl);
     if (href) return { kind: 'menu', href };
-    return channels.length > 0 ? { kind: 'panel' } : { kind: 'none' };
+    return channels.length > 0 || hasWhatsapp ? { kind: 'panel' } : { kind: 'none' };
 }
 
 const EXPERIENCE_UNIT_KEYS: Readonly<Record<string, string>> = {
