@@ -9,7 +9,7 @@
 
 import type { NavGroup } from '@/config/navigation';
 
-/** Id of the Tourist area, the only one that can start collapsed. */
+/** Id of the Tourist area. */
 export const TOURIST_GROUP_ID = 'turista';
 
 /** Id of the base Account area. */
@@ -23,10 +23,6 @@ export type StoredNavState = Readonly<Record<string, boolean>>;
 
 /** Input for `resolveGroupDefaultOpen`. */
 export interface ResolveGroupDefaultOpenParams {
-    /** Id of the group being rendered. */
-    readonly groupId: string;
-    /** Ids of every group visible to the user, in render order. */
-    readonly visibleGroupIds: readonly string[];
     /** Whether the current page belongs to this group. */
     readonly containsActive: boolean;
 }
@@ -34,25 +30,17 @@ export interface ResolveGroupDefaultOpenParams {
 /**
  * Decides whether an area renders open on the server (no JS, no stored state).
  *
- * - The area holding the current page is always open.
- * - Every area is open by default, except Tourist, which starts collapsed
- *   unless the user has no other area besides Cuenta (then collapsing it would
- *   hide the only thing they can do).
+ * Only the area holding the current page is open (HOS-2549): with every area
+ * open the desktop sidebar was twice the viewport tall. What the person opens
+ * or closes afterwards is layered on top by `applyStoredNavState`.
  *
- * @param params - `{ groupId, visibleGroupIds, containsActive }` (RO-RO).
+ * @param params - `{ containsActive }` (RO-RO).
  * @returns `true` when the `<details>` should carry the `open` attribute.
  */
 export function resolveGroupDefaultOpen({
-    groupId,
-    visibleGroupIds,
     containsActive
 }: ResolveGroupDefaultOpenParams): boolean {
-    if (containsActive) return true;
-    if (groupId !== TOURIST_GROUP_ID) return true;
-    const hasOtherArea = visibleGroupIds.some(
-        (id) => id !== ACCOUNT_GROUP_ID && id !== TOURIST_GROUP_ID
-    );
-    return !hasOtherArea;
+    return containsActive;
 }
 
 /** Input for `placeProviderGroup`. */
@@ -99,5 +87,54 @@ export function parseStoredNavState({ raw }: { readonly raw: string | null }): S
         return result;
     } catch {
         return {};
+    }
+}
+
+/**
+ * Layers the remembered open/closed state onto the rendered `<details>` groups
+ * and remembers every later toggle. The group holding the current page is
+ * never closed by a remembered value. Every storage access is wrapped in
+ * try/catch: when storage fails the server-rendered defaults stand.
+ *
+ * @param params - `{ root, storage }` (RO-RO). `storage` is a getter so a
+ *   throwing `localStorage` accessor is caught here too.
+ */
+export function applyStoredNavState({
+    root,
+    storage
+}: {
+    readonly root: ParentNode;
+    readonly storage: () => Pick<Storage, 'getItem' | 'setItem'>;
+}): void {
+    const groups = root.querySelectorAll<HTMLDetailsElement>(
+        '[data-account-sidebar] details[data-nav-group]'
+    );
+    if (groups.length === 0) return;
+    let raw: string | null = null;
+    try {
+        raw = storage().getItem(ACCOUNT_NAV_STORAGE_KEY);
+    } catch {
+        raw = null;
+    }
+    const stored = parseStoredNavState({ raw });
+    for (const details of groups) {
+        const id = details.dataset.navGroup;
+        if (!id) continue;
+        const remembered = stored[id];
+        if (typeof remembered === 'boolean' && details.dataset.containsActive !== 'true') {
+            details.open = remembered;
+        }
+        details.querySelector('summary')?.addEventListener('click', () => {
+            const next = !details.open;
+            try {
+                const store = storage();
+                const current = parseStoredNavState({
+                    raw: store.getItem(ACCOUNT_NAV_STORAGE_KEY)
+                });
+                store.setItem(ACCOUNT_NAV_STORAGE_KEY, JSON.stringify({ ...current, [id]: next }));
+            } catch {
+                // Storage unavailable: the choice just won't be remembered.
+            }
+        });
     }
 }

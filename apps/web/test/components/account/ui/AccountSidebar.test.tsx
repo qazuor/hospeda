@@ -48,6 +48,26 @@ describe('AccountSidebar', () => {
         expect(group).toHaveAttribute('data-contains-active', 'true');
     });
 
+    it('renders only the group holding the current page open (HOS-2549)', () => {
+        const view = viewFor(['HOST', 'VENUE_OWNER'], 'editar');
+        const { container } = render(
+            <AccountSidebar
+                view={view}
+                locale="es"
+            />
+        );
+        const open = [...container.querySelectorAll('details[open]')].map((el) =>
+            el.getAttribute('data-nav-group')
+        );
+        const all = container.querySelectorAll('details[data-nav-group]').length;
+        expect(all).toBeGreaterThan(1);
+        expect(open).toHaveLength(1);
+        expect(container.querySelector('details[open]')).toHaveAttribute(
+            'data-contains-active',
+            'true'
+        );
+    });
+
     it('keeps a locked item as a link, with a lock and alternative text', () => {
         const view = viewFor(['USER']);
         const target = view.groups.flatMap((group) => group.items)[1];

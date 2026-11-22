@@ -146,7 +146,6 @@ export function buildAccountNavModel({
         groups: baseGroups,
         providerGroup: ownsHostTradeListing ? PROVIDER_NAV_GROUP : null
     });
-    const visibleGroupIds = ordered.map((group) => group.id);
 
     const groups: AccountNavGroupModel[] = ordered.map((group) => {
         const items: AccountNavItemModel[] = group.items.map((item) => {
@@ -164,11 +163,7 @@ export function buildAccountNavModel({
             items,
             suppressHeader: group.suppressHeaderWhenSingle === true && group.items.length === 1,
             containsActive,
-            defaultOpen: resolveGroupDefaultOpen({
-                groupId: group.id,
-                visibleGroupIds,
-                containsActive
-            })
+            defaultOpen: resolveGroupDefaultOpen({ containsActive })
         };
     });
 
