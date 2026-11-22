@@ -259,7 +259,7 @@ describe('MP4 preview', () => {
             reimputedPeriodStart: null,
             nextChargeAt: new Date('2026-08-03T12:00:00.000Z'),
             effect: 'S19',
-            periodCase: 'WITHIN_PERIOD',
+            periodCase: 'ORIGINAL_PERIOD',
             nextChargeOverdue: true,
             vertical: fixture.subscription.vertical,
             presence: null,
@@ -295,6 +295,54 @@ describe('MP4 preview', () => {
         expect(rows.installment?.status).toBe('DECLARED_UNPAID');
         expect(rows.coverage).toHaveLength(0);
         expect(rows.receipt).toHaveLength(0);
+    });
+});
+
+describe('HOS-1640 MP4 C5 fallback, preview and registration agree', () => {
+    it('C5_FALLBACK: the reimputed period is covered, so it goes back to the original and the next charge is overdue', async () => {
+        // Arrange
+        const expiredPeriod = new Date('2026-07-03T12:00:00.000Z');
+        const fixture = await seed({ periodStart: expiredPeriod });
+        const db = getServiceTestDb();
+        const [payment] = await db
+            .insert(payments)
+            .values({
+                subscriptionId: fixture.subscription.id,
+                amount: 3000000,
+                currency: 'ARS',
+                status: 'SUCCEEDED',
+                provider: 'test',
+                providerFactId: crypto.randomUUID(),
+                factAt: now
+            })
+            .returning();
+        if (!payment) throw new Error('Payment fixture failed');
+        await db.insert(coveredPeriods).values({
+            subscriptionId: fixture.subscription.id,
+            paymentId: payment.id,
+            periodStart: now,
+            creditedAt: now
+        });
+
+        // Act
+        const preview = await previewLateManualPaymentRegistration(fixture.request, { clock });
+        const result = await registerLateManualPayment(fixture.request, { clock });
+
+        // Assert
+        expect(preview).toMatchObject({
+            effect: 'S7',
+            periodCase: 'C5_FALLBACK',
+            periodStart: expiredPeriod,
+            reimputedPeriodStart: null,
+            nextChargeAt: new Date('2026-08-03T12:00:00.000Z'),
+            nextChargeOverdue: true
+        });
+        expect(result).toMatchObject({
+            effect: 'S7',
+            periodStart: expiredPeriod,
+            reimputedFrom: null,
+            nextChargeAt: preview.nextChargeAt
+        });
     });
 });
 

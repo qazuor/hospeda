@@ -3,10 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const queue: unknown[][] = [];
 const conditions = vi.hoisted(() => ({ value: {} as Record<string, unknown> }));
-const facts = vi.hoisted(() => ({
-    readLateManualPaymentPresence: vi.fn(),
-    readS7SideEffects: vi.fn()
-}));
+const facts = vi.hoisted(() => ({ readLateManualPaymentReturn: vi.fn() }));
 
 function chain(): Record<string, unknown> {
     const node: Record<string, unknown> = {};
@@ -86,15 +83,13 @@ const request = {
 beforeEach(() => {
     queue.length = 0;
     vi.clearAllMocks();
-    facts.readLateManualPaymentPresence.mockResolvedValue({
-        kind: 'PARTNER',
-        partner: null,
-        outcome: 'NO_PARTNER'
-    });
-    facts.readS7SideEffects.mockResolvedValue({
-        complements: { resumed: [], skipped: [] },
-        touristVip: { cancels: false, subscriptionIds: [] },
-        scheduledChange: null
+    facts.readLateManualPaymentReturn.mockResolvedValue({
+        presence: { kind: 'PARTNER', partner: null, outcome: 'NO_PARTNER' },
+        s7Effects: {
+            complements: { resumed: [], skipped: [] },
+            touristVip: { cancels: false, subscriptionIds: [] },
+            scheduledChange: null
+        }
     });
 });
 
@@ -119,6 +114,25 @@ describe('HOS-1640 MP4 period: the three answers of fila 10-bis', () => {
         expect(resolveManualPaymentPeriodCase({ candidate, chosen: candidate })).toBe(
             'WITHIN_PERIOD'
         );
+    });
+
+    it('ORIGINAL_PERIOD: S19 always covers the original period, even when it already ended', () => {
+        // Arrange
+        const candidate = candidateManualPaymentPeriod({
+            originalPeriodStart: PERIOD_START,
+            everyMonths: 1,
+            now: PERIOD_START
+        });
+
+        // Act
+        const periodCase = resolveManualPaymentPeriodCase({
+            candidate,
+            chosen: candidate,
+            atOriginalPeriod: true
+        });
+
+        // Assert
+        expect(periodCase).toBe('ORIGINAL_PERIOD');
     });
 
     it('REIMPUTED: the own period had ended, so it pays the period starting now, next in one cycle', async () => {
@@ -190,8 +204,7 @@ describe('HOS-1640 MP4 preview composition', () => {
             presence: { kind: 'PARTNER', outcome: 'NO_PARTNER' },
             s7Effects: { scheduledChange: null }
         });
-        expect(facts.readLateManualPaymentPresence).toHaveBeenCalledOnce();
-        expect(facts.readS7SideEffects).toHaveBeenCalledOnce();
+        expect(facts.readLateManualPaymentReturn).toHaveBeenCalledOnce();
     });
 
     it('S19: does not reactivate, pays the original period, and leaves the rest to the close', async () => {
@@ -209,13 +222,13 @@ describe('HOS-1640 MP4 preview composition', () => {
             effect: 'S19',
             periodStart: PERIOD_START,
             reimputedPeriodStart: null,
-            periodCase: 'WITHIN_PERIOD',
+            periodCase: 'ORIGINAL_PERIOD',
+            nextChargeOverdue: true,
             nextChargeAt: new Date('2026-09-03T12:00:00.000Z'),
             presence: null,
             s7Effects: null
         });
-        expect(facts.readLateManualPaymentPresence).not.toHaveBeenCalled();
-        expect(facts.readS7SideEffects).not.toHaveBeenCalled();
+        expect(facts.readLateManualPaymentReturn).not.toHaveBeenCalled();
     });
 
     it('keeps MP4 rejections: a failed condition answers MANUAL_PAYMENT_CONDITION_FAILED', async () => {

@@ -89,9 +89,15 @@ async function evaluateManualPaymentPeriod(input: {
  * - `WITHIN_PERIOD`: the installment's own period had not ended at the instant used;
  * - `REIMPUTED`: it had ended, and the payment moves to the period starting then;
  * - `C5_FALLBACK`: it had ended, the reimputed period was already covered (C5), and the
- *   payment went back to the original period with `reimputedFrom: null`.
+ *   payment went back to the original period with `reimputedFrom: null`;
+ * - `ORIGINAL_PERIOD`: S19 — there is no reactivation instant, so the payment covers the
+ *   installment's original period whether or not it already ended.
  */
-export type ManualPaymentPeriodCase = 'WITHIN_PERIOD' | 'REIMPUTED' | 'C5_FALLBACK';
+export type ManualPaymentPeriodCase =
+    | 'WITHIN_PERIOD'
+    | 'REIMPUTED'
+    | 'C5_FALLBACK'
+    | 'ORIGINAL_PERIOD';
 
 /**
  * Classifies MP4's final period against its candidate. Pure.
@@ -103,7 +109,10 @@ export type ManualPaymentPeriodCase = 'WITHIN_PERIOD' | 'REIMPUTED' | 'C5_FALLBA
 export function resolveManualPaymentPeriodCase(input: {
     readonly candidate: ManualPaymentPeriod;
     readonly chosen: ManualPaymentPeriod;
+    /** True under S19, which evaluates the period at its own start (`periodAt`). */
+    readonly atOriginalPeriod?: boolean;
 }): ManualPaymentPeriodCase {
+    if (input.atOriginalPeriod) return 'ORIGINAL_PERIOD';
     if (input.candidate.reimputedFrom === null) return 'WITHIN_PERIOD';
     return input.chosen.reimputedFrom === null ? 'C5_FALLBACK' : 'REIMPUTED';
 }
@@ -123,7 +132,14 @@ export async function previewManualPaymentPeriod(input: {
         now: input.periodAt ?? input.now
     });
     const chosen = await evaluateManualPaymentPeriodReadOnly(input);
-    return { ...chosen, periodCase: resolveManualPaymentPeriodCase({ candidate, chosen }) };
+    return {
+        ...chosen,
+        periodCase: resolveManualPaymentPeriodCase({
+            candidate,
+            chosen,
+            atOriginalPeriod: input.periodAt !== undefined
+        })
+    };
 }
 
 async function evaluateManualPaymentPeriodReadOnly(input: {
