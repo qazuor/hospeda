@@ -246,7 +246,7 @@ describe('SearchHistoryList', () => {
             });
         });
 
-        it('does NOT show the Plus/VIP upsell copy for an already-entitled user with zero saved searches (BETA-167)', async () => {
+        it('does NOT show the plan upsell copy for an already-entitled user with zero saved searches (BETA-167)', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
             renderComponent();
             await waitFor(() => {
@@ -255,7 +255,7 @@ describe('SearchHistoryList', () => {
                 ).toBeInTheDocument();
             });
             expect(
-                screen.queryByText(/tus búsquedas aparecerán acá cuando tengas un plan/i)
+                screen.queryByText(/tus búsquedas aparecerán acá cuando/i)
             ).not.toBeInTheDocument();
         });
 
@@ -277,7 +277,7 @@ describe('SearchHistoryList', () => {
             await waitFor(() => {
                 expect(screen.getByText(/sin búsquedas guardadas/i)).toBeInTheDocument();
                 expect(
-                    screen.getByText(/tus búsquedas aparecerán acá cuando tengas un plan/i)
+                    screen.getByText(/tus búsquedas aparecerán acá cuando tu plan incluya/i)
                 ).toBeInTheDocument();
             });
         });

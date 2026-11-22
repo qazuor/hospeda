@@ -23,6 +23,7 @@ import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/sche
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { translateApiError } from '@/lib/api-errors';
+import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -85,6 +86,11 @@ export interface SearchHistoryListProps {
      * Fetched server-side to avoid a flash on mount.
      */
     readonly initialHistoryEnabled: boolean;
+    /**
+     * HOS-2554: catalog names of the plans that carry search history, read by the SSR page
+     * (the catalog reader is server-only). Empty when the catalog could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -233,7 +239,8 @@ export function SearchHistoryList({
     locale,
     apiUrl,
     userId: _userId,
-    initialHistoryEnabled
+    initialHistoryEnabled,
+    gatePlanNames = []
 }: SearchHistoryListProps) {
     // Memoized so `t` keeps a stable reference across renders — otherwise it
     // recreates on every render, which cascades into the useCallback deps
@@ -622,10 +629,14 @@ export function SearchHistoryList({
                         title={t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
                         description={
                             entitlementRequired
-                                ? t(
-                                      'account.searchHistory.empty.upsellBody',
-                                      'Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo.'
-                                  )
+                                ? resolvePlanGateMessage({
+                                      keyBase: 'account.searchHistory.empty.upsellBody',
+                                      locale,
+                                      noPlansFallback:
+                                          'Tus búsquedas aparecerán acá cuando tu plan incluya el historial de búsquedas.',
+                                      planNames: gatePlanNames,
+                                      t
+                                  })
                                 : t(
                                       'account.searchHistory.empty.body',
                                       'Todavía no tenés búsquedas guardadas.'

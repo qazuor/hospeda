@@ -31,6 +31,7 @@ import { WebEvents } from '@/lib/analytics/events';
 import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
+import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -64,6 +65,11 @@ export interface WhatsAppContactProps {
     readonly plansHref: string;
     readonly locale: SupportedLocale;
     readonly origin?: 'panel' | 'sidebar';
+    /**
+     * HOS-2554: catalog names of the plans that carry this feature, read server-side and
+     * handed down (the catalog reader is server-only). Empty when it could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 /**
@@ -80,7 +86,8 @@ export function WhatsAppContact({
     accommodationName,
     plansHref,
     locale,
-    origin = 'sidebar'
+    origin = 'sidebar',
+    gatePlanNames = []
 }: WhatsAppContactProps) {
     const { t } = createTranslations(locale);
     // Simple mode (no `initialUser`): `user` starts null, so the server and the
@@ -166,10 +173,14 @@ export function WhatsAppContact({
             {viewer.showUpsell ? (
                 <div className={styles.upsell}>
                     <p className={styles.upsellText}>
-                        {t(
-                            'accommodations.detail.whatsapp.upsellText',
-                            'Suscribite a Plus para ver el WhatsApp del anfitrión.'
-                        )}
+                        {resolvePlanGateMessage({
+                            keyBase: 'accommodations.detail.whatsapp.upsellText',
+                            locale,
+                            noPlansFallback:
+                                'Tu plan actual no incluye ver el WhatsApp del anfitrión.',
+                            planNames: gatePlanNames,
+                            t
+                        })}
                     </p>
                     <a
                         className={styles.upsellCta}

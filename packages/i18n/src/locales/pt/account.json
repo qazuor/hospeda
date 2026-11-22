@@ -1335,7 +1335,9 @@
         "empty": {
             "title": "Sem buscas salvas",
             "body": "Você ainda não tem buscas salvas.",
-            "upsellBody": "Suas buscas aparecerão aqui quando você tiver um plano Plus ou VIP ativo."
+            "upsellBody_one": "Suas buscas aparecerão aqui quando você tiver o plano {{plans}} ativo.",
+            "upsellBody_other": "Suas buscas aparecerão aqui quando você tiver algum dos planos {{plans}} ativo.",
+            "upsellBodyNoPlans": "Suas buscas aparecerão aqui quando seu plano incluir o histórico de buscas."
         },
         "clearAll": "Limpar tudo",
         "clearAllInline": "Sim, limpar tudo",
@@ -1369,8 +1371,7 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filtro",
             "filterCount_other": "{{count}} filtros"
-        },
-        "entitlementRequired": "Esta função está disponível para assinantes Plus e VIP."
+        }
     },
     "alerts": {
         "loading": "Carregando alertas...",
@@ -1414,7 +1415,9 @@
         },
         "upgrade": {
             "title": "Ofertas exclusivas",
-            "message": "As ofertas exclusivas estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+            "message_one": "As ofertas exclusivas estão disponíveis no plano {{plans}}. Atualize seu plano para acessar.",
+            "message_other": "As ofertas exclusivas estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
+            "messageNoPlans": "As ofertas exclusivas não estão incluídas no seu plano atual. Atualize seu plano para acessar.",
             "cta": "Ver planos"
         },
         "listLabel": "Suas ofertas exclusivas",
@@ -1442,7 +1445,9 @@
         },
         "upgrade": {
             "title": "Sugestões para você",
-            "message": "As sugestões personalizadas estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+            "message_one": "As sugestões personalizadas estão disponíveis no plano {{plans}}. Atualize seu plano para acessar.",
+            "message_other": "As sugestões personalizadas estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
+            "messageNoPlans": "As sugestões personalizadas não estão incluídas no seu plano atual. Atualize seu plano para acessar.",
             "cta": "Ver planos"
         }
     },

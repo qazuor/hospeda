@@ -33,6 +33,11 @@ export interface ListingContactPanelProps {
     readonly price: ListingContactPrice;
     readonly hasWhatsapp: boolean;
     readonly whatsappPlansHref: string;
+    /**
+     * HOS-2554: catalog names of the plans that carry the host's WhatsApp number, read server-side and
+     * handed down (the catalog reader is server-only). Empty when it could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
     readonly phone?: string | null;
     readonly email?: string | null;
     readonly capacity?: number | null;
@@ -60,6 +65,7 @@ function ListingContactSheet({
     price,
     hasWhatsapp,
     whatsappPlansHref,
+    gatePlanNames = [],
     phone,
     email,
     capacity,
@@ -219,6 +225,7 @@ function ListingContactSheet({
                                 accommodationId={accommodation.id}
                                 accommodationName={accommodationName}
                                 plansHref={whatsappPlansHref}
+                                gatePlanNames={gatePlanNames}
                                 locale={locale}
                                 origin="panel"
                             />
