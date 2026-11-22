@@ -6,7 +6,8 @@ import {
     parsePlanNames,
     resolveDashboardFreeCard,
     resolveDashboardPlanStat,
-    resolveDashboardTrialStat
+    resolveDashboardTrialStat,
+    resolvePlanStatusLabel
 } from '../../../src/lib/billing/dashboard-plan-stat';
 
 const plan = {
@@ -53,7 +54,8 @@ describe('TEST:1756:9-11 dashboard plan stat resolver', () => {
         ['ACTIVE', 'active'],
         ['GRACE_PERIOD', 'grace-period'],
         ['SUSPENDED', 'suspended'],
-        ['CANCEL_SCHEDULED', 'cancel-scheduled']
+        ['CANCEL_SCHEDULED', 'cancel-scheduled'],
+        ['PAUSED', 'paused']
     ] as const)('TEST:1756:9 maps %s to %s', (status, statusKey) => {
         expect(
             resolveDashboardPlanStat({
@@ -165,5 +167,54 @@ describe('HOS-1996 dashboard free-branch decision', () => {
             formatDate
         });
         expect(card).toEqual({ value: 'En prueba', statusText: null });
+    });
+});
+
+describe('HOS-2543 resolvePlanStatusLabel', () => {
+    const t = (key: string, _fallback: string, params?: Record<string, unknown>) =>
+        params?.date ? `${key}|${String(params.date)}` : key;
+    const formatDate = (iso: string) => `D(${iso})`;
+    const info = (subscriptionStatus: string | null, serviceEndsAt: string | null = null) => ({
+        status: 'active',
+        subscriptionStatus,
+        serviceEndsAt
+    });
+
+    it.each([
+        ['ACTIVE', 'host.dashboard.plan.active'],
+        ['GRACE_PERIOD', 'host.dashboard.plan.gracePeriod'],
+        ['SUSPENDED', 'host.dashboard.plan.suspended'],
+        ['PAUSED', 'host.dashboard.plan.paused']
+    ])('gives %s its own label', (status, key) => {
+        expect(resolvePlanStatusLabel({ info: info(status), t, formatDate })).toBe(key);
+    });
+
+    it('shows the end date on a scheduled cancellation', () => {
+        expect(
+            resolvePlanStatusLabel({
+                info: info('CANCEL_SCHEDULED', '2026-12-31T00:00:00.000Z'),
+                t,
+                formatDate
+            })
+        ).toBe('host.dashboard.plan.cancelScheduled|D(2026-12-31T00:00:00.000Z)');
+    });
+
+    it('drops the date when a scheduled cancellation has none', () => {
+        expect(resolvePlanStatusLabel({ info: info('CANCEL_SCHEDULED'), t, formatDate })).toBe(
+            'host.dashboard.plan.cancelScheduledNoDate'
+        );
+    });
+
+    it('falls back to the coarse status for an API without subscriptionStatus', () => {
+        expect(resolvePlanStatusLabel({ info: info(null), t, formatDate })).toBe(
+            'host.dashboard.plan.active'
+        );
+        expect(
+            resolvePlanStatusLabel({
+                info: { status: 'past_due', subscriptionStatus: null, serviceEndsAt: null },
+                t,
+                formatDate
+            })
+        ).toBe('host.dashboard.plan.inactive');
     });
 });

@@ -9,7 +9,12 @@
  * GET /api/v1/protected/host/dashboard
  */
 
-import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import {
+    OwnPlanStatusSchema,
+    PublicationStatusEnum,
+    ServiceErrorCode,
+    VerticalEnum
+} from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import {
     AccommodationService,
@@ -42,7 +47,12 @@ export const HostDashboardResponseSchema = z.object({
         .object({
             slug: z.string(),
             name: z.string(),
+            /** Coarse legacy status, kept for existing consumers (mobile). */
             status: z.enum(['active', 'trial', 'cancelled', 'expired', 'past_due']),
+            /** Exact status of the live principal subscription (HOS-2543). */
+            subscriptionStatus: OwnPlanStatusSchema,
+            /** ISO end of service; set for a scheduled cancellation, `null` otherwise. */
+            serviceEndsAt: z.string().nullable(),
             isTrial: z.boolean()
         })
         .nullable(),
@@ -143,7 +153,8 @@ const PLAN_STATUS_BY_SUBSCRIPTION_STATUS: Readonly<
  * Reads through `readOwnPlanState`, the same reader behind Mi suscripcion, so the
  * plan name comes from the catalog (`plan.name`) and never from a constant.
  * The accommodation principal wins; any other live principal is the fallback.
- * `isTrial` is always false: the trial is Hospeda's own state machine and the
+ * The exact subscription status is returned in `subscriptionStatus` (one label per
+ * status on the card); `status` stays as the coarse legacy value. `isTrial` is always false: the trial is Hospeda's own state machine and the
  * client reads it separately.
  *
  * FAIL-SAFE: a failed read degrades to `null` (the card then shows the
@@ -163,10 +174,20 @@ async function resolvePlan(input: { actor: Actor }): Promise<HostDashboardPlan |
             subscriptions.find((row) => row.vertical === VerticalEnum.ACCOMMODATION) ??
             subscriptions[0];
         if (!chosen) return null;
+        const parsedStatus = OwnPlanStatusSchema.safeParse(chosen.status);
+        if (!parsedStatus.success) {
+            apiLogger.warn(
+                { actorId: actor.id, status: chosen.status },
+                'Host dashboard: live subscription has an unexpected status — plan null'
+            );
+            return null;
+        }
         return {
             slug: chosen.plan.slug,
             name: chosen.plan.name,
             status: PLAN_STATUS_BY_SUBSCRIPTION_STATUS[chosen.status] ?? 'active',
+            subscriptionStatus: parsedStatus.data,
+            serviceEndsAt: chosen.serviceEndsAt?.toISOString() ?? null,
             isTrial: false
         };
     } catch (error) {

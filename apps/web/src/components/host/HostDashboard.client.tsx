@@ -20,7 +20,8 @@ import type { HostDashboardData } from '@/lib/api/types';
 import { visibleApiMessage } from '@/lib/api-errors';
 import {
     resolveDashboardFreeCard,
-    resolveDashboardTrialStat
+    resolveDashboardTrialStat,
+    resolvePlanStatusLabel
 } from '@/lib/billing/dashboard-plan-stat';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -203,9 +204,11 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
     const planBadge = data.planInfo
         ? data.planInfo.isTrial
             ? t('host.dashboard.plan.trial', 'Prueba gratuita')
-            : data.planInfo.status === 'active'
-              ? t('host.dashboard.plan.active', 'Activo')
-              : t('host.dashboard.plan.inactive', 'Inactivo')
+            : resolvePlanStatusLabel({
+                  info: data.planInfo,
+                  t,
+                  formatDate: (iso) => formatNoticeInstant({ iso, locale })
+              })
         : t('host.dashboard.plan.noPlan', 'Sin plan');
 
     return (
@@ -258,7 +261,9 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                             <p className={styles.planName}>{data.planInfo.name}</p>
                             <span
                                 className={`${styles.planBadge} ${
-                                    data.planInfo.isTrial || data.planInfo.status !== 'active'
+                                    data.planInfo.isTrial ||
+                                    (data.planInfo.subscriptionStatus ?? data.planInfo.status) !==
+                                        'ACTIVE'
                                         ? styles.planBadgeWarning
                                         : styles.planBadgeActive
                                 }`}

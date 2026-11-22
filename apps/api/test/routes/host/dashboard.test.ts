@@ -366,8 +366,48 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                 slug: 'basic',
                 name: 'Basic',
                 status: 'active',
+                subscriptionStatus: 'ACTIVE',
+                serviceEndsAt: null,
                 isTrial: false
             });
+        });
+
+        it.each([
+            ['ACTIVE', 'ACTIVE'],
+            ['GRACE_PERIOD', 'GRACE_PERIOD'],
+            ['SUSPENDED', 'SUSPENDED'],
+            ['CANCEL_SCHEDULED', 'CANCEL_SCHEDULED'],
+            ['PAUSED', 'PAUSED']
+        ])('returns the exact status %s without collapsing it', async (status, expected) => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({ status })],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan.subscriptionStatus).toBe(expected);
+        });
+
+        it('returns the end of service for a scheduled cancellation', async () => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [
+                    principal({
+                        status: 'CANCEL_SCHEDULED',
+                        serviceEndsAt: new Date('2026-12-31T00:00:00.000Z')
+                    })
+                ],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan.serviceEndsAt).toBe('2026-12-31T00:00:00.000Z');
+        });
+
+        it('degrades to plan null when the status is not one the card can show', async () => {
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({ status: 'ABANDONED' })],
+                deferredCourtesies: []
+            });
+            const body = await (await buildApp().request('/dashboard')).json();
+            expect(body.data.plan).toBeNull();
         });
 
         it('prefers the accommodation principal over another vertical', async () => {

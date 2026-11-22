@@ -1360,6 +1360,9 @@ export function transformHostDashboard({
             ? {
                   name: String(plan.name ?? ''),
                   status: String(plan.status ?? ''),
+                  subscriptionStatus:
+                      typeof plan.subscriptionStatus === 'string' ? plan.subscriptionStatus : null,
+                  serviceEndsAt: typeof plan.serviceEndsAt === 'string' ? plan.serviceEndsAt : null,
                   isTrial: Boolean(plan.isTrial)
               }
             : null,

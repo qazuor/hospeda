@@ -999,7 +999,12 @@
             "trial": "Teste gratuito",
             "active": "Ativo",
             "inactive": "Inativo",
-            "noPlan": "Sem plano"
+            "noPlan": "Sem plano",
+            "gracePeriod": "Pagamento pendente",
+            "suspended": "Suspensa",
+            "cancelScheduled": "Cancelamento agendado até {{date}}",
+            "cancelScheduledNoDate": "Cancelamento agendado",
+            "paused": "Pausada"
         },
         "widgets": {
             "properties": "Suas propriedades",

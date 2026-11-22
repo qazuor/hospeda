@@ -122,6 +122,10 @@ export interface HostDashboardData {
     readonly planInfo: {
         readonly name: string;
         readonly status: string;
+        /** Exact subscription status (`ACTIVE`, `GRACE_PERIOD`, ...), `null` from an older API. */
+        readonly subscriptionStatus: string | null;
+        /** ISO end of service for a scheduled cancellation. */
+        readonly serviceEndsAt: string | null;
         readonly isTrial: boolean;
     } | null;
     readonly unreadCount: number;

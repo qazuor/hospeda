@@ -28,7 +28,12 @@ export function resolveDashboardPlanStat(input: {
     | {
           readonly kind: 'single';
           readonly label: string;
-          readonly statusKey: 'active' | 'grace-period' | 'suspended' | 'cancel-scheduled';
+          readonly statusKey:
+              | 'active'
+              | 'grace-period'
+              | 'suspended'
+              | 'cancel-scheduled'
+              | 'paused';
       } {
     const { plan, activeSubscriptionsCount, planNames } = input;
     if (activeSubscriptionsCount >= 2) return { kind: 'multiple', count: activeSubscriptionsCount };
@@ -38,7 +43,8 @@ export function resolveDashboardPlanStat(input: {
         ACTIVE: 'active',
         GRACE_PERIOD: 'grace-period',
         SUSPENDED: 'suspended',
-        CANCEL_SCHEDULED: 'cancel-scheduled'
+        CANCEL_SCHEDULED: 'cancel-scheduled',
+        PAUSED: 'paused'
     } as const;
     return {
         kind: 'single',
@@ -136,4 +142,50 @@ export function resolveDashboardFreeCard(input: {
         value: labels.trial,
         statusText: date ? labels.trialEndsOn.replace('{{date}}', date) : null
     };
+}
+
+/**
+ * Label for the host dashboard's subscription badge: one distinct text per exact
+ * subscription status (HOS-2543), never collapsed into active/inactive.
+ *
+ * A scheduled cancellation carries its end date when the API sent one. An API that
+ * predates `subscriptionStatus` falls back to the coarse `status`.
+ *
+ * @param input.info - The dashboard plan (`subscriptionStatus`, `serviceEndsAt`, legacy `status`).
+ * @param input.t - Translator returning the fallback when a key is missing.
+ * @param input.formatDate - Formats an ISO instant, returning `null` when it cannot.
+ * @returns The translated badge text.
+ */
+export function resolvePlanStatusLabel(input: {
+    readonly info: {
+        readonly status: string;
+        readonly subscriptionStatus: string | null;
+        readonly serviceEndsAt: string | null;
+    };
+    readonly t: (key: string, fallback: string, params?: Record<string, unknown>) => string;
+    readonly formatDate: (iso: string) => string | null;
+}): string {
+    const { info, t, formatDate } = input;
+    switch (info.subscriptionStatus) {
+        case 'ACTIVE':
+            return t('host.dashboard.plan.active', 'Activo');
+        case 'GRACE_PERIOD':
+            return t('host.dashboard.plan.gracePeriod', 'Pago pendiente');
+        case 'SUSPENDED':
+            return t('host.dashboard.plan.suspended', 'Suspendida');
+        case 'PAUSED':
+            return t('host.dashboard.plan.paused', 'Pausada');
+        case 'CANCEL_SCHEDULED': {
+            const date = info.serviceEndsAt ? formatDate(info.serviceEndsAt) : null;
+            return date
+                ? t('host.dashboard.plan.cancelScheduled', 'Baja programada hasta el {{date}}', {
+                      date
+                  })
+                : t('host.dashboard.plan.cancelScheduledNoDate', 'Baja programada');
+        }
+        default:
+            return info.status === 'active'
+                ? t('host.dashboard.plan.active', 'Activo')
+                : t('host.dashboard.plan.inactive', 'Inactivo');
+    }
 }
