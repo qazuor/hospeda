@@ -2,7 +2,11 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import { buildRestitutionPayload } from './publication-notices';
-import { orderRestorationCandidates, selectSurplusToLower } from './publication-order';
+import {
+    isRestorableArchiveOrigin,
+    orderRestorationCandidates,
+    selectSurplusToLower
+} from './publication-order';
 import type {
     PostCommitWarning,
     PublicationAfterCommit,
@@ -131,13 +135,9 @@ export async function recalculateCoverage(args: {
                 vertical: args.vertical,
                 listingIds: archived.map((row) => row.id)
             });
-            const archivedCandidates = archived.filter((row) => {
-                const origin = origins.get(row.id);
-                return (
-                    origin === PublicationStatusEnum.PUBLISHED ||
-                    origin === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
-                );
-            });
+            const archivedCandidates = archived.filter((row) =>
+                isRestorableArchiveOrigin({ origin: origins.get(row.id) })
+            );
             const candidatesAtStart = applicable.filter(
                 (row) => row.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             );
