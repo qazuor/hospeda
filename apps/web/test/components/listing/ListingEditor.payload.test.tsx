@@ -595,7 +595,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             expect(body).toHaveProperty('whatsappVisibility', 'LOGGED_IN_ONLY');
         });
 
-        it('HOS-2557: saving without a number sends no visibility', async () => {
+        it('HOS-2557: saving without a number sends no WhatsApp choice', async () => {
             renderEditor('venue', buildListing({ contactInfo: {} }), 'contact');
 
             fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.com' } });

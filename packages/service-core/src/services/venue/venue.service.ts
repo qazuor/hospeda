@@ -699,7 +699,7 @@ export class VenueService extends BaseListingService<
         // HOS-2557: a number written without a visibility is PUBLIC by default.
         const whatsapp = resolveDefaultWhatsappVisibility({
             contactInfo: data.contactInfo,
-            visibility: data.whatsappVisibility,
+            requested: data.whatsappVisibility,
             stored: null
         });
         return { ...base, ...nightInfo, ...locationKey, ...whatsapp } as Partial<Venue>;
@@ -751,7 +751,7 @@ export class VenueService extends BaseListingService<
         // HOS-2557: a number written without a visibility is PUBLIC unless a choice is stored.
         const whatsapp = resolveDefaultWhatsappVisibility({
             contactInfo: data.contactInfo,
-            visibility: data.whatsappVisibility,
+            requested: data.whatsappVisibility,
             stored: (current as { whatsappVisibility?: VenueWhatsappVisibilityEnum | null } | null)
                 ?.whatsappVisibility
         });

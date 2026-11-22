@@ -110,7 +110,7 @@ describe('resolveDefaultWhatsappVisibility (HOS-2557)', () => {
 
     it('defaults a number with no choice and nothing stored to PUBLIC', () => {
         expect(
-            resolveDefaultWhatsappVisibility({ contactInfo, visibility: undefined, stored: null })
+            resolveDefaultWhatsappVisibility({ contactInfo, requested: undefined, stored: null })
         ).toEqual({ whatsappVisibility: VenueWhatsappVisibilityEnum.PUBLIC });
     });
 
@@ -118,17 +118,17 @@ describe('resolveDefaultWhatsappVisibility (HOS-2557)', () => {
         expect(
             resolveDefaultWhatsappVisibility({
                 contactInfo,
-                visibility: VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY,
+                requested: VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY,
                 stored: null
             })
         ).toEqual({});
         expect(
-            resolveDefaultWhatsappVisibility({ contactInfo, visibility: null, stored: null })
+            resolveDefaultWhatsappVisibility({ contactInfo, requested: null, stored: null })
         ).toEqual({});
         expect(
             resolveDefaultWhatsappVisibility({
                 contactInfo,
-                visibility: undefined,
+                requested: undefined,
                 stored: VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY
             })
         ).toEqual({});
@@ -138,14 +138,14 @@ describe('resolveDefaultWhatsappVisibility (HOS-2557)', () => {
         expect(
             resolveDefaultWhatsappVisibility({
                 contactInfo: { mobilePhone: '1' },
-                visibility: undefined,
+                requested: undefined,
                 stored: null
             })
         ).toEqual({});
         expect(
             resolveDefaultWhatsappVisibility({
                 contactInfo: undefined,
-                visibility: undefined,
+                requested: undefined,
                 stored: null
             })
         ).toEqual({});

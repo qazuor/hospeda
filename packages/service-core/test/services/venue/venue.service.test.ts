@@ -246,7 +246,7 @@ describe('VenueService.updateOwn', () => {
         }
     });
 
-    it('HOS-2557: a contact update with no number sets no visibility', async () => {
+    it('HOS-2557: a contact update with no number sets no WhatsApp choice', async () => {
         const service = makeService(makeVenueEntity({ whatsappVisibility: null }));
         const result = await service.updateOwn(
             ENTITY_ID,

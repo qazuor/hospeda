@@ -14,7 +14,7 @@
  * - {@link getVenueWhatsappForViewer} backs the protected endpoint a signed-in
  *   visitor calls. It never answers for an unpublished, deleted or unknown
  *   venue (all NOT_FOUND, indistinguishable), and never returns a number for a
- *   venue whose owner has not chosen a visibility.
+ *   venue whose owner has not chosen a WhatsApp visibility.
  *
  * `VenuePublicContactInfoSchema` is untouched by design: it stays an allow-list
  * that never names the number (HOS-1076 / HOS-2042).
@@ -46,29 +46,29 @@ export function readVenueWhatsappNumber({
 }
 
 /**
- * The visibility a write must add so a WhatsApp number never lands undecided
+ * The WhatsApp visibility a write must add so a WhatsApp number never lands undecided
  * (HOS-2557, owner decision: the default is `PUBLIC`).
  *
  * Single source for every write path (editor, API, MCP tools). It adds the default
- * only when the write sets a number AND carries no visibility AND nothing is stored;
+ * only when the write sets a number AND carries no WhatsApp visibility AND nothing is stored;
  * an explicit choice (including an explicit `null`) and a stored choice are never
  * overridden.
  *
  * @param params.contactInfo - The `contact_info` of the write, if it carries one.
- * @param params.visibility - The visibility of the write (`undefined` when absent).
- * @param params.stored - The stored visibility; `null` for a create or an undecided row.
+ * @param params.requested - The WhatsApp visibility the write requests (`undefined` when absent).
+ * @param params.stored - The stored WhatsApp visibility; `null` for a create or an undecided row.
  * @returns `{ whatsappVisibility: PUBLIC }` to merge into the patch, or `{}`.
  */
 export function resolveDefaultWhatsappVisibility({
     contactInfo,
-    visibility,
+    requested,
     stored
 }: {
     readonly contactInfo: unknown;
-    readonly visibility: VenueWhatsappVisibilityEnum | null | undefined;
+    readonly requested: VenueWhatsappVisibilityEnum | null | undefined;
     readonly stored: VenueWhatsappVisibilityEnum | null | undefined;
 }): { readonly whatsappVisibility?: VenueWhatsappVisibilityEnum } {
-    if (visibility !== undefined || (stored ?? null) !== null) return {};
+    if (requested !== undefined || (stored ?? null) !== null) return {};
     if (readVenueWhatsappNumber({ contactInfo }) === null) return {};
     return { whatsappVisibility: VenueWhatsappVisibilityEnum.PUBLIC };
 }
