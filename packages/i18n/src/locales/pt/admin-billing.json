@@ -2395,7 +2395,7 @@
             "calls": "Chamadas sem resposta: {{count}} de {{total}}",
             "oldestUnanswered": "a mais antiga, {{age}}",
             "accepted": "O MP aceitou {{amount}}",
-            "noAction": "Nenhuma ação pode tratá-la agora: espere a chamada completar 24 horas ou siga o runbook de devoluções (§8).",
+            "noAction": "Nenhuma ação do painel pode tratá-la agora: se a chamada for recente, espere completar 24 horas; caso contrário, siga o runbook de devoluções (§8).",
             "actions": {
                 "RETRY": "Tentar de novo com o MP",
                 "SETTLE_REMAINDER": "Registrar o restante"

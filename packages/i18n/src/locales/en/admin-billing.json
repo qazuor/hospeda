@@ -2395,7 +2395,7 @@
             "calls": "Unanswered calls: {{count}} of {{total}}",
             "oldestUnanswered": "the oldest {{age}}",
             "accepted": "MP accepted {{amount}}",
-            "noAction": "No action can take it right now: wait until the call is 24 hours old or follow the refunds runbook (§8).",
+            "noAction": "No panel action can take it right now: if the call is recent, wait until it is 24 hours old; otherwise follow the refunds runbook (§8).",
             "actions": {
                 "RETRY": "Retry with MP",
                 "SETTLE_REMAINDER": "Settle the rest"

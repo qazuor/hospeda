@@ -2395,7 +2395,7 @@
             "calls": "Llamadas sin respuesta: {{count}} de {{total}}",
             "oldestUnanswered": "la más vieja, {{age}}",
             "accepted": "MP aceptó {{amount}}",
-            "noAction": "Ninguna acción la puede tomar ahora: esperá a que pasen las 24 horas de la llamada o seguí el runbook de devoluciones (§8).",
+            "noAction": "Ninguna acción del panel la puede tomar ahora: si la llamada es reciente, esperá a que pasen 24 horas; si no, seguí el runbook de devoluciones (§8).",
             "actions": {
                 "RETRY": "Reintentar con MP",
                 "SETTLE_REMAINDER": "Asentar el resto"
