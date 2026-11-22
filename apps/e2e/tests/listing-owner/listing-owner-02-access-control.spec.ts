@@ -15,9 +15,9 @@
  *
  *   2. CROSS-OWNER BLOCKED — a logged-in VENUE_OWNER (Julieta) navigating
  *      to another owner's (Rodrigo's) venue CARTA is redirected back to
- *      /es/mi-cuenta/comercio/ (her own listing index). The gate lives in:
+ *      /es/mi-cuenta/comercio/?vertical=venue (her own venue list, HOS-2559). The gate lives in:
  *        apps/web/src/lib/editor/resolve-listing-editor-page.ts (the shared front door)
- *        `if (!ownsListing && !isStaff) → redirect('mi-cuenta/comercio')`
+ *        `if (!ownsListing && !isStaff) → redirect(ownerListPath({ vertical }))`
  *
  * Actors:
  *   - e2e-tourist@local.test          (role USER, seeded by venues.seed.ts Step 2b)
@@ -172,7 +172,8 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         // The ownership gate in `resolveListingEditorPage` checks
         // detail.ownerId === user.id, for the hub and every section alike
         // (HOS-1080 moved it out of the single page into the shared resolver).
-        // Rodrigo's listing ownerId !== Julieta's userId → redirect to /mi-cuenta/comercio/.
+        // Rodrigo's listing ownerId !== Julieta's userId → redirect to the venue list,
+        // /mi-cuenta/comercio/?vertical=venue (HOS-2559: the list of the editor's vertical).
         //
         // The CARTA section is the page that now renders `#ce-menuUrl`
         // (DEC-FAC-062), so landing there would put the field on screen. Asking
@@ -181,9 +182,11 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/venue/${RODRIGO_VENUE_ID}/editar/carta/`;
         await page.goto(rivalEditorUrl, { waitUntil: 'domcontentloaded' });
 
-        // The ownership gate redirects to /[lang]/mi-cuenta/comercio/ (her index).
-        // Assert the final URL is the listing-owner index and does NOT contain the editor path.
-        await expect(page).toHaveURL(`${WEB_URL}/es/mi-cuenta/comercio/`);
+        // The ownership gate redirects to the list of the editor's vertical
+        // (HOS-2559). Julieta holds VENUE_EDIT_OWN, so the list renders there
+        // instead of redirecting again. Exact match: the final URL is the venue
+        // list and does NOT contain the editor path.
+        await expect(page).toHaveURL(`${WEB_URL}/es/mi-cuenta/comercio/?vertical=venue`);
 
         // Additionally confirm the venue editor input is NOT present on this page.
         // #ce-menuUrl is the stable, unique id for the venue editor's menu-link
