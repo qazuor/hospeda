@@ -15,6 +15,10 @@
  */
 import { z } from 'zod';
 
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+// Read through a typed view of `globalThis`: this package compiles without the DOM lib, so a
+// bare `window`/`document` reference fails its declaration build.
+const runtime = globalThis as { readonly window?: unknown; readonly document?: unknown };
+
+if (typeof runtime.window !== 'undefined' && typeof runtime.document !== 'undefined') {
     z.config({ jitless: true });
 }
