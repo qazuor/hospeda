@@ -14,6 +14,12 @@
  * It does nothing when the URL already names an audience (AC-3), and nothing
  * on any failure: the server-selected tab stays and no error is shown.
  *
+ * When every read succeeded and the signed-in reader matches no audience (a
+ * pure tourist), it announces that instead ({@link announceReaderWithoutAudience}),
+ * so the search's «Solo para mi tipo de cuenta» shows them no article rather
+ * than the default `host` tab's (which includes client-only articles such as
+ * «Conectar un asistente de IA», whose page 404s for a tourist).
+ *
  * Renders nothing. Hydration: `client:idle`.
  */
 
@@ -23,6 +29,7 @@ import { hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import { fetchAuthMe, readCachedAuthMe } from '@/lib/auth-cache';
 import { pickHelpAudience } from '@/lib/help/help-audience';
 import {
+    announceReaderWithoutAudience,
     HELP_AUDIENCE_PARAM,
     HELP_SELECT_AUDIENCE_EVENT,
     type HelpAudienceEventDetail,
@@ -39,15 +46,25 @@ function urlNamesAudience(): boolean {
 }
 
 /**
- * Works out the audience to preselect. Row reads run only when no permission
- * decided it; a failed read counts as "no row".
- *
- * @returns The audience, or `undefined` when nothing matched or a read failed
+ * What the reader's kind of account is: an audience, definitively none (a
+ * signed-in reader with no matching permission and no row, every read
+ * succeeded), or unknown (signed out, or a row read failed).
  */
-export async function resolvePreselectedHelpAudience(): Promise<HelpAudience | undefined> {
+export type ReaderHelpAudience =
+    | { readonly kind: 'audience'; readonly audience: HelpAudience }
+    | { readonly kind: 'none' }
+    | { readonly kind: 'unknown' };
+
+/**
+ * Works out the reader's audience. Row reads run only when no permission
+ * decided it.
+ *
+ * @returns See {@link ReaderHelpAudience}
+ */
+export async function resolveReaderHelpAudience(): Promise<ReaderHelpAudience> {
     const session = readCachedAuthMe() ?? (await fetchAuthMe());
     if (!session.isAuthenticated) {
-        return undefined;
+        return { kind: 'unknown' };
     }
     const byPermission = pickHelpAudience({
         permissions: session.permissions,
@@ -55,14 +72,28 @@ export async function resolvePreselectedHelpAudience(): Promise<HelpAudience | u
         ownsPartner: false
     });
     if (byPermission !== undefined) {
-        return byPermission;
+        return { kind: 'audience', audience: byPermission };
     }
     const [trade, partner] = await Promise.all([hostTradesApi.mine(), partnersApi.mine()]);
-    return pickHelpAudience({
+    const byRow = pickHelpAudience({
         permissions: session.permissions,
         ownsHostTrade: trade.ok && trade.data.trade !== null,
         ownsPartner: partner.ok && partner.data.partner !== null
     });
+    if (byRow !== undefined) {
+        return { kind: 'audience', audience: byRow };
+    }
+    return trade.ok && partner.ok ? { kind: 'none' } : { kind: 'unknown' };
+}
+
+/**
+ * Works out the audience to preselect. A failed read counts as "no row".
+ *
+ * @returns The audience, or `undefined` when nothing matched or a read failed
+ */
+export async function resolvePreselectedHelpAudience(): Promise<HelpAudience | undefined> {
+    const reader = await resolveReaderHelpAudience();
+    return reader.kind === 'audience' ? reader.audience : undefined;
 }
 
 /** Writes `?para=<audience>` into the current URL without a navigation. */
@@ -85,12 +116,19 @@ export function HelpAudiencePreselect() {
         let cancelled = false;
         const run = async (): Promise<void> => {
             try {
-                const audience = await resolvePreselectedHelpAudience();
-                // The reader may have picked a tab meanwhile: their choice wins.
-                const pickedMeanwhile = urlNamesAudience();
-                if (cancelled || audience === undefined || pickedMeanwhile) {
+                const reader = await resolveReaderHelpAudience();
+                if (cancelled) {
                     return;
                 }
+                if (reader.kind === 'none') {
+                    announceReaderWithoutAudience();
+                    return;
+                }
+                // The reader may have picked a tab meanwhile: their choice wins.
+                if (reader.kind !== 'audience' || urlNamesAudience()) {
+                    return;
+                }
+                const { audience } = reader;
                 writeAudienceParam({ audience });
                 window.dispatchEvent(
                     new CustomEvent<HelpAudienceEventDetail>(HELP_SELECT_AUDIENCE_EVENT, {

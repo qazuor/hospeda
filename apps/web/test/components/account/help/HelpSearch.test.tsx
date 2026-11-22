@@ -12,6 +12,7 @@ import {
     helpSearchAnnouncement
 } from '../../../../src/components/account/help/HelpSearch.client';
 import { HELP_AUDIENCE_CHANGED_EVENT } from '../../../../src/lib/help/help-audience';
+import { announceReaderWithoutAudience } from '../../../../src/lib/help/help-audience-shared';
 import {
     listLocalizedHelpArticles,
     toHelpSearchEntries
@@ -315,6 +316,52 @@ describe('HelpSearch (HOS-2552 review)', () => {
             .getAllByRole('link')
             .find((link) => link.getAttribute('href')?.startsWith('/es/mi-cuenta/ayuda/photos/'));
         expect(photos?.getAttribute('href')).toBe('/es/mi-cuenta/ayuda/photos/?para=host');
+    });
+});
+
+describe('HelpSearch for a reader with no business audience (tourist)', () => {
+    afterEach(() => {
+        document.documentElement.removeAttribute('data-help-reader-without-audience');
+    });
+
+    it('baseline: the default host tab finds the client-only AI assistants article', () => {
+        renderSearch('host');
+        type('conectar asistente');
+        expect(resultIds()).toContain('ai-assistants');
+    });
+
+    it('shows no article «for my account type», only the FAQ and contact fallback', () => {
+        // Arrange
+        renderSearch('host');
+
+        // Act
+        act(() => announceReaderWithoutAudience());
+        type('conectar asistente');
+
+        // Assert
+        expect(resultIds()).not.toContain('ai-assistants');
+        expect(resultIds()).toHaveLength(0);
+        expect(screen.getByRole('link', { name: /preguntas frecuentes/i })).toBeInTheDocument();
+    });
+
+    it('reads the fact when the preselection ran before hydration', () => {
+        announceReaderWithoutAudience();
+        renderSearch('host');
+        type('conectar asistente');
+        expect(resultIds()).toHaveLength(0);
+    });
+
+    it('shows every article again with the toggle off', () => {
+        // Arrange
+        announceReaderWithoutAudience();
+        renderSearch('host');
+
+        // Act
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Solo para mi tipo de cuenta' }));
+        type('conectar asistente');
+
+        // Assert
+        expect(resultIds()).toContain('ai-assistants');
     });
 });
 
