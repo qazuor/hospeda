@@ -54,10 +54,14 @@ describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
         expect(anfitrion?.items.some((item) => item.id === 'properties')).toBe(true);
     });
 
-    it('marks comercio as suppressHeaderWhenSingle (single-item "cajón" group)', () => {
+    it('marks comercio as suppressHeaderWhenSingle, with one dashboard per vertical gated by its own permission (HOS-2475/2476)', () => {
         const comercio = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'comercio');
         expect(comercio?.suppressHeaderWhenSingle).toBe(true);
-        expect(comercio?.items).toHaveLength(1);
+        expect(comercio?.items.map((item) => [item.id, item.requiredPermission])).toEqual([
+            ['venueDashboard', PermissionEnum.VENUE_EDIT_OWN],
+            ['experienceDashboard', PermissionEnum.EXPERIENCE_EDIT_OWN],
+            ['comercio-listings', undefined]
+        ]);
     });
 
     it('stores i18n keys, never resolved text, for every group and item label', () => {
@@ -365,7 +369,10 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio', 'turista']);
         const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
+        expect(comercio?.items.map((item) => item.id)).toEqual([
+            'venueDashboard',
+            'comercio-listings'
+        ]);
     });
 
     it('shows comercio with only the experience permission', () => {
@@ -450,7 +457,10 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio', 'turista']);
         const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
+        expect(comercio?.items.map((item) => item.id)).toEqual([
+            'venueDashboard',
+            'comercio-listings'
+        ]);
     });
 
     it('adds anfitrion, comercio and editorial for platform staff (ADMIN)', () => {
