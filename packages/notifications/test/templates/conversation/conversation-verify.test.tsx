@@ -71,3 +71,36 @@ describe('ConversationVerify', () => {
         expect(render).not.toThrow();
     });
 });
+
+describe('ConversationVerify inquiry message (HOS-2568)', () => {
+    const baseProps: ConversationVerifyProps = {
+        accommodationName: 'Hostería del Río',
+        verificationUrl: 'https://hospeda.com.ar/verify?token=abc123',
+        guestName: 'Laura Gómez',
+        locale: 'es'
+    };
+
+    it('shows the message the link will deliver', () => {
+        const html = renderToStaticMarkup(
+            ConversationVerify({ ...baseProps, message: '¿Hay lugar en enero?' })
+        );
+
+        expect(html).toContain('Tu consulta');
+        expect(html).toContain('¿Hay lugar en enero?');
+    });
+
+    it('escapes markup in the message', () => {
+        const html = renderToStaticMarkup(
+            ConversationVerify({ ...baseProps, message: '<script>alert(1)</script>' })
+        );
+
+        expect(html).not.toContain('<script>alert(1)</script>');
+        expect(html).toContain('&lt;script&gt;');
+    });
+
+    it('omits the section when there is no message', () => {
+        const html = renderToStaticMarkup(ConversationVerify(baseProps));
+
+        expect(html).not.toContain('Tu consulta');
+    });
+});

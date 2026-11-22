@@ -16,6 +16,11 @@ export interface ConversationVerifyProps {
     guestName: string;
     /** Email locale — does not alter content (copy is in Spanish) but included for caller parity */
     locale: 'es' | 'en' | 'pt';
+    /**
+     * The inquiry text this link will deliver (HOS-2568). Shown so the person sees exactly
+     * what they are confirming; React escapes it, so it is safe to render as plain text.
+     */
+    message?: string;
 }
 
 /**
@@ -29,7 +34,8 @@ export interface ConversationVerifyProps {
 export function ConversationVerify({
     accommodationName,
     verificationUrl,
-    guestName
+    guestName,
+    message
 }: ConversationVerifyProps) {
     return (
         <EmailLayout previewText="Verificá tu email para continuar la conversación — Hospeda">
@@ -41,6 +47,13 @@ export function ConversationVerify({
                 Recibimos tu consulta sobre <strong>{accommodationName}</strong>. Para poder
                 enviarla al anfitrión, necesitamos confirmar que el email es tuyo.
             </Text>
+
+            {message ? (
+                <Section style={styles.messageBox}>
+                    <Text style={styles.messageLabel}>Tu consulta</Text>
+                    <Text style={styles.messageText}>{message}</Text>
+                </Section>
+            ) : null}
 
             <Text style={styles.paragraph}>
                 Hospeda es la plataforma de turismo del Litoral argentino que conecta viajeros con
@@ -78,6 +91,27 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
+    },
+    messageBox: {
+        backgroundColor: '#f8fafc',
+        borderRadius: '8px',
+        borderLeft: '4px solid #94a3b8',
+        padding: '12px 20px',
+        margin: '0 0 16px'
+    },
+    messageLabel: {
+        color: '#64748b',
+        fontSize: '12px',
+        lineHeight: '16px',
+        margin: '0 0 4px',
+        textTransform: 'uppercase' as const
+    },
+    messageText: {
+        color: '#1e293b',
+        fontSize: '15px',
+        lineHeight: '22px',
+        margin: '0',
+        whiteSpace: 'pre-wrap' as const
     },
     buttonContainer: {
         margin: '32px 0',
