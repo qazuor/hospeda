@@ -4,6 +4,43 @@ import type { ScheduledChangeApplier } from './subscription-billing-ports';
 
 const inputSchema = z.strictObject({ subscriptionId: z.uuid(), now: z.date() });
 
+/** A queued scheduled change whose `effective_at` already passed. */
+export interface DueScheduledChange {
+    readonly id: string;
+    readonly effectiveAt: Date;
+}
+
+/**
+ * Reads the row's queued scheduled change whose `effective_at` is at or before `now`
+ * — the one S7 hands to S38 on return. Shared by {@link applyOverdueScheduledChangeOnReturn}
+ * and the read-only MP4 preview (HOS-1640), so both answer the same question.
+ *
+ * @param input.subscriptionId - The suspended row
+ * @param input.now - The act's instant
+ * @param input.tx - The caller's transaction or client
+ * @returns The due entry, or null
+ */
+export async function findDueScheduledChange(input: {
+    readonly subscriptionId: string;
+    readonly now: Date;
+    readonly tx: DrizzleClient;
+}): Promise<DueScheduledChange | null> {
+    const [due] = await input.tx
+        .select({
+            id: subscriptionScheduledChanges.id,
+            effectiveAt: subscriptionScheduledChanges.effectiveAt
+        })
+        .from(subscriptionScheduledChanges)
+        .where(
+            and(
+                eq(subscriptionScheduledChanges.subscriptionId, input.subscriptionId),
+                lte(subscriptionScheduledChanges.effectiveAt, input.now)
+            )
+        )
+        .limit(1);
+    return due ?? null;
+}
+
 /** Result of {@link applyOverdueScheduledChangeOnReturn}. */
 export interface ApplyOverdueScheduledChangeOnReturnResult {
     /** True when the row had a due scheduled change and S38 was called. */
@@ -38,16 +75,7 @@ export async function applyOverdueScheduledChangeOnReturn(
         subscriptionId: input.subscriptionId,
         now: input.now
     });
-    const [due] = await input.tx
-        .select({ id: subscriptionScheduledChanges.id })
-        .from(subscriptionScheduledChanges)
-        .where(
-            and(
-                eq(subscriptionScheduledChanges.subscriptionId, subscriptionId),
-                lte(subscriptionScheduledChanges.effectiveAt, now)
-            )
-        )
-        .limit(1);
+    const due = await findDueScheduledChange({ subscriptionId, now, tx: input.tx });
     if (!due) return { called: false };
     await ports.scheduledChangeApplier.applyScheduledChange({ subscriptionId, tx: input.tx });
     return { called: true };
