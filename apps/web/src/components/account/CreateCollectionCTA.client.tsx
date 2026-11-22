@@ -10,6 +10,7 @@
  */
 
 import { useState } from 'react';
+import { resolveCollectionsGateMessage } from '@/lib/billing/plan-name-list';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
@@ -43,6 +44,11 @@ export interface CreateCollectionCTAProps {
      */
     readonly accessDenied?: boolean;
     /**
+     * HOS-2544: catalog names of the plans that carry collections, read by the SSR page
+     * (the catalog reader is server-only). Empty when the catalog could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
+    /**
      * Optional callback invoked after a collection is successfully created.
      * Receives the created collection's id and name.
      */
@@ -65,6 +71,7 @@ export function CreateCollectionCTA({
     isAtLimit,
     maxCollections,
     accessDenied = false,
+    gatePlanNames = [],
     onCreated
 }: CreateCollectionCTAProps) {
     const t = createT(locale);
@@ -76,10 +83,11 @@ export function CreateCollectionCTA({
         { max: maxCollections }
     );
 
-    const entitlementRequiredLabel = t(
-        'account.favorites.collections.upgrade.message',
-        'Las colecciones están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
-    );
+    const entitlementRequiredLabel = resolveCollectionsGateMessage({
+        locale,
+        planNames: gatePlanNames,
+        t
+    });
 
     const createLabel = t('account.favorites.collections.create', 'Crear colección');
 
@@ -159,6 +167,7 @@ export function CreateCollectionCTA({
                 locale={locale}
                 isAtLimit={isAtLimit}
                 collectionMax={maxCollections}
+                gatePlanNames={gatePlanNames}
             />
         </>
     );

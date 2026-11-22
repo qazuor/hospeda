@@ -67,7 +67,8 @@ vi.mock('../../../src/components/shared/feedback/SkeletonCard.module.css', () =>
 }));
 
 vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
+    const t = (key: string, fallback?: string, params?: Record<string, unknown>): string =>
+        fallback ?? `${key} ${JSON.stringify(params ?? {})}`;
     const translations = { t } as const;
     return { createTranslations: () => translations };
 });
@@ -204,11 +205,12 @@ function make403Response(code: string) {
     });
 }
 
-function renderList() {
+function renderList({ gatePlanNames }: { readonly gatePlanNames?: readonly string[] } = {}) {
     return render(
         <UserFavoritesList
             locale="es"
             apiUrl="http://localhost:3001"
+            gatePlanNames={gatePlanNames}
         />
     );
 }
@@ -958,7 +960,7 @@ describe('UserFavoritesList', () => {
         await waitFor(() => {
             expect(screen.getByText('Colecciones')).toBeInTheDocument();
             expect(
-                screen.getByText(/Las colecciones están disponibles en los planes Plus y VIP/i)
+                screen.getByText(/Las colecciones no están incluidas en tu plan actual/i)
             ).toBeInTheDocument();
         });
 
@@ -973,6 +975,17 @@ describe('UserFavoritesList', () => {
         expect(screen.queryByText(/Aún no tenés colecciones/i)).not.toBeInTheDocument();
     });
 
+    it('HOS-2544: the cartel names the catalog plan it receives, never a hardcoded Plus', async () => {
+        globalThis.fetch = makeRoutedFetchMock({
+            collectionsResponse: () => make403Response('ENTITLEMENT_REQUIRED')
+        });
+        renderList({ gatePlanNames: ['Explorador'] });
+
+        const message = await screen.findByText(/Explorador/);
+        expect(message.textContent).toContain('upgrade.message_one');
+        expect(message.textContent).not.toMatch(/Plus/);
+    });
+
     it('does not show the upgrade cartel on a normal 200 empty collections list', async () => {
         globalThis.fetch = makeRoutedFetchMock({
             collectionsResponse: makeEmptyCollectionsResponse
@@ -984,7 +997,7 @@ describe('UserFavoritesList', () => {
         });
 
         expect(
-            screen.queryByText(/Las colecciones están disponibles en los planes Plus y VIP/i)
+            screen.queryByText(/Las colecciones no están incluidas en tu plan actual/i)
         ).not.toBeInTheDocument();
     });
 
@@ -1000,7 +1013,7 @@ describe('UserFavoritesList', () => {
         });
 
         expect(
-            screen.queryByText(/Las colecciones están disponibles en los planes Plus y VIP/i)
+            screen.queryByText(/Las colecciones no están incluidas en tu plan actual/i)
         ).not.toBeInTheDocument();
     });
 

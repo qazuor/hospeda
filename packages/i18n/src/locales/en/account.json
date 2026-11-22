@@ -907,7 +907,9 @@
             "assignSuccess": "Movido a {{name}}",
             "upgrade": {
                 "title": "Collections",
-                "message": "Collections are available on Plus and VIP plans. Upgrade your plan to access this feature.",
+                "message_one": "Collections are available on the {{plans}} plan. Upgrade your plan to access this feature.",
+                "message_other": "Collections are available on the {{plans}} plans. Upgrade your plan to access this feature.",
+                "messageNoPlans": "Collections are not included in your current plan. Upgrade your plan to access this feature.",
                 "cta": "View plans"
             }
         },

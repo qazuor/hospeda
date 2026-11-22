@@ -31,7 +31,8 @@ vi.mock('../../../src/components/host/PromotionForm.module.css', () => ({
 /** i18n: return the fallback string so assertions can use human-readable text. */
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (_key: string, fallback?: string, params?: Record<string, unknown>) =>
+            fallback ?? `${_key} ${JSON.stringify(params ?? {})}`
     })
 }));
 
@@ -159,6 +160,34 @@ describe('PromotionForm — feedback and action styling (HOS-2451)', () => {
         const block = css.match(/\.form-actions\s*\{([^}]*)\}/)?.[1] ?? '';
         expect(block).toMatch(/gap:/);
         expect(block).toMatch(/align-items:\s*center/);
+    });
+});
+
+describe('PromotionForm — audience hint (HOS-2544)', () => {
+    it('names the catalog plan it receives in the VIP-only hint, never a hardcoded Plus', () => {
+        // Arrange + Act
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+                audiencePlanNames={['Explorador']}
+            />
+        );
+
+        // Assert
+        const hint = screen.getByText(/Explorador/);
+        expect(hint.textContent).toContain('vipOnlyHint_one');
+        expect(hint.textContent).not.toMatch(/Plus/);
+    });
+
+    it('names no plan when the catalog could not be read', () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+        expect(screen.queryByText(/Plus/)).not.toBeInTheDocument();
     });
 });
 

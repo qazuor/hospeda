@@ -907,7 +907,9 @@
             "assignSuccess": "Movido a {{name}}",
             "upgrade": {
                 "title": "Coleções",
-                "message": "As coleções estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
+                "message_one": "As coleções estão disponíveis no plano {{plans}}. Atualize seu plano para acessar.",
+                "message_other": "As coleções estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
+                "messageNoPlans": "As coleções não estão incluídas no seu plano atual. Atualize seu plano para acessar.",
                 "cta": "Ver planos"
             }
         },

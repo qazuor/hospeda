@@ -83,6 +83,8 @@ export interface CreateEditCollectionModalProps {
      * enforcement).
      */
     readonly isAtLimit?: boolean;
+    /** HOS-2544: catalog names of the plans that carry collections (entitlement toast). */
+    readonly gatePlanNames?: readonly string[];
     /**
      * The plan-level maximum number of collections allowed.
      * Used to render the limit-reached banner with the actual cap number.
@@ -112,6 +114,7 @@ export function CreateEditCollectionModal({
     locale,
     collection,
     isAtLimit = false,
+    gatePlanNames,
     collectionMax
 }: CreateEditCollectionModalProps) {
     const t = createT(locale);
@@ -161,7 +164,8 @@ export function CreateEditCollectionModal({
     const { isSubmitting, submit } = useCollectionMutation({
         collectionId: collection?.id,
         callbacks: mutationCallbacks,
-        locale
+        locale,
+        gatePlanNames
     });
 
     // ── Sync with collection prop in EDIT mode ────────────────────────────
