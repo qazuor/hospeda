@@ -63,6 +63,37 @@ describe('buildAccountNavModel: active state', () => {
         expect(model.activeLabelKey).toBe(active[0]?.item.i18nKey);
     });
 
+    it('keeps the legacy default (all open but turista) while the shell opens only the active group', () => {
+        const model = buildAccountNavModel({
+            roles: ['HOST'],
+            ownsHostTradeListing: false,
+            mcpEnabled: true,
+            activeSection: 'editar'
+        });
+        const turista = model.groups.find((entry) => entry.group.id === 'turista');
+        const anfitrion = model.groups.find((entry) => entry.group.id === 'anfitrion');
+        expect(anfitrion?.defaultOpen).toBe(true);
+        expect(turista?.defaultOpen).toBe(false);
+        expect(anfitrion?.shellDefaultOpen).toBe(false);
+        expect(model.groups.filter((entry) => entry.shellDefaultOpen)).toHaveLength(1);
+    });
+
+    it.each([
+        'publica',
+        'partner',
+        'aliados'
+    ])('opens the first headed group in the shell when %s matches no item', (activeSection) => {
+        const model = buildAccountNavModel({
+            roles: ['HOST'],
+            ownsHostTradeListing: false,
+            mcpEnabled: true,
+            activeSection
+        });
+        const open = model.groups.filter((entry) => entry.shellDefaultOpen);
+        expect(open).toHaveLength(1);
+        expect(open[0]).toBe(model.groups.find((entry) => !entry.suppressHeader));
+    });
+
     it('falls back to the generic menu label when nothing is active', () => {
         const model = buildAccountNavModel({
             ...BASE,

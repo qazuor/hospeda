@@ -9,7 +9,7 @@
 
 import type { NavGroup } from '@/config/navigation';
 
-/** Id of the Tourist area. */
+/** Id of the Tourist area, the only one that can start collapsed in the legacy layout. */
 export const TOURIST_GROUP_ID = 'turista';
 
 /** Id of the base Account area. */
@@ -23,24 +23,68 @@ export type StoredNavState = Readonly<Record<string, boolean>>;
 
 /** Input for `resolveGroupDefaultOpen`. */
 export interface ResolveGroupDefaultOpenParams {
+    /** Id of the group being rendered. */
+    readonly groupId: string;
+    /** Ids of every group visible to the user, in render order. */
+    readonly visibleGroupIds: readonly string[];
     /** Whether the current page belongs to this group. */
     readonly containsActive: boolean;
 }
 
 /**
- * Decides whether an area renders open on the server (no JS, no stored state).
+ * LEGACY default (`AccountLayout.astro`): decides whether an area renders open
+ * on the server (no JS, no stored state).
  *
- * Only the area holding the current page is open (HOS-2549): with every area
- * open the desktop sidebar was twice the viewport tall. What the person opens
- * or closes afterwards is layered on top by `applyStoredNavState`.
+ * - The area holding the current page is always open.
+ * - Every area is open by default, except Tourist, which starts collapsed
+ *   unless the user has no other area besides Cuenta (then collapsing it would
+ *   hide the only thing they can do).
  *
- * @param params - `{ containsActive }` (RO-RO).
+ * The kit shell (`AccountShell.astro`) uses {@link resolveShellGroupOpen}.
+ *
+ * @param params - `{ groupId, visibleGroupIds, containsActive }` (RO-RO).
  * @returns `true` when the `<details>` should carry the `open` attribute.
  */
 export function resolveGroupDefaultOpen({
+    groupId,
+    visibleGroupIds,
     containsActive
 }: ResolveGroupDefaultOpenParams): boolean {
-    return containsActive;
+    if (containsActive) return true;
+    if (groupId !== TOURIST_GROUP_ID) return true;
+    const hasOtherArea = visibleGroupIds.some(
+        (id) => id !== ACCOUNT_GROUP_ID && id !== TOURIST_GROUP_ID
+    );
+    return !hasOtherArea;
+}
+
+/** Input for `resolveShellGroupOpen`. */
+export interface ResolveShellGroupOpenParams {
+    /** Whether the current page belongs to this group. */
+    readonly containsActive: boolean;
+    /** Whether ANY group holds the current page. */
+    readonly anyGroupContainsActive: boolean;
+    /** Whether this is the first group that renders a header. */
+    readonly isFirstHeadedGroup: boolean;
+}
+
+/**
+ * Default for the kit shell (HOS-2549): only the area holding the current page
+ * renders open, which keeps the desktop sidebar short. When no group holds the
+ * current page (pages whose `activeSection` matches no nav item, such as
+ * `publica`, `partner` or `aliados`) the first headed group opens instead, so
+ * the sidebar never renders fully collapsed.
+ *
+ * @param params - See {@link ResolveShellGroupOpenParams}.
+ * @returns `true` when the `<details>` should carry the `open` attribute.
+ */
+export function resolveShellGroupOpen({
+    containsActive,
+    anyGroupContainsActive,
+    isFirstHeadedGroup
+}: ResolveShellGroupOpenParams): boolean {
+    if (containsActive) return true;
+    return !anyGroupContainsActive && isFirstHeadedGroup;
 }
 
 /** Input for `placeProviderGroup`. */

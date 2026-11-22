@@ -32,7 +32,11 @@ import {
     getNavForSurface,
     PROVIDER_NAV_GROUP
 } from '@/config/navigation';
-import { placeProviderGroup, resolveGroupDefaultOpen } from '@/lib/account-nav-collapse';
+import {
+    placeProviderGroup,
+    resolveGroupDefaultOpen,
+    resolveShellGroupOpen
+} from '@/lib/account-nav-collapse';
 import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
 
 /**
@@ -99,8 +103,10 @@ export interface AccountNavGroupModel {
     readonly suppressHeader: boolean;
     /** True when the current page belongs to this group. */
     readonly containsActive: boolean;
-    /** Whether the group renders open on the server. */
+    /** Whether the group renders open on the server in the LEGACY layout. */
     readonly defaultOpen: boolean;
+    /** Whether the group renders open in the kit shell (active group only, HOS-2549). */
+    readonly shellDefaultOpen: boolean;
 }
 
 /** One discovery door of the model. */
@@ -147,25 +153,44 @@ export function buildAccountNavModel({
         providerGroup: ownsHostTradeListing ? PROVIDER_NAV_GROUP : null
     });
 
-    const groups: AccountNavGroupModel[] = ordered.map((group) => {
-        const items: AccountNavItemModel[] = group.items.map((item) => {
-            const sectionKey = getActiveSectionKey({ href: item.href });
+    const firstHeadedIndex = ordered.findIndex(
+        (group) => !(group.suppressHeaderWhenSingle === true && group.items.length === 1)
+    );
+    const visibleGroupIds = ordered.map((group) => group.id);
+
+    const groups: AccountNavGroupModel[] = ordered
+        .map((group) => {
+            const items: AccountNavItemModel[] = group.items.map((item) => {
+                const sectionKey = getActiveSectionKey({ href: item.href });
+                return {
+                    item,
+                    sectionKey,
+                    active: sectionKey === activeSection,
+                    hiddenUntilRevealed: item.id === AI_ASSISTANTS_NAV_ITEM_ID && !mcpEnabled
+                };
+            });
+            const containsActive = items.some((entry) => entry.active);
             return {
-                item,
-                sectionKey,
-                active: sectionKey === activeSection,
-                hiddenUntilRevealed: item.id === AI_ASSISTANTS_NAV_ITEM_ID && !mcpEnabled
+                group,
+                items,
+                suppressHeader: group.suppressHeaderWhenSingle === true && group.items.length === 1,
+                containsActive,
+                defaultOpen: resolveGroupDefaultOpen({
+                    groupId: group.id,
+                    visibleGroupIds,
+                    containsActive
+                }),
+                shellDefaultOpen: false
             };
-        });
-        const containsActive = items.some((entry) => entry.active);
-        return {
-            group,
-            items,
-            suppressHeader: group.suppressHeaderWhenSingle === true && group.items.length === 1,
-            containsActive,
-            defaultOpen: resolveGroupDefaultOpen({ containsActive })
-        };
-    });
+        })
+        .map((entry, _index, all) => ({
+            ...entry,
+            shellDefaultOpen: resolveShellGroupOpen({
+                containsActive: entry.containsActive,
+                anyGroupContainsActive: all.some((other) => other.containsActive),
+                isFirstHeadedGroup: all.indexOf(entry) === firstHeadedIndex
+            })
+        }));
 
     const doors: AccountNavDoorModel[] = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
         isDoorVisible({ door, visibility })

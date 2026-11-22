@@ -88,6 +88,27 @@ const view = buildSidebarView({ model: navModel, locale });
 				{aiAssistantsHidden && <AiAssistantsNavReveal slot="aiAssistantsReveal" client:idle />}
 			</AccountSidebar>
 		</aside>
+		{/* Applies the remembered open/closed nav state BEFORE first paint (HOS-2549), so a
+		    remembered-open area does not collapse and expand on every navigation. Static
+		    body, so the csp-soft-nav-hashes integration hashes it at build (no nonce, CSP
+		    untouched). Keep the storage key in sync with ACCOUNT_NAV_STORAGE_KEY: pinned
+		    by test/layouts/account-shell.test.ts. */}
+		<script is:inline data-astro-rerun>
+			(function () {
+				try {
+					var raw = localStorage.getItem('hospeda:account-nav:v1');
+					if (!raw) return;
+					var stored = JSON.parse(raw);
+					if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return;
+					var groups = document.querySelectorAll('[data-account-sidebar] details[data-nav-group]');
+					for (var i = 0; i < groups.length; i++) {
+						var d = groups[i];
+						var v = stored[d.getAttribute('data-nav-group')];
+						if (typeof v === 'boolean' && d.getAttribute('data-contains-active') !== 'true') d.open = v;
+					}
+				} catch (e) {}
+			})();
+		</script>
 
 		<div class={styles.content} data-account-content data-template={resolvedTemplate}>
 			<slot />

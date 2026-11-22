@@ -11,18 +11,96 @@ import {
     applyStoredNavState,
     parseStoredNavState,
     placeProviderGroup,
-    resolveGroupDefaultOpen
+    resolveGroupDefaultOpen,
+    resolveShellGroupOpen
 } from '../../src/lib/account-nav-collapse';
 
 const group = (id: string): NavGroup => ({ id, i18nKey: `k.${id}`, items: [] });
 
-describe('resolveGroupDefaultOpen', () => {
-    it('opens the group that holds the current page', () => {
-        expect(resolveGroupDefaultOpen({ containsActive: true })).toBe(true);
+describe('resolveGroupDefaultOpen (legacy layout)', () => {
+    it('collapses turista when the user has another area besides cuenta', () => {
+        expect(
+            resolveGroupDefaultOpen({
+                groupId: 'turista',
+                visibleGroupIds: ['cuenta', 'anfitrion', 'turista'],
+                containsActive: false
+            })
+        ).toBe(false);
     });
 
-    it('closes every other group, tourist included or not (HOS-2549)', () => {
-        expect(resolveGroupDefaultOpen({ containsActive: false })).toBe(false);
+    it('keeps turista open when cuenta is the only other area', () => {
+        expect(
+            resolveGroupDefaultOpen({
+                groupId: 'turista',
+                visibleGroupIds: ['cuenta', 'turista'],
+                containsActive: false
+            })
+        ).toBe(true);
+    });
+
+    it('keeps turista open when the current page belongs to it', () => {
+        expect(
+            resolveGroupDefaultOpen({
+                groupId: 'turista',
+                visibleGroupIds: ['cuenta', 'editorial', 'turista'],
+                containsActive: true
+            })
+        ).toBe(true);
+    });
+
+    it.each([
+        'cuenta',
+        'anfitrion',
+        'comercio',
+        'editorial',
+        'proveedor'
+    ])('opens %s by default', (groupId) => {
+        expect(
+            resolveGroupDefaultOpen({
+                groupId,
+                visibleGroupIds: ['cuenta', groupId, 'turista'],
+                containsActive: false
+            })
+        ).toBe(true);
+    });
+});
+
+describe('resolveShellGroupOpen', () => {
+    it('opens the group that holds the current page', () => {
+        expect(
+            resolveShellGroupOpen({
+                containsActive: true,
+                anyGroupContainsActive: true,
+                isFirstHeadedGroup: false
+            })
+        ).toBe(true);
+    });
+
+    it('closes the others when some group holds the page', () => {
+        expect(
+            resolveShellGroupOpen({
+                containsActive: false,
+                anyGroupContainsActive: true,
+                isFirstHeadedGroup: true
+            })
+        ).toBe(false);
+    });
+
+    it('opens the first headed group when no group holds the page', () => {
+        expect(
+            resolveShellGroupOpen({
+                containsActive: false,
+                anyGroupContainsActive: false,
+                isFirstHeadedGroup: true
+            })
+        ).toBe(true);
+        expect(
+            resolveShellGroupOpen({
+                containsActive: false,
+                anyGroupContainsActive: false,
+                isFirstHeadedGroup: false
+            })
+        ).toBe(false);
     });
 });
 
@@ -108,6 +186,29 @@ describe('applyStoredNavState', () => {
         expect(JSON.parse(storage.getItem(ACCOUNT_NAV_STORAGE_KEY) ?? '{}')).toEqual({
             anfitrion: true
         });
+    });
+
+    it('survives a storage getter that throws on every access', () => {
+        mount();
+        expect(() =>
+            applyStoredNavState({
+                root: document,
+                storage: () => {
+                    throw new Error('SecurityError');
+                }
+            })
+        ).not.toThrow();
+        expect(() => group('anfitrion').querySelector('summary')?.click()).not.toThrow();
+        expect(group('cuenta').open).toBe(true);
+    });
+
+    it('ignores a stored value that contradicts the active group', () => {
+        mount();
+        applyStoredNavState({
+            root: document,
+            storage: () => memoryStorage('{"cuenta":false}')
+        });
+        expect(group('cuenta').open).toBe(true);
     });
 
     it('falls back to the rendered defaults when storage throws', () => {
