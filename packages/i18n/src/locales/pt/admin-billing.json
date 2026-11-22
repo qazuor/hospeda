@@ -2412,7 +2412,7 @@
             "empty": "Não há devoluções travadas para escolher. Se a sua não aparece, use «Operar por ID» no final."
         },
         "operateById": {
-            "title": "Operar por ID",
+            "title": "Operar por identificador",
             "description": "Para uma devolução que a lista não mostra: cole o ID dela à mão."
         }
     },
