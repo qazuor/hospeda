@@ -14,6 +14,9 @@
  * the owner permission here, so `OwnerListingDashboardService` checks it and
  * answers 403 before reading anything.
  *
+ * **Entitlement read:** `probeEffectiveKeys`, which throws on a failed read, so
+ * a transient error is `unavailable` and never shows a paying owner the upsell.
+ *
  * **Not cached:** the payload depends on the actor and on their plan.
  *
  * @module routes/venue/protected/mineStats
@@ -26,7 +29,7 @@ import {
 } from '@repo/schemas';
 import { OwnerListingDashboardService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
-import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
+import { probeEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -58,7 +61,9 @@ export const protectedVenueMineStatsRoute = createProtectedRoute({
             vertical: 'venue',
             window,
             canViewTraffic: async () => {
-                const keys = await readEffectiveKeys({
+                // Throws when the set cannot be read: the service maps that to
+                // `unavailable`, never to the `locked` upsell.
+                const keys = await probeEffectiveKeys({
                     userId: actor.id,
                     vertical: VerticalEnum.VENUE,
                     keys: ['view_basic_stats']

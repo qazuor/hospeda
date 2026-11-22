@@ -8,14 +8,14 @@
  *
  * ## Deliberately NOT a `BaseCrudService`
  *
- * There is no CRUD surface: this is one read aggregate that composes
- * `listOwn` and `EntityViewService.getStatsForOwnListings`.
+ * There is no CRUD surface: this is one read aggregate that composes COUNT
+ * queries on the vertical's model and `EntityViewService.getStatsForOwnListings`.
  *
  * ## Ownership is structural
  *
- * No listing or owner id is accepted. Both reads receive only the caller's
- * actor and scope themselves to `ownerId = actor.id`, so another owner's
- * listings can never be counted.
+ * No listing or owner id is accepted. The counts are filtered by
+ * `ownerId = actor.id` and the view read receives only the caller's actor, so
+ * another owner's listings can never be counted.
  *
  * ## Permission
  *
@@ -28,10 +28,12 @@
  *   to zeros, because a zero would read as "you have no listings".
  * - A locked plan or a failed traffic read yields no `traffic` key at all
  *   (`trafficAccess: 'locked' | 'unavailable'`), never a fabricated `0`.
+ * - A failed ENTITLEMENT read is `unavailable`, never `locked`.
  *
  * @module services/owner-dashboard/owner-listing-dashboard.service
  */
 
+import { ExperienceModel, VenueModel } from '@repo/db';
 import {
     EntityTypeEnum,
     type EntityViewWindow,
@@ -45,8 +47,6 @@ import {
 import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { entityViewService } from '../entityView/entityView.service';
-import { ExperienceService } from '../experience/experience.service';
-import { VenueService } from '../venue/venue.service';
 
 /** Window lengths in days, keyed by the accepted window value. */
 const WINDOW_DAYS: Readonly<Record<EntityViewWindow, number>> = { '7d': 7, '30d': 30 };
@@ -71,15 +71,14 @@ const REQUIRED_PERMISSION_BY_VERTICAL = {
     experience: PermissionEnum.EXPERIENCE_EDIT_OWN
 } as const satisfies Record<OwnerDashboardVertical, PermissionEnum>;
 
-/** Minimal listing shape the dashboard counts. */
-interface CountableListing {
-    readonly publicationStatus?: string | null;
-}
-
-/** The slice of a listing service this aggregate depends on. */
-export interface OwnListingsReader {
-    /** Lists every non-deleted listing owned by the actor. */
-    listOwn(actor: Actor): Promise<ServiceOutput<{ listings: readonly CountableListing[] }>>;
+/**
+ * The slice of a listing model this aggregate depends on: a COUNT query. The
+ * counts never fetch rows and have no page cap (`listOwn` stops at 100 rows,
+ * so counting its result would silently under-count a larger owner).
+ */
+export interface OwnListingsCounter {
+    /** Counts the rows matching an equality filter. */
+    count(where: Record<string, unknown>): Promise<number>;
 }
 
 /** The slice of the view service this aggregate depends on. */
@@ -101,38 +100,46 @@ export interface GetOwnerListingDashboardInput {
     /**
      * Whether the owner's effective set grants `view_basic_stats` in this
      * vertical. Resolved by the route (it owns the entitlement ports) and only
-     * invoked when the traffic block is about to be read.
+     * invoked when the traffic block is about to be read. It must THROW when the
+     * set cannot be read: a failed read is `unavailable`, never `locked` (a
+     * paying owner must not be shown the upsell because of a transient error).
      */
     readonly canViewTraffic: () => Promise<boolean>;
 }
 
-/** Counts listings by publication state; `total` includes every state. */
-const countListings = (listings: readonly CountableListing[]): OwnerListingCounts => ({
-    total: listings.length,
-    published: listings.filter((l) => l.publicationStatus === PublicationStatusEnum.PUBLISHED)
-        .length,
-    draft: listings.filter((l) => l.publicationStatus === PublicationStatusEnum.DRAFT).length,
-    archived: listings.filter((l) => l.publicationStatus === PublicationStatusEnum.ARCHIVED).length
-});
+/** Counts an owner's non-deleted listings in total and per publication state. */
+const countListings = async (
+    counter: OwnListingsCounter,
+    ownerId: string
+): Promise<OwnerListingCounts> => {
+    const scope = { ownerId, deletedAt: null };
+    const [total, published, draft, archived] = await Promise.all([
+        counter.count(scope),
+        counter.count({ ...scope, publicationStatus: PublicationStatusEnum.PUBLISHED }),
+        counter.count({ ...scope, publicationStatus: PublicationStatusEnum.DRAFT }),
+        counter.count({ ...scope, publicationStatus: PublicationStatusEnum.ARCHIVED })
+    ]);
+    return { total, published, draft, archived };
+};
 
 /**
  * Builds the owner dashboard for the venue and experience verticals.
  */
 export class OwnerListingDashboardService {
-    private readonly readers: Readonly<Record<OwnerDashboardVertical, OwnListingsReader>>;
+    private readonly counters: Readonly<Record<OwnerDashboardVertical, OwnListingsCounter>>;
     private readonly viewStats: OwnListingViewStatsReader;
     private readonly logger: ServiceConfig['logger'];
 
     constructor(
         ctx: ServiceConfig & {
-            venueService?: OwnListingsReader;
-            experienceService?: OwnListingsReader;
+            venueModel?: OwnListingsCounter;
+            experienceModel?: OwnListingsCounter;
             entityViewService?: OwnListingViewStatsReader;
         } = {}
     ) {
-        this.readers = {
-            venue: ctx.venueService ?? new VenueService(ctx),
-            experience: ctx.experienceService ?? new ExperienceService(ctx)
+        this.counters = {
+            venue: ctx.venueModel ?? new VenueModel(),
+            experience: ctx.experienceModel ?? new ExperienceModel()
         };
         this.viewStats = ctx.entityViewService ?? entityViewService;
         this.logger = ctx.logger;
@@ -163,9 +170,7 @@ export class OwnerListingDashboardService {
 
         let listings: OwnerListingCounts;
         try {
-            const result = await this.readers[vertical].listOwn(actor);
-            if (result.error) return { error: result.error };
-            listings = countListings(result.data?.listings ?? []);
+            listings = await countListings(this.counters[vertical], actor.id);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             this.logger?.error({ vertical }, `Owner dashboard listings read failed: ${message}`);
@@ -177,8 +182,11 @@ export class OwnerListingDashboardService {
             };
         }
 
-        const granted = await this.resolveGrant({ canViewTraffic, vertical });
-        if (!granted) return { data: { vertical, listings, trafficAccess: 'locked' } };
+        const grant = await this.resolveGrant({ canViewTraffic, vertical });
+        if (grant === 'unknown') {
+            return { data: { vertical, listings, trafficAccess: 'unavailable' } };
+        }
+        if (grant === 'denied') return { data: { vertical, listings, trafficAccess: 'locked' } };
 
         try {
             const views = await this.viewStats.getStatsForOwnListings({
@@ -209,20 +217,23 @@ export class OwnerListingDashboardService {
         }
     }
 
-    /** Runs the entitlement probe; a probe that throws grants nothing. */
+    /**
+     * Runs the entitlement probe. A probe that throws is `unknown` (rendered
+     * as `unavailable`), never `denied`: absence and failure are different.
+     */
     private async resolveGrant(args: {
         readonly canViewTraffic: () => Promise<boolean>;
         readonly vertical: OwnerDashboardVertical;
-    }): Promise<boolean> {
+    }): Promise<'granted' | 'denied' | 'unknown'> {
         try {
-            return await args.canViewTraffic();
+            return (await args.canViewTraffic()) ? 'granted' : 'denied';
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             this.logger?.warn(
                 { vertical: args.vertical },
                 `Owner dashboard entitlement probe failed: ${message}`
             );
-            return false;
+            return 'unknown';
         }
     }
 }

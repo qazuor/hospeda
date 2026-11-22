@@ -21,10 +21,11 @@ const OWNER_A = '11111111-1111-4111-8111-111111111111';
 const OWNER_B = '99999999-9999-4999-8999-999999999999';
 
 const mocks = vi.hoisted(() => ({
-    listOwn: vi.fn(),
+    count: vi.fn(),
     getStats: vi.fn()
 }));
 let granted = true;
+let effectiveSetFails = false;
 
 vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
@@ -36,8 +37,8 @@ vi.mock('@repo/service-core', async (importActual) => {
             constructor(ctx: ConstructorParameters<typeof actual.OwnerListingDashboardService>[0]) {
                 super({
                     ...ctx,
-                    venueService: { listOwn: mocks.listOwn },
-                    experienceService: { listOwn: mocks.listOwn },
+                    venueModel: { count: mocks.count },
+                    experienceModel: { count: mocks.count },
                     entityViewService: { getStatsForOwnListings: mocks.getStats }
                 });
             }
@@ -46,15 +47,17 @@ vi.mock('@repo/service-core', async (importActual) => {
 });
 vi.mock('../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
-            rehydrateEffectiveSet({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) => {
+            if (effectiveSetFails) throw new Error('effective set store unreachable');
+            return rehydrateEffectiveSet({
                 version: 1,
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
                 entries: granted ? [{ key: 'view_basic_stats', value: 1, strategy: 'MAX' }] : []
-            })
+            });
+        }
     })
 }));
 vi.mock('../../src/utils/logger.js', () => ({
@@ -69,7 +72,7 @@ const { protectedExperienceMineStatsRoute } = await import(
     '../../src/routes/experience/protected/mineStats.js'
 );
 
-/** Listings keyed by owner: the fake DB behind `listOwn`. */
+/** Listings keyed by owner: the fake table behind the model `count`. */
 const LISTINGS_BY_OWNER: Record<string, Array<{ publicationStatus: PublicationStatusEnum }>> = {
     [OWNER_A]: [
         { publicationStatus: PublicationStatusEnum.PUBLISHED },
@@ -107,9 +110,16 @@ function buildApp(
 beforeEach(() => {
     vi.clearAllMocks();
     granted = true;
-    mocks.listOwn.mockImplementation(async (actor: { id: string }) => ({
-        data: { listings: LISTINGS_BY_OWNER[actor.id] ?? [] }
-    }));
+    effectiveSetFails = false;
+    // A COUNT over the fake table, honouring the ownerId / publicationStatus filter.
+    mocks.count.mockImplementation(
+        async (where: { ownerId: string; publicationStatus?: PublicationStatusEnum }) =>
+            (LISTINGS_BY_OWNER[where.ownerId] ?? []).filter(
+                (row) =>
+                    where.publicationStatus === undefined ||
+                    row.publicationStatus === where.publicationStatus
+            ).length
+    );
     mocks.getStats.mockImplementation(async ({ actor }: { actor: { id: string } }) => ({
         data: VIEWS_BY_OWNER[actor.id] ?? []
     }));
@@ -142,7 +152,7 @@ describe.each([
         // Assert
         expect(res.status).toBe(403);
         expect((await res.json()).error.code).toBe('FORBIDDEN');
-        expect(mocks.listOwn).not.toHaveBeenCalled();
+        expect(mocks.count).not.toHaveBeenCalled();
         expect(mocks.getStats).not.toHaveBeenCalled();
     });
 
@@ -163,6 +173,19 @@ describe.each([
         expect(mocks.getStats).not.toHaveBeenCalled();
     });
 
+    it('answers unavailable, NOT locked, when the entitlement read itself fails', async () => {
+        // Arrange: a paying owner whose effective set cannot be read right now.
+        effectiveSetFails = true;
+        // Act
+        const res = await buildApp(route, OWNER_A).request('/mine/stats');
+        // Assert: no upsell for a transient failure.
+        expect(res.status).toBe(200);
+        const body = (await res.json()).data;
+        expect(body.trafficAccess).toBe('unavailable');
+        expect(body).not.toHaveProperty('traffic');
+        expect(mocks.getStats).not.toHaveBeenCalled();
+    });
+
     it('answers unavailable with NO traffic key when the view read fails', async () => {
         mocks.getStats.mockResolvedValue({ error: { code: 'INTERNAL_ERROR', message: 'x' } });
         const res = await buildApp(route, OWNER_A).request('/mine/stats');
@@ -172,7 +195,7 @@ describe.each([
     });
 
     it('answers an error, not zero counts, when the listings read fails', async () => {
-        mocks.listOwn.mockResolvedValue({ error: { code: 'INTERNAL_ERROR', message: 'x' } });
+        mocks.count.mockRejectedValue(new Error('db down'));
         const res = await buildApp(route, OWNER_A).request('/mine/stats');
         expect(res.status).toBe(500);
     });
@@ -184,9 +207,9 @@ describe.each([
         // Assert: owner A sees A's numbers only, and both reads got A's actor.
         expect(body.listings.total).toBe(2);
         expect(body.traffic).toEqual({ windowDays: 30, unique: 2, total: 4 });
-        expect(mocks.listOwn).toHaveBeenCalledExactlyOnceWith(
-            expect.objectContaining({ id: OWNER_A })
-        );
+        for (const [where] of mocks.count.mock.calls) {
+            expect(where).toMatchObject({ ownerId: OWNER_A });
+        }
         expect(mocks.getStats).toHaveBeenCalledWith(
             expect.objectContaining({ actor: expect.objectContaining({ id: OWNER_A }) })
         );
@@ -211,6 +234,6 @@ describe.each([
         });
         // Assert
         expect(res.status).toBe(401);
-        expect(mocks.listOwn).not.toHaveBeenCalled();
+        expect(mocks.count).not.toHaveBeenCalled();
     });
 });
