@@ -51,6 +51,10 @@ import { venueApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toVenueDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
+import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
+import { ListingChannelsPanel } from '@/components/listing/contact/ListingChannelsPanel.client';
+import { buildVenueChannels, resolveVenueContactMode } from '@/lib/listing-contact/listing-channels';
+import { VENUE_CONTACT_ANCHOR_ID } from '@/lib/venue-contact';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
 import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
@@ -256,6 +260,15 @@ const houseRulePolicies = showEventsCta
     ? setListingPolicy({ policies: venue.policies ?? {}, key: 'eventsAllowed', value: undefined })
     : venue.policies;
 
+// --- Mobile contact bar (HOS-2532) ---
+// No price, no form, no WhatsApp in the bar or its panel (HOS-1076). A published
+// menu link wins («Ver carta»); otherwise «Contactar» opens the social links; with
+// neither, there is no bar. The in-page block is a superset of both, so the bar's
+// no-JS fallback anchor always has a target.
+const contactChannels = buildVenueChannels({ socialNetworks: venue.socialNetworks });
+const contactMode = resolveVenueContactMode({ menuUrl: venue.menuUrl, channels: contactChannels });
+const contactPanelId = 'listing-contact-panel';
+
 const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
 const jsonLdHasMenu = buildRestaurantHasMenu({
     venue,
@@ -445,17 +458,18 @@ const breadcrumbItems = [
         } : undefined}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
-    <Breadcrumbs
-        slot="breadcrumbs"
-        locale={locale}
-        items={[
-            {
-                label: t('venue.listing.title'),
-                path: 'comer-y-salir/'
-            },
-            { label: venue.name }
-        ]}
-    />
+    <div slot="breadcrumbs" class="venue-detail-breadcrumbs">
+        <Breadcrumbs
+            locale={locale}
+            items={[
+                {
+                    label: t('venue.listing.title'),
+                    path: 'comer-y-salir/'
+                },
+                { label: venue.name }
+            ]}
+        />
+    </div>
 
     <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
@@ -463,6 +477,7 @@ const breadcrumbItems = [
             venue={venue}
             locale={locale}
             bookmarkCount={bookmarkCount}
+            hasMobileGalleryControls={galleryImages.length > 0}
         />
     </Fragment>
 
@@ -475,6 +490,15 @@ const breadcrumbItems = [
                     images={galleryImages}
                     locale={locale}
                     variant="detail"
+                    mobile={{
+                        backHref: buildUrl({ locale, path: 'comer-y-salir' }),
+                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: venue.name },
+                        favorite: {
+                            entityId: venue.id,
+                            entityType: 'VENUE',
+                            variant: 'standalone'
+                        }
+                    }}
                 />
             </div>
         )}
@@ -561,6 +585,34 @@ const breadcrumbItems = [
         locale={locale}
         apiUrl={getApiUrl()}
     />
+    {contactMode.kind !== 'none' && (
+        <ListingContactBar
+            client:idle
+            vertical="venue"
+            listingId={venue.id}
+            locale={locale}
+            price={null}
+            hasWhatsapp={false}
+            primaryLabelKey={
+                contactMode.kind === 'menu'
+                    ? 'accommodations.detail.listingContact.bar.viewMenu'
+                    : 'accommodations.detail.listingContact.bar.contact'
+            }
+            panelId={contactPanelId}
+            fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
+            primaryLink={contactMode.kind === 'menu' ? { href: contactMode.href, channel: 'menu' } : undefined}
+        />
+    )}
+    {contactMode.kind === 'panel' && (
+        <ListingChannelsPanel
+            client:idle
+            panelId={contactPanelId}
+            listingId={venue.id}
+            vertical="venue"
+            locale={locale}
+            channels={contactChannels}
+        />
+    )}
 </DetailLayout>
 
 <script>
@@ -569,6 +621,12 @@ const breadcrumbItems = [
 </script>
 
 <style>
+    @media (max-width: 767px) {
+        :global(.wave-header__breadcrumbs:has(.venue-detail-breadcrumbs)) {
+            display: none;
+        }
+    }
+
     .venue-detail {
         max-width: var(--container-max, 1350px);
         margin: 0 auto;
@@ -581,5 +639,20 @@ const breadcrumbItems = [
     .venue-detail__gallery {
         border-radius: var(--radius-card, 24px);
         overflow: hidden;
+    }
+
+    /* The mobile gallery track runs edge to edge (HOS-2532): the layout container
+       already pads the page, so the body drops its own inset and the wrapper stops
+       clipping the track's negative margin. */
+    @media (max-width: 767px) {
+        .venue-detail {
+            padding-inline: 0;
+            padding-block-start: 0;
+        }
+
+        .venue-detail__gallery {
+            border-radius: 0;
+            overflow: visible;
+        }
     }
 </style>

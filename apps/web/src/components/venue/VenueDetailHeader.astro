@@ -41,12 +41,15 @@ interface Props {
     /** SSR-resolved bookmark id for toggling off without a re-check. */
     /** Total bookmark count from the public API. */
     readonly bookmarkCount?: number;
+    /** Whether the gallery already renders back and favorite controls on mobile. */
+    readonly hasMobileGalleryControls?: boolean;
 }
 
 const {
     venue,
     locale,
     bookmarkCount,
+    hasMobileGalleryControls = false
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
@@ -63,7 +66,7 @@ const isNew = venue.createdAt
     : false;
 ---
 
-<header class="venue-detail-header">
+<header class:list={['venue-detail-header', { 'venue-detail-header--mobile-gallery': hasMobileGalleryControls }]}>
     <div class="venue-detail-header__back-row wh-compact-hide">
         <HeaderBackButton href={`/${locale}/comer-y-salir/`} locale={locale} />
     </div>
@@ -331,6 +334,38 @@ const isNew = venue.createdAt
      * ========================================================= */
     :global(.wave-header--compact) .venue-detail-header__badges {
         gap: 4px;
+    }
+
+
+    /* Mobile gallery pages (HOS-2532): the gallery overlay already carries back
+       and favorite, so the header drops them and keeps a compact title block. */
+    @media (max-width: 767px) {
+        .venue-detail-header--mobile-gallery .venue-detail-header__back-row,
+        .venue-detail-header--mobile-gallery .venue-detail-header__fav {
+            display: none;
+        }
+
+        .venue-detail-header--mobile-gallery .venue-detail-header__badges {
+            min-width: 0;
+            max-width: 100%;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+
+        .venue-detail-header--mobile-gallery .venue-detail-header__badges > * {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        .venue-detail-header--mobile-gallery .venue-detail-header__type-badge,
+        .venue-detail-header--mobile-gallery .venue-detail-header__new-badge,
+        .venue-detail-header--mobile-gallery .featured-badge {
+            font-size: 12px;
+        }
+
+        .venue-detail-header--mobile-gallery .venue-detail-header__name {
+            overflow-wrap: anywhere;
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {
