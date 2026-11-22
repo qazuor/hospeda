@@ -5,6 +5,7 @@
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { act } from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     HelpSearch,
@@ -243,6 +244,77 @@ describe('HelpSearch', () => {
             />
         );
         expect(resultIds()).toContain('photos');
+    });
+});
+
+describe('HelpSearch (HOS-2552 review)', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    const props = (initialQuery: string) => ({
+        locale: 'es' as const,
+        articles,
+        initialAudience: 'host' as const,
+        initialQuery,
+        articlePaths,
+        faqPath: '/es/preguntas-frecuentes/',
+        contactPath: '/es/contacto/'
+    });
+
+    it('server-renders an empty live region, so an initial ?q= is announced after hydration', () => {
+        // Act
+        const html = renderToString(<HelpSearch {...props('zzqx yyqw')} />);
+
+        // Assert
+        expect(html).toMatch(/<p class="sr-only" aria-live="polite"[^>]*><\/p>/);
+    });
+
+    it('announces the initial ?q= no-match once hydrated', () => {
+        const { container } = render(<HelpSearch {...props('zzqx yyqw')} />);
+        expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(
+            'No encontramos ayuda para eso'
+        );
+    });
+
+    it('sends the selected tab with a no-JS GET', () => {
+        const { container } = render(<HelpSearch {...props('')} />);
+        expect(container.querySelector('input[type="hidden"][name="para"]')).toHaveValue('host');
+    });
+
+    it('«Buscar» with no result returns focus to the input and repeats the announcement', () => {
+        // Arrange
+        const { container } = render(<HelpSearch {...props('zzqx yyqw')} />);
+        const live = container.querySelector('[aria-live="polite"]');
+        const before = live?.textContent;
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+        // Assert
+        expect(document.activeElement).toBe(screen.getByLabelText('Buscar en la ayuda'));
+        expect(live?.textContent).not.toBe(before);
+        expect(live?.textContent?.trim()).toBe('No encontramos ayuda para eso');
+    });
+
+    it('«Buscar» below two characters focuses the input', () => {
+        render(<HelpSearch {...props('f')} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+        expect(document.activeElement).toBe(screen.getByLabelText('Buscar en la ayuda'));
+    });
+
+    it('carries the selected tab in result links with the filter off too', () => {
+        // Arrange
+        render(<HelpSearch {...props('fotos')} />);
+
+        // Act
+        fireEvent.click(screen.getByLabelText('Solo para mi tipo de cuenta'));
+
+        // Assert
+        const photos = screen
+            .getAllByRole('link')
+            .find((link) => link.getAttribute('href')?.startsWith('/es/mi-cuenta/ayuda/photos/'));
+        expect(photos?.getAttribute('href')).toBe('/es/mi-cuenta/ayuda/photos/?para=host');
     });
 });
 

@@ -14,11 +14,12 @@
  *
  * Hydration: `client:idle`. The server renders the same markup, including the
  * results of an initial `?q=` (SSR-first), so the list never appears only after
- * hydration.
+ * hydration. Only the polite live region waits for hydration, so that its text
+ * is a change a screen reader announces (HOS-2552).
  */
 
 import { type HelpAudience, searchOwnerHelp } from '@repo/help';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
     HELP_AUDIENCE_CHANGED_EVENT,
     HELP_AUDIENCE_LABEL_KEYS,
@@ -132,6 +133,17 @@ export function HelpSearch({
     const [query, setQuery] = useState(initialQuery);
     const [onlyMine, setOnlyMine] = useState(true);
     const [audience, setAudience] = useState<HelpAudience>(initialAudience);
+    // The live region renders empty on the server and on the first client
+    // render, then fills after hydration: text that is already in the HTML
+    // when the page loads (an initial `?q=` with no match) is never announced.
+    const [hydrated, setHydrated] = useState(false);
+    // Flipped by «Buscar» on a fruitless query, to make the region re-announce.
+    const [repeat, setRepeat] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setHydrated(true);
+    }, []);
 
     useEffect(() => {
         const current = readSelectedHelpAudience();
@@ -161,14 +173,24 @@ export function HelpSearch({
             <form
                 className={styles.form}
                 onSubmit={(event) => {
-                    // Results already follow every keystroke; the button only
-                    // moves the reader to the first one (same affordance as the
+                    // Results already follow every keystroke; the button moves
+                    // the reader to the first one (same affordance as the
                     // article page's search, which submits to this landing).
+                    // With nothing to show it returns focus to the input and
+                    // repeats the announcement, so the press is never silent.
+                    // Without JS the form is a plain GET to this page.
                     event.preventDefault();
                     const first = (
                         event.currentTarget.parentElement ?? document
                     ).querySelector<HTMLAnchorElement>('[data-help-result] a');
-                    first?.focus();
+                    if (first !== null) {
+                        first.focus();
+                        return;
+                    }
+                    inputRef.current?.focus();
+                    if (searched) {
+                        setRepeat((value) => !value);
+                    }
                 }}
             >
                 <label
@@ -179,6 +201,7 @@ export function HelpSearch({
                 </label>
                 <div className={styles.row}>
                     <input
+                        ref={inputRef}
                         id={inputId}
                         className={styles.input}
                         type="search"
@@ -200,6 +223,11 @@ export function HelpSearch({
                         {t('account.help.search.submit')}
                     </button>
                 </div>
+                <input
+                    type="hidden"
+                    name="para"
+                    value={audience}
+                />
                 <label className={styles.toggle}>
                     <input
                         type="checkbox"
@@ -215,12 +243,14 @@ export function HelpSearch({
                 aria-live="polite"
                 data-help-search-status
             >
-                {helpSearchAnnouncement({
-                    searched,
-                    count: results.length,
-                    countText: (count) => tPlural('account.help.search.results', count),
-                    noMatchText: t('account.help.search.noMatch')
-                })}
+                {hydrated
+                    ? `${helpSearchAnnouncement({
+                          searched,
+                          count: results.length,
+                          countText: (count) => tPlural('account.help.search.results', count),
+                          noMatchText: t('account.help.search.noMatch')
+                      })}${repeat ? '\u00a0' : ''}`
+                    : ''}
             </p>
 
             {searched && results.length > 0 && (
@@ -235,7 +265,9 @@ export function HelpSearch({
                                 className={styles.resultLink}
                                 href={withHelpAudienceParam({
                                     href: articlePaths[entry.id] ?? '',
-                                    audience: onlyMine ? audience : undefined,
+                                    // The selected tab, filter on or off, so the
+                                    // article breadcrumb keeps the reader's level.
+                                    audience,
                                     audiences: entry.audiences
                                 })}
                             >
