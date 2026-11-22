@@ -33,6 +33,25 @@ const FACT_FILES = [
 ];
 /** Families whose catalog events need a docs row, and whose docs rows need a catalog event. */
 const DOC_FAMILIES = /^(billing|trial|addon)_/;
+/**
+ * The spans of `Extract<...>` type arguments in masked code (HOS-1883). A kind named only there
+ * is a type-level mention, not a producer, so the producer predicate ignores literals inside.
+ */
+function extractTypeSpans(code: string): { readonly start: number; readonly end: number }[] {
+    const spans: { start: number; end: number }[] = [];
+    for (const match of code.matchAll(/\bExtract\s*</g)) {
+        const open = (match.index ?? 0) + match[0].length;
+        let depth = 1;
+        let k = open;
+        for (; k < code.length && depth > 0; k += 1) {
+            if (code[k] === '<') depth += 1;
+            else if (code[k] === '>' && code[k - 1] !== '=') depth -= 1;
+        }
+        spans.push({ start: open, end: k });
+    }
+    return spans;
+}
+
 export function run(
     args: { root?: string; minScannedFiles?: number; minCatalogKeys?: number } = {}
 ): { exitCode: 0 | 1; output: string } {
@@ -125,8 +144,15 @@ export function run(
             !FACT_FILES.includes(file) &&
             !/\/utils\/analytics\/analytics-facts[^/]*\.ts$/.test(file)
     );
+    const producerLiterals = producerFiles.map(({ code, strings }) => {
+        const typeSpans = extractTypeSpans(code);
+        return strings.filter(
+            (literal) =>
+                !typeSpans.some((span) => literal.start >= span.start && literal.start < span.end)
+        );
+    });
     for (const kind of factKinds)
-        if (!producerFiles.some(({ strings }) => strings.some((literal) => literal.value === kind)))
+        if (!producerLiterals.some((strings) => strings.some((literal) => literal.value === kind)))
             violations.push(`fact kind ${kind} has no production producer`);
     if (violations.length)
         return {

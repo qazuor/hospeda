@@ -12,7 +12,7 @@ function tree(options: {
     retiredSrc?: boolean;
     retiredCatalog?: boolean;
     missingDoc?: boolean;
-    producer?: 'service' | 'adapter-only' | 'none';
+    producer?: 'service' | 'adapter-only' | 'extract-only' | 'none';
 }): string {
     const root = mkdtempSync(join(tmpdir(), 'analytics-emitter-'));
     trees.push(root);
@@ -32,6 +32,11 @@ function tree(options: {
     const producer = "export const fact = { kind: 'ADDON_ACTIVATED' };\n";
     if ((options.producer ?? 'service') === 'service')
         writeFileSync(join(facts, '../addon-producer.ts'), producer);
+    if (options.producer === 'extract-only')
+        writeFileSync(
+            join(facts, '../addon-types.ts'),
+            "import type { AddonFact } from './facts/addon-fact';\nexport type Activated = Extract<AddonFact, { readonly kind: 'ADDON_ACTIVATED' }>;\n"
+        );
     if (options.producer === 'adapter-only')
         writeFileSync(
             join(root, 'apps/api/src/utils/analytics/analytics-facts-addon.ts'),
@@ -162,6 +167,15 @@ describe('analytics catalog emitter guard (TEST:1878:17)', () => {
     it('does not count the adapter as a producer of a fact kind (HOS-1883)', () => {
         const result = run({
             root: tree({ producer: 'adapter-only' }),
+            minScannedFiles: 1,
+            minCatalogKeys: 1
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('fact kind ADDON_ACTIVATED has no production producer');
+    });
+    it('does not count a kind named only inside Extract<...> as a producer (HOS-1883)', () => {
+        const result = run({
+            root: tree({ producer: 'extract-only' }),
             minScannedFiles: 1,
             minCatalogKeys: 1
         });
