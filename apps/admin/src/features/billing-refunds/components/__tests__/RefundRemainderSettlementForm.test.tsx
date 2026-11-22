@@ -45,6 +45,15 @@ vi.mock('../../hooks/useProposedRefunds', () => ({
         refetch: vi.fn()
     })
 }));
+// The screen also renders the stuck-refund list (HOS-2560); its own tests cover it.
+vi.mock('../../hooks/useStuckRefunds', () => ({
+    useStuckRefunds: () => ({
+        isLoading: false,
+        isError: false,
+        data: { items: [], pagination: { page: 1, pageSize: 50, total: 0, totalPages: 1 } },
+        refetch: vi.fn()
+    })
+}));
 // The screen also renders «Retry with MP» (HOS-2516); its mutation is out of this test's scope.
 vi.mock('../../hooks/useRetryRefundProviderCalls', () => ({
     useRetryRefundProviderCalls: () => ({ mutateAsync: vi.fn(), isPending: false })
