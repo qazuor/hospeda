@@ -12,6 +12,8 @@ import {
 } from '../../../../src/components/account/ui';
 import { buildAccountNavModel } from '../../../../src/lib/account-nav-model';
 
+vi.mock('astro:transitions/client', () => ({ navigate: () => Promise.resolve() }));
+
 const aiState = vi.hoisted(() => ({ visible: false }));
 vi.mock('../../../../src/hooks/use-ai-assistants-entry', () => ({
     useAiAssistantsEntry: () => aiState.visible
@@ -62,7 +64,7 @@ describe('AccountBar', () => {
         expect(toggle).toHaveFocus();
     });
 
-    it('closes when a link inside the drawer is chosen (soft navigation keeps the DOM)', async () => {
+    it('closes when a link inside the drawer is chosen', async () => {
         const user = userEvent.setup();
         render(
             <AccountBar
@@ -73,7 +75,6 @@ describe('AccountBar', () => {
         await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
         const dialog = await screen.findByRole('dialog');
         const link = dialog.querySelector('a') as HTMLAnchorElement;
-        link.addEventListener('click', (event) => event.preventDefault());
         await user.click(link);
         await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     });

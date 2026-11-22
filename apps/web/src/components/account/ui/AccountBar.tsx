@@ -9,17 +9,24 @@
  * - `shadow-sticky` applies while the bar is stuck, detected by an
  *   `IntersectionObserver` on a sentinel inside this island (it replaces the
  *   legacy layout's script).
+ * - The drawer holds real navigation links, so the bar OWNS the HOS-310
+ *   history entry instead of letting the shared Dialog claim it (HOS-2541).
+ *   A link click unwinds the entry first and navigates once the `popstate`
+ *   settles; closing synchronously let the Dialog's `history.go(-1)` race the
+ *   ClientRouter navigation and left the page loading forever. Same recipe as
+ *   `MobileMenu.client.tsx`.
  * - It hydrates only below 64rem: `client:media="(max-width: 63.99rem)"`.
  *
  * @module components/account/ui/AccountBar
  */
 
 import { HamburgerIcon } from '@repo/icons';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type MouseEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { ACCOUNT_NAV_ICONS } from '@/lib/account-nav-icons';
+import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import styles from './AccountBar.module.css';
 import { AccountSidebar } from './AccountSidebar';
@@ -35,6 +42,23 @@ export interface AccountBarProps {
     readonly locale: SupportedLocale;
 }
 
+/** Max wait for the history unwind's `popstate` before navigating anyway. */
+const POPSTATE_TIMEOUT_MS = 160;
+
+/**
+ * Navigates through the Astro ClientRouter, falling back to a full load.
+ *
+ * @param href - Absolute URL to open.
+ */
+async function continueNavigation(href: string): Promise<void> {
+    try {
+        const { navigate } = await import('astro:transitions/client');
+        await navigate(href);
+    } catch {
+        window.location.assign(href);
+    }
+}
+
 /**
  * The mobile account bar and its drawer.
  *
@@ -46,6 +70,7 @@ export function AccountBar({ view, locale }: AccountBarProps) {
     const [open, setOpen] = useState(false);
     const [stuck, setStuck] = useState(false);
     const sentinel = useRef<HTMLDivElement>(null);
+    const historyReleaseRef = useRef<(() => void) | null>(null);
     const drawerId = useId();
     // The AI-assistants entry renders `hidden` when MCP is off; reveal the
     // drawer's own copy in React (the DOM-querying island only finds the first).
@@ -66,6 +91,60 @@ export function AccountBar({ view, locale }: AccountBarProps) {
         );
         observer.observe(node);
         return () => observer.disconnect();
+    }, []);
+
+    // The bar owns the drawer's history entry (see the module docblock).
+    useEffect(() => {
+        if (!open) return;
+        const { release } = acquireDialogHistoryEntry({ onPopped: () => setOpen(false) });
+        historyReleaseRef.current = release;
+        return () => {
+            if (historyReleaseRef.current === release) {
+                historyReleaseRef.current = null;
+                release();
+            }
+        };
+    }, [open]);
+
+    // A ClientRouter navigation started elsewhere also closes the drawer.
+    useEffect(() => {
+        const handleBeforeSwap = () => setOpen(false);
+        document.addEventListener('astro:before-swap', handleBeforeSwap);
+        return () => document.removeEventListener('astro:before-swap', handleBeforeSwap);
+    }, []);
+
+    const handleLinkClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+        const anchor = (event.target as HTMLElement).closest('a');
+        if (!anchor) return;
+        const modified =
+            event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+        if (
+            modified ||
+            event.defaultPrevented ||
+            anchor.href.length === 0 ||
+            anchor.target === '_blank' ||
+            anchor.origin !== window.location.origin
+        ) {
+            // Let the browser (or whoever prevented it) handle the click.
+            setOpen(false);
+            return;
+        }
+        event.preventDefault();
+        setOpen(false);
+        const href = anchor.href;
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            window.removeEventListener('popstate', finish);
+            window.clearTimeout(timeoutId);
+            void continueNavigation(href);
+        };
+        window.addEventListener('popstate', finish, { once: true });
+        const timeoutId = window.setTimeout(finish, POPSTATE_TIMEOUT_MS);
+        const release = historyReleaseRef.current;
+        historyReleaseRef.current = null;
+        release?.();
     }, []);
 
     const showCurrent = view.activeLabel !== menuLabel;
@@ -106,14 +185,13 @@ export function AccountBar({ view, locale }: AccountBarProps) {
                 title={menuLabel}
                 locale={locale}
                 side="bottom"
+                claimHistoryEntry={false}
             >
                 {/* The drawer id is what the toggle controls. */}
                 <div
                     id={drawerId}
                     className={styles.drawerBody}
-                    onClickCapture={(event) => {
-                        if ((event.target as HTMLElement).closest('a')) setOpen(false);
-                    }}
+                    onClickCapture={handleLinkClick}
                 >
                     <AccountSidebar
                         view={view}
