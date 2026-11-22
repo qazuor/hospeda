@@ -4,7 +4,7 @@ import { publicationAfterCommit, withPublicationLock } from './publication-lock'
 import { buildRestitutionPayload } from './publication-notices';
 import {
     isRestorableArchiveOrigin,
-    orderRestorationCandidates,
+    planRestoration,
     selectSurplusToLower
 } from './publication-order';
 import type {
@@ -202,7 +202,6 @@ export async function recalculateCoverage(args: {
                     vertical: args.vertical,
                     ownerId: args.userId
                 });
-                let available = Math.max(0, limit - publishedNow);
                 const returning = [...candidatesAtStart, ...archivedCandidates];
                 const incomplete =
                     returning.length > 0
@@ -214,11 +213,14 @@ export async function recalculateCoverage(args: {
                 const eligibleReturning = returning.filter(
                     (candidate) => !incomplete.has(candidate.id)
                 );
-                const ordered = orderRestorationCandidates({
-                    entries: eligibleReturning.map(entry)
+                // One rule for the reconciler and the MP4 preview (HOS-1640): the
+                // free slots go to the plan's `restoring` set, in return order.
+                const plan = planRestoration({
+                    entries: eligibleReturning.map(entry),
+                    available: limit - publishedNow
                 });
-                for (const candidate of ordered) {
-                    if (available === 0) break;
+                const ordered = [...plan.restoring, ...plan.withoutSlot];
+                for (const candidate of plan.restoring) {
                     const listing = returning.find((row) => row.id === candidate.id);
                     if (!listing) continue;
                     const changed = await tx.setPublicationStatus({
@@ -242,7 +244,6 @@ export async function recalculateCoverage(args: {
                     restored.push(candidate.id);
                     if (listing.publicationStatus === PublicationStatusEnum.ARCHIVED)
                         restoredFromArchived.push(candidate.id);
-                    available -= 1;
                 }
                 if (restored.length > 0) {
                     const restoredIds = new Set(restored);
