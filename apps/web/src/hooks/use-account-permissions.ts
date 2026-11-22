@@ -93,13 +93,20 @@ export interface UseAccountPermissionsResult {
      * fails closed in both cases (HOS-296).
      */
     readonly roles: ReadonlyArray<string>;
+    /**
+     * `true` once the visitor's session has been settled (a trusted cache hit
+     * or a successful `/auth/me` answer). Before that, `user === null` means
+     * "unknown", not "guest". A failed fetch leaves it `false` (fail closed).
+     * Lets a consumer tell a confirmed guest from the not-yet-resolved window.
+     */
+    readonly isResolved: boolean;
 }
 
 /**
  * Resolves the current visitor's `/auth/me` snapshot on mount, cache-first.
  *
  * @param params - `{ initialUser?, skip? }` (RO-RO). See the two modes above.
- * @returns `{ user, permissions, roles }`.
+ * @returns `{ user, permissions, roles, isResolved }`.
  */
 export function useAccountPermissions({
     initialUser,
@@ -110,6 +117,7 @@ export function useAccountPermissions({
     const [user, setUser] = useState<AuthMeUser | null>(initialUser ?? null);
     const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
     const [roles, setRoles] = useState<ReadonlyArray<string>>(initialRoles ?? []);
+    const [isResolved, setIsResolved] = useState(false);
 
     // `initialUser === undefined` means the caller never passed it (simple
     // mode) — distinct from explicitly passing `null` for a guest
@@ -138,6 +146,7 @@ export function useAccountPermissions({
             setUser(cached.user);
             setPermissions(cached.permissions);
             setRoles(cached.roles);
+            setIsResolved(true);
             if (shouldSyncAttribute) {
                 document.documentElement.setAttribute(
                     'data-user-authenticated',
@@ -156,6 +165,7 @@ export function useAccountPermissions({
                 setUser(snapshot.user);
                 setPermissions(snapshot.permissions);
                 setRoles(snapshot.roles);
+                setIsResolved(true);
                 if (shouldSyncAttribute) {
                     document.documentElement.setAttribute(
                         'data-user-authenticated',
@@ -173,5 +183,5 @@ export function useAccountPermissions({
         };
     }, [skip]);
 
-    return { user, permissions, roles };
+    return { user, permissions, roles, isResolved };
 }
