@@ -3,6 +3,7 @@ import {
     coveredPeriods,
     type DrizzleClient,
     eq,
+    inArray,
     manualPayments,
     payments,
     plans,
@@ -14,7 +15,7 @@ import {
     users
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import {
     previewLateManualPaymentRegistration,
     registerLateManualPayment
@@ -24,6 +25,63 @@ import { closeServiceTestPool, getServiceTestDb } from './helpers';
 const now = new Date('2026-09-04T12:00:00.000Z');
 const runningPeriod = new Date('2026-09-03T12:00:00.000Z');
 const clock = { now: () => now };
+const seededPayerIds: string[] = [];
+
+/**
+ * Deletes the rows each case committed. A reactivated MANUAL row left behind is due for
+ * any later run of the manual installment opener, a global sweep: the HOS-2130 file's sweep
+ * opened one and its spy applier moved it onto that file's plan, which then blocked the
+ * HOS-2130 cleanup (HOS-1640 CI). Every row of each case's payer goes, successors too.
+ */
+afterEach(async () => {
+    const payerIds = seededPayerIds.splice(0);
+    if (payerIds.length === 0) return;
+    const db = getServiceTestDb();
+    const owned = await db
+        .select({ id: subscriptions.id, succeedsId: subscriptions.succeedsId })
+        .from(subscriptions)
+        .where(inArray(subscriptions.userId, payerIds));
+    const ids = owned.map((row) => row.id);
+    if (ids.length === 0) return;
+    await db
+        .delete(subscriptionScheduledChanges)
+        .where(inArray(subscriptionScheduledChanges.subscriptionId, ids));
+    await db
+        .delete(successionRetainedPayments)
+        .where(inArray(successionRetainedPayments.subscriptionId, ids));
+    const installmentIds = (
+        await db
+            .select({ id: manualPayments.id })
+            .from(manualPayments)
+            .where(inArray(manualPayments.subscriptionId, ids))
+    ).map((row) => row.id);
+    const paymentIds = (
+        await db
+            .select({ id: payments.id })
+            .from(payments)
+            .where(inArray(payments.subscriptionId, ids))
+    ).map((row) => row.id);
+    if (installmentIds.length > 0)
+        await db.delete(receipts).where(inArray(receipts.manualPaymentId, installmentIds));
+    if (paymentIds.length > 0)
+        await db.delete(receipts).where(inArray(receipts.paymentId, paymentIds));
+    await db.delete(coveredPeriods).where(inArray(coveredPeriods.subscriptionId, ids));
+    await db.delete(manualPayments).where(inArray(manualPayments.subscriptionId, ids));
+    await db.delete(payments).where(inArray(payments.subscriptionId, ids));
+    await db
+        .update(subscriptions)
+        .set({ succeededById: null })
+        .where(inArray(subscriptions.id, ids));
+    // Successors first: a predecessor goes once nothing left succeeds it.
+    let remaining = owned;
+    while (remaining.length > 0) {
+        const predecessors = new Set(remaining.map((row) => row.succeedsId).filter(Boolean));
+        const leaves = remaining.filter((row) => !predecessors.has(row.id)).map((row) => row.id);
+        if (leaves.length === 0) throw new Error('Succession cycle in MP4 fixtures');
+        await db.delete(subscriptions).where(inArray(subscriptions.id, leaves));
+        remaining = remaining.filter((row) => !leaves.includes(row.id));
+    }
+});
 afterAll(closeServiceTestPool);
 
 async function seed(
@@ -54,6 +112,7 @@ async function seed(
         })
         .returning();
     if (!payer || !admin) throw new Error('User fixture failed');
+    seededPayerIds.push(payer.id);
     const [plan] = await db
         .insert(plans)
         .values({
