@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BillingAnalyticsEventSchemas } from './catalog-billing.js';
+import { AddonAnalyticsEventSchemas, BillingAnalyticsEventSchemas } from './catalog-billing.js';
 
 const idSchema = z.string().min(1);
 const slugSchema = z.string().min(1);
@@ -105,6 +105,13 @@ export const AnalyticsEvents = {
     billingSubscriptionRecovered: 'billing_subscription_recovered',
     billingCancelScheduled: 'billing_cancel_scheduled',
     billingSubscriptionCancelled: 'billing_subscription_cancelled',
+    addonCheckoutStarted: 'addon_checkout_started',
+    addonCheckoutAbandoned: 'addon_checkout_abandoned',
+    addonActivated: 'addon_activated',
+    addonChargeSucceeded: 'addon_charge_succeeded',
+    addonChargeDeclined: 'addon_charge_declined',
+    addonCancelled: 'addon_cancelled',
+    addonGrantedFree: 'addon_granted_free',
     trialStarted: 'trial_started',
     trialConverted: 'trial_converted',
     trialExpired: 'trial_expired',
@@ -298,6 +305,7 @@ export const AnalyticsEventSchemas = {
         owner_id: idSchema.optional()
     }),
     ...BillingAnalyticsEventSchemas,
+    ...AddonAnalyticsEventSchemas,
     [AnalyticsEvents.newsletterSubscribed]: z.object({
         is_authenticated: z.boolean().optional(),
         locale: localeSchema,
