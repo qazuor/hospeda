@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4680
+    {
+        id: '2026-11-22-help-center-easier-to-browse',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'SPONSOR'],
+        title: {
+            es: 'La ayuda de Mi cuenta es más fácil de recorrer',
+            en: 'Help in My account is easier to browse',
+            pt: 'A ajuda de Minha conta ficou mais fácil de navegar'
+        },
+        body: {
+            es: 'En **Ayuda** las pestañas entran en una sola fila en el celular, el buscador tiene botón y ejemplo, y te avisa cuando no encuentra nada. Al tocar una sección del índice saltás justo a ella, y cada artículo te dice a qué página de tu cuenta ir.',
+            en: 'In **Help** the tabs fit on one row on your phone, the search box has a button and an example, and it tells you when it finds nothing. Tapping a section in the index takes you right to it, and each article tells you which page of your account to go to.',
+            pt: 'Em **Ajuda** as abas cabem em uma só linha no celular, a busca tem botão e exemplo, e avisa quando não encontra nada. Ao tocar uma seção do índice você vai direto a ela, e cada artigo diz para qual página da sua conta ir.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4414
     {
         id: '2026-11-16-owners-can-downgrade-their-plan',
