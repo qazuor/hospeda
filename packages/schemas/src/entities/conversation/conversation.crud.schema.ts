@@ -15,6 +15,51 @@ import { z } from 'zod';
 import { ConversationStatusEnum } from '../../enums/conversation-status.enum.js';
 
 // ============================================================================
+// Inquiry booking fields (HOS-2534)
+// ============================================================================
+
+/** Largest guest count an inquiry may carry. The listing's own capacity is checked client-side. */
+export const INQUIRY_MAX_GUESTS = 100;
+
+/**
+ * Optional booking context a visitor may attach to an inquiry: check-in date,
+ * check-out date and guest count. Every field is independent and optional;
+ * dates are plain ISO calendar dates (`YYYY-MM-DD`, no time).
+ */
+export const InquiryBookingFieldsShape = {
+    /** Check-in calendar date (`YYYY-MM-DD`). */
+    checkIn: z.string().date({ message: 'zodError.conversation.checkIn.invalid' }).optional(),
+
+    /** Check-out calendar date (`YYYY-MM-DD`). Must be after `checkIn` when both are given. */
+    checkOut: z.string().date({ message: 'zodError.conversation.checkOut.invalid' }).optional(),
+
+    /** Number of guests: a positive integer up to {@link INQUIRY_MAX_GUESTS}. */
+    guests: z
+        .number()
+        .int({ message: 'zodError.conversation.guests.invalid' })
+        .min(1, { message: 'zodError.conversation.guests.min' })
+        .max(INQUIRY_MAX_GUESTS, { message: 'zodError.conversation.guests.max' })
+        .optional()
+} as const;
+
+/**
+ * Refinement shared by the initiate schemas: when both dates are present the
+ * check-out must fall strictly after the check-in. ISO dates compare correctly
+ * as strings.
+ */
+export function refineInquiryDates<T extends { checkIn?: string; checkOut?: string }>(
+    data: T
+): boolean {
+    return !data.checkIn || !data.checkOut || data.checkOut > data.checkIn;
+}
+
+/** Issue metadata for {@link refineInquiryDates}. */
+const inquiryDatesIssue = {
+    message: 'zodError.conversation.checkOut.afterCheckIn',
+    path: ['checkOut']
+};
+
+// ============================================================================
 // CreateConversationAnonSchema
 // ============================================================================
 
@@ -30,7 +75,7 @@ import { ConversationStatusEnum } from '../../enums/conversation-status.enum.js'
  * const body = CreateConversationAnonSchema.parse(req.json());
  * ```
  */
-export const CreateConversationAnonSchema = z
+export const CreateConversationAnonObjectSchema = z
     .object({
         /** UUID of the accommodation the guest is enquiring about. */
         accommodationId: z.string().uuid(),
@@ -57,9 +102,21 @@ export const CreateConversationAnonSchema = z
             .max(5000, { message: 'zodError.conversation.message.max' }),
 
         /** Preferred locale for system notifications (e.g. "es", "en", "pt"). */
-        locale: z.string().max(10).optional()
+        locale: z.string().max(10).optional(),
+
+        ...InquiryBookingFieldsShape
     })
     .strict();
+
+/**
+ * Anonymous initiate body, with the check-out-after-check-in rule applied.
+ * Use {@link CreateConversationAnonObjectSchema} when the plain object is needed
+ * (e.g. `.omit()`).
+ */
+export const CreateConversationAnonSchema = CreateConversationAnonObjectSchema.refine(
+    refineInquiryDates,
+    inquiryDatesIssue
+);
 
 /** TypeScript type inferred from {@link CreateConversationAnonSchema}. */
 export type CreateConversationAnon = z.infer<typeof CreateConversationAnonSchema>;
@@ -72,7 +129,8 @@ export type CreateConversationAnon = z.infer<typeof CreateConversationAnonSchema
  * Request body for `POST /api/v1/protected/conversations/initiate` (authenticated user).
  *
  * The authenticated caller's identity is resolved from the session, so the body
- * only needs the accommodation UUID and the opening message.  `.strict()` rejects
+ * only needs the accommodation UUID and the opening message (plus the optional
+ * booking fields).  `.strict()` rejects
  * any extra guest-identity fields.
  *
  * @example
@@ -80,7 +138,7 @@ export type CreateConversationAnon = z.infer<typeof CreateConversationAnonSchema
  * const body = CreateConversationAuthSchema.parse(req.json());
  * ```
  */
-export const CreateConversationAuthSchema = z
+export const CreateConversationAuthObjectSchema = z
     .object({
         /** UUID of the accommodation the user is enquiring about. */
         accommodationId: z.string().uuid(),
@@ -89,9 +147,20 @@ export const CreateConversationAuthSchema = z
         message: z.string().min(1).max(5000),
 
         /** Preferred locale for system notifications (e.g. "es", "en", "pt"). */
-        locale: z.string().max(10).optional()
+        locale: z.string().max(10).optional(),
+
+        ...InquiryBookingFieldsShape
     })
     .strict();
+
+/**
+ * Authenticated initiate body, with the check-out-after-check-in rule applied.
+ * Use {@link CreateConversationAuthObjectSchema} when the plain object is needed.
+ */
+export const CreateConversationAuthSchema = CreateConversationAuthObjectSchema.refine(
+    refineInquiryDates,
+    inquiryDatesIssue
+);
 
 /** TypeScript type inferred from {@link CreateConversationAuthSchema}. */
 export type CreateConversationAuth = z.infer<typeof CreateConversationAuthSchema>;
