@@ -37,8 +37,7 @@ describe('HOS-1640 MP4 preview: listing return (fila 10-bis (a))', () => {
             archiveOrigins,
             incompleteIds: new Set(),
             publishedAt: new Map(),
-            limit: 3,
-            publishedCount: 0
+            limit: 3
         });
 
         // Assert
@@ -60,8 +59,7 @@ describe('HOS-1640 MP4 preview: listing return (fila 10-bis (a))', () => {
             archiveOrigins,
             incompleteIds: new Set(),
             publishedAt: new Map(),
-            limit: 10,
-            publishedCount: 0
+            limit: 10
         });
 
         // Assert
@@ -86,8 +84,7 @@ describe('HOS-1640 MP4 preview: listing return (fila 10-bis (a))', () => {
             archiveOrigins: new Map(),
             incompleteIds: new Set(),
             publishedAt,
-            limit: 2,
-            publishedCount: 1
+            limit: 2
         });
 
         // Assert
@@ -112,8 +109,7 @@ describe('HOS-1640 MP4 preview: listing return (fila 10-bis (a))', () => {
             archiveOrigins: new Map(),
             incompleteIds: new Set(),
             publishedAt: new Map(),
-            limit: 10,
-            publishedCount: 0
+            limit: 10
         });
 
         // Assert
@@ -121,6 +117,35 @@ describe('HOS-1640 MP4 preview: listing return (fila 10-bis (a))', () => {
             purged: 'PURGED',
             moderated: 'MODERATED',
             draft: 'DRAFT'
+        });
+    });
+
+    it('PB7 surplus: a returning plan below what is public lowers the newest publish and restores nothing', () => {
+        // Arrange
+        const listings = [
+            listing('first', PublicationStatusEnum.PUBLISHED),
+            listing('second', PublicationStatusEnum.PUBLISHED),
+            listing('waiting', PublicationStatusEnum.UNPUBLISHED_BY_BILLING)
+        ];
+        const publishedAt = new Map([
+            ['first', new Date('2026-01-01T00:00:00Z')],
+            ['second', new Date('2026-02-01T00:00:00Z')]
+        ]);
+
+        // Act
+        const items = planListingReturn({
+            listings,
+            archiveOrigins: new Map(),
+            incompleteIds: new Set(),
+            publishedAt,
+            limit: 1
+        });
+
+        // Assert
+        expect(outcomes(items)).toEqual({
+            first: 'ALREADY_PUBLISHED',
+            second: 'LOWERED_BY_SURPLUS',
+            waiting: 'NO_SLOT'
         });
     });
 
@@ -137,8 +162,7 @@ describe('HOS-1640 MP4 preview: listing return (fila 10-bis (a))', () => {
             archiveOrigins: new Map(),
             incompleteIds: new Set(['incomplete']),
             publishedAt: new Map(),
-            limit: 1,
-            publishedCount: 0
+            limit: 1
         });
 
         // Assert
@@ -155,8 +179,7 @@ describe('HOS-1640 MP4 preview: listing return (fila 10-bis (a))', () => {
             archiveOrigins: new Map(),
             incompleteIds: new Set(),
             publishedAt: new Map(),
-            limit: null,
-            publishedCount: 0
+            limit: null
         });
 
         // Assert

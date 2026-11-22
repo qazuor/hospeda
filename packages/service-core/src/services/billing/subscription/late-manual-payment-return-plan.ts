@@ -1,5 +1,5 @@
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
-import { isRestorableArchiveOrigin, planRestoration } from '@repo/verticals';
+import { isRestorableArchiveOrigin, planRestoration, selectSurplusToLower } from '@repo/verticals';
 
 /**
  * Pure planners behind the MP4 confirmation (B13a fila 10-bis, HOS-1640): what the
@@ -31,8 +31,10 @@ export type ListingReturnOutcome =
     | 'PURGED'
     /** Taken down by an admin (PB10): only an admin lifts it. */
     | 'MODERATED'
-    /** Already public: nothing changes. */
+    /** Already public and within the quota: nothing changes. */
     | 'ALREADY_PUBLISHED'
+    /** Public, but beyond the returning plan's quota: PB7 lowers it (surplus, V6 order). */
+    | 'LOWERED_BY_SURPLUS'
     /** A draft: it was never public and stays a draft. */
     | 'DRAFT';
 
@@ -58,9 +60,8 @@ export interface ListingReturnItem {
  * @param input.listings - The owner's non-deleted listings of the vertical
  * @param input.archiveOrigins - Origin of each archived listing's latest archive transition
  * @param input.incompleteIds - Listings failing the publish completeness predicate
- * @param input.publishedAt - Latest manual publish instant per listing (return order)
+ * @param input.publishedAt - Latest manual publish instant per listing (return and surplus order)
  * @param input.limit - The plan's declared publication limit, or null when absent
- * @param input.publishedCount - Listings already published
  * @returns One item per listing, in input order
  */
 export function planListingReturn(input: {
@@ -69,7 +70,6 @@ export function planListingReturn(input: {
     readonly incompleteIds: ReadonlySet<string>;
     readonly publishedAt: ReadonlyMap<string, Date>;
     readonly limit: number | null;
-    readonly publishedCount: number;
 }): readonly ListingReturnItem[] {
     const fixed = new Map<string, ListingReturnOutcome>();
     const candidates: ListingReturnFact[] = [];
@@ -79,13 +79,24 @@ export function planListingReturn(input: {
         else if (input.incompleteIds.has(listing.id)) fixed.set(listing.id, 'INCOMPLETE');
         else candidates.push(listing);
     }
-    const available = input.limit === null ? null : input.limit - input.publishedCount;
+    const entry = (listing: ListingReturnFact) => ({
+        id: listing.id,
+        createdAt: listing.createdAt,
+        publishedAt: input.publishedAt.get(listing.id) ?? null
+    });
+    const published = input.listings.filter(
+        (listing) => listing.publicationStatus === PublicationStatusEnum.PUBLISHED
+    );
+    // PB7 lowers the surplus first when the returning plan's quota is below what is public.
+    const lowered =
+        input.limit === null
+            ? []
+            : selectSurplusToLower({ published: published.map(entry), limit: input.limit });
+    for (const { id } of lowered) fixed.set(id, 'LOWERED_BY_SURPLUS');
+    const available =
+        input.limit === null ? null : input.limit - (published.length - lowered.length);
     const plan = planRestoration({
-        entries: candidates.map((listing) => ({
-            id: listing.id,
-            createdAt: listing.createdAt,
-            publishedAt: input.publishedAt.get(listing.id) ?? null
-        })),
+        entries: candidates.map(entry),
         available
     });
     const restoring = new Set(plan.restoring.map(({ id }) => id));
