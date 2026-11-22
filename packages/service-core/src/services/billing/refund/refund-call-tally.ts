@@ -78,8 +78,11 @@ export function isSettledExternallyResult(value: unknown): boolean {
     return hasOutcome(value, SETTLED_EXTERNALLY);
 }
 
-/** The columns every tally reads for one call. */
-const refundCallColumns = {
+/**
+ * The columns every tally reads for one call. A function, not a module constant: reading the
+ * table columns at import time breaks every suite that mocks `@repo/db` without `refundCalls`.
+ */
+const refundCallColumns = () => ({
     idempotencyKey: refundCalls.idempotencyKey,
     providerRefundId: refundCalls.providerRefundId,
     addonInstanceId: refundCalls.addonInstanceId,
@@ -87,7 +90,7 @@ const refundCallColumns = {
     createdAt: refundCalls.createdAt,
     completedAt: idempotencyKeys.completedAt,
     result: idempotencyKeys.result
-};
+});
 
 /**
  * Reads and classifies the provider calls of one refund: accepted (it carries a
@@ -104,7 +107,7 @@ export async function readRefundCallTally(input: {
     readonly refundId: string;
 }): Promise<RefundCallTally> {
     const calls: readonly RefundCallRow[] = await input.db
-        .select(refundCallColumns)
+        .select(refundCallColumns())
         .from(refundCalls)
         .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
         .where(eq(refundCalls.refundId, input.refundId));
@@ -125,7 +128,7 @@ export async function readRefundCallTallies(input: {
 }): Promise<ReadonlyMap<string, RefundCallTally>> {
     if (input.refundIds.length === 0) return new Map();
     const rows = await input.db
-        .select({ refundId: refundCalls.refundId, ...refundCallColumns })
+        .select({ refundId: refundCalls.refundId, ...refundCallColumns() })
         .from(refundCalls)
         .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
         .where(inArray(refundCalls.refundId, [...input.refundIds]));
