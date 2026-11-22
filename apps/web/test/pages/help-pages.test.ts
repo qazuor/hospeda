@@ -92,6 +92,12 @@ describe('help landing (web-ui §2)', () => {
         expect(LANDING).toContain('initHelpTabs');
     });
 
+    it('keeps the tabs on one scrollable row instead of wrapping (HOS-2552)', () => {
+        expect(LANDING).toMatch(
+            /\.help-tabs__list \{[^}]*flex-wrap: nowrap;[^}]*overflow-x: auto;/
+        );
+    });
+
     it('selects the tab from ?para= only, never from the session (AC-3)', () => {
         expect(LANDING).toContain("searchParams.get('para')");
         expect(LANDING).toContain('{para === undefined && <HelpAudiencePreselect');
@@ -114,6 +120,23 @@ describe('help article (web-ui §4)', () => {
         expect(ARTICLE).toContain('{limitVerticals.length > 0 && <HelpLimitValues client:idle');
     });
 
+    it("breadcrumbs the reader's tab from ?para= only, never the first audience (HOS-2552)", () => {
+        expect(ARTICLE).toContain(
+            'const crumbAudience = helpCrumbAudience({ para, audiences: article.audiences });'
+        );
+        expect(ARTICLE).not.toContain('article.audiences[0]');
+        expect(ARTICLE).not.toMatch(/user\.[a-zA-Z]/);
+    });
+
+    it('searches with the same placeholder and button as the landing (HOS-2552)', () => {
+        expect(ARTICLE).toContain("placeholder={t('account.help.search.placeholder')}");
+        expect(ARTICLE).toContain("{t('account.help.search.submit')}");
+    });
+
+    it('adds no scroll-margin on top of the global scroll-padding (HOS-2552)', () => {
+        expect(ARTICLE).not.toMatch(/scroll-margin-top:\s*\d/);
+    });
+
     it('renders a side index and a mobile details index', () => {
         expect(ARTICLE).toContain('<details class="help-article__toc-mobile">');
         expect(ARTICLE.match(/data-help-toc/g)?.length).toBeGreaterThanOrEqual(2);
@@ -133,10 +156,17 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
         expect(SHELL).toContain('helpAnchor={helpAnchor}');
     });
 
-    it('HelpLink renders nothing without an entry and opens in a new tab', () => {
+    it('HelpLink renders nothing without an entry and opens in a new tab outside help', () => {
         expect(HELP_LINK).toContain('{entry !== undefined && (');
-        expect(HELP_LINK).toContain('target="_blank"');
-        expect(HELP_LINK).toContain('rel="noopener"');
+        expect(HELP_LINK).toContain('helpLinkOpensNewTab({ anchor:');
+        expect(HELP_LINK).toContain("target={newTab ? '_blank' : undefined}");
+        expect(HELP_LINK).toContain("rel={newTab ? 'noopener' : undefined}");
+    });
+
+    it('inside help the «?» names no new tab in its accessible name (HOS-2552)', () => {
+        expect(HELP_LINK).toContain(
+            "newTab ? 'account.help.link.ariaLabel' : 'account.help.link.ariaLabelSameTab'"
+        );
     });
 
     it.each(

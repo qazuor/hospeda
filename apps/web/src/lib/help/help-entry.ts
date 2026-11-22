@@ -26,6 +26,29 @@ export const HELP_ENTRY_ARTICLE_IDS: ReadonlyMap<string, string> = new Map(
     )
 );
 
+/** Route of the help center itself; its pages open help in the same tab. */
+export const HELP_CENTER_ROUTE = `${HELP_LINK_ROUTE_PREFIX}/ayuda`;
+
+/**
+ * Whether a «?» with this anchor opens its article in a new tab. Everywhere
+ * the reader keeps the page they were working on (AC-21 of HOS-2410), except
+ * inside the help center: there the reader is already reading help, so a new
+ * tab only piles up tabs (HOS-2552).
+ *
+ * @param args.anchor - The «?» anchor
+ * @returns `false` for the help center's own pages, `true` otherwise
+ *
+ * @example
+ * ```ts
+ * helpLinkOpensNewTab({ anchor: 'page:mi-cuenta/ayuda/[id]' }); // false
+ * helpLinkOpensNewTab({ anchor: 'page:mi-cuenta/suscripcion' }); // true
+ * ```
+ */
+export function helpLinkOpensNewTab({ anchor }: { readonly anchor: string }): boolean {
+    const page = `page:${HELP_CENTER_ROUTE}`;
+    return anchor !== page && !anchor.startsWith(`${page}/`);
+}
+
 /**
  * The page anchor of a route pattern, or `undefined` outside `/mi-cuenta`.
  *

@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
     findHelpEntry,
     HELP_ENTRY_ARTICLE_IDS,
+    helpLinkOpensNewTab,
     pageHelpAnchor,
     sectionHelpAnchor
 } from '../../../src/lib/help/help-entry';
@@ -48,5 +49,18 @@ describe('findHelpEntry', () => {
     it('maps every entryFor of the index to its article', () => {
         const claimed = HELP_INDEX.locales.es.flatMap((article) => article.entryFor);
         expect(HELP_ENTRY_ARTICLE_IDS.size).toBe(claimed.length);
+    });
+});
+
+describe('helpLinkOpensNewTab (HOS-2552)', () => {
+    it('stays in the same tab on the help landing and on an article', () => {
+        expect(helpLinkOpensNewTab({ anchor: 'page:mi-cuenta/ayuda' })).toBe(false);
+        expect(helpLinkOpensNewTab({ anchor: 'page:mi-cuenta/ayuda/[id]' })).toBe(false);
+    });
+
+    it('opens a new tab from every other page and editor section (AC-21 of HOS-2410)', () => {
+        expect(helpLinkOpensNewTab({ anchor: 'page:mi-cuenta/suscripcion' })).toBe(true);
+        expect(helpLinkOpensNewTab({ anchor: 'page:mi-cuenta/ayudante' })).toBe(true);
+        expect(helpLinkOpensNewTab({ anchor: 'section:accommodation.fotos' })).toBe(true);
     });
 });
