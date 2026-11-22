@@ -122,6 +122,12 @@ declare namespace App {
              */
             readonly ownsHostTradeListing: boolean;
             /**
+             * Whether the account owns a LIVE partner listing (HOS-2551): not
+             * revoked, not soft-deleted. From `/auth/me` `ownsPartner`; `false`
+             * on a malformed payload, like `ownsHostTradeListing`.
+             */
+            readonly ownsPartner: boolean;
+            /**
              * Force-password-change flag (SPEC-239), from the same
              * `/api/v1/public/auth/me` payload (`actor.mustChangePassword`).
              *

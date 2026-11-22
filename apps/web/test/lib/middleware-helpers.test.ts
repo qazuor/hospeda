@@ -1337,6 +1337,34 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
         });
     });
 
+    it('carries ownsPartner from the payload onto the session user (HOS-2551)', async () => {
+        mockAuthMe({
+            data: {
+                actor: { id: 'u1', name: 'Aliado', email: 'a@test', roles: ['USER'] },
+                isAuthenticated: true,
+                ownsPartner: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            ownsPartner: true
+        });
+    });
+
+    it('reads a non-boolean ownsPartner as false, never as truthy (HOS-2551)', async () => {
+        mockAuthMe({
+            data: {
+                actor: { id: 'u1', name: 'Aliado', email: 'a@test', roles: ['USER'] },
+                isAuthenticated: true,
+                ownsPartner: 'yes'
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            ownsPartner: false
+        });
+    });
+
     it('maps the actor onto the session user, including the FULL role set', async () => {
         mockAuthMe({
             data: {
@@ -1362,7 +1390,8 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
             mustChangePassword: false,
             // Absent from this payload, so it reads as "owns no listing" —
             // the lowest-privilege default (H-158).
-            ownsHostTradeListing: false
+            ownsHostTradeListing: false,
+            ownsPartner: false
         });
     });
 

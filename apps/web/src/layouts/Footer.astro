@@ -417,6 +417,25 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
 </footer>
 
 <script>
+    /**
+     * Nav accordions ship `open` so the links stay visible without JS and on
+     * tablet+. On mobile (<768px) they start collapsed to keep the footer
+     * compact; crossing into tablet+ re-opens them because the column
+     * headings are not toggleable there.
+     */
+    const footerMobileQuery = window.matchMedia("(max-width: 47.99rem)");
+    const syncFooterAccordions = (isMobile: boolean) => {
+        for (const col of document.querySelectorAll<HTMLDetailsElement>("details.footer__nav-col")) {
+            col.open = !isMobile;
+        }
+    };
+    footerMobileQuery.addEventListener("change", (event) => {
+        syncFooterAccordions(event.matches);
+    });
+    document.addEventListener("astro:page-load", () => {
+        syncFooterAccordions(footerMobileQuery.matches);
+    });
+
     /** Footer client-side wiring. Replaces inline event handlers, which are blocked by CSP. */
     document.addEventListener("astro:page-load", () => {
         const btn = document.querySelector("[data-cookie-consent-reopen]");
@@ -1038,6 +1057,171 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
 
         .footer__nav-col {
             min-width: 9rem;
+        }
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       Responsive — mobile compact (<768px)
+       Reduces the footer height by roughly half without removing content:
+       tighter spacing, smaller type, closed accordions (see script below).
+       Declared last so it wins over the mobile-first base rules; desktop
+       is untouched because every rule lives inside this media query.
+       ════════════════════════════════════════════════════════════════════ */
+    @media (max-width: 47.99rem) {
+        .footer__main {
+            padding-block: 1.5rem 1rem;
+        }
+
+        .footer__main-grid {
+            gap: 0.75rem;
+        }
+
+        /* Brand: logo and socials share a row, description sits below. */
+        .footer__brand {
+            display: grid;
+            grid-template-columns: auto auto;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem 0.75rem;
+            text-align: left;
+        }
+
+        .footer__logo {
+            grid-column: 1;
+            grid-row: 1;
+            gap: 0.5rem;
+        }
+
+        .footer__logo-icon {
+            width: 1.75rem;
+        }
+
+        .footer__logo-wordmark {
+            font-size: 1.5rem;
+        }
+
+        .footer__brand-social {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .footer__brand-desc {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            max-width: none;
+            font-size: var(--text-caption);
+            line-height: 1.5;
+        }
+
+        /* Accordions: compact summary rows, still >= 44px tap targets. */
+        .footer__nav {
+            gap: 0;
+        }
+
+        .footer__nav-col {
+            padding-block: 0;
+        }
+
+        .footer__nav-heading {
+            min-height: 2.75rem;
+            padding-block: 0;
+        }
+
+        .footer__nav-list {
+            row-gap: 0.5rem;
+            padding: 0.25rem 0 0.75rem;
+        }
+
+        .footer__nav-link {
+            font-size: var(--text-caption);
+        }
+
+        /* Newsletter */
+        .footer__newsletter-zone {
+            padding-block: 1rem;
+        }
+
+        .footer__newsletter-inner {
+            gap: 0.625rem;
+        }
+
+        .footer__newsletter-title {
+            font-size: var(--text-body);
+        }
+
+        .footer__newsletter-desc {
+            font-size: var(--text-caption);
+            line-height: 1.4;
+        }
+
+        /* Trust: tight 2x2 with smaller icons and text. */
+        .footer__trust {
+            padding-block: 0.75rem;
+        }
+
+        .footer__trust-inner {
+            gap: 0.625rem;
+        }
+
+        .footer__trust-list {
+            gap: 0.5rem 0.75rem;
+        }
+
+        .footer__trust-item {
+            gap: 0.375rem;
+        }
+
+        .footer__trust-icon {
+            width: 1.125rem;
+            height: 1.125rem;
+        }
+
+        .footer__trust-strong {
+            font-size: var(--text-caption);
+        }
+
+        .footer__trust-meta {
+            font-size: 0.6875rem;
+        }
+
+        .footer__payments-list {
+            gap: 0.625rem;
+        }
+
+        .footer__payment {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        /* Bottom bar */
+        .footer__bottom {
+            padding-block: 0.75rem;
+        }
+
+        .footer__bottom-inner {
+            gap: 0.5rem;
+        }
+
+        .footer__bottom-contact {
+            flex-wrap: nowrap;
+            gap: 0.75rem;
+        }
+
+        .footer__contact-link {
+            font-size: var(--text-caption);
+            gap: 0.375rem;
+        }
+
+        .footer__legal {
+            gap: 0.25rem 0.75rem;
+        }
+
+        .footer__legal-link {
+            font-size: 0.6875rem;
+        }
+
+        .footer__copyright {
+            font-size: 0.6875rem;
         }
     }
 </style>

@@ -202,63 +202,67 @@ adapter makes (`mercadopago-charge-read.ts:74`). Never paste the token anywhere.
 confirmed amount. The provider call path ends with `PROVIDER_REJECTED_KEPT_CONFIRMED`
 (`refund-provider-call.ts:292-295`).
 
-**What to check in Mercado Pago (section 6):**
+**How to close it: action 14 on the refund, «Settle the remainder of a refund from the MP panel»
+(HOS-2406).** It is an admin action with its own audit record. No direct write and no owner OK on
+the database are needed. Do the steps in this order. The settlement checks Mercado Pago, so the
+panel refund must exist and be `approved` before you record it.
 
-1. For each `refund_call` with a `provider_refund_id`, find that refund. Write down its amount and
-   status.
-2. Confirm that Mercado Pago's refunded total matches `accepted_amount` (in pesos). Confirm that no
-   other refund appears that Hospeda does not know about.
-3. Write down what this refund still owes the customer: `remaining_amount` from 4.2, in centavos.
+1. **Read Mercado Pago (section 6).** For each `refund_call` with a `provider_refund_id`, find that
+   refund. Write down its amount and status.
+   - Confirm that the refunds Mercado Pago credited add up to `accepted_amount` of 4.2 (in pesos)
+     and that no other refund appears that Hospeda does not know about. If an accepted part is not
+     shown as credited, stop: the settlement refuses it (`ACCEPTED_PART_NOT_ACCREDITED`).
+   - Work out what is still owed: `refund.amount` minus what Mercado Pago credited for the accepted
+     calls. This is `remaining_amount` of 4.2, in centavos. The settlement computes it from what
+     Mercado Pago reports credited, not from what we asked for.
+2. **Refund the remainder by hand from the Mercado Pago panel** and wait until Mercado Pago shows
+   that refund `approved`. Never record one that is still in process. Write down its refund id.
+3. **Record it with action 14.** In **Billing → Reconciliation → Refunds**, use **Settle the
+   remainder of a refund from the MP panel** («Asentar el resto de una devolución desde el panel de
+   MP») with the refund id, the amount from step 1 and the Mercado Pago refund id of step 2 as the
+   reference. The screen asks you to review and confirm before it writes. It is
+   `POST /api/v1/admin/billing-refunds/<refund_id>/settle-remainder` with
+   `{"amount": <centavos>, "reference": "<Mercado Pago refund id>"}` and permission
+   `billing.settleExternal` (`apps/api/src/routes/billing-refund/admin/settle-remainder.ts`,
+   `packages/service-core/src/services/billing/refund/settle-refund-remainder.service.ts`).
+   The service reads the charge first: the reference must be an `approved` refund of exactly that
+   amount. Then, in one transaction, the refund closes `EXECUTED` for its full amount, as a panel
+   refund (`executed_via = 'EXTERNAL'`, `external_channel = 'PROVIDER_PANEL'`, `external_ref` the
+   reference, `settled_by` you). The payment is updated (P3/P4/P5, so
+   `payment.refunded_amount` counts the accepted part and the remainder) and the hung mark
+   attachments resolve, exactly as after a normal execution. The answer carries `acceptedAmount`,
+   `remainderAmount`, `paymentOutcome` and `coverageReleased`.
+4. **Check it** with section 5: the refund is `EXECUTED`, `settled_by` is you, and query 4.2 no
+   longer lists it.
 
-**How to close it in Hospeda: there is no safe path today.** None of the existing actions closes
-this refund:
+What it refuses (all 409 unless noted; full list in `apps/api/docs/error-contract.md`, «Action 14
+remainder settlement»):
 
-| Action | What happens |
-|---|---|
-| Action 13, decline (`POST /api/v1/admin/billing-refunds/{refundId}/decline`, `apps/api/src/routes/billing-refund/admin/decline.ts:49`) | Refused with `REFUND_HAS_PROVIDER_CALLS`, because the accepted call is live (`decline-refund.service.ts:119-128`). |
-| Action 14 naming the refund (`POST /api/v1/admin/billing-refunds/external` with `refundId`, `settle-external.ts:71-152`) | Refused with `REFUND_NOT_OPEN`. RF4 never leaves `CONFIRMED` (`settle-external-refund.service.ts:210-216`). |
-| Action 14 for the remainder, without `refundId` | Usually refused with `REFUND_EXCEEDS_BALANCE`. The `CONFIRMED` row still claims its full amount (`refund-source.ts:42`, `:201-222`). When it does fit, it is still wrong. It creates a second `EXECUTED` row, the `CONFIRMED` row stays open forever, and `payment.refunded_amount` never counts the part Mercado Pago accepted. That is because only `EXECUTED` rows count (`packages/service-core/src/services/billing/payment/apply-executed-refund.service.ts:50`). |
-| Automatic execution (RF3) | Returns `NOT_ACCREDITED_KEPT_CONFIRMED`, because the accepted ids do not add up to `refund.amount` (`execute-refund.service.ts:137-144`). |
-| Lifting the mark (action 7, `POST /api/v1/admin/billing-reconciliation/marks/{markId}/lift`) | Refused while the payment is still hung (`MARK_HAS_UNRESOLVED_PAYMENTS`). On a held page charge it refuses to resolve the payment without a refund (`MARK_CLOSES_ONLY_BY_REFUND`, `lift-reconciliation-mark-by-admin.service.ts:134-140`). |
+| Answer | Why | Next |
+|---|---|---|
+| `ACCEPTED_PART_NOT_ACCREDITED` | Mercado Pago does not show the part it accepted as credited | Read the charge in the panel again (section 6). Wait for the accreditation, or press **Retry with Mercado Pago** (section 8, step 0). Do not refund anything yet |
+| `REMAINDER_AMOUNT_MISMATCH` (422) | The amount is not what is still owed; the message says what is | Use the amount in the message |
+| `REMAINDER_NOT_FOUND_AT_PROVIDER` (422) | The charge read shows no `approved` refund with that reference for exactly that amount | Check the reference and the amount, or wait until Mercado Pago approves the panel refund |
+| `EXTERNAL_REFERENCE_ALREADY_SETTLED` | The reference is already another refund's panel reference or another call's provider refund | Check the reference; escalate if it is right |
+| `REFUND_CALL_UNANSWERED` | A call of this refund was sent 24 hours ago or less | Section 8: use **Retry with Mercado Pago** first |
+| `REFUND_RETRY_IN_PROGRESS` | A **Retry with Mercado Pago** of this refund (or another settlement) is running | Wait for its answer, read it, then settle again only if it did not close the refund |
+| `OTHER_REFUND_CALL_UNANSWERED` | Another refund of the same payment has an unanswered call: the panel refund you cite could be that call's (HOS-2517) | Close that refund first |
+| `UNCITED_PROVIDER_REFUND_ON_CHARGE` | The charge shows a refund for an unanswered call's amount that nothing of ours records | **Retry with Mercado Pago**, which binds it. Do not refund again |
+| `REFUND_HAS_NO_ACCEPTED_CALL` | Mercado Pago accepted no part and there is no unanswered call: this is not case A | Section 8 (8.1 or 8.4), or decline the refund (action 13) if no money moved |
+| `REFUND_NOT_CONFIRMED`, `REFUND_STATE_CHANGED` | The refund is not `CONFIRMED`, or it changed while you worked | Read it again (section 5) |
 
-**What to do:**
+A refund that is also case B (an unanswered call older than 24 hours) is settled by this same
+action, which answers those calls `SETTLED_EXTERNALLY`. Section 8.4 describes that, and the Sentry
+alert for money the settlement could not count.
 
-1. Do not refund the remainder from the Mercado Pago panel on your own. Once you do, Hospeda cannot
-   record it (see action 14 above). Mercado Pago and the database then disagree until the HOS-2402
-   fix ships. Whether the customer gets the remainder now, and by which channel, is the owner's
-   decision.
-2. Escalate to the billing owner, with a comment on HOS-2402 (section 9) that carries the section 5
-   output, the Mercado Pago refund ids and amounts, and the remaining amount.
-3. Leave the refund `CONFIRMED`. Do not edit `refund`, `refund_call` or `idempotency_key` by hand
-   for this case.
+**Do not** insert `idempotency_key` or `refund_call` rows by hand to imitate a call. The settlement
+exists so that nobody has to. Do not edit `refund`, `refund_call` or `idempotency_key` by hand for
+this case.
 
-**The only conceivable path, for the owner to weigh. It is NOT safe, and this note does not ask
-you to run it.** It is listed so the owner can decide with the risks in view, not as a procedure:
-
-1. Refund the remainder (`remaining_amount`) from the Mercado Pago panel, and wait until Mercado
-   Pago shows that refund `approved`. Never use a refund that is still in process.
-2. Insert by hand one `idempotency_key` row and one `refund_call` row that imitate `persistCall`
-   (`refund-provider-call.ts:43-77`): key `refund:<refund_id>:<n+1>`, operation `REFUND_CREATE`,
-   `subject_id` the refund, `refund_call.amount` the remainder and `provider_refund_id` the new
-   Mercado Pago refund id. Then complete them as `ACCEPTED`, as `completeCall` would
-   (`:80-106`).
-3. Wait for a charge notice to trigger RF3. RF3 executes only if every accepted id is accredited and
-   Mercado Pago's amounts add up to `refund.amount` (`execute-refund.service.ts:137-144`).
-
-Why it is not safe:
-
-- **It fabricates a call our code never sent.** No POST with that idempotency key ever reached
-  Mercado Pago. The row claims a history that did not happen, and every later reader trusts it.
-- **There is a race.** The panel refund triggers its own charge notice. If that notice is processed
-  before the insert, RF3 runs on the old calls and answers `NOT_ACCREDITED_KEPT_CONFIRMED`. The
-  notice does not come again, so the refund stays stuck, now with the fabricated rows.
-- **A wrong amount or id makes it permanent.** The fabricated call is live (it has a
-  `provider_refund_id`), so the refund can still never be declined.
-
-**Held charge or mark.** While the refund stays `CONFIRMED`, the payment stays hung on its mark
-(`reconciliation_mark_payment.resolved_at` NULL) and the mark cannot be lifted. A page-charge mark
-(reasons `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO`, `ORDEN_PAGADA_SIN_INSTANCIA` on an add-on
-instance) keeps the charge held. That is expected until the fix.
+**Held charge or mark.** Until the refund closes, the payment stays hung on its mark
+(`reconciliation_mark_payment.resolved_at` NULL) and the mark cannot be lifted. Closing the refund
+with the settlement resolves the attachments in the same transaction, so lift the mark (action 7)
+only after that.
 
 ## 8. Case B: unanswered call
 
@@ -612,8 +616,8 @@ own permission and refuses an admin acting on their own account
 ## 11. When this note stops applying
 
 HOS-2402 asks for an exit for both cases. Case A got one in HOS-2406 (the remainder settlement on
-the refunds screen, `POST /api/v1/admin/billing-refunds/<refund_id>/settle-remainder`); section 7
-still describes the manual path and should be rewritten to point there. Case B got its first one in
+the refunds screen, `POST /api/v1/admin/billing-refunds/<refund_id>/settle-remainder`, section 7).
+Case B got its first one in
 HOS-2516 («Retry with MP», section 8, step 0), and HOS-2538 closed the call the retry will no longer
 post (action 14, section 8.4); the direct writes of 8.1 and 8.2 remain only for what neither can
 close. Update or retire this note when the rest merges.

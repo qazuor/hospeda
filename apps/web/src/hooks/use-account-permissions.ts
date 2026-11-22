@@ -100,13 +100,23 @@ export interface UseAccountPermissionsResult {
      * Lets a consumer tell a confirmed guest from the not-yet-resolved window.
      */
     readonly isResolved: boolean;
+    /**
+     * Whether the account owns a host-trade directory listing (HOS-2551).
+     * `false` for guests and while still resolving (fail-closed).
+     */
+    readonly ownsHostTradeListing: boolean;
+    /**
+     * Whether the account owns a live (not revoked) partner listing
+     * (HOS-2551). `false` for guests and while still resolving (fail-closed).
+     */
+    readonly ownsPartner: boolean;
 }
 
 /**
  * Resolves the current visitor's `/auth/me` snapshot on mount, cache-first.
  *
  * @param params - `{ initialUser?, skip? }` (RO-RO). See the two modes above.
- * @returns `{ user, permissions, roles, isResolved }`.
+ * @returns `{ user, permissions, roles, isResolved, ownsHostTradeListing, ownsPartner }`.
  */
 export function useAccountPermissions({
     initialUser,
@@ -118,6 +128,8 @@ export function useAccountPermissions({
     const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
     const [roles, setRoles] = useState<ReadonlyArray<string>>(initialRoles ?? []);
     const [isResolved, setIsResolved] = useState(false);
+    const [ownsHostTradeListing, setOwnsHostTradeListing] = useState(false);
+    const [ownsPartner, setOwnsPartner] = useState(false);
 
     // `initialUser === undefined` means the caller never passed it (simple
     // mode) — distinct from explicitly passing `null` for a guest
@@ -147,6 +159,8 @@ export function useAccountPermissions({
             setPermissions(cached.permissions);
             setRoles(cached.roles);
             setIsResolved(true);
+            setOwnsHostTradeListing(cached.ownsHostTradeListing === true);
+            setOwnsPartner(cached.ownsPartner === true);
             if (shouldSyncAttribute) {
                 document.documentElement.setAttribute(
                     'data-user-authenticated',
@@ -166,6 +180,8 @@ export function useAccountPermissions({
                 setPermissions(snapshot.permissions);
                 setRoles(snapshot.roles);
                 setIsResolved(true);
+                setOwnsHostTradeListing(snapshot.ownsHostTradeListing === true);
+                setOwnsPartner(snapshot.ownsPartner === true);
                 if (shouldSyncAttribute) {
                     document.documentElement.setAttribute(
                         'data-user-authenticated',
@@ -183,5 +199,5 @@ export function useAccountPermissions({
         };
     }, [skip]);
 
-    return { user, permissions, roles, isResolved };
+    return { user, permissions, roles, isResolved, ownsHostTradeListing, ownsPartner };
 }
