@@ -152,6 +152,60 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4618, #4636
+    {
+        id: '2026-11-20-buy-one-time-highlights-in-store',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Ya podés comprar destaques de pago único en la tienda',
+            en: 'You can now buy one-time highlights in the store',
+            pt: 'Agora você pode comprar destaques de pagamento único na loja'
+        },
+        body: {
+            es: 'En **Comprar complementos** elegís un impulso de visibilidad de 7 o 30 días y la ficha que querés destacar, y pagás una sola vez en Mercado Pago, sin cargar la tarjeta en Hospeda. Si la ficha no está publicada, te avisamos antes de pagar.',
+            en: 'In **Buy add-ons** you pick a 7- or 30-day visibility boost and the listing you want to highlight, and pay once on Mercado Pago, without entering your card on Hospeda. If the listing is not published, we tell you before you pay.',
+            pt: 'Em **Comprar complementos** você escolhe um impulso de visibilidade de 7 ou 30 dias e o anúncio que quer destacar, e paga uma só vez no Mercado Pago, sem informar o cartão no Hospeda. Se o anúncio não estiver publicado, avisamos antes de pagar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4645
+    {
+        id: '2026-11-21-settle-remainder-other-refund-waiting',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: '«Asentar el resto» ya no cuenta dos veces un reembolso de Mercado Pago',
+            en: '«Settle the remainder» no longer counts a Mercado Pago refund twice',
+            pt: '«Registrar o restante» não conta mais duas vezes um reembolso do Mercado Pago'
+        },
+        body: {
+            es: 'En **Devoluciones propuestas**, si otra devolución del mismo pago todavía espera la respuesta de Mercado Pago, «Asentar el resto» lo rechaza y te explica por qué, en tu idioma. Así un mismo reembolso no queda registrado en dos devoluciones.',
+            en: 'In **Proposed refunds**, if another refund of the same payment is still waiting for Mercado Pago to answer, «Settle the remainder» refuses it and tells you why, in your language. That way the same refund is never recorded on two refunds.',
+            pt: 'Em **Reembolsos propostos**, se outro reembolso do mesmo pagamento ainda espera a resposta do Mercado Pago, «Registrar o restante» recusa e explica o motivo, no seu idioma. Assim o mesmo reembolso não fica registrado em dois reembolsos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4646
+    {
+        id: '2026-11-21-two-tabs-expired-purchase-retry',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Reintentar una compra de destaque vencida desde dos pestañas ya no da error',
+            en: 'Retrying an expired highlight purchase from two tabs no longer fails',
+            pt: 'Tentar de novo uma compra de destaque vencida em duas abas não dá mais erro'
+        },
+        body: {
+            es: 'Si se te venció el link de pago de un destaque y lo reintentás desde dos pestañas a la vez, las dos te llevan al mismo pago de Mercado Pago, en lugar de que una muestre un error.',
+            en: 'If the payment link for a highlight expired and you retry it from two tabs at once, both take you to the same Mercado Pago payment instead of one showing an error.',
+            pt: 'Se o link de pagamento de um destaque venceu e você tenta de novo em duas abas ao mesmo tempo, as duas levam ao mesmo pagamento do Mercado Pago, em vez de uma mostrar um erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4634
     {
         id: '2026-11-20-unlimited-favorites-shown-as-unlimited',
