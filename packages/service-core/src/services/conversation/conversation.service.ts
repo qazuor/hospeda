@@ -538,6 +538,9 @@ export class ConversationService extends BaseService {
                         anonymousEmail: normalizedEmail,
                         anonymousPhone: validated.guestPhone,
                         anonymousEmailVerified: false,
+                        // HOS-2568: held here until the email is verified. Only ever
+                        // written on creation, never on the `resent` path above.
+                        pendingMessage: validated.message,
                         status: 'PENDING_VERIFICATION' as const,
                         locale
                     } satisfies InsertConversation)
@@ -1760,16 +1763,50 @@ export class ConversationService extends BaseService {
                 // Primary path: PENDING_VERIFICATION → PENDING_OWNER
                 const rawToken = await withServiceTransaction(async (txCtx) => {
                     const now = new Date();
-
                     // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                    await txCtx
-                        .tx!.update(conversations)
+                    const tx = txCtx.tx!;
+
+                    // Conditional flip: only the request that actually moves the row out of
+                    // PENDING_VERIFICATION may deliver the pending message, so two concurrent
+                    // verifications cannot both insert it (HOS-2568).
+                    const claimed = await tx
+                        .update(conversations)
                         .set({
                             status: 'PENDING_OWNER' as const,
                             anonymousEmailVerified: true,
+                            pendingMessage: null,
                             updatedAt: now
                         })
-                        .where(eq(conversations.id, conversationId));
+                        .where(
+                            and(
+                                eq(conversations.id, conversationId),
+                                eq(conversations.status, 'PENDING_VERIFICATION' as const)
+                            )
+                        )
+                        .returning({ id: conversations.id });
+
+                    // HOS-2568: deliver the guest's held message as their first message, with
+                    // the same counter semantics as `initiateAuthenticated` (no user id: the
+                    // guest is anonymous).
+                    const pendingMessage = conversation.pendingMessage;
+                    if (claimed.length > 0 && pendingMessage) {
+                        await tx.insert(messages).values({
+                            conversationId,
+                            senderType: 'GUEST' as const,
+                            userId: null,
+                            body: pendingMessage,
+                            status: 'VISIBLE' as const
+                        });
+                        await tx
+                            .update(conversations)
+                            .set({
+                                lastActivityAt: now,
+                                lastGuestMessageAt: now,
+                                firstGuestMessageAt: now,
+                                guestMessageCount: 1
+                            })
+                            .where(eq(conversations.id, conversationId));
+                    }
 
                     const tokenResult = await this.accessTokenService.generateToken(
                         validatedActor,

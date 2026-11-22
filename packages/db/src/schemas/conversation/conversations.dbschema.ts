@@ -56,6 +56,16 @@ export const conversations = pgTable(
         /** Optional phone number provided by anonymous guest at initiation. */
         anonymousPhone: varchar('anonymous_phone', { length: 50 }),
 
+        /**
+         * Opening message an anonymous guest typed, held until the email is verified
+         * (HOS-2568). `initiateAnonymous` writes it once on creation (first submission
+         * wins); `verifyEmailToken` moves it into `messages` and clears it back to NULL.
+         * NULL for authenticated guests and for every verified conversation. It is
+         * deliberately absent from every read schema: an unverified guest's text must
+         * never reach the owner or any public response.
+         */
+        pendingMessage: text('pending_message'),
+
         /** Current lifecycle state of the conversation. */
         status: ConversationStatusPgEnum('status').notNull().default('PENDING_VERIFICATION'),
 
