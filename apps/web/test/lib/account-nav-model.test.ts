@@ -2,6 +2,7 @@
  * Tests for the account navigation model (HOS-2413 T-017).
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     ACCOUNT_MENU_LABEL_KEY,
@@ -10,6 +11,20 @@ import {
 } from '../../src/lib/account-nav-model';
 
 const BASE = { ownsHostTradeListing: false, mcpEnabled: true, activeSection: 'mi-cuenta' } as const;
+
+/**
+ * The effective permissions the seed grants each role, for the verticals only.
+ * HOS-2562: «Asistentes de IA» reads PERMISSIONS (never roles), so a test that
+ * means "a host" passes a host's permissions.
+ */
+const VERTICAL_PERMISSIONS_BY_ROLE: Readonly<Record<string, readonly PermissionEnum[]>> = {
+    HOST: [PermissionEnum.ACCOMMODATION_CREATE],
+    VENUE_OWNER: [PermissionEnum.VENUE_EDIT_OWN],
+    EXPERIENCE_OWNER: [PermissionEnum.EXPERIENCE_EDIT_OWN],
+    EDITOR: [PermissionEnum.POST_CREATE, PermissionEnum.EVENT_CREATE]
+};
+const permissionsFor = (roles: readonly string[] | null): readonly string[] =>
+    (roles ?? []).flatMap((role) => VERTICAL_PERMISSIONS_BY_ROLE[role] ?? []);
 const groupIds = (model: ReturnType<typeof buildAccountNavModel>) =>
     model.groups.map((entry) => entry.group.id);
 
@@ -124,14 +139,40 @@ describe('buildAccountNavModel: active state', () => {
 });
 
 describe('buildAccountNavModel: gated entries', () => {
-    it('hides the AI-assistants entry until revealed only when MCP is off', () => {
-        const hiddenFlags = (mcpEnabled: boolean) =>
-            buildAccountNavModel({ ...BASE, roles: ['USER'], mcpEnabled })
+    it('lists AI assistants only for a real client while MCP is on (HOS-2562)', () => {
+        const aiCount = (input: {
+            readonly roles: readonly string[];
+            readonly permissions: readonly string[];
+            readonly mcpEnabled: boolean;
+        }) =>
+            buildAccountNavModel({ ...BASE, ...input })
                 .groups.flatMap((entry) => entry.items)
-                .filter((item) => item.item.id === 'aiAssistants')
-                .map((item) => item.hiddenUntilRevealed);
-        expect(hiddenFlags(true)).toEqual([false]);
-        expect(hiddenFlags(false)).toEqual([true]);
+                .filter((item) => item.item.id === 'aiAssistants').length;
+        const host = { roles: ['HOST'], permissions: permissionsFor(['HOST']) };
+        const tourist = { roles: ['USER'], permissions: [] };
+        expect(aiCount({ ...host, mcpEnabled: true })).toBe(1);
+        expect(aiCount({ ...host, mcpEnabled: false })).toBe(0);
+        expect(aiCount({ ...tourist, mcpEnabled: true })).toBe(0);
+        expect(aiCount({ ...tourist, mcpEnabled: false })).toBe(0);
+    });
+
+    it('never lets a role decide: a HOST role without the permission gets no AI assistants', () => {
+        const items = buildAccountNavModel({ ...BASE, roles: ['HOST'], permissions: [] })
+            .groups.flatMap((entry) => entry.items)
+            .map((item) => item.item.id);
+        expect(items).not.toContain('aiAssistants');
+    });
+
+    it('counts a partner-only account as a client (row ownership)', () => {
+        const items = buildAccountNavModel({
+            ...BASE,
+            roles: ['USER'],
+            permissions: [],
+            ownsPartner: true
+        })
+            .groups.flatMap((entry) => entry.items)
+            .map((item) => item.item.id);
+        expect(items).toContain('aiAssistants');
     });
 
     it('suppresses the header of a single-item cajón group only', () => {
@@ -171,6 +212,7 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
     }: ShellInput) =>
         buildAccountNavModel({
             roles,
+            permissions: permissionsFor(roles),
             ownsHostTradeListing,
             ownsPartner,
             mcpEnabled,
@@ -221,6 +263,7 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
         it('opens only the group holding the current page and keeps the doors', () => {
             const model = buildAccountNavModel({
                 roles: ['HOST'],
+                permissions: permissionsFor(['HOST']),
                 ownsHostTradeListing: false,
                 mcpEnabled: true,
                 activeSection: 'favoritos'
@@ -273,12 +316,9 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
             expect(ids).not.toContain('provider');
         });
 
-        it('keeps the AI-assistants entry hidden until revealed when MCP is off', () => {
+        it('drops the AI-assistants entry for a client when MCP is off (no hidden copy)', () => {
             const shell = shellFor({ roles: ['HOST'], activeSection: 'editar', mcpEnabled: false });
-            const ai = shell.groups
-                .flatMap((entry) => entry.items)
-                .find((item) => item.item.id === 'aiAssistants');
-            expect(ai?.hiddenUntilRevealed).toBe(true);
+            expect(itemIds(shell)).not.toContain('aiAssistants');
         });
     });
 

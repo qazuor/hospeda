@@ -33,7 +33,6 @@ import {
 } from '@/components/account/ui/account-shell-template';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
-import { AiAssistantsNavReveal } from '@/components/account/AiAssistantsNavReveal.client';
 import { AccountFooter } from '@/components/account/ui/AccountFooter';
 import { AccountToastRegion } from '@/components/account/ui/AccountToastRegion';
 import AccountHeader from './AccountHeader.astro';
@@ -46,11 +45,9 @@ interface Props {
 	readonly title?: string;
 	readonly description?: string;
 	readonly template?: AccountShellTemplate;
-	/** True when the MCP feature is off: the AI-assistants entry needs its reveal island. */
-	readonly aiAssistantsHidden?: boolean;
 }
 
-const { locale, navModel, title, description, template, aiAssistantsHidden = false } = Astro.props;
+const { locale, navModel, title, description, template } = Astro.props;
 
 const { t } = createTranslations(locale);
 const canonicalUrl = new URL(Astro.url.pathname, getSiteUrl()).href;
@@ -85,7 +82,6 @@ const view = buildSidebarView({ model: navModel, locale });
 			<AccountSidebar view={view} locale={locale} icons={ACCOUNT_NAV_ICONS}>
 				<WhatsNewCountPill slot="whatsNewCount" locale={locale} client:idle />
 				<BenefitUsagesCountPill slot="benefitUsagesCount" locale={locale} client:idle />
-				{aiAssistantsHidden && <AiAssistantsNavReveal slot="aiAssistantsReveal" client:idle />}
 			</AccountSidebar>
 		</aside>
 		{/* Applies the remembered open/closed nav state BEFORE first paint (HOS-2549), so a

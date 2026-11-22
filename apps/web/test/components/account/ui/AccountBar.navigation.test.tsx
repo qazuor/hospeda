@@ -28,9 +28,6 @@ vi.mock('astro:transitions/client', () => ({
         return Promise.resolve();
     }
 }));
-vi.mock('../../../../src/hooks/use-ai-assistants-entry', () => ({
-    useAiAssistantsEntry: () => false
-}));
 vi.mock('../../../../src/components/shared/whats-new/WhatsNewCountPill.client', () => ({
     WhatsNewCountPill: () => null
 }));

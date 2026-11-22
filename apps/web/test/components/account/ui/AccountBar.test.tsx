@@ -14,10 +14,6 @@ import { buildAccountNavModel } from '../../../../src/lib/account-nav-model';
 
 vi.mock('astro:transitions/client', () => ({ navigate: () => Promise.resolve() }));
 
-const aiState = vi.hoisted(() => ({ visible: false }));
-vi.mock('../../../../src/hooks/use-ai-assistants-entry', () => ({
-    useAiAssistantsEntry: () => aiState.visible
-}));
 vi.mock('../../../../src/components/shared/whats-new/WhatsNewCountPill.client', () => ({
     WhatsNewCountPill: () => <span data-testid="whats-new-pill">2</span>
 }));
@@ -189,29 +185,36 @@ describe('AccountBar', () => {
         expect(screen.getByTestId('whats-new-pill').closest('a')).not.toBeNull();
     });
 
-    it('reveals the AI-assistants entry in the drawer only when the user qualifies', async () => {
+    it('lists the AI-assistants entry in the drawer for a client, and none for a tourist (HOS-2562)', async () => {
         const user = userEvent.setup();
-        const open = async () => {
+        const drawerHrefs = async () => {
             await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-            const dialog = await screen.findByRole('dialog');
-            return dialog.querySelector('[data-ai-assistants-entry]') as HTMLElement;
+            return hrefsIn(await screen.findByRole('dialog'));
         };
-        aiState.visible = false;
-        const first = render(
+        const viewFor = (input: { readonly roles: string[]; readonly permissions: string[] }) =>
+            buildSidebarView({
+                model: buildAccountNavModel({
+                    ...input,
+                    ownsHostTradeListing: false,
+                    mcpEnabled: true,
+                    activeSection: 'editar'
+                }),
+                locale: 'es'
+            });
+        const client = render(
             <AccountBar
-                view={view}
+                view={viewFor({ roles: ['HOST'], permissions: ['accommodation.create'] })}
                 locale="es"
             />
         );
-        expect(await open()).toHaveAttribute('hidden');
-        first.unmount();
-        aiState.visible = true;
+        expect(await drawerHrefs()).toContain('/es/mi-cuenta/asistentes-ia/');
+        client.unmount();
         render(
             <AccountBar
-                view={view}
+                view={viewFor({ roles: ['USER'], permissions: [] })}
                 locale="es"
             />
         );
-        expect(await open()).not.toHaveAttribute('hidden');
+        expect(await drawerHrefs()).not.toContain('/es/mi-cuenta/asistentes-ia/');
     });
 });

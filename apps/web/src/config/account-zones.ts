@@ -9,8 +9,9 @@
  *   the person has.
  *
  * The header user menu lists one «Administrar …» shortcut per business vertical
- * ({@link BUSINESS_SHORTCUTS}). The same catalog answers whether a person is a
- * real client (has at least one vertical), which gates «Asistentes de IA».
+ * ({@link BUSINESS_SHORTCUTS}). Who has a vertical, and therefore who is a real
+ * client (gates «Asistentes de IA»), is `BUSINESS_VERTICAL_GATES` in
+ * `@repo/schemas` (HOS-2562), shared with the API.
  *
  * Labels are i18n keys and icons are `@repo/icons` references, like
  * `navigation.ts`.
@@ -20,7 +21,7 @@
 
 import type { IconProps } from '@repo/icons';
 import { BuildingIcon, CompassIcon, PostIcon, StarIcon, VenueIcon, WrenchIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
+import { type BusinessVerticalId, PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
 import { AI_ASSISTANTS_NAV_ITEM_ID, type NavGroup } from '@/config/navigation';
 
@@ -86,73 +87,64 @@ export const PARTNER_NAV_GROUP: NavGroup = {
     ]
 };
 
-/** Row ownership that grants a business vertical without a permission. */
-export type BusinessOwnership = 'hostTradeListing' | 'partner';
-
 /** One destination of a shortcut; the first visible one wins. */
 export interface BusinessShortcutTarget {
     /** Path segment under the locale (e.g. `mi-cuenta/publicaciones`). */
     readonly href: string;
-    /** Permission this destination needs, on top of the shortcut's own gate. */
+    /** Permission this destination needs, on top of the vertical's own gate. */
     readonly requiredPermission?: PermissionEnum;
 }
 
-/** One «Administrar …» shortcut of the header user menu. */
+/**
+ * One «Administrar …» shortcut of the header user menu. Its id IS the business
+ * vertical it opens; who has that vertical is decided by
+ * `BUSINESS_VERTICAL_GATES` in `@repo/schemas` (HOS-2562), the same rule the
+ * API applies, never here.
+ */
 export interface BusinessShortcut {
-    /** Stable id. */
-    readonly id: 'accommodations' | 'venues' | 'experiences' | 'editorial' | 'partner' | 'provider';
+    /** The business vertical (also the shortcut's stable id). */
+    readonly id: BusinessVerticalId;
     /** i18n key of the label (always phrased as managing). */
     readonly i18nKey: string;
     /** Icon. */
     readonly icon: ComponentType<IconProps>;
-    /** Gate by permission (same declarations the sidebar groups use). */
-    readonly requiredPermission?: PermissionEnum;
-    /** Gate by any of these permissions. */
-    readonly requiredPermissions?: readonly PermissionEnum[];
-    /** Gate by row ownership instead of a permission. */
-    readonly ownership?: BusinessOwnership;
     /** Destinations, in priority order. */
     readonly targets: readonly BusinessShortcutTarget[];
 }
 
 /**
- * The business shortcuts, in the owner's order. Each one is gated exactly like
- * the sidebar entry it opens:
+ * The business shortcuts, in the owner's order (the same order as
+ * `BUSINESS_VERTICAL_IDS`):
  *
- * - Alojamientos: the `anfitrion` group (`ACCOMMODATION_CREATE`).
- * - Comer y salir / Experiencias: the two permissions the `comercio` group
- *   accepts, one each. Both open `/mi-cuenta/comercio` until HOS-2559.
- * - Editorial: the `editorial` items. It opens «Mis publicaciones», or «Mis
- *   eventos» for an account that can only create events.
- * - Partner / Proveedor: row ownership.
+ * - Alojamientos: the `anfitrion` area.
+ * - Comer y salir / Experiencias: both open `/mi-cuenta/comercio` until HOS-2559.
+ * - Editorial: «Mis publicaciones», or «Mis eventos» for an account that can
+ *   only create events.
+ * - Partner / Proveedor: their self-service pages.
  */
 export const BUSINESS_SHORTCUTS: readonly BusinessShortcut[] = [
     {
         id: 'accommodations',
         i18nKey: 'account.nav.manageAccommodations',
         icon: BuildingIcon,
-        requiredPermission: PermissionEnum.ACCOMMODATION_CREATE,
         targets: [{ href: 'mi-cuenta/host-dashboard' }]
     },
     {
         id: 'venues',
         i18nKey: 'account.nav.manageVenues',
         icon: VenueIcon,
-        requiredPermission: PermissionEnum.VENUE_EDIT_OWN,
         targets: [{ href: 'mi-cuenta/comercio' }]
     },
     {
         id: 'experiences',
         i18nKey: 'account.nav.manageExperiences',
         icon: CompassIcon,
-        requiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN,
         targets: [{ href: 'mi-cuenta/comercio' }]
     },
     {
         id: 'editorial',
         i18nKey: 'account.nav.manageEditorial',
         icon: PostIcon,
-        requiredPermissions: [PermissionEnum.POST_CREATE, PermissionEnum.EVENT_CREATE],
         targets: [
             { href: 'mi-cuenta/publicaciones', requiredPermission: PermissionEnum.POST_CREATE },
             { href: 'mi-cuenta/eventos', requiredPermission: PermissionEnum.EVENT_CREATE }
@@ -162,14 +154,12 @@ export const BUSINESS_SHORTCUTS: readonly BusinessShortcut[] = [
         id: 'partner',
         i18nKey: 'account.nav.managePartner',
         icon: StarIcon,
-        ownership: 'partner',
         targets: [{ href: 'mi-cuenta/partner' }]
     },
     {
         id: 'provider',
         i18nKey: 'account.nav.manageProvider',
         icon: WrenchIcon,
-        ownership: 'hostTradeListing',
         targets: [{ href: 'mi-cuenta/proveedor' }]
     }
 ];
