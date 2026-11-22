@@ -1,5 +1,9 @@
 {
     "aiChat": {
+        "guestIntro": "Pergunte à IA o que quiser saber sobre este local.",
+        "guestExample1": "Têm opções sem glúten?",
+        "guestExample2": "Há mesas ao ar livre?",
+        "guestExample3": "Até que horas funcionam?",
         "fabLabel": "Perguntar à IA sobre este local",
         "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Confirme sempre as informações com o local.",
         "panelLabel": "Chat com IA — Perguntas sobre o local",

@@ -19,7 +19,8 @@ import ptAccommodations from '../../src/locales/pt/accommodations.json';
  * Keys `consumerLimitReached` and `consumerLimitUpgradeCta` were added by
  * SPEC-283 (consumer-side AI chat quota — distinct from the owner-side
  * `unavailable` copy). `error.EMPTY_ANSWER` was added by HOS-2095 (a stream
- * that ends with no visible text).
+ * that ends with no visible text). The `guest*` keys are the HOS-2561 sign-up
+ * invitation shown to visitors without a session.
  */
 const AI_CHAT_KEYS = [
     'fabLabel',
@@ -40,7 +41,15 @@ const AI_CHAT_KEYS = [
     'thinking',
     'consumerLimitReached',
     'consumerLimitUpgradeCta',
-    'error.EMPTY_ANSWER'
+    'error.EMPTY_ANSWER',
+    'guestIntro',
+    'guestExample1',
+    'guestExample2',
+    'guestExample3',
+    'guestExamplesLead',
+    'guestFree',
+    'guestSignUp',
+    'guestSignIn'
 ] as const;
 
 /** Top-level keys of the aiChat object (a dotted path contributes its first segment). */
@@ -57,7 +66,7 @@ function resolveKey(obj: Record<string, unknown>, key: string): unknown {
 }
 
 describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
-    it('has all 19 aiChat keys in es locale with non-empty values', () => {
+    it('has all aiChat keys in es locale with non-empty values', () => {
         const aiChat = (esAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -70,7 +79,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in es/accommodations.json').toEqual([]);
     });
 
-    it('has all 19 aiChat keys in en locale with non-empty values', () => {
+    it('has all aiChat keys in en locale with non-empty values', () => {
         const aiChat = (enAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -83,7 +92,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in en/accommodations.json').toEqual([]);
     });
 
-    it('has all 19 aiChat keys in pt locale with non-empty values', () => {
+    it('has all aiChat keys in pt locale with non-empty values', () => {
         const aiChat = (ptAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
