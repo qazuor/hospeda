@@ -2065,6 +2065,15 @@
         "breadcrumbs": "Caminho de navegação",
         "gallery": {
             "title": "Kit de componentes"
+        },
+        "chrome": {
+            "siteNav": "Navegação do site",
+            "helpCenter": "Central de ajuda",
+            "helpGroup": "Ajuda",
+            "whatsNew": "O que há de novo",
+            "publish": "Publique",
+            "footerNav": "Links do site",
+            "legalNav": "Links legais"
         }
     }
 }

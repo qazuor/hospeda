@@ -5,8 +5,9 @@
  * zone OR the business zone, depending on the page.
  *
  * - **Personal zone** (`/mi-cuenta/`, profile pages, former tourist pages and
- *   any page that is not a business page): «Inicio», «Mi perfil», «Mis viajes»,
- *   the interim entries (until HOS-2550) and the discovery doors.
+ *   any page that is not a business page): «Inicio», «Mi perfil», «Mis viajes»
+ *   and the discovery doors. «Qué hay de nuevo» and «Ayuda» are header icons
+ *   (HOS-2550), not sidebar entries.
  * - **Business zone** (host, comercio, editorial, partner and provider pages):
  *   only the business verticals the person has, under a «← Mi cuenta» link
  *   (the link itself is added by the view).
@@ -19,8 +20,6 @@
 import {
     BUSINESS_GROUP_IDS,
     HOME_GROUP_ID,
-    INTERIM_GROUP_ID,
-    INTERIM_PERSONAL_NAV_ITEM_IDS,
     PARTNER_NAV_GROUP,
     PROFILE_GROUP_ID,
     PROFILE_NAV_ITEM_IDS
@@ -206,7 +205,7 @@ function businessZone({
 
 /**
  * Builds the personal zone: «Inicio», «Mi perfil» («Asistentes de IA» only
- * for a real client), «Mis viajes», the interim entries, then the doors.
+ * for a real client), «Mis viajes», then the doors.
  * Only the titled group holding the current page opens; when the current
  * page sits in a header-less group (or none), every titled group opens.
  */
@@ -237,12 +236,6 @@ function personalZone({
             i18nKey: TRIPS_LABEL_KEY,
             items: tourist?.items ?? [],
             suppressHeader: false
-        }),
-        groupOf({
-            id: INTERIM_GROUP_ID,
-            i18nKey: PROFILE_LABEL_KEY,
-            items: pick({ source: account, ids: INTERIM_PERSONAL_NAV_ITEM_IDS }),
-            suppressHeader: true
         })
     ].filter((entry) => entry.items.length > 0);
     // On a page whose entry sits in a header-less group (the `/mi-cuenta/`

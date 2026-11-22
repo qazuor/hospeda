@@ -130,18 +130,16 @@ describe('AccountSidebar', () => {
         }
     });
 
-    it('slots the existing count-pill islands', () => {
-        render(
+    it('lists no «Qué hay de nuevo» or «Ayuda» link: they moved to the header (HOS-2550)', () => {
+        const { container } = render(
             <AccountSidebar
                 view={viewFor(['USER'], 'editar')}
                 locale="es"
-                whatsNewCount={<span data-testid="wn">3</span>}
             />
         );
-        expect(screen.getByTestId('wn').closest('a')).toHaveAttribute(
-            'href',
-            expect.stringContaining('novedades')
-        );
+        const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+        expect(hrefs.some((href) => href?.includes('/mi-cuenta/novedades'))).toBe(false);
+        expect(hrefs.some((href) => href?.includes('/mi-cuenta/ayuda'))).toBe(false);
     });
 });
 
