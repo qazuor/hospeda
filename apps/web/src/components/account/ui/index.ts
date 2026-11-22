@@ -49,6 +49,7 @@ export { Field, type FieldProps } from './Field';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
+export { type KeyValueItem, KeyValueList, type KeyValueListProps } from './KeyValueList';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
