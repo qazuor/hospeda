@@ -1049,6 +1049,7 @@
                 "gracePeriodStatus": "Pagamento pendente",
                 "suspendedStatus": "Suspensa",
                 "cancelScheduledStatus": "Cancelamento agendado",
+                "pausedStatus": "Pausada",
                 "multipleSubscriptions_one": "{{count}} assinatura ativa",
                 "multipleSubscriptions_other": "{{count}} assinaturas ativas",
                 "properties": "Meus imóveis",
