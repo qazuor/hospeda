@@ -385,52 +385,82 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 
 	/*
 	 * Anchor jumps land below the sticky navbar through the global
-	 * `html { scroll-padding-top }`; no extra scroll-margin on desktop, or the
-	 * two add up and the heading lands ~200px down (HOS-2552). Up to 768px
-	 * (AccountLayout's mobile breakpoint) the account nav bar also sticks under
-	 * the navbar, so headings add its height. No shared variable exposes that
+	 * `html { scroll-padding-top }`; no extra scroll-margin from 48rem up, or the
+	 * two add up and the heading lands ~200px down (HOS-2552). Below 48rem
+	 * (AccountLayout's mobile range) the account nav bar also sticks under the
+	 * navbar, so headings add its height. No shared variable exposes that
 	 * height: 52px = the toggle's 12px padding twice + one 24px line + 2px
 	 * border, plus 2px of air; keep it in step with `.account-page__toggle`.
+	 * Mobile-first: the closed breakpoint list (HOS-2469) only allows min-width.
 	 */
-	@media (max-width: 768px) {
-		.help-article {
-			--help-account-bar-height: 52px;
-		}
+	.help-article {
+		--help-account-bar-height: 52px;
+	}
 
-		.help-article__h2,
-		.help-article__prose :global(h3) {
-			scroll-margin-top: var(--help-account-bar-height);
-		}
+	.help-article__h2,
+	.help-article__prose :global(h3) {
+		scroll-margin-top: var(--help-account-bar-height);
 	}
 
 	/* Small screens: a tighter header so the article starts higher (HOS-2552). */
-	@media (max-width: 768px) {
+	.help-crumbs__list {
+		margin-bottom: var(--space-2);
+	}
+
+	.help-article__search-form {
+		margin-bottom: var(--space-4);
+	}
+
+	.help-article__search-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.help-article__meta {
+		margin-bottom: var(--space-4);
+	}
+
+	.help-article__toc-mobile {
+		margin-bottom: var(--space-4);
+	}
+
+	@media (min-width: 48rem) {
+		.help-article__h2,
+		.help-article__prose :global(h3) {
+			scroll-margin-top: 0;
+		}
+
 		.help-crumbs__list {
-			margin-bottom: var(--space-2);
+			margin-bottom: var(--space-3);
 		}
 
 		.help-article__search-form {
-			margin-bottom: var(--space-4);
+			margin-bottom: var(--space-6);
 		}
 
 		.help-article__search-label {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			padding: 0;
-			margin: -1px;
-			overflow: hidden;
-			clip: rect(0, 0, 0, 0);
-			white-space: nowrap;
-			border: 0;
+			position: static;
+			width: auto;
+			height: auto;
+			margin: 0;
+			overflow: visible;
+			clip: auto;
+			white-space: normal;
 		}
 
 		.help-article__meta {
-			margin-bottom: var(--space-4);
+			margin-bottom: var(--space-6);
 		}
 
 		.help-article__toc-mobile {
-			margin-bottom: var(--space-4);
+			margin-bottom: var(--space-6);
 		}
 	}
 

@@ -134,12 +134,20 @@ describe('help article (web-ui §4)', () => {
     });
 
     it('adds no literal scroll-margin on top of the global scroll-padding (HOS-2552)', () => {
-        expect(ARTICLE).not.toMatch(/scroll-margin-top:\s*\d/);
+        // Only the mobile account-bar offset and its 48rem reset are allowed.
+        expect(ARTICLE).not.toMatch(/scroll-margin-top:\s*[1-9]/);
+        expect(ARTICLE).toMatch(/@media \(min-width: 48rem\) \{[^@]*scroll-margin-top: 0;/);
     });
 
     it('on mobile, headings clear the sticky account nav bar too (HOS-2552)', () => {
-        expect(ARTICLE).toMatch(
-            /@media \(max-width: 768px\) \{[^@]*scroll-margin-top: var\(--help-account-bar-height\);/
+        // Mobile-first (closed breakpoint list, HOS-2469): the offset is the
+        // base rule, before any @media block resets it.
+        const base = ARTICLE.slice(
+            0,
+            ARTICLE.indexOf('@media (min-width: 48rem) {\n\t\t.help-article__h2')
+        );
+        expect(base).toMatch(
+            /\.help-article__h2,\s*\.help-article__prose :global\(h3\) \{\s*scroll-margin-top: var\(--help-account-bar-height\);/
         );
         expect(LAYOUT).toMatch(
             /@media \(max-width: 768px\)[\s\S]*\.account-page__nav \{\s*position: sticky;/
