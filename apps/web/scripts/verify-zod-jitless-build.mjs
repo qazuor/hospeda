@@ -12,10 +12,14 @@
  *
  * Every `.js` file under `dist/client` is imported in its OWN Node process
  * (Zod caches the probe per realm, so chunks must not share one) with stubbed
- * browser globals and a counting `Function`. A chunk that loads Zod must load
- * with zero `Function` calls. Chunks that cannot load under the stubs are
- * listed, and the script fails if a chunk that contains Zod is among them,
- * because then nothing was proven for it.
+ * browser globals and a counting `Function`. The run FAILS when:
+ * - a chunk reached `Function`;
+ * - a chunk loaded Zod with `jitless` off. Without this, removing the plugin
+ *   would leave a green run whenever the schema-building chunks cannot load
+ *   under the stubs: only the Zod chunk would load, and it builds no schema;
+ * - a chunk that contains Zod, or loaded it, failed to load (nothing was
+ *   proven for it);
+ * - no chunk loaded Zod at all.
  *
  * Usage (after `astro build`): `node scripts/verify-zod-jitless-build.mjs`
  */
@@ -80,7 +84,10 @@ async function runChild(file) {
         'IntersectionObserver',
         'ResizeObserver',
         'MutationObserver',
-        'self'
+        'self',
+        // `CSS.supports`/`CSS.escape`, and Leaflet's `L`, read at load by map and form islands.
+        'CSS',
+        'L'
     ]) {
         try {
             Object.defineProperty(globalThis, name, {
@@ -128,6 +135,7 @@ function runParent() {
     const self = fileURLToPath(import.meta.url);
 
     const offenders = [];
+    const jitlessOff = [];
     const unprovenZod = [];
     let zodChunks = 0;
     let loaded = 0;
@@ -145,6 +153,7 @@ function runParent() {
             report = {
                 functionCalls: 0,
                 zodLoaded: false,
+                jitless: false,
                 error: `no report (${run.signal ?? run.status})`
             };
         }
@@ -152,15 +161,24 @@ function runParent() {
         if (report.zodLoaded) zodChunks += 1;
         if (!report.error) loaded += 1;
         if (report.functionCalls > 0) offenders.push(`${rel} (${report.functionCalls} calls)`);
-        if (report.error && containsZod) unprovenZod.push(`${rel}: ${report.error}`);
+        if (report.zodLoaded && report.jitless !== true) jitlessOff.push(rel);
+        // A chunk that loaded Zod and then threw is a schema chunk nothing was proven for.
+        if (report.error && (containsZod || report.zodLoaded))
+            unprovenZod.push(`${rel}: ${report.error}`);
     }
 
     console.log(
-        `[zod-jitless] ${files.length} client chunks, ${loaded} loaded, ${zodChunks} loaded Zod, ${offenders.length} reached Function`
+        `[zod-jitless] ${files.length} client chunks, ${loaded} loaded, ${zodChunks} loaded Zod, ${offenders.length} reached Function, ${jitlessOff.length} without jitless`
     );
     for (const offender of offenders) console.error(`  Function reached: ${offender}`);
+    for (const chunk of jitlessOff) console.error(`  Zod loaded with jitless OFF: ${chunk}`);
     for (const unproven of unprovenZod) console.error(`  Zod chunk failed to load: ${unproven}`);
-    if (offenders.length > 0 || unprovenZod.length > 0 || zodChunks === 0) {
+    if (
+        offenders.length > 0 ||
+        jitlessOff.length > 0 ||
+        unprovenZod.length > 0 ||
+        zodChunks === 0
+    ) {
         if (zodChunks === 0) console.error('  No chunk loaded Zod: the check proved nothing.');
         process.exit(1);
     }
