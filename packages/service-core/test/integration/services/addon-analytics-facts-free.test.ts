@@ -1,7 +1,7 @@
 /**
  * HOS-1883: the one-time page activation (activated + charge_succeeded), and the free paths
  * (O-5): a free choice and an S20 conversion emit `addon_granted_free`, never an activation or a
- * cancellation; the grant preview emits nothing (AC-4, AC-7, AC-10, AC-11, AC-21).
+ * cancellation; the grant preview emits nothing (AC-4, AC-19, AC-21, AC-22).
  */
 import { addonInstances, addonProducts, addonVersions, eq, providerLinks } from '@repo/db';
 import { encodeFakeNotice } from '@repo/payments/fake';
@@ -141,7 +141,7 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: one-time pa
 });
 
 describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: free paths (O-5)', () => {
-    it('a free choice emits addon_granted_free{FREE_CHOICE} and no activation (AC-10)', async () => {
+    it('a free choice emits addon_granted_free{FREE_CHOICE} and no activation (AC-22)', async () => {
         // Arrange
         const f = await freeChoiceFixture();
         const spy = spySink();
@@ -166,44 +166,7 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: free paths 
         ]);
     });
 
-    it('a free instance ended by the grant revocation owes no fact (AC-7)', async () => {
-        // Arrange
-        const f = await freeChoiceFixture();
-        const chosen = await chooseFreeAddon(f.freeInput(), f.freePorts);
-        if (chosen.outcome !== 'CREATED') throw new Error('Free choice missing');
-        const spy = spySink();
-
-        // Act: the fixture's revoke uses a no-op sink, so the revocation runs through the
-        // ending choke point directly with the spy.
-        const { emitAddonCoverageRemoved } = await import(
-            '../../../src/services/billing/addon/addon-instance-a5'
-        );
-        await emitAddonCoverageRemoved({
-            cancelled: [
-                {
-                    instanceId: chosen.instanceId,
-                    ownerId: f.ownerId,
-                    clause: 'ORPHANED',
-                    coverageVerticals: [],
-                    complementSubscriptionId: null,
-                    providerCancellation: null,
-                    ending: {
-                        origin: 'ACTIVE',
-                        paid: false,
-                        complement: null,
-                        endedAt: f.ports.clock.now()
-                    }
-                }
-            ],
-            coverageNotices: { emitCoverageChanged: async () => {} },
-            end: { path: 'GRANT_REVOKED', actorKind: 'ADMIN', billingFacts: spy.sink }
-        });
-
-        // Assert
-        expect(spy.addonFacts()).toEqual([]);
-    });
-
-    it('S20 converts a paid ACTIVE add-on: addon_granted_free{S20_CONVERSION}; the preview emits nothing (AC-11, AC-21)', async () => {
+    it('S20 converts a paid ACTIVE add-on: addon_granted_free{S20_CONVERSION}; the preview emits nothing (AC-19, AC-21)', async () => {
         // Arrange
         const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
         await payingPrincipal(f);

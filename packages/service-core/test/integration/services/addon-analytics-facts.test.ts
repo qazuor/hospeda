@@ -1,6 +1,6 @@
 /**
  * HOS-1883: the A1/A2/A3/A5 producers of the add-on facts emit after commit through the same
- * sink, with exact payloads, once per instance (AC-1, AC-2, AC-3, AC-5, AC-6, AC-9).
+ * sink, with exact payloads, once per instance (AC-1, AC-2, AC-3, AC-7, AC-9).
  */
 import { addonInstances, addonProducts, addonVersions, eq, providerLinks } from '@repo/db';
 import { encodeFakeNotice } from '@repo/payments/fake';
@@ -131,7 +131,7 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: A1, A2 and 
         });
     });
 
-    it('A1 replay of the same order returns no started fact (AC-1)', async () => {
+    it('A1 replay of the same order returns no started fact (AC-2)', async () => {
         // Arrange
         const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
         await payingPrincipal(f);
@@ -146,7 +146,7 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: A1, A2 and 
         expect('startedFact' in replay ? replay.startedFact : undefined).toBeUndefined();
     });
 
-    it('A2 recurring emits addon_activated once, after commit (AC-2)', async () => {
+    it('A2 recurring emits addon_activated once, after commit (AC-3)', async () => {
         // Arrange
         const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
         await payingPrincipal(f);
@@ -192,7 +192,7 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: A1, A2 and 
         ]);
     });
 
-    it('A3 abandons an expired recurring purchase as WINDOW_EXPIRED (AC-3)', async () => {
+    it('A3 abandons an expired recurring purchase as WINDOW_EXPIRED (AC-7)', async () => {
         // Arrange
         const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
         await payingPrincipal(f);
@@ -228,7 +228,7 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: A1, A2 and 
 });
 
 describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: owner withdrawal (A5)', () => {
-    it('a paid ACTIVE withdrawal emits addon_cancelled OWNER_WITHDREW by the USER (AC-5)', async () => {
+    it('a paid ACTIVE withdrawal emits addon_cancelled OWNER_WITHDREW by the USER (AC-9)', async () => {
         // Arrange
         const s = await withdrawalFixture({ withCharge: true });
         const before = await subjectOf(s.instanceId);
@@ -258,7 +258,7 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: owner withd
         ]);
     });
 
-    it('a pending withdrawal is an abandoned checkout, never a cancellation (AC-6)', async () => {
+    it('a pending withdrawal is an abandoned checkout, never a cancellation (AC-9)', async () => {
         // Arrange
         const s = await withdrawalFixture({ state: 'PENDING_AUTHORIZATION' });
         const before = await subjectOf(s.instanceId);
