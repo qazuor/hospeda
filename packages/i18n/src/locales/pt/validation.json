@@ -1992,28 +1992,28 @@
         },
         "social": {
             "facebook": {
-                "invalid": "El facebook no es válido",
-                "pattern": "El formato del facebook no es válido"
+                "invalid": "A URL do Facebook não é válida",
+                "pattern": "O formato da URL do Facebook não é válido"
             },
             "instagram": {
-                "invalid": "El instagram no es válido",
-                "pattern": "El formato del instagram no es válido"
+                "invalid": "A URL do Instagram não é válida",
+                "pattern": "O formato da URL do Instagram não é válido"
             },
             "linkedIn": {
-                "invalid": "El linked in no es válido",
-                "pattern": "El formato del linked in no es válido"
+                "invalid": "A URL do LinkedIn não é válida",
+                "pattern": "O formato da URL do LinkedIn não é válido"
             },
             "tiktok": {
-                "invalid": "El tiktok no es válido",
-                "pattern": "El formato del tiktok no es válido"
+                "invalid": "A URL do TikTok não é válida",
+                "pattern": "O formato da URL do TikTok não é válido"
             },
             "twitter": {
-                "invalid": "El twitter no es válido",
-                "pattern": "El formato del twitter no es válido"
+                "invalid": "A URL do Twitter não é válida",
+                "pattern": "O formato da URL do Twitter não é válido"
             },
             "youtube": {
-                "invalid": "El youtube no es válido",
-                "pattern": "El formato del youtube no es válido"
+                "invalid": "A URL do YouTube não é válida",
+                "pattern": "O formato da URL do YouTube não é válido"
             }
         },
         "sort": {
