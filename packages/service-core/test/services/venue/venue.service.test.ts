@@ -217,6 +217,46 @@ describe('VenueService.updateOwn', () => {
         });
     });
 
+    it('HOS-2557: a WhatsApp number written with no stored choice defaults to PUBLIC', async () => {
+        const service = makeService(makeVenueEntity({ whatsappVisibility: null }));
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { contactInfo: { whatsapp: '3442 45-2345' } },
+            ownerActor
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.whatsappVisibility).toBe('PUBLIC');
+    });
+
+    it('HOS-2557: never overrides a stored choice when a number is written', async () => {
+        const service = makeService(makeVenueEntity({ whatsappVisibility: 'LOGGED_IN_ONLY' }));
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { contactInfo: { whatsapp: '3442 45-2345' } },
+            ownerActor
+        );
+
+        expect(result.error).toBeUndefined();
+        // The patch sent to the model must not carry a visibility at all.
+        const model = (service as unknown as { model: { update: ReturnType<typeof vi.fn> } }).model;
+        expect(model.update).toHaveBeenCalled();
+        for (const [, patch] of model.update.mock.calls) {
+            expect(patch).not.toHaveProperty('whatsappVisibility');
+        }
+    });
+
+    it('HOS-2557: a contact update with no number sets no visibility', async () => {
+        const service = makeService(makeVenueEntity({ whatsappVisibility: null }));
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { contactInfo: { mobilePhone: '3442 45-2345' } },
+            ownerActor
+        );
+
+        expect(result.data?.whatsappVisibility ?? null).toBeNull();
+    });
+
     it('should return NOT_FOUND when venue does not exist', async () => {
         const service = makeService(null);
         const result = await service.updateOwn(ENTITY_ID, {}, ownerActor);

@@ -56,6 +56,7 @@ import {
     VenueSearchSchema,
     type VenueUpdateInput,
     VenueUpdateInputSchema,
+    type VenueWhatsappVisibilityEnum,
     VerticalEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
@@ -97,6 +98,7 @@ import {
 } from './venue.permissions';
 import { projectVenueOwnerAvatar, projectVenuePublic } from './venue.projections';
 import type { VenueHookState } from './venue.types';
+import { resolveDefaultWhatsappVisibility } from './venue.whatsapp';
 import {
     buildVenueMenuQrTargetUrl,
     resolveVenueMenuQrLangFromTargetUrl,
@@ -694,7 +696,13 @@ export class VenueService extends BaseListingService<
             payload: data as Record<string, unknown>,
             current: null
         });
-        return { ...base, ...nightInfo, ...locationKey } as Partial<Venue>;
+        // HOS-2557: a number written without a visibility is PUBLIC by default.
+        const whatsapp = resolveDefaultWhatsappVisibility({
+            contactInfo: data.contactInfo,
+            visibility: data.whatsappVisibility,
+            stored: null
+        });
+        return { ...base, ...nightInfo, ...locationKey, ...whatsapp } as Partial<Venue>;
     }
 
     /**
@@ -740,7 +748,14 @@ export class VenueService extends BaseListingService<
             current: current as unknown as LocationRuleCurrent | null,
             tx: ctx.tx
         });
-        return { ...base, ...nightInfo, ...locationKey } as Partial<Venue>;
+        // HOS-2557: a number written without a visibility is PUBLIC unless a choice is stored.
+        const whatsapp = resolveDefaultWhatsappVisibility({
+            contactInfo: data.contactInfo,
+            visibility: data.whatsappVisibility,
+            stored: (current as { whatsappVisibility?: VenueWhatsappVisibilityEnum | null } | null)
+                ?.whatsappVisibility
+        });
+        return { ...base, ...nightInfo, ...locationKey, ...whatsapp } as Partial<Venue>;
     }
 
     // -----------------------------------------------------------------------
