@@ -119,10 +119,10 @@ export type BillingFact =
               | 'OTHER';
       });
 
-/** Where a fact's log line points: its subscription, or its add-on instance when it has none. */
 /** Every fact a {@link BillingFactSink} accepts: HOS-1878's and the add-on facts (HOS-1883). */
 export type SinkFact = BillingFact | AddonFact;
 
+/** Where a fact's log line points: its subscription, or its add-on instance when it has none. */
 function factSubject(fact: SinkFact): {
     readonly subscriptionId?: string;
     readonly addonInstanceId?: string;

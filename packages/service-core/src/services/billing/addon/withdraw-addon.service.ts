@@ -98,6 +98,8 @@ export async function withdrawAddon(
             );
         return result.addon;
     });
+    let provider: Awaited<ReturnType<typeof cancelAddonComplementsAtProvider>> = { results: [] };
+    // HOS-1883: notices, then the provider call, then analytics: it never delays either.
     await emitAddonCoverageRemoved({
         cancelled: [committed],
         coverageNotices: ports.coverageNotices,
@@ -106,9 +108,11 @@ export async function withdrawAddon(
             actorKind: 'USER',
             billingFacts: ports.billingFacts,
             listing: ports.orphanhood.listing
+        },
+        beforeFacts: async () => {
+            provider = await cancelAddonComplementsAtProvider({ cancelled: [committed] }, ports);
         }
     });
-    const provider = await cancelAddonComplementsAtProvider({ cancelled: [committed] }, ports);
     return {
         instanceId: committed.instanceId,
         status: 'CANCELLED',

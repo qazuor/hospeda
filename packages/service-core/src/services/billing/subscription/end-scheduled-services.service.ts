@@ -148,26 +148,37 @@ function errorMessage(error: unknown): string {
 }
 
 /** The after-commit halves of A5 for what one row's transaction cancelled. */
-async function afterA5Commit(
-    cancelled: readonly CancelledAddon[],
-    ports: EndScheduledServicesPorts,
-    path: 'ORPHANED' | 'SERVICE_END'
-): Promise<void> {
+async function afterA5Commit(input: {
+    readonly cancelled: readonly CancelledAddon[];
+    readonly ports: EndScheduledServicesPorts;
+    readonly path: 'ORPHANED' | 'SERVICE_END';
+    readonly db: DrizzleClient;
+}): Promise<void> {
+    const { cancelled, ports, path, db } = input;
     if (cancelled.length === 0) return;
+    // HOS-1883: notices, then the provider half, then analytics: it never delays either.
     await emitAddonCoverageRemoved({
         cancelled,
         coverageNotices: ports.coverageNotices,
-        end: { path, actorKind: 'SYSTEM', billingFacts: ports.billingFacts, listing: ports.listing }
-    });
-    await cancelAddonComplementsAtProvider(
-        { cancelled },
-        {
-            provider: ports.provider,
-            clock: ports.clock,
-            beforeCancelNotice: ports.beforeCancelNotice,
-            cancellationSeen: ports.cancellationSeen
+        end: {
+            path,
+            actorKind: 'SYSTEM',
+            billingFacts: ports.billingFacts,
+            listing: ports.listing,
+            db
+        },
+        beforeFacts: async () => {
+            await cancelAddonComplementsAtProvider(
+                { cancelled },
+                {
+                    provider: ports.provider,
+                    clock: ports.clock,
+                    beforeCancelNotice: ports.beforeCancelNotice,
+                    cancellationSeen: ports.cancellationSeen
+                }
+            );
         }
-    );
+    });
 }
 
 /**
@@ -255,7 +266,7 @@ export async function endScheduledServices(
                     ended: [result],
                     coverageNotices: ports.coverageNotices
                 });
-                await afterA5Commit(result.cancelled, ports, 'ORPHANED');
+                await afterA5Commit({ cancelled: result.cancelled, ports, path: 'ORPHANED', db });
                 try {
                     await pauseComplementsS32(
                         {
@@ -309,7 +320,13 @@ export async function endScheduledServices(
                 applyS12ToComplement({ tx, subscriptionId, now }, orphanhood)
             );
             if (result.outcome === 'CANCELLED') complements.cancelled += 1;
-            if (result.withdrawn) await afterA5Commit([result.withdrawn], ports, 'SERVICE_END');
+            if (result.withdrawn)
+                await afterA5Commit({
+                    cancelled: [result.withdrawn],
+                    ports,
+                    path: 'SERVICE_END',
+                    db
+                });
             rows.push({
                 subscriptionId,
                 phase: 'COMPLEMENTO',

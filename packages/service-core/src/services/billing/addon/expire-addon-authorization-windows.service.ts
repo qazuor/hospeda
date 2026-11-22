@@ -233,7 +233,11 @@ export async function expireAddonAuthorizationWindows(
                         await emitAddonCoverageAdded({
                             activated: [result],
                             coverageNotices: ports.coverageNotices,
-                            fact: { billingFacts: ports.billingFacts, listing: ports.listing }
+                            fact: {
+                                billingFacts: ports.billingFacts,
+                                listing: ports.listing,
+                                activatedAt: ports.clock.now()
+                            }
                         });
                         activated++;
                     } else deferred++;

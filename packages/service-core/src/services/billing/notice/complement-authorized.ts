@@ -61,7 +61,11 @@ export async function activateAuthorizedPending(
     await emitAddonCoverageAdded({
         activated: [activated],
         coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices,
-        fact: { billingFacts: ports.billingFacts, listing: complements.listing }
+        fact: {
+            billingFacts: ports.billingFacts,
+            listing: complements.listing,
+            activatedAt: input.now
+        }
     });
     return true;
 }

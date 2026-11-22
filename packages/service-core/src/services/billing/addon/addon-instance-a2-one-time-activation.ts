@@ -232,7 +232,11 @@ export async function activateOneTimeInstance(
     await emitAddonCoverageAdded({
         activated: [activated],
         coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices,
-        fact: { billingFacts: ports.billingFacts, listing: ports.listing }
+        fact: {
+            billingFacts: ports.billingFacts,
+            listing: ports.listing,
+            activatedAt: ports.clock.now()
+        }
     });
     return { outcome: 'ACTIVATED', paymentId: activated.paymentId };
 }

@@ -6,7 +6,11 @@ export type AddonFactActorKind = 'USER' | 'ADMIN' | 'SYSTEM';
 /** The cycle of a recurring (`PERIODICO`) add-on product (`ADDON_CYCLES`). */
 export type AddonFactCycle = 'monthly' | 'quarterly' | 'semiannual' | 'annual';
 
-/** The path through which a paid, live add-on ended before its natural end (HOS-1883 §4.2). */
+/**
+ * The path through which a paid, live add-on ended before its natural end (HOS-1883 §4.2).
+ * `GRANT_REVOKED` is never emitted today: a revocation ends only free instances, which owe no
+ * fact (AC-7). The owner kept it in the enum on purpose.
+ */
 export type AddonEndPath =
     | 'OWNER_WITHDREW'
     | 'SERVICE_END'

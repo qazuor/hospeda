@@ -139,7 +139,12 @@ export async function applyA2Recurring(
  * free choice (A1-bis) passes `NOT_A_PAID_ACTIVATION` (its event is `addon_granted_free`).
  */
 export type AddonActivationFact =
-    | { readonly billingFacts: BillingFactSink | undefined; readonly listing?: AddonFactListing }
+    | {
+          readonly billingFacts: BillingFactSink | undefined;
+          readonly listing?: AddonFactListing;
+          /** The act's instant from the injected clock; used only if `starts_at` is missing. */
+          readonly activatedAt: Date;
+      }
     | 'NOT_A_PAID_ACTIVATION';
 
 /**
@@ -151,14 +156,14 @@ async function emitAddonActivatedFacts(input: {
     readonly fact: AddonActivationFact;
 }): Promise<void> {
     if (input.fact === 'NOT_A_PAID_ACTIVATION') return;
-    const { billingFacts, listing } = input.fact;
+    const { billingFacts, listing, activatedAt } = input.fact;
     for (const addon of input.activated)
         await emitAddonFact({
             billingFacts,
             listing,
             source: { instanceId: addon.instanceId },
             build: (anchored) => {
-                const occurredAt = anchored.startsAt ?? new Date();
+                const occurredAt = anchored.startsAt ?? activatedAt;
                 return {
                     kind: 'ADDON_ACTIVATED',
                     ...anchored.subject,
@@ -177,8 +182,8 @@ async function emitAddonActivatedFacts(input: {
 }
 
 /**
- * Emits one post-commit ADDED notice per owner and vertical, logging delivery failures, and the
- * `addon_activated` fact of a paid activation.
+ * Emits one post-commit ADDED notice per owner and vertical, logging delivery failures, then the
+ * `addon_activated` fact of a paid activation. Analytics goes last so it never delays access.
  *
  * @param input.activated - What A2 (or A1-bis) activated
  * @param input.coverageNotices - The coverage notice port
@@ -189,7 +194,6 @@ export async function emitAddonCoverageAdded(input: {
     readonly coverageNotices: CoverageNotices;
     readonly fact: AddonActivationFact;
 }): Promise<void> {
-    await emitAddonActivatedFacts({ activated: input.activated, fact: input.fact });
     const seen = new Set<string>();
     for (const addon of input.activated)
         for (const raw of addon.coverageVerticals) {
@@ -218,4 +222,5 @@ export async function emitAddonCoverageAdded(input: {
                 );
             }
         }
+    await emitAddonActivatedFacts({ activated: input.activated, fact: input.fact });
 }

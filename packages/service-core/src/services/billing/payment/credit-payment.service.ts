@@ -123,7 +123,10 @@ export async function creditPayment(
                               .for('update')
                       )[0]
                     : undefined;
-                // HOS-1883 T-1: a COMPLEMENTO's first charge uses the same ledger read.
+                // HOS-1883 T-1: a COMPLEMENTO's first charge uses the same ledger read. It stays
+                // here, under the subscription lock and before this payment is credited: after
+                // commit the read would always see this payment, and two concurrent credits could
+                // both claim to be the first.
                 const firstPayment =
                     subscription?.class === 'PRINCIPAL' || subscription?.class === 'COMPLEMENTO'
                         ? !(await creditedPaymentsFromLedger.hasCreditedPayment({
@@ -432,12 +435,6 @@ export async function creditPayment(
     if (effects.after.chargeFact) {
         emitBillingFact({ sink: ports.billingFacts, fact: effects.after.chargeFact });
     }
-    if (effects.after.addonCharge)
-        await emitAddonChargeCredited({
-            charge: effects.after.addonCharge,
-            billingFacts: ports.billingFacts,
-            listing: ports.listing
-        });
     if (effects.after.coverageEvent) {
         try {
             await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged(
@@ -457,5 +454,12 @@ export async function creditPayment(
             logger.error({ ...promo, error }, 'S30 failed after payment commit');
         }
     }
+    // HOS-1883: analytics goes after access (coverage) and the promo exhaustion, never before.
+    if (effects.after.addonCharge)
+        await emitAddonChargeCredited({
+            charge: effects.after.addonCharge,
+            billingFacts: ports.billingFacts,
+            listing: ports.listing
+        });
     return effects.result;
 }

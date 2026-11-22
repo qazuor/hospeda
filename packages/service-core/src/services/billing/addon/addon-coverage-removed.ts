@@ -3,6 +3,7 @@
  * coverage-notice half stays in `addon-instance-a5.ts` (`emitAddonCoverageRemoved`), which G5
  * reads as A5's `via: notice`, and calls {@link emitAddonEndingFacts} after its notices.
  */
+import type { DrizzleClient } from '@repo/db';
 import type { AddonEndPath, AddonFact, AddonFactActorKind } from '../facts/addon-fact';
 import type { BillingFactSink } from '../facts/billing-fact-sink';
 import {
@@ -40,6 +41,8 @@ export type AddonEndFact =
           readonly actorKind: AddonFactActorKind;
           readonly billingFacts: BillingFactSink | undefined;
           readonly listing?: AddonFactListing;
+          /** The client the act committed through; defaults to `getDb()`. */
+          readonly db?: DrizzleClient;
       }
     | 'NOT_AN_END';
 
@@ -114,6 +117,7 @@ export async function emitAddonEndingFacts(input: {
         await emitAddonFact({
             billingFacts: end.billingFacts,
             listing: end.listing,
+            db: end.db,
             source: { instanceId: addon.instanceId },
             build: (anchored) => addonEndingFact({ ending: addon.ending, end, anchored })
         });

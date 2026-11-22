@@ -7,14 +7,22 @@
  * transition stays committed (P-9, AC-16).
  */
 import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
-import { addonInstances, addonProducts, addonVersions, eq, getDb, subscriptions } from '@repo/db';
+import {
+    ADDON_CYCLES,
+    addonInstances,
+    addonProducts,
+    addonVersions,
+    type DrizzleClient,
+    eq,
+    getDb,
+    subscriptions
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { VerticalEnumSchema } from '@repo/schemas';
 import type { AddonFact, AddonFactCycle, AddonFactSubject } from '../facts/addon-fact';
 import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink';
 
 const logger = createLogger('addon-fact-emit');
-const CYCLES: readonly string[] = ['monthly', 'quarterly', 'semiannual', 'annual'];
 
 /** The listing reader, used only to derive a `LISTING` instance's vertical (P-4'). */
 export type AddonFactListing = VerticalsForBilling['listing'];
@@ -23,6 +31,8 @@ export type AddonFactListing = VerticalsForBilling['listing'];
 export interface AddonFactPorts {
     readonly billingFacts: BillingFactSink | undefined;
     readonly listing?: AddonFactListing;
+    /** The client the producer committed through; defaults to `getDb()`. */
+    readonly db?: DrizzleClient;
 }
 
 /** Which instance a fact is about: by id, or by the COMPLEMENTO it hangs from. */
@@ -47,6 +57,7 @@ async function verticalOf(input: {
     readonly targetId: string | null;
     readonly compatibleVerticals: readonly string[];
     readonly listing?: AddonFactListing;
+    readonly db: DrizzleClient;
 }): Promise<string | undefined> {
     if (input.complementVertical) return input.complementVertical;
     switch (input.scopeType) {
@@ -57,7 +68,7 @@ async function verticalOf(input: {
                 : undefined;
         case 'VERTICAL_SUBSCRIPTION': {
             if (!input.targetId) return undefined;
-            const [target] = await getDb()
+            const [target] = await input.db
                 .select({ vertical: subscriptions.vertical })
                 .from(subscriptions)
                 .where(eq(subscriptions.id, input.targetId))
@@ -84,13 +95,16 @@ async function verticalOf(input: {
  *
  * @param input.source - The instance id, or the COMPLEMENTO it hangs from
  * @param input.listing - Optional listing reader for a `LISTING` instance's vertical
+ * @param input.db - The client to read through; defaults to `getDb()`
  * @returns The anchored identity, or `null` when the instance or its catalog rows are missing or invalid
  */
 export async function readAddonFactSnapshot(input: {
     readonly source: AddonFactSource;
     readonly listing?: AddonFactListing;
+    readonly db?: DrizzleClient;
 }): Promise<AddonFactSnapshot | null> {
-    const [row] = await getDb()
+    const db = input.db ?? getDb();
+    const [row] = await db
         .select({
             instance: addonInstances,
             price: addonProducts.price,
@@ -119,11 +133,14 @@ export async function readAddonFactSnapshot(input: {
         scopeType: row.scopeType,
         targetId: row.instance.targetId,
         compatibleVerticals: row.compatibleVerticals,
-        listing: input.listing
+        listing: input.listing,
+        db
     });
     const vertical = rawVertical ? VerticalEnumSchema.safeParse(rawVertical) : undefined;
     const cycle =
-        row.cycle && CYCLES.includes(row.cycle) ? (row.cycle as AddonFactCycle) : undefined;
+        row.cycle && (ADDON_CYCLES as readonly string[]).includes(row.cycle)
+            ? (row.cycle as AddonFactCycle)
+            : undefined;
     return {
         subject: {
             userId: row.instance.ownerId,
@@ -164,18 +181,21 @@ export function wholeSecondsBetween(input: { readonly from: Date; readonly to: D
  * @param input.billingFacts - The sink; unwired falls back to the logging sink
  * @param input.source - Which instance the fact is about
  * @param input.listing - Optional listing reader for a `LISTING` instance's vertical
+ * @param input.db - The client the producer committed through; defaults to `getDb()`
  * @param input.build - Builds the fact from the anchored identity, or returns `null` to emit nothing
  */
 export async function emitAddonFact(input: {
     readonly billingFacts: BillingFactSink | undefined;
     readonly source: AddonFactSource;
     readonly listing?: AddonFactListing;
+    readonly db?: DrizzleClient;
     readonly build: (anchored: AddonFactSnapshot) => AddonFact | null;
 }): Promise<void> {
     try {
         const anchored = await readAddonFactSnapshot({
             source: input.source,
-            listing: input.listing
+            listing: input.listing,
+            db: input.db
         });
         if (!anchored) {
             logger.error({ source: input.source }, 'Add-on fact source not found; not emitted');

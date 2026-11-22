@@ -369,17 +369,19 @@ export async function runOrphanhood(
 /**
  * After the caller's commit: one `REMOVED` `ADDON` coverage notice per `(owner, vertical)` of the
  * cancelled instances (notas I-7), without repeating, then the analytics fact each ending owes
- * (HOS-1883). A failure is logged and never propagated: the commit already happened. This call
+ * (HOS-1883), after `beforeFacts`. A notice failure is logged and never propagated. This call
  * is what makes `A5` a `turns-off` writer `via: notice` for G5.
  *
  * @param input.cancelled - What `runOrphanhood`/`applyA5`/`applyA6` cancelled
  * @param input.coverageNotices - The coverage notice port
  * @param input.end - The call site's ending path, or `NOT_AN_END` (required, T-5)
+ * @param input.beforeFacts - Business work that must run before analytics (the provider call)
  */
 export async function emitAddonCoverageRemoved(input: {
     readonly cancelled: readonly CancelledAddon[];
     readonly coverageNotices: CoverageNotices;
     readonly end: AddonEndFact;
+    readonly beforeFacts?: () => Promise<void>;
 }): Promise<void> {
     const seen = new Set<string>();
     for (const addon of input.cancelled)
@@ -409,6 +411,7 @@ export async function emitAddonCoverageRemoved(input: {
                 );
             }
         }
+    await input.beforeFacts?.();
     await emitAddonEndingFacts({ cancelled: input.cancelled, end: input.end });
 }
 

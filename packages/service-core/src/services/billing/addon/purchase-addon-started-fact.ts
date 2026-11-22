@@ -1,9 +1,7 @@
 import type { AddonPolicyResponse } from '@repo/billing-verticals-contract';
-import type { SelectAddonProduct } from '@repo/db';
+import { ADDON_CYCLES, type SelectAddonProduct } from '@repo/db';
 import { VerticalEnumSchema } from '@repo/schemas';
 import type { AddonFact, AddonFactCycle } from '../facts/addon-fact';
-
-const CYCLES: readonly string[] = ['monthly', 'quarterly', 'semiannual', 'annual'];
 
 /** The `ADDON_CHECKOUT_STARTED` fact. */
 export type AddonCheckoutStartedFact = Extract<
@@ -47,7 +45,7 @@ export function checkoutStartedFact(input: {
               : undefined;
     const vertical = rawVertical ? VerticalEnumSchema.safeParse(rawVertical) : undefined;
     const cycle =
-        product.cycle && CYCLES.includes(product.cycle)
+        product.cycle && (ADDON_CYCLES as readonly string[]).includes(product.cycle)
             ? (product.cycle as AddonFactCycle)
             : undefined;
     return {

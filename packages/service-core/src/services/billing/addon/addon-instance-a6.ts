@@ -201,6 +201,7 @@ export async function cancelPurgedListingAddon(
         )
     );
     if (result.outcome === 'NOT_LIVE') return result;
+    let results: Awaited<ReturnType<typeof cancelAddonComplementAtProviderForA6>>['results'] = [];
     await emitAddonCoverageRemoved({
         cancelled: [result.addon],
         coverageNotices: {
@@ -212,11 +213,13 @@ export async function cancelPurgedListingAddon(
             actorKind: 'SYSTEM',
             billingFacts: ports.billingFacts,
             listing: ports.listing
+        },
+        // HOS-1883: the provider half runs before analytics, which never delays it.
+        beforeFacts: async () => {
+            results = (
+                await cancelAddonComplementAtProviderForA6({ cancelled: [result.addon] }, ports)
+            ).results;
         }
     });
-    const { results } = await cancelAddonComplementAtProviderForA6(
-        { cancelled: [result.addon] },
-        ports
-    );
     return { outcome: 'CANCELLED', cancelCall: results[0]?.cancelCall };
 }
