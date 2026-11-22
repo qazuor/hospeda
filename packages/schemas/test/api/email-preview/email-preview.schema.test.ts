@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    EmailAudienceSchema,
     EmailCatalogDomainSchema,
     EmailPreviewEntrySummarySchema,
     EmailPreviewListResponseSchema,
@@ -14,6 +15,7 @@ const entry = {
     sendPath: 'outbox',
     name: 'Aviso de renovación',
     domain: 'billing',
+    audience: 'user',
     wired: true,
     scenarios: [{ id: 'monthly', label: 'Mensual' }]
 } as const;
@@ -46,6 +48,18 @@ describe('HOS-2519 email preview schemas', () => {
         expect(
             EmailPreviewEntrySummarySchema.safeParse({ ...entry, domain: 'other' }).success
         ).toBe(false);
+    });
+
+    it('accepts user and staff audiences and rejects a missing or unknown one', () => {
+        expect(EmailAudienceSchema.options).toEqual(['user', 'staff']);
+        expect(
+            EmailPreviewEntrySummarySchema.safeParse({ ...entry, audience: 'staff' }).success
+        ).toBe(true);
+        expect(
+            EmailPreviewEntrySummarySchema.safeParse({ ...entry, audience: 'admin' }).success
+        ).toBe(false);
+        const { audience: _audience, ...withoutAudience } = entry;
+        expect(EmailPreviewEntrySummarySchema.safeParse(withoutAudience).success).toBe(false);
     });
 
     it('requires both query params within their length limits', () => {

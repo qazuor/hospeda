@@ -91,6 +91,7 @@ function toSummary(input: { readonly entry: EmailCatalogEntry }): EmailPreviewEn
         sendPath: entry.sendPath,
         name: entry.name,
         domain: entry.domain,
+        audience: entry.audience,
         wired: entry.wired,
         scenarios: entry.scenarios.map((scenario) => ({ id: scenario.id, label: scenario.label }))
     };

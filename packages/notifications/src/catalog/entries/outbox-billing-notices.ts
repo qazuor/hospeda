@@ -30,6 +30,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.renewal-upcoming',
         name: 'Aviso de renovación próxima',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'card',
@@ -63,6 +64,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.grace-reminder',
         name: 'Recordatorio de período de gracia',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'card',
@@ -117,6 +119,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.promo-ending',
         name: 'Aviso de fin de promoción',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -136,6 +139,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.plan-migration-announced',
         name: 'Anuncio de migración de plan',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'scheduled',
@@ -178,6 +182,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.plan-migration-upcoming',
         name: 'Recordatorio de migración de plan próxima',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'plan-retirement',
@@ -211,6 +216,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.plan-migration-cancelled',
         name: 'Cancelación de migración de plan',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'nothing-changes',
@@ -247,6 +253,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.courtesy-revoked',
         name: 'Aviso de cortesía revocada',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -259,6 +266,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.provider-watch-alert',
         name: 'Alerta de vigilancia del proveedor de pagos',
         domain: 'billing',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'value-changed',

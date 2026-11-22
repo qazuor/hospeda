@@ -33,6 +33,9 @@ export type EmailCatalogDomain =
     | 'contact-feedback'
     | 'ai';
 
+/** Who reads the email. Drives the previewer audience filter (HOS-2565). */
+export type EmailAudience = 'user' | 'staff';
+
 /** One named sample input for an entry. */
 export interface EmailScenario<TInput> {
     /** Kebab-case, unique within the entry. */
@@ -89,6 +92,8 @@ export interface EmailCatalogEntry {
     readonly name: string;
     /** Admin grouping. */
     readonly domain: EmailCatalogDomain;
+    /** Who reads the email: `'staff'` for internal mails, `'user'` otherwise. */
+    readonly audience: EmailAudience;
     /** `false`: the template exists but no production sender sends it. */
     readonly wired: boolean;
     /** Scenario summaries, in declaration order. */

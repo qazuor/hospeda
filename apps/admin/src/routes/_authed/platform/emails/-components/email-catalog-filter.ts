@@ -4,7 +4,10 @@
  * catalog (HOS-2519 §8). Pure functions, no React.
  */
 
-import type { EmailCatalogDomain, EmailPreviewEntrySummary } from '@repo/schemas';
+import type { EmailAudience, EmailCatalogDomain, EmailPreviewEntrySummary } from '@repo/schemas';
+
+/** Audience filter value: one audience, or `'all'` for no audience filtering. */
+export type EmailAudienceFilter = 'all' | EmailAudience;
 
 /**
  * Lowercases and strips diacritics so "Renovación" matches "renov".
@@ -27,13 +30,15 @@ export interface FilterEmailCatalogInput {
     readonly search: string;
     /** Selected domains; empty means every domain. */
     readonly domains: readonly EmailCatalogDomain[];
+    /** Audience to keep; `'all'` keeps every audience. */
+    readonly audience: EmailAudienceFilter;
 }
 
 /**
- * Filters the catalog by the search text and the selected domains, keeping
- * catalog order.
+ * Filters the catalog by audience, the search text and the selected domains,
+ * keeping catalog order.
  *
- * @param input - Entries, search text and selected domains.
+ * @param input - Entries, search text, selected domains and audience.
  * @returns The matching entries.
  */
 export function filterEmailCatalog(
@@ -42,6 +47,9 @@ export function filterEmailCatalog(
     const needle = normalizeSearchText({ text: input.search });
     const domainSet = new Set(input.domains);
     return input.entries.filter((entry) => {
+        if (input.audience !== 'all' && entry.audience !== input.audience) {
+            return false;
+        }
         if (domainSet.size > 0 && !domainSet.has(entry.domain)) {
             return false;
         }

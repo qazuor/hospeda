@@ -2251,6 +2251,13 @@
         "description": "Vista previa de cada email que envía la plataforma, renderizado en el servidor con datos de ejemplo. No se envía nada.",
         "searchLabel": "Buscar emails",
         "searchPlaceholder": "Buscar por nombre, clave o id",
+        "audienceFilterLabel": "Destinatario",
+        "staffBadge": "Staff",
+        "audiences": {
+            "all": "Todos",
+            "user": "Usuarios",
+            "staff": "Staff"
+        },
         "domainFilterLabel": "Filtrar por dominio",
         "clearFilters": "Limpiar filtros",
         "count": "{{shown}} de {{total}}",
