@@ -429,6 +429,15 @@
         "clearFilters": "Limpar filtros"
     },
     "detail": {
+        "sectionTabs": {
+            "label": "Seções da acomodação",
+            "photos": "Fotos",
+            "details": "Detalhes",
+            "amenities": "Comodidades",
+            "location": "Localização",
+            "reviews": "Avaliações",
+            "host": "Anfitrião"
+        },
         "listingContact": {
             "bar": {
                 "inquire": "Enviar consulta",
