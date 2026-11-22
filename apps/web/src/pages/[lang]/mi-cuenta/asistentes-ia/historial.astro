@@ -39,7 +39,7 @@ const user = Astro.locals.user;
 
 if (!user) {
 	return Astro.redirect(
-		buildLoginRedirect({ locale, currentUrl: buildUrl({ locale, path: 'mi-cuenta/asistentes-ia/historial' }) }),
+		buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }),
 	);
 }
 
