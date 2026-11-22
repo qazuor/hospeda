@@ -10,6 +10,7 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import { ConversationReply } from '@/components/account/ConversationReply.client';
 import ListingGoneNotice from '@/components/account/ListingGoneNotice.astro';
 import { resolveConversationBubbleSide } from '@/lib/conversation-bubble-side';
+import { formatInquirySummary } from '@/lib/format-inquiry-summary';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -77,6 +78,15 @@ const pageTitle = t('conversations.thread.title', undefined, {
     senderName: conversation.guestName ?? t('conversations.senderLabels.guest')
 });
 
+// HOS-2534: the visitor's dates and guest count, stored as columns. Null when
+// the inquiry carried none, in which case nothing renders.
+const inquirySummary = formatInquirySummary({
+    locale,
+    checkIn: conversation.checkIn,
+    checkOut: conversation.checkOut,
+    guests: conversation.guests
+});
+
 // Owner reply URL for the ConversationReply component
 const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversationId}/messages`;
 ---
@@ -94,6 +104,15 @@ const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversa
             </a>
             <h1 class="conv-thread__title">{pageTitle}</h1>
             <span class="conv-thread__accommodation">{conversation.accommodationName}</span>
+            {inquirySummary && (
+                <p
+                    class="conv-thread__inquiry"
+                    data-inquiry-summary
+                    aria-label={t('conversations.thread.inquiry.label')}
+                >
+                    {inquirySummary}
+                </p>
+            )}
         </div>
 
         <div data-conversation-thread style="display: contents">
@@ -192,6 +211,17 @@ const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversa
         font-family: var(--font-sans);
         font-size: 0.83rem;
         color: var(--core-muted-foreground);
+    }
+
+    .conv-thread__inquiry {
+        font: var(--app-body);
+        font-weight: 600;
+        color: var(--core-foreground);
+        background-color: var(--muted);
+        border-radius: var(--radius-md);
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+        margin: var(--space-2, 8px) 0 0;
+        align-self: flex-start;
     }
 
     .conv-thread__load-older {
