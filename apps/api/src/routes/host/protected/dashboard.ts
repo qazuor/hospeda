@@ -62,7 +62,13 @@ export const HostDashboardResponseSchema = z.object({
      * (HOS-2424). The numeric fields stay present for contract compatibility,
      * but a client must show these as "not available", never as a real 0.
      */
-    unavailable: z.array(z.enum(['properties', 'unreadConversations']))
+    unavailable: z.array(z.enum(['properties', 'unreadConversations'])),
+    /**
+     * `true` only when the plan read FAILED, so `plan: null` means "unknown" and
+     * not "no subscription" (HOS-2543). A separate boolean, not a new `unavailable`
+     * value: older mobile builds validate `unavailable` against a closed enum.
+     */
+    planUnavailable: z.boolean()
 });
 
 export type HostDashboardResponse = z.infer<typeof HostDashboardResponseSchema>;
@@ -157,13 +163,16 @@ const PLAN_STATUS_BY_SUBSCRIPTION_STATUS: Readonly<
  * status on the card); `status` stays as the coarse legacy value. `isTrial` is always false: the trial is Hospeda's own state machine and the
  * client reads it separately.
  *
- * FAIL-SAFE: a failed read degrades to `null` (the card then shows the
- * "no subscription" message), never a 500.
+ * FAIL-SAFE: a failed read degrades to `plan: null` with `degraded: true` (the
+ * card then shows "not available" instead of "no subscription"), never a 500.
  *
  * @param input - `{ actor }` whose `id` is the owner.
- * @returns The plan summary, or `null` when the owner has no live principal.
+ * @returns `{ plan, degraded }`: the plan summary (`null` when the owner has no
+ * live principal) and whether `null` is a read-failure fallback.
  */
-async function resolvePlan(input: { actor: Actor }): Promise<HostDashboardPlan | null> {
+async function resolvePlan(input: {
+    actor: Actor;
+}): Promise<{ plan: HostDashboardPlan | null; degraded: boolean }> {
     const { actor } = input;
     try {
         const { subscriptions } = await readOwnPlanState({
@@ -173,29 +182,32 @@ async function resolvePlan(input: { actor: Actor }): Promise<HostDashboardPlan |
         const chosen =
             subscriptions.find((row) => row.vertical === VerticalEnum.ACCOMMODATION) ??
             subscriptions[0];
-        if (!chosen) return null;
+        if (!chosen) return { plan: null, degraded: false };
         const parsedStatus = OwnPlanStatusSchema.safeParse(chosen.status);
         if (!parsedStatus.success) {
             apiLogger.warn(
                 { actorId: actor.id, status: chosen.status },
                 'Host dashboard: live subscription has an unexpected status — plan null'
             );
-            return null;
+            return { plan: null, degraded: false };
         }
         return {
-            slug: chosen.plan.slug,
-            name: chosen.plan.name,
-            status: PLAN_STATUS_BY_SUBSCRIPTION_STATUS[chosen.status] ?? 'active',
-            subscriptionStatus: parsedStatus.data,
-            serviceEndsAt: chosen.serviceEndsAt?.toISOString() ?? null,
-            isTrial: false
+            plan: {
+                slug: chosen.plan.slug,
+                name: chosen.plan.name,
+                status: PLAN_STATUS_BY_SUBSCRIPTION_STATUS[chosen.status] ?? 'active',
+                subscriptionStatus: parsedStatus.data,
+                serviceEndsAt: chosen.serviceEndsAt?.toISOString() ?? null,
+                isTrial: false
+            },
+            degraded: false
         };
     } catch (error) {
         apiLogger.warn(
             { actorId: actor.id, error: String(error) },
             'Host dashboard: plan read threw — degrading plan to null'
         );
-        return null;
+        return { plan: null, degraded: true };
     }
 }
 
@@ -292,7 +304,7 @@ export const hostDashboardRoute = createProtectedRoute({
                 degraded: propertiesDegraded
             } = await resolveProperties({ actor });
 
-            const plan = await resolvePlan({ actor });
+            const { plan, degraded: planDegraded } = await resolvePlan({ actor });
             const unread = await resolveUnreadConversations({
                 actor,
                 accommodationIds
@@ -308,7 +320,8 @@ export const hostDashboardRoute = createProtectedRoute({
                 properties,
                 plan,
                 unreadConversations: unread.count,
-                unavailable
+                unavailable,
+                planUnavailable: planDegraded
             };
 
             return response;

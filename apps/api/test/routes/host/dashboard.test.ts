@@ -373,18 +373,19 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
         });
 
         it.each([
-            ['ACTIVE', 'ACTIVE'],
-            ['GRACE_PERIOD', 'GRACE_PERIOD'],
-            ['SUSPENDED', 'SUSPENDED'],
-            ['CANCEL_SCHEDULED', 'CANCEL_SCHEDULED'],
-            ['PAUSED', 'PAUSED']
-        ])('returns the exact status %s without collapsing it', async (status, expected) => {
+            ['ACTIVE', 'ACTIVE', 'active'],
+            ['GRACE_PERIOD', 'GRACE_PERIOD', 'past_due'],
+            ['SUSPENDED', 'SUSPENDED', 'past_due'],
+            ['CANCEL_SCHEDULED', 'CANCEL_SCHEDULED', 'cancelled'],
+            ['PAUSED', 'PAUSED', 'cancelled']
+        ])('returns the exact status %s without collapsing it', async (status, expected, coarse) => {
             readOwnPlanStateMock.mockResolvedValue({
                 subscriptions: [principal({ status })],
                 deferredCourtesies: []
             });
             const body = await (await buildApp().request('/dashboard')).json();
             expect(body.data.plan.subscriptionStatus).toBe(expected);
+            expect(body.data.plan.status).toBe(coarse);
         });
 
         it('returns the end of service for a scheduled cancellation', async () => {
@@ -442,6 +443,20 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const body = await res.json();
             expect(res.status).toBe(200);
             expect(body.data.plan).toBeNull();
+            expect(body.data.planUnavailable).toBe(true);
+        });
+
+        it('keeps planUnavailable false when the read succeeds, with or without a plan', async () => {
+            const none = await (await buildApp().request('/dashboard')).json();
+            expect(none.data.plan).toBeNull();
+            expect(none.data.planUnavailable).toBe(false);
+
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [principal({})],
+                deferredCourtesies: []
+            });
+            const some = await (await buildApp().request('/dashboard')).json();
+            expect(some.data.planUnavailable).toBe(false);
         });
     });
 
