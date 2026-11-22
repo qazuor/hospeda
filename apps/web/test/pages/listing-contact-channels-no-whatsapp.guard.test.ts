@@ -13,13 +13,32 @@ import { describe, expect, it } from 'vitest';
 const root = resolve(__dirname, '../../src');
 const read = (path: string): string => readFileSync(resolve(root, path), 'utf8');
 
-/** Removes JS/TS/CSS block comments, line comments and HTML comments. */
+/** Removes every `open ... close` span, scanning until none is left (no partial-match leftovers). */
+function removeSpans({
+    source,
+    open,
+    close
+}: {
+    readonly source: string;
+    readonly open: string;
+    readonly close: string;
+}): string {
+    let result = source;
+    for (let from = result.indexOf(open); from !== -1; from = result.indexOf(open)) {
+        const to = result.indexOf(close, from + open.length);
+        result =
+            to === -1
+                ? result.slice(0, from)
+                : result.slice(0, from) + result.slice(to + close.length);
+    }
+    return result;
+}
+
+/** Removes HTML, block and full-line comments, so prose that explains the rule does not trip the guard. */
 function stripComments(source: string): string {
-    return source
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/^\s*\/\/.*$/gm, '')
-        .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+    const html = removeSpans({ source, open: '<!--', close: '-->' });
+    const block = removeSpans({ source: html, open: '/*', close: '*/' });
+    return block.replace(/^\s*\/\/.*$/gm, '');
 }
 
 const experiencePage = stripComments(read('pages/[lang]/experiencias/[slug].astro'));
