@@ -2383,6 +2383,37 @@
                 "REFUND_RETRY_IN_PROGRESS": "Ya hay un reintento de esta devolución en curso. Esperá a que termine y mirá el resultado.",
                 "REFUND_CALL_TOO_OLD_TO_RETRY": "El llamado sin respuesta se envió hace más de 24 horas y el cobro no muestra ninguna devolución para atarlo, así que no se reenvía (no se envió ni se registró nada). Revisá el cobro en el panel de Mercado Pago, devolvé desde ahí lo que siga faltando y registralo con la acción 14 en «Asentar el resto» de esta misma pantalla: la devolución se cierra y el llamado queda respondido (runbook de devoluciones, §8 paso 0)."
             }
+        },
+        "stuck": {
+            "title": "Devoluciones trabadas",
+            "description": "Devoluciones confirmadas que quedaron esperando a Mercado Pago: alguna llamada no tuvo respuesta, o MP la aceptó pero todavía no figura acreditada. Cada una trae la acción sugerida; la acción vuelve a validar todo antes de hacer nada.",
+            "loading": "Cargando devoluciones trabadas...",
+            "error": "No se pudieron cargar las devoluciones trabadas.",
+            "empty": "No hay devoluciones trabadas.",
+            "pagination": "Paginación de devoluciones trabadas",
+            "createdAt": "Creada el",
+            "calls": "Llamadas sin respuesta: {{count}} de {{total}}",
+            "oldestUnanswered": "la más vieja, {{age}}",
+            "accepted": "MP aceptó {{amount}}",
+            "noAction": "Ninguna acción la puede tomar ahora: esperá a que pasen las 24 horas de la llamada o seguí el runbook de devoluciones (§8).",
+            "actions": {
+                "RETRY": "Reintentar con MP",
+                "SETTLE_REMAINDER": "Asentar el resto"
+            },
+            "age": {
+                "minutes": "hace {{count}} min",
+                "hours": "hace {{count}} h",
+                "days": "hace {{count}} d"
+            }
+        },
+        "picker": {
+            "label": "Devolución trabada",
+            "placeholder": "Elegí una devolución",
+            "empty": "No hay devoluciones trabadas para elegir. Si la tuya no aparece, usá «Operar por ID» al final."
+        },
+        "operateById": {
+            "title": "Operar por ID",
+            "description": "Para una devolución que la lista no muestra: pegá su ID a mano."
         }
     },
     "subscriptionCancellation": {
