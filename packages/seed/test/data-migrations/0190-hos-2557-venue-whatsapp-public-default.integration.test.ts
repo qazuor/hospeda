@@ -5,7 +5,7 @@
  * Runs against the REAL integration database with the rollback-isolation idiom:
  * the SQL is what has to be proven. A venue with a number and no stored choice
  * becomes PUBLIC; a venue with an explicit choice (either value), a venue with no
- * number, and a venue with a blank number are left alone; a second run changes
+ * number, and a venue with a blank number (any whitespace `trim()` strips) are left alone; a second run changes
  * nothing.
  */
 import path from 'node:path';
@@ -69,6 +69,7 @@ type Fixture = {
     readonly alreadyPublic: string;
     readonly noChoiceNoNumber: string;
     readonly noChoiceBlankNumber: string;
+    readonly noChoiceWhitespaceNumber: string;
 };
 
 /** Inserts an owner, a destination and five venues covering every case. */
@@ -137,7 +138,14 @@ async function insertVenues(tx: DrizzleClient): Promise<Fixture> {
             visibility: VenueWhatsappVisibilityEnum.PUBLIC
         }),
         noChoiceNoNumber: await insert({ key: 'd', whatsapp: null, visibility: null }),
-        noChoiceBlankNumber: await insert({ key: 'e', whatsapp: '   ', visibility: null })
+        noChoiceBlankNumber: await insert({ key: 'e', whatsapp: '   ', visibility: null }),
+        // Blank for JS `trim()` (the write paths' check) but not for SQL `btrim`, which
+        // strips spaces only: tab, newline, no-break space.
+        noChoiceWhitespaceNumber: await insert({
+            key: 'f',
+            whatsapp: '\t\n\u00a0 ',
+            visibility: null
+        })
     };
 }
 
@@ -177,7 +185,8 @@ describe('HOS-2557: 0190-hos-2557-venue-whatsapp-public-default (integration)', 
                 f.loggedInOnly,
                 f.alreadyPublic,
                 f.noChoiceNoNumber,
-                f.noChoiceBlankNumber
+                f.noChoiceBlankNumber,
+                f.noChoiceWhitespaceNumber
             ];
 
             // Act
@@ -190,6 +199,7 @@ describe('HOS-2557: 0190-hos-2557-venue-whatsapp-public-default (integration)', 
             expect(after.get(f.alreadyPublic)).toBe('PUBLIC');
             expect(after.get(f.noChoiceNoNumber)).toBeNull();
             expect(after.get(f.noChoiceBlankNumber)).toBeNull();
+            expect(after.get(f.noChoiceWhitespaceNumber)).toBeNull();
             expect(result.counts?.defaulted).toBeGreaterThanOrEqual(1);
         });
     });

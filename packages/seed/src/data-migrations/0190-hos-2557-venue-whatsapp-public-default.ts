@@ -10,7 +10,8 @@
  *
  * ## What it changes
  *
- * Every venue that carries a non-blank `contact_info.whatsapp` and whose
+ * Every venue that carries a non-blank `contact_info.whatsapp` (blank as `trim()`
+ * sees it: any whitespace, not only spaces) and whose
  * `whatsapp_visibility` is `NULL` is set to `PUBLIC`. The owner took this
  * decision knowing that those numbers become visible in the page HTML.
  *
@@ -39,6 +40,15 @@ import { sql, venues } from '@repo/db';
 import { VenueWhatsappVisibilityEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
+/**
+ * A value that is blank for JavaScript's `String.prototype.trim()`, the check every
+ * write path uses (`venue.whatsapp.ts`): the ASCII whitespace class plus the Unicode
+ * spaces `trim()` also strips. SQL `btrim` strips spaces only, so a tab-only number
+ * would have read as present. Sent as a bind parameter, so no SQL escaping applies.
+ */
+const BLANK_PATTERN =
+    '^[\\s\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]*$';
+
 export const meta = {
     name: '0190-hos-2557-venue-whatsapp-public-default',
     group: 'required',
@@ -62,7 +72,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         .set({ whatsappVisibility: VenueWhatsappVisibilityEnum.PUBLIC, updatedAt: new Date() })
         .where(
             sql`${venues.whatsappVisibility} IS NULL
-                AND btrim(coalesce(${venues.contactInfo}->>'whatsapp', '')) <> ''`
+                AND coalesce(${venues.contactInfo}->>'whatsapp', '') !~ ${BLANK_PATTERN}`
         )
         .returning({ id: venues.id });
 
