@@ -477,7 +477,8 @@ describe('ConversationService', () => {
 
             // select returns the existing pending row (unverified duplicate)
             const selectChain = makeSelectChainMock([existingPendingRow]);
-            mockGetDb.mockReturnValue({ select: selectChain.select });
+            const updateChain = makeUpdateChainMock([]);
+            mockGetDb.mockReturnValue({ select: selectChain.select, update: updateChain.update });
 
             // Act
             const result = await service.initiateAnonymous(ACTOR, {
@@ -491,6 +492,41 @@ describe('ConversationService', () => {
             expectSuccess(result);
             expect(result.data?.status).toBe('resent');
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
+        });
+
+        it('replaces the pending row booking fields with the re-submitted ones (HOS-2534)', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const pendingRow = makeConversation({
+                id: CONVERSATION_ID,
+                status: 'PENDING_VERIFICATION'
+            });
+            const selectChain = makeSelectChainMock([pendingRow]);
+            const updateChain = makeUpdateChainMock([]);
+            mockGetDb.mockReturnValue({ select: selectChain.select, update: updateChain.update });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Corrijo las fechas',
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 3
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(result.data?.status).toBe('resent');
+            expect(updateChain.set).toHaveBeenCalledWith({
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 3
+            });
         });
 
         it('should throw ALREADY_EXISTS for a verified duplicate conversation', async () => {

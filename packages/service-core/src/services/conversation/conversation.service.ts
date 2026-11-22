@@ -530,6 +530,18 @@ export class ConversationService extends BaseService {
                     .limit(1);
 
                 if (pendingRow) {
+                    // A visitor who corrects their dates and re-submits must not lose
+                    // the correction. The row is still their own unverified one (same
+                    // email + accommodation, PENDING_VERIFICATION), so the booking
+                    // fields are replaced with the latest submission.
+                    await db
+                        .update(conversations)
+                        .set({
+                            checkIn: validated.checkIn ?? null,
+                            checkOut: validated.checkOut ?? null,
+                            guests: validated.guests ?? null
+                        })
+                        .where(eq(conversations.id, pendingRow.id));
                     await this.sendVerificationEmail(
                         pendingRow.id,
                         normalizedEmail,
