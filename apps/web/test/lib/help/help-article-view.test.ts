@@ -5,10 +5,21 @@
 
 import { HELP_INDEX, HELP_SECTION_ANCHORS } from '@repo/help';
 import { describe, expect, it } from 'vitest';
-import { buildHelpArticleView } from '../../../src/lib/help/help-article-view';
+import {
+    buildHelpArticleView,
+    dedupeHelpPageLinks,
+    mergeHelpPageLabels
+} from '../../../src/lib/help/help-article-view';
 import { findLocalizedHelpArticle } from '../../../src/lib/help/help-catalog';
 
 const SITE = 'http://localhost:4321';
+
+/** Mirrors `account.help.article.editorSectionLabel.*` in es. */
+const VERTICAL_NOUNS = {
+    accommodation: 'alojamiento',
+    venue: 'comercio',
+    experience: 'experiencia'
+} as const;
 
 const viewOf = (id: string, locale: 'es' | 'en' = 'es') => {
     const found = findLocalizedHelpArticle({ id, locale });
@@ -18,6 +29,7 @@ const viewOf = (id: string, locale: 'es' | 'en' = 'es') => {
         locale,
         contentLocale: found.contentLocale,
         neutralLimitText: 'el tope de tu plan',
+        editorSectionLabel: ({ label, vertical }) => `${label} de tu ${VERTICAL_NOUNS[vertical]}`,
         siteOrigin: SITE
     });
 };
@@ -91,7 +103,8 @@ describe('buildHelpArticleView over the real index', () => {
         const view = viewOf(article?.id ?? '');
 
         // Assert
-        expect(view.pages).toHaveLength(article?.destinations.length ?? -1);
+        expect(view.pages.length).toBeGreaterThan(0);
+        expect(view.pages.length).toBeLessThanOrEqual(article?.destinations.length ?? -1);
         expect(view.pages.every((page) => page.href.startsWith('/es/'))).toBe(true);
     });
 
@@ -121,5 +134,92 @@ describe('buildHelpArticleView over the real index', () => {
 
     it('needs no limit island when the article has no limit token', () => {
         expect(viewOf('calendar').limitVerticals).toEqual([]);
+    });
+});
+
+describe('«Páginas» box (HOS-2552)', () => {
+    it('names the vertical of each photos link and never repeats a destination', () => {
+        // Act
+        const view = viewOf('photos');
+
+        // Assert
+        expect(view.pages).toEqual([
+            { href: '/es/mi-cuenta/propiedades/', label: 'Fotos de tu alojamiento' },
+            { href: '/es/mi-cuenta/comercio/', label: 'Fotos de tu comercio o experiencia' }
+        ]);
+    });
+
+    it.each(
+        HELP_INDEX.locales.es.map((article) => article.id)
+    )('%s repeats no href and no label in its «Páginas» box', (id) => {
+        // Act
+        const { pages } = viewOf(id);
+
+        // Assert
+        expect(new Set(pages.map((page) => page.href)).size).toBe(pages.length);
+        expect(new Set(pages.map((page) => page.label)).size).toBe(pages.length);
+    });
+
+    it('a degraded editor section never renames the list page it shares (publish-requirements)', () => {
+        // «Ubicación» of an accommodation opens «Mis propiedades» on the web.
+        const labels = viewOf('publish-requirements').pages.map((page) => page.label);
+        expect(labels).toContain('Mis propiedades');
+        expect(labels).toContain('Mi comercio');
+        expect(labels.some((label) => label.startsWith('Ubicación'))).toBe(false);
+    });
+
+    it('lets the label of a link that really goes there win over a degraded editor section', () => {
+        expect(
+            dedupeHelpPageLinks({
+                links: [
+                    { href: '/es/mi-cuenta/propiedades/', label: 'Mis propiedades', exact: true },
+                    {
+                        href: '/es/mi-cuenta/propiedades/',
+                        label: 'Ubicación de tu alojamiento',
+                        exact: false
+                    }
+                ],
+                locale: 'es'
+            })
+        ).toEqual([{ href: '/es/mi-cuenta/propiedades/', label: 'Mis propiedades' }]);
+    });
+
+    it('merges labels by their shared words, or joins them as alternatives', () => {
+        expect(
+            mergeHelpPageLabels({
+                labels: ['Fotos de tu comercio', 'Fotos de tu experiencia'],
+                locale: 'es'
+            })
+        ).toBe('Fotos de tu comercio o experiencia');
+        expect(mergeHelpPageLabels({ labels: ['Mi comercio', 'Mi comercio'], locale: 'es' })).toBe(
+            'Mi comercio'
+        );
+        expect(mergeHelpPageLabels({ labels: ['Carta', 'Menú'], locale: 'en' })).toBe(
+            'Carta or Menú'
+        );
+    });
+});
+
+describe('{{limit}} sentences (HOS-2552)', () => {
+    /** Every limit span, with the text right before and after it. */
+    const limitSpans = HELP_INDEX.locales.es.flatMap((article) =>
+        viewOf(article.id)
+            .sections.flatMap((section) => [
+                ...section.html.matchAll(/(.{0,40})<span data-help-limit[^>]*>[^<]*<\/span>(.?)/g)
+            ])
+            .map((match) => [article.id, match[1] ?? '', match[2] ?? ''] as const)
+    );
+
+    it('the catalog has at least one limit sentence to check', () => {
+        expect(limitSpans.length).toBeGreaterThan(0);
+    });
+
+    it.each(
+        limitSpans
+    )('%s puts each limit as the value after a colon, so the neutral text, a number and «sin tope» all read right', (_id, before, after) => {
+        // The island replaces the whole span text: «…: el tope de tu plan.»,
+        // «…: 15.» and «…: sin tope.» must all be sentences.
+        expect(before).toMatch(/: $/);
+        expect(after).toMatch(/^[.;,]?$/);
     });
 });

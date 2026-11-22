@@ -18,6 +18,7 @@ import {
     HELP_SECTION_KEYS,
     HELP_SOURCE_LOCALE,
     type HelpArticle,
+    type HelpAudience,
     type HelpLocale,
     type HelpSectionKey,
     parseHelpTokens
@@ -54,9 +55,11 @@ export interface HelpRelatedView {
     readonly title: string;
     readonly summary: string;
     readonly href: string;
+    /** The target's audiences, so the page can carry the reader's tab. */
+    readonly audiences: readonly HelpAudience[];
 }
 
-/** One link of the «Páginas» box. */
+/** One link of the «Páginas» box. Hrefs never repeat within one box. */
 export interface HelpPageLinkView {
     readonly href: string;
     readonly label: string;
@@ -85,9 +88,21 @@ export interface BuildHelpArticleViewArgs {
     readonly contentLocale: HelpLocale;
     /** What a `limit` token reads before the island fills the value. */
     readonly neutralLimitText: string;
+    /**
+     * The «Páginas» label of a link to an editor section, naming its vertical
+     * («Fotos» → «Fotos de tu alojamiento»), in the content locale. The
+     * authored label stays bare because `get_help` adds the listing name.
+     */
+    readonly editorSectionLabel: (args: {
+        readonly label: string;
+        readonly vertical: HelpEditorVertical;
+    }) => string;
     /** Site origin for the sanitizer. */
     readonly siteOrigin: string;
 }
+
+/** The verticals an editor-section destination can name. */
+export type HelpEditorVertical = 'accommodation' | 'venue' | 'experience';
 
 /** Every authored text of an article: the four prose sections, the steps and the text after them. */
 function authoredTexts({ article }: { readonly article: HelpArticle }): readonly string[] {
@@ -111,6 +126,93 @@ function limitVerticalsOf({ article }: { readonly article: HelpArticle }): reado
     return [...verticals].sort();
 }
 
+/** Splits a label into words, for the common-prefix merge. */
+function wordsOf(label: string): readonly string[] {
+    return label.trim().split(/\s+/);
+}
+
+/**
+ * One label for several links that open the same page. Labels that share a
+ * leading run of words keep it once («Fotos de tu comercio» + «Fotos de tu
+ * experiencia» → «Fotos de tu comercio o experiencia»); otherwise the whole
+ * labels are joined as alternatives. Equal labels collapse to one.
+ *
+ * @param args.labels - The labels, in authoring order
+ * @param args.locale - The locale the labels are written in (for «o» / «or» / «ou»)
+ * @returns The merged label
+ */
+export function mergeHelpPageLabels({
+    labels,
+    locale
+}: {
+    readonly labels: readonly string[];
+    readonly locale: HelpLocale;
+}): string {
+    const unique = [...new Set(labels.map((label) => label.trim()))];
+    if (unique.length <= 1) {
+        return unique[0] ?? '';
+    }
+    const split = unique.map(wordsOf);
+    const shortest = Math.min(...split.map((words) => words.length));
+    let shared = 0;
+    while (shared < shortest - 1 && split.every((words) => words[shared] === split[0]?.[shared])) {
+        shared += 1;
+    }
+    const list = new Intl.ListFormat(locale, { type: 'disjunction' });
+    if (shared === 0) {
+        return list.format(unique);
+    }
+    const prefix = (split[0] ?? []).slice(0, shared).join(' ');
+    return `${prefix} ${list.format(split.map((words) => words.slice(shared).join(' ')))}`;
+}
+
+/** A «Páginas» link before deduplication. */
+export interface HelpPageLinkCandidate extends HelpPageLinkView {
+    /**
+     * Whether the href is where the destination really goes. An editor
+     * section is not: on the web it degrades to the vertical's list page.
+     */
+    readonly exact: boolean;
+}
+
+/**
+ * The «Páginas» links with no repeated destination. Links that open the same
+ * path become one: the label of a link that really goes there wins (an editor
+ * section that degraded to the list page must not rename «Mis propiedades»);
+ * otherwise the labels merge with {@link mergeHelpPageLabels}. The first
+ * occurrence keeps its position.
+ *
+ * @param args.links - The links, in authoring order
+ * @param args.locale - The locale the labels are written in
+ * @returns One link per distinct href
+ */
+export function dedupeHelpPageLinks({
+    links,
+    locale
+}: {
+    readonly links: readonly HelpPageLinkCandidate[];
+    readonly locale: HelpLocale;
+}): readonly HelpPageLinkView[] {
+    const groups = new Map<string, HelpPageLinkCandidate[]>();
+    for (const link of links) {
+        const group = groups.get(link.href);
+        if (group === undefined) {
+            groups.set(link.href, [link]);
+        } else {
+            group.push(link);
+        }
+    }
+    return [...groups].map(([href, group]) => {
+        const exact = group.find((link) => link.exact);
+        return {
+            href,
+            label:
+                exact?.label ??
+                mergeHelpPageLabels({ labels: group.map((link) => link.label), locale })
+        };
+    });
+}
+
 /**
  * Computes the article page.
  *
@@ -122,6 +224,7 @@ export function buildHelpArticleView({
     locale,
     contentLocale,
     neutralLimitText,
+    editorSectionLabel,
     siteOrigin
 }: BuildHelpArticleViewArgs): HelpArticleView {
     const headings =
@@ -157,17 +260,32 @@ export function buildHelpArticleView({
                 id,
                 title: target.article.title,
                 summary: target.article.summary,
-                href: helpArticlePath({ id, locale })
+                href: helpArticlePath({ id, locale }),
+                audiences: target.article.audiences
             }
         ];
     });
 
-    const pages = article.destinations.map(
-        (destination): HelpPageLinkView => ({
-            href: helpDestinationPath({ destination, locale }),
-            label: helpDestinationLabel({ destination })
-        })
-    );
+    const pages = dedupeHelpPageLinks({
+        links: article.destinations.map(
+            (destination): HelpPageLinkCandidate =>
+                destination.kind === 'ownEditorSection'
+                    ? {
+                          href: helpDestinationPath({ destination, locale }),
+                          label: editorSectionLabel({
+                              label: helpDestinationLabel({ destination }),
+                              vertical: destination.vertical
+                          }),
+                          exact: false
+                      }
+                    : {
+                          href: helpDestinationPath({ destination, locale }),
+                          label: helpDestinationLabel({ destination }),
+                          exact: true
+                      }
+        ),
+        locale: contentLocale
+    });
 
     const faqCategory = article.faqKey?.split('.')[0];
     const faqHref =
