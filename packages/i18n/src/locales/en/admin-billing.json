@@ -2867,6 +2867,7 @@
             "listingOutcomes": {
                 "RETURNS": "comes back published",
                 "NO_SLOT": "does not come back: the plan's quota is not enough",
+                "LOCATION_CONFLICT": "does not come back: another of your listings is published (or comes back first) at the same address, and two cannot be; the slot goes to the next one",
                 "INCOMPLETE": "does not come back: it is missing data required to publish",
                 "ARCHIVED_DRAFT": "does not come back on its own: it was archived as a draft",
                 "PURGED": "does not come back: its content was already deleted, permanently",

@@ -2867,6 +2867,7 @@
             "listingOutcomes": {
                 "RETURNS": "vuelve publicada",
                 "NO_SLOT": "no vuelve: el cupo del plan no le alcanza",
+                "LOCATION_CONFLICT": "no vuelve: otra ficha tuya está publicada (o vuelve antes) en la misma dirección, y no puede haber dos; el cupo pasa a la siguiente",
                 "INCOMPLETE": "no vuelve: le faltan datos para publicarse",
                 "ARCHIVED_DRAFT": "no vuelve sola: se archivó siendo borrador",
                 "PURGED": "no vuelve: su contenido ya se borró y es final",

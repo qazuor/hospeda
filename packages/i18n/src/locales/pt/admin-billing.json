@@ -2867,6 +2867,7 @@
             "listingOutcomes": {
                 "RETURNS": "volta publicado",
                 "NO_SLOT": "não volta: a cota do plano não é suficiente",
+                "LOCATION_CONFLICT": "não volta: outro anúncio seu está publicado (ou volta antes) no mesmo endereço, e não pode haver dois; a vaga passa para o seguinte",
                 "INCOMPLETE": "não volta: faltam dados para publicá-lo",
                 "ARCHIVED_DRAFT": "não volta sozinho: foi arquivado como rascunho",
                 "PURGED": "não volta: o conteúdo já foi apagado, de forma definitiva",
