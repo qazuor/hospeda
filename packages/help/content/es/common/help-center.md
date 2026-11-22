@@ -37,7 +37,7 @@ covers:
 entryFor:
   - "page:mi-cuenta/ayuda"
   - "page:mi-cuenta/ayuda/[id]"
-reviewedAt: "2026-11-21"
+reviewedAt: "2026-11-22"
 ---
 
 ## Qué podés hacer
@@ -57,7 +57,7 @@ Encontrar cómo se hace algo en tu cuenta sin salir de {{link:help|Ayuda}}: busc
 
 - La pestaña que se abre primero es la de lo que publicás. Podés cambiarla cuando quieras.
 - Cada artículo tiene siempre las mismas partes: qué podés hacer, cómo se hace, qué esperar, qué no esperar y problemas comunes. Al final hay artículos relacionados.
-- El botón «?» abre la ayuda en otra pestaña, así no perdés lo que estabas cargando.
+- El botón «?» abre la ayuda en otra pestaña, así no perdés lo que estabas cargando. Dentro de la ayuda se abre en la misma pestaña.
 
 ## Qué NO esperar
 

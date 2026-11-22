@@ -92,6 +92,12 @@ describe('help landing (web-ui §2)', () => {
         expect(LANDING).toContain('initHelpTabs');
     });
 
+    it('keeps the tabs on one scrollable row instead of wrapping (HOS-2552)', () => {
+        expect(LANDING).toMatch(
+            /\.help-tabs__list \{[^}]*flex-wrap: nowrap;[^}]*overflow-x: auto;/
+        );
+    });
+
     it('selects the tab from ?para= only, never from the session (AC-3)', () => {
         expect(LANDING).toContain("searchParams.get('para')");
         expect(LANDING).toContain('{para === undefined && <HelpAudiencePreselect');
@@ -114,6 +120,40 @@ describe('help article (web-ui §4)', () => {
         expect(ARTICLE).toContain('{limitVerticals.length > 0 && <HelpLimitValues client:idle');
     });
 
+    it("breadcrumbs the reader's tab from ?para= only, never the first audience (HOS-2552)", () => {
+        expect(ARTICLE).toContain(
+            'const crumbAudience = helpCrumbAudience({ para, audiences: article.audiences });'
+        );
+        expect(ARTICLE).not.toContain('article.audiences[0]');
+        expect(ARTICLE).not.toMatch(/user\.[a-zA-Z]/);
+    });
+
+    it('searches with the same placeholder and button as the landing (HOS-2552)', () => {
+        expect(ARTICLE).toContain("placeholder={t('account.help.search.placeholder')}");
+        expect(ARTICLE).toContain("{t('account.help.search.submit')}");
+    });
+
+    it('adds no literal scroll-margin on top of the global scroll-padding (HOS-2552)', () => {
+        // Only the mobile account-bar offset and its 48rem reset are allowed.
+        expect(ARTICLE).not.toMatch(/scroll-margin-top:\s*[1-9]/);
+        expect(ARTICLE).toMatch(/@media \(min-width: 48rem\) \{[^@]*scroll-margin-top: 0;/);
+    });
+
+    it('on mobile, headings clear the sticky account nav bar too (HOS-2552)', () => {
+        // Mobile-first (closed breakpoint list, HOS-2469): the offset is the
+        // base rule, before any @media block resets it.
+        const base = ARTICLE.slice(
+            0,
+            ARTICLE.indexOf('@media (min-width: 48rem) {\n\t\t.help-article__h2')
+        );
+        expect(base).toMatch(
+            /\.help-article__h2,\s*\.help-article__prose :global\(h3\) \{\s*scroll-margin-top: var\(--help-account-bar-height\);/
+        );
+        expect(LAYOUT).toMatch(
+            /@media \(max-width: 768px\)[\s\S]*\.account-page__nav \{\s*position: sticky;/
+        );
+    });
+
     it('renders a side index and a mobile details index', () => {
         expect(ARTICLE).toContain('<details class="help-article__toc-mobile">');
         expect(ARTICLE.match(/data-help-toc/g)?.length).toBeGreaterThanOrEqual(2);
@@ -133,10 +173,20 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
         expect(SHELL).toContain('helpAnchor={helpAnchor}');
     });
 
-    it('HelpLink renders nothing without an entry and opens in a new tab', () => {
-        expect(HELP_LINK).toContain('{entry !== undefined && (');
-        expect(HELP_LINK).toContain('target="_blank"');
-        expect(HELP_LINK).toContain('rel="noopener"');
+    it('HelpLink renders nothing without an entry and puts helpLinkAttributes on its <a>', () => {
+        // The new-tab rule itself is tested as behaviour in help-entry.test.ts
+        // (helpLinkAttributes); here only that the component uses all of it.
+        expect(HELP_LINK).toContain('{entry !== undefined && link !== undefined && (');
+        expect(HELP_LINK).toContain('helpLinkAttributes({ anchor:');
+        for (const attribute of [
+            'href={link.href}',
+            'target={link.target}',
+            'rel={link.rel}',
+            'aria-label={link.ariaLabel}'
+        ]) {
+            expect(HELP_LINK).toContain(attribute);
+        }
+        expect(HELP_LINK).not.toMatch(/target="|rel="|helpLinkOpensNewTab\(/);
     });
 
     it.each(

@@ -21,6 +21,7 @@ import { HelpLimitValues } from '@/components/account/help/HelpLimitValues.clien
 import type { VerticalEnum } from '@repo/schemas';
 import { getSiteUrl } from '@/lib/env';
 import { buildHelpArticleView } from '@/lib/help/help-article-view';
+import { helpCrumbAudience, withHelpAudienceParam } from '@/lib/help/help-audience-shared';
 import { HELP_AUDIENCE_LABEL_KEYS } from '@/lib/help/help-audience';
 import { findLocalizedHelpArticle, parseHelpAudience } from '@/lib/help/help-catalog';
 import { createTranslations } from '@/lib/i18n';
@@ -46,17 +47,22 @@ const { article, contentLocale, isFallback } = found;
 const { t } = createTranslations(locale);
 const contentT = createTranslations(contentLocale).t;
 
+const para = parseHelpAudience({ value: Astro.url.searchParams.get('para') });
+// The reader's tab comes from the URL (the landing links carry `?para=`);
+// unknown means no audience level, never the article's first audience.
+const crumbAudience = helpCrumbAudience({ para, audiences: article.audiences });
+
 const view = buildHelpArticleView({
 	article,
 	locale,
 	contentLocale,
 	neutralLimitText: contentT('account.help.article.limitNeutral'),
+	editorSectionLabel: ({ label, vertical }) =>
+		contentT(`account.help.article.editorSectionLabel.${vertical}`, undefined, { label }),
 	siteOrigin: getSiteUrl(),
+	readerAudience: crumbAudience,
 });
 
-const para = parseHelpAudience({ value: Astro.url.searchParams.get('para') });
-const crumbAudience =
-	para !== undefined && article.audiences.includes(para) ? para : article.audiences[0];
 const landingPath = buildUrl({ locale, path: 'mi-cuenta/ayuda' });
 const reviewedOn = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeZone: 'UTC' }).format(
 	new Date(`${article.reviewedAt}T00:00:00Z`),
@@ -83,8 +89,18 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 	<search class="help-article__search">
 		<form action={landingPath} method="get" class="help-article__search-form">
 			<label class="help-article__search-label" for="help-article-q">{t('account.help.search.label')}</label>
-			<input class="help-article__search-input" id="help-article-q" type="search" name="q" autocomplete="off" />
-			<button class="help-article__search-button" type="submit">{t('account.help.search.submit')}</button>
+			<div class="help-article__search-row">
+				<input
+					class="help-article__search-input"
+					id="help-article-q"
+					type="search"
+					name="q"
+					autocomplete="off"
+					placeholder={t('account.help.search.placeholder')}
+				/>
+				<button class="help-article__search-button" type="submit">{t('account.help.search.submit')}</button>
+			</div>
+			{crumbAudience !== undefined && <input type="hidden" name="para" value={crumbAudience} />}
 		</form>
 	</search>
 
@@ -123,7 +139,7 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 					<ul class="help-article__related">
 						{view.related.map((entry) => (
 							<li>
-								<a href={entry.href}>{entry.title}</a>
+								<a href={withHelpAudienceParam({ href: entry.href, audience: crumbAudience, audiences: entry.audiences })}>{entry.title}</a>
 								<p>{entry.summary}</p>
 							</li>
 						))}
@@ -200,26 +216,30 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 
 	.help-article__search-form {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
+		flex-direction: column;
 		gap: var(--space-2);
 		margin-bottom: var(--space-6);
 	}
 
+	.help-article__search-row {
+		display: flex;
+		gap: var(--space-2);
+	}
+
 	.help-article__search-label {
-		width: 100%;
 		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
+		font-size: var(--text-body-md);
 		font-weight: 600;
 		color: var(--core-foreground);
 	}
 
 	.help-article__search-input {
 		flex: 1;
-		min-width: 12rem;
+		min-width: 0;
 		min-height: 44px;
-		padding: var(--space-2) var(--space-3);
+		padding: var(--space-3) var(--space-4);
 		font-family: var(--font-sans);
+		font-size: var(--text-body);
 		color: var(--core-foreground);
 		background-color: var(--core-card);
 		border: 1px solid var(--border);
@@ -354,7 +374,6 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 
 	.help-article__section {
 		margin-bottom: var(--space-8);
-		scroll-margin-top: 120px;
 	}
 
 	.help-article__h2 {
@@ -362,7 +381,87 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 		font-family: var(--font-heading);
 		font-size: var(--text-xl);
 		color: var(--core-foreground);
-		scroll-margin-top: 120px;
+	}
+
+	/*
+	 * Anchor jumps land below the sticky navbar through the global
+	 * `html { scroll-padding-top }`; no extra scroll-margin from 48rem up, or the
+	 * two add up and the heading lands ~200px down (HOS-2552). Below 48rem
+	 * (AccountLayout's mobile range) the account nav bar also sticks under the
+	 * navbar, so headings add its height. No shared variable exposes that
+	 * height: 52px = the toggle's 12px padding twice + one 24px line + 2px
+	 * border, plus 2px of air; keep it in step with `.account-page__toggle`.
+	 * Mobile-first: the closed breakpoint list (HOS-2469) only allows min-width.
+	 */
+	.help-article {
+		--help-account-bar-height: 52px;
+	}
+
+	.help-article__h2,
+	.help-article__prose :global(h3) {
+		scroll-margin-top: var(--help-account-bar-height);
+	}
+
+	/* Small screens: a tighter header so the article starts higher (HOS-2552). */
+	.help-crumbs__list {
+		margin-bottom: var(--space-2);
+	}
+
+	.help-article__search-form {
+		margin-bottom: var(--space-4);
+	}
+
+	.help-article__search-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.help-article__meta {
+		margin-bottom: var(--space-4);
+	}
+
+	.help-article__toc-mobile {
+		margin-bottom: var(--space-4);
+	}
+
+	@media (min-width: 48rem) {
+		.help-article__h2,
+		.help-article__prose :global(h3) {
+			scroll-margin-top: 0;
+		}
+
+		.help-crumbs__list {
+			margin-bottom: var(--space-3);
+		}
+
+		.help-article__search-form {
+			margin-bottom: var(--space-6);
+		}
+
+		.help-article__search-label {
+			position: static;
+			width: auto;
+			height: auto;
+			margin: 0;
+			overflow: visible;
+			clip: auto;
+			white-space: normal;
+		}
+
+		.help-article__meta {
+			margin-bottom: var(--space-6);
+		}
+
+		.help-article__toc-mobile {
+			margin-bottom: var(--space-6);
+		}
 	}
 
 	.help-article__prose {
@@ -376,7 +475,6 @@ const pageTitle = t('account.help.article.title', undefined, { title: article.ti
 		margin: var(--space-5) 0 var(--space-2);
 		font-family: var(--font-heading);
 		font-size: var(--text-body-lg);
-		scroll-margin-top: 120px;
 	}
 
 	.help-article__prose :global(a),

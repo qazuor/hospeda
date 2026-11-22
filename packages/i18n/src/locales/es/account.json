@@ -1929,10 +1929,16 @@
             "onlySpanish": "Este artículo por ahora está disponible solo en español.",
             "limitNeutral": "el tope de tu plan",
             "unlimited": "sin tope",
-            "title": "Ayuda: {{title}}"
+            "title": "Ayuda: {{title}}",
+            "editorSectionLabel": {
+                "accommodation": "{{label}} de tu alojamiento",
+                "venue": "{{label}} de tu comercio",
+                "experience": "{{label}} de tu experiencia"
+            }
         },
         "link": {
-            "ariaLabel": "Ayuda: {{title}} (se abre en una pestaña nueva)"
+            "ariaLabel": "Ayuda: {{title}} (se abre en una pestaña nueva)",
+            "ariaLabelSameTab": "Ayuda: {{title}}"
         }
     },
     "ui": {

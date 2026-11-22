@@ -10,7 +10,8 @@ import {
 import {
     HELP_TABS_ENHANCED_CLASS,
     initHelpTabs,
-    nextTabIndex
+    nextTabIndex,
+    tabScrollLeft
 } from '../../../src/lib/help/help-tabs';
 
 const AUDIENCES = ['host', 'venue', 'partner'] as const;
@@ -125,5 +126,29 @@ describe('nextTabIndex', () => {
         expect(nextTabIndex({ key: 'Home', current: 2, count: 3 })).toBe(0);
         expect(nextTabIndex({ key: 'End', current: 0, count: 3 })).toBe(2);
         expect(nextTabIndex({ key: 'a', current: 0, count: 3 })).toBeUndefined();
+    });
+});
+
+describe('tabScrollLeft (one-row tablist on narrow screens, HOS-2552)', () => {
+    it('keeps the scroll when the tab is already in view', () => {
+        expect(tabScrollLeft({ tabStart: 40, tabWidth: 80, viewStart: 0, viewWidth: 300 })).toBe(0);
+    });
+
+    it('scrolls right just enough to show a tab cut on the right', () => {
+        expect(tabScrollLeft({ tabStart: 280, tabWidth: 100, viewStart: 0, viewWidth: 300 })).toBe(
+            80
+        );
+    });
+
+    it('scrolls left to a tab hidden on the left', () => {
+        expect(tabScrollLeft({ tabStart: 20, tabWidth: 100, viewStart: 150, viewWidth: 300 })).toBe(
+            20
+        );
+    });
+
+    it('aligns a tab wider than the view to its start', () => {
+        expect(tabScrollLeft({ tabStart: 400, tabWidth: 500, viewStart: 0, viewWidth: 300 })).toBe(
+            400
+        );
     });
 });

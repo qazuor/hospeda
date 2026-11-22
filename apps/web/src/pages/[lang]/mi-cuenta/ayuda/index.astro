@@ -160,12 +160,24 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 		margin-bottom: var(--space-8);
 	}
 
+	/*
+	 * One row on every width: a narrow screen scrolls the tablist sideways
+	 * instead of wrapping it into rows that read as a list (HOS-2552);
+	 * `initHelpTabs` scrolls the selected tab into view.
+	 */
 	.help-tabs__list {
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
+		flex-wrap: nowrap;
+		gap: var(--space-1);
 		margin-bottom: var(--space-4);
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scrollbar-width: none;
 		border-bottom: 1px solid var(--core-foreground-a08);
+	}
+
+	.help-tabs__list::-webkit-scrollbar {
+		display: none;
 	}
 
 	.help-tabs__list[hidden] {
@@ -173,6 +185,8 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 	}
 
 	.help-tabs__tab {
+		flex: 0 0 auto;
+		white-space: nowrap;
 		min-height: 44px;
 		padding: var(--space-2) var(--space-4);
 		font-family: var(--font-sans);
@@ -191,9 +205,10 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 		font-weight: 600;
 	}
 
+	/* Inset: the scrolling tablist would clip an outside outline. */
 	.help-tabs__tab:focus-visible {
 		outline: 2px solid var(--brand-primary);
-		outline-offset: 2px;
+		outline-offset: -2px;
 	}
 
 	.help-tabs__panel {

@@ -4,7 +4,9 @@
  * @description The «?» button of an owner page (HOS-2410 `docs/web-ui.md` §6,
  * US-6, AC-21, AC-22).
  *
- * It opens, in a new tab, the article whose `entryFor` claims `anchor`. When no
+ * It opens the article whose `entryFor` claims `anchor`: in a new tab, so the
+ * reader keeps their page, except inside the help center itself, where it
+ * stays in the same tab (`helpLinkOpensNewTab`, HOS-2552). When no
  * article claims it (an exempt page, a page outside `/mi-cuenta`, or a page
  * whose article is not written yet) it renders NOTHING: a «?» that leads to a
  * generic page is worse than no «?».
@@ -12,8 +14,7 @@
  * Same HTML for every reader (D-H4): it reads only the anchor and the locale.
  */
 
-import { findHelpEntry } from '@/lib/help/help-entry';
-import { helpArticlePath } from '@/lib/help/help-tokens';
+import { findHelpEntry, helpLinkAttributes } from '@/lib/help/help-entry';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -26,15 +27,17 @@ interface Props {
 const { anchor, locale } = Astro.props;
 const entry = findHelpEntry({ anchor, locale });
 const { t } = createTranslations(locale);
+const link =
+	entry === undefined ? undefined : helpLinkAttributes({ anchor: anchor ?? '', entry, locale, t });
 ---
 
-{entry !== undefined && (
+{entry !== undefined && link !== undefined && (
 	<a
 		class="help-link"
-		href={helpArticlePath({ id: entry.id, locale })}
-		target="_blank"
-		rel="noopener"
-		aria-label={t('account.help.link.ariaLabel', undefined, { title: entry.title })}
+		href={link.href}
+		target={link.target}
+		rel={link.rel}
+		aria-label={link.ariaLabel}
 		data-help-link={entry.id}
 	>
 		<span class="help-link__mark" aria-hidden="true">?</span>

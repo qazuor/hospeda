@@ -6,7 +6,9 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 12px);
-    margin-bottom: var(--space-6, 24px);
+    /* The live region is visually hidden, so nothing sits between the
+       toggle and the tabs but this margin (HOS-2552). */
+    margin-bottom: var(--space-4, 16px);
 }
 
 .form {
@@ -22,8 +24,15 @@
     color: var(--core-foreground);
 }
 
+/* Input and «Buscar» side by side, the same affordance as the article page. */
+.row {
+    display: flex;
+    gap: var(--space-2, 8px);
+}
+
 .input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     min-height: 44px;
     padding: var(--space-3, 12px) var(--space-4, 16px);
     font-family: var(--font-sans);
@@ -34,7 +43,20 @@
     border-radius: var(--radius-button);
 }
 
-.input:focus-visible {
+.button {
+    min-height: 44px;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    color: var(--core-card);
+    background-color: var(--brand-primary);
+    border: none;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+}
+
+.input:focus-visible,
+.button:focus-visible {
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
 }
@@ -48,14 +70,6 @@
     font-size: var(--text-body-sm);
     color: var(--core-muted-foreground);
     cursor: pointer;
-}
-
-.status {
-    margin: 0;
-    min-height: 1.25rem;
-    font-family: var(--font-sans);
-    font-size: var(--text-body-sm);
-    color: var(--core-muted-foreground);
 }
 
 .results {

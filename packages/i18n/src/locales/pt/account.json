@@ -1929,10 +1929,16 @@
             "onlySpanish": "Este artigo por enquanto está disponível só em espanhol.",
             "limitNeutral": "o limite do seu plano",
             "unlimited": "sem limite",
-            "title": "Ajuda: {{title}}"
+            "title": "Ajuda: {{title}}",
+            "editorSectionLabel": {
+                "accommodation": "{{label}} da sua hospedagem",
+                "venue": "{{label}} do seu estabelecimento",
+                "experience": "{{label}} da sua experiência"
+            }
         },
         "link": {
-            "ariaLabel": "Ajuda: {{title}} (abre em uma nova aba)"
+            "ariaLabel": "Ajuda: {{title}} (abre em uma nova aba)",
+            "ariaLabelSameTab": "Ajuda: {{title}}"
         }
     },
     "ui": {

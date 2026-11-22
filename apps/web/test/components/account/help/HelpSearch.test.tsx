@@ -5,8 +5,12 @@
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { act } from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HelpSearch } from '../../../../src/components/account/help/HelpSearch.client';
+import {
+    HelpSearch,
+    helpSearchAnnouncement
+} from '../../../../src/components/account/help/HelpSearch.client';
 import { HELP_AUDIENCE_CHANGED_EVENT } from '../../../../src/lib/help/help-audience';
 import {
     listLocalizedHelpArticles,
@@ -87,14 +91,59 @@ describe('HelpSearch', () => {
         type('zzqx yyqw');
 
         // Assert
-        const status = screen.getByRole('status');
-        expect(within(status).getByText('No encontramos ayuda para eso')).toBeInTheDocument();
+        const message = screen
+            .getAllByText('No encontramos ayuda para eso')
+            .find((element) => !element.hasAttribute('aria-live'));
+        const box = message?.parentElement as HTMLElement;
         expect(
-            within(status)
+            within(box)
                 .getAllByRole('link')
                 .map((link) => link.getAttribute('href'))
         ).toEqual(['/es/preguntas-frecuentes/', '/es/contacto/']);
         expect(resultIds()).toEqual([]);
+    });
+
+    it('announces the no-match sentence in the live region, not silence (HOS-2552)', () => {
+        // Arrange
+        const { container } = renderSearch();
+
+        // Act
+        type('zzqx yyqw');
+
+        // Assert
+        const live = container.querySelector('[aria-live="polite"]');
+        expect(live?.textContent).toBe('No encontramos ayuda para eso');
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('has a «Buscar» button and the same placeholder as the article search (HOS-2552)', () => {
+        // Arrange
+        renderSearch();
+        type('fotos');
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+        // Assert
+        expect(screen.getByLabelText('Buscar en la ayuda')).toHaveAttribute(
+            'placeholder',
+            'Por ejemplo: cómo subo fotos'
+        );
+        expect(document.activeElement?.getAttribute('href')).toMatch(/^\/es\/mi-cuenta\/ayuda\//);
+    });
+
+    it('carries the filtered audience into the result links (HOS-2552)', () => {
+        // Arrange
+        renderSearch('host');
+
+        // Act
+        type('fotos');
+
+        // Assert
+        const photos = screen
+            .getAllByRole('link')
+            .find((link) => link.getAttribute('href')?.startsWith('/es/mi-cuenta/ayuda/photos/'));
+        expect(photos?.getAttribute('href')).toBe('/es/mi-cuenta/ayuda/photos/?para=host');
     });
 
     it('shows nothing below two characters', () => {
@@ -114,6 +163,12 @@ describe('HelpSearch', () => {
         // Assert
         const live = container.querySelector('[aria-live="polite"]');
         expect(live?.textContent).toMatch(/^\d+ resultados?$/);
+    });
+
+    it('announces nothing below two characters', () => {
+        const { container } = renderSearch();
+        type('f');
+        expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe('');
     });
 
     it('clears on Escape', () => {
@@ -189,5 +244,98 @@ describe('HelpSearch', () => {
             />
         );
         expect(resultIds()).toContain('photos');
+    });
+});
+
+describe('HelpSearch (HOS-2552 review)', () => {
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    const props = (initialQuery: string) => ({
+        locale: 'es' as const,
+        articles,
+        initialAudience: 'host' as const,
+        initialQuery,
+        articlePaths,
+        faqPath: '/es/preguntas-frecuentes/',
+        contactPath: '/es/contacto/'
+    });
+
+    it('server-renders an empty live region, so an initial ?q= is announced after hydration', () => {
+        // Act
+        const html = renderToString(<HelpSearch {...props('zzqx yyqw')} />);
+
+        // Assert
+        expect(html).toMatch(/<p class="sr-only" aria-live="polite"[^>]*><\/p>/);
+    });
+
+    it('announces the initial ?q= no-match once hydrated', () => {
+        const { container } = render(<HelpSearch {...props('zzqx yyqw')} />);
+        expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(
+            'No encontramos ayuda para eso'
+        );
+    });
+
+    it('sends the selected tab with a no-JS GET', () => {
+        const { container } = render(<HelpSearch {...props('')} />);
+        expect(container.querySelector('input[type="hidden"][name="para"]')).toHaveValue('host');
+    });
+
+    it('«Buscar» with no result returns focus to the input and repeats the announcement', () => {
+        // Arrange
+        const { container } = render(<HelpSearch {...props('zzqx yyqw')} />);
+        const live = container.querySelector('[aria-live="polite"]');
+        const before = live?.textContent;
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+
+        // Assert
+        expect(document.activeElement).toBe(screen.getByLabelText('Buscar en la ayuda'));
+        expect(live?.textContent).not.toBe(before);
+        expect(live?.textContent?.trim()).toBe('No encontramos ayuda para eso');
+    });
+
+    it('«Buscar» below two characters focuses the input', () => {
+        render(<HelpSearch {...props('f')} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
+        expect(document.activeElement).toBe(screen.getByLabelText('Buscar en la ayuda'));
+    });
+
+    it('carries the selected tab in result links with the filter off too', () => {
+        // Arrange
+        render(<HelpSearch {...props('fotos')} />);
+
+        // Act
+        fireEvent.click(screen.getByLabelText('Solo para mi tipo de cuenta'));
+
+        // Assert
+        const photos = screen
+            .getAllByRole('link')
+            .find((link) => link.getAttribute('href')?.startsWith('/es/mi-cuenta/ayuda/photos/'));
+        expect(photos?.getAttribute('href')).toBe('/es/mi-cuenta/ayuda/photos/?para=host');
+    });
+});
+
+describe('helpSearchAnnouncement', () => {
+    const countText = (count: number) => `${count} resultados`;
+
+    it('is empty before a searchable query', () => {
+        expect(
+            helpSearchAnnouncement({ searched: false, count: 0, countText, noMatchText: 'nada' })
+        ).toBe('');
+    });
+
+    it('announces the count when there are results', () => {
+        expect(
+            helpSearchAnnouncement({ searched: true, count: 3, countText, noMatchText: 'nada' })
+        ).toBe('3 resultados');
+    });
+
+    it('announces the no-match sentence on zero results', () => {
+        expect(
+            helpSearchAnnouncement({ searched: true, count: 0, countText, noMatchText: 'nada' })
+        ).toBe('nada');
     });
 });

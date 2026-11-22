@@ -1929,10 +1929,16 @@
             "onlySpanish": "This article is only available in Spanish for now.",
             "limitNeutral": "your plan limit",
             "unlimited": "no limit",
-            "title": "Help: {{title}}"
+            "title": "Help: {{title}}",
+            "editorSectionLabel": {
+                "accommodation": "{{label}} of your accommodation",
+                "venue": "{{label}} of your venue",
+                "experience": "{{label}} of your experience"
+            }
         },
         "link": {
-            "ariaLabel": "Help: {{title}} (opens in a new tab)"
+            "ariaLabel": "Help: {{title}} (opens in a new tab)",
+            "ariaLabelSameTab": "Help: {{title}}"
         }
     },
     "ui": {

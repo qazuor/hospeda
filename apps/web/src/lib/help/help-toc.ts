@@ -1,18 +1,35 @@
 /**
  * @file help-toc.ts
  * @description Highlights the section being read in a help article's side index
- * (HOS-2410 `docs/web-ui.md` §4). An `IntersectionObserver` watches the section
- * headings; the link of the topmost visible one gets `aria-current="location"`.
- * Without JavaScript, or without the observer, the index is a plain list of
- * links, which is all the reader needs.
+ * (HOS-2410 `docs/web-ui.md` §4).
+ *
+ * The current section is the LAST heading whose top has reached the line where
+ * an anchor jump lands it (the page's `scroll-padding-top` plus the heading's
+ * own `scroll-margin-top`, with a small tolerance). That is the heading the
+ * reader sees just under the sticky navbar. The previous rule ("topmost heading
+ * in the upper 40% of the viewport") picked the section ABOVE the chosen one
+ * whenever that section was short, because its heading was still on screen
+ * (HOS-2552).
+ *
+ * A click on an index link marks its section at once and keeps it marked until
+ * the reader scrolls on their own (wheel, touch, a key, or any pointer press,
+ * which covers dragging the scrollbar and middle-click autoscroll): the last
+ * sections of a page may never reach the line, since the page cannot scroll
+ * past its end. Opening the page with `#<section>` starts pinned the same way.
+ *
+ * Without JavaScript the index is a plain list of links, which is all the
+ * reader needs.
  */
+
+/** Pixels below the landing line that still count as "reached". */
+export const HELP_TOC_TOLERANCE_PX = 8;
 
 /** Arguments for {@link initHelpToc}. RO-RO. */
 export interface InitHelpTocArgs {
     /** Every `nav[data-help-toc]` of the page (side index and mobile index). */
     readonly navs: readonly HTMLElement[];
-    /** The observer constructor; injected by tests. Defaults to the global one. */
-    readonly Observer?: typeof IntersectionObserver;
+    /** Where scroll and input events are listened for; defaults to `window`. */
+    readonly win?: Window;
 }
 
 /**
@@ -39,45 +56,144 @@ export function markHelpTocCurrent({
     }
 }
 
+/** One heading's position for {@link pickHelpTocCurrent}. */
+export interface HelpTocHeadingPosition {
+    readonly id: string;
+    /** `getBoundingClientRect().top`. */
+    readonly top: number;
+    /** Where an anchor jump puts this heading's top (padding + margin). */
+    readonly landingLine: number;
+}
+
+/**
+ * The current section: the last heading, in document order, whose top has
+ * reached its landing line; the first heading when none has yet.
+ *
+ * @param args.headings - The headings in document order
+ * @returns The id to mark, or `undefined` when there are no headings
+ */
+export function pickHelpTocCurrent({
+    headings
+}: {
+    readonly headings: readonly HelpTocHeadingPosition[];
+}): string | undefined {
+    let current = headings[0]?.id;
+    for (const heading of headings) {
+        if (heading.top <= heading.landingLine + HELP_TOC_TOLERANCE_PX) {
+            current = heading.id;
+        }
+    }
+    return current;
+}
+
+/** The id a `location.hash` names, `''` when none or malformed. */
+function hashId({ hash }: { readonly hash: string }): string {
+    try {
+        return decodeURIComponent(hash.slice(1));
+    } catch {
+        return '';
+    }
+}
+
+/** Reads a CSS length in pixels, `0` when it is not one. */
+function pixels(value: string): number {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 /**
  * Starts highlighting the current section.
  *
- * @param args - The indexes and the observer constructor
- * @returns A cleanup function that disconnects the observer
+ * @param args - The indexes and the window
+ * @returns A cleanup function that removes the listeners
  */
-export function initHelpToc({ navs, Observer }: InitHelpTocArgs): () => void {
-    const ObserverCtor =
-        Observer ??
-        (typeof IntersectionObserver === 'undefined' ? undefined : IntersectionObserver);
+export function initHelpToc({ navs, win = window }: InitHelpTocArgs): () => void {
     const first = navs[0];
-    if (ObserverCtor === undefined || first === undefined) {
+    if (first === undefined) {
         return () => undefined;
     }
+    const doc = win.document;
     const ids = [...first.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')]
         .map((link) => link.getAttribute('href')?.slice(1) ?? '')
         .filter((id) => id !== '');
     const targets = ids
-        .map((id) => document.getElementById(id))
+        .map((id) => doc.getElementById(id))
         .filter((element): element is HTMLElement => element !== null);
-    const visible = new Set<string>();
-    const observer = new ObserverCtor(
-        (entries) => {
-            for (const entry of entries) {
-                if (entry.isIntersecting) {
-                    visible.add(entry.target.id);
-                } else {
-                    visible.delete(entry.target.id);
-                }
-            }
-            const current = ids.find((id) => visible.has(id));
-            if (current !== undefined) {
-                markHelpTocCurrent({ navs, id: current });
-            }
-        },
-        { rootMargin: '0px 0px -60% 0px' }
-    );
-    for (const target of targets) {
-        observer.observe(target);
+    if (targets.length === 0) {
+        return () => undefined;
     }
-    return () => observer.disconnect();
+
+    /** Set by an index click or an initial hash; cleared by the reader's own input. */
+    const initialHash = hashId({ hash: win.location.hash });
+    let pinned = initialHash !== '' && ids.includes(initialHash);
+    let frame: number | undefined;
+
+    const update = (): void => {
+        frame = undefined;
+        if (pinned) {
+            return;
+        }
+        const padding = pixels(win.getComputedStyle(doc.documentElement).scrollPaddingTop);
+        const current = pickHelpTocCurrent({
+            headings: targets.map((target) => ({
+                id: target.id,
+                top: target.getBoundingClientRect().top,
+                landingLine: padding + pixels(win.getComputedStyle(target).scrollMarginTop)
+            }))
+        });
+        if (current !== undefined) {
+            markHelpTocCurrent({ navs, id: current });
+        }
+    };
+
+    const onScroll = (): void => {
+        if (frame === undefined) {
+            frame = win.requestAnimationFrame(update);
+        }
+    };
+
+    const onClick = (event: Event): void => {
+        const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
+        const id = link?.getAttribute('href')?.slice(1);
+        if (id !== undefined && ids.includes(id)) {
+            pinned = true;
+            markHelpTocCurrent({ navs, id });
+        }
+    };
+
+    const onUserScroll = (): void => {
+        pinned = false;
+    };
+
+    const userScrollEvents = ['wheel', 'touchstart', 'keydown'] as const;
+    const root = doc.documentElement;
+    win.addEventListener('scroll', onScroll, { passive: true });
+    for (const name of userScrollEvents) {
+        win.addEventListener(name, onUserScroll, { passive: true });
+    }
+    // Capture phase on the root: a press on the scrollbar or a middle-click
+    // releases the pin before the nav's own click can set it again.
+    root.addEventListener('pointerdown', onUserScroll, { capture: true, passive: true });
+    for (const nav of navs) {
+        nav.addEventListener('click', onClick);
+    }
+    if (pinned) {
+        markHelpTocCurrent({ navs, id: initialHash });
+    } else {
+        update();
+    }
+
+    return () => {
+        win.removeEventListener('scroll', onScroll);
+        for (const name of userScrollEvents) {
+            win.removeEventListener(name, onUserScroll);
+        }
+        root.removeEventListener('pointerdown', onUserScroll, { capture: true });
+        for (const nav of navs) {
+            nav.removeEventListener('click', onClick);
+        }
+        if (frame !== undefined) {
+            win.cancelAnimationFrame(frame);
+        }
+    };
 }
