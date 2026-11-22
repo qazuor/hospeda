@@ -80,6 +80,10 @@ export function renderMarkdownToHtml(markdown: string): string {
 
     try {
         editor = new Editor({
+            // HOS-2545: this editor is never mounted, so TipTap's editor stylesheet is
+            // useless here. Left on, TipTap appends an inline <style> to <head> on every
+            // call, which the page CSP (style-src, hashes only) refuses once per entry.
+            injectCSS: false,
             extensions: [StarterKit, Markdown],
             content: markdown
         });
