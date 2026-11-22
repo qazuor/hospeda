@@ -71,7 +71,7 @@ describe('AccountSidebar', () => {
     it.each([
         'publica',
         'aliados'
-    ])('opens the first group when the page %s matches no nav item', (section) => {
+    ])('opens every titled personal group when the page %s matches no nav item (HOS-2551)', (section) => {
         const view = viewFor(['HOST'], section);
         const { container } = render(
             <AccountSidebar
@@ -79,9 +79,10 @@ describe('AccountSidebar', () => {
                 locale="es"
             />
         );
-        const open = [...container.querySelectorAll('details[open]')];
-        expect(open).toHaveLength(1);
-        expect(open[0]).toBe(container.querySelector('details[data-nav-group]'));
+        const open = [...container.querySelectorAll('details[open]')].map((el) =>
+            el.getAttribute('data-nav-group')
+        );
+        expect(open).toEqual(['perfil', 'turista']);
     });
 
     it('keeps a locked item as a link, with a lock and alternative text', () => {
@@ -164,6 +165,20 @@ describe('AccountSidebar: personal and business zones (HOS-2551)', () => {
         expect(hrefs).toContain('/es/mi-cuenta/asistentes-ia/');
         expect(hrefs).toContain('/es/mi-cuenta/favoritos/');
         expect(hrefs).not.toContain('/es/mi-cuenta/propiedades/');
+    });
+
+    it('on /mi-cuenta/ renders Mi perfil and Mis viajes open', () => {
+        const { container } = render(
+            <AccountSidebar
+                view={viewFor(['HOST'], 'mi-cuenta')}
+                locale="es"
+            />
+        );
+        expect(
+            [...container.querySelectorAll('details[open]')].map((el) =>
+                el.getAttribute('data-nav-group')
+            )
+        ).toEqual(['perfil', 'turista']);
     });
 
     it('on a business page shows «← Mi cuenta» on top and only the verticals', () => {

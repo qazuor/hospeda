@@ -207,6 +207,8 @@ function businessZone({
 /**
  * Builds the personal zone: «Inicio», «Mi perfil» («Asistentes de IA» only
  * for a real client), «Mis viajes», the interim entries, then the doors.
+ * Only the titled group holding the current page opens; when the current
+ * page sits in a header-less group (or none), every titled group opens.
  */
 function personalZone({
     groups,
@@ -243,7 +245,15 @@ function personalZone({
             suppressHeader: true
         })
     ].filter((entry) => entry.items.length > 0);
-    return { mode: 'personal', groups: withShellOpen({ groups: zone }), doors };
+    // On a page whose entry sits in a header-less group (the `/mi-cuenta/`
+    // home under «Inicio») no titled group holds the current page, and the
+    // HOS-2549 rule would leave «Mi perfil» and «Mis viajes» both collapsed.
+    // There every titled personal group opens; a remembered state still wins.
+    const activeInTitledGroup = zone.some((entry) => entry.containsActive && !entry.suppressHeader);
+    const zoneGroups = activeInTitledGroup
+        ? withShellOpen({ groups: zone })
+        : zone.map((entry) => ({ ...entry, shellDefaultOpen: !entry.suppressHeader }));
+    return { mode: 'personal', groups: zoneGroups, doors };
 }
 
 /**

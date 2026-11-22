@@ -232,6 +232,22 @@ describe('buildAccountNavModel: zoned shell (HOS-2551)', () => {
 
         it.each([
             'mi-cuenta',
+            'novedades',
+            'publica'
+        ])('opens every titled personal group when %s is not in one', (activeSection) => {
+            const shell = shellFor({ roles: ['HOST'], activeSection });
+            const open = shell.groups.filter((entry) => entry.shellDefaultOpen);
+            expect(open.map((entry) => entry.group.id)).toEqual(['perfil', 'turista']);
+        });
+
+        it('a pure tourist on /mi-cuenta/ also gets Mi perfil and Mis viajes open', () => {
+            const shell = shellFor({ roles: ['USER'], activeSection: 'mi-cuenta' });
+            const open = shell.groups.filter((entry) => entry.shellDefaultOpen);
+            expect(open.map((entry) => entry.group.id)).toEqual(['perfil', 'turista']);
+        });
+
+        it.each([
+            'mi-cuenta',
             'editar',
             'suscripcion',
             'preferencias',
