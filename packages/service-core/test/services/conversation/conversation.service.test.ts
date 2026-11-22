@@ -181,6 +181,7 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
         anonymousEmail: 'ana@example.com',
         anonymousEmailVerified: false,
         anonymousPhone: null,
+        pendingMessage: null,
         status: 'PENDING_VERIFICATION' as SelectConversation['status'],
         blockReason: null,
         locale: 'es',
@@ -372,6 +373,69 @@ describe('ConversationService', () => {
             expectSuccess(result);
             expect(result.data?.status).toBe('pending_verification');
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
+        });
+
+        it('HOS-2568: stores the guest message on the pending conversation', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([]);
+            const insertChain = makeInsertChainMock([makeConversation()]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola, ¿hay lugar en enero?'
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    pendingMessage: 'Hola, ¿hay lugar en enero?',
+                    status: 'PENDING_VERIFICATION'
+                })
+            );
+        });
+
+        it('HOS-2568: first submission wins, a resent never writes the message', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([
+                makeConversation({ pendingMessage: 'Consulta original' })
+            ]);
+            const insertChain = makeInsertChainMock([]);
+            const updateChain = makeUpdateChainMock([]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert,
+                update: updateChain.update
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Otra Persona',
+                guestEmail: 'ana@example.com',
+                message: 'Texto reescrito por un tercero'
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(result.data?.status).toBe('resent');
+            expect(insertChain.insert).not.toHaveBeenCalled();
+            expect(updateChain.update).not.toHaveBeenCalled();
         });
 
         it('should re-send email and return status=resent for unverified duplicate', async () => {
@@ -614,9 +678,12 @@ describe('ConversationService', () => {
                     const fakeTx = {
                         update: vi.fn().mockReturnValue({
                             set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue([])
+                                where: vi.fn().mockReturnValue({
+                                    returning: vi.fn().mockResolvedValue([{ id: CONVERSATION_ID }])
+                                })
                             })
-                        })
+                        }),
+                        insert: vi.fn()
                     };
                     return fn({ tx: fakeTx, hookState: {} });
                 }
@@ -632,6 +699,106 @@ describe('ConversationService', () => {
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
             expect(result.data?.rawToken).toBe(rawToken);
             expect(notificationScheduleMock.upsertForMessage).toHaveBeenCalledOnce();
+        });
+
+        /** Runs a verification with a recording fake transaction (HOS-2568). */
+        async function verifyWithRecordingTx(args: {
+            readonly pendingMessage: string | null;
+            readonly claimed: boolean;
+        }) {
+            asMock(conversationModelMock.findById).mockResolvedValue(
+                makeConversation({ pendingMessage: args.pendingMessage })
+            );
+            asMock(jose.jwtVerify).mockResolvedValue({
+                payload: { conversationId: CONVERSATION_ID, email: 'ana@example.com' }
+            });
+            const setCalls: Array<Record<string, unknown>> = [];
+            const insertedValues: Array<Record<string, unknown>> = [];
+            asMock(withServiceTransaction).mockImplementationOnce(
+                async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) => {
+                    const fakeTx = {
+                        update: vi.fn().mockReturnValue({
+                            set: vi.fn().mockImplementation((values: Record<string, unknown>) => {
+                                setCalls.push(values);
+                                return {
+                                    where: vi.fn().mockReturnValue({
+                                        returning: vi
+                                            .fn()
+                                            .mockResolvedValue(
+                                                args.claimed ? [{ id: CONVERSATION_ID }] : []
+                                            )
+                                    })
+                                };
+                            })
+                        }),
+                        insert: vi.fn().mockReturnValue({
+                            values: vi
+                                .fn()
+                                .mockImplementation((values: Record<string, unknown>) => {
+                                    insertedValues.push(values);
+                                    return Promise.resolve([]);
+                                })
+                        })
+                    };
+                    return fn({ tx: fakeTx, hookState: {} });
+                }
+            );
+            const result = await service.verifyEmailToken(ACTOR, {
+                verificationToken: 'mock.jwt.token'
+            });
+            return { result, setCalls, insertedValues };
+        }
+
+        it('HOS-2568: inserts the held message as the guest first message and sets the counters', async () => {
+            // Act
+            const { result, setCalls, insertedValues } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola, ¿hay lugar en enero?',
+                claimed: true
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertedValues).toEqual([
+                expect.objectContaining({
+                    conversationId: CONVERSATION_ID,
+                    senderType: 'GUEST',
+                    userId: null,
+                    body: 'Hola, ¿hay lugar en enero?',
+                    status: 'VISIBLE'
+                })
+            ]);
+            expect(setCalls[0]).toMatchObject({
+                status: 'PENDING_OWNER',
+                anonymousEmailVerified: true,
+                pendingMessage: null
+            });
+            expect(setCalls[1]).toMatchObject({
+                guestMessageCount: 1,
+                firstGuestMessageAt: expect.any(Date),
+                lastGuestMessageAt: expect.any(Date),
+                lastActivityAt: expect.any(Date)
+            });
+        });
+
+        it('HOS-2568: inserts nothing when another verification already claimed the row', async () => {
+            const { result, insertedValues } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola',
+                claimed: false
+            });
+
+            expectSuccess(result);
+            expect(insertedValues).toHaveLength(0);
+        });
+
+        it('HOS-2568: inserts nothing for a legacy row with no held message', async () => {
+            const { result, insertedValues, setCalls } = await verifyWithRecordingTx({
+                pendingMessage: null,
+                claimed: true
+            });
+
+            expectSuccess(result);
+            expect(insertedValues).toHaveLength(0);
+            expect(setCalls).toHaveLength(1);
         });
 
         it('should be idempotent — return fresh token when conversation is already past PENDING_VERIFICATION', async () => {

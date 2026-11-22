@@ -179,6 +179,7 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
         anonymousEmail: 'ana@example.com',
         anonymousEmailVerified: false,
         anonymousPhone: null,
+        pendingMessage: null,
         status: 'PENDING_OWNER' as SelectConversation['status'],
         blockReason: null,
         locale: 'es',
