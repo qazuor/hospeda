@@ -39,6 +39,13 @@ export interface DrawerProps {
     readonly footer?: ReactNode;
     /** Optional help anchor rendered as `data-help` on the header. */
     readonly helpId?: HelpAnchor;
+    /**
+     * Whether the shared Dialog claims a history entry (HOS-310) so the back
+     * button closes the drawer. Pass `false` when the caller owns the entry
+     * itself, e.g. because the drawer holds navigation links and must unwind
+     * the entry BEFORE navigating (HOS-2541). @default true
+     */
+    readonly claimHistoryEntry?: boolean;
     /** Drawer body. */
     readonly children?: ReactNode;
 }
@@ -57,6 +64,7 @@ export function Drawer({
     side = 'bottom',
     footer,
     helpId,
+    claimHistoryEntry = true,
     children
 }: DrawerProps) {
     const titleId = useId();
@@ -66,6 +74,7 @@ export function Drawer({
             isOpen={open}
             onClose={() => onOpenChange(false)}
             ariaLabelledBy={titleId}
+            claimHistoryEntry={claimHistoryEntry}
             size="md"
             className={cx(styles.panel, side === 'bottom' ? styles.bottom : styles.right)}
             overlayClassName={cx(
