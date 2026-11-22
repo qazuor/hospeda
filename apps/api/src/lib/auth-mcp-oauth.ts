@@ -18,6 +18,9 @@
  *   ChatGPT send a metadata-document URL as their `client_id`).
  *
  * - `mcpRegistrationRedirectGuard` — the redirect allowlist at DCR.
+ * - `createMcpRealClientGuard` — HOS-2562: only a real client (a person with a
+ *   business vertical) may authorize or consent; `customAccessTokenClaims`
+ *   refuses to issue a token for anybody else (`auth-mcp-client-guard.ts`).
  *
  * Everything is gated by `HOSPEDA_MCP_ENABLED`. The plugin list is built once
  * when `getAuth()` first runs, so flipping the flag needs an API redeploy. With the flag off
@@ -52,6 +55,11 @@ import type { BetterAuthPlugin } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { jwt } from 'better-auth/plugins';
 import { mcpCimdFetch } from './auth-mcp-cimd-fetch';
+import {
+    assertMcpRealClientForToken,
+    createMcpRealClientGuard,
+    type IsRealClientForUser
+} from './auth-mcp-client-guard';
 
 /**
  * Scopes the provider accepts. `offline_access` is what makes the provider
@@ -259,6 +267,8 @@ export interface BuildMcpOAuthProviderOptionsArgs {
     readonly resourceUrl: string;
     /** Public web origin (`HOSPEDA_SITE_URL`), where login and consent live. */
     readonly siteUrl: string;
+    /** The «real client» check behind the token-issuance gate (HOS-2562). */
+    readonly isRealClientForUser: IsRealClientForUser;
 }
 
 /**
@@ -275,13 +285,17 @@ export interface BuildMcpOAuthProviderOptionsArgs {
  *   omit `application_type` register a loopback callback.
  * - `validateRedirectUri` narrows the provider's own matching: a URI must
  *   match the client's registration AND be on the MCP allowlist.
+ * - `customAccessTokenClaims` adds no claim: it is the HOS-2562 gate. It throws
+ *   for a user who is not a real client, so no access token is issued for
+ *   them, neither at the code exchange nor at a refresh.
  *
  * @param args - Resource URL and web origin
  * @returns Options to pass to `oauthProvider()`
  */
 export function buildMcpOAuthProviderOptions({
     resourceUrl,
-    siteUrl
+    siteUrl,
+    isRealClientForUser
 }: BuildMcpOAuthProviderOptionsArgs): OAuthOptions<Scope[]> {
     const siteOrigin = siteUrl.replace(/\/+$/, '');
 
@@ -297,7 +311,11 @@ export function buildMcpOAuthProviderOptions({
         clientRegistrationRequirePKCE: true,
         clientRegistrationDefaultApplicationType: 'infer',
         validateRedirectUri: (redirectUri, _registeredUris, defaultResult) =>
-            defaultResult && isAllowedMcpRedirectUri({ redirectUri })
+            defaultResult && isAllowedMcpRedirectUri({ redirectUri }),
+        customAccessTokenClaims: async ({ user }) => {
+            await assertMcpRealClientForToken({ user, isRealClientForUser });
+            return {};
+        }
     };
 }
 
@@ -311,7 +329,23 @@ export interface BuildMcpOAuthConfigArgs {
     readonly resourceUrl: string | undefined;
     /** `HOSPEDA_SITE_URL`. */
     readonly siteUrl: string;
+    /**
+     * The «real client» check (HOS-2562). Defaults to `isUserRealClient`
+     * (loaded lazily); tests replace it.
+     */
+    readonly isRealClientForUser?: IsRealClientForUser;
 }
+
+/**
+ * Production «real client» check, imported on first use: `mcp-real-client`
+ * pulls the actor builder and its permission caches, which read `@repo/db`
+ * models at module load. Loading it lazily keeps this builder importable on
+ * its own (and by tests that never authorize anybody).
+ */
+const isUserRealClientLazily: IsRealClientForUser = async (input) => {
+    const { isUserRealClient } = await import('./mcp-real-client');
+    return isUserRealClient(input);
+};
 
 /**
  * What `auth.ts` merges into its Better Auth options.
@@ -332,7 +366,8 @@ export interface McpOAuthConfig {
  *
  * With the flag off nothing is constructed: no plugin, no disabled path.
  * With it on, returns `jwt`, `oauthProvider` and `cimd` (in that order; `cimd`
- * extends the provider from its `init` hook) and disables the JWT plugin's
+ * extends the provider from its `init` hook), then the registration guard and
+ * the real-client guard, and disables the JWT plugin's
  * `/token` endpoint, as the provider docs require.
  *
  * @param args - Flag, resource URL and web origin
@@ -353,7 +388,8 @@ export interface McpOAuthConfig {
 export function buildMcpOAuthConfig({
     enabled,
     resourceUrl,
-    siteUrl
+    siteUrl,
+    isRealClientForUser = isUserRealClientLazily
 }: BuildMcpOAuthConfigArgs): McpOAuthConfig {
     if (enabled !== true) {
         return { enabled: false, plugins: [], disabledPaths: [], oauthProviderOptions: null };
@@ -362,7 +398,11 @@ export function buildMcpOAuthConfig({
         throw new Error('HOSPEDA_MCP_RESOURCE_URL is required when HOSPEDA_MCP_ENABLED is true');
     }
 
-    const oauthProviderOptions = buildMcpOAuthProviderOptions({ resourceUrl, siteUrl });
+    const oauthProviderOptions = buildMcpOAuthProviderOptions({
+        resourceUrl,
+        siteUrl,
+        isRealClientForUser
+    });
 
     return {
         enabled: true,
@@ -374,7 +414,8 @@ export function buildMcpOAuthConfig({
                 isMetadataDocumentUrlAllowed: (clientIdUrl) => isMcpCimdUrlAllowed(clientIdUrl),
                 metadataProfile: 'mcp-2026-07-28'
             }),
-            mcpRegistrationRedirectGuard
+            mcpRegistrationRedirectGuard,
+            createMcpRealClientGuard({ isRealClientForUser })
         ],
         disabledPaths: [...MCP_DISABLED_AUTH_PATHS],
         oauthProviderOptions

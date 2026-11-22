@@ -19,6 +19,8 @@ import {
 
 const RESOURCE_URL = 'https://staging-api.hospeda.com.ar/mcp';
 const SITE_URL = 'https://staging.hospeda.com.ar';
+/** Every user is a real client unless a test says otherwise (HOS-2562). */
+const IS_CLIENT = async () => true;
 
 describe('isAllowedMcpRedirectUri', () => {
     it.each([
@@ -96,7 +98,8 @@ describe('buildMcpOAuthProviderOptions', () => {
         // Arrange / Act
         const options = buildMcpOAuthProviderOptions({
             resourceUrl: RESOURCE_URL,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            isRealClientForUser: IS_CLIENT
         });
 
         // Assert
@@ -107,7 +110,8 @@ describe('buildMcpOAuthProviderOptions', () => {
         // Arrange / Act
         const options = buildMcpOAuthProviderOptions({
             resourceUrl: RESOURCE_URL,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            isRealClientForUser: IS_CLIENT
         });
 
         // Assert
@@ -118,7 +122,8 @@ describe('buildMcpOAuthProviderOptions', () => {
         // Arrange / Act
         const options = buildMcpOAuthProviderOptions({
             resourceUrl: RESOURCE_URL,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            isRealClientForUser: IS_CLIENT
         });
 
         // Assert
@@ -132,7 +137,8 @@ describe('buildMcpOAuthProviderOptions', () => {
         // Arrange / Act
         const options = buildMcpOAuthProviderOptions({
             resourceUrl: RESOURCE_URL,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            isRealClientForUser: IS_CLIENT
         });
 
         // Assert
@@ -144,7 +150,8 @@ describe('buildMcpOAuthProviderOptions', () => {
         // Arrange / Act
         const options = buildMcpOAuthProviderOptions({
             resourceUrl: RESOURCE_URL,
-            siteUrl: `${SITE_URL}/`
+            siteUrl: `${SITE_URL}/`,
+            isRealClientForUser: IS_CLIENT
         });
 
         // Assert
@@ -157,7 +164,8 @@ describe('buildMcpOAuthProviderOptions', () => {
         // Arrange
         const options = buildMcpOAuthProviderOptions({
             resourceUrl: RESOURCE_URL,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            isRealClientForUser: IS_CLIENT
         });
         const validate = options.validateRedirectUri;
         const claude = 'https://claude.ai/api/mcp/auth_callback';
@@ -205,7 +213,7 @@ describe('buildMcpOAuthConfig', () => {
         expect(build).not.toThrow();
     });
 
-    it('registers jwt, oauth-provider, cimd and the registration guard, in that order, when on', () => {
+    it('registers jwt, oauth-provider, cimd, the registration guard and the real-client guard, in that order, when on', () => {
         // Arrange / Act
         const config = buildMcpOAuthConfig({
             enabled: true,
@@ -219,7 +227,8 @@ describe('buildMcpOAuthConfig', () => {
             'jwt',
             'oauth-provider',
             'cimd',
-            'hospeda-mcp-registration-redirect-guard'
+            'hospeda-mcp-registration-redirect-guard',
+            'hospeda-mcp-real-client-guard'
         ]);
         expect(config.oauthProviderOptions?.resources).toEqual([RESOURCE_URL]);
     });
@@ -251,5 +260,53 @@ describe('buildMcpOAuthConfig', () => {
 
         // Assert
         expect(build).toThrow(/HOSPEDA_MCP_RESOURCE_URL is required/);
+    });
+});
+
+describe('customAccessTokenClaims (HOS-2562 token-issuance gate)', () => {
+    const user = { id: '00000000-0000-4000-8000-000000000001', email: 'a@example.com' };
+
+    it('issues the token, with no extra claim, for a real client', async () => {
+        // Arrange
+        const options = buildMcpOAuthProviderOptions({
+            resourceUrl: RESOURCE_URL,
+            siteUrl: SITE_URL,
+            isRealClientForUser: IS_CLIENT
+        });
+
+        // Act
+        const claims = await options.customAccessTokenClaims?.({
+            user,
+            scopes: ['openid'],
+            resources: [RESOURCE_URL]
+        } as unknown as Parameters<NonNullable<typeof options.customAccessTokenClaims>>[0]);
+
+        // Assert
+        expect(claims).toEqual({});
+    });
+
+    it.each([
+        ['a pure tourist', user],
+        ['no user (a machine grant)', null]
+    ])('refuses to issue a token for %s with 403 access_denied', async (_label, subject) => {
+        // Arrange
+        const options = buildMcpOAuthProviderOptions({
+            resourceUrl: RESOURCE_URL,
+            siteUrl: SITE_URL,
+            isRealClientForUser: async () => false
+        });
+
+        // Act
+        const issue = options.customAccessTokenClaims?.({
+            user: subject,
+            scopes: ['openid'],
+            resources: [RESOURCE_URL]
+        } as unknown as Parameters<NonNullable<typeof options.customAccessTokenClaims>>[0]);
+
+        // Assert
+        await expect(issue).rejects.toMatchObject({
+            statusCode: 403,
+            body: { error: 'access_denied' }
+        });
     });
 });
