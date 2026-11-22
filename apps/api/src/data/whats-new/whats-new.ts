@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4684
+    {
+        id: '2026-11-22-refunds-runbook-points-to-remainder-settlement',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'El manual de devoluciones ahora te lleva a «Asentar el resto»',
+            en: 'The refunds manual now points you to "Settle the remainder"',
+            pt: 'O manual de reembolsos agora leva você a «Registrar o restante»'
+        },
+        body: {
+            es: 'Cuando Mercado Pago acepta una devolución sólo en parte, el manual de devoluciones explica paso a paso cómo cerrarla con «Asentar el resto de una devolución desde el panel de MP», en Facturación, Conciliación, Devoluciones.',
+            en: 'When Mercado Pago accepts a refund only in part, the refunds manual now explains step by step how to close it with "Settle the remainder of a refund from the MP panel", under Billing, Reconciliation, Refunds.',
+            pt: 'Quando o Mercado Pago aceita um reembolso apenas em parte, o manual de reembolsos agora explica passo a passo como encerrá-lo com «Registrar o restante de um reembolso pelo painel do MP», em Faturamento, Conciliação, Reembolsos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4414
     {
         id: '2026-11-16-owners-can-downgrade-their-plan',
