@@ -4,7 +4,7 @@
    breakpoints; the content column answers to its own container. */
 
 .shell {
-    display: contents;
+    display: block;
     max-inline-size: 90rem;
     margin-inline: auto;
 }
@@ -14,7 +14,7 @@
        AccountBar lives inside the island (itself display: contents), so a block
        wrapper exactly as tall as the bar would be its containing block and leave
        it no room to travel. With contents, .shell becomes the containing block. */
-    display: block;
+    display: contents;
 }
 
 .sidebar {
