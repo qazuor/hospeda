@@ -116,6 +116,30 @@ export interface NavGroup {
 /** Id of the AI assistants nav item, which the sidebar gates on the MCP feature. */
 export const AI_ASSISTANTS_NAV_ITEM_ID = 'aiAssistants';
 
+/** Id of the `/mi-cuenta/` entry: the areas home (HOS-2551). */
+export const DASHBOARD_NAV_ITEM_ID = 'dashboard';
+
+/**
+ * The PERSONAL account entries, in display order (HOS-2551). The header user
+ * menu lists exactly these (then «Cerrar sesión»), and on a personal page the
+ * account sidebar lists them too. Every id belongs to the `cuenta` group.
+ */
+export const PERSONAL_NAV_ITEM_IDS = [
+    'editProfile',
+    'subscription',
+    'preferences',
+    'newsletter',
+    AI_ASSISTANTS_NAV_ITEM_ID
+] as const;
+
+/**
+ * Personal entries that only the sidebar still lists, after
+ * {@link PERSONAL_NAV_ITEM_IDS}. HOS-2550 moves «Qué hay de nuevo» and «Ayuda»
+ * to header icons; until it ships, the personal sidebar is the only link to
+ * `/mi-cuenta/novedades` and `/mi-cuenta/ayuda`, so they stay there.
+ */
+export const INTERIM_PERSONAL_NAV_ITEM_IDS = ['whatsNew', 'help'] as const;
+
 const FULL_SURFACES: readonly NavSurface[] = ['sidebar', 'mobile'];
 
 /**
@@ -136,7 +160,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         i18nKey: 'account.nav.groupAccount',
         items: [
             {
-                id: 'dashboard',
+                id: DASHBOARD_NAV_ITEM_ID,
                 i18nKey: 'account.nav.dashboard',
                 href: 'mi-cuenta',
                 icon: HomeIcon,

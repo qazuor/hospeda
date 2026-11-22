@@ -7,6 +7,29 @@
     gap: var(--space-4);
 }
 
+/* «← Mis áreas» on a personal page (HOS-2551). */
+.areasLink {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--control-h-md);
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-control);
+    color: var(--core-muted-foreground);
+    font: var(--app-control);
+    text-decoration: none;
+}
+
+.areasLink:hover {
+    background-color: var(--muted);
+    color: var(--core-foreground);
+}
+
+.areasLink:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
 .group {
     display: flex;
     flex-direction: column;

@@ -23,7 +23,7 @@ describe('AccountSidebar', () => {
     it('is a labelled nav with native details groups', () => {
         const { container } = render(
             <AccountSidebar
-                view={viewFor(['USER'])}
+                view={viewFor(['HOST'])}
                 locale="es"
             />
         );
@@ -34,7 +34,7 @@ describe('AccountSidebar', () => {
     });
 
     it('opens the group that holds the active page and marks the item with aria-current', () => {
-        const view = viewFor(['USER'], 'editar');
+        const view = viewFor(['HOST'], 'propiedades');
         const { container } = render(
             <AccountSidebar
                 view={view}
@@ -42,14 +42,14 @@ describe('AccountSidebar', () => {
             />
         );
         const current = container.querySelector('a[aria-current="page"]');
-        expect(current).toHaveAttribute('href', '/es/mi-cuenta/editar/');
+        expect(current).toHaveAttribute('href', '/es/mi-cuenta/propiedades/');
         const group = current?.closest('details');
         expect(group).toHaveAttribute('open');
         expect(group).toHaveAttribute('data-contains-active', 'true');
     });
 
     it('renders only the group holding the current page open (HOS-2549)', () => {
-        const view = viewFor(['HOST', 'VENUE_OWNER'], 'editar');
+        const view = viewFor(['HOST', 'EDITOR'], 'favoritos');
         const { container } = render(
             <AccountSidebar
                 view={view}
@@ -61,7 +61,7 @@ describe('AccountSidebar', () => {
         );
         const all = container.querySelectorAll('details[data-nav-group]').length;
         expect(all).toBeGreaterThan(1);
-        expect(open).toHaveLength(1);
+        expect(open).toEqual(['turista']);
         expect(container.querySelector('details[open]')).toHaveAttribute(
             'data-contains-active',
             'true'
@@ -73,7 +73,7 @@ describe('AccountSidebar', () => {
         'partner',
         'aliados'
     ])('opens the first group when the page %s matches no nav item', (section) => {
-        const view = viewFor(['USER'], section);
+        const view = viewFor(['HOST'], section);
         const { container } = render(
             <AccountSidebar
                 view={view}
@@ -116,11 +116,24 @@ describe('AccountSidebar', () => {
         );
     });
 
-    it('renders the discovery doors and slots the existing count-pill islands', () => {
+    it('renders the discovery doors on an area page', () => {
         const view = viewFor(['USER']);
         render(
             <AccountSidebar
                 view={view}
+                locale="es"
+            />
+        );
+        expect(view.doors.length).toBeGreaterThan(0);
+        for (const door of view.doors) {
+            expect(screen.getByRole('link', { name: door.label })).toBeInTheDocument();
+        }
+    });
+
+    it('slots the existing count-pill islands', () => {
+        render(
+            <AccountSidebar
+                view={viewFor(['USER'], 'editar')}
                 locale="es"
                 whatsNewCount={<span data-testid="wn">3</span>}
             />
@@ -129,9 +142,65 @@ describe('AccountSidebar', () => {
             'href',
             expect.stringContaining('novedades')
         );
-        for (const door of view.doors) {
-            expect(screen.getByRole('link', { name: door.label })).toBeInTheDocument();
-        }
+    });
+});
+
+describe('AccountSidebar: personal and area pages (HOS-2551)', () => {
+    it('on a personal page shows «Mis áreas» on top, then only the personal entries', () => {
+        const { container } = render(
+            <AccountSidebar
+                view={viewFor(['HOST'], 'editar')}
+                locale="es"
+            />
+        );
+        const nav = container.querySelector('[data-account-sidebar]') as Element;
+        expect(nav).toHaveAttribute('data-nav-mode', 'personal');
+        const links = [...nav.querySelectorAll('a')];
+        expect(links[0]).toHaveAttribute('data-areas-link');
+        expect(links[0]).toHaveAttribute('href', '/es/mi-cuenta/');
+        expect(links[0]).toHaveTextContent('Mis áreas');
+        expect(links.slice(1).map((link) => link.getAttribute('href'))).toEqual([
+            '/es/mi-cuenta/editar/',
+            '/es/mi-cuenta/suscripcion/',
+            '/es/mi-cuenta/preferencias/',
+            '/es/mi-cuenta/newsletter/',
+            '/es/mi-cuenta/asistentes-ia/',
+            '/es/mi-cuenta/novedades/',
+            '/es/mi-cuenta/ayuda/'
+        ]);
+        expect(nav.querySelector('details')).toBeNull();
+    });
+
+    it('on an area page shows no «Mis áreas» link and no personal entry', () => {
+        const { container } = render(
+            <AccountSidebar
+                view={viewFor(['HOST'], 'propiedades')}
+                locale="es"
+            />
+        );
+        const nav = container.querySelector('[data-account-sidebar]') as Element;
+        expect(nav).toHaveAttribute('data-nav-mode', 'areas');
+        expect(nav.querySelector('[data-areas-link]')).toBeNull();
+        const hrefs = [...nav.querySelectorAll('a')].map((link) => link.getAttribute('href'));
+        expect(hrefs).not.toContain('/es/mi-cuenta/editar/');
+        expect(hrefs).not.toContain('/es/mi-cuenta/ayuda/');
+        expect(hrefs).not.toContain('/es/mi-cuenta/novedades/');
+    });
+
+    it('a pure tourist sees the tourist items as a flat list without a group title', () => {
+        const view = viewFor(['USER'], 'favoritos');
+        const { container } = render(
+            <AccountSidebar
+                view={view}
+                locale="es"
+            />
+        );
+        expect(container.querySelector('details')).toBeNull();
+        expect(screen.queryByText('Área turista')).toBeNull();
+        expect(container.querySelector('a[aria-current="page"]')).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/favoritos/'
+        );
     });
 });
 

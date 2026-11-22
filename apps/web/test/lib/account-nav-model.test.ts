@@ -153,3 +153,146 @@ describe('buildAccountNavModel: gated entries', () => {
         }
     });
 });
+
+describe('buildAccountNavModel: shell split (HOS-2551)', () => {
+    const shellFor = (
+        roles: readonly string[],
+        activeSection: string,
+        ownsHostTradeListing = false
+    ) =>
+        buildAccountNavModel({ roles, ownsHostTradeListing, mcpEnabled: true, activeSection })
+            .shell;
+    const shellGroupIds = (shell: ReturnType<typeof shellFor>) =>
+        shell.groups.map((entry) => entry.group.id);
+    const shellItemIds = (shell: ReturnType<typeof shellFor>) =>
+        shell.groups.flatMap((entry) => entry.items.map((item) => item.item.id));
+
+    describe('personal page', () => {
+        it('lists only the personal entries, in order, as one header-less open group', () => {
+            const shell = shellFor(['HOST', 'VENUE_OWNER'], 'editar');
+            expect(shell.mode).toBe('personal');
+            expect(shell.groups).toHaveLength(1);
+            expect(shell.groups[0]?.suppressHeader).toBe(true);
+            expect(shell.groups[0]?.shellDefaultOpen).toBe(true);
+            expect(shellItemIds(shell)).toEqual([
+                'editProfile',
+                'subscription',
+                'preferences',
+                'newsletter',
+                'aiAssistants',
+                'whatsNew',
+                'help'
+            ]);
+        });
+
+        it('marks the current entry active and shows no discovery door', () => {
+            const shell = shellFor(['USER'], 'preferencias');
+            const active = shell.groups
+                .flatMap((entry) => entry.items)
+                .filter((item) => item.active);
+            expect(active.map((item) => item.item.id)).toEqual(['preferences']);
+            expect(shell.doors).toEqual([]);
+        });
+
+        it('never lists the areas home or an area entry', () => {
+            const ids = shellItemIds(shellFor(['HOST'], 'editar'));
+            expect(ids).not.toContain('dashboard');
+            expect(ids).not.toContain('properties');
+            expect(ids).not.toContain('favorites');
+        });
+
+        it.each([
+            'editar',
+            'suscripcion',
+            'preferencias',
+            'newsletter',
+            'asistentes-ia',
+            'novedades',
+            'ayuda'
+        ])('treats activeSection=%s as a personal page', (activeSection) => {
+            expect(shellFor(['USER'], activeSection).mode).toBe('personal');
+        });
+
+        it('keeps the AI-assistants entry hidden until revealed when MCP is off', () => {
+            const shell = buildAccountNavModel({
+                roles: ['USER'],
+                ownsHostTradeListing: false,
+                mcpEnabled: false,
+                activeSection: 'editar'
+            }).shell;
+            const ai = shell.groups
+                .flatMap((entry) => entry.items)
+                .find((item) => item.item.id === 'aiAssistants');
+            expect(ai?.hiddenUntilRevealed).toBe(true);
+        });
+    });
+
+    describe('area page', () => {
+        it('lists only the areas the person has, with the current group open', () => {
+            const shell = shellFor(['HOST', 'VENUE_OWNER'], 'propiedades');
+            expect(shell.mode).toBe('areas');
+            expect(shellGroupIds(shell)).toEqual(['anfitrion', 'comercio', 'turista']);
+            const open = shell.groups.filter((entry) => entry.shellDefaultOpen);
+            expect(open.map((entry) => entry.group.id)).toEqual(['anfitrion']);
+            expect(shell.groups.find((entry) => entry.group.id === 'turista')?.suppressHeader).toBe(
+                false
+            );
+        });
+
+        it('lists no personal entry', () => {
+            const ids = shellItemIds(shellFor(['HOST'], 'favoritos'));
+            expect(ids).not.toContain('editProfile');
+            expect(ids).not.toContain('whatsNew');
+            expect(ids).not.toContain('help');
+        });
+
+        it('treats the areas home /mi-cuenta/ as an area page and opens the first headed area', () => {
+            const shell = shellFor(['HOST'], 'mi-cuenta');
+            expect(shell.mode).toBe('areas');
+            expect(shellItemIds(shell)).not.toContain('dashboard');
+            const open = shell.groups.filter((entry) => entry.shellDefaultOpen);
+            expect(open.map((entry) => entry.group.id)).toEqual(['anfitrion']);
+        });
+
+        it('keeps the discovery doors with the areas', () => {
+            const model = buildAccountNavModel({
+                roles: ['USER'],
+                ownsHostTradeListing: false,
+                mcpEnabled: true,
+                activeSection: 'mi-cuenta'
+            });
+            expect(model.shell.doors).toEqual(model.doors);
+        });
+
+        it('leaves the legacy groups untouched (cuenta still first)', () => {
+            const model = buildAccountNavModel({
+                roles: ['HOST'],
+                ownsHostTradeListing: false,
+                mcpEnabled: true,
+                activeSection: 'propiedades'
+            });
+            expect(model.groups[0]?.group.id).toBe('cuenta');
+        });
+    });
+
+    describe('single-area account', () => {
+        it.each([
+            'mi-cuenta',
+            'favoritos'
+        ])('a pure tourist on %s sees the tourist items as a flat list', (activeSection) => {
+            const shell = shellFor(['USER'], activeSection);
+            expect(shell.mode).toBe('areas');
+            expect(shellGroupIds(shell)).toEqual(['turista']);
+            expect(shell.groups[0]?.suppressHeader).toBe(true);
+            expect(shellItemIds(shell)).toContain('favorites');
+        });
+
+        it('a tourist who also owns a provider listing has two areas, tourist headed', () => {
+            const shell = shellFor(['USER'], 'favoritos', true);
+            expect(shellGroupIds(shell)).toEqual(['proveedor', 'turista']);
+            expect(shell.groups.find((entry) => entry.group.id === 'turista')?.suppressHeader).toBe(
+                false
+            );
+        });
+    });
+});

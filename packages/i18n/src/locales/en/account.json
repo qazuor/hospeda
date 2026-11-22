@@ -2038,7 +2038,8 @@
         },
         "sidebar": {
             "lockedLabel": "Requires a higher plan",
-            "label": "My account navigation"
+            "label": "My account navigation",
+            "areasLink": "My areas"
         },
         "breadcrumbs": "Breadcrumb",
         "gallery": {

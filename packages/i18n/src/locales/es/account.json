@@ -2038,7 +2038,8 @@
         },
         "sidebar": {
             "lockedLabel": "Requiere un plan superior",
-            "label": "Navegación de Mi cuenta"
+            "label": "Navegación de Mi cuenta",
+            "areasLink": "Mis áreas"
         },
         "breadcrumbs": "Ruta de navegación",
         "gallery": {

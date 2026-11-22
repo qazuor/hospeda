@@ -10,6 +10,9 @@
  * separate (D20) and «Complementos» appears as its own item (D15) whenever the
  * config declares it.
  *
+ * On a personal page (HOS-2551, `view.areasLink`) a «← Mis áreas» link to
+ * `/mi-cuenta/` sits on top of the personal entries.
+ *
  * Count pills are the EXISTING islands, passed as named slots from the Astro
  * shell (`whatsNewCount`, `benefitUsagesCount`, `aiAssistantsReveal`).
  *
@@ -144,7 +147,18 @@ export function AccountSidebar({
             aria-label={t('account.ui.sidebar.label')}
             className={cx(styles.nav, className)}
             data-account-sidebar=""
+            data-nav-mode={view.mode}
         >
+            {view.areasLink ? (
+                <a
+                    href={view.areasLink.href}
+                    className={styles.areasLink}
+                    data-areas-link=""
+                >
+                    <span aria-hidden="true">←</span>
+                    <span>{view.areasLink.label}</span>
+                </a>
+            ) : null}
             {view.groups.map((group) => {
                 const list = (
                     <ul className={styles.list}>

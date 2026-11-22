@@ -32,6 +32,19 @@ const model = buildAccountNavModel({
     activeSection: 'editar'
 });
 const view = buildSidebarView({ model, locale: 'es' });
+const areasView = buildSidebarView({
+    model: buildAccountNavModel({
+        roles: ['HOST'],
+        ownsHostTradeListing: false,
+        mcpEnabled: false,
+        activeSection: 'propiedades'
+    }),
+    locale: 'es'
+});
+
+/** Hrefs of every link inside a node, in order. */
+const hrefsIn = (node: ParentNode) =>
+    [...node.querySelectorAll('a')].map((anchor) => anchor.getAttribute('href'));
 
 describe('AccountBar', () => {
     it('shows the menu label and the current section', () => {
@@ -79,32 +92,58 @@ describe('AccountBar', () => {
         await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     });
 
-    it('lists the same groups in the drawer as the sidebar does for the same view', async () => {
+    it.each([
+        ['a personal page', view],
+        ['an area page', areasView]
+    ])('lists the same links in the drawer as the sidebar does on %s (HOS-2551)', async (_label, pageView) => {
         const user = userEvent.setup();
         const { container } = render(
             <>
                 <AccountSidebar
-                    view={view}
+                    view={pageView}
                     locale="es"
                 />
                 <AccountBar
-                    view={view}
+                    view={pageView}
                     locale="es"
                 />
             </>
         );
         await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
         const dialog = await screen.findByRole('dialog');
-        const sidebarGroups = [
-            ...container
-                .querySelectorAll('[data-account-sidebar]')[0]
-                .querySelectorAll('[data-nav-group]')
-        ].map((el) => el.getAttribute('data-nav-group'));
-        const drawerGroups = [...dialog.querySelectorAll('[data-nav-group]')].map((el) =>
-            el.getAttribute('data-nav-group')
+        const sidebar = container.querySelectorAll('[data-account-sidebar]')[0] as Element;
+        const drawerLinks = hrefsIn(dialog);
+        expect(drawerLinks).toEqual(hrefsIn(sidebar));
+        expect(drawerLinks.length).toBeGreaterThan(0);
+    });
+
+    it('shows «Mis áreas» and only the personal entries in the drawer on a personal page (HOS-2551)', async () => {
+        const user = userEvent.setup();
+        render(
+            <AccountBar
+                view={view}
+                locale="es"
+            />
         );
-        expect(drawerGroups).toEqual(sidebarGroups);
-        expect(drawerGroups.length).toBeGreaterThan(0);
+        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
+        const dialog = await screen.findByRole('dialog');
+        expect(dialog.querySelector('[data-areas-link]')).toHaveAttribute('href', '/es/mi-cuenta/');
+        expect(hrefsIn(dialog)).not.toContain('/es/mi-cuenta/propiedades/');
+    });
+
+    it('shows only the areas in the drawer on an area page (HOS-2551)', async () => {
+        const user = userEvent.setup();
+        render(
+            <AccountBar
+                view={areasView}
+                locale="es"
+            />
+        );
+        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
+        const dialog = await screen.findByRole('dialog');
+        expect(dialog.querySelector('[data-areas-link]')).toBeNull();
+        expect(hrefsIn(dialog)).toContain('/es/mi-cuenta/propiedades/');
+        expect(hrefsIn(dialog)).not.toContain('/es/mi-cuenta/editar/');
     });
 
     it('points aria-controls at the drawer only while it is open', async () => {
@@ -125,9 +164,9 @@ describe('AccountBar', () => {
 
     it('gives the drawer copy the icons and the count pills of the desktop sidebar', async () => {
         const user = userEvent.setup();
-        render(
+        const { unmount } = render(
             <AccountBar
-                view={view}
+                view={areasView}
                 locale="es"
             />
         );
@@ -135,8 +174,18 @@ describe('AccountBar', () => {
         const dialog = await screen.findByRole('dialog');
         const firstLink = dialog.querySelector('a') as HTMLElement;
         expect(firstLink.querySelector('svg')).not.toBeNull();
-        expect(screen.getByTestId('whats-new-pill').closest('a')).not.toBeNull();
         expect(screen.getByTestId('benefit-pill').closest('a')).not.toBeNull();
+        unmount();
+
+        render(
+            <AccountBar
+                view={view}
+                locale="es"
+            />
+        );
+        await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
+        await screen.findByRole('dialog');
+        expect(screen.getByTestId('whats-new-pill').closest('a')).not.toBeNull();
     });
 
     it('reveals the AI-assistants entry in the drawer only when the user qualifies', async () => {
