@@ -189,7 +189,16 @@ describe('MP4 preview', () => {
                 periodStart: runningPeriod,
                 reimputedPeriodStart: null,
                 nextChargeAt: new Date('2026-10-03T12:00:00.000Z'),
-                effect: 'S7'
+                effect: 'S7',
+                periodCase: 'WITHIN_PERIOD',
+                nextChargeOverdue: false,
+                vertical: fixture.subscription.vertical,
+                presence: expect.objectContaining({ kind: 'PARTNER' }),
+                s7Effects: {
+                    complements: { resumed: [], skipped: [] },
+                    touristVip: { cancels: false, subscriptionIds: [] },
+                    scheduledChange: null
+                }
             });
         } finally {
             vi.useRealTimers();
@@ -249,7 +258,12 @@ describe('MP4 preview', () => {
             periodStart: expiredPeriod,
             reimputedPeriodStart: null,
             nextChargeAt: new Date('2026-08-03T12:00:00.000Z'),
-            effect: 'S19'
+            effect: 'S19',
+            periodCase: 'WITHIN_PERIOD',
+            nextChargeOverdue: true,
+            vertical: fixture.subscription.vertical,
+            presence: null,
+            s7Effects: null
         });
         const rows = await state(fixture);
         expect(rows.installment?.status).toBe('DECLARED_UNPAID');
@@ -266,7 +280,16 @@ describe('MP4 preview', () => {
             periodStart: fixture.installment.periodStart,
             reimputedPeriodStart: now,
             nextChargeAt: new Date('2026-10-04T12:00:00.000Z'),
-            effect: 'S7'
+            effect: 'S7',
+            periodCase: 'REIMPUTED',
+            nextChargeOverdue: false,
+            vertical: fixture.subscription.vertical,
+            presence: expect.objectContaining({ kind: 'PARTNER' }),
+            s7Effects: {
+                complements: { resumed: [], skipped: [] },
+                touristVip: { cancels: false, subscriptionIds: [] },
+                scheduledChange: null
+            }
         });
         const rows = await state(fixture);
         expect(rows.installment?.status).toBe('DECLARED_UNPAID');

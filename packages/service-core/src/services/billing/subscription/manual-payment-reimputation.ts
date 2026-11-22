@@ -84,8 +84,49 @@ async function evaluateManualPaymentPeriod(input: {
     );
 }
 
+/**
+ * Which of MP4's three period answers applies (B13a fila 10-bis):
+ * - `WITHIN_PERIOD`: the installment's own period had not ended at the instant used;
+ * - `REIMPUTED`: it had ended, and the payment moves to the period starting then;
+ * - `C5_FALLBACK`: it had ended, the reimputed period was already covered (C5), and the
+ *   payment went back to the original period with `reimputedFrom: null`.
+ */
+export type ManualPaymentPeriodCase = 'WITHIN_PERIOD' | 'REIMPUTED' | 'C5_FALLBACK';
+
+/**
+ * Classifies MP4's final period against its candidate. Pure.
+ *
+ * @param input.candidate - {@link candidateManualPaymentPeriod} at the instant used
+ * @param input.chosen - The period MP4 ends up covering
+ * @returns The period case
+ */
+export function resolveManualPaymentPeriodCase(input: {
+    readonly candidate: ManualPaymentPeriod;
+    readonly chosen: ManualPaymentPeriod;
+}): ManualPaymentPeriodCase {
+    if (input.candidate.reimputedFrom === null) return 'WITHIN_PERIOD';
+    return input.chosen.reimputedFrom === null ? 'C5_FALLBACK' : 'REIMPUTED';
+}
+
 /** Evaluates MP4's C5 choice without claiming coverage. */
 export async function previewManualPaymentPeriod(input: {
+    readonly tx: DrizzleClient;
+    readonly subscriptionId: string;
+    readonly originalPeriodStart: Date;
+    readonly everyMonths: number;
+    readonly now: Date;
+    readonly periodAt?: Date;
+}): Promise<ManualPaymentPeriod & { readonly periodCase: ManualPaymentPeriodCase }> {
+    const candidate = candidateManualPaymentPeriod({
+        originalPeriodStart: input.originalPeriodStart,
+        everyMonths: input.everyMonths,
+        now: input.periodAt ?? input.now
+    });
+    const chosen = await evaluateManualPaymentPeriodReadOnly(input);
+    return { ...chosen, periodCase: resolveManualPaymentPeriodCase({ candidate, chosen }) };
+}
+
+async function evaluateManualPaymentPeriodReadOnly(input: {
     readonly tx: DrizzleClient;
     readonly subscriptionId: string;
     readonly originalPeriodStart: Date;

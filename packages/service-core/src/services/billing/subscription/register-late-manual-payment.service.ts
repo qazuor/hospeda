@@ -22,9 +22,17 @@ import { issueReceipt, readReceiptPayer } from '../payment/issue-receipt';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { unwiredCoverageNotices } from '../payment/payment-ports';
 import { resumeComplementsS33 } from './complement-resume-s33';
+import {
+    type LateManualPaymentPresence,
+    type LateManualPaymentReturnPorts,
+    readLateManualPaymentPresence,
+    readS7SideEffects
+} from './late-manual-payment-return-facts';
+import type { S7SideEffects } from './late-manual-payment-return-plan';
 import { checkLatePaymentConditions } from './late-payment-conditions';
 import {
     claimManualPaymentPeriod,
+    type ManualPaymentPeriodCase,
     previewManualPaymentPeriod
 } from './manual-payment-reimputation';
 import type { ReactivateSuspendedPorts } from './reactivate-suspended.service';
@@ -168,18 +176,38 @@ async function check(input: Input, tx: DrizzleClient, lock: boolean): Promise<Ch
     };
 }
 
-/** Read-only MP4 preview with the registration's business rejections and injected clock. */
-export async function previewLateManualPaymentRegistration(
-    input: Input,
-    ports: Pick<RegisterLateManualPaymentPorts, 'clock'>
-): Promise<{
+/** The MP4 confirmation (B13a fila 10-bis, HOS-1640). */
+export interface LateManualPaymentRegistrationPreview {
     readonly subscriptionId: string;
     readonly manualPaymentId: string;
+    /** The installment's own period start. */
     readonly periodStart: Date;
+    /** The period the payment moves to when reimputed, or null. */
     readonly reimputedPeriodStart: Date | null;
     readonly nextChargeAt: Date;
     readonly effect: 'S7' | 'S19';
-}> {
+    /** Which of the three period answers applies. */
+    readonly periodCase: ManualPaymentPeriodCase;
+    /** True when the next installment is already due at the preview instant. */
+    readonly nextChargeOverdue: boolean;
+    readonly vertical: string | null;
+    /** What comes back per vertical; null under S19 (the succession close decides). */
+    readonly presence: LateManualPaymentPresence | null;
+    /** The other three S7 effects; null under S19. */
+    readonly s7Effects: S7SideEffects | null;
+}
+
+/**
+ * Read-only MP4 preview with the registration's business rejections and injected clock.
+ * It runs MP4's own checks and period choice, then reads what the S7 return would
+ * bring back through the same selectors the real path uses (HOS-1640).
+ */
+export async function previewLateManualPaymentRegistration(
+    input: Input,
+    ports: Pick<RegisterLateManualPaymentPorts, 'clock'> & {
+        readonly returnPorts?: LateManualPaymentReturnPorts;
+    }
+): Promise<LateManualPaymentRegistrationPreview> {
     const parsed = inputSchema.parse(input);
     const now = ports.clock.now();
     return getDb().transaction(async (tx) => {
@@ -196,13 +224,30 @@ export async function previewLateManualPaymentRegistration(
             now,
             ...(effect === 'S19' ? { periodAt: checked.installment.periodStart } : {})
         });
+        const subject = {
+            id: checked.subscription.id,
+            userId: checked.subscription.userId,
+            vertical: checked.subscription.vertical,
+            planVersionId: checked.subscription.planVersionId
+        };
+        const returnPorts = ports.returnPorts ?? {};
+        const reactivates = effect === 'S7';
         return {
             subscriptionId: checked.subscription.id,
             manualPaymentId: checked.installment.id,
             periodStart: checked.installment.periodStart,
             reimputedPeriodStart: period.reimputedFrom ? period.periodStart : null,
             nextChargeAt: period.nextChargeAt,
-            effect
+            effect,
+            periodCase: period.periodCase,
+            nextChargeOverdue: period.nextChargeAt.getTime() <= now.getTime(),
+            vertical: checked.subscription.vertical,
+            presence: reactivates
+                ? await readLateManualPaymentPresence({ tx, subject, ports: returnPorts })
+                : null,
+            s7Effects: reactivates
+                ? await readS7SideEffects({ tx, subject, now, ports: returnPorts })
+                : null
         };
     });
 }
