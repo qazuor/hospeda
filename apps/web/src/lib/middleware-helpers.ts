@@ -486,6 +486,12 @@ export interface SessionUser {
      * regardless of what this flag says.
      */
     readonly ownsHostTradeListing: boolean;
+    /**
+     * Whether the account owns a LIVE (not revoked, not deleted) partner
+     * listing (HOS-2551), from the top-level `ownsPartner` of `/auth/me`. Same
+     * reasoning and same fail-closed default as `ownsHostTradeListing`.
+     */
+    readonly ownsPartner: boolean;
 }
 
 /**
@@ -631,6 +637,8 @@ export async function parseSessionUser({
                         // the actor keeps the lookup out of every other
                         // authenticated API request.
                         ownsHostTradeListing?: boolean;
+                        // HOS-2551: same placement as the flag above.
+                        ownsPartner?: boolean;
                     };
                 };
 
@@ -667,7 +675,8 @@ export async function parseSessionUser({
                     // absent or malformed value reads as "no listing", which
                     // hides a nav entry rather than advertising a panel the
                     // account may not own.
-                    ownsHostTradeListing: data?.data?.ownsHostTradeListing === true
+                    ownsHostTradeListing: data?.data?.ownsHostTradeListing === true,
+                    ownsPartner: data?.data?.ownsPartner === true
                 };
             } catch {
                 span?.setStatus({ code: 2, message: 'internal_error' });

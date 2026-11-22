@@ -226,3 +226,48 @@ describe('buildSidebarView', () => {
         expect(view.activeLabel).toBeTruthy();
     });
 });
+
+describe('AccountSidebar — partner (HOS-2551)', () => {
+    it('shows «Mi ficha de aliado» in the business zone when the account owns a partner', () => {
+        const view = buildSidebarView({
+            locale: 'es',
+            model: buildAccountNavModel({
+                roles: ['USER'],
+                ownsHostTradeListing: false,
+                ownsPartner: true,
+                mcpEnabled: true,
+                activeSection: 'partner'
+            })
+        });
+        render(
+            <AccountSidebar
+                view={view}
+                locale="es"
+            />
+        );
+        expect(screen.getByRole('link', { name: /mi ficha de aliado/i })).toHaveAttribute(
+            'href',
+            '/es/mi-cuenta/partner/'
+        );
+    });
+
+    it('does not show it when the account owns no live partner', () => {
+        const view = buildSidebarView({
+            locale: 'es',
+            model: buildAccountNavModel({
+                roles: ['USER', 'HOST'],
+                ownsHostTradeListing: false,
+                ownsPartner: false,
+                mcpEnabled: true,
+                activeSection: 'propiedades'
+            })
+        });
+        render(
+            <AccountSidebar
+                view={view}
+                locale="es"
+            />
+        );
+        expect(screen.queryByRole('link', { name: /mi ficha de aliado/i })).not.toBeInTheDocument();
+    });
+});

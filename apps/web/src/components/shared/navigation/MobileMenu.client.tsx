@@ -194,7 +194,7 @@ export function MobileMenu({
     // `syncAuthenticatedAttribute: false` — UserMenu (client:load, mounted
     // on every page) is the single owner of `<html data-user-authenticated>`;
     // this island must not become a second writer of the same attribute.
-    const { user, permissions, ownsHostTradeListing } = useAccountPermissions({
+    const { user, permissions, ownsHostTradeListing, ownsPartner } = useAccountPermissions({
         initialUser,
         initialRoles,
         syncAuthenticatedAttribute: false
@@ -219,9 +219,10 @@ export function MobileMenu({
         () =>
             getCuratedAccountNav({
                 permissions: permissions ?? [],
-                ownsHostTradeListing
+                ownsHostTradeListing,
+                ownsPartner
             }),
-        [permissions, ownsHostTradeListing]
+        [permissions, ownsHostTradeListing, ownsPartner]
     );
     const curatedAccountItems = useMemo(
         (): readonly MobileAccountNavItem[] =>

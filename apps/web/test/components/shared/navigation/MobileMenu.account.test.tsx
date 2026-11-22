@@ -255,6 +255,30 @@ describe('MobileMenu — account block (HOS-131 §6.5, HOS-2551)', () => {
         ).toBeInTheDocument();
     });
 
+    it('shows «Administrar ficha de aliado» for a partner owner (HOS-2551)', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
+                permissions: [],
+                roles: ['USER'],
+                ownsPartner: true,
+                cachedAt: Date.now()
+            })
+        );
+        global.fetch = vi.fn() as unknown as typeof fetch;
+
+        renderMenu();
+        openAccountMenu();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('link', { name: /administrar ficha de aliado/i })
+            ).toHaveAttribute('href', '/es/mi-cuenta/partner/');
+        });
+    });
+
     it('fetches permissions from /auth/me when no cache is present', async () => {
         const fetchMock = vi.fn().mockResolvedValue({
             ok: true,

@@ -190,7 +190,7 @@ export function UserMenu({
 
     // SSR-reconciling mode (see the hook's JSDoc) — this is the component
     // responsible for the `data-user-authenticated` attribute.
-    const { user, permissions, roles, ownsHostTradeListing } = useAccountPermissions({
+    const { user, permissions, roles, ownsHostTradeListing, ownsPartner } = useAccountPermissions({
         initialUser
     });
 
@@ -322,9 +322,10 @@ export function UserMenu({
         () =>
             getCuratedAccountNav({
                 permissions: permissions ?? [],
-                ownsHostTradeListing
+                ownsHostTradeListing,
+                ownsPartner
             }),
-        [permissions, ownsHostTradeListing]
+        [permissions, ownsHostTradeListing, ownsPartner]
     );
 
     // ── Admin panel session item ──────────────────────────────────────────

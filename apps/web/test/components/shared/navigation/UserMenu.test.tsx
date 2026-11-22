@@ -242,6 +242,30 @@ describe('UserMenu — permission-gated items', () => {
         ]);
     });
 
+    it('shows «Administrar ficha de aliado» when the cache says the account owns a partner (HOS-2551)', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
+                permissions: [],
+                roles: ['USER'],
+                ownsPartner: true,
+                cachedAt: Date.now()
+            })
+        );
+        renderMenu();
+        // Open ONCE: `open()` toggles, so clicking it inside a retry loop can
+        // stall instead of failing when the shortcut is missing.
+        open();
+        const group = await screen.findByRole('group', { name: 'Administración' });
+        const links = [...group.querySelectorAll('a')].map((link) => [
+            link.textContent?.trim(),
+            link.getAttribute('href')
+        ]);
+        expect(links).toEqual([['Administrar ficha de aliado', '/es/mi-cuenta/partner/']]);
+    });
+
     it('shows only «Administrar experiencias» for an experience-only owner', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,

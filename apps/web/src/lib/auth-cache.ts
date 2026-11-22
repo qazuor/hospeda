@@ -58,6 +58,12 @@ export interface AuthMeSnapshot {
      * HOS-2551: gates the «Administrar ficha de proveedor» menu shortcut.
      */
     readonly ownsHostTradeListing?: boolean;
+    /**
+     * Whether the account owns a live (not revoked) partner listing, from the
+     * top-level `ownsPartner` of `/auth/me` (HOS-2551). Optional for the same
+     * reason as `ownsHostTradeListing`. Gates «Administrar ficha de aliado».
+     */
+    readonly ownsPartner?: boolean;
     readonly cachedAt: number;
 }
 
@@ -143,6 +149,8 @@ interface AuthMeResponseBody {
         readonly isAuthenticated?: boolean;
         /** H-158: top-level, computed for authenticated callers only. */
         readonly ownsHostTradeListing?: boolean;
+        /** HOS-2551: top-level, computed for authenticated callers only. */
+        readonly ownsPartner?: boolean;
     };
 }
 
@@ -256,6 +264,7 @@ async function performAuthMeFetch({ apiUrl }: FetchAuthMeParams): Promise<AuthMe
             permissions: actor?.permissions ?? [],
             roles: isAuthenticated && Array.isArray(actor?.roles) ? actor.roles : [],
             ownsHostTradeListing: isAuthenticated && json.data?.ownsHostTradeListing === true,
+            ownsPartner: isAuthenticated && json.data?.ownsPartner === true,
             cachedAt: Date.now()
         };
     } catch {
