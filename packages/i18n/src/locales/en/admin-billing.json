@@ -2852,7 +2852,8 @@
             "periodCases": {
                 "WITHIN_PERIOD": "It pays the installment's own period, which started on {periodStart} and has not ended yet. The next installment is the one on {nextChargeAt}, the day it ends.",
                 "REIMPUTED": "The installment's own period (from {periodStart}) had already ended: the payment is moved to the period starting today ({reimputedStart}) and the next installment opens one cycle from now, on {nextChargeAt}.",
-                "C5_FALLBACK": "The installment's own period had already ended, but the one starting today is already covered: the payment goes back to the original period (from {periodStart}). The next installment is the one on {nextChargeAt}."
+                "C5_FALLBACK": "The installment's own period had already ended, but the one starting today is already covered: the payment goes back to the original period (from {periodStart}). The next installment is the one on {nextChargeAt}.",
+                "ORIGINAL_PERIOD": "It covers the installment's original period, from {periodStart} to {nextChargeAt}: with the succession in progress there is no reactivation instant, so it is not moved. The next installment is recorded for {nextChargeAt}."
             },
             "nextChargeOverdue": "Heads up: that next installment is already overdue.",
             "s19Title": "This subscription is the predecessor of a succession in progress",
@@ -2860,8 +2861,8 @@
             "returnsTitle": "What comes back and what does not",
             "serviceReturns": "The service comes back: the subscription becomes active.",
             "noPresence": "This vertical has no public presence: only the service comes back.",
-            "limit": "The plan's publication quota: {limit}.",
-            "noLimit": "The plan declares no publication quota: no listing comes back on its own.",
+            "limit": "Publication quota of the plan it returns on: {limit}. If the account has extra quota from elsewhere, more may come back.",
+            "noLimit": "The plan declares no publication quota, so this preview cannot promise that any listing comes back. If the account has quota from elsewhere (a courtesy or an add-on), some may still come back.",
             "noListings": "The account has no listings in this vertical.",
             "listingOutcomes": {
                 "RETURNS": "comes back published",
@@ -2871,6 +2872,7 @@
                 "PURGED": "does not come back: its content was already deleted, permanently",
                 "MODERATED": "does not come back: an admin took it down and only an admin can lift it",
                 "ALREADY_PUBLISHED": "is already published",
+                "LOWERED_BY_SURPLUS": "is unpublished: it exceeds the returning plan's quota",
                 "DRAFT": "stays a draft"
             },
             "partnerOutcomes": {
@@ -2885,9 +2887,9 @@
                 "complementsResumed": "Paused recurring add-ons are resumed ({count}).",
                 "complementsSkipped": "Paused add-ons without a linked card that do not resume on their own: {count}.",
                 "noComplements": "There are no paused recurring add-ons to resume.",
-                "touristVipCancels": "The paid Tourist VIP is cancelled, because the plan already includes it (no refund).",
+                "touristVipCancels": "The paid Tourist VIP is cancelled, with no refund, because the account will have it included. This may happen after you confirm, once the notice is sent.",
                 "noTouristVip": "There is no inherited Tourist VIP to cancel.",
-                "scheduledChange": "The scheduled plan change that came due on {date} is applied.",
+                "scheduledChange": "The scheduled plan change that came due on {date} is applied. What comes back above is already worked out on the new plan.",
                 "noScheduledChange": "There is no overdue scheduled plan change."
             },
             "rejections": {

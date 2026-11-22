@@ -2852,7 +2852,8 @@
             "periodCases": {
                 "WITHIN_PERIOD": "Paga el período propio de la cuota, que arrancó el {periodStart} y todavía no terminó. La próxima cuota es la del {nextChargeAt}, el día en que termina.",
                 "REIMPUTED": "El período propio de la cuota (desde el {periodStart}) ya había terminado: el pago se reimputa al período que arranca hoy ({reimputedStart}) y la próxima cuota se abre dentro de un ciclo, el {nextChargeAt}.",
-                "C5_FALLBACK": "El período propio de la cuota ya había terminado, pero el que arranca hoy ya está cubierto: el pago vuelve al período original (desde el {periodStart}). La próxima cuota es la del {nextChargeAt}."
+                "C5_FALLBACK": "El período propio de la cuota ya había terminado, pero el que arranca hoy ya está cubierto: el pago vuelve al período original (desde el {periodStart}). La próxima cuota es la del {nextChargeAt}.",
+                "ORIGINAL_PERIOD": "Cubre el período original de la cuota, del {periodStart} al {nextChargeAt}: con la sucesión en curso no hay instante de reactivación, así que no se reimputa. La próxima cuota queda escrita para el {nextChargeAt}."
             },
             "nextChargeOverdue": "Ojo: esa próxima cuota ya está vencida.",
             "s19Title": "Esta suscripción es la predecesora de una sucesión en curso",
@@ -2860,8 +2861,8 @@
             "returnsTitle": "Qué vuelve y qué no",
             "serviceReturns": "Vuelve el servicio: la suscripción pasa a activa.",
             "noPresence": "Esta vertical no tiene presencia pública: vuelve sólo el servicio.",
-            "limit": "Cupo de publicación del plan: {limit}.",
-            "noLimit": "El plan no declara cupo de publicación: ninguna ficha vuelve sola.",
+            "limit": "Cupo de publicación del plan con el que vuelve: {limit}. Si la cuenta tiene cupo extra por otra vía, pueden volver más.",
+            "noLimit": "El plan no declara cupo de publicación, así que esta vista no puede prometer que alguna ficha vuelva. Si la cuenta tiene cupo por otra vía (una cortesía o un addon), puede volver alguna igual.",
             "noListings": "La cuenta no tiene fichas en esta vertical.",
             "listingOutcomes": {
                 "RETURNS": "vuelve publicada",
@@ -2871,6 +2872,7 @@
                 "PURGED": "no vuelve: su contenido ya se borró y es final",
                 "MODERATED": "no vuelve: la bajó un admin y sólo un admin la levanta",
                 "ALREADY_PUBLISHED": "ya está publicada",
+                "LOWERED_BY_SURPLUS": "se despublica: con el cupo del plan que vuelve, sobra",
                 "DRAFT": "sigue como borrador"
             },
             "partnerOutcomes": {
@@ -2885,9 +2887,9 @@
                 "complementsResumed": "Se reanudan los complementos recurrentes pausados ({count}).",
                 "complementsSkipped": "Complementos pausados sin tarjeta vinculada que no se reanudan solos: {count}.",
                 "noComplements": "No hay complementos recurrentes pausados para reanudar.",
-                "touristVipCancels": "Se cancela el Turista VIP pago, porque el plan ya lo incluye (sin reintegro).",
+                "touristVipCancels": "Se cancela el Turista VIP pago, sin reintegro, porque la cuenta lo va a tener incluido. Puede hacerse después de confirmar, cuando salga el aviso.",
                 "noTouristVip": "No hay Turista VIP heredado para cancelar.",
-                "scheduledChange": "Se aplica el cambio de plan programado que venció el {date}.",
+                "scheduledChange": "Se aplica el cambio de plan programado que venció el {date}. Lo que vuelve arriba ya está calculado con el plan nuevo.",
                 "noScheduledChange": "No hay cambio de plan programado vencido."
             },
             "rejections": {

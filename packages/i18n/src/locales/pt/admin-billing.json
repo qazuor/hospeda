@@ -2852,7 +2852,8 @@
             "periodCases": {
                 "WITHIN_PERIOD": "Paga o período próprio da parcela, que começou em {periodStart} e ainda não terminou. A próxima parcela é a de {nextChargeAt}, o dia em que ele termina.",
                 "REIMPUTED": "O período próprio da parcela (desde {periodStart}) já tinha terminado: o pagamento é reimputado ao período que começa hoje ({reimputedStart}) e a próxima parcela abre daqui a um ciclo, em {nextChargeAt}.",
-                "C5_FALLBACK": "O período próprio da parcela já tinha terminado, mas o que começa hoje já está coberto: o pagamento volta ao período original (desde {periodStart}). A próxima parcela é a de {nextChargeAt}."
+                "C5_FALLBACK": "O período próprio da parcela já tinha terminado, mas o que começa hoje já está coberto: o pagamento volta ao período original (desde {periodStart}). A próxima parcela é a de {nextChargeAt}.",
+                "ORIGINAL_PERIOD": "Cobre o período original da parcela, de {periodStart} a {nextChargeAt}: com a sucessão em andamento não há instante de reativação, então não é reimputado. A próxima parcela fica registrada para {nextChargeAt}."
             },
             "nextChargeOverdue": "Atenção: essa próxima parcela já está vencida.",
             "s19Title": "Esta assinatura é a predecessora de uma sucessão em andamento",
@@ -2860,8 +2861,8 @@
             "returnsTitle": "O que volta e o que não",
             "serviceReturns": "O serviço volta: a assinatura passa a ficar ativa.",
             "noPresence": "Esta vertical não tem presença pública: volta só o serviço.",
-            "limit": "Cota de publicação do plano: {limit}.",
-            "noLimit": "O plano não declara cota de publicação: nenhum anúncio volta sozinho.",
+            "limit": "Cota de publicação do plano com que volta: {limit}. Se a conta tiver cota extra por outra via, mais podem voltar.",
+            "noLimit": "O plano não declara cota de publicação, então esta prévia não pode prometer que algum anúncio volte. Se a conta tiver cota por outra via (uma cortesia ou um complemento), algum ainda pode voltar.",
             "noListings": "A conta não tem anúncios nesta vertical.",
             "listingOutcomes": {
                 "RETURNS": "volta publicado",
@@ -2871,6 +2872,7 @@
                 "PURGED": "não volta: o conteúdo já foi apagado, de forma definitiva",
                 "MODERATED": "não volta: um admin o tirou do ar e só um admin pode liberá-lo",
                 "ALREADY_PUBLISHED": "já está publicado",
+                "LOWERED_BY_SURPLUS": "é despublicado: excede a cota do plano com que volta",
                 "DRAFT": "continua como rascunho"
             },
             "partnerOutcomes": {
@@ -2885,9 +2887,9 @@
                 "complementsResumed": "Os complementos recorrentes pausados são retomados ({count}).",
                 "complementsSkipped": "Complementos pausados sem cartão vinculado que não são retomados sozinhos: {count}.",
                 "noComplements": "Não há complementos recorrentes pausados para retomar.",
-                "touristVipCancels": "O Turista VIP pago é cancelado, porque o plano já o inclui (sem reembolso).",
+                "touristVipCancels": "O Turista VIP pago é cancelado, sem reembolso, porque a conta vai tê-lo incluído. Pode acontecer depois de confirmar, quando o aviso for enviado.",
                 "noTouristVip": "Não há Turista VIP herdado para cancelar.",
-                "scheduledChange": "É aplicada a mudança de plano programada que venceu em {date}.",
+                "scheduledChange": "É aplicada a mudança de plano programada que venceu em {date}. O que volta acima já está calculado com o plano novo.",
                 "noScheduledChange": "Não há mudança de plano programada vencida."
             },
             "rejections": {
