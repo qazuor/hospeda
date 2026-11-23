@@ -71,10 +71,7 @@ describe('MobileBookingSummary', () => {
         const page = source('pages/[lang]/alojamientos/[slug].astro');
         const sidebar = page.match(/<Fragment slot="sidebar">([\s\S]*?)<\/Fragment>/)?.[1];
 
-        // The summary is wrapped in the host section anchor (HOS-2527).
-        expect(page).toMatch(
-            /<QuickFacts[^>]*\/>\s*<div id=\{LISTING_SECTION_IDS\.host\}[^>]*>\s*<MobileBookingSummary\b/
-        );
+        expect(page).toMatch(/<QuickFacts[^>]*\/>\s*<MobileBookingSummary\b/);
         expect(page.indexOf('<MobileBookingSummary')).toBeLessThan(
             page.indexOf('<RelatedCarousel')
         );

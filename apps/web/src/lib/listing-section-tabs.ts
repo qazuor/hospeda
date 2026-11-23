@@ -5,9 +5,9 @@ export const LISTING_SECTION_KEYS = [
     'photos',
     'details',
     'amenities',
-    'location',
     'reviews',
-    'host'
+    'host',
+    'location'
 ] as const;
 
 /** A tab-able listing section. */
@@ -21,9 +21,9 @@ export const LISTING_SECTION_IDS: Readonly<Record<ListingSectionKey, string>> = 
     photos: 'listing-photos',
     details: 'listing-details',
     amenities: 'listing-amenities',
-    location: 'listing-location',
     reviews: 'listing-reviews',
-    host: 'listing-host'
+    host: 'listing-host',
+    location: 'listing-location'
 };
 
 /** One tab of the sticky section navigation. */

@@ -7,7 +7,7 @@ describe('buildListingSectionTabs', () => {
             present: { reviews: true, photos: true, amenities: false, location: true }
         });
 
-        expect(tabs.map((tab) => tab.key)).toEqual(['photos', 'location', 'reviews']);
+        expect(tabs.map((tab) => tab.key)).toEqual(['photos', 'reviews', 'location']);
     });
 
     it('links each tab to the stable section id', () => {
@@ -26,9 +26,9 @@ describe('buildListingSectionTabs', () => {
             'listing-photos',
             'listing-details',
             'listing-amenities',
-            'listing-location',
             'listing-reviews',
-            'listing-host'
+            'listing-host',
+            'listing-location'
         ]);
         expect(tabs.map((tab) => tab.id)).toEqual(Object.values(LISTING_SECTION_IDS));
     });

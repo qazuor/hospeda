@@ -21,6 +21,17 @@ describe('accommodation detail section anchors (HOS-2527)', () => {
         expect(page).toContain('galleryId={LISTING_SECTION_IDS.photos}');
     });
 
+    it('keeps WhatsNearbySection inside the location anchor, right after LocationSection', () => {
+        expect(page).toMatch(
+            /<div id=\{LISTING_SECTION_IDS\.location\}[^>]*>\s*<LocationSection[\s\S]*?\/>\s*<WhatsNearbySection[^>]*\/>\s*<\/div>/
+        );
+    });
+
+    it('anchors the host tab on the HostSection, before the location section', () => {
+        expect(page).toMatch(/<div id=\{LISTING_SECTION_IDS\.host\}[^>]*>\s*<HostSection/);
+        expect(page.indexOf('<HostSection')).toBeLessThan(page.indexOf('<LocationSection'));
+    });
+
     it('only wraps optional sections when they exist', () => {
         expect(page).toContain('{hasDescriptionSection && (');
         expect(page).toContain('{hasAmenitiesSection && (');

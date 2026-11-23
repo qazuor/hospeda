@@ -593,6 +593,8 @@
             }
         },
         "reviewsDetail": {
+            "anonymous": "Anônimo",
+            "stripLabel": "Avaliações em destaque",
             "noReviews": "Ainda não há avaliações",
             "viewAll_one": "Ver a {{count}} avaliação",
             "viewAll_other": "Ver todas as {{count}} avaliações",
@@ -615,6 +617,11 @@
                 "loading": "Carregando avaliações…"
             }
         },
+        "host": {
+            "title": "Seu anfitrião",
+            "since": "Anfitrião desde {date}",
+            "languages": "Atende em {languages}"
+        },
         "owner": {
             "memberSince": "Membro desde {date}",
             "contactUnavailable": "Informações de contato não disponíveis",
@@ -629,10 +636,14 @@
             "viewAll_one": "Ver a {{count}} comodidade",
             "viewAll_other": "Ver todas as {{count}} comodidades",
             "collapse": "Ver menos",
+            "close": "Fechar",
             "additionalCost": "(custo adicional)"
         },
         "features": {
-            "title": "Características"
+            "title": "Características",
+            "viewAll_one": "Ver a {{count}} característica",
+            "viewAll_other": "Ver todas as {{count}} características",
+            "close": "Fechar"
         },
         "faqsDetail": {
             "title": "Perguntas frequentes",

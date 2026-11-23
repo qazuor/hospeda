@@ -35,6 +35,8 @@ import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.as
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
+import HostSection from '@/components/accommodation/HostSection.astro';
+import { toReviewStripItems } from '@/lib/review-strip';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
 import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
@@ -531,9 +533,7 @@ const breadcrumbItems = [
 ];
 
 // --- Sticky section tabs (HOS-2527) ---
-// A tab exists only when its section does. The host tab points at the mobile
-// summary (the host card lives in the sidebar on desktop, which is always in
-// view), so it is narrow-layout only.
+// A tab exists only when its section does.
 const hasDescriptionSection = Boolean(
     accommodation.summary || accommodation.description || accommodation.richDescription
 );
@@ -546,8 +546,7 @@ const sectionTabs = buildListingSectionTabs({
         location: true,
         reviews: true,
         host: true
-    },
-    hideOnDesktop: ['host']
+    }
 });
 
 // --- FAQPage JSON-LD when FAQs exist (REQ-096-37 / T-067) ---
@@ -646,7 +645,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
             galleryId={LISTING_SECTION_IDS.photos}
         />
         <QuickFacts extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
-        <div id={LISTING_SECTION_IDS.host} class="acc-anchor acc-anchor--narrow">
         <MobileBookingSummary
             listingId={accommodation.id}
             panelId={panelId}
@@ -658,7 +656,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
             ownerJoinedAt={result.data.owner?.createdAt ?? null}
             hasWhatsapp={accommodation.hasWhatsapp}
         />
-        </div>
         {hasDescriptionSection && (
         <div id={LISTING_SECTION_IDS.details} class="acc-anchor">
         {accommodation.richDescription ? (
@@ -706,7 +703,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         <PromotionBanner promos={activePromos} locale={locale} />
 
         <div id={LISTING_SECTION_IDS.reviews} class="acc-anchor">
-        <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} lang={locale}>
+        <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} reviews={toReviewStripItems({ items: reviewItems })} lang={locale}>
             <ReviewsModal
                 client:idle
                 accommodationId={accommodation.id}
@@ -726,15 +723,18 @@ const faqSections = accommodation.faqs.map((faq) => ({
         )}
 
         <FaqAccordion faqs={accommodation.faqs} lang={locale} />
-        <div id={LISTING_SECTION_IDS.location} class="acc-anchor">
+        <div id={LISTING_SECTION_IDS.host} class="acc-anchor">
+        <HostSection owner={accommodation.owner} accommodationId={accommodation.id} panelId={panelId} spokenLanguages={accommodation.policies.spokenLanguages} lang={locale} />
+        </div>
+        <div id={LISTING_SECTION_IDS.location} class="acc-anchor acc-anchor--stack">
         <LocationSection
             destination={accommodation.destination}
             approximateLocation={accommodation.approximateLocation}
             accommodationName={accommodation.name}
             lang={locale}
         />
-        </div>
         <WhatsNearbySection pointsOfInterest={nearbyPois} locale={locale} />
+        </div>
     </div>
 
     <Fragment slot="after-content">
@@ -938,11 +938,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
        plus the sticky tabs. */
     .acc-anchor {
         scroll-margin-top: calc(var(--listing-tabs-height) + 8px);
-    }
-    @media (min-width: 1025px) {
-        .acc-anchor--narrow {
-            display: none;
-        }
     }
     .acc-anchor--stack {
         display: flex;
