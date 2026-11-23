@@ -232,7 +232,7 @@
             "spec": ".hoja/notas.md:5"
         },
         {
-            "file": "apps/web/src/components/listing/ListingEditor.client.tsx",
+            "file": "apps/web/src/components/listing/editor/listing-patch-payload.ts",
             "symbol": "buildPatchPayload",
             "count": 4,
             "category": "editor",
