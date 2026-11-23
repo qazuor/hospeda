@@ -1,6 +1,6 @@
 /**
  * Gallery group: data display (StatCard, StatGrid, Avatar), data lists, entity cards
- * (HOS-2480) and conversations (HOS-2481).
+ * (HOS-2480), conversations (HOS-2481) and authored content (HOS-2505).
  *
  * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
  *
@@ -11,6 +11,7 @@ import {
     Avatar,
     Button,
     Composer,
+    ContentCard,
     ConversationThread,
     CountPill,
     DataList,
@@ -18,8 +19,10 @@ import {
     EntityCardGrid,
     ListRow,
     MessageBubble,
+    MyContentList,
     StatCard,
     StatGrid,
+    StatusPill,
     type ThreadMessage
 } from '@/components/account/ui';
 import styles from './KitGallery.module.css';
@@ -237,6 +240,79 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                         locale={locale}
                         title="Museo histórico"
                         meta="Atracción"
+                    />
+                </Visual>
+                <Visual name="ContentCard/statuses">
+                    <ul className={styles.stack}>
+                        <ContentCard
+                            locale={locale}
+                            title="Fiesta del río"
+                            meta="12 de enero"
+                            statuses={[
+                                {
+                                    key: 'moderation',
+                                    label: 'Moderación',
+                                    value: (
+                                        <StatusPill tone="warning">
+                                            Pendiente de revisión
+                                        </StatusPill>
+                                    )
+                                },
+                                {
+                                    key: 'visibility',
+                                    label: 'Visibilidad',
+                                    value: <StatusPill tone="success">Pública</StatusPill>
+                                }
+                            ]}
+                            actions={
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    Editar
+                                </Button>
+                            }
+                        />
+                    </ul>
+                </Visual>
+                <Visual name="MyContentList/ready">
+                    <MyContentList
+                        locale={locale}
+                        title="Mis eventos"
+                        description="Revisá el estado de tus eventos"
+                        createAction={<Button>Nuevo evento</Button>}
+                        sectionTitle="Tus eventos"
+                        helpId="section:content.events"
+                        listLabel="Mis eventos"
+                        state={{ status: 'ready' }}
+                        pagination={{ page: 1, pageCount: 3, onPageChange: noop }}
+                    >
+                        <ContentCard
+                            locale={locale}
+                            title="Fiesta del río"
+                        />
+                        <ContentCard
+                            locale={locale}
+                            title="Feria de artesanos"
+                        />
+                    </MyContentList>
+                </Visual>
+                <Visual name="MyContentList/locked">
+                    <MyContentList
+                        locale={locale}
+                        title="Mis publicaciones"
+                        sectionTitle="Tus publicaciones"
+                        helpId="section:content.posts"
+                        listLabel="Mis publicaciones"
+                        state={{
+                            status: 'locked',
+                            reason: {
+                                kind: 'permission',
+                                feature: 'Escribir publicaciones es una función de los editores',
+                                description: 'Tu cuenta todavía no tiene permiso.',
+                                helpHref: '#editores'
+                            }
+                        }}
                     />
                 </Visual>
                 <Visual name="Composer/default">
