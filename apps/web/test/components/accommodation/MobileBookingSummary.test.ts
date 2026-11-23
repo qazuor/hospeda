@@ -77,7 +77,7 @@ describe('MobileBookingSummary', () => {
         );
         for (const element of [
             'PricingSidebar',
-            'OwnerCard',
+            'ContactCard',
             'ListingContactCard',
             'ReviewSidebarCard'
         ]) {

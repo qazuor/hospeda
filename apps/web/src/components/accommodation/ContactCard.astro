@@ -1,0 +1,81 @@
+---
+/**
+ * @file ContactCard.astro
+ * @description Sidebar contact card of the accommodation detail page. It is a PURE
+ * contact surface (dates, guests, form, «o contactá directo» via the slotted island):
+ * it never shows the host's identity. Owner decision (HOS-2520, 23/11/2026): the
+ * «Tu anfitrión» section (`HostSection`) is the only place the host is presented, at
+ * every width.
+ *
+ * Below 768px the card is hidden: the desktop `ListingContactCard` island hydrates
+ * only from 768px up, so an unhydrated form must not show, and the contact path there
+ * is the dock bar + panel. Public channels stay reachable on mobile in three cases,
+ * all without JavaScript logic of their own:
+ *   1. `:target`: «Consultar» links that fall back to `#contact` before their island
+ *      hydrates reveal the card with the public channels instead of the form.
+ *   2. `:has([data-contact-fallback]:not([hidden]))`: hydration failed and
+ *      `ContactHostShell` revealed its fallback.
+ *   3. `<noscript>`: JavaScript is off.
+ */
+---
+
+<div class="contact-card" id="contact">
+  <slot />
+</div>
+<noscript>
+  <style is:inline>
+    @media (max-width: 767px) {
+      .contact-card { display: block !important; }
+    }
+  </style>
+</noscript>
+<style is:global>
+  .contact-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    background-color: var(--core-card);
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-6, 24px) var(--space-5, 20px) var(--space-5, 20px);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+  }
+  .contact-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-accent) 100%);
+  }
+  .contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover, var(--shadow-card));
+  }
+  @media (max-width: 767px) {
+    .contact-card {
+      display: none;
+    }
+    /* Public channels only: the form belongs to the desktop island. */
+    .contact-card:target,
+    .contact-card:has([data-contact-fallback]:not([hidden])) {
+      display: flex;
+    }
+    .contact-card:target [data-contact-form] {
+      display: none !important;
+    }
+    .contact-card:target [data-contact-fallback] {
+      display: flex !important;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .contact-card,
+    .contact-card:hover {
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
