@@ -34,7 +34,9 @@ vi.mock('../../../src/components/listing/ListingTranslationPanel.client', () => 
     })
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`
     })
@@ -147,8 +149,10 @@ describe('ListingEditor — richDescription as a rich text editor', () => {
         // Regression guard: TipTap fires an update transaction when it first
         // parses `content`. That reached the orchestrator's `onFieldChange` and
         // left the form dirty on load, so every subsequent save re-serialized
-        // the stored Markdown through TipTap.
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        // the stored Markdown through TipTap. Clean = the save bar stays hidden
+        // and a submit sends nothing.
+        expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull();
+        fireEvent.submit(document.querySelector('form') as HTMLFormElement);
         expect(mockPatch).not.toHaveBeenCalled();
     });
 
@@ -158,7 +162,8 @@ describe('ListingEditor — richDescription as a rich text editor', () => {
 
         // The empty case emitted onChange('') before the fix — same false-dirty
         // signal, and the one every brand-new listing would hit.
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull();
+        fireEvent.submit(document.querySelector('form') as HTMLFormElement);
         expect(mockPatch).not.toHaveBeenCalled();
     });
 
@@ -170,7 +175,7 @@ describe('ListingEditor — richDescription as a rich text editor', () => {
         fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
             target: { value: 'La Nueva Parrilla' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;

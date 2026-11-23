@@ -2,7 +2,7 @@
  * @file EditorHub.test.ts
  * @description Source-level guards for the editor hub (HOS-318 T-007/T-008, AC-4).
  *
- * As with `EditorRouteNav`, Vitest cannot render `.astro`, so these assertions
+ * Vitest cannot render `.astro`, so these assertions
  * cover only genuinely textual properties. The status logic itself is unit-tested
  * for real in `editor-hub-status-model.test.ts`.
  */
@@ -44,12 +44,17 @@ describe('EditorHub.astro — structure (AC-4)', () => {
         expect(CODE).toContain('visibility');
     });
 
-    it('should render each group as the canonical account card', () => {
-        // Not a bespoke <section>: AccountSectionCard is the surface every other
-        // /mi-cuenta page uses, and it owns the group's <h2>. Rolling our own
-        // here is what made the hub read as a foreign screen.
-        expect(CODE).toContain('AccountSectionCard');
-        expect(CODE).toContain('title={t(entry.headingKey)}');
+    it('should render each group flat: a heading and a list, no card (HOS-2493)', () => {
+        // Spec HOS-2415 §6.1: the hub's groups are flat sections, the same as
+        // the rest of the kit pages, not stacked cards.
+        expect(CODE).toContain('<h2 class="editor-hub__heading"');
+        expect(CODE).toContain('{t(entry.headingKey)}');
+        expect(CODE).not.toContain('AccountSectionCard');
+    });
+
+    it('should show the completeness meter fed by the page (HOS-2499)', () => {
+        expect(CODE).toContain('<CompletenessMeter');
+        expect(CODE).toContain('buildEditorSectionUrl({ locale, registry, entityId, section })');
     });
 });
 
@@ -73,7 +78,7 @@ describe('EditorHub.astro — status lines', () => {
 
 describe('EditorHub.astro — built for the target user', () => {
     it('should give rows a tap target above the 44px floor', () => {
-        const match = CODE.match(/min-height:\s*(\d+)px/);
+        const match = CODE.match(/min-block-size:\s*(\d+)px/);
 
         expect(match).not.toBeNull();
         expect(Number(match?.[1])).toBeGreaterThanOrEqual(44);
@@ -90,10 +95,10 @@ describe('EditorHub.astro — built for the target user', () => {
     });
 
     it('should never rely on colour alone for a warning', () => {
-        // The warning modifier only recolours; the words come from the i18n
-        // string, which already carries its own marker.
-        expect(CODE).toContain('editor-hub__status--warning');
-        expect(CODE).toContain('status.tone');
+        // The kit pill always carries the words (HOS-2493); the tone only
+        // recolours them.
+        expect(CODE).toContain('<StatusPill tone={PILL_TONE[status.tone]}');
+        expect(CODE).toContain('{statusText(status)}');
     });
 });
 

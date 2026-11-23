@@ -926,8 +926,10 @@ re-derive wrongly:
   button (section → hub → forward again). The hub is a real page on both
   viewports; on mobile it IS the navigation, on desktop it doubles as a status
   summary.
-- **Only this editor uses route nav.** `EditorRouteNav.astro` (zero JS, active
-  item from the URL) is the accommodation editor's. `EditorSectionNav.client.tsx`
+- **Route nav is the shell's.** `EditorShellLayout` draws the kit
+  `EditorSectionNav` (a column from a 60rem content area, container query) or
+  the sticky `EditorSwitcher` below that, zero JS, active item from the URL
+  (HOS-2486; `EditorRouteNav.astro` is gone). The scrollspy `EditorSectionNav.client.tsx`
   — the `IntersectionObserver` scrollspy — is still live and still correct for
   `EventEditor` and `PostEditor`, which remain single-page. When those migrate,
   they adopt the route nav and the scrollspy goes.

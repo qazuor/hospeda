@@ -53,7 +53,8 @@ import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.clie
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key

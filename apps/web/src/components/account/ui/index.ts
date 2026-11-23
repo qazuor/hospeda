@@ -47,6 +47,11 @@ export {
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
+export {
+    type CompletenessItem,
+    CompletenessMeter,
+    type CompletenessMeterProps
+} from './CompletenessMeter';
 export { Composer, type ComposerProps } from './Composer';
 export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog';
 export { ContentCard, type ContentCardProps, type ContentCardStatus } from './ContentCard';
@@ -63,6 +68,8 @@ export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Disclosure, type DisclosureProps } from './Disclosure';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
+export { EditorSectionNav, type EditorSectionNavProps } from './EditorSectionNav';
+export { EditorSwitcher, type EditorSwitcherProps } from './EditorSwitcher';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export {
     EntityCard,
@@ -75,6 +82,22 @@ export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
 export { type FilterChipItem, FilterChips, type FilterChipsProps } from './FilterChips';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
+export {
+    copyHoursDayToAll,
+    HOURS_DEFAULT_SLOT,
+    HOURS_WEEKDAYS,
+    type HoursBound,
+    type HoursDay,
+    HoursEditor,
+    type HoursEditorProps,
+    type HoursSlot,
+    type HoursWeek,
+    type HoursWeekday,
+    removeHoursSlot,
+    toggleHoursDay,
+    weekdayName,
+    withHoursDay
+} from './HoursEditor';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export {
     DEFAULT_IMAGE_TYPES,

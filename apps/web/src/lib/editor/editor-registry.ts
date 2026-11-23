@@ -44,6 +44,22 @@ import { buildUrl } from '@/lib/urls';
  */
 export type EditorSectionGroup = 'property' | 'content' | 'management';
 
+/**
+ * How a section saves (D8 «dos modelos de guardado», HOS-2487).
+ *
+ * - `bar`: the page holds a form saved as a whole, and renders the kit
+ *   `StickySaveBar` (through `EditorSaveBar`) while it has unsaved edits.
+ * - `auto`: each control saves on its own action, and the shell mounts the kit
+ *   `AutoSaveChip` (through `EditorAutoSaveChip`), fed by
+ *   `reportEditorAutoSave`.
+ *
+ * A page renders exactly the signal of its model, never both.
+ */
+export type EditorSaveModel = 'bar' | 'auto';
+
+/** Every {@link EditorSaveModel}, for exhaustive tests. */
+export const EDITOR_SAVE_MODELS: readonly EditorSaveModel[] = ['bar', 'auto'] as const;
+
 /** A single editor section — one entry, one route, one nav item, one hub row. */
 export interface EditorSection {
     /** Stable identifier, used as the React key and by the foreign-import guard. */
@@ -63,6 +79,11 @@ export interface EditorSection {
      * Absent means "always visible", which is the common case.
      */
     readonly visibilityKey?: string;
+    /**
+     * How this section saves. Required: a section with no declared model is a
+     * page that may show no save signal, or two (HOS-2487, AC-3).
+     */
+    readonly saveModel: EditorSaveModel;
 }
 
 /**

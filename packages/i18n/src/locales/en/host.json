@@ -269,6 +269,10 @@
             "moreActions": "More actions for {{name}}"
         },
         "editor": {
+            "groups": {
+                "basicInfo": "How your accommodation is presented",
+                "amenities": "What your accommodation offers"
+            },
             "section": {
                 "basicInfo": "Basic information",
                 "location": "Location",
@@ -509,7 +513,7 @@
                 "premiumFeature": "Premium feature",
                 "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
                 "calendarNudge": "Upgrade your plan to use the availability calendar.",
-                "richDescriptionHint": "Formatted text: bold, lists and more. Available on higher plans.",
+                "richDescriptionHint": "Formatted text in the description: bold, lists and more. Available on higher plans.",
                 "videoNudge": "Upgrade your plan to embed videos in your property.",
                 "genericNudge": "This feature is available on a higher plan.",
                 "upgradeLink": "Upgrade plan"

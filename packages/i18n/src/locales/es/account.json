@@ -2243,6 +2243,43 @@
         "entityCard": {
             "noImage": "Sin imagen"
         },
+        "editorNav": {
+            "label": "Secciones de la ficha",
+            "switcherLabel": "Cambiar de sección",
+            "previous": "Sección anterior: {{section}}",
+            "next": "Sección siguiente: {{section}}",
+            "position": "Sección {{position}} de {{total}}",
+            "allSections": "Todas las secciones",
+            "status": {
+                "complete": "Completa",
+                "incomplete": "Incompleta",
+                "locked": "Bloqueada por tu plan"
+            }
+        },
+        "completeness": {
+            "title": "Completitud de la ficha",
+            "summary": "{{done}} de {{total}} secciones completas",
+            "complete": "Tu ficha tiene todo lo necesario para publicarse.",
+            "missingTitle": "Te falta completar:"
+        },
+        "editorShell": {
+            "backToHub": "Volver al editor",
+            "backToList": "Volver a la lista"
+        },
+        "hoursEditor": {
+            "title": "Horarios de atención",
+            "hint": "Activá los días que abrís y cargá sus franjas. Con «Copiar a todos los días» repetís el horario de un día en toda la semana.",
+            "open": "Abierto",
+            "closed": "Cerrado",
+            "openAria": "{{day}} abierto",
+            "openTimeAria": "{{day}}, apertura de la franja {{index}}",
+            "closeTimeAria": "{{day}}, cierre de la franja {{index}}",
+            "removeSlotAria": "Quitar la franja {{index}} de {{day}}",
+            "addSlot": "Agregar franja",
+            "addSlotAria": "Agregar franja a {{day}}",
+            "copyToAll": "Copiar a todos los días",
+            "copyToAllAria": "Copiar a todos los días el horario de {{day}}"
+        },
         "stepper": {
             "progress": "Paso {{current}} de {{total}}",
             "done": "completado"
@@ -2302,5 +2339,56 @@
         "trafficHint_one": "en los últimos {{days}} días · {{unique}} persona",
         "trafficHint_other": "en los últimos {{days}} días · {{unique}} personas",
         "trafficLockedDescription": "Las visitas a tus fichas vienen con estos planes."
+    },
+    "editorFields": {
+        "contact": {
+            "title": "Datos de contacto",
+            "publicHint": "Estos datos de contacto se muestran públicamente en tu ficha.",
+            "phone": "Teléfono",
+            "landline": "Teléfono fijo",
+            "whatsapp": "WhatsApp",
+            "email": "Email",
+            "website": "Sitio web",
+            "whatsappVisibility": {
+                "legend": "Quién ve el botón de WhatsApp",
+                "PUBLIC": "Todas las personas",
+                "LOGGED_IN_ONLY": "Solo personas con sesión iniciada",
+                "publicWarning": "Tu número va a quedar visible en la página y cualquiera puede copiarlo, incluidos programas automáticos.",
+                "loggedInHint": "El número no aparece en la página: solo lo ven las personas que iniciaron sesión."
+            }
+        },
+        "social": {
+            "title": "Redes sociales",
+            "hint": "Pegá el enlace de cada perfil que quieras mostrar en tu ficha.",
+            "facebook": "Facebook",
+            "instagram": "Instagram",
+            "twitter": "X (Twitter)",
+            "tiktok": "TikTok",
+            "youtube": "YouTube",
+            "linkedIn": "LinkedIn"
+        },
+        "location": {
+            "title": "Dirección",
+            "addressHint": "La ciudad sale del destino que elegiste en Información básica. Esta dirección se muestra en tu ficha pública.",
+            "street": "Calle",
+            "number": "Número",
+            "floor": "Piso",
+            "apartment": "Departamento o local",
+            "venueMapLabel": "Mapa con la ubicación de tu comercio",
+            "meetingPointTitle": "Punto de encuentro",
+            "meetingPoint": "Dónde arranca la experiencia",
+            "meetingPointHint": "Puede ser una dirección o una referencia del lugar.",
+            "meetingPointMapLabel": "Mapa con el punto de encuentro",
+            "directions": "Cómo llegar",
+            "directionsHint": "Una indicación por línea. Dónde estacionar, qué colectivo, cuánto se camina desde la ruta, qué referencia buscar.",
+            "directionsLocked": "El mapa y las indicaciones de cómo llegar no están incluidos en tu plan. El punto de encuentro sí, y se sigue publicando.",
+            "mapLoading": "Cargando el mapa…",
+            "touchToActivate": "Tocá para mover el pin",
+            "pinHint": "Arrastrá el pin o tocá el mapa para ajustar el punto exacto.",
+            "noPinHint": "Todavía no hay pin. Tocá el mapa donde está el lugar para ubicarlo.",
+            "coordinates": "Coordenadas",
+            "latitude": "Latitud",
+            "longitude": "Longitud"
+        }
     }
 }

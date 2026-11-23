@@ -104,7 +104,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         ]);
     });
 
-    it('adds only «Comer y salir» when the user has VENUE_EDIT_OWN (HOS-2559)', () => {
+    it('adds only «Comer y salir» (dashboard + list) when the user has VENUE_EDIT_OWN (HOS-2559)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
@@ -114,7 +114,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         expect(venues?.items.map((item) => item.id)).toEqual(['venueDashboard', 'venue-listings']);
     });
 
-    it('adds only «Experiencias» with only the experience permission (HOS-2559)', () => {
+    it('adds only «Experiencias» (dashboard + list) with only the experience permission (HOS-2559)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.EXPERIENCE_EDIT_OWN])

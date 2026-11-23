@@ -269,6 +269,10 @@
             "moreActions": "Más acciones para {{name}}"
         },
         "editor": {
+            "groups": {
+                "basicInfo": "Cómo se presenta tu alojamiento",
+                "amenities": "Lo que ofrece tu alojamiento"
+            },
             "section": {
                 "basicInfo": "Información básica",
                 "location": "Ubicación",
@@ -509,7 +513,7 @@
                 "premiumFeature": "Función premium",
                 "richDescriptionNudge": "Actualizá tu plan para usar descripciones enriquecidas con formato.",
                 "calendarNudge": "Actualizá tu plan para usar el calendario de disponibilidad.",
-                "richDescriptionHint": "Texto con formato: negritas, listas y más. Disponible en planes superiores.",
+                "richDescriptionHint": "Texto con formato en la descripción: negritas, listas y más. Disponible en planes superiores.",
                 "videoNudge": "Actualizá tu plan para incrustar videos en tu propiedad.",
                 "genericNudge": "Esta función está disponible en un plan superior.",
                 "upgradeLink": "Mejorar plan"

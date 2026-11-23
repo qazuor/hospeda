@@ -1,0 +1,111 @@
+/* HoursEditor.module.css — weekly hours editor (HOS-2491). Day rows adapt to
+   their container: name and switch on top, slots below; from 36rem of width
+   the name sits beside the slots. */
+
+.root {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.days {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.day {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+    border-block-end: 1px solid var(--border);
+}
+
+.day:last-child {
+    border-block-end: 0;
+}
+
+.dayHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-block-size: var(--control-h-lg);
+}
+
+.dayName {
+    font: var(--app-control);
+    color: var(--core-foreground);
+}
+
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font: var(--app-ui);
+    color: var(--core-muted-foreground);
+}
+
+.dayBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-inline-size: 0;
+}
+
+.slot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* Two times, a dash and the remove button: never wraps. The inputs shrink
+   instead, down to what a time value needs. */
+.slotRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.time {
+    flex: 1 1 7rem;
+    min-inline-size: 6rem;
+}
+
+.dash {
+    flex: none;
+    color: var(--core-muted-foreground);
+}
+
+.dayActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.error {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--status-danger-fg);
+}
+
+@container (min-width: 36rem) {
+    .day {
+        grid-template-columns: 12rem minmax(0, 1fr);
+        align-items: start;
+        column-gap: var(--space-4);
+    }
+
+    .dayHead {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .time {
+        flex: 0 1 9rem;
+    }
+}

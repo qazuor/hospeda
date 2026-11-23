@@ -136,3 +136,72 @@ describe('LocationPickerMap — unplaced pin (HOS-1767)', () => {
         });
     });
 });
+
+describe('LocationPickerMap — handlers read the latest props (HOS-2496 review)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /** The handler Leaflet was given for `event` on `target`, registered once at mount. */
+    const handlerFor = (
+        target: { readonly on: ReturnType<typeof vi.fn> },
+        event: string
+    ): ((...args: unknown[]) => void) => {
+        const call = target.on.mock.calls.find(([name]) => name === event);
+        if (!call) throw new Error(`no ${event} handler registered`);
+        return call[1] as (...args: unknown[]) => void;
+    };
+
+    it('a click and a drag after a re-render call the CURRENT onMove, not the first one', async () => {
+        const firstOnMove = vi.fn();
+        const latestOnMove = vi.fn();
+        const { rerender } = render(
+            <LocationPickerMap
+                {...DEFAULT_PROPS}
+                onMove={firstOnMove}
+            />
+        );
+        await waitFor(() => {
+            expect(mockMap.on).toHaveBeenCalledWith('click', expect.any(Function));
+        });
+
+        rerender(
+            <LocationPickerMap
+                {...DEFAULT_PROPS}
+                onMove={latestOnMove}
+            />
+        );
+
+        handlerFor(mockMap, 'click')({ latlng: { lat: -32.5, lng: -58.3 } });
+        mockMarker.getLatLng.mockReturnValueOnce({ lat: -32.6, lng: -58.4 });
+        handlerFor(mockMarker, 'dragend')();
+
+        expect(latestOnMove).toHaveBeenNthCalledWith(1, -32.5, -58.3);
+        expect(latestOnMove).toHaveBeenNthCalledWith(2, -32.6, -58.4);
+        expect(firstOnMove).not.toHaveBeenCalled();
+    });
+
+    it('a click after the map is locked by a re-render does not move the pin', async () => {
+        const onMove = vi.fn();
+        const { rerender } = render(
+            <LocationPickerMap
+                {...DEFAULT_PROPS}
+                onMove={onMove}
+            />
+        );
+        await waitFor(() => {
+            expect(mockMap.on).toHaveBeenCalledWith('click', expect.any(Function));
+        });
+
+        rerender(
+            <LocationPickerMap
+                {...DEFAULT_PROPS}
+                onMove={onMove}
+                disabled
+            />
+        );
+        handlerFor(mockMap, 'click')({ latlng: { lat: -32.5, lng: -58.3 } });
+
+        expect(onMove).not.toHaveBeenCalled();
+    });
+});

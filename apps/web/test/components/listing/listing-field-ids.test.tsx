@@ -48,7 +48,9 @@ import type { ListingDetail } from '@/lib/listing/owner-listings';
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
@@ -240,7 +242,7 @@ function idFor(name: string): string {
  */
 function isFocusableControl(element: HTMLElement): boolean {
     return (
-        ['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName) ||
+        ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(element.tagName) ||
         element.getAttribute('contenteditable') === 'true' ||
         element.hasAttribute('tabindex')
     );
@@ -298,9 +300,12 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
                     const element = document.getElementById(idFor(key));
 
                     if (GROUP_CONTAINER_KEYS.has(key) && vertical === 'venue') {
-                        expect(element?.tagName, `"${key}" should render a group container`).toBe(
-                            'FIELDSET'
-                        );
+                        // HOS-2488: the id sits on a wrapper around the kit's
+                        // `<fieldset>` group, which takes no id of its own.
+                        expect(
+                            element?.querySelector('fieldset'),
+                            `"${key}" should wrap a group container`
+                        ).not.toBeNull();
                         expect(
                             isFocusableControl(element as HTMLElement),
                             `"${key}" is exempt, so its container must not take focus.`
@@ -336,7 +341,7 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
         fireEvent.change(document.getElementById(idFor('summary')) as HTMLElement, {
             target: { value: 'corto' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         expect(document.activeElement?.id).toBe(idFor('summary'));
     });

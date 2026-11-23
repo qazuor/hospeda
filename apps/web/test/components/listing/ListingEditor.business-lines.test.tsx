@@ -62,7 +62,7 @@ describe('ListingEditor — TEST:5.7:2 invalid business lines block the save', (
             screen.getAllByText('Este tipo de comercio no admite ese rubro').length
         ).toBeGreaterThan(0);
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).not.toHaveBeenCalled());
     });

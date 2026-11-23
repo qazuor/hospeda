@@ -1,435 +1,164 @@
 /**
  * @file OpeningHoursSection.client.tsx
  * @description Weekly opening-hours section of the listing owner editor
- * (SPEC-249 T-014, extracted in HOS-258).
+ * (SPEC-249 T-014, extracted in HOS-258; on the kit `HoursEditor` since
+ * HOS-2491).
  *
- * Renders the seven ISO day rows (mon–sun); each day can be toggled closed or
- * carry one or more open/close shifts. Fully controlled: every edit produces a
- * COMPLETE `OpeningHours` value, preserving the timezone and the other days, so
- * saving never drops existing windows.
+ * Fully controlled: every edit produces a COMPLETE `OpeningHours` value,
+ * preserving the timezone and the other days, so saving never drops existing
+ * windows. A day nobody configured reads as CLOSED (HOS-906): «open with no
+ * hours» is the state `DayScheduleSchema` rejects.
  *
  * ## Errors are shown at TWO levels (HOS-814)
  *
- * A rejected schedule used to mark nothing at all. `<FieldError>` was already
- * mounted here, but it was fed `fieldErrors.openingHours` — a key Zod never
- * produces, because it reports at the deepest path
- * (`openingHours.days.mon.shifts.0.close`). So the submit raised "Revisá los
- * campos marcados", marked no field, wrote no message and moved no focus.
- *
- * Both levels are now wired, from the one error map the rest of the editor
- * already receives:
- *
- * - **Per shift** — the exact `open`/`close` input that failed gets
- *   `aria-invalid` and an `aria-describedby` pointing at its own inline
- *   `<FieldError>`, so the reason sits next to the control that caused it.
+ * - **Per slot** — the exact `open`/`close` input that failed gets
+ *   `aria-invalid` and its own message, read from the deepest Zod path
+ *   (`openingHours.days.mon.shifts.0.close`).
  * - **Per section** — the aggregate `openingHours` entry (rolled up by
- *   `useZodForm`'s `aggregateFields`) is announced from the group's first
- *   control, which is also where `focusFirstInvalidField` lands.
- *
- * A shift's two bounds share ONE message slot: `ShiftSchema` reports the window
- * rule on `close`, and a malformed time is per-bound, so at most one of the pair
- * is ever wrong at a time.
+ *   `useZodForm`'s `aggregateFields`) shows under the week, described from
+ *   Monday's switch, which carries the field id `focusFirstInvalidField` lands
+ *   on. With a slot marked, the aggregate copy would repeat the same sentence,
+ *   so it defers to the specific one.
  */
 
 import type { OpeningHours } from '@repo/schemas';
 import type { JSX } from 'react';
-import { FieldError } from '@/components/ui/FieldError';
-import { buildFieldErrorId } from '@/components/ui/TextField';
+import {
+    HOURS_WEEKDAYS,
+    HoursEditor,
+    type HoursWeek,
+    type HoursWeekday
+} from '@/components/account/ui/HoursEditor';
+import { Section } from '@/components/account/ui/Section';
 import { buildFieldId } from '@/lib/forms/build-field-id';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import fieldStyles from './editor-fields.module.css';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 import { LISTING_FIELD_PREFIX } from './field-ids';
-import styles from './OpeningHoursSection.module.css';
 
 const DEFAULT_TZ = 'America/Argentina/Buenos_Aires';
 
-/**
- * Identity of the aggregate `openingHours` field (HOS-385).
- *
- * Derivation only, not `<TextField>`: this is 7 days × N shifts under ONE Zod
- * key, so there is no single labelled control for the wrapper to own. The
- * derived id lands on the first day's "closed" checkbox — see the note at that
- * element for why the group's first control is the right focus target.
- */
+/** Identity of the aggregate `openingHours` field (HOS-385). */
 const OPENING_HOURS_FIELD = { prefix: LISTING_FIELD_PREFIX, name: 'openingHours' } as const;
 
-/** Window seeded when a closed day is opened and has no shifts of its own (HOS-2446). */
-const DEFAULT_SHIFT = { open: '09:00', close: '18:00' } as const;
+type StoredDay = { closed: boolean; shifts: Array<{ open: string; close: string }> };
 
 /**
- * ISO weekday keys with their Spanish fallback labels. The visible label is
- * resolved through `@repo/i18n` (`listing.owner.editor.sections.openingHoursDays.<key>`)
- * at render time (HOS-2436); the fallback only covers a missing key.
- */
-const DAYS = [
-    { key: 'mon', fallback: 'Lun' },
-    { key: 'tue', fallback: 'Mar' },
-    { key: 'wed', fallback: 'Mié' },
-    { key: 'thu', fallback: 'Jue' },
-    { key: 'fri', fallback: 'Vie' },
-    { key: 'sat', fallback: 'Sáb' },
-    { key: 'sun', fallback: 'Dom' }
-] as const;
-
-const HOURS_KEY = 'listing.owner.editor.sections';
-
-type DayKey = (typeof DAYS)[number]['key'];
-type DaySchedule = { closed: boolean; shifts: Array<{ open: string; close: string }> };
-
-/**
- * Read the schedule for a day, defaulting to CLOSED with no shifts (HOS-906).
+ * The stored schedule as the kit's week, a missing day reading CLOSED (HOS-906).
  *
- * The default used to be `{ closed: false, shifts: [] }` — "open" with no
- * hours — which is the exact intermediate state `DayScheduleSchema` now
- * rejects: neither open (no shifts to be open DURING) nor closed. Every day
- * the host never touches falls through this default, and `withDay()` below
- * rebuilds the full week from it on every edit, so the old default meant
- * saving after editing just ONE day silently persisted that invalid state on
- * the other six. Defaulting to closed is the honest read: better to show
- * "closed" for a day nobody configured than to claim it is open with no
- * stated hours.
+ * @param value - The stored opening hours, or `null`.
+ * @returns The week the editor shows.
  */
-function dayOf(value: OpeningHours | null, key: DayKey): DaySchedule {
-    const days = (value?.days ?? {}) as Record<string, DaySchedule | undefined>;
-    return days[key] ?? { closed: true, shifts: [] };
-}
-
-/** Rebuild the full OpeningHours with one day replaced. */
-function withDay(value: OpeningHours | null, key: DayKey, schedule: DaySchedule): OpeningHours {
-    const next: Record<string, DaySchedule> = {};
-    for (const { key: dayKey } of DAYS) {
-        next[dayKey] = dayKey === key ? schedule : dayOf(value, dayKey);
+export function toHoursWeek(value: OpeningHours | null): HoursWeek {
+    const days = (value?.days ?? {}) as Record<string, StoredDay | undefined>;
+    const week = {} as Record<HoursWeekday, HoursWeek[HoursWeekday]>;
+    for (const day of HOURS_WEEKDAYS) {
+        const stored = days[day];
+        week[day] = stored
+            ? { closed: stored.closed, slots: stored.shifts.map((shift) => ({ ...shift })) }
+            : { closed: true, slots: [] };
     }
-    // TYPE-WORKAROUND: rebuilt OpeningHours from the day map; structurally valid but TS can't infer the schema-derived shape from the plain literal.
-    return {
-        timezone: value?.timezone ?? DEFAULT_TZ,
-        days: next
-    } as unknown as OpeningHours;
+    return week;
 }
 
-/** Rebuild the full OpeningHours by copying one day's schedule to all seven. */
-function withAllDays(value: OpeningHours | null, schedule: DaySchedule): OpeningHours {
-    const next: Record<string, DaySchedule> = {};
-    for (const { key: dayKey } of DAYS) {
-        next[dayKey] = {
-            closed: schedule.closed,
-            shifts: schedule.shifts.map((shift) => ({ ...shift }))
+/**
+ * The kit's week back as a complete `OpeningHours`, keeping the timezone.
+ *
+ * @param params - The edited `week` and the `previous` stored value.
+ * @returns The value the form stores.
+ */
+export function fromHoursWeek({
+    week,
+    previous
+}: {
+    readonly week: HoursWeek;
+    readonly previous: OpeningHours | null;
+}): OpeningHours {
+    const days: Record<string, StoredDay> = {};
+    for (const day of HOURS_WEEKDAYS) {
+        days[day] = {
+            closed: week[day].closed,
+            shifts: week[day].slots.map((slot) => ({ open: slot.open, close: slot.close }))
         };
     }
     // TYPE-WORKAROUND: rebuilt OpeningHours from the day map; structurally valid but TS can't infer the schema-derived shape from the plain literal.
-    return {
-        timezone: value?.timezone ?? DEFAULT_TZ,
-        days: next
-    } as unknown as OpeningHours;
+    return { timezone: previous?.timezone ?? DEFAULT_TZ, days } as unknown as OpeningHours;
+}
+
+/** Dotted Zod path of one shift bound, as the error map keys it. */
+function shiftFieldPath(day: HoursWeekday, index: number, bound: 'open' | 'close'): string {
+    return `openingHours.days.${day}.shifts.${index}.${bound}`;
+}
+
+/**
+ * Whether any slot bound the editor RENDERS carries its own error.
+ *
+ * Only an open day's existing slots are drawn, so an error keyed elsewhere —
+ * `openingHours.days.mon.closed` on legacy data (an open day with no slots), or
+ * a slot of a closed day — has no control to show it on. Counting those would
+ * silence the aggregate message and leave the owner with no message at all.
+ *
+ * @param params - The `week` as shown and the form's `errors`.
+ * @returns `true` when a visible slot shows a message.
+ */
+function hasVisibleSlotError({
+    week,
+    errors
+}: {
+    readonly week: HoursWeek;
+    readonly errors: Readonly<Record<string, string>>;
+}): boolean {
+    return HOURS_WEEKDAYS.some(
+        (day) =>
+            !week[day].closed &&
+            week[day].slots.some((_, index) =>
+                (['open', 'close'] as const).some((bound) =>
+                    Boolean(errors[shiftFieldPath(day, index, bound)])
+                )
+            )
+    );
 }
 
 export interface OpeningHoursSectionProps {
     readonly locale: SupportedLocale;
     readonly value: OpeningHours | null;
-    /**
-     * The form's whole dotted-path error map, as every sibling section in this
-     * editor already takes (HOS-814). It used to be a single `error` string
-     * holding `fieldErrors.openingHours`, which no rejection ever populated:
-     * Zod reports at the deepest path, so the message arrived under
-     * `openingHours.days.mon.shifts.0.close` and the section rendered nothing.
-     *
-     * Reading the map lets this section do both halves — mark the exact control
-     * that failed, and show the group-level message that `useZodForm`'s
-     * `aggregateFields` now rolls up under the bare `openingHours` key.
-     */
+    /** The form's whole dotted-path error map (HOS-814). */
     readonly errors: Readonly<Record<string, string>>;
     readonly onChange: (next: OpeningHours) => void;
-}
-
-/** Dotted Zod path of one shift's `open`/`close`, as the error map keys it. */
-function shiftFieldPath(day: DayKey, index: number, bound: 'open' | 'close'): string {
-    return `openingHours.days.${day}.shifts.${index}.${bound}`;
-}
-
-/** The error-message element id for one shift bound. */
-function shiftErrorIdFor(path: string): string {
-    return buildFieldErrorId({ prefix: LISTING_FIELD_PREFIX, name: path });
+    /** The listing's vertical, for the section help anchor. */
+    readonly vertical: string;
 }
 
 /**
- * The id of the FIRST per-shift message this section will render, in document
- * order, or `undefined` when no shift is marked.
+ * The opening-hours section on the kit.
  *
- * Walking `DAYS` and each day's own shifts is what makes it document order
- * rather than Zod's issue order — the two happen to agree today, and relying on
- * that would be a silent coupling.
- *
- * It exists so the group is described by ONE message: with a shift marked, the
- * aggregate copy at the foot of the section would repeat that same sentence
- * verbatim, so the section defers to the specific one and points the group's
- * focus target at it instead.
+ * @param props - See {@link OpeningHoursSectionProps}.
+ * @returns A kit `Section` with the `HoursEditor`.
  */
-function firstShiftErrorId(
-    value: OpeningHours | null,
-    errors: Readonly<Record<string, string>>
-): string | undefined {
-    for (const { key } of DAYS) {
-        const schedule = dayOf(value, key);
-        if (schedule.closed) continue;
-        for (let index = 0; index < schedule.shifts.length; index += 1) {
-            for (const bound of ['open', 'close'] as const) {
-                const path = shiftFieldPath(key, index, bound);
-                if (errors[path]) return shiftErrorIdFor(path);
-            }
-        }
-    }
-    return undefined;
-}
-
 export function OpeningHoursSection({
     locale,
     value,
     errors,
-    onChange
+    onChange,
+    vertical
 }: OpeningHoursSectionProps): JSX.Element {
-    const { t } = createTranslations(locale);
-    const copyToAllLabel = t(
-        'listing.owner.editor.sections.openingHoursCopyToAll',
-        'Copiar a todos los días'
-    );
-
-    const sectionErrorId = buildFieldErrorId(OPENING_HOURS_FIELD);
-    const shiftErrorId = firstShiftErrorId(value, errors);
-    // The aggregate copy is the FALLBACK, not a second voice: it speaks only
-    // when no individual shift is marked (a rejection of the object itself, or
-    // of a day whose failing shift is not rendered because the day is closed).
-    const sectionError = shiftErrorId ? undefined : errors.openingHours;
-    // Whichever message exists is announced from the group's focus target.
-    const groupDescribedBy = shiftErrorId ?? (sectionError ? sectionErrorId : undefined);
+    const t = createT(locale);
+    const week = toHoursWeek(value);
+    const hasShiftError = hasVisibleSlotError({ week, errors });
 
     return (
-        <section
-            className={fieldStyles.section}
-            id="editor-openingHours"
+        <Section
+            title={t('account.ui.hoursEditor.title')}
+            description={t('account.ui.hoursEditor.hint')}
+            helpId={`section:${vertical}.horarios`}
         >
-            <span className={fieldStyles.label}>
-                {t('listing.owner.editor.sections.openingHours', 'Horarios de atención')}
-            </span>
-            <p className={fieldStyles.hint}>
-                {t(
-                    'listing.owner.editor.sections.openingHoursHint',
-                    'Todos los días arrancan en "Cerrado". Destildá "Cerrado" en un día para cargar sus horarios, y usá "Copiar a todos los días" para repetirlos en el resto de la semana.'
-                )}
-            </p>
-            <div className={styles.days}>
-                {DAYS.map(({ key, fallback }, dayIndex) => {
-                    const label = t(`${HOURS_KEY}.openingHoursDays.${key}`, fallback);
-                    const schedule = dayOf(value, key);
-                    return (
-                        <div
-                            key={key}
-                            className={styles.day}
-                        >
-                            <span className={styles.dayLabel}>{label}</span>
-
-                            <label className={fieldStyles.checkbox}>
-                                <input
-                                    // HOS-373 OQ-3: `openingHours` carries ONE
-                                    // aggregate error over 7 days × N shifts, so
-                                    // focus targets the group's first control.
-                                    // Not necessarily the failing day — but it
-                                    // lands the user in the right section, which
-                                    // beats a toast and no hint at all.
-                                    id={
-                                        dayIndex === 0
-                                            ? buildFieldId(OPENING_HOURS_FIELD)
-                                            : undefined
-                                    }
-                                    type="checkbox"
-                                    checked={schedule.closed}
-                                    aria-label={t(
-                                        `${HOURS_KEY}.openingHoursClosedAria`,
-                                        '{{day}} cerrado',
-                                        {
-                                            day: label
-                                        }
-                                    )}
-                                    // The group's aggregate error is announced
-                                    // from the control that carries the derived
-                                    // id, which is also where focus lands.
-                                    aria-invalid={
-                                        dayIndex === 0 && groupDescribedBy ? true : undefined
-                                    }
-                                    aria-describedby={dayIndex === 0 ? groupDescribedBy : undefined}
-                                    onChange={(event) =>
-                                        onChange(
-                                            withDay(value, key, {
-                                                closed: event.target.checked,
-                                                // HOS-2446: opening a day with no shifts used to
-                                                // show only the "+" button. Seed the default
-                                                // window so a slot is there to edit.
-                                                shifts: event.target.checked
-                                                    ? []
-                                                    : schedule.shifts.length > 0
-                                                      ? schedule.shifts
-                                                      : [{ ...DEFAULT_SHIFT }]
-                                            })
-                                        )
-                                    }
-                                />
-                                {t(`${HOURS_KEY}.openingHoursClosed`, 'Cerrado')}
-                            </label>
-
-                            {!schedule.closed &&
-                                schedule.shifts.map((shift, index) => {
-                                    // Zod reports a bad window on `close` (see
-                                    // `ShiftSchema`'s `path`), but a malformed
-                                    // time can be reported on either bound, so
-                                    // both are read and both can be marked.
-                                    const openPath = shiftFieldPath(key, index, 'open');
-                                    const closePath = shiftFieldPath(key, index, 'close');
-                                    const openError = errors[openPath];
-                                    const closeError = errors[closePath];
-                                    const shiftError = openError ?? closeError;
-                                    const messageId = shiftErrorIdFor(
-                                        openError ? openPath : closePath
-                                    );
-
-                                    return (
-                                        <span
-                                            // biome-ignore lint/suspicious/noArrayIndexKey: shifts are positional with no stable id; edits are controlled and rebuild the full array
-                                            key={`${key}-${index}`}
-                                            className={styles.shift}
-                                        >
-                                            <span className={styles.shiftRow}>
-                                                <input
-                                                    type="time"
-                                                    className={fieldStyles.input}
-                                                    aria-label={t(
-                                                        `${HOURS_KEY}.openingHoursOpenAria`,
-                                                        '{{day}} apertura {{index}}',
-                                                        {
-                                                            day: label,
-                                                            index: index + 1
-                                                        }
-                                                    )}
-                                                    aria-invalid={openError ? true : undefined}
-                                                    aria-describedby={
-                                                        openError ? messageId : undefined
-                                                    }
-                                                    value={shift.open}
-                                                    onChange={(event) => {
-                                                        const shifts = schedule.shifts.slice();
-                                                        shifts[index] = {
-                                                            ...shift,
-                                                            open: event.target.value
-                                                        };
-                                                        onChange(
-                                                            withDay(value, key, {
-                                                                closed: false,
-                                                                shifts
-                                                            })
-                                                        );
-                                                    }}
-                                                />
-                                                <input
-                                                    type="time"
-                                                    className={fieldStyles.input}
-                                                    aria-label={t(
-                                                        `${HOURS_KEY}.openingHoursCloseAria`,
-                                                        '{{day}} cierre {{index}}',
-                                                        {
-                                                            day: label,
-                                                            index: index + 1
-                                                        }
-                                                    )}
-                                                    aria-invalid={closeError ? true : undefined}
-                                                    aria-describedby={
-                                                        closeError ? messageId : undefined
-                                                    }
-                                                    value={shift.close}
-                                                    onChange={(event) => {
-                                                        const shifts = schedule.shifts.slice();
-                                                        shifts[index] = {
-                                                            ...shift,
-                                                            close: event.target.value
-                                                        };
-                                                        onChange(
-                                                            withDay(value, key, {
-                                                                closed: false,
-                                                                shifts
-                                                            })
-                                                        );
-                                                    }}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className={styles.shiftButton}
-                                                    aria-label={t(
-                                                        `${HOURS_KEY}.openingHoursRemoveShiftAria`,
-                                                        'Quitar turno {{day}} {{index}}',
-                                                        { day: label, index: index + 1 }
-                                                    )}
-                                                    onClick={() =>
-                                                        onChange(
-                                                            withDay(value, key, {
-                                                                closed: false,
-                                                                shifts: schedule.shifts.filter(
-                                                                    (_, i) => i !== index
-                                                                )
-                                                            })
-                                                        )
-                                                    }
-                                                >
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </span>
-                                            <FieldError
-                                                id={messageId}
-                                                message={shiftError}
-                                            />
-                                        </span>
-                                    );
-                                })}
-
-                            {!schedule.closed && (
-                                <button
-                                    type="button"
-                                    className={styles.addShiftButton}
-                                    aria-label={t(
-                                        `${HOURS_KEY}.openingHoursAddShiftAria`,
-                                        'Agregar turno {{day}}',
-                                        {
-                                            day: label
-                                        }
-                                    )}
-                                    onClick={() =>
-                                        onChange(
-                                            withDay(value, key, {
-                                                closed: false,
-                                                shifts: [...schedule.shifts, { ...DEFAULT_SHIFT }]
-                                            })
-                                        )
-                                    }
-                                >
-                                    <span aria-hidden="true">+</span>
-                                </button>
-                            )}
-
-                            {!schedule.closed && schedule.shifts.length > 0 && (
-                                <button
-                                    type="button"
-                                    className={styles.copyToAllButton}
-                                    aria-label={`${copyToAllLabel}: ${label}`}
-                                    onClick={() => onChange(withAllDays(value, schedule))}
-                                >
-                                    {copyToAllLabel}
-                                </button>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-            <FieldError
-                id={sectionErrorId}
-                message={sectionError}
+            <HoursEditor
+                locale={locale}
+                value={week}
+                idBase={buildFieldId(OPENING_HOURS_FIELD)}
+                firstControlId={buildFieldId(OPENING_HOURS_FIELD)}
+                errorFor={(day, index, bound) => errors[shiftFieldPath(day, index, bound)]}
+                error={hasShiftError ? undefined : errors.openingHours}
+                onChange={(next) => onChange(fromHoursWeek({ week: next, previous: value }))}
             />
-        </section>
+        </Section>
     );
 }

@@ -11,7 +11,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
 import type { ListingPolicyValues } from '@/lib/listing/listing-policies';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key
     })

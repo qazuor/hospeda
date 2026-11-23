@@ -102,7 +102,7 @@ async function saveDescription(
         description,
         'A genuine description of this welcoming cabin and its surroundings.'
     );
-    await user.click(screen.getByRole('button', { name: 'Guardar' }));
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
 }
 

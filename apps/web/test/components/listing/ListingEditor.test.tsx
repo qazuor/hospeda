@@ -35,7 +35,9 @@ vi.mock('../../../src/components/listing/ListingTranslationPanel.client', () => 
     })
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     // Mirror the real translator closely enough for the fields under test:
     //  - A key with no translation resolves to `[MISSING:<key>]` (not the bare
     //    key). `catalog-names` relies on that sentinel to fall back to a
@@ -183,6 +185,25 @@ function renderEditor(
     );
 }
 
+/**
+ * The form-level error banner: a `role="alert"` outside the save bar, whose own
+ * failure line (HOS-2487) is a separate signal.
+ *
+ * @returns The banner; throws until it renders (for `waitFor`).
+ */
+function formBanner(): HTMLElement {
+    const banner = Array.from(document.querySelectorAll<HTMLElement>('[role="alert"]')).find(
+        (el) => !el.closest('[data-editor-save-signal]')
+    );
+    if (!banner) throw new Error('no form banner yet');
+    return banner;
+}
+
+/** The phone number inputs in DOM order: main, landline, WhatsApp (HOS-2497). */
+function phoneNumbers(): HTMLInputElement[] {
+    return Array.from(document.querySelectorAll<HTMLInputElement>('input[type="tel"]'));
+}
+
 describe('ListingEditor', () => {
     beforeEach(() => {
         mockPatch.mockReset();
@@ -237,7 +258,9 @@ describe('ListingEditor', () => {
         // the HOS-372 failure, reintroduced by the split rather than fixed by it.
         renderEditor('venue');
 
-        await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar' })));
+        await waitFor(() =>
+            expect(document.querySelector('[data-editor-save-signal="bar"]')).not.toBeNull()
+        );
         expect(mockListMedia).not.toHaveBeenCalled();
         expect(mockDeleteMedia).not.toHaveBeenCalled();
     });
@@ -245,10 +268,10 @@ describe('ListingEditor', () => {
     it('answers a no-op save with a toast instead of a request', () => {
         renderEditor('venue');
 
-        const save = screen.getByRole('button', { name: 'Guardar' });
-        expect(save).toBeEnabled();
-
-        fireEvent.click(save);
+        // Clean: the save bar is hidden (HOS-2487), but Enter in a field still
+        // submits, and that must visibly answer (HOS-190).
+        expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull();
+        fireEvent.submit(document.querySelector('form') as HTMLFormElement);
 
         expect(mockPatch).not.toHaveBeenCalled();
         expect(addToast).toHaveBeenCalledWith(
@@ -259,19 +282,17 @@ describe('ListingEditor', () => {
     it('renders the summary counter interpolated, not the literal {{count}} template (BETA-124)', () => {
         renderEditor('venue');
 
-        // Summary starts empty → the counter reads "0/300", NOT the raw
-        // "{{count}}/300" template that leaked before the fix (the count was
-        // passed as the fallback, which the resolver discards for an existing
-        // key).
-        const hint = screen.getByText('0/300');
+        // Summary starts empty → the kit counter reads "0 de 300 caracteres"
+        // (HOS-2488), never a raw "{{...}}" template (BETA-124).
+        const hint = screen.getByText('0 de 300 caracteres');
         expect(hint).toBeInTheDocument();
-        expect(hint.textContent).not.toContain('{{count}}');
+        expect(hint.textContent).not.toContain('{{');
 
         // Typing a valid-length summary updates the interpolated counter.
         fireEvent.change(screen.getByLabelText('Resumen'), {
             target: { value: 'hello world!' }
         });
-        expect(screen.getByText('12/300')).toBeInTheDocument();
+        expect(screen.getByText('12 de 300 caracteres')).toBeInTheDocument();
     });
 
     it('PATCHes the venue endpoint with only the dirty field on submit', async () => {
@@ -281,7 +302,7 @@ describe('ListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'new text' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -303,7 +324,7 @@ describe('ListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'changed' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -319,9 +340,9 @@ describe('ListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'x' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-        await screen.findByRole('alert');
+        await waitFor(() => formBanner());
     });
 
     it('surfaces the REAL API error message on PATCH failure, not a fixed banner string (HOS-190 regression)', async () => {
@@ -337,14 +358,14 @@ describe('ListingEditor', () => {
         renderEditor('venue', 'contact');
 
         // HOS-371: the phone is a country-code combobox + local number pair now,
-        // so the editable control is the "Número" input; the dial code comes
+        // so the editable control is the phone number input; the dial code comes
         // from the combobox and is recomposed into the stored string.
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '9 11 1234 5678' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-        const alert = await screen.findByRole('alert');
+        const alert = await waitFor(() => formBanner());
         expect(alert.textContent).toBe('Ese teléfono ya está en uso');
         expect(alert.textContent).not.toBe('No se pudieron guardar los cambios.');
     });
@@ -355,12 +376,12 @@ describe('ListingEditor', () => {
             error: { status: 500, message: 'An unexpected error occurred' }
         });
         renderEditor('venue', 'contact');
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '9 11 1234 5678' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
-        const alert = await screen.findByRole('alert');
+        const alert = await waitFor(() => formBanner());
         expect(alert.textContent).toBe('No se pudieron guardar los cambios.');
     });
 
@@ -396,7 +417,7 @@ describe('ListingEditor', () => {
         const priceFromInput = screen.getByLabelText(/Precio desde/);
         expect(priceFromInput).toHaveValue(500);
         fireEvent.change(priceFromInput, { target: { value: '' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as { priceFrom?: number | null };
@@ -408,7 +429,7 @@ describe('ListingEditor', () => {
         renderEditor('venue', 'price');
 
         fireEvent.change(screen.getByLabelText('Rango de precios'), { target: { value: 'MID' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -425,10 +446,10 @@ describe('ListingEditor', () => {
         // (defaulting to Argentina) into the single `mobilePhone` string the
         // backend stores — the same `<dialCode> <number>` shape the
         // accommodation editor writes and `InternationalPhoneRegex` validates.
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '9 11 1234 5678' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         // HOS-1190: `contactInfo` is MERGED server-side now, so an empty member
@@ -457,10 +478,10 @@ describe('ListingEditor', () => {
         );
         fireEvent.mouseDown(screen.getByRole('option', { name: /Brasil|Brazil/ }));
 
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '11 91234 5678' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as {
@@ -495,7 +516,7 @@ describe('ListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Email'), {
                 target: { value: 'hola@laparrilla.test' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             const body = mockPatch.mock.calls[0]?.[0]?.body as {
@@ -515,10 +536,10 @@ describe('ListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('venue', 'contact');
 
-        fireEvent.change(screen.getByLabelText('facebook'), {
+        fireEvent.change(screen.getByLabelText(/^Facebook/), {
             target: { value: 'https://facebook.com/x' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -574,8 +595,8 @@ describe('ListingEditor', () => {
             />
         );
 
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('switch', { name: 'Lunes abierto' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const call = mockPatch.mock.calls[0]?.[0] as {
@@ -603,8 +624,8 @@ describe('ListingEditor', () => {
         // HOS-2446, unticking «Cerrado» on a day without shifts seeds the
         // default 09:00-18:00 shift, so no extra "add shift" click is needed.
         // Every other day is left untouched.
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('switch', { name: 'Lunes abierto' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const call = mockPatch.mock.calls[0]?.[0] as {
@@ -684,7 +705,7 @@ describe('ListingEditor', () => {
         // Select a second amenity and a feature.
         fireEvent.click(screen.getByLabelText('Terraza'));
         fireEvent.click(screen.getByLabelText('pet_friendly'));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as {
@@ -739,7 +760,7 @@ describe('ListingEditor', () => {
         expect(outdoors?.open).toBe(false);
 
         fireEvent.click(screen.getByLabelText('Terraza'));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const collapsedBody = mockPatch.mock.calls[0]?.[0]?.body as { amenityIds?: string[] };
@@ -782,7 +803,7 @@ describe('ListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Nueva Parrilla' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
@@ -807,7 +828,7 @@ describe('ListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Ciudad / Destino'), {
                 target: { value: DESTINATION_2 }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
@@ -832,7 +853,7 @@ describe('ListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Descripción'), {
                 target: { value: 'Una descripción completamente nueva y suficientemente larga.' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
@@ -859,7 +880,7 @@ describe('ListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'Otro nombre' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;

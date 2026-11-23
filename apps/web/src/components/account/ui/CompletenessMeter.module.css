@@ -1,0 +1,98 @@
+/* CompletenessMeter.module.css — the editor hub meter (HOS-2499).
+   A flat block (D5): one border, no nested box. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    box-sizing: border-box;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    background-color: var(--core-card);
+}
+
+.head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-3);
+}
+
+.title {
+    margin: 0;
+    font: var(--app-card-title);
+    color: var(--core-foreground);
+}
+
+.summary {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.track {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.segment {
+    flex: 1;
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--muted);
+}
+
+.segment[data-filled="true"] {
+    background-color: var(--status-warning-solid);
+}
+
+.root[data-complete="true"] .segment[data-filled="true"] {
+    background-color: var(--status-success-solid);
+}
+
+.missing {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.note {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-foreground);
+}
+
+.list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.link,
+.text {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-block-size: var(--control-h-md);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--status-warning-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--status-warning-bg);
+    color: var(--status-warning-fg);
+    font: var(--app-control);
+}
+
+.link {
+    text-decoration: underline;
+    text-underline-offset: var(--space-1);
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}

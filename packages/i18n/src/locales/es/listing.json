@@ -136,6 +136,12 @@
                 "nightInfo": "Info para salir",
                 "aiQuestions": "Preguntas a la IA"
             },
+            "groups": {
+                "basicInfo": "Identidad y descripción",
+                "practicalInfo": "Lo práctico de la salida",
+                "price": "Cuánto cuesta",
+                "amenities": "Qué ofrece tu comercio"
+            },
             "sections": {
                 "type": "Categoría",
                 "summary": "Resumen",

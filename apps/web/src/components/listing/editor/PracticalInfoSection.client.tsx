@@ -42,12 +42,17 @@
  */
 
 import type { JSX } from 'react';
-import { TextField } from '@/components/ui/TextField';
+import { Field } from '@/components/account/ui/Field';
+import { Section } from '@/components/account/ui/Section';
+import { Textarea } from '@/components/account/ui/Textarea';
+import { TextInput } from '@/components/account/ui/TextInput';
+import { buildFieldId } from '@/lib/forms/build-field-id';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from './editor-fields.module.css';
 import { LISTING_FIELD_ID_SUFFIXES, LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
+import styles from './listing-section.module.css';
 
 /**
  * Splits a textarea's contents into checklist items.
@@ -169,137 +174,151 @@ export function PracticalInfoSection({
     onFieldChange
 }: PracticalInfoSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const idOf = (name: string) => ({ prefix: LISTING_FIELD_PREFIX, name });
 
     return (
-        <section
-            className={styles.section}
+        <Section
             id="editor-practicalInfo"
+            title={t('listing.owner.editor.groups.practicalInfo', 'Lo práctico de la salida')}
+            // Experience-only by shape (see the file docblock), so the anchor's
+            // vertical is fixed rather than read from a prop.
+            helpId={sectionHelpId({ vertical: 'experience', slug: 'datos-practicos' })}
         >
-            {/*
-             * Duration (HOS-898) — TWO controls, ONE Zod field, exactly like
-             * `contactInfo.mobilePhone`'s country+number pair. Both carry the
-             * schema's name `durationMinutes` so the derived ids stay inside
-             * that field's family, and the minutes box takes its suffix from
-             * LISTING_FIELD_ID_SUFFIXES rather than a literal — the same map
-             * `focusFirstInvalidField` reads, so the control the error points at
-             * and the one focus lands on cannot drift. Hard-coding the suffix at
-             * either end compiles, renders, and silently focuses nothing.
-             *
-             * `onFieldChange` still writes the two INDEPENDENT state keys: the
-             * shared name is an id concern, not a state one.
-             */}
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="durationMinutes"
-                suffix="hours"
-                label={t('listing.owner.editor.sections.durationHours', 'Duración — horas')}
-                labelClassName={styles.label}
-                className={styles.input}
-                type="number"
-                min={0}
-                step={1}
-                value={numberInputValue({ value: data.durationHours })}
-                placeholder={t('listing.owner.editor.sections.durationHoursPlaceholder', 'Ej.: 2')}
-                onChange={(event) => {
-                    onFieldChange(
-                        'durationHours',
-                        parseWholeNumberInput({ raw: event.target.value })
-                    );
-                }}
-            />
+            <div className={styles.grid}>
+                {/*
+                 * Duration (HOS-898): TWO controls, ONE Zod field, like
+                 * `contactInfo.mobilePhone`. Both carry the schema name
+                 * `durationMinutes`; the minutes box takes its suffix from
+                 * LISTING_FIELD_ID_SUFFIXES, the same map `focusFirstInvalidField`
+                 * reads, so the control the error points at and the one focus
+                 * lands on cannot drift.
+                 */}
+                <div className={styles.full}>
+                    <div className={styles.pair}>
+                        <Field
+                            locale={locale}
+                            id={buildFieldId({
+                                ...idOf('durationMinutes'),
+                                suffix: 'hours'
+                            })}
+                            label={t(
+                                'listing.owner.editor.sections.durationHours',
+                                'Duración — horas'
+                            )}
+                        >
+                            <TextInput
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                step={1}
+                                value={numberInputValue({ value: data.durationHours })}
+                                placeholder={t(
+                                    'listing.owner.editor.sections.durationHoursPlaceholder',
+                                    'Ej.: 2'
+                                )}
+                                onChange={(event) => {
+                                    onFieldChange(
+                                        'durationHours',
+                                        parseWholeNumberInput({ raw: event.target.value })
+                                    );
+                                }}
+                            />
+                        </Field>
+                        <Field
+                            locale={locale}
+                            id={buildFieldId({
+                                ...idOf('durationMinutes'),
+                                suffix: LISTING_FIELD_ID_SUFFIXES.durationMinutes
+                            })}
+                            label={t(
+                                'listing.owner.editor.sections.durationMinutes',
+                                'Duración — minutos'
+                            )}
+                            // The error lives on the focus target: a rejected
+                            // duration is reported in minutes.
+                            error={errors.durationMinutes}
+                        >
+                            <TextInput
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                step={1}
+                                value={numberInputValue({ value: data.durationMinutesPart })}
+                                placeholder={t(
+                                    'listing.owner.editor.sections.durationMinutesPlaceholder',
+                                    'Ej.: 30'
+                                )}
+                                onChange={(event) => {
+                                    onFieldChange(
+                                        'durationMinutesPart',
+                                        parseWholeNumberInput({ raw: event.target.value })
+                                    );
+                                }}
+                            />
+                        </Field>
+                    </div>
+                    <p className={styles.hint}>
+                        {t(
+                            'listing.owner.editor.sections.durationHint',
+                            'Cuánto dura la experiencia. Dejá los dos campos vacíos si preferís no publicarlo.'
+                        )}
+                    </p>
+                </div>
 
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="durationMinutes"
-                suffix={LISTING_FIELD_ID_SUFFIXES.durationMinutes}
-                label={t('listing.owner.editor.sections.durationMinutes', 'Duración — minutos')}
-                labelClassName={styles.label}
-                className={styles.input}
-                // The error lives on the focus target: a rejected duration is
-                // reported in minutes, which is what this box holds.
-                error={errors.durationMinutes}
-                type="number"
-                min={0}
-                step={1}
-                value={numberInputValue({ value: data.durationMinutesPart })}
-                placeholder={t(
-                    'listing.owner.editor.sections.durationMinutesPlaceholder',
-                    'Ej.: 30'
-                )}
-                onChange={(event) => {
-                    onFieldChange(
-                        'durationMinutesPart',
-                        parseWholeNumberInput({ raw: event.target.value })
-                    );
-                }}
-            />
+                {/* What to bring (HOS-1046) */}
+                <Field
+                    locale={locale}
+                    idParts={idOf('whatToBring')}
+                    label={t('listing.owner.editor.sections.whatToBring', 'Qué llevar')}
+                    hint={t(
+                        'listing.owner.editor.sections.whatToBringHint',
+                        'Un ítem por línea. Lo que tiene que traer la persona que se anota.'
+                    )}
+                    error={errors.whatToBring}
+                >
+                    <Textarea
+                        rows={4}
+                        value={checklistItemsToLines({ items: data.whatToBring })}
+                        placeholder={t(
+                            'listing.owner.editor.sections.whatToBringPlaceholder',
+                            'Repelente\nCalzado cerrado\nTraje de baño'
+                        )}
+                        onChange={(event) => {
+                            onFieldChange(
+                                'whatToBring',
+                                linesToChecklistItems({ raw: event.target.value })
+                            );
+                        }}
+                    />
+                </Field>
 
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.durationHint',
-                    'Cuánto dura la experiencia. Dejá los dos campos vacíos si preferís no publicarlo.'
-                )}
-            </p>
-
-            {/* What to bring (HOS-1046) */}
-            <TextField
-                as="textarea"
-                prefix={LISTING_FIELD_PREFIX}
-                name="whatToBring"
-                label={t('listing.owner.editor.sections.whatToBring', 'Qué llevar')}
-                labelClassName={styles.label}
-                className={styles.textarea}
-                error={errors.whatToBring}
-                rows={4}
-                value={checklistItemsToLines({ items: data.whatToBring })}
-                placeholder={t(
-                    'listing.owner.editor.sections.whatToBringPlaceholder',
-                    'Repelente\nCalzado cerrado\nTraje de baño'
-                )}
-                onChange={(event) => {
-                    onFieldChange(
-                        'whatToBring',
-                        linesToChecklistItems({ raw: event.target.value })
-                    );
-                }}
-            />
-
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.whatToBringHint',
-                    'Un ítem por línea. Lo que tiene que traer la persona que se anota.'
-                )}
-            </p>
-
-            {/* Requirements (HOS-1046) */}
-            <TextField
-                as="textarea"
-                prefix={LISTING_FIELD_PREFIX}
-                name="requirements"
-                label={t('listing.owner.editor.sections.requirements', 'Requisitos')}
-                labelClassName={styles.label}
-                className={styles.textarea}
-                error={errors.requirements}
-                rows={4}
-                value={checklistItemsToLines({ items: data.requirements })}
-                placeholder={t(
-                    'listing.owner.editor.sections.requirementsPlaceholder',
-                    'Edad mínima 12 años\nSaber nadar\nNo apto para embarazadas'
-                )}
-                onChange={(event) => {
-                    onFieldChange(
-                        'requirements',
-                        linesToChecklistItems({ raw: event.target.value })
-                    );
-                }}
-            />
-
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.requirementsHint',
-                    'Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.'
-                )}
-            </p>
-        </section>
+                {/* Requirements (HOS-1046) */}
+                <Field
+                    locale={locale}
+                    idParts={idOf('requirements')}
+                    label={t('listing.owner.editor.sections.requirements', 'Requisitos')}
+                    hint={t(
+                        'listing.owner.editor.sections.requirementsHint',
+                        'Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.'
+                    )}
+                    error={errors.requirements}
+                >
+                    <Textarea
+                        rows={4}
+                        value={checklistItemsToLines({ items: data.requirements })}
+                        placeholder={t(
+                            'listing.owner.editor.sections.requirementsPlaceholder',
+                            'Edad mínima 12 años\nSaber nadar\nNo apto para embarazadas'
+                        )}
+                        onChange={(event) => {
+                            onFieldChange(
+                                'requirements',
+                                linesToChecklistItems({ raw: event.target.value })
+                            );
+                        }}
+                    />
+                </Field>
+            </div>
+        </Section>
     );
 }

@@ -136,6 +136,12 @@
                 "nightInfo": "Night out info",
                 "aiQuestions": "AI questions"
             },
+            "groups": {
+                "basicInfo": "Identity and description",
+                "practicalInfo": "Practical details of the trip",
+                "price": "How much it costs",
+                "amenities": "What your business offers"
+            },
             "sections": {
                 "type": "Category",
                 "summary": "Summary",

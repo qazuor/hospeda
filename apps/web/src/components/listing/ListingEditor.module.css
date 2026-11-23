@@ -26,9 +26,9 @@
 }
 
 /* The two-column shell (220px sticky nav + form) is NOT here any more. HOS-1080
-   moved the navigation out of this island and onto the route: `EditorRouteNav`
-   is a zero-JavaScript Astro component rendered by `EditorShellLayout`, which
-   owns the grid for every vertical's editor. What was `.layout`, `.navSlot` and
+   moved the navigation out of this island and onto the route: since HOS-2486
+   the kit `EditorSectionNav` / `EditorSwitcher` are rendered by
+   `EditorShellLayout`, which owns the grid for every vertical's editor. What was `.layout`, `.navSlot` and
    `.sectionsColumn` here would now be a second, unreferenced copy of that
    geometry — the kind that drifts silently because nothing renders it. */
 

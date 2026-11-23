@@ -17,23 +17,6 @@
         "font-size": 1,
         "shadow": 3
     },
-    "apps/web/src/components/account/AiActivityHistory.module.css": {
-        "font-size": 14
-    },
-    "apps/web/src/components/account/AiAssistantsPanel.module.css": {
-        "color": 1,
-        "font-size": 12
-    },
-    "apps/web/src/components/account/AlertsList.module.css": {
-        "color": 3,
-        "font-size": 11
-    },
-    "apps/web/src/components/account/AllianceApplicationsSection.astro": {
-        "radius": 2
-    },
-    "apps/web/src/components/account/AllianceClaimBanner.module.css": {
-        "radius": 1
-    },
     "apps/web/src/components/account/AvatarUpload.module.css": {
         "color": 7,
         "font-size": 4
@@ -44,18 +27,10 @@
         "radius": 3,
         "shadow": 1
     },
-    "apps/web/src/components/account/DiscoveryDoorHub.astro": {
-        "font-size": 5,
-        "shadow": 1
-    },
     "apps/web/src/components/account/EditableContentCard.astro": {
         "color": 10,
         "font-size": 3,
         "radius": 2
-    },
-    "apps/web/src/components/account/ExclusiveDealsList.module.css": {
-        "color": 1,
-        "font-size": 8
     },
     "apps/web/src/components/account/HostTradeEditForm.module.css": {
         "color": 1,
@@ -67,42 +42,11 @@
         "font-size": 1,
         "radius": 1
     },
-    "apps/web/src/components/account/PartnerEditForm.module.css": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 3,
-        "shadow": 1
-    },
-    "apps/web/src/components/account/PartnerStatsSection.astro": {
-        "color": 7,
-        "font-size": 9,
-        "radius": 2
-    },
     "apps/web/src/components/account/PartnerTrafficSection.module.css": {
         "color": 3,
         "font-size": 2,
         "radius": 2,
         "shadow": 1
-    },
-    "apps/web/src/components/account/ProfileCompletion.module.css": {
-        "color": 6,
-        "font-size": 18,
-        "radius": 6,
-        "shadow": 5
-    },
-    "apps/web/src/components/account/RecommendationsFeed.module.css": {
-        "color": 1,
-        "font-size": 15
-    },
-    "apps/web/src/components/account/SearchHistoryList.module.css": {
-        "color": 4,
-        "font-size": 12
-    },
-    "apps/web/src/components/account/SetPassword.module.css": {
-        "color": 7,
-        "font-size": 10,
-        "radius": 3,
-        "shadow": 2
     },
     "apps/web/src/components/account/SubscriptionCancel.module.css": {
         "font-size": 1,
@@ -111,11 +55,6 @@
     "apps/web/src/components/account/TrialSummary.module.css": {
         "font-size": 4,
         "radius": 1
-    },
-    "apps/web/src/components/account/UserReviewsList.module.css": {
-        "color": 1,
-        "font-size": 11,
-        "radius": 3
     },
     "apps/web/src/components/account/WhatsNewModal.module.css": {
         "color": 3,
@@ -133,21 +72,6 @@
         "font-size": 4,
         "radius": 1
     },
-    "apps/web/src/components/account/editor/content-editor-fields.module.css": {
-        "color": 1,
-        "font-size": 4,
-        "radius": 1
-    },
-    "apps/web/src/components/account/editor/content-editor-layout.module.css": {
-        "color": 5,
-        "font-size": 2,
-        "radius": 2
-    },
-    "apps/web/src/components/auth/ChangePasswordForm.module.css": {
-        "color": 2,
-        "font-size": 5,
-        "radius": 3
-    },
     "apps/web/src/components/billing/addon-purchase/AddonPurchase.module.css": {
         "font-size": 1
     },
@@ -155,16 +79,6 @@
         "color": 1,
         "font-size": 7,
         "radius": 4
-    },
-    "apps/web/src/components/host/ExternalReputationSection.module.css": {
-        "color": 12,
-        "font-size": 20,
-        "radius": 10
-    },
-    "apps/web/src/components/host/PromotionList.module.css": {
-        "color": 20,
-        "font-size": 16,
-        "radius": 14
     },
     "apps/web/src/components/host/editor/ActionBar.module.css": {
         "color": 2,
@@ -176,11 +90,6 @@
         "font-size": 7,
         "radius": 5,
         "shadow": 1
-    },
-    "apps/web/src/components/host/editor/BasicInfoSection.module.css": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 3
     },
     "apps/web/src/components/host/editor/CalendarSection.module.css": {
         "color": 10,
@@ -207,22 +116,9 @@
         "font-size": 4,
         "radius": 1
     },
-    "apps/web/src/components/host/editor/ContactInfoSection.module.css": {
-        "color": 1,
-        "font-size": 5,
-        "radius": 1
-    },
     "apps/web/src/components/host/editor/CountryCodeCombobox.module.css": {
         "font-size": 6,
         "radius": 3
-    },
-    "apps/web/src/components/host/editor/EditorHub.astro": {
-        "font-size": 3,
-        "radius": 1
-    },
-    "apps/web/src/components/host/editor/EditorRouteNav.astro": {
-        "font-size": 2,
-        "radius": 1
     },
     "apps/web/src/components/host/editor/EditorSectionNav.module.css": {
         "font-size": 1
@@ -236,11 +132,6 @@
         "font-size": 5,
         "radius": 3,
         "shadow": 1
-    },
-    "apps/web/src/components/host/editor/LocationPicker.module.css": {
-        "color": 2,
-        "font-size": 13,
-        "radius": 8
     },
     "apps/web/src/components/host/editor/PhotoSection.module.css": {
         "color": 63,
@@ -272,11 +163,6 @@
         "font-size": 6,
         "radius": 1
     },
-    "apps/web/src/components/host/editor/SocialNetworksSection.module.css": {
-        "color": 1,
-        "font-size": 4,
-        "radius": 3
-    },
     "apps/web/src/components/host/editor/TranslationPanel.module.css": {
         "color": 17,
         "font-size": 13,
@@ -294,52 +180,20 @@
         "font-size": 1,
         "radius": 1
     },
-    "apps/web/src/components/host/editor/forms/ServicesForm.module.css": {
-        "font-size": 1
-    },
-    "apps/web/src/components/host/host-trades/BenefitUsagesPanel.module.css": {
-        "color": 23,
-        "font-size": 14,
-        "radius": 10
-    },
     "apps/web/src/components/host/host-trades/DirectoryReviews.module.css": {
         "color": 3,
         "font-size": 11,
         "radius": 4
-    },
-    "apps/web/src/components/host/host-trades/HostTradesAccessDenied.astro": {
-        "color": 1,
-        "font-size": 3,
-        "radius": 2
     },
     "apps/web/src/components/host/host-trades/ProviderPanels.module.css": {
         "color": 22,
         "font-size": 17,
         "radius": 10
     },
-    "apps/web/src/components/host/host-trades/RegisterUsageForm.module.css": {
-        "color": 5,
-        "font-size": 9,
-        "radius": 5
-    },
     "apps/web/src/components/host/host-trades/ReviewFormDialog.module.css": {
         "color": 5,
         "font-size": 12,
         "radius": 5
-    },
-    "apps/web/src/components/host/host-trades/TradeCard.module.css": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 4
-    },
-    "apps/web/src/components/host/host-trades/TradeCategoryBadges.module.css": {
-        "font-size": 1,
-        "radius": 1
-    },
-    "apps/web/src/components/host/host-trades/TradesDirectory.module.css": {
-        "color": 4,
-        "font-size": 2,
-        "radius": 2
     },
     "apps/web/src/components/listing/HiddenByBusinessLinesSummary.module.css": {
         "color": 3,
@@ -393,14 +247,6 @@
         "font-size": 1,
         "radius": 2
     },
-    "apps/web/src/components/listing/editor/BusinessLinesField.module.css": {
-        "color": 1,
-        "font-size": 3,
-        "radius": 2
-    },
-    "apps/web/src/components/listing/editor/ContactSection.module.css": {
-        "font-size": 2
-    },
     "apps/web/src/components/listing/editor/MediaSection.module.css": {
         "color": 2,
         "font-size": 4,
@@ -410,23 +256,10 @@
         "font-size": 2,
         "radius": 1
     },
-    "apps/web/src/components/listing/editor/OpeningHoursSection.module.css": {
-        "color": 4,
-        "font-size": 3,
-        "radius": 1
-    },
-    "apps/web/src/components/listing/editor/PoliciesPanel.module.css": {
-        "font-size": 1
-    },
     "apps/web/src/components/listing/editor/editor-fields.module.css": {
         "color": 4,
         "font-size": 5,
         "radius": 3,
-        "shadow": 1
-    },
-    "apps/web/src/components/newsletter/NewsletterPreferences.module.css": {
-        "font-size": 4,
-        "radius": 2,
         "shadow": 1
     },
     "apps/web/src/components/post/editor/PostCreateForm.module.css": {
@@ -468,12 +301,6 @@
         "font-size": 4,
         "shadow": 3
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/asistentes-ia/historial.astro": {
-        "font-size": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/asistentes-ia/index.astro": {
-        "font-size": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/datos.astro": {
         "font-size": 1
     },
@@ -481,43 +308,7 @@
         "font-size": 1,
         "radius": 1
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/index.astro": {
-        "color": 1,
-        "font-size": 2,
-        "radius": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/servicios.astro": {
-        "font-size": 1,
-        "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 3
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/index.astro": {
-        "color": 3,
-        "font-size": 2,
-        "radius": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/eventos/[id]/editar.astro": {
-        "font-size": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro": {
-        "color": 2,
-        "font-size": 1,
-        "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/proveedor/index.astro": {
-        "color": 1,
-        "font-size": 1,
-        "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/[id]/editar.astro": {
-        "font-size": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/index.astro": {
-        "color": 2,
         "font-size": 1,
         "radius": 1
     }

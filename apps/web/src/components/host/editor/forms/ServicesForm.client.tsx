@@ -25,16 +25,18 @@
  * sends `policies` at all.
  */
 
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
+import { Section } from '@/components/account/ui/Section';
 import type { AccommodationEditData, AmenityAttributeValue, AmenityData } from '@/lib/api/types';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ActionBar } from '../ActionBar.client';
 import { AccommodationServicesSchema } from '../accommodation-edit-form.schema';
 import { buildAmenityAttributesPayload } from '../amenity-attributes-payload';
 import { AmenityCatalogBrowser } from '../amenity-catalog/AmenityCatalogBrowser.client';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
-import pickerSectionStyles from './ServicesForm.module.css';
 
 /**
  * The fields this page owns. Nothing else can reach the PATCH body, except
@@ -110,24 +112,22 @@ export function ServicesForm({
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
-                <fieldset className={pickerSectionStyles.section}>
-                    <legend className={pickerSectionStyles.sectionTitle}>
-                        {t('host.properties.editor.section.amenities', 'Servicios y comodidades')}
-                    </legend>
-                    <AmenityCatalogBrowser
-                        locale={locale}
-                        amenities={amenities}
-                        features={features}
-                        selectedAmenityIds={new Set(form.values.amenityIds)}
-                        selectedFeatureIds={new Set(form.values.featureIds)}
-                        onToggleAmenity={(id) => toggle('amenityIds', id)}
-                        onToggleFeature={(id) => toggle('featureIds', id)}
-                        amenityAttributes={form.values.amenityAttributes}
-                        onChangeAmenityAttributes={setAttributes}
-                    />
-                </fieldset>
-            </div>
+            <Section
+                title={t('host.properties.editor.groups.amenities', 'Lo que ofrece tu alojamiento')}
+                helpId={sectionHelpId({ vertical: 'accommodation', slug: 'servicios' })}
+            >
+                <AmenityCatalogBrowser
+                    locale={locale}
+                    amenities={amenities}
+                    features={features}
+                    selectedAmenityIds={new Set(form.values.amenityIds)}
+                    selectedFeatureIds={new Set(form.values.featureIds)}
+                    onToggleAmenity={(id) => toggle('amenityIds', id)}
+                    onToggleFeature={(id) => toggle('featureIds', id)}
+                    amenityAttributes={form.values.amenityAttributes}
+                    onChangeAmenityAttributes={setAttributes}
+                />
+            </Section>
 
             {form.formError && (
                 <div
@@ -138,10 +138,13 @@ export function ServicesForm({
                 </div>
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={form.isSaving}
-                onCancel={form.handleCancel}
+                isDirty={form.isDirty}
+                onSave={form.save}
+                onDiscard={form.discard}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
             />
         </form>
     );

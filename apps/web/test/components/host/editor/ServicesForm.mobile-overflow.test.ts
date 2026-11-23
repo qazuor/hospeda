@@ -1,18 +1,15 @@
 /**
  * @fileoverview
- * Source-read regression for HOS-2156: on a phone, the amenity browser on the
- * services page was clipped at the right edge (search box, category chips and
- * tiles cut off).
+ * Source-read regression for HOS-2156, kept after HOS-2488 replaced the
+ * `<fieldset>` wrapper with the kit `Section`.
  *
- * Root cause: the wrapper is a `<fieldset>`, whose user-agent default is
- * `min-inline-size: min-content`. The category chip row is a single long
- * horizontal line, so the fieldset grew to thousands of px and the card's
- * `overflow: hidden` clipped everything instead of letting the chip row scroll.
- *
- * jsdom does no layout, so this asserts the CSS rule that neutralises the UA
- * default is declared on the fieldset's class. It proves the rule is DECLARED,
- * not the rendered width. The rendered width was measured on staging at 390px:
- * the nav dropped from 3957px to 301px and became scrollable.
+ * Root cause of the original bug: the wrapper was a `<fieldset>`, whose
+ * user-agent default is `min-inline-size: min-content`. The amenity browser's
+ * category chip row is one long horizontal line, so the fieldset grew to
+ * thousands of px and the card's `overflow: hidden` clipped the search box and
+ * tiles on a phone. The kit `Section` body is a plain block, so the UA default
+ * no longer applies; this asserts that nobody reintroduces a fieldset around
+ * the picker.
  */
 
 import { readFileSync } from 'node:fs';
@@ -24,37 +21,23 @@ const formSrc = readFileSync(
     resolve(WEB_SRC, 'components/host/editor/forms/ServicesForm.client.tsx'),
     'utf8'
 );
-const cssSrc = readFileSync(
-    resolve(WEB_SRC, 'components/host/editor/forms/ServicesForm.module.css'),
-    'utf8'
-);
-
-/** Extracts the declaration block of a top-level `.className { ... }` rule. */
-function ruleBody({ css, className }: { css: string; className: string }): string {
-    const match = new RegExp(`(^|\\n)\\.${className}\\s*\\{([^}]*)\\}`).exec(css);
-    return match?.[2] ?? '';
-}
 
 describe('ServicesForm amenity wrapper on narrow viewports (HOS-2156)', () => {
-    it('wraps the picker in a fieldset styled by the `section` class', () => {
+    it('wraps the picker in the kit Section, not in a fieldset', () => {
         // Arrange + Act
-        const usesFieldsetSection = /<fieldset className=\{pickerSectionStyles\.section\}>/.test(
-            formSrc
-        );
+        const usesKitSection = /<Section\b/.test(formSrc);
+        const usesFieldset = /<fieldset\b/.test(formSrc);
 
         // Assert
-        expect(usesFieldsetSection).toBe(true);
+        expect(usesKitSection).toBe(true);
+        expect(usesFieldset).toBe(false);
     });
 
-    it('overrides the fieldset min-content minimum width so the chip row can scroll', () => {
-        // Arrange
-        const body = ruleBody({ css: cssSrc, className: 'section' });
-
-        // Act
-        const neutralised = /\bmin-(inline-size|width)\s*:\s*0(px)?\s*;/.test(body);
+    it('does not depend on a local stylesheet that could re-add a min-content minimum', () => {
+        // Arrange + Act
+        const importsOwnCss = /ServicesForm\.module\.css/.test(formSrc);
 
         // Assert
-        expect(body).not.toBe('');
-        expect(neutralised).toBe(true);
+        expect(importsOwnCss).toBe(false);
     });
 });

@@ -8,12 +8,13 @@
 
 import { PublicationStatusEnum } from '@repo/schemas';
 import { useCallback, useEffect, useState } from 'react';
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildSlugRefreshPayload, getSlugRefreshOptInPlacement } from '@/lib/listing-slug-refresh';
-import { ActionBar } from '../ActionBar.client';
 import { AccommodationBasicsSchema } from '../accommodation-edit-form.schema';
 import { BasicInfoSection } from '../BasicInfoSection.client';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { PublishReadyDialog } from '../PublishReadyDialog.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import { usePublishReadyPrompt } from '../use-publish-ready-prompt';
@@ -114,19 +115,17 @@ export function BasicsForm({
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
-                <BasicInfoSection
-                    locale={locale}
-                    data={form.values}
-                    destinations={destinations}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                    shouldOfferSlugRefreshNearName={slugRefreshPlacement.nearName}
-                    shouldOfferSlugRefreshNearType={slugRefreshPlacement.nearType}
-                    refreshSlugFromName={refreshSlugFromName}
-                    onRefreshSlugFromNameChange={setRefreshSlugFromName}
-                />
-            </div>
+            <BasicInfoSection
+                locale={locale}
+                data={form.values}
+                destinations={destinations}
+                errors={form.fieldErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+                shouldOfferSlugRefreshNearName={slugRefreshPlacement.nearName}
+                shouldOfferSlugRefreshNearType={slugRefreshPlacement.nearType}
+                refreshSlugFromName={refreshSlugFromName}
+                onRefreshSlugFromNameChange={setRefreshSlugFromName}
+            />
 
             {form.formError && (
                 <div
@@ -137,10 +136,13 @@ export function BasicsForm({
                 </div>
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={form.isSaving}
-                onCancel={form.handleCancel}
+                isDirty={form.isDirty}
+                onSave={form.save}
+                onDiscard={form.discard}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
             />
 
             <PublishReadyDialog
