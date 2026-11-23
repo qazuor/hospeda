@@ -10,6 +10,7 @@ import {
     Button,
     type ButtonVariant,
     CountPill,
+    KeyValueList,
     LinkButton,
     NavTabs,
     Pagination,
@@ -85,6 +86,29 @@ export function KitGalleryActions({ locale }: GalleryGroupProps) {
                     >
                         Sitio externo
                     </LinkButton>
+                </Visual>
+                <Visual name="KeyValueList/default">
+                    <div className={styles.stack}>
+                        <KeyValueList
+                            items={[
+                                {
+                                    key: 'schedule',
+                                    label: 'Horario',
+                                    value: 'Lunes a viernes, 9 a 18'
+                                },
+                                {
+                                    key: 'status',
+                                    label: 'Estado',
+                                    value: <StatusPill tone="success">Activo</StatusPill>
+                                },
+                                {
+                                    key: 'contact',
+                                    label: 'Contacto',
+                                    value: 'proveedor@example.com'
+                                }
+                            ]}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="TextLink/tones">
                     <TextLink href="#kit">Por defecto</TextLink>

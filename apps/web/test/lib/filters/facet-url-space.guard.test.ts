@@ -58,6 +58,8 @@ const CANONICALIZE_LOOKBACK = 240;
 const NON_FACET_JOINS: Readonly<Record<string, string>> = Object.freeze({
     'components/GlobalAnnouncements.astro': 'dismissed-announcement ids in a cookie value',
     'components/account/ProfileEditAvatarSection.tsx': "the <input> `accept` attribute's MIME list",
+    'components/account/ProfileEditIdentitySection.tsx':
+        "the <input> `accept` attribute's MIME list",
     'components/destination/DestinationPOISection.astro':
         'a `data-poi-categories` attribute read as a SET by the client filter',
     'components/shared/navigation/UserMenu.client.tsx': 'a pre-sorted useMemo cache key',

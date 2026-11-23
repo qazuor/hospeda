@@ -1,5 +1,9 @@
 {
     "aiChat": {
+        "guestIntro": "Ask the AI anything you want to know about this place.",
+        "guestExample1": "Do you have gluten-free options?",
+        "guestExample2": "Is there outdoor seating?",
+        "guestExample3": "What time do you close?",
         "fabLabel": "Ask the AI about this venue",
         "headerDisclaimer": "Answers are AI-generated and may contain errors. Always confirm the information with the venue.",
         "panelLabel": "AI chat — Questions about the venue",

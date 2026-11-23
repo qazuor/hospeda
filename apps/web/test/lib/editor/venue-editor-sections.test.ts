@@ -144,10 +144,13 @@ describe('buildVenueEditorRegistry: paths', () => {
         ).toBe('/es/mi-cuenta/comercio/venue/abc/editar/');
     });
 
-    it('should point the breadcrumb index at the owner listing page', () => {
-        expect(buildListingEditorRegistry({ vertical: 'venue', sectionStates }).indexPath).toBe(
-            'mi-cuenta/comercio'
-        );
+    it('should point the breadcrumb index at the list of its own vertical (HOS-2559)', () => {
+        const venue = buildListingEditorRegistry({ vertical: 'venue', sectionStates });
+        expect(venue.indexPath).toBe('mi-cuenta/comercio?vertical=venue');
+        expect(venue.indexLabelKey).toBe('account.nav.myVenues');
+        const experience = buildListingEditorRegistry({ vertical: 'experience', sectionStates });
+        expect(experience.indexPath).toBe('mi-cuenta/comercio?vertical=experience');
+        expect(experience.indexLabelKey).toBe('account.nav.myExperiences');
     });
 });
 

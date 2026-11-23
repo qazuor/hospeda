@@ -1157,4 +1157,63 @@ describe('ContactHost', () => {
             ).toBe(false);
         });
     });
+
+    describe('inquiry booking fields (HOS-2534)', () => {
+        function submitAuthenticated(inquiry?: {
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
+        }) {
+            arrangeSession(true);
+            arrangeConversation(null);
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: {} }) });
+            vi.stubGlobal('fetch', fetchMock);
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    locale={LOCALE}
+                    initialMessage="Hola, ¿está disponible?"
+                    inquiry={inquiry}
+                />
+            );
+            return fetchMock;
+        }
+
+        it('sends the fields to the protected initiate route', async () => {
+            const fetchMock = submitAuthenticated({
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 3
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            const [endpoint, options] = fetchMock.mock.calls[0];
+            expect(endpoint).toMatch(/\/api\/v1\/protected\/conversations\/initiate$/);
+            expect(JSON.parse(options.body)).toEqual({
+                accommodationId: ACTIVE_ACCOMMODATION.id,
+                message: 'Hola, ¿está disponible?',
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 3
+            });
+        });
+
+        it('sends only the message when no fields were filled', async () => {
+            const fetchMock = submitAuthenticated(undefined);
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+                accommodationId: ACTIVE_ACCOMMODATION.id,
+                message: 'Hola, ¿está disponible?'
+            });
+        });
+    });
 });

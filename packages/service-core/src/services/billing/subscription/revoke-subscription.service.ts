@@ -386,18 +386,32 @@ export async function revokeSubscription(
         });
     await emitRemoved({ reading, coverageNotices: ports.coverageNotices });
     const provider = await cancelAtProvider({ reading, ports });
-    await emitAddonCoverageRemoved({ cancelled, coverageNotices: ports.coverageNotices });
-    const addonCancelCalls = (
-        await cancelAddonComplementsAtProvider(
-            { cancelled },
-            {
-                provider: ports.provider,
-                clock: ports.clock,
-                beforeCancelNotice: ports.beforeCancelNotice,
-                cancellationSeen: ports.cancellationSeen
-            }
-        )
-    ).results;
+    let addonCancelCalls: Awaited<ReturnType<typeof cancelAddonComplementsAtProvider>>['results'] =
+        [];
+    // HOS-1883: notices, then the provider half, then analytics.
+    await emitAddonCoverageRemoved({
+        cancelled,
+        coverageNotices: ports.coverageNotices,
+        end: {
+            path: 'ORPHANED',
+            actorKind: 'SYSTEM',
+            billingFacts: ports.billingFacts,
+            listing: ports.orphanhood.listing
+        },
+        beforeFacts: async () => {
+            addonCancelCalls = (
+                await cancelAddonComplementsAtProvider(
+                    { cancelled },
+                    {
+                        provider: ports.provider,
+                        clock: ports.clock,
+                        beforeCancelNotice: ports.beforeCancelNotice,
+                        cancellationSeen: ports.cancellationSeen
+                    }
+                )
+            ).results;
+        }
+    });
     logger.info(
         {
             subscriptionId: reading.subscriptionId,

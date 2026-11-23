@@ -92,6 +92,14 @@ const sources = sourceFiles(BILLING_DIR).map((file) => ({
     path: relative(BILLING_DIR, file).split('\\').join('/'),
     code: stripComments(readFileSync(file, 'utf8'))
 }));
+/**
+ * Transitions whose first notice is asked from a sibling file instead of the file that
+ * records them. A5's provider half lives in `addon-provider-cancellation.ts` (HOS-1883).
+ */
+const NOTICE_FILE_BY_TRANSITION: Readonly<Record<string, string>> = {
+    A5: 'addon/addon-provider-cancellation.ts',
+    A6: 'addon/addon-instance-a6-provider.ts'
+};
 const recordings = sources.flatMap(({ path, code }) =>
     recordedTransitions(code).map((transition) => ({ path, code, transition }))
 );
@@ -143,11 +151,10 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             .filter(({ kind }) => kind !== 'RECIPIENTLESS' && kind !== 'UNDECLARED')
             .filter(({ code, transition, kind }) => {
                 if (transition === 'S31') return false;
-                const noticeCode =
-                    transition === 'A6'
-                        ? sources.find(({ path }) => path === 'addon/addon-instance-a6-provider.ts')
-                              ?.code
-                        : code;
+                const noticePath = NOTICE_FILE_BY_TRANSITION[transition];
+                const noticeCode = noticePath
+                    ? sources.find(({ path }) => path === noticePath)?.code
+                    : code;
                 return !noticeCode?.includes(`kind: '${kind}'`);
             })
             .map(({ path, kind }) => `${path}: kind: '${kind}'`);

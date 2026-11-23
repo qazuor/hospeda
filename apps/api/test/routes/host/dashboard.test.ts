@@ -377,7 +377,9 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             ['GRACE_PERIOD', 'GRACE_PERIOD', 'past_due'],
             ['SUSPENDED', 'SUSPENDED', 'past_due'],
             ['CANCEL_SCHEDULED', 'CANCEL_SCHEDULED', 'cancelled'],
-            ['PAUSED', 'PAUSED', 'cancelled']
+            ['PAUSED', 'PAUSED', 'cancelled'],
+            ['CHARGE_DECLINED', 'CHARGE_DECLINED', 'past_due'],
+            ['PENDING_AUTHORIZATION', 'PENDING_AUTHORIZATION', 'past_due']
         ])('returns the exact status %s without collapsing it', async (status, expected, coarse) => {
             readOwnPlanStateMock.mockResolvedValue({
                 subscriptions: [principal({ status })],
@@ -386,6 +388,31 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const body = await (await buildApp().request('/dashboard')).json();
             expect(body.data.plan.subscriptionStatus).toBe(expected);
             expect(body.data.plan.status).toBe(coarse);
+        });
+
+        it('never lets an older declined row shadow a live subscription in the same vertical (HOS-2553)', async () => {
+            // Arrange: oldest first, as the reader returns them
+            readOwnPlanStateMock.mockResolvedValue({
+                subscriptions: [
+                    principal({ id: 'old-decline', status: 'CHARGE_DECLINED' }),
+                    principal({ id: 'paying', status: 'ACTIVE' })
+                ],
+                deferredCourtesies: []
+            });
+
+            // Act
+            const body = await (await buildApp().request('/dashboard')).json();
+
+            // Assert
+            expect(body.data.plan.subscriptionStatus).toBe('ACTIVE');
+            expect(body.data.plan.status).toBe('active');
+        });
+
+        it('asks the reader for the unsettled statuses so they never read as no subscription (HOS-2553)', async () => {
+            await buildApp().request('/dashboard');
+            expect(readOwnPlanStateMock).toHaveBeenCalledWith(
+                expect.objectContaining({ includeUnsettled: true })
+            );
         });
 
         it('returns the end of service for a scheduled cancellation', async () => {

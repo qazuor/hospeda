@@ -3,6 +3,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import type { Actor } from '../../../types';
 import { ServiceError } from '../../../types';
+import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import {
     type A5Ports,
@@ -23,6 +24,8 @@ const withdrawSchema = z.object({
 export interface WithdrawAddonPorts extends AddonProviderCancellationPorts {
     readonly orphanhood: A5Ports;
     readonly coverageNotices: CoverageNotices;
+    /** HOS-1883: where `addon_cancelled` / `addon_checkout_abandoned` go. */
+    readonly billingFacts?: BillingFactSink;
 }
 
 /** The provider result for the one complement cancelled by the withdrawal. */
@@ -95,11 +98,21 @@ export async function withdrawAddon(
             );
         return result.addon;
     });
+    let provider: Awaited<ReturnType<typeof cancelAddonComplementsAtProvider>> = { results: [] };
+    // HOS-1883: notices, then the provider call, then analytics: it never delays either.
     await emitAddonCoverageRemoved({
         cancelled: [committed],
-        coverageNotices: ports.coverageNotices
+        coverageNotices: ports.coverageNotices,
+        end: {
+            path: 'OWNER_WITHDREW',
+            actorKind: 'USER',
+            billingFacts: ports.billingFacts,
+            listing: ports.orphanhood.listing
+        },
+        beforeFacts: async () => {
+            provider = await cancelAddonComplementsAtProvider({ cancelled: [committed] }, ports);
+        }
     });
-    const provider = await cancelAddonComplementsAtProvider({ cancelled: [committed] }, ports);
     return {
         instanceId: committed.instanceId,
         status: 'CANCELLED',

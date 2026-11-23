@@ -62,6 +62,7 @@ export const ALERT_DIGEST_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'alerts-digest',
         name: 'Resumen de alertas de precios y ofertas',
         domain: 'alerts',
+        audience: 'user',
         scenarios: [
             {
                 id: 'price-drops-and-offers',

@@ -28,8 +28,6 @@
  *     an undefined alias with an inline oklch fallback.
  *   - components/shared/cards/EventCardFeatured.astro (3): base is
  *     `var(--event-cat-bg, ...)`, a CSS var injected at runtime per event category.
- *   - components/account/CollectionCard.tsx (3): base is a JS template `${color}`
- *     where `color` is arbitrary user-chosen collection color from the API.
  *   - pages/500.astro (1): SVG fill is `oklch(from ${destructiveColor} ...)` with
  *     destructiveColor interpolated in the Astro frontmatter at runtime.
  *
@@ -113,7 +111,6 @@ const ALLOWLIST = Object.freeze({
     // UNMEASURED, and `Plans Index [light]` already carries accepted
     // `color-contrast` debt in the a11y baseline — so the sweep will not flag it.
     'src/pages/[lang]/suscriptores/planes/index.astro': 2,
-    'src/components/account/CollectionCard.tsx': 3,
     // 500 error page: SVG fill uses `oklch(from ${destructiveColor} ...)` where
     // destructiveColor is interpolated in the Astro frontmatter at runtime.
     'src/pages/500.astro': 1,

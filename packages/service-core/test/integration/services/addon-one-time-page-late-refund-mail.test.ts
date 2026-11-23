@@ -155,11 +155,14 @@ async function lateHeldPayment() {
     const s = await pageSetup();
     const { instance, paymentPageId } = await boughtPage(s);
     const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-    await abandonOneTimeAddon({
-        instanceId: instance.id,
-        expectedProviderOrderId: null,
-        now: s.f.ports.clock.now()
-    });
+    await abandonOneTimeAddon(
+        {
+            instanceId: instance.id,
+            expectedProviderOrderId: null,
+            now: s.f.ports.clock.now()
+        },
+        { billingFacts: undefined }
+    );
     expect(await deliver(s, takeDue(s))).toContainEqual({
         ack: 'OK',
         outcome: 'ADDON_LATE_PAYMENT_MARKED'

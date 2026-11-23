@@ -166,6 +166,7 @@ const mockMailer = {
 const SERVICE_DEPS = {
     authSecret: 'test-secret-must-be-at-least-32-chars-long!!',
     siteUrl: 'https://test.hospeda.com',
+    apiUrl: 'https://api.test.hospeda.com',
     mailer: mockMailer
 } as const;
 
@@ -179,6 +180,7 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
         anonymousEmail: 'ana@example.com',
         anonymousEmailVerified: false,
         anonymousPhone: null,
+        pendingMessage: null,
         status: 'PENDING_OWNER' as SelectConversation['status'],
         blockReason: null,
         locale: 'es',
@@ -195,6 +197,9 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
         blockedAt: null,
         guestMessageCount: 0,
         ownerMessageCount: 0,
+        checkIn: null,
+        checkOut: null,
+        guests: null,
         createdAt: now,
         updatedAt: now,
         createdById: null,

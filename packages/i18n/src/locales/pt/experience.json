@@ -1,5 +1,9 @@
 {
     "aiChat": {
+        "guestIntro": "Pergunte à IA o que quiser saber sobre esta experiência.",
+        "guestExample1": "O que preciso levar?",
+        "guestExample2": "É indicada para crianças?",
+        "guestExample3": "Quanto tempo dura?",
         "fabLabel": "Perguntar à IA sobre esta experiência",
         "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Confirme sempre as informações com o prestador.",
         "panelLabel": "Chat com IA — Perguntas sobre a experiência",

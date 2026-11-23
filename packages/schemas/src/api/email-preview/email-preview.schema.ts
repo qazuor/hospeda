@@ -45,6 +45,12 @@ export const EmailCatalogDomainSchema = z.enum([
 /** Grouping shown in the admin previewer. */
 export type EmailCatalogDomain = z.infer<typeof EmailCatalogDomainSchema>;
 
+/** Who reads an email. Mirrors `EmailAudience` in `@repo/notifications` (HOS-2565). */
+export const EmailAudienceSchema = z.enum(['user', 'staff']);
+
+/** Who reads an email: end users or internal staff. */
+export type EmailAudience = z.infer<typeof EmailAudienceSchema>;
+
 // ============================================================================
 // LIST
 // ============================================================================
@@ -65,6 +71,8 @@ export const EmailPreviewEntrySummarySchema = z.object({
     sendPath: EmailSendPathSchema,
     name: z.string().min(1),
     domain: EmailCatalogDomainSchema,
+    /** Who reads the email: end users or internal staff. */
+    audience: EmailAudienceSchema,
     /** `false`: the template exists but no production path sends it. */
     wired: z.boolean(),
     scenarios: z.array(EmailPreviewScenarioSummarySchema).min(1)

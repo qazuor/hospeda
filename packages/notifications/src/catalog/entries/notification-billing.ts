@@ -28,6 +28,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.SUBSCRIPTION_PURCHASE,
         name: 'Confirmación de compra',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'monthly',
@@ -72,6 +73,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PAYMENT_SUCCESS,
         name: 'Pago recibido',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-payment-method',
@@ -102,6 +104,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PAYMENT_FAILURE,
         name: 'Pago fallido',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-reason',
@@ -145,6 +148,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.RENEWAL_REMINDER,
         name: 'Recordatorio de renovación',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'accommodation-with-amount',
@@ -178,6 +182,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PLAN_CHANGE_CONFIRMATION,
         name: 'Confirmación de cambio de plan',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-amount',
@@ -209,6 +214,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.COURTESY_GRANTED,
         name: 'Cortesía otorgada',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -228,6 +234,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.COURTESY_STARTED,
         name: 'Cortesía iniciada',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -245,6 +252,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.COMP_GRANTED,
         name: 'Suscripción de cortesía otorgada',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'had-active-billing',
@@ -272,6 +280,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.COURTESY_ENDED,
         name: 'Cortesía finalizada',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-next-billing',
@@ -298,6 +307,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING,
         name: 'Aviso de límite por cambio a un plan menor',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -318,6 +328,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PAYMENT_RETRY_WARNING,
         name: 'Aviso de reintento de pago',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-payment-method-hint',
@@ -346,6 +357,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PLAN_BEING_RETIRED,
         name: 'Plan en retiro',
         domain: 'subscription',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -364,6 +376,7 @@ export const NOTIFICATION_BILLING_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PLAN_PRICE_CHANGE_NOTICE,
         name: 'Aviso de cambio de precio',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'monthly',

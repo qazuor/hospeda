@@ -1,119 +1,75 @@
 /**
  * @file EditableNote.tsx
- * @description Inline editable note sub-component for bookmark cards.
+ * @description The inline personal note of a bookmark card (HOS-2445,
+ * HOS-2480).
  *
- * Renders a user's personal note (bookmark `description`) as static text.
- * Clicking the text (or the edit icon) expands a textarea with Save/Cancel
- * buttons. The caller owns the persisted value — this component calls
- * `onSaved` on success and leaves persistence to the parent.
+ * The note (bookmark `description`) reads as text; activating it opens a
+ * textarea. It is a direct-action control (D8 «dos modelos de guardado»): it
+ * saves on blur and reports through the kit `AutoSaveChip` (saving, saved,
+ * failed with retry). Save and Cancel stay as explicit buttons.
  *
- * Features:
- * - Max 300 characters with a live character counter.
- * - Auto-grow textarea capped at 6 rows.
- * - Escape key cancels editing.
- * - Enter key on Save button confirms (natural form UX).
- * - ARIA: textarea is labelled via `aria-label`; buttons have explicit text.
- * - On save error an `addToast` is called and the previous value is kept.
+ * - Max 300 characters with a live counter; Escape cancels.
+ * - Cancel/Escape never save: the blur that follows them is ignored.
+ * - A failed draft is not re-sent on every later blur, only on retry or edit.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AutoSaveChip, type AutoSaveStatus, Button } from '@/components/account/ui';
 import { translateApiError } from '@/lib/api-errors';
-import type { SupportedLocale } from '@/lib/i18n';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import styles from './EditableNote.module.css';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const NOTE_MAX_LENGTH = 300;
 const TEXTAREA_MIN_ROWS = 3;
 const TEXTAREA_MAX_ROWS = 6;
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
+/** Props of {@link EditableNote}. */
 export interface EditableNoteProps {
-    /** Bookmark database ID used to call PATCH endpoint. */
+    /** Bookmark id (PATCH target). */
     readonly bookmarkId: string;
-    /** Current persisted value (may be null or empty string). */
+    /** Current persisted value (null or empty means no note). */
     readonly initialValue: string | null | undefined;
-    /**
-     * Called after a successful save with the new description string.
-     * The parent should update its local copy of the bookmark.
-     * Optional: when omitted, the component still updates its own read view
-     * via the local `persistedValue` mirror. SSR hosts (e.g. the collection
-     * detail Astro page) cannot pass functions across the island boundary,
-     * so they omit it and rely on the local mirror instead.
-     */
+    /** Called after a successful save with the new note. */
     readonly onSaved?: (newValue: string) => void;
-    /** Full base API URL (e.g. `http://localhost:3001`) without trailing slash. */
+    /** API origin without trailing slash. */
     readonly apiBase: string;
-    /** Placeholder shown when the note is empty and not editing. */
-    readonly placeholder: string;
-    /** Label for the Save button. */
-    readonly saveLabel: string;
-    /** Label for the Cancel button. */
-    readonly cancelLabel: string;
-    /** Accessible label for the textarea (`aria-label`). */
-    readonly textareaLabel: string;
-    /** Accessible label for the edit trigger button. */
-    readonly editButtonLabel: string;
-    /** i18n fallback message for save errors. */
-    readonly saveErrorMessage: string;
-    /**
-     * Confirmation shown (as a status message) after a successful save.
-     * Optional; when omitted no confirmation is rendered (HOS-2445).
-     */
-    readonly savedLabel?: string;
-    /**
-     * Current locale, used to translate API error responses by `code`.
-     * Optional for backwards-compat; without it the component falls back to
-     * the API's English `message` (the current behavior pre-fix).
-     */
-    readonly locale?: SupportedLocale;
+    /** Locale for the copy and for translating API errors. */
+    readonly locale: SupportedLocale;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+/** Row count for the auto-growing textarea (3 to 6). */
+function computeRows(value: string): number {
+    return Math.min(TEXTAREA_MAX_ROWS, Math.max(TEXTAREA_MIN_ROWS, value.split('\n').length));
+}
 
 /**
- * Inline note editor for a single bookmark card.
+ * Inline note editor for one bookmark.
  *
- * State is kept local to the card — no lifting required. The component
- * only calls `onSaved` on a successful PATCH response; the parent stores
- * the canonical value and passes it back via `initialValue` on re-render.
+ * @param props - See {@link EditableNoteProps}.
+ * @returns The read view or the editor, plus the autosave chip.
  */
 export function EditableNote({
     bookmarkId,
     initialValue,
     onSaved,
     apiBase,
-    placeholder,
-    saveLabel,
-    cancelLabel,
-    textareaLabel,
-    editButtonLabel,
-    saveErrorMessage,
-    savedLabel,
     locale
 }: EditableNoteProps) {
+    const t = createT(locale);
     const [isEditing, setIsEditing] = useState(false);
     const [draft, setDraft] = useState(initialValue ?? '');
     const [isSaving, setIsSaving] = useState(false);
-    // Tracks the last persisted value. Lets the read view stay up-to-date even
-    // when the host page is SSR-rendered and never re-passes a new initialValue
-    // (collection detail page is the main consumer of this fallback).
+    // Last persisted value: keeps the read view right without a parent re-render.
     const [persistedValue, setPersistedValue] = useState(initialValue ?? '');
-    // True right after a successful save; drives the "saved" confirmation.
-    const [justSaved, setJustSaved] = useState(false);
+    const [status, setStatus] = useState<AutoSaveStatus | null>(null);
+    const [savedAt, setSavedAt] = useState<Date | undefined>(undefined);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const saveButtonRef = useRef<HTMLButtonElement>(null);
-    // Set by Escape/Cancel so the blur that follows (including the one fired on
-    // unmount) never saves a note the user just discarded (HOS-2445).
+    // Set by Escape/Cancel so the blur that follows never saves a discarded note.
     const cancelledRef = useRef(false);
-    // Draft whose save failed; blur does not retry it until the draft changes,
-    // so one failure cannot re-fire PATCH + toast on every later blur.
+    // Draft whose save failed: blur does not retry it until the draft changes.
     const failedDraftRef = useRef<string | null>(null);
 
-    // Reset draft + mirror whenever the persisted value changes (e.g. after a
-    // successful save the parent passes the new value back in).
     useEffect(() => {
         if (!isEditing) {
             setDraft(initialValue ?? '');
@@ -121,94 +77,82 @@ export function EditableNote({
         }
     }, [initialValue, isEditing]);
 
-    // Auto-focus textarea when editing starts.
     useEffect(() => {
-        if (isEditing) {
-            textareaRef.current?.focus();
-        }
+        if (isEditing) textareaRef.current?.focus();
     }, [isEditing]);
-
-    /** Compute dynamic row count for auto-grow (3-6 rows). */
-    function computeRows(value: string): number {
-        const lineCount = value.split('\n').length;
-        return Math.min(TEXTAREA_MAX_ROWS, Math.max(TEXTAREA_MIN_ROWS, lineCount));
-    }
 
     const handleEdit = useCallback(() => {
         cancelledRef.current = false;
         failedDraftRef.current = null;
-        setJustSaved(false);
-        setDraft(initialValue ?? '');
+        setStatus(null);
+        setDraft(persistedValue);
         setIsEditing(true);
-    }, [initialValue]);
+    }, [persistedValue]);
 
     const handleCancel = useCallback(() => {
         cancelledRef.current = true;
-        setDraft(initialValue ?? '');
+        setDraft(persistedValue);
+        setStatus(null);
         setIsEditing(false);
-    }, [initialValue]);
-
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-            if (e.key === 'Escape') {
-                handleCancel();
-            }
-        },
-        [handleCancel]
-    );
+    }, [persistedValue]);
 
     const handleSave = useCallback(async () => {
         if (isSaving) return;
         setIsSaving(true);
-
+        setStatus('saving');
         try {
-            const url = `${apiBase}/api/v1/protected/user-bookmarks/${bookmarkId}`;
-            const res = await fetch(url, {
+            const res = await fetch(`${apiBase}/api/v1/protected/user-bookmarks/${bookmarkId}`, {
                 method: 'PATCH',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ description: draft })
             });
-
             if (!res.ok) {
                 let apiError: { code?: string; message?: string } | undefined;
                 try {
                     const body = (await res.json()) as {
                         error?: { code?: string; message?: string };
                     };
-                    if (body.error) apiError = body.error;
+                    apiError = body.error;
                 } catch {
-                    // ignore JSON parse errors
+                    // Not JSON: the fallback copy is used.
                 }
                 throw new Error(
-                    translateApiError({ error: apiError, locale, fallback: saveErrorMessage })
+                    translateApiError({
+                        error: apiError,
+                        locale,
+                        fallback: t('account.favorites.errors.saveFailed')
+                    })
                 );
             }
-
             setPersistedValue(draft);
             onSaved?.(draft);
             failedDraftRef.current = null;
             setIsEditing(false);
-            setJustSaved(true);
+            setSavedAt(new Date());
+            setStatus('saved');
         } catch (err) {
             failedDraftRef.current = draft;
-            const msg = err instanceof Error ? err.message : saveErrorMessage;
-            addToast({ type: 'error', message: msg });
-            // Keep editor open with current draft so the user can retry.
+            setStatus('error');
+            addToast({
+                type: 'error',
+                message:
+                    err instanceof Error ? err.message : t('account.favorites.errors.saveFailed')
+            });
+            // The editor stays open with the draft so the user can retry.
         } finally {
             setIsSaving(false);
         }
-    }, [apiBase, bookmarkId, draft, isSaving, onSaved, saveErrorMessage, locale]);
+    }, [apiBase, bookmarkId, draft, isSaving, onSaved, locale, t]);
 
     /**
-     * Saves when the textarea loses focus so a typed note is never silently
-     * dropped (HOS-2445). Moving focus to the Save/Cancel buttons is left to
-     * those buttons; an unchanged draft just closes the editor.
+     * Saves when the textarea loses focus, so a typed note is never dropped
+     * (HOS-2445). Focus moving to Save/Cancel is left to those buttons.
      */
     const handleBlur = useCallback(
-        (e: React.FocusEvent<HTMLTextAreaElement>) => {
-            const next = e.relatedTarget as Node | null;
-            if (next && e.currentTarget.parentElement?.contains(next)) return;
+        (event: React.FocusEvent<HTMLTextAreaElement>) => {
+            const next = event.relatedTarget as Node | null;
+            if (next && event.currentTarget.parentElement?.contains(next)) return;
             if (isSaving || cancelledRef.current) return;
             if (draft === failedDraftRef.current) return;
             if (draft === persistedValue) {
@@ -221,89 +165,91 @@ export function EditableNote({
         [draft, persistedValue, isSaving, handleSave]
     );
 
-    const currentLength = draft.length;
-    const isOverLimit = currentLength > NOTE_MAX_LENGTH;
-    // Use the locally-tracked persisted value so the read view reflects the
-    // last save even when the host page never re-renders (SSR collection page).
+    const isOverLimit = draft.length > NOTE_MAX_LENGTH;
     const displayValue = persistedValue.trim();
-    const hasNote = displayValue.length > 0;
-
-    // ── Editing view ──────────────────────────────────────────────────────────
+    const chip =
+        status === null ? null : (
+            <AutoSaveChip
+                status={status}
+                savedAt={savedAt}
+                locale={locale}
+                onRetry={() => {
+                    failedDraftRef.current = null;
+                    void handleSave();
+                }}
+            />
+        );
 
     if (isEditing) {
         return (
-            <div className={styles.editorWrap}>
-                <textarea
-                    ref={textareaRef}
-                    className={styles.textarea}
-                    aria-label={textareaLabel}
-                    value={draft}
-                    rows={computeRows(draft)}
-                    maxLength={NOTE_MAX_LENGTH + 1} // allow one extra to show over-limit UI
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onBlur={handleBlur}
-                    disabled={isSaving}
-                />
-                <div className={styles.editorFooter}>
-                    <span
-                        className={isOverLimit ? styles.charCountOver : styles.charCount}
-                        aria-live="polite"
-                        aria-atomic="true"
-                    >
-                        {currentLength}/{NOTE_MAX_LENGTH}
-                    </span>
-                    <div className={styles.editorActions}>
-                        <button
-                            type="button"
-                            className={styles.cancelBtn}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={handleCancel}
-                            disabled={isSaving}
+            <div className={styles.note}>
+                <div className={styles.editor}>
+                    <textarea
+                        ref={textareaRef}
+                        className={styles.textarea}
+                        aria-label={t('account.favorites.notes.label')}
+                        value={draft}
+                        rows={computeRows(draft)}
+                        maxLength={NOTE_MAX_LENGTH + 1}
+                        onChange={(event) => setDraft(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Escape') handleCancel();
+                        }}
+                        onBlur={handleBlur}
+                        disabled={isSaving}
+                    />
+                    <div className={styles.footer}>
+                        <span
+                            className={isOverLimit ? styles.countOver : styles.count}
+                            aria-live="polite"
+                            aria-atomic="true"
                         >
-                            {cancelLabel}
-                        </button>
-                        <button
-                            ref={saveButtonRef}
-                            type="button"
-                            className={styles.saveBtn}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => {
-                                void handleSave();
-                            }}
-                            disabled={isSaving || isOverLimit}
-                            aria-busy={isSaving}
-                        >
-                            {saveLabel}
-                        </button>
+                            {draft.length}/{NOTE_MAX_LENGTH}
+                        </span>
+                        <div className={styles.actions}>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={handleCancel}
+                                disabled={isSaving}
+                            >
+                                {t('account.favorites.notes.cancel')}
+                            </Button>
+                            <Button
+                                size="sm"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() => {
+                                    void handleSave();
+                                }}
+                                disabled={isOverLimit}
+                                loading={isSaving}
+                            >
+                                {t('account.favorites.notes.save')}
+                            </Button>
+                        </div>
                     </div>
                 </div>
+                {chip}
             </div>
         );
     }
 
-    // ── Read view ─────────────────────────────────────────────────────────────
-
+    const visible =
+        displayValue.length > 0 ? displayValue : t('account.favorites.notes.placeholder');
     return (
-        <>
+        <div className={styles.note}>
             <button
                 type="button"
-                className={hasNote ? styles.noteDisplay : styles.notePlaceholder}
+                className={
+                    displayValue.length > 0 ? styles.trigger : `${styles.trigger} ${styles.empty}`
+                }
                 onClick={handleEdit}
-                aria-label={editButtonLabel}
-                title={editButtonLabel}
+                aria-label={`${t('account.favorites.notes.edit')}: ${visible}`}
             >
-                {hasNote ? displayValue : placeholder}
+                {visible}
             </button>
-            {justSaved && savedLabel ? (
-                <span
-                    className={styles.savedStatus}
-                    role="status"
-                    data-testid="note-saved-status"
-                >
-                    {savedLabel}
-                </span>
-            ) : null}
-        </>
+            {chip}
+        </div>
     );
 }

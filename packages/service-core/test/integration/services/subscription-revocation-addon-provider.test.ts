@@ -100,6 +100,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 A5 provider half from S
                 return typeof value === 'function' ? value.bind(target) : value;
             }
         });
+        // HOS-1883: how many addon provider calls had happened when each add-on fact was emitted.
+        const addonCancelsAtFact: number[] = [];
         const sent = await revokeSubscription(
             {
                 actor: await seedRevocationActor(),
@@ -109,9 +111,15 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B5:12 A5 provider half from S
             {
                 ...f.ports,
                 provider,
-                beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true })
+                beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
+                billingFacts: {
+                    emit: (fact: { readonly kind: string }) => {
+                        if (fact.kind.startsWith('ADDON_')) addonCancelsAtFact.push(addonCancels);
+                    }
+                }
             }
         );
+        expect(addonCancelsAtFact).toEqual([1]);
         expect(noticeAtCancel).toBe(true);
         expect(addonCancels).toBe(1);
         expect(f.cancel).toHaveBeenCalledTimes(2);

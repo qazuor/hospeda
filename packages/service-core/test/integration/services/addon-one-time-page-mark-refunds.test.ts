@@ -171,11 +171,14 @@ async function paidAfterAbandon(input: { readonly twice?: boolean } = {}) {
     const { instance, paymentPageId } = await boughtPage(s);
     const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
     const again = input.twice ? s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' }) : null;
-    await abandonOneTimeAddon({
-        instanceId: instance.id,
-        expectedProviderOrderId: null,
-        now: s.f.ports.clock.now()
-    });
+    await abandonOneTimeAddon(
+        {
+            instanceId: instance.id,
+            expectedProviderOrderId: null,
+            now: s.f.ports.clock.now()
+        },
+        { billingFacts: undefined }
+    );
     return { s, instance, paid, again };
 }
 
@@ -465,7 +468,13 @@ describe('HOS-2179 D1 safeguard 2: the revocation refunds the payment that activ
                         clause: 'ORPHANED',
                         coverageVerticals: [],
                         complementSubscriptionId: null,
-                        providerCancellation: null
+                        providerCancellation: null,
+                        ending: {
+                            origin: 'ACTIVE',
+                            paid: true,
+                            complement: null,
+                            endedAt: s.f.ports.clock.now()
+                        }
                     }
                 ],
                 now: s.f.ports.clock.now(),

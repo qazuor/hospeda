@@ -1,7 +1,7 @@
 import { eq, payments, users } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
@@ -73,7 +73,7 @@ describe('TEST:1734 rejected charge without a retry window', () => {
         await fake.cancel({ authorizationId: started.authorizationId });
         const read = await fake.readCharge({ chargeId: charge.chargeId });
         expect(read.snapshot.expiresAt).toBeNull();
-        const facts: BillingFact[] = [];
+        const facts: SinkFact[] = [];
         const result = await recordChargeFact(
             { chargeId: charge.chargeId },
             {

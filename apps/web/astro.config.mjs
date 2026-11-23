@@ -6,6 +6,7 @@ import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { cspSoftNavHashes } from './integrations/csp-soft-nav-hashes/index.ts';
+import { zodJitlessClientPlugin } from './integrations/zod-jitless/index.ts';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
 import {
@@ -188,6 +189,11 @@ export default defineConfig({
                     });
                 }
             },
+            // HOS-2558: Zod `jitless` in every browser bundle, set inside Zod's
+            // core module so no import order can beat it. Client-only; also
+            // registered in `optimizeDeps.rolldownOptions` below for dev. See
+            // integrations/zod-jitless/index.ts.
+            zodJitlessClientPlugin(),
             // Force `@repo/icons` to resolve to its package SOURCE (per-file
             // icon wrappers under packages/icons/src), NOT the prebuilt
             // `dist/index.js` tsup barrel.
@@ -274,7 +280,12 @@ export default defineConfig({
             // matches the specifier as written, so the bare package name leaves
             // every `/web` import unbundled (measured: it stayed at ~485
             // requests until the subpath was listed here).
-            include: ['@repo/schemas', '@repo/icons', '@repo/i18n/web']
+            include: ['@repo/schemas', '@repo/icons', '@repo/i18n/web'],
+            // The dev server serves Zod from this pre-bundle, which never runs
+            // `vite.plugins`; the jitless patch has to be applied here too (HOS-2558).
+            rolldownOptions: {
+                plugins: [zodJitlessClientPlugin()]
+            }
         },
         ssr: {
             // `sanitize-html` is CommonJS but depends on `htmlparser2@12`, which is

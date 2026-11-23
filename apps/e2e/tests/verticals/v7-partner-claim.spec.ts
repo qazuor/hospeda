@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { PartnerApplicationApproveSchema } from '@repo/schemas';
 import type { CreatedUser } from '../../fixtures/api-helpers.ts';
 import { createUser, markProfileCompleted, signupUser } from '../../fixtures/api-helpers.ts';
-import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
+import { seedCookieConsent, waitForIslandHydration } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { attachSession } from '../../fixtures/listing-notices.ts';
 import { cleanupManualArrearsRows } from '../../fixtures/manual-arrears.ts';
@@ -61,7 +61,9 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         const partnerName = `V7 Gold ${randomUUID()}`;
         await seedCookieConsent(page);
         await page.goto(`${WEB_URL}/es/sumate/partner/`);
-        await page.locator('#partner-application-email').fill(email);
+        const emailInput = page.locator('#partner-application-email');
+        await waitForIslandHydration({ locator: emailInput });
+        await emailInput.fill(email);
         const submitResponse = page.waitForResponse(
             (response) =>
                 response.url().includes('/api/v1/public/partner-applications') &&

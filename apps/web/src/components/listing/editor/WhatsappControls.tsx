@@ -3,10 +3,10 @@
  * @description The venue WhatsApp number and the owner's choice of who may see
  * the button (HOS-2256 section 7.8, AC-16, AC-21).
  *
- * Two values with a deliberate default: until the owner picks one the button is
- * NOT shown anywhere (a stored number alone publishes nothing), so a listing
- * never starts exposing a number it did not opt in. Choosing "public" warns
- * that the number lands in the page HTML and can be copied by third parties.
+ * Two values, with "public" as the default (HOS-2557, owner decision): the radio
+ * opens on "public" while the owner has not chosen, and the editor saves that
+ * default together with the first number. Choosing "public" warns that the
+ * number lands in the page HTML and can be copied by third parties.
  */
 
 import type { JSX } from 'react';
@@ -47,6 +47,8 @@ interface WhatsappControlsProps {
 export function WhatsappControls({ locale, controls, error }: WhatsappControlsProps): JSX.Element {
     const { t } = createTranslations(locale);
     const name = 'ce-whatsapp-mode';
+    // HOS-2557: "public" is the default while no choice is stored.
+    const mode = controls.mode || 'PUBLIC';
 
     return (
         <>
@@ -83,27 +85,22 @@ export function WhatsappControls({ locale, controls, error }: WhatsappControlsPr
                             type="radio"
                             name={name}
                             value={option.value}
-                            checked={controls.mode === option.value}
+                            checked={mode === option.value}
                             onChange={() => controls.onVisibilityChange(option.value)}
                         />{' '}
                         {t(option.key, option.fallback)}
                     </label>
                 ))}
                 <p className={styles.hint}>
-                    {controls.mode === ''
+                    {mode === 'LOGGED_IN_ONLY'
                         ? t(
-                              'listing.owner.editor.contactField.whatsappVisibility.undecided',
-                              'Hasta que elijas una opción, el botón de WhatsApp no se muestra en tu ficha.'
+                              'listing.owner.editor.contactField.whatsappVisibility.loggedInHint',
+                              'El número no aparece en la página: solo lo ven las personas que iniciaron sesión.'
                           )
-                        : controls.mode === 'PUBLIC'
-                          ? t(
-                                'listing.owner.editor.contactField.whatsappVisibility.publicWarning',
-                                'Tu número va a quedar visible en la página y cualquiera puede copiarlo, incluidos programas automáticos.'
-                            )
-                          : t(
-                                'listing.owner.editor.contactField.whatsappVisibility.loggedInHint',
-                                'El número no aparece en la página: solo lo ven las personas que iniciaron sesión.'
-                            )}
+                        : t(
+                              'listing.owner.editor.contactField.whatsappVisibility.publicWarning',
+                              'Tu número va a quedar visible en la página y cualquiera puede copiarlo, incluidos programas automáticos.'
+                          )}
                 </p>
             </fieldset>
         </>

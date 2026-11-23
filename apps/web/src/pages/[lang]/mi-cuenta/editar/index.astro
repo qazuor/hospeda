@@ -24,12 +24,13 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import { PageHeader } from '@/components/account/ui';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { parseProfileStatus } from '@/lib/middleware-helpers';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -192,7 +193,9 @@ const hasPassword = profileStatus ? profileStatus.hasCredentialAccount : true;
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="editar">
-	<AccountPageHeader title={title} />
+	<PageHeader title={title} locale={locale}>
+		<HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+	</PageHeader>
 
 	<ProfileEditForm
 		client:load

@@ -91,8 +91,11 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    background: var(--brand-primary);
-    color: var(--primary-foreground);
+    /* AA pair in both themes (HOS-2572): --brand-primary-text is navy in light
+       (10.9:1 with --core-card) and the brand blue in dark (5.1:1). The previous
+       --brand-primary + --primary-foreground pair was 2.85:1 in light. */
+    background: var(--brand-primary-text);
+    color: var(--core-card);
     border: none;
     border-radius: 24px;
     padding: 10px 14px 10px 24px;
@@ -101,11 +104,13 @@
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: background 0.3s ease;
+    transition: filter 0.3s ease;
 }
 
+/* Brighten on hover: raises contrast in dark (blue fill, dark text) and keeps
+   white-on-navy above 9:1 in light. */
 .button:hover {
-    background: var(--brand-primary-l90);
+    filter: brightness(1.15);
 }
 
 .button:focus-visible {

@@ -1723,6 +1723,27 @@
       "when": 1795237318594,
       "tag": "0245_hos2519_email_template_preview",
       "breakpoints": true
+    },
+    {
+      "idx": 246,
+      "version": "7",
+      "when": 1795382074529,
+      "tag": "0246_hos2534_conversation_inquiry_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 247,
+      "version": "7",
+      "when": 1795400639982,
+      "tag": "0247_hos1883_payment_rejection_observed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 248,
+      "version": "7",
+      "when": 1795415625451,
+      "tag": "0248_hos2568_conversation_pending_message",
+      "breakpoints": true
     }
   ]
 }

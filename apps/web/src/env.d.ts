@@ -5,8 +5,10 @@
  * Flattened translation dictionaries delivered to the browser, keyed by locale
  * (`{ es: { "nav.home": "Inicio", … } }`).
  *
- * Assigned by the hashed, immutable classic script that `I18nClientData.astro`
- * links from `<head>` and `src/pages/i18n/[file].js.ts` serves (HOS-369 Wave D).
+ * Filled by the two hashed, immutable classic scripts that `I18nClientData.astro`
+ * links from `<head>` and `src/pages/i18n/[file].js.ts` serves (HOS-369 Wave D):
+ * a parser-blocking critical part and a deferred rest, both merging into the
+ * same per-locale object (HOS-2572).
  * `getClientLocaleDict` in `src/lib/i18n.ts` reads it SYNCHRONOUSLY while
  * islands render — do not replace it with anything asynchronous.
  *

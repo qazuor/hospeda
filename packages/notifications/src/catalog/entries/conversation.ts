@@ -123,6 +123,7 @@ export const CONVERSATION_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'verify',
         name: 'Verificación de email del huésped',
         domain: 'conversation',
+        audience: 'user',
         scenarios: [{ id: 'default', label: 'Huésped anónimo', input: VERIFY_SAMPLE }],
         render: ({ scenario }) => ({
             subject: CONVERSATION_VERIFY_SUBJECT,
@@ -140,6 +141,7 @@ export const CONVERSATION_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'access-link',
         name: 'Enlace de acceso a la conversación',
         domain: 'conversation',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -166,6 +168,7 @@ export const CONVERSATION_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'new-message',
         name: 'Nuevo mensaje (usuario registrado)',
         domain: 'conversation',
+        audience: 'user',
         scenarios: newMessageScenarios(
             `${SAMPLE_SITE_URL}/es/mensajes/00000000-0000-4000-8000-0000000000c1`
         ),
@@ -182,6 +185,7 @@ export const CONVERSATION_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'new-message-anon',
         name: 'Nuevo mensaje (huésped anónimo)',
         domain: 'conversation',
+        audience: 'user',
         scenarios: newMessageScenarios(`${SAMPLE_SITE_URL}/guest/messages/token-de-ejemplo-789`),
         render: ({ scenario }) => ({
             subject: buildConversationNewMessageSubject({
@@ -196,6 +200,7 @@ export const CONVERSATION_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'token-expiring-day15',
         name: 'Enlace de acceso vence en 15 días',
         domain: 'conversation',
+        audience: 'user',
         scenarios: [{ id: 'default', label: 'Huésped anónimo', input: TOKEN_SAMPLE }],
         render: ({ scenario }) => ({
             subject: buildConversationTokenDay15Subject({
@@ -210,6 +215,7 @@ export const CONVERSATION_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'token-expiring-day25',
         name: 'Último aviso: enlace de acceso vence en 5 días',
         domain: 'conversation',
+        audience: 'user',
         scenarios: [{ id: 'default', label: 'Huésped anónimo', input: TOKEN_SAMPLE }],
         render: ({ scenario }) => ({
             subject: buildConversationTokenDay25Subject({

@@ -475,6 +475,9 @@ interface VerticalPatchFieldsArgs {
     readonly baseline: ListingEditData;
 }
 
+/** Visibility a venue WhatsApp number gets when the owner never picked one (HOS-2557). */
+const DEFAULT_WHATSAPP_VISIBILITY = 'PUBLIC';
+
 /**
  * Fields only the venue update schema owns: the price tier and nightInfo.
  *
@@ -500,6 +503,15 @@ function buildVenuePatchFields({
     // venue update schema, hence here and not in the shared diff.
     if (current.whatsappVisibility !== baseline.whatsappVisibility) {
         payload.whatsappVisibility = current.whatsappVisibility || null;
+    } else if (
+        // HOS-2557: "public" is the default. The radio shows it while nothing is
+        // stored, so a number entered for the first time saves it with the number
+        // (an owner's explicit pick, sent above, always wins).
+        current.whatsappVisibility === '' &&
+        current.whatsapp !== '' &&
+        current.whatsapp !== baseline.whatsapp
+    ) {
+        payload.whatsappVisibility = DEFAULT_WHATSAPP_VISIBILITY;
     }
     const location = buildLocationPatch({ current: current.location, baseline: baseline.location });
     if (location) {

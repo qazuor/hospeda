@@ -39,7 +39,11 @@ const VERTICAL_SPECIFIC_KEYS = new Set([
     'headerDisclaimer',
     'priceDisclaimer',
     'unavailable',
-    'readNotice'
+    'readNotice',
+    'guestIntro',
+    'guestExample1',
+    'guestExample2',
+    'guestExample3'
 ]);
 
 /**
@@ -106,10 +110,31 @@ function verticalFallback(entityType: AiChatEntityType, suffix: string): string 
             return entityType === 'accommodation'
                 ? 'El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.'
                 : 'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.';
+        case 'guestIntro':
+            return `Preguntale a la IA lo que quieras saber de ${subject}.`;
+        case 'guestExample1':
+        case 'guestExample2':
+        case 'guestExample3':
+            return GUEST_EXAMPLE_FALLBACKS[entityType][Number(suffix.slice(-1)) - 1];
         default:
             return undefined;
     }
 }
+
+/** Spanish example questions shown to a guest, per vertical. */
+const GUEST_EXAMPLE_FALLBACKS: Readonly<Record<AiChatEntityType, readonly string[]>> = {
+    accommodation: [
+        '¿Aceptan mascotas?',
+        '¿Tiene pileta y estacionamiento?',
+        '¿Cómo es el check-in?'
+    ],
+    venue: [
+        '¿Tienen opciones sin gluten?',
+        '¿Hay mesas al aire libre?',
+        '¿Hasta qué hora atienden?'
+    ],
+    experience: ['¿Qué tengo que llevar?', '¿Es apta para chicos?', '¿Cuánto dura?']
+};
 
 /** Human Spanish copy for the vertical-agnostic strings. */
 const SHARED_FALLBACKS: Readonly<Record<string, string>> = Object.freeze({
@@ -122,7 +147,11 @@ const SHARED_FALLBACKS: Readonly<Record<string, string>> = Object.freeze({
     newConversation: 'Nueva conversación',
     close: 'Cerrar chat',
     expand: 'Expandir panel',
-    collapse: 'Reducir panel'
+    collapse: 'Reducir panel',
+    guestExamplesLead: 'Por ejemplo:',
+    guestFree: 'Es gratis con tu cuenta.',
+    guestSignUp: 'Crear cuenta gratis',
+    guestSignIn: 'Ingresar'
 });
 
 /**

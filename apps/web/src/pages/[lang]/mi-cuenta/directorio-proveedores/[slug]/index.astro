@@ -12,8 +12,13 @@
  * hydration would show an empty panel on exactly the screen where "no reviews"
  * and "not loaded yet" carry opposite meanings.
  *
- * The four terminal states mirror the sibling QR landing page, and for the
- * same reason: a host may reach this URL from a link saved a season ago.
+ * Built on the account kit (HOS-2472): `PageHeader` with a back link, the
+ * provider's data and a «Contactar» dialog in one island, the benefit with its
+ * CTA, and the reviews island untouched.
+ *
+ * The terminal states exist because a host may reach this URL from a link saved
+ * a season ago. This page has its own «not found» copy: it is reached by a
+ * link, never by scanning a code, so it must not mention a QR.
  *   - 403          → caller lacks HOST_TRADE_VIEW — not yet a host. The gate
  *                    is working as designed; renders the shared
  *                    {@link HostTradesAccessDenied} instead of the generic
@@ -27,12 +32,13 @@
  * @rendering SSR (prerender = false — requires an authenticated host)
  */
 
-import { LockIcon, WrenchIcon } from '@repo/icons';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import { EmptyState, LinkButton, PageHeader } from '@/components/account/ui';
 import { DirectoryReviewsList } from '@/components/host/host-trades/DirectoryReviewsList.client';
 import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
-import { TradeCategoryBadges } from '@/components/host/host-trades/TradeCategoryBadges';
+import { ProviderDetail } from '@/components/host/host-trades/ProviderDetail.client';
+import { ProviderLoadError } from '@/components/host/host-trades/ProviderLoadError.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { DirectoryProvider, DirectoryReviewRow } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
@@ -155,39 +161,23 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
     description={subtitle}
     activeSection="directorio-proveedores"
 >
-    <AccountPageHeader title={title} description={subtitle} />
+    <PageHeader
+        title={title}
+        description={subtitle}
+        locale={locale}
+        back={{ label: backToDirectory, href: directoryHref }}
+        helpId="section:hosttrade.detalle">
+        <HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+    </PageHeader>
 
     {outcome === 'ok' && provider ? (
         <div class="provider-detail__stack">
-            <div class:list={['provider-detail__identity', accountSectionStyles.branded]}>
-                <span class="provider-detail__icon" aria-hidden="true">
-                    <WrenchIcon size={32} weight="duotone" />
-                </span>
-                <div class="provider-detail__identity-body">
-                    <TradeCategoryBadges categories={provider.categories} locale={locale} />
-                    <p class="provider-detail__benefit">
-                        <span class="provider-detail__benefit-label">
-                            {t('host-trades.card.benefit', 'Beneficio para hosts')}
-                        </span>
-                        {provider.benefit}
-                    </p>
-
-                    {provider.is24h ? (
-                        <p class="provider-detail__schedule">
-                            {t('host-trades.card.is24h', 'Disponible 24hs')}
-                        </p>
-                    ) : provider.scheduleText ? (
-                        <p class="provider-detail__schedule">{provider.scheduleText}</p>
-                    ) : null}
-
-                    <div class="provider-detail__actions">
-                        <a href={registerUsageHref} class="provider-detail__cta">
-                            {t('host-trades.registerUsage.title', 'Registrar uso del beneficio')}
-                        </a>
-                        <a href={directoryHref} class="provider-detail__back">{backToDirectory}</a>
-                    </div>
-                </div>
-            </div>
+            <ProviderDetail
+                client:idle
+                locale={locale}
+                provider={provider}
+                registerUsageHref={registerUsageHref}
+            />
 
             <DirectoryReviewsList
                 client:load
@@ -201,51 +191,29 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
         </div>
     ) : outcome === 'accessDenied' ? (
         <HostTradesAccessDenied locale={locale} />
+    ) : outcome === 'error' ? (
+        <ProviderLoadError client:load locale={locale} />
     ) : (
-        <div class:list={['provider-detail__terminal', accountSectionStyles.branded]} role="alert">
-            <span class="provider-detail__terminal-icon" aria-hidden="true">
-                <LockIcon size={40} weight="duotone" />
-            </span>
-            <h2 class="provider-detail__terminal-heading">
-                {outcome === 'revoked'
+        <EmptyState
+            title={
+                outcome === 'revoked'
                     ? t(
                           'host-trades.registerUsage.revoked.title',
                           'Este proveedor ya no está en el directorio'
                       )
-                    : outcome === 'notFound'
-                      ? t(
-                            'host-trades.registerUsage.notFound.title',
-                            'No encontramos este proveedor'
-                        )
-                      : t(
-                            'host-trades.registerUsage.loadError.title',
-                            'No pudimos cargar el proveedor'
-                        )}
-            </h2>
-            <p class="provider-detail__terminal-body">
-                {outcome === 'revoked'
+                    : t('host-trades.detail.notFound.title')
+            }
+            description={
+                outcome === 'revoked'
                     ? t(
                           'host-trades.registerUsage.revoked.body',
                           'Ya no forma parte del directorio, así que no podés registrar usos de su beneficio. Si tenés dudas, escribinos.'
                       )
-                    : outcome === 'notFound'
-                      ? t(
-                            'host-trades.registerUsage.notFound.body',
-                            'El código que escaneaste no corresponde a ningún proveedor del directorio. Revisá que sea el código correcto.'
-                        )
-                      : t(
-                            'host-trades.registerUsage.loadError.body',
-                            'Hubo un problema al cargar los datos. Probá recargar la página.'
-                        )}
-            </p>
-            {outcome === 'error' ? (
-                <a href={Astro.url.pathname} class="provider-detail__terminal-cta">
-                    {t('host-trades.registerUsage.loadError.retry', 'Reintentar')}
-                </a>
-            ) : (
-                <a href={directoryHref} class="provider-detail__terminal-cta">{backToDirectory}</a>
-            )}
-        </div>
+                    : t('host-trades.detail.notFound.body')
+            }
+            action={<LinkButton href={directoryHref}>{backToDirectory}</LinkButton>}
+            helpId="section:hosttrade.detalle"
+        />
     )}
 </AccountLayout>
 
@@ -254,129 +222,5 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
         display: flex;
         flex-direction: column;
         gap: var(--space-5, 1.25rem);
-    }
-
-    /* ── Identity + benefit ── */
-
-    .provider-detail__identity {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--space-4, 1rem);
-        padding: var(--space-6, 1.5rem);
-        background-color: var(--core-card);
-        border: 1px solid var(--core-foreground-a08);
-        border-radius: var(--radius-card, 24px);
-    }
-
-    .provider-detail__icon {
-        display: inline-flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        color: var(--brand-primary);
-    }
-
-    .provider-detail__identity-body {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2, 0.5rem);
-    }
-
-    .provider-detail__benefit {
-        margin: 0;
-        font-family: var(--font-sans);
-        font-size: var(--text-body, 1rem);
-        color: var(--core-foreground);
-    }
-
-    .provider-detail__benefit-label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--brand-accent);
-    }
-
-    .provider-detail__schedule {
-        margin: 0;
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--core-muted-foreground);
-    }
-
-    .provider-detail__actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-3, 0.75rem);
-        margin-top: var(--space-2, 0.5rem);
-    }
-
-    .provider-detail__cta,
-    .provider-detail__terminal-cta {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        padding: 0.625rem 1.25rem;
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.9375rem;
-        color: var(--primary-foreground, #ffffff);
-        text-decoration: none;
-        white-space: nowrap;
-        background-color: var(--brand-primary);
-        border-radius: var(--radius-pill, 9999px);
-        transition: opacity 150ms ease-out;
-    }
-
-    .provider-detail__cta:hover,
-    .provider-detail__terminal-cta:hover {
-        opacity: 0.88;
-    }
-
-    .provider-detail__back {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--core-muted-foreground);
-        text-decoration: underline;
-    }
-
-    /* ── Terminal states (not found / revoked / load error) ── */
-
-    .provider-detail__terminal {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-4, 1rem);
-        padding: var(--space-12, 3rem) var(--space-8, 2rem);
-        background-color: var(--core-card);
-        border: 1px solid var(--core-foreground-a08);
-        border-radius: var(--radius-card, 24px);
-        text-align: center;
-    }
-
-    .provider-detail__terminal-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--core-muted-foreground);
-    }
-
-    .provider-detail__terminal-heading {
-        margin: 0;
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: 1.25rem;
-        color: var(--core-foreground);
-    }
-
-    .provider-detail__terminal-body {
-        max-width: 46ch;
-        margin: 0;
-        font-family: var(--font-sans);
-        font-size: var(--text-body, 1rem);
-        color: var(--core-muted-foreground);
     }
 </style>

@@ -1,12 +1,13 @@
 /**
  * @file [file].js.ts
- * @description Serves one locale's flattened translation dictionary as a
- * hashed, immutable JavaScript asset (HOS-369 Wave D).
+ * @description Serves one part of a locale's flattened translation dictionary
+ * as a hashed, immutable JavaScript asset (HOS-369 Wave D, split by HOS-2572).
  *
- * `GET /i18n/<locale>.<8 hex>.js` → a classic script that assigns
- * `window.__HOSPEDA_I18N__[<locale>]`. Client islands read that global
- * synchronously through `getClientLocaleDict` (`@/lib/i18n`); the page links to
- * it from `<head>` via `I18nClientData.astro`.
+ * `GET /i18n/<locale>.<part>.<8 hex>.js` → a classic script that merges into
+ * `window.__HOSPEDA_I18N__[<locale>]`. `<part>` is `critical` (parser-blocking,
+ * carries the hydration gate) or `rest` (deferred). Client islands read that
+ * global synchronously through `getClientLocaleDict` (`@/lib/i18n`); the page
+ * links both parts from `<head>` via `I18nClientData.astro`.
  *
  * Both the URL and the body come from `@/lib/i18n-asset`, so what this endpoint
  * serves and what the page requests cannot drift apart.
@@ -41,7 +42,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { getI18nAssetBody, I18N_ASSET_EXTENSION, resolveI18nAssetLocale } from '@/lib/i18n-asset';
+import { getI18nAssetBody, I18N_ASSET_EXTENSION, resolveI18nAsset } from '@/lib/i18n-asset';
 
 export const prerender = false;
 
@@ -49,7 +50,7 @@ export const prerender = false;
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
 export const GET: APIRoute = ({ params }) => {
-    // An unknown locale OR a hash that is not the current one both 404. The
+    // An unknown locale or part, OR a hash that is not the current one, all 404. The
     // second half is what makes `immutable` safe: answering a stale URL with
     // this deployment's content would pin the wrong dictionary for a year in
     // every cache that asked, with no way to invalidate it.
@@ -59,8 +60,8 @@ export const GET: APIRoute = ({ params }) => {
     // (`max-age=14400`). During a rollout the old container answers the new
     // hash with this 404, and a cached copy would keep every island of that
     // locale on its Spanish fallbacks after the new container serves the file.
-    const locale = resolveI18nAssetLocale(`${params.file ?? ''}${I18N_ASSET_EXTENSION}`);
-    if (locale === null) {
+    const asset = resolveI18nAsset(`${params.file ?? ''}${I18N_ASSET_EXTENSION}`);
+    if (asset === null) {
         return new Response('Not Found', {
             status: 404,
             headers: {
@@ -70,7 +71,7 @@ export const GET: APIRoute = ({ params }) => {
         });
     }
 
-    return new Response(getI18nAssetBody(locale), {
+    return new Response(getI18nAssetBody(asset), {
         status: 200,
         headers: {
             'Content-Type': 'application/javascript; charset=utf-8',

@@ -157,6 +157,19 @@ svg {
     border-width: 0;
 }
 
+/* --- Not-yet-hydrated islands (HOS-2572) ---
+ * Astro keeps the `ssr` attribute on an island until it hydrates. Page islands
+ * wait for the i18n hydration gate (DOMContentLoaded), so their server-rendered
+ * controls are visible before they work: a click would do nothing and typed text
+ * would be dropped when React takes the input over. Block pointer input on those
+ * controls until hydration and show they are still loading. Links stay usable
+ * (they work without JS). `client:media` islands are excluded: one whose query
+ * does not match never hydrates, and its controls must not stay dead. */
+astro-island[ssr]:not([client="media"]) :is(button, input, select, textarea, [role="button"]) {
+    pointer-events: none;
+    cursor: progress;
+}
+
 /* --- Reduced motion: disable all decorative animations --- */
 @media (prefers-reduced-motion: reduce) {
     *,

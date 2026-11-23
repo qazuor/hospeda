@@ -115,11 +115,12 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<slot name="head-early" />
 
 		<!--
-		  HOS-369 Wave D: the client translation dictionary, as a hashed
-		  immutable asset, loaded as a parser-BLOCKING script (HOS-2388). It
-		  MUST live in <head>: `client:load` islands start hydrating while the
-		  document is still being parsed, so from <body> the islands rendered
-		  above it would hydrate against an empty dictionary.
+		  HOS-369 Wave D: the client translation dictionary, as hashed
+		  immutable assets — a small parser-BLOCKING critical part (with the
+		  hydration gate) and a deferred rest (HOS-2388, HOS-2572). It MUST
+		  live in <head>: islands start hydrating while the document is still
+		  being parsed, so from <body> the islands rendered above it would
+		  hydrate before the gate exists.
 		-->
 		<I18nClientData locale={locale} />
 

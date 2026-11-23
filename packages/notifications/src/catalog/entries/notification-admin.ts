@@ -26,6 +26,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.ADMIN_PAYMENT_FAILURE,
         name: 'Pago fallido (admin)',
         domain: 'admin',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'critical',
@@ -60,6 +61,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.ADMIN_SYSTEM_EVENT,
         name: 'Evento del sistema (admin)',
         domain: 'admin',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'info',
@@ -95,6 +97,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.ADMIN_LEAD_RECEIVED,
         name: 'Nuevo lead recibido (admin)',
         domain: 'admin',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'complete',
@@ -135,6 +138,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.FEEDBACK_REPORT,
         name: 'Reporte de feedback',
         domain: 'contact-feedback',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'bug-complete',
@@ -188,6 +192,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.CONTACT_SUBMISSION,
         name: 'Consulta del formulario de contacto',
         domain: 'contact-feedback',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'general',
@@ -224,6 +229,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.AI_COST_THRESHOLD_ALERT,
         name: 'Alerta de costo de IA',
         domain: 'ai',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'global-80',
@@ -258,6 +264,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.AI_QUESTIONS_WEEKLY_DIGEST,
         name: 'Resumen semanal de preguntas a la IA',
         domain: 'ai',
+        audience: 'user',
         scenarios: [
             {
                 id: 'es-two-listings',

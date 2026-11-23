@@ -19,6 +19,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.signup-declined',
         name: 'Alta rechazada',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'provider-risk',
@@ -74,6 +75,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.grace-started',
         name: 'Comenzó el período de gracia',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -119,6 +121,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.paid-after-cancellation',
         name: 'Pago recibido tras la cancelación',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -150,6 +153,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.payment-credited',
         name: 'Pago acreditado',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'subscription',
@@ -186,6 +190,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.signup-confirmed',
         name: 'Suscripción activa',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-payment',
@@ -217,6 +222,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.before-cancel',
         name: 'Autorización pendiente vencida',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -229,6 +235,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.signup-incomplete',
         name: 'Alta sin completar',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -262,6 +269,7 @@ export const OUTBOX_BILLING_SIGNUP_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.arrears-suspension',
         name: 'Suspensión por mora',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'card-basic',

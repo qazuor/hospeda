@@ -1,15 +1,30 @@
 ---
 /**
  * @file mi-cuenta/consultas-propietario/[conversationId].astro
- * @description Authenticated owner conversation thread page.
+ * @description Authenticated owner conversation thread on the account kit
+ * (HOS-2482): the same `ConversationPanel` island as the guest thread, with
+ * `viewer="owner"`, and a labelled back link in the `PageHeader`.
+ *
+ * Gate (HOS-2433): signed-out → login with this URL as the return path;
+ * signed-in without the owner permission (`resolveOwnerInboxGate`) → kit
+ * `LockedState`, and the thread is never read. A 404 — a missing conversation
+ * or one about somebody else's listing — rewrites to the in-layout not-found
+ * page, keeping the 404 status inside the shell (HOS-2434). Any other failure
+ * renders `ErrorState` with a retry.
+ *
  * @route /{lang}/mi-cuenta/consultas-propietario/{conversationId}/
  * @rendering SSR (on-demand, auth-protected)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { ConversationReply } from '@/components/account/ConversationReply.client';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import { PageHeader } from '@/components/account/ui';
+import { ConversationPanel } from '@/components/account/conversations/ConversationPanel.client';
+import { ConversationLoadError } from '@/components/account/conversations/ConversationLoadError.client';
+import { OwnerInboxLocked } from '@/components/account/conversations/OwnerInboxLocked';
 import ListingGoneNotice from '@/components/account/ListingGoneNotice.astro';
-import { resolveConversationBubbleSide } from '@/lib/conversation-bubble-side';
+import { formatInquirySummary } from '@/lib/format-inquiry-summary';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -17,7 +32,7 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { resolveOwnerInboxGate } from '@/lib/owner-inbox-gate';
 import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
-import { getApiUrl } from '@/lib/env';
+import type { OwnerConversationThreadResponse } from '@/lib/api/endpoints-protected';
 
 export const prerender = false;
 
@@ -29,287 +44,101 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-// HOS-2433: role gate by PERMISSION (never by role name). The sidebar entry for
-// this inbox lives in the host group gated on ACCOMMODATION_CREATE, so the page
-// applies the same predicate and the two can never disagree. A user without it
-// is sent back to the account home instead of seeing an empty owner inbox.
-const gate = resolveOwnerInboxGate({ roles: user.roles, locale });
-if (gate.action === 'redirect') {
-    return Astro.redirect(gate.location);
-}
+// HOS-2433 / HOS-2482: gate by PERMISSION, never by role name, BEFORE any read.
+const gate = resolveOwnerInboxGate({ roles: user.roles });
 
 const { conversationId } = Astro.params;
 if (!conversationId) return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'ownerMessages' }));
 
-// Cursor from URL for older message pagination
-const cursor = Astro.url.searchParams.get('cursor') ?? undefined;
-// Forward the session cookie so the protected endpoint can resolve the actor
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const result = await ownerConversationsApi.getById({
-    id: conversationId,
-    cursor,
-    limit: 50,
-    cookieHeader
-});
-
-if (!result.ok) {
-    return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'ownerMessages' }));
+let thread: OwnerConversationThreadResponse | null = null;
+if (gate.action === 'continue') {
+    // Cursor from URL for older message pagination
+    const cursor = Astro.url.searchParams.get('cursor') ?? undefined;
+    // Forward the session cookie so the protected endpoint can resolve the actor
+    const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+    const result = await ownerConversationsApi.getById({
+        id: conversationId,
+        cursor,
+        limit: 50,
+        cookieHeader
+    });
+    // HOS-2434: only a real «not found» becomes the in-layout 404 page.
+    if (!result.ok && result.error.status === 404) {
+        return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'ownerMessages' }));
+    }
+    thread = result.ok ? result.data : null;
 }
 
-const { conversation, messages, nextCursor, listingAvailability } = result.data;
+const back = {
+    label: t('conversations.thread.backToOwnerInbox'),
+    href: buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })
+};
 
-// Determine if reply is allowed: the conversation must be open AND its listing
-// must still admit new messages (HOS-1492, rows 28 and 35). Otherwise the
-// whole conversation stays visible, read-only, under `ListingGoneNotice`.
-const closedStatuses = ['CLOSED', 'BLOCKED'];
-const listingAdmitsMessages = listingAvailability === 'AVAILABLE';
-const canReply =
-    listingAdmitsMessages && !closedStatuses.includes(conversation.status.toUpperCase());
+let pageTitle = t('conversations.inbox.ownerInboxTitle');
+let subtitle: string | undefined;
+let headerDescription: string | undefined;
+let canReply = false;
+let listingAdmitsMessages = true;
+let olderHref: string | undefined;
 
-function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleString(
-        locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',
-        { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
-    );
+if (thread) {
+    const { conversation, nextCursor, listingAvailability } = thread;
+    pageTitle = t('conversations.thread.title', undefined, {
+        senderName: conversation.guestName || t('conversations.senderLabels.guest')
+    });
+    subtitle = conversation.accommodationName;
+    headerDescription = subtitle;
+
+    // Reply only while the conversation is open AND its listing still admits
+    // messages (HOS-1492, row 28). Otherwise the whole conversation stays
+    // visible, read-only, under `ListingGoneNotice`.
+    const closedStatuses = ['CLOSED', 'BLOCKED'];
+    listingAdmitsMessages = listingAvailability === 'AVAILABLE';
+    canReply = listingAdmitsMessages && !closedStatuses.includes(conversation.status.toUpperCase());
+
+    // HOS-2534: the visitor's dates and guest count; null when the inquiry carried none.
+    const inquirySummary = formatInquirySummary({
+        locale,
+        checkIn: conversation.checkIn,
+        checkOut: conversation.checkOut,
+        guests: conversation.guests
+    });
+    if (inquirySummary) headerDescription = `${subtitle} · ${inquirySummary}`;
+
+    olderHref = nextCursor
+        ? `${buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conversationId}` })}?cursor=${encodeURIComponent(nextCursor)}`
+        : undefined;
 }
-
-const pageTitle = t('conversations.thread.title', undefined, {
-    senderName: conversation.guestName ?? t('conversations.senderLabels.guest')
-});
-
-// Owner reply URL for the ConversationReply component
-const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversationId}/messages`;
 ---
 
-<AccountLayout
-    locale={locale}
-    title={pageTitle}
-    description={pageTitle}
-    activeSection="owner-messages"
->
-    <div class="conv-thread">
-        <div class="conv-thread__header">
-            <a href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })} class="conv-thread__back">
-                &larr;
-            </a>
-            <h1 class="conv-thread__title">{pageTitle}</h1>
-            <span class="conv-thread__accommodation">{conversation.accommodationName}</span>
-        </div>
+<AccountLayout locale={locale} title={pageTitle} description={subtitle ?? pageTitle} activeSection="owner-messages">
+    <PageHeader title={pageTitle} description={headerDescription} locale={locale} back={back}>
+        <HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+    </PageHeader>
 
-        <div data-conversation-thread style="display: contents">
-        {nextCursor && (
-            <div class="conv-thread__load-older">
-                <a
-                    href={buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conversationId}` }) +
-                        `?cursor=${encodeURIComponent(nextCursor)}`}
-                    class="conv-thread__older-link"
-                >
-                    {t('conversations.thread.older')}
-                </a>
-            </div>
-        )}
-
-        <ol class="conv-thread__messages" aria-label={pageTitle}>
-            {messages.map((msg) => (
-                <li
-                    class:list={[
-                        'conv-thread__message',
-                        `conv-thread__message--${resolveConversationBubbleSide({ senderType: msg.senderType, viewerRole: 'owner' })}`
-                    ]}
-                >
-                    <div class="conv-thread__bubble">
-                        <span class="conv-thread__sender-label">
-                            {msg.senderType?.toLowerCase() === 'owner'
-                                ? t('conversations.senderLabels.owner')
-                                : msg.senderType?.toLowerCase() === 'guest'
-                                  ? t('conversations.senderLabels.guest')
-                                  : t('conversations.thread.systemMessage')}
-                        </span>
-                        <p class="conv-thread__body">{msg.body}</p>
-                        <time
-                            datetime={msg.createdAt}
-                            class="conv-thread__timestamp"
-                        >
-                            {formatDate(msg.createdAt)}
-                        </time>
-                    </div>
-                </li>
-            ))}
-        </ol>
-        </div>
-
-        {!listingAdmitsMessages ? (
-            <ListingGoneNotice locale={locale} availability={listingAvailability} />
-        ) : canReply ? (
-            <ConversationReply
-                client:load
-                mode="auth"
-                conversationId={conversationId}
-                locale={locale}
-                replyUrl={replyUrl}
-            />
-        ) : (
-            <p class="conv-thread__closed-notice">
-                {conversation.status?.toUpperCase() === 'BLOCKED'
-                    ? t('conversations.errors.conversationBlocked')
-                    : t('conversations.status.closed')}
-            </p>
-        )}
-    </div>
+    {gate.action === 'locked' ? (
+        <OwnerInboxLocked locale={locale} />
+    ) : thread ? (
+        <ConversationPanel
+            client:load
+            locale={locale}
+            viewer="owner"
+            conversationId={conversationId}
+            initialMessages={thread.messages}
+            canReply={canReply}
+            olderHref={olderHref}
+        >
+            {!listingAdmitsMessages ? (
+                <ListingGoneNotice locale={locale} availability={thread.listingAvailability} />
+            ) : canReply ? null : (
+                <p role="status">
+                    {thread.conversation.status.toUpperCase() === 'BLOCKED'
+                        ? t('conversations.errors.conversationBlocked')
+                        : t('conversations.status.closed')}
+                </p>
+            )}
+        </ConversationPanel>
+    ) : (
+        <ConversationLoadError client:load locale={locale} helpId="section:messages.owner-thread" />
+    )}
 </AccountLayout>
-
-<style>
-    .conv-thread {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 16px);
-    }
-
-    .conv-thread__header {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1, 4px);
-    }
-
-    .conv-thread__back {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--brand-primary);
-        text-decoration: none;
-        align-self: flex-start;
-        margin-bottom: var(--space-2, 8px);
-    }
-
-    .conv-thread__title {
-        font-family: var(--font-heading);
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .conv-thread__accommodation {
-        font-family: var(--font-sans);
-        font-size: 0.83rem;
-        color: var(--core-muted-foreground);
-    }
-
-    .conv-thread__load-older {
-        text-align: center;
-    }
-
-    .conv-thread__older-link {
-        font-family: var(--font-sans);
-        font-size: 0.85rem;
-        color: var(--brand-primary);
-        text-decoration: underline;
-    }
-
-    .conv-thread__messages {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3, 12px);
-    }
-
-    .conv-thread__message {
-        display: flex;
-    }
-
-    .conv-thread__message--mine {
-        justify-content: flex-end;
-    }
-
-    .conv-thread__message--theirs,
-    .conv-thread__message--system {
-        justify-content: flex-start;
-    }
-
-    .conv-thread__bubble {
-        max-width: 75%;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1, 4px);
-    }
-
-    .conv-thread__message--mine .conv-thread__bubble {
-        background-color: var(--brand-primary);
-        color: white;
-        border-radius: var(--radius-card);
-        border-bottom-right-radius: var(--radius-button);
-        padding: var(--space-3, 12px) var(--space-4, 16px);
-        box-shadow: var(--shadow-card);
-    }
-
-    .conv-thread__message--theirs .conv-thread__bubble {
-        background-color: var(--core-card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-card);
-        border-bottom-left-radius: var(--radius-button);
-        padding: var(--space-3, 12px) var(--space-4, 16px);
-        box-shadow: var(--shadow-card);
-    }
-
-    .conv-thread__message--system .conv-thread__bubble {
-        background-color: var(--muted);
-        border-radius: var(--radius-md);
-        padding: var(--space-2, 8px) var(--space-3, 12px);
-    }
-
-    .conv-thread__sender-label {
-        font-family: var(--font-sans);
-        font-size: 0.72rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .conv-thread__message--mine .conv-thread__sender-label {
-        color: var(--white-a75);
-    }
-
-    .conv-thread__message--theirs .conv-thread__sender-label {
-        color: var(--core-muted-foreground);
-    }
-
-    .conv-thread__body {
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-
-    .conv-thread__message--mine .conv-thread__body {
-        color: white;
-    }
-
-    .conv-thread__message--theirs .conv-thread__body,
-    .conv-thread__message--system .conv-thread__body {
-        color: var(--core-foreground);
-    }
-
-    .conv-thread__timestamp {
-        font-family: var(--font-sans);
-        font-size: 0.72rem;
-        color: var(--core-muted-foreground);
-        align-self: flex-end;
-    }
-
-    .conv-thread__message--mine .conv-thread__timestamp {
-        color: var(--white-a75);
-    }
-
-    .conv-thread__closed-notice {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--core-muted-foreground);
-        text-align: center;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-button, 8px);
-        padding: var(--space-3, 12px);
-        margin: 0;
-    }
-</style>

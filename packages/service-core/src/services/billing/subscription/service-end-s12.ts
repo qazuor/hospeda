@@ -270,7 +270,18 @@ export async function applyS12ToComplement(
     const a5 = instance
         ? await applyA5({ tx, instanceId: instance.id, clause: 'WITHDRAWN', now }, ports)
         : null;
-    const withdrawn = a5?.outcome === 'CANCELLED' ? a5.addon : null;
+    // S12 itself cancelled the complement from CANCEL_SCHEDULED just above, so S21 inside A5 saw
+    // it ALREADY_CANCELLED: the ending is this S12's, scheduled (HOS-1883 §5.3).
+    const withdrawn =
+        a5?.outcome === 'CANCELLED'
+            ? {
+                  ...a5.addon,
+                  ending: {
+                      ...a5.addon.ending,
+                      complement: { outcome: 'CANCELLED' as const, from: 'CANCEL_SCHEDULED' }
+                  }
+              }
+            : null;
     logger.info(
         { subscriptionId, withdrawn: withdrawn?.instanceId ?? null },
         'S12 ended the service of a complement'

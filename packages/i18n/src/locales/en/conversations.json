@@ -118,7 +118,10 @@
             "title": "We couldn't load your inquiries",
             "body": "There was a problem reading your inbox. Your inquiries are still there: please try again in a moment.",
             "retry": "Try again"
-        }
+        },
+        "sectionTitle": "Conversations",
+        "guestListLabel": "Your inquiries",
+        "ownerListLabel": "Conversations with guests"
     },
     "notifications": {
         "conversationArchived": "Conversation archived.",
@@ -150,9 +153,26 @@
         "sending": "Sending…",
         "systemMessage": "System message",
         "title": "Conversation with {senderName}",
+        "inquiry": {
+            "label": "Inquiry details",
+            "from": "From {{date}}",
+            "until": "Until {{date}}",
+            "guests_one": "{{count}} guest",
+            "guests_other": "{{count}} guests"
+        },
         "listingAvailability": {
             "gone": "This listing no longer exists.",
             "notPublished": "For now you cannot send messages about this listing."
+        },
+        "sectionTitle": "Messages",
+        "backToOwnerInbox": "Back to guest messages",
+        "loadError": {
+            "title": "We couldn't load the conversation",
+            "body": "There was a problem reading the messages. Please try again in a moment."
         }
+    },
+    "ownerLocked": {
+        "feature": "Guest messages",
+        "description": "This inbox receives the inquiries about the accommodations you publish. It opens once your account is a host account."
     }
 }

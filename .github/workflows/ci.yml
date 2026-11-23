@@ -1294,6 +1294,12 @@ jobs:
           name: build-outputs
       - name: Verify CSP header on former-prerender routes
         run: pnpm --filter=hospeda-web verify:csp
+      # HOS-2558: no built client chunk may reach `new Function` (Zod's eval
+      # probe, a CSP violation without `unsafe-eval`). Imports every chunk that
+      # statically reaches Zod (~250 of ~520) in its own process, 8 at a time;
+      # ~5-10 s locally.
+      - name: Verify no client chunk reaches the Function constructor
+        run: pnpm --filter=hospeda-web verify:zod-jitless
 
   # ------------------------------------------------------------------
   # Aggregator job. Reports a single PASS/FAIL after every CI leaf job

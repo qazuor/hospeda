@@ -187,7 +187,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         headers: context.request.headers,
         fn: () => runMiddlewarePipeline(context, next, isNestedPass)
     });
-    applySecurityHeaders({ headers: response.headers });
+    applySecurityHeaders({ headers: response.headers, pathname: context.url.pathname });
     return response;
 });
 
@@ -381,7 +381,12 @@ async function runMiddlewarePipeline(
 
         // Step 7: Redirect unauthenticated users away from protected routes.
         if (isProtectedRoute({ path }) && !user) {
-            const loginUrl = buildLoginRedirect({ locale, currentUrl: path });
+            // HOS-2555: keep the query string (pagination, filters, search) so the
+            // post-login landing is exactly the URL the visitor asked for.
+            const loginUrl = buildLoginRedirect({
+                locale,
+                currentUrl: `${path}${context.url.search}`
+            });
             return context.redirect(loginUrl);
         }
 
@@ -389,8 +394,7 @@ async function runMiddlewarePipeline(
         // onboarding gate below so finishing them lands there instead of on
         // `/mi-cuenta/` (HOS-838). Includes the query string: a destination
         // like a legacy vertical segment in an account URL is only useful
-        // with its params intact. `buildLoginRedirect` above deliberately keeps
-        // using the bare pathname — changing that is a separate decision.
+        // with its params intact. `buildLoginRedirect` above carries it too (HOS-2555).
         const interruptedDestination = `${path}${context.url.search}`;
 
         // Step 7.2 (SPEC-239): Must-change-password gate.

@@ -91,6 +91,7 @@ export async function createRevokeScenario(input: {
         planPolicy: currentFloorPolicy,
         clock: { now: () => revokeNow },
         provider: namespaceFake(fake),
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
         coverageNotices: { emitCoverageChanged },
         orphanhood: {

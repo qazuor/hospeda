@@ -121,7 +121,8 @@ describe('AC-11: revoking a connection stops the client', () => {
             findActiveGrant: async (pair) =>
                 store.hasConsent(pair) ? { clientName: 'Claude' } : null,
             findUser: async ({ userId }) => ({ id: userId, name: 'Ana', email: 'ana@test.dev' }),
-            buildActor: async () => ACTOR
+            buildActor: async () => ACTOR,
+            isRealClient: async () => true
         };
         app = new Hono<AppBindings>();
         app.use('/mcp', createMcpAuthMiddleware({ deps, getConfig: () => CONFIG }));

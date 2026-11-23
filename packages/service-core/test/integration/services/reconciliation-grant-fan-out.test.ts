@@ -59,6 +59,7 @@ function fakePorts(fake: FakePaymentProvider) {
         planPolicy: currentFloorPolicy,
         clock,
         provider,
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
         coverageNotices: { emitCoverageChanged: async () => undefined },
         orphanhood: {

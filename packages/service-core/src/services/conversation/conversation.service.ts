@@ -43,13 +43,16 @@ import {
 import type { HostConversationResponseRate } from '@repo/schemas';
 import {
     ConversationStatusEnum,
+    InquiryBookingFieldsShape,
     MessageSenderTypeEnum,
     NotificationRecipientSideEnum,
     PermissionEnum,
+    refineInquiryDates,
     ServiceErrorCode
 } from '@repo/schemas';
 import { getLocalDayWindow } from '@repo/utils';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
+import type { AnyColumn, GetColumnData } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
@@ -65,6 +68,7 @@ import {
     checkCanUpdateStatus,
     checkCanViewConversation
 } from './conversation.permissions.js';
+import { computeInquiryPayloadHash, inquiryHashesMatch } from './inquiry-payload-hash.js';
 import { MessageService } from './message.service.js';
 import { NotificationScheduleService } from './notification-schedule.service.js';
 
@@ -118,25 +122,53 @@ const ALLOWED_TRANSITIONS: Readonly<
     [ConversationStatusEnum.BLOCKED]: []
 };
 
+/**
+ * Equality that treats an absent value as `IS NULL` (HOS-2568: the claim that delivers an
+ * inquiry compares nullable columns against the payload the link was hashed from).
+ */
+function nullableEq<TColumn extends AnyColumn>(
+    column: TColumn,
+    value: GetColumnData<TColumn, 'raw'> | null | undefined
+) {
+    return value === null || value === undefined ? isNull(column) : eq(column, value);
+}
+
 // ---------------------------------------------------------------------------
 // Input schemas (Zod — internal only)
 // ---------------------------------------------------------------------------
 
-const InitiateAnonymousInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    guestName: z.string().min(1).max(100),
-    guestEmail: z.string().email().max(255),
-    guestPhone: z.string().max(50).optional(),
-    message: z.string().min(1).max(5000),
-    locale: z.string().max(10).optional()
-});
+/**
+ * Drops NUL characters before validation: Postgres `text` rejects them, which would turn a
+ * hostile or garbled submission into a 500. Applied to every free-text field of the
+ * anonymous inquiry, so the stored text and the hash bound to the link agree.
+ */
+const withoutNul = (schema: z.ZodString) =>
+    z
+        .string()
+        .transform((value) => value.replaceAll('\u0000', ''))
+        .pipe(schema);
 
-const InitiateAuthenticatedInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    message: z.string().min(1).max(5000),
-    locale: z.string().max(10).optional(),
-    urlLang: z.string().max(10).optional()
-});
+const InitiateAnonymousInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        guestName: withoutNul(z.string().min(1).max(100)),
+        guestEmail: z.string().email().max(255),
+        guestPhone: withoutNul(z.string().max(50)).optional(),
+        message: withoutNul(z.string().min(1).max(5000)),
+        locale: z.string().max(10).optional(),
+        ...InquiryBookingFieldsShape
+    })
+    .refine(refineInquiryDates, { message: 'checkOut must be after checkIn', path: ['checkOut'] });
+
+const InitiateAuthenticatedInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        message: z.string().min(1).max(5000),
+        locale: z.string().max(10).optional(),
+        urlLang: z.string().max(10).optional(),
+        ...InquiryBookingFieldsShape
+    })
+    .refine(refineInquiryDates, { message: 'checkOut must be after checkIn', path: ['checkOut'] });
 
 const GetThreadInputSchema = z.object({
     conversationId: z.string().uuid(),
@@ -264,6 +296,18 @@ export interface VerificationEmailPayload {
     readonly guestName: string;
     readonly accommodationName: string;
     readonly locale: 'es' | 'en' | 'pt';
+    /**
+     * The inquiry text this link will deliver once confirmed (HOS-2568). The recipient
+     * address is unverified, so the mailer must NOT render it in full: show a short
+     * neutralized excerpt only.
+     */
+    readonly message?: string;
+    /** Phone the guest declared; the mailer renders it masked. */
+    readonly guestPhone?: string | null;
+    /** Declared dates and guests, shown in the email so the person sees what they confirm. */
+    readonly checkIn?: string | null;
+    readonly checkOut?: string | null;
+    readonly guests?: number | null;
 }
 
 /**
@@ -310,6 +354,13 @@ export interface ConversationServiceDeps {
     readonly authSecret: string;
     /** Base URL for the web app (e.g. `https://hospeda.com.ar`). */
     readonly siteUrl: string;
+    /**
+     * Public base URL of the API (e.g. `https://api.hospeda.com.ar`, the API's
+     * `HOSPEDA_API_URL`). Required by anything that mails a link that lands on an API route,
+     * namely the anonymous verification link (HOS-2568); the web origin does not serve
+     * `/api/v1`. Optional so the many call sites that never mail such links stay unchanged.
+     */
+    readonly apiUrl?: string;
     /** Email dispatcher. When absent, email sending is skipped with a warning. */
     readonly mailer?: ConversationMailer;
 }
@@ -455,6 +506,9 @@ export class ConversationService extends BaseService {
             guestPhone?: string;
             message: string;
             locale?: string;
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<InitiateAnonymousResult>> {
@@ -519,12 +573,42 @@ export class ConversationService extends BaseService {
                     .limit(1);
 
                 if (pendingRow) {
+                    // HOS-2568 (supersedes the HOS-2534 first-wins rule): last submission wins. Each submit replaces the held payload
+                    // and sends a link bound to THAT payload (hash in the JWT), so a link
+                    // can only ever deliver the payload it was issued for. First-wins would
+                    // let a stranger park text under someone else's email and have it
+                    // delivered when the real owner of the email verifies. The booking
+                    // fields (dates, guests) ride in the same payload and the same hash.
+                    await db
+                        .update(conversations)
+                        .set({
+                            pendingMessage: validated.message,
+                            anonymousName: validated.guestName,
+                            anonymousPhone: validated.guestPhone ?? null,
+                            checkIn: validated.checkIn ?? null,
+                            checkOut: validated.checkOut ?? null,
+                            guests: validated.guests ?? null,
+                            updatedAt: new Date()
+                        })
+                        .where(
+                            and(
+                                eq(conversations.id, pendingRow.id),
+                                eq(conversations.status, 'PENDING_VERIFICATION' as const)
+                            )
+                        );
                     await this.sendVerificationEmail(
                         pendingRow.id,
                         normalizedEmail,
                         validated.guestName,
                         accommodation.name,
-                        locale as 'es' | 'en' | 'pt'
+                        locale as 'es' | 'en' | 'pt',
+                        {
+                            message: validated.message,
+                            guestPhone: validated.guestPhone,
+                            checkIn: validated.checkIn,
+                            checkOut: validated.checkOut,
+                            guests: validated.guests
+                        }
                     );
                     return { status: 'resent', conversationId: pendingRow.id };
                 }
@@ -538,8 +622,14 @@ export class ConversationService extends BaseService {
                         anonymousEmail: normalizedEmail,
                         anonymousPhone: validated.guestPhone,
                         anonymousEmailVerified: false,
+                        // HOS-2568: held here until the email is verified; replaced by
+                        // the `resent` path (last submission wins, link bound by hash).
+                        pendingMessage: validated.message,
                         status: 'PENDING_VERIFICATION' as const,
-                        locale
+                        locale,
+                        checkIn: validated.checkIn,
+                        checkOut: validated.checkOut,
+                        guests: validated.guests
                     } satisfies InsertConversation)
                     .returning();
 
@@ -555,7 +645,14 @@ export class ConversationService extends BaseService {
                     normalizedEmail,
                     validated.guestName,
                     accommodation.name,
-                    locale as 'es' | 'en' | 'pt'
+                    locale as 'es' | 'en' | 'pt',
+                    {
+                        message: validated.message,
+                        guestPhone: validated.guestPhone,
+                        checkIn: validated.checkIn,
+                        checkOut: validated.checkOut,
+                        guests: validated.guests
+                    }
                 );
 
                 return {
@@ -594,6 +691,9 @@ export class ConversationService extends BaseService {
             message: string;
             locale?: string;
             urlLang?: string;
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<InitiateAuthenticatedResult>> {
@@ -664,6 +764,9 @@ export class ConversationService extends BaseService {
                                 userId: validatedActor.id,
                                 status: 'PENDING_OWNER' as const,
                                 locale,
+                                checkIn: validated.checkIn,
+                                checkOut: validated.checkOut,
+                                guests: validated.guests,
                                 createdById: validatedActor.id,
                                 updatedById: validatedActor.id
                             } satisfies InsertConversation)
@@ -1607,8 +1710,10 @@ export class ConversationService extends BaseService {
     /**
      * Signs a 24-hour JWT and sends the verification email to the anonymous guest.
      *
-     * JWT payload: `{ conversationId, email }`. Algorithm: HS256.
-     * The verification URL is: `{siteUrl}/api/v1/public/conversations/verify?token={jwt}`.
+     * JWT payload: `{ conversationId, email, payloadHash? }`. Algorithm: HS256.
+     * The verification URL targets the API route (the web origin has no `/api/v1`):
+     * `{apiUrl}/api/v1/public/conversations/verify/{jwt}?locale={locale}`, which verifies the
+     * token and redirects the guest to their thread on the web app.
      *
      * When `resendApiKey` is absent, logs a warning and returns without sending
      * (safe degradation for local development).
@@ -1629,15 +1734,37 @@ export class ConversationService extends BaseService {
         guestEmail: string,
         guestName: string,
         accommodationName: string,
-        locale: 'es' | 'en' | 'pt' = 'es'
+        locale: 'es' | 'en' | 'pt' = 'es',
+        inquiry?: {
+            readonly message: string;
+            readonly guestPhone?: string | null;
+            readonly checkIn?: string | null;
+            readonly checkOut?: string | null;
+            readonly guests?: number | null;
+        }
     ): Promise<void> {
         const secret = this._getJwtSecret();
-        const jwt = await new SignJWT({ conversationId, email: guestEmail })
+        // HOS-2568: bind the link to the payload it confirms.
+        const payloadHash = inquiry
+            ? computeInquiryPayloadHash({
+                  payload: {
+                      message: inquiry.message,
+                      guestName,
+                      guestPhone: inquiry.guestPhone,
+                      checkIn: inquiry.checkIn,
+                      checkOut: inquiry.checkOut,
+                      guests: inquiry.guests
+                  }
+              }).hash
+            : undefined;
+        const jwt = await new SignJWT({
+            conversationId,
+            email: guestEmail,
+            ...(payloadHash ? { payloadHash } : {})
+        })
             .setProtectedHeader({ alg: 'HS256' })
             .setExpirationTime('24h')
             .sign(secret);
-
-        const verificationUrl = `${this.deps.siteUrl}/api/v1/public/conversations/verify?token=${jwt}`;
 
         if (!this.deps.mailer) {
             this.logger.warn(
@@ -1647,6 +1774,15 @@ export class ConversationService extends BaseService {
             return;
         }
 
+        if (!this.deps.apiUrl) {
+            // A link built from the web origin 404s, so fail loudly instead of mailing it.
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'ConversationService requires deps.apiUrl to build the verification link'
+            );
+        }
+        const verificationUrl = `${this.deps.apiUrl.replace(/\/+$/, '')}/api/v1/public/conversations/verify/${jwt}?locale=${locale}`;
+
         try {
             await this.deps.mailer.sendVerificationEmail({
                 conversationId,
@@ -1654,7 +1790,16 @@ export class ConversationService extends BaseService {
                 verificationUrl,
                 guestName,
                 accommodationName,
-                locale
+                locale,
+                ...(inquiry
+                    ? {
+                          message: inquiry.message,
+                          guestPhone: inquiry.guestPhone,
+                          checkIn: inquiry.checkIn,
+                          checkOut: inquiry.checkOut,
+                          guests: inquiry.guests
+                      }
+                    : {})
             });
         } catch (error) {
             this.logger.error(
@@ -1703,9 +1848,11 @@ export class ConversationService extends BaseService {
             execute: async (validated, validatedActor) => {
                 const secret = this._getJwtSecret();
                 let conversationId: string;
+                let tokenPayloadHash: unknown;
 
                 try {
                     const { payload } = await jwtVerify(validated.verificationToken, secret);
+                    tokenPayloadHash = (payload as Record<string, unknown>).payloadHash;
                     const convId = (payload as Record<string, unknown>).conversationId;
                     if (typeof convId !== 'string') {
                         throw new ServiceError(
@@ -1757,19 +1904,118 @@ export class ConversationService extends BaseService {
                     return { conversationId, rawToken: tokenResult.data.rawToken };
                 }
 
+                // HOS-2568: the link delivers only the payload it was issued for. A stored
+                // payload whose hash differs from the one in the token was replaced by a
+                // later submission (or the token was tampered with): stale, deliver nothing
+                // and leave the status untouched. Rows without a held message (created
+                // before the fix) have nothing to deliver and keep verifying as before.
+                const heldMessage = conversation.pendingMessage;
+                if (heldMessage) {
+                    const { hash: expectedHash } = computeInquiryPayloadHash({
+                        payload: {
+                            message: heldMessage,
+                            guestName: conversation.anonymousName ?? '',
+                            guestPhone: conversation.anonymousPhone,
+                            checkIn: conversation.checkIn,
+                            checkOut: conversation.checkOut,
+                            guests: conversation.guests
+                        }
+                    });
+                    if (
+                        !inquiryHashesMatch({ expected: expectedHash, actual: tokenPayloadHash })
+                            .matches
+                    ) {
+                        throw new ServiceError(
+                            ServiceErrorCode.UNAUTHORIZED,
+                            'Invalid email verification token',
+                            undefined,
+                            'VERIFICATION_TOKEN_INVALID'
+                        );
+                    }
+                }
+
                 // Primary path: PENDING_VERIFICATION → PENDING_OWNER
                 const rawToken = await withServiceTransaction(async (txCtx) => {
                     const now = new Date();
-
                     // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                    await txCtx
-                        .tx!.update(conversations)
+                    const tx = txCtx.tx!;
+
+                    // Conditional flip: only the request that actually moves the row out of
+                    // PENDING_VERIFICATION may deliver the pending message, so two concurrent
+                    // verifications cannot both insert it (HOS-2568).
+                    const claimed = await tx
+                        .update(conversations)
                         .set({
                             status: 'PENDING_OWNER' as const,
                             anonymousEmailVerified: true,
+                            pendingMessage: null,
                             updatedAt: now
                         })
-                        .where(eq(conversations.id, conversationId));
+                        .where(
+                            and(
+                                eq(conversations.id, conversationId),
+                                eq(conversations.status, 'PENDING_VERIFICATION' as const),
+                                // The payload verified above is still the one stored: a
+                                // submission landing in between must not be delivered
+                                // under this link.
+                                heldMessage
+                                    ? and(
+                                          eq(conversations.pendingMessage, heldMessage),
+                                          eq(
+                                              conversations.anonymousName,
+                                              conversation.anonymousName ?? ''
+                                          ),
+                                          nullableEq(
+                                              conversations.anonymousPhone,
+                                              conversation.anonymousPhone
+                                          ),
+                                          nullableEq(conversations.checkIn, conversation.checkIn),
+                                          nullableEq(conversations.checkOut, conversation.checkOut),
+                                          nullableEq(conversations.guests, conversation.guests)
+                                      )
+                                    : isNull(conversations.pendingMessage)
+                            )
+                        )
+                        .returning({ id: conversations.id });
+
+                    if (claimed.length === 0) {
+                        const [current] = await tx
+                            .select({ status: conversations.status })
+                            .from(conversations)
+                            .where(eq(conversations.id, conversationId))
+                            .limit(1);
+                        if (current?.status === 'PENDING_VERIFICATION') {
+                            throw new ServiceError(
+                                ServiceErrorCode.UNAUTHORIZED,
+                                'Invalid email verification token',
+                                undefined,
+                                'VERIFICATION_TOKEN_INVALID'
+                            );
+                        }
+                    }
+
+                    // HOS-2568: deliver the guest's held message as their first message, with
+                    // the same counter semantics as `initiateAuthenticated` (no user id: the
+                    // guest is anonymous).
+                    const pendingMessage = conversation.pendingMessage;
+                    if (claimed.length > 0 && pendingMessage) {
+                        await tx.insert(messages).values({
+                            conversationId,
+                            senderType: 'GUEST' as const,
+                            userId: null,
+                            body: pendingMessage,
+                            status: 'VISIBLE' as const
+                        });
+                        await tx
+                            .update(conversations)
+                            .set({
+                                lastActivityAt: now,
+                                lastGuestMessageAt: now,
+                                firstGuestMessageAt: now,
+                                guestMessageCount: 1
+                            })
+                            .where(eq(conversations.id, conversationId));
+                    }
 
                     const tokenResult = await this.accessTokenService.generateToken(
                         validatedActor,

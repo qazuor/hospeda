@@ -3,6 +3,7 @@ import { rehydrateEffectiveSet, UnknownStepKeyError } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     enforceUserGate,
+    probeEffectiveKeys,
     readEffectiveKeys,
     readEffectiveLimit
 } from '../../../src/utils/listing-access/user-gate';
@@ -181,5 +182,36 @@ describe('user-level effective gate', () => {
             readEffectiveLimit({ userId, vertical, key: 'unknown_limit_key' })
         ).rejects.toBeInstanceOf(UnknownStepKeyError);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+});
+
+describe('probeEffectiveKeys (HOS-2475: failure is not absence)', () => {
+    it('reports granted and absent keys like readEffectiveKeys', async () => {
+        grant([{ key: 'view_basic_stats', value: 1 }]);
+        await expect(
+            probeEffectiveKeys({
+                userId,
+                vertical,
+                keys: ['view_basic_stats', 'view_advanced_stats']
+            })
+        ).resolves.toEqual({ view_basic_stats: true, view_advanced_stats: false });
+    });
+
+    it('THROWS when the effective set cannot be read, where readEffectiveKeys answers false', async () => {
+        // Arrange
+        mocks.effectiveSet.mockRejectedValue(new Error('store unreachable'));
+        // Act / Assert
+        await expect(
+            probeEffectiveKeys({ userId, vertical, keys: ['view_basic_stats'] })
+        ).rejects.toThrow('store unreachable');
+        await expect(
+            readEffectiveKeys({ userId, vertical, keys: ['view_basic_stats'] })
+        ).resolves.toEqual({ view_basic_stats: false });
+    });
+
+    it('throws for an unknown catalog key', async () => {
+        await expect(
+            probeEffectiveKeys({ userId, vertical, keys: ['not_a_catalog_key'] })
+        ).rejects.toBeInstanceOf(UnknownStepKeyError);
     });
 });

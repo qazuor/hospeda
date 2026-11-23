@@ -704,6 +704,8 @@ Declining any `CONFIRMED` refund returns `warning: "VERIFY_NO_PROVIDER_REFUND"` 
 
 `GET /api/v1/admin/billing-refunds/proposed` (HOS-2400) feeds the screen that confirms or declines these refunds. It lists `MARK_PROPOSAL` refunds that are `REQUESTED`, or `CONFIRMED` with no accepted or unanswered provider call (`refundHasLiveProviderCalls` is false, the predicate decline uses), oldest first, each with the marks that hang its payment and a `closesHeldCharge` flag that is true exactly when decline would answer `REFUND_CLOSES_HELD_CHARGE`. It is read-only and takes the same `billing.refund` permission as the actions it feeds. Checks run in this order: 401 authentication → 403 `billing.refund` permission → 400 pagination (`page` ≥ 1, `pageSize` 1 to 100). It has no 404 and no 409: an empty list is a 200.
 
+`GET /api/v1/admin/billing-refunds/stuck` (HOS-2560) lists the refunds that list leaves out: `CONFIRMED` refunds with a provider call the provider accepted or never answered (`hasLiveProviderCallSql`), oldest first, each with its unanswered call count, its oldest unanswered call, its accepted amount and an advisory `suggestedAction` (`RETRY`, `SETTLE_REMAINDER`, or null when neither action takes it now); both actions revalidate on their own. It is read-only and takes `billing.refund`, the permission of «Retry with MP». Checks run in this order: 401 authentication → 403 `billing.refund` permission → 400 pagination (`page` ≥ 1, `pageSize` 1 to 100). It has no 404 and no 409: an empty list is a 200.
+
 ## Action 14 charge settlement rejections (B5.9)
 
 `POST /api/v1/admin/billing-refunds/external-charge` settles an approved provider charge that was never recorded (ACC:14, motive 19). The route maps `settleExternalCharge` rejections exhaustively in `src/routes/billing-refund/admin/settle-external-charge.ts`.
@@ -936,8 +938,8 @@ support closes a peer or a less privileged account, never a more privileged
 one. It runs after the 404, so it never reveals more than existence, which the
 holder of the permission may already read.
 
-A 409 names the FIRST missing step of the manual closure, in its order (charge,
-then listings, then presence), and writes nothing, not even the audit event.
+A 422 refusal names the FIRST missing step of the manual closure, in its order
+(charge, then listings, then presence), and writes nothing, not even the audit event.
 As everywhere in `createAdminRoute`, the body is validated before the route
 permission, so a `POST` without a valid body answers 400 before 403
 (previous to this PR, Coord-184).

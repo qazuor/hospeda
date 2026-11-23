@@ -1,58 +1,114 @@
-import { TrialStatusEnum, type TrialSummaryResponse, type UserStatsResponse } from '@repo/schemas';
+import {
+    type OwnPlanStatus,
+    TrialStatusEnum,
+    type TrialSummaryResponse,
+    type UserStatsResponse
+} from '@repo/schemas';
 
-/** Plan catalog slugs that have dashboard name translations. */
-export const DASHBOARD_PLAN_SLUGS = [
-    'owner-basico',
-    'owner-pro',
-    'owner-premium',
-    'tourist-free',
-    'tourist-vip',
-    'venue-basico',
-    'venue-pro',
-    'venue-premium',
-    'experience-basico',
-    'experience-pro',
-    'experience-premium',
-    'partner-silver',
-    'partner-gold'
-] as const;
+/** Key of the label a subscription status uses on the account dashboard card. */
+export type DashboardStatusKey =
+    | 'active'
+    | 'grace-period'
+    | 'suspended'
+    | 'cancel-scheduled'
+    | 'paused'
+    | 'charge-declined'
+    | 'pending-authorization';
 
-/** Resolve API stats into a renderable free, multiple, or single-plan dashboard state. */
+/** Exact subscription status to its card label key; one entry per `OWN_PLAN_STATUSES` value. */
+const STATUS_KEY_BY_STATUS = {
+    ACTIVE: 'active',
+    GRACE_PERIOD: 'grace-period',
+    SUSPENDED: 'suspended',
+    CANCEL_SCHEDULED: 'cancel-scheduled',
+    PAUSED: 'paused',
+    CHARGE_DECLINED: 'charge-declined',
+    PENDING_AUTHORIZATION: 'pending-authorization'
+} as const satisfies Record<OwnPlanStatus, DashboardStatusKey>;
+
+/** Most subscriptions the `/mi-cuenta/` card lists before it offers "Ver todas" (HOS-2553). */
+export const MAX_CARD_SUBSCRIPTIONS = 3;
+
+/**
+ * Whether a status needs the owner to DO something (HOS-2553): the card then adds a
+ * line saying what, next to the link to the subscription page.
+ *
+ * @param input.statusKey - The card label key of the status.
+ * @returns `true` for a declined charge and for a checkout waiting for authorization.
+ */
+export function statusNeedsAction(input: { readonly statusKey: DashboardStatusKey }): boolean {
+    return input.statusKey === 'charge-declined' || input.statusKey === 'pending-authorization';
+}
+
+/** Status keys that need the owner to act (a subset of `DashboardStatusKey`). */
+export type DashboardActionStatusKey = 'charge-declined' | 'pending-authorization';
+
+/**
+ * The action key of a status, narrowed from `DashboardStatusKey` (HOS-2553).
+ *
+ * @param input.statusKey - The card label key of the status.
+ * @returns The key when `statusNeedsAction` holds for it, otherwise `null`.
+ */
+export function getActionStatusKey(input: {
+    readonly statusKey: DashboardStatusKey;
+}): DashboardActionStatusKey | null {
+    return input.statusKey === 'charge-declined' || input.statusKey === 'pending-authorization'
+        ? input.statusKey
+        : null;
+}
+
+/** One subscription row of the `/mi-cuenta/` card. */
+export interface DashboardSubscriptionRow {
+    /** Plan name, read from the catalog (translated when the slug has a name). */
+    readonly label: string;
+    /** Exact status label key. */
+    readonly statusKey: DashboardStatusKey;
+}
+
+/** Resolve API stats into a renderable free, multiple, list, or single-plan dashboard state. */
 export function resolveDashboardPlanStat(input: {
     readonly plan: UserStatsResponse['plan'];
     readonly activeSubscriptionsCount: UserStatsResponse['activeSubscriptionsCount'];
     readonly planNames: Readonly<Record<string, string>>;
+    /** Every live subscription (HOS-2553). Absent when the API predates the field. */
+    readonly subscriptions?: UserStatsResponse['subscriptions'];
 }):
     | { readonly kind: 'free' }
     | { readonly kind: 'multiple'; readonly count: number }
     | {
+          readonly kind: 'list';
+          readonly rows: readonly DashboardSubscriptionRow[];
+          readonly total: number;
+          readonly hasMore: boolean;
+      }
+    | {
           readonly kind: 'single';
           readonly label: string;
-          readonly statusKey:
-              | 'active'
-              | 'grace-period'
-              | 'suspended'
-              | 'cancel-scheduled'
-              | 'paused';
+          readonly statusKey: DashboardStatusKey;
       } {
-    const { plan, activeSubscriptionsCount, planNames } = input;
+    const { plan, activeSubscriptionsCount, planNames, subscriptions = [] } = input;
+    const labelFor = (item: { readonly slug: string; readonly name: string }): string =>
+        planNames[item.slug] && planNames[item.slug] !== item.slug
+            ? (planNames[item.slug] as string)
+            : item.name;
+    if (subscriptions.length >= 2) {
+        return {
+            kind: 'list',
+            rows: subscriptions.slice(0, MAX_CARD_SUBSCRIPTIONS).map((item) => ({
+                label: labelFor(item),
+                statusKey: STATUS_KEY_BY_STATUS[item.status]
+            })),
+            total: subscriptions.length,
+            hasMore: subscriptions.length > MAX_CARD_SUBSCRIPTIONS
+        };
+    }
     if (activeSubscriptionsCount >= 2) return { kind: 'multiple', count: activeSubscriptionsCount };
     if (!plan) return { kind: 'free' };
 
-    const statusKeys = {
-        ACTIVE: 'active',
-        GRACE_PERIOD: 'grace-period',
-        SUSPENDED: 'suspended',
-        CANCEL_SCHEDULED: 'cancel-scheduled',
-        PAUSED: 'paused'
-    } as const;
     return {
         kind: 'single',
-        label:
-            planNames[plan.slug] && planNames[plan.slug] !== plan.slug
-                ? planNames[plan.slug]
-                : plan.name,
-        statusKey: statusKeys[plan.status]
+        label: labelFor(plan),
+        statusKey: STATUS_KEY_BY_STATUS[plan.status]
     };
 }
 
@@ -142,73 +198,4 @@ export function resolveDashboardFreeCard(input: {
         value: labels.trial,
         statusText: date ? labels.trialEndsOn.replace('{{date}}', date) : null
     };
-}
-
-/**
- * Label for the host dashboard's subscription badge: one distinct text per exact
- * subscription status (HOS-2543), never collapsed into active/inactive.
- *
- * A scheduled cancellation carries its end date when the API sent one. An API that
- * predates `subscriptionStatus` falls back to the coarse `status`.
- *
- * @param input.info - The dashboard plan (`subscriptionStatus`, `serviceEndsAt`, legacy `status`).
- * @param input.t - Translator returning the fallback when a key is missing.
- * @param input.formatDate - Formats an ISO instant, returning `null` when it cannot.
- * @returns The translated badge text.
- */
-export function resolvePlanStatusLabel(input: {
-    readonly info: {
-        readonly status: string;
-        readonly subscriptionStatus: string | null;
-        readonly serviceEndsAt: string | null;
-    };
-    readonly t: (key: string, fallback: string, params?: Record<string, unknown>) => string;
-    readonly formatDate: (iso: string) => string | null;
-}): string {
-    const { info, t, formatDate } = input;
-    switch (info.subscriptionStatus) {
-        case 'ACTIVE':
-            return t('host.dashboard.plan.active', 'Activo');
-        case 'GRACE_PERIOD':
-            return t('host.dashboard.plan.gracePeriod', 'Pago pendiente');
-        case 'SUSPENDED':
-            return t('host.dashboard.plan.suspended', 'Suspendida');
-        case 'PAUSED':
-            return t('host.dashboard.plan.paused', 'Pausada');
-        case 'CANCEL_SCHEDULED': {
-            const date = info.serviceEndsAt ? formatDate(info.serviceEndsAt) : null;
-            return date
-                ? t('host.dashboard.plan.cancelScheduled', 'Baja programada hasta el {{date}}', {
-                      date
-                  })
-                : t('host.dashboard.plan.cancelScheduledNoDate', 'Baja programada');
-        }
-        default:
-            return info.status === 'active'
-                ? t('host.dashboard.plan.active', 'Activo')
-                : t('host.dashboard.plan.inactive', 'Inactivo');
-    }
-}
-
-/**
- * Whether the host dashboard plan is in good standing (active badge style).
- *
- * Compares the EXACT subscription status (`ACTIVE`) when the API sent it, and the
- * coarse legacy status (`active`, lowercase) only for an API that predates it.
- * The two vocabularies differ in case, so they must never be compared with the
- * same literal (HOS-2543).
- *
- * @param input.info - The dashboard plan (`subscriptionStatus`, legacy `status`).
- * @returns `true` when the plan is active.
- */
-export function isPlanActive(input: {
-    readonly info: {
-        readonly status: string;
-        readonly subscriptionStatus: string | null;
-    };
-}): boolean {
-    const { info } = input;
-    return info.subscriptionStatus === null
-        ? info.status === 'active'
-        : info.subscriptionStatus === 'ACTIVE';
 }

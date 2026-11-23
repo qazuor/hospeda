@@ -120,6 +120,7 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
                 clock: getClock().clock,
                 beforeCancelNotice,
                 coverageNotices: getCoverageNotices(),
+                billingFacts: getAnalyticsFactSink(),
                 ...buildComplementPolicyPorts()
             });
             errors += addonSummary.failed;

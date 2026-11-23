@@ -34,7 +34,7 @@ covers:
   - "file:apps/web/src/components/account/AiAssistantsPanel.client.tsx"
 entryFor:
   - "page:mi-cuenta/asistentes-ia"
-reviewedAt: "2026-11-21"
+reviewedAt: "2026-11-22"
 ---
 
 ## Qué podés hacer
@@ -60,6 +60,7 @@ Con un asistente conectado podés, por ejemplo, {{article:reviews|leer tus rese�
 
 ## Qué NO esperar
 
+- Usarlo con una cuenta que no administra ningún negocio en Hospeda: los asistentes de IA son solo para cuentas con alojamientos, comercios, experiencias, publicaciones, ficha de aliado o ficha de proveedor.
 - Conectar asistentes nuevos mientras la conexión está pausada; los que ya tenés se pueden desconectar igual.
 - Que el asistente haga cambios sin pedirte confirmación en las acciones que la piden.
 

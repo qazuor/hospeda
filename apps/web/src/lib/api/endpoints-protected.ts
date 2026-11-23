@@ -741,7 +741,13 @@ export const protectedConversationsApi = {
      * @param params - Accommodation ID and initial message
      * @returns Conversation ID, new flag, and message ID
      */
-    initiate(params: { readonly accommodationId: string; readonly message: string }): Promise<
+    initiate(params: {
+        readonly accommodationId: string;
+        readonly message: string;
+        readonly checkIn?: string;
+        readonly checkOut?: string;
+        readonly guests?: number;
+    }): Promise<
         ApiResult<{
             readonly conversationId: string;
             readonly isNew: boolean;
@@ -884,6 +890,12 @@ export interface OwnerConversationDetail {
     readonly status: string;
     readonly lastReadAtByOwner: string | null;
     readonly createdAt: string;
+    /** Inquiry check-in date (`YYYY-MM-DD`), when the visitor gave one (HOS-2534). */
+    readonly checkIn?: string | null;
+    /** Inquiry check-out date (`YYYY-MM-DD`), when the visitor gave one (HOS-2534). */
+    readonly checkOut?: string | null;
+    /** Inquiry guest count, when the visitor gave one (HOS-2534). */
+    readonly guests?: number | null;
 }
 
 /** Thread response for the owner conversation detail */

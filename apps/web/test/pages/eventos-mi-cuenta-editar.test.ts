@@ -15,6 +15,11 @@ const pageSource = readFileSync(
     'utf8'
 );
 
+const helperSource = readFileSync(
+    resolve(__dirname, '../../src/lib/editor/resolve-authored-editor-item.ts'),
+    'utf8'
+);
+
 /**
  * The rendered TEMPLATE only — everything after the frontmatter's closing `---`.
  *
@@ -35,15 +40,24 @@ describe('mi-cuenta/eventos/[id]/editar.astro — data path', () => {
     });
 
     it('loads the event through the PROTECTED getById, forwarding the session cookie', () => {
-        expect(pageSource).toContain('eventEditApi.getById(');
-        expect(pageSource).toContain("Astro.request.headers.get('cookie')");
-        expect(pageSource).toContain('cookieHeader');
+        // The page hands the protected read to resolveAuthoredEditorItem, which
+        // forwards the session cookie to it (HOS-2556).
+        expect(pageSource).toContain('fetchById: eventEditApi.getById');
+        expect(helperSource).toContain("astro.request.headers.get('cookie')");
+        expect(helperSource).toContain('fetchById({ id, cookieHeader })');
         expect(pageSource).not.toContain('/public/events/');
+        expect(helperSource).not.toContain('/public/events/');
+        expect(helperSource).not.toContain('fetch(');
     });
 
-    it('redirects to the listing when the event cannot be loaded', () => {
-        expect(pageSource).toContain('if (!result.ok)');
-        expect(pageSource).toContain('Astro.redirect(listUrl)');
+    it('renders the in-layout 404 (no redirect to the list) when the event cannot be loaded', () => {
+        expect(pageSource).toContain('resolveAuthoredEditorItem(');
+        expect(pageSource).toContain('if (loaded.notFound)');
+        expect(pageSource).toContain('return loaded.notFound');
+        expect(helperSource).toContain('if (!result.ok)');
+        expect(helperSource).toContain('astro.rewrite(buildAccountNotFoundTarget');
+        expect(pageSource).not.toContain('Astro.redirect(listUrl)');
+        expect(helperSource).not.toContain('redirect(');
     });
 
     it('redirects unauthenticated visitors to the login page', () => {
@@ -65,11 +79,11 @@ describe('mi-cuenta/eventos/[id]/editar.astro — data path', () => {
         expect(pageSource.indexOf('buildLoginRedirect(')).toBeLessThan(
             pageSource.indexOf('hasEventsNavAccess(')
         );
-        expect(pageSource).toMatch(/if \(canManageEvents\) \{[\s\S]*eventEditApi\.getById\(/);
+        expect(pageSource).toMatch(/if \(canManageEvents\) \{[\s\S]*resolveAuthoredEditorItem\(/);
         expect(pageSource.indexOf('hasEventsNavAccess(')).toBeLessThan(
-            pageSource.indexOf('eventEditApi.getById(')
+            pageSource.indexOf('resolveAuthoredEditorItem(')
         );
-        expect(pageSource).toContain('Astro.redirect(listUrl)');
+        expect(pageSource).not.toContain('Astro.redirect(listUrl)');
         expect(template).toContain('{event ?');
         expect(template.indexOf('<EventEditor')).toBeGreaterThan(template.indexOf('{event ?'));
     });

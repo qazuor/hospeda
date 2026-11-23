@@ -254,3 +254,81 @@ describe('CreateMessageSchema', () => {
         });
     });
 });
+
+// ============================================================================
+// Inquiry booking fields (HOS-2534)
+// ============================================================================
+
+describe.each([
+    {
+        name: 'CreateConversationAnonSchema',
+        schema: CreateConversationAnonSchema,
+        base: {
+            accommodationId: UUID_ACC,
+            guestName: 'Alice Smith',
+            guestEmail: 'alice@example.com',
+            message: 'Hola'
+        }
+    },
+    {
+        name: 'CreateConversationAuthSchema',
+        schema: CreateConversationAuthSchema,
+        base: { accommodationId: UUID_ACC, message: 'Hola' }
+    }
+])('$name inquiry booking fields', ({ schema, base }) => {
+    const messagesOf = (input: unknown) => {
+        const result = schema.safeParse(input);
+        return result.success ? [] : result.error.issues.map((i) => i.message);
+    };
+
+    it('accepts a body without any booking field', () => {
+        expect(schema.safeParse(base).success).toBe(true);
+    });
+
+    it('accepts dates and guests together', () => {
+        const result = schema.safeParse({
+            ...base,
+            checkIn: '2026-12-12',
+            checkOut: '2026-12-15',
+            guests: 2
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts each field on its own', () => {
+        expect(schema.safeParse({ ...base, checkIn: '2026-12-12' }).success).toBe(true);
+        expect(schema.safeParse({ ...base, checkOut: '2026-12-15' }).success).toBe(true);
+        expect(schema.safeParse({ ...base, guests: 1 }).success).toBe(true);
+    });
+
+    it('rejects a check-out on or before the check-in', () => {
+        expect(messagesOf({ ...base, checkIn: '2026-12-15', checkOut: '2026-12-15' })).toContain(
+            'zodError.conversation.checkOut.afterCheckIn'
+        );
+        expect(messagesOf({ ...base, checkIn: '2026-12-15', checkOut: '2026-12-12' })).toContain(
+            'zodError.conversation.checkOut.afterCheckIn'
+        );
+    });
+
+    it('rejects values that are not ISO calendar dates', () => {
+        expect(messagesOf({ ...base, checkIn: '12/12/2026' })).toContain(
+            'zodError.conversation.checkIn.invalid'
+        );
+        expect(messagesOf({ ...base, checkOut: '2026-02-31' })).toContain(
+            'zodError.conversation.checkOut.invalid'
+        );
+        expect(messagesOf({ ...base, checkIn: '2026-12-12T10:00:00Z' })).toContain(
+            'zodError.conversation.checkIn.invalid'
+        );
+    });
+
+    it('rejects a guest count that is not a positive integer within the maximum', () => {
+        expect(messagesOf({ ...base, guests: 0 })).toContain('zodError.conversation.guests.min');
+        expect(messagesOf({ ...base, guests: -2 })).toContain('zodError.conversation.guests.min');
+        expect(messagesOf({ ...base, guests: 1.5 })).toContain(
+            'zodError.conversation.guests.invalid'
+        );
+        expect(messagesOf({ ...base, guests: 101 })).toContain('zodError.conversation.guests.max');
+        expect(schema.safeParse({ ...base, guests: '2' }).success).toBe(false);
+    });
+});

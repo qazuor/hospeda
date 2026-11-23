@@ -1,3 +1,5 @@
+import './zod-runtime-config.js';
+
 export * from './api/index.js';
 export * from './catalog/index.js';
 export * from './common/index.js';

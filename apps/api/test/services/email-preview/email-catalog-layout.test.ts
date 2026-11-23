@@ -4,16 +4,16 @@
  * Every scenario of every catalog entry is rendered through the preview
  * dependencies (the same pipeline the admin previewer and the inbox use) and
  * checked for:
- * - AC-1.2: one Spanish `<html>`, the hosted logo with `alt` and explicit
- *   `width`, the footer brand line, and no email-unsafe CSS or SVG.
+ * - AC-1.2: one Spanish `<html>`, the hosted isotipo with explicit
+ *   `width`, the live "hospeda" wordmark, the footer brand line, and no email-unsafe CSS or SVG.
  * - AC-2.1: no unresolved `{{...}}` placeholder and no `unsubscribe_url`.
  * - AC-2.2: any preferences link points at the absolute preferences URL.
  * - AC-3.2: a non-empty text part with the footer brand line and without the
- *   logo URL or the header tagline.
+ *   isotipo URL or the header tagline.
  * - R-8: HTML under 90 KB (Gmail clips at 102 KB).
  * Plus AC-2.3: the anonymous-guest token mails carry no preferences link.
  */
-import { EMAIL_LOGO_URL, EMAIL_PREFERENCES_URL } from '@repo/email';
+import { EMAIL_ISOTIPO_URL, EMAIL_PREFERENCES_URL } from '@repo/email';
 import {
     EMAIL_CATALOG,
     type EmailCatalogRenderDeps,
@@ -52,10 +52,13 @@ describe('email catalog: unified layout on every scenario (HOS-2519 PR-3)', () =
         // Assert: AC-1.2
         expect(html.match(/<html\b/g)).toHaveLength(1);
         expect(html.match(/<html\b[^>]*\blang="es"/g)).toHaveLength(1);
-        const logo = html.match(/<img\b[^>]*\balt="Hospeda"[^>]*>/)?.[0];
-        expect(logo, 'logo <img alt="Hospeda">').toBeDefined();
-        expect(logo).toContain(`src="${EMAIL_LOGO_URL}"`);
-        expect(logo).toMatch(/\bwidth="\d+"/);
+        const isotipo = html.match(/<img\b[^>]*\bsrc="[^"]*hospeda-isotipo@2x\.png"[^>]*>/)?.[0];
+        expect(isotipo, 'isotipo <img>').toBeDefined();
+        expect(isotipo).toContain(`src="${EMAIL_ISOTIPO_URL}"`);
+        expect(isotipo).toMatch(/\bwidth="\d+"/);
+        expect(html).toMatch(/<span style="[^"]*">hospeda<\/span>/);
+        expect(html).toContain('aria-label="Hospeda"');
+        expect(html).not.toContain('hospeda-logo@2x.png');
         expect(html).toContain(FOOTER_BRAND_LINE);
         for (const forbidden of FORBIDDEN_IN_HTML) {
             expect(html, `contains ${forbidden}`).not.toContain(forbidden);
@@ -73,7 +76,7 @@ describe('email catalog: unified layout on every scenario (HOS-2519 PR-3)', () =
         // Assert: AC-3.2
         expect(text.trim()).not.toBe('');
         expect(text).toContain(FOOTER_BRAND_LINE);
-        expect(text).not.toContain(EMAIL_LOGO_URL);
+        expect(text).not.toContain(EMAIL_ISOTIPO_URL);
         expect(text.replaceAll(FOOTER_BRAND_LINE, '')).not.toContain(TAGLINE);
 
         // Assert: R-8

@@ -9,6 +9,10 @@
  * field stays reachable. Desktop: sticky in the content column. Mobile: fixed
  * to the bottom, safe-area aware, with 44px buttons.
  *
+ * `contained` renders the bar in flow instead (no fixed/sticky positioning,
+ * no spacer). It exists for previews such as the kit gallery, where a fixed
+ * bar would cover the neighbouring demos; product forms never set it.
+ *
  * It registers NO leave warning itself: `useSaveBar` goes through
  * `useUnsavedChangesGuard`.
  *
@@ -38,6 +42,11 @@ export interface StickySaveBarProps {
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
     readonly helpId?: HelpAnchor;
+    /**
+     * Render in flow (no fixed/sticky positioning, no spacer). Preview-only
+     * (kit gallery); product forms leave it unset.
+     */
+    readonly contained?: boolean;
 }
 
 /**
@@ -53,7 +62,8 @@ export function StickySaveBar({
     onGoToFirstError,
     locale,
     className,
-    helpId
+    helpId,
+    contained = false
 }: StickySaveBarProps) {
     if (status === 'clean') return null;
     const t = createT(locale);
@@ -62,16 +72,19 @@ export function StickySaveBar({
 
     return (
         <>
-            <div
-                className={styles.spacer}
-                aria-hidden="true"
-                data-testid="save-bar-spacer"
-            />
+            {contained ? null : (
+                <div
+                    className={styles.spacer}
+                    aria-hidden="true"
+                    data-testid="save-bar-spacer"
+                />
+            )}
             <section
                 {...helpAttr({ helpId })}
                 aria-label={t('account.ui.saveBar.region')}
                 data-status={status}
-                className={cx(styles.bar, styles[status], className)}
+                data-contained={contained ? '' : undefined}
+                className={cx(styles.bar, styles[status], contained && styles.contained, className)}
             >
                 <p
                     role={status === 'error' ? 'alert' : 'status'}

@@ -101,6 +101,7 @@ function buildApp(
         findActiveGrant: vi.fn(async () => ({ clientName: 'Claude' })),
         findUser: vi.fn(async () => ({ id: USER_ID, name: 'Ana', email: 'ana@test.dev' })),
         buildActor: vi.fn(async () => ACTOR),
+        isRealClient: vi.fn(async () => true),
         ...input.deps
     };
     const app = new Hono<AppBindings>();
@@ -341,6 +342,24 @@ describe('createMcpAuthMiddleware — revocation and account state', () => {
         expect(body.error.code).toBe('PASSWORD_CHANGE_REQUIRED');
         expect(res.headers.get('WWW-Authenticate')).toBeNull();
         expect(deps.buildActor).not.toHaveBeenCalled();
+    });
+
+    it('refuses a user who is not a real client with 403 FORBIDDEN (HOS-2562), no challenge', async () => {
+        // Arrange — a pure tourist: valid token, live grant, usable account.
+        const isRealClient = vi.fn(async () => false);
+        const { app } = buildApp({ deps: { isRealClient } });
+        const token = await signToken();
+
+        // Act
+        const res = await call(app, `Bearer ${token}`);
+
+        // Assert
+        expect(res.status).toBe(403);
+        const body = await res.json();
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe('FORBIDDEN');
+        expect(res.headers.get('WWW-Authenticate')).toBeNull();
+        expect(isRealClient).toHaveBeenCalledWith({ actor: ACTOR });
     });
 
     it('accepts a user whose mustChangePassword flag is false', async () => {

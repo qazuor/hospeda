@@ -3,7 +3,9 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { addonInstances, and, domainEventModel, eq, getDb } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
 import type { CoverageNotices } from '../payment/payment-ports';
+import { type AddonFactPorts, emitAddonFact, wholeSecondsBetween } from './addon-fact-emit';
 import type { A5Ports } from './addon-instance-a5';
 import { confirmOneTimePageByReference } from './confirm-one-time-page-by-reference';
 
@@ -13,14 +15,27 @@ const abandonInputSchema = z.object({
     now: z.date()
 });
 
-/** Closes a pending one-time addon without touching its stored provider order id. */
-export async function abandonOneTimeAddon(input: {
-    readonly instanceId: string;
-    readonly expectedProviderOrderId: string | null;
-    readonly now: Date;
-}): Promise<boolean> {
+/**
+ * Closes a pending one-time addon without touching its stored provider order id. When it wrote,
+ * it emits `addon_checkout_abandoned{reason:'WINDOW_EXPIRED'}` after commit (HOS-1883): both
+ * callers close a purchase whose payment page stopped taking payments with no approved payment.
+ *
+ * @param input.instanceId - The pending one-time instance
+ * @param input.expectedProviderOrderId - The order id it must still carry (`null` for a page)
+ * @param input.now - The instant of the act
+ * @param facts - Where the abandonment fact goes (required, HOS-1883 T-5)
+ * @returns Whether this call wrote the abandonment
+ */
+export async function abandonOneTimeAddon(
+    input: {
+        readonly instanceId: string;
+        readonly expectedProviderOrderId: string | null;
+        readonly now: Date;
+    },
+    facts: AddonFactPorts
+): Promise<boolean> {
     abandonInputSchema.parse(input);
-    return getDb().transaction(async (tx) => {
+    const wrote = await getDb().transaction(async (tx) => {
         const [instance] = await tx
             .select()
             .from(addonInstances)
@@ -56,6 +71,20 @@ export async function abandonOneTimeAddon(input: {
         });
         return true;
     });
+    if (wrote)
+        await emitAddonFact({
+            ...facts,
+            source: { instanceId: input.instanceId },
+            build: (anchored) => ({
+                kind: 'ADDON_CHECKOUT_ABANDONED',
+                ...anchored.subject,
+                actorKind: 'SYSTEM',
+                occurredAt: input.now,
+                reason: 'WINDOW_EXPIRED',
+                secondsInPending: wholeSecondsBetween({ from: anchored.createdAt, to: input.now })
+            })
+        });
+    return wrote;
 }
 
 /**
@@ -79,16 +108,16 @@ export async function expireOneTimePageAddon(
         readonly provider: PaymentProvider;
         readonly clock: Clock;
         readonly coverageNotices: CoverageNotices;
+        readonly billingFacts?: BillingFactSink;
     }
 ): Promise<'ACTIVATED' | 'ABANDONED' | 'DEFERRED'> {
     z.object({ instanceId: z.uuid() }).parse(input);
     const found = await confirmOneTimePageByReference(input, ports);
     if (found === 'ACTIVATED') return 'ACTIVATED';
     if (found !== 'NONE_APPROVED' && found !== 'NONE_FOUND') return 'DEFERRED';
-    const abandoned = await abandonOneTimeAddon({
-        instanceId: input.instanceId,
-        expectedProviderOrderId: null,
-        now: ports.clock.now()
-    });
+    const abandoned = await abandonOneTimeAddon(
+        { instanceId: input.instanceId, expectedProviderOrderId: null, now: ports.clock.now() },
+        { billingFacts: ports.billingFacts, listing: ports.listing }
+    );
     return abandoned ? 'ABANDONED' : 'DEFERRED';
 }

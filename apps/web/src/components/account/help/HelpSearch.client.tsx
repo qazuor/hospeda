@@ -12,6 +12,12 @@
  * it agrees with the tabs whatever order the two `client:idle` islands
  * hydrate in; later changes arrive through {@link HELP_AUDIENCE_CHANGED_EVENT}.
  *
+ * A reader the preselection found to have NO business audience (a pure
+ * tourist, {@link HELP_READER_WITHOUT_AUDIENCE_EVENT}) has no articles «for
+ * their kind of account»: with the toggle on they get the no-match fallback
+ * (FAQ, contact) instead of the default `host` tab's articles. Turning the
+ * toggle off shows everything, as for anybody.
+ *
  * Hydration: `client:idle`. The server renders the same markup, including the
  * results of an initial `?q=` (SSR-first), so the list never appears only after
  * hydration. Only the polite live region waits for hydration, so that its text
@@ -23,7 +29,9 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
     HELP_AUDIENCE_CHANGED_EVENT,
     HELP_AUDIENCE_LABEL_KEYS,
+    HELP_READER_WITHOUT_AUDIENCE_EVENT,
     type HelpAudienceEventDetail,
+    isReaderWithoutAudience,
     parseHelpAudience,
     readSelectedHelpAudience,
     withHelpAudienceParam
@@ -62,7 +70,8 @@ export interface HelpSearchProps {
  *
  * @param args.articles - The projection
  * @param args.query - What the reader typed
- * @param args.audience - The audience to keep, or `undefined` for all
+ * @param args.audience - The audience to keep, `undefined` for all, or
+ *   `null` for none (a reader with no business audience, filter on)
  * @returns At most {@link HELP_SEARCH_LIMIT} entries; empty below two characters
  */
 export function findHelpResults({
@@ -72,9 +81,9 @@ export function findHelpResults({
 }: {
     readonly articles: readonly HelpSearchEntry[];
     readonly query: string;
-    readonly audience: HelpAudience | undefined;
+    readonly audience: HelpAudience | null | undefined;
 }): readonly HelpSearchEntry[] {
-    if (query.trim().length < HELP_SEARCH_MIN_CHARS) {
+    if (query.trim().length < HELP_SEARCH_MIN_CHARS || audience === null) {
         return [];
     }
     return searchOwnerHelp({
@@ -133,6 +142,8 @@ export function HelpSearch({
     const [query, setQuery] = useState(initialQuery);
     const [onlyMine, setOnlyMine] = useState(true);
     const [audience, setAudience] = useState<HelpAudience>(initialAudience);
+    // False on the server and the first render; set from the preselection.
+    const [withoutAudience, setWithoutAudience] = useState(false);
     // The live region renders empty on the server and on the first client
     // render, then fills after hydration: text that is already in the HTML
     // when the page loads (an initial `?q=` with no match) is never announced.
@@ -162,9 +173,19 @@ export function HelpSearch({
         return () => window.removeEventListener(HELP_AUDIENCE_CHANGED_EVENT, onChange);
     }, []);
 
+    useEffect(() => {
+        if (isReaderWithoutAudience()) {
+            setWithoutAudience(true);
+        }
+        const onWithout = (): void => setWithoutAudience(true);
+        window.addEventListener(HELP_READER_WITHOUT_AUDIENCE_EVENT, onWithout);
+        return () => window.removeEventListener(HELP_READER_WITHOUT_AUDIENCE_EVENT, onWithout);
+    }, []);
+
+    const filterAudience = withoutAudience ? null : audience;
     const results = useMemo(
-        () => findHelpResults({ articles, query, audience: onlyMine ? audience : undefined }),
-        [articles, query, audience, onlyMine]
+        () => findHelpResults({ articles, query, audience: onlyMine ? filterAudience : undefined }),
+        [articles, query, filterAudience, onlyMine]
     );
     const searched = query.trim().length >= HELP_SEARCH_MIN_CHARS;
 

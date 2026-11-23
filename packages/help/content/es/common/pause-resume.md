@@ -45,14 +45,14 @@ covers:
   - "page:mi-cuenta/complementos"
   - "tool:set_listing_publication"
 entryFor: []
-reviewedAt: "2026-11-21"
+reviewedAt: "2026-11-22"
 ---
 
 ## Qué podés hacer
 
 Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.
 
-Las publicaciones de {{link:list:venue|Mi comercio}} se pausan y reanudan con un asistente de IA.
+Las publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.
 
 ## Cómo se hace
 

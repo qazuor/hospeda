@@ -161,11 +161,14 @@ describe('HOS-2179 §5.3 path 1: the payment notice of a page purchase reaches A
             const s = await pageSetup();
             const { instance, paymentPageId } = await boughtPage(s);
             s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-            await abandonOneTimeAddon({
-                instanceId: instance.id,
-                expectedProviderOrderId: null,
-                now: s.f.ports.clock.now()
-            });
+            await abandonOneTimeAddon(
+                {
+                    instanceId: instance.id,
+                    expectedProviderOrderId: null,
+                    now: s.f.ports.clock.now()
+                },
+                { billingFacts: undefined }
+            );
             const [late] = webhooksDeliveries(s);
             if (!late) throw new Error('notice missing');
 

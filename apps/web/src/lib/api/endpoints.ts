@@ -1223,6 +1223,9 @@ export const publicConversationsApi = {
         readonly guestEmail: string;
         readonly guestPhone?: string;
         readonly message: string;
+        readonly checkIn?: string;
+        readonly checkOut?: string;
+        readonly guests?: number;
     }): Promise<
         ApiResult<{
             readonly status: 'pending_verification' | 'resent' | 'conflict';

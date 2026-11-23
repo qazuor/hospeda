@@ -32,14 +32,22 @@
  * HOS-862: Partner payment uses a manual subscription created by administrative
  * action 6; the partner pays by bank transfer. The page shows any open installment.
  *
+ * HOS-2477 made this page the partner's dashboard on the account kit: a
+ * PageHeader with the listing's StatusPill, the state banner as a «próxima
+ * acción» Alert, the numbers `mineStats` computes (PartnerStatsGrid island) and
+ * the edit form inside a Section. Test ids and copy the e2e suite reads are kept.
+ *
  * @route     /[lang]/mi-cuenta/partner/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import { Alert, PageHeader, Section, StatusPill, type StatusTone } from '@/components/account/ui';
 import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
+import { PartnerStatsGrid } from '@/components/account/dashboard/PartnerStatsGrid.client';
+import styles from '@/components/account/dashboard/Dashboard.module.css';
 import { billingSubscriptionApi, partnersApi } from '@/lib/api/endpoints-protected';
 import {
     hasActivePartnerSubscription as resolveHasActivePartnerSubscription,
@@ -96,6 +104,36 @@ try {
 } catch {
     hasActivePartnerSubscription = false;
 }
+// The header pill and the «próxima acción» tone follow the same state ladder
+// as the banner below (revoked first, then approved, review, rejected, draft).
+type ListingState = 'revoked' | 'active' | 'approved' | 'underReview' | 'rejected' | 'draft';
+const listingState: ListingState = isRevoked
+    ? 'revoked'
+    : isContentApproved
+      ? hasActivePartnerSubscription
+          ? 'active'
+          : 'approved'
+      : isUnderReview
+        ? 'underReview'
+        : hasSubmitted
+          ? 'rejected'
+          : 'draft';
+const STATE_TONE: Record<ListingState, StatusTone> = {
+    revoked: 'danger',
+    active: 'success',
+    approved: 'info',
+    underReview: 'warning',
+    rejected: 'danger',
+    draft: 'neutral'
+};
+const ALERT_TONE: Record<ListingState, 'info' | 'success' | 'warning' | 'danger'> = {
+    revoked: 'danger',
+    active: 'success',
+    approved: 'info',
+    underReview: 'info',
+    rejected: 'warning',
+    draft: 'info'
+};
 let installmentView = null;
 try {
     installmentView = resolveManualInstallmentView({
@@ -111,11 +149,18 @@ try {
 }
 ---
 
-<AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner">
-    <AccountPageHeader title={title} description={subtitle} />
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner" template="dashboard">
+  <div class={styles.page}>
+    <PageHeader locale={locale} title={title} description={subtitle} helpId="section:partner.dashboard">
+        <HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+        {partner !== null && (
+            <StatusPill slot="status" tone={STATE_TONE[listingState]}>{t(`account.partner.statusPill.${listingState}`)}</StatusPill>
+        )}
+    </PageHeader>
 
     {showPresenceNotice && presence !== null && (
-        <AccountSectionCard data-testid="partner-presence-notice">
+        <div data-testid="partner-presence-notice">
+        <Section title={t('account.partner.presence.title')} helpId="section:partner.presence">
             <p>{t('account.partner.presence.notDeleted', 'No se borró nada: tu ficha y tus datos siguen guardados.')}</p>
             <p>{t('account.partner.presence.hidden', 'Mientras tanto, para el público tu página responde como si no existiera.')}</p>
             <p>{t('account.partner.presence.returnsAlone', 'Tu presencia vuelve sola cuando recuperes el plan que la otorga.')}</p>
@@ -125,21 +170,22 @@ try {
                     {presence.moderationReason !== null && <p data-testid="partner-presence-moderation-reason">{presence.moderationReason}</p>}
                 </div>
             )}
-        </AccountSectionCard>
+        </Section>
+        </div>
     )}
 
     {
         fetchFailed ? (
-            <AccountSectionCard>
-                <p role="alert">
+            <Alert locale={locale} tone="danger">
+                <p>
                     {t(
                         'account.partner.errors.fetchFailed',
                         'No pudimos cargar tu ficha de aliado. Recargá la página para reintentar.'
                     )}
                 </p>
-            </AccountSectionCard>
+            </Alert>
         ) : partner === null ? (
-            <AccountSectionCard>
+            <Section title={t('account.partner.empty.title')} helpId="section:partner.empty">
                 <p>
                     {t(
                         'account.partner.empty.text',
@@ -149,10 +195,10 @@ try {
                 <a href={buildUrl({ locale, path: 'sumate/partner' })}>
                     {t('account.partner.empty.cta', 'Ir a Sumate como aliado')}
                 </a>
-            </AccountSectionCard>
+            </Section>
         ) : (
             <>
-                <AccountSectionCard>
+                <Alert locale={locale} tone={ALERT_TONE[listingState]} title={t('account.partner.nextAction.title')} helpId="section:partner.next-action">
                     {
                         isRevoked ? (
                             <>
@@ -209,26 +255,31 @@ try {
                             </p>
                         )
                     }
-                </AccountSectionCard>
+                </Alert>
+
+                {!isRevoked && isContentApproved && <PartnerStatsGrid client:visible locale={locale} />}
 
                 {!isRevoked && installmentView && (
-                    <AccountSectionCard
-                        data-testid="partner-installment"
+                    <div data-testid="partner-installment">
+                    <Section
                         title={t('account.partner.installment.title', 'Tu cuota a pagar')}
+                        helpId="section:partner.installment"
                     >
                         <p>{installmentView.planLine}</p>
                         <p data-testid="partner-installment-amount">{installmentView.amountLine}</p>
                         <p data-testid="partner-installment-due">{installmentView.dueLine}</p>
                         <p>{t('account.partner.installment.howToPay', 'Se paga por transferencia bancaria. El equipo de Hospeda te manda por correo los datos para transferir. Cuando registremos el pago, tu suscripción queda al día.')}</p>
-                    </AccountSectionCard>
+                    </Section>
+                    </div>
                 )}
 
                 {!isRevoked && (
-                    <AccountSectionCard>
+                    <Section title={t('account.partner.form.sectionTitle')} helpId="section:partner.edit-form">
                         <PartnerEditForm locale={locale} partner={partner} client:load />
-                    </AccountSectionCard>
+                    </Section>
                 )}
             </>
         )
     }
+  </div>
 </AccountLayout>

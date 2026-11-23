@@ -170,11 +170,14 @@ describe('HOS-2518: a tab that loses the identity while the other tab replaces t
             // The old purchase is released after B collided with it, and nothing replaces it.
             reads.before = async () => {
                 reads.before = null;
-                await abandonOneTimeAddon({
-                    instanceId: instance.id,
-                    expectedProviderOrderId: null,
-                    now: s.f.ports.clock.now()
-                });
+                await abandonOneTimeAddon(
+                    {
+                        instanceId: instance.id,
+                        expectedProviderOrderId: null,
+                        now: s.f.ports.clock.now()
+                    },
+                    { billingFacts: undefined }
+                );
             };
 
             await expect(purchaseAddon(retry(), s.f.ports)).rejects.toMatchObject({

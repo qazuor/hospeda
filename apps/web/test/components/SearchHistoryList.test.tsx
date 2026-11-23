@@ -10,7 +10,7 @@
  *  - Re-run link has correct href (rebuilds search URL from stored filters)
  *  - Delete-one shows inline confirmation then calls DELETE /:id
  *  - Clear-all shows inline confirmation then calls DELETE /
- *  - Opt-out toggle calls PATCH /preferences and updates aria-checked
+ *  - Recording state is a read-only pill + link to Preferences (HOS-2479)
  *  - API errors are translated via translateApiError instead of leaking the
  *    raw English API message (BETA-143 regression: RATE_LIMIT_EXCEEDED)
  */
@@ -246,7 +246,7 @@ describe('SearchHistoryList', () => {
             });
         });
 
-        it('does NOT show the Plus/VIP upsell copy for an already-entitled user with zero saved searches (BETA-167)', async () => {
+        it('does NOT show the plan upsell copy for an already-entitled user with zero saved searches (BETA-167)', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
             renderComponent();
             await waitFor(() => {
@@ -255,7 +255,7 @@ describe('SearchHistoryList', () => {
                 ).toBeInTheDocument();
             });
             expect(
-                screen.queryByText(/tus búsquedas aparecerán acá cuando tengas un plan/i)
+                screen.queryByText(/tus búsquedas aparecerán acá cuando/i)
             ).not.toBeInTheDocument();
         });
 
@@ -277,7 +277,7 @@ describe('SearchHistoryList', () => {
             await waitFor(() => {
                 expect(screen.getByText(/sin búsquedas guardadas/i)).toBeInTheDocument();
                 expect(
-                    screen.getByText(/tus búsquedas aparecerán acá cuando tengas un plan/i)
+                    screen.getByText(/tus búsquedas aparecerán acá cuando tu plan incluya/i)
                 ).toBeInTheDocument();
             });
         });
@@ -575,95 +575,40 @@ describe('SearchHistoryList', () => {
         });
     });
 
-    // ── 8. Opt-out toggle ──────────────────────────────────────────────────────
+    // ── 8. Recording state: read-only here, the switch lives in Preferences (HOS-2479) ──
 
-    describe('Opt-out toggle', () => {
-        it('renders the toggle with aria-checked=true when enabled', async () => {
+    describe('Recording state (HOS-2479)', () => {
+        it('shows the enabled state as a pill and has no switch', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
-            renderComponent({ initialHistoryEnabled: true });
-            await waitFor(() => {
-                const toggle = screen.getByRole('switch');
-                expect(toggle).toHaveAttribute('aria-checked', 'true');
-            });
+            const { container } = renderComponent({ initialHistoryEnabled: true });
+            await screen.findByText('Activado');
+            expect(container.querySelector('[role="switch"]')).toBeNull();
         });
 
-        it('renders the toggle with aria-checked=false when disabled', async () => {
+        it('shows the disabled state as a pill', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
             renderComponent({ initialHistoryEnabled: false });
-            await waitFor(() => {
-                const toggle = screen.getByRole('switch');
-                expect(toggle).toHaveAttribute('aria-checked', 'false');
-            });
+            expect(await screen.findByText('Desactivado')).toBeInTheDocument();
         });
 
-        it('calls PATCH /preferences when toggled', async () => {
-            vi.mocked(global.fetch)
-                .mockResolvedValueOnce(makeEmptyListResponse())
-                .mockResolvedValueOnce(makeMutationResponse());
-
+        it('links to Preferences to change it', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
             renderComponent({ initialHistoryEnabled: true });
-            await waitFor(() => {
-                expect(screen.getByRole('switch')).toBeInTheDocument();
+            // The suite's i18n mock returns the key when no fallback is given.
+            const link = await screen.findByRole('link', {
+                name: 'account.preferences.changeInPreferences'
             });
-
-            fireEvent.click(screen.getByRole('switch'));
-
-            await waitFor(() => {
-                const calls = vi.mocked(global.fetch).mock.calls;
-                const patchCall = calls.find(
-                    ([url, opts]) =>
-                        typeof url === 'string' &&
-                        url.includes('/search-history/preferences') &&
-                        (opts as RequestInit)?.method === 'PATCH'
-                );
-                expect(patchCall).toBeDefined();
-            });
+            expect(link).toHaveAttribute('href', '/es/mi-cuenta/preferencias/');
         });
 
-        it('sends { enabled: false } when toggling from enabled to disabled', async () => {
-            vi.mocked(global.fetch)
-                .mockResolvedValueOnce(makeEmptyListResponse())
-                .mockResolvedValueOnce(makeMutationResponse());
-
+        it('never sends a preferences PATCH on its own', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
             renderComponent({ initialHistoryEnabled: true });
-            await waitFor(() => {
-                expect(screen.getByRole('switch')).toBeInTheDocument();
-            });
-
-            fireEvent.click(screen.getByRole('switch'));
-
-            await waitFor(() => {
-                const calls = vi.mocked(global.fetch).mock.calls;
-                const patchCall = calls.find(
-                    ([url, opts]) =>
-                        typeof url === 'string' &&
-                        url.includes('/preferences') &&
-                        (opts as RequestInit)?.method === 'PATCH'
-                );
-                expect(patchCall).toBeDefined();
-                const body = JSON.parse((patchCall?.[1] as RequestInit)?.body as string) as {
-                    enabled: boolean;
-                };
-                expect(body.enabled).toBe(false);
-            });
-        });
-
-        it('reverts aria-checked on PATCH failure', async () => {
-            vi.mocked(global.fetch)
-                .mockResolvedValueOnce(makeEmptyListResponse())
-                .mockResolvedValueOnce(makeErrorResponse());
-
-            renderComponent({ initialHistoryEnabled: true });
-            await waitFor(() => {
-                expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
-            });
-
-            fireEvent.click(screen.getByRole('switch'));
-
-            // After revert the toggle should be back to true
-            await waitFor(() => {
-                expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
-            });
+            await screen.findByText('Activado');
+            const patchCalls = vi
+                .mocked(global.fetch)
+                .mock.calls.filter(([, opts]) => (opts as RequestInit)?.method === 'PATCH');
+            expect(patchCalls).toHaveLength(0);
         });
     });
 });

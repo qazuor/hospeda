@@ -84,11 +84,14 @@ async function paidWithoutLiveInstance() {
     const s = await pageSetup();
     const { instance, paymentPageId } = await boughtPage(s);
     const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-    await abandonOneTimeAddon({
-        instanceId: instance.id,
-        expectedProviderOrderId: null,
-        now: s.f.ports.clock.now()
-    });
+    await abandonOneTimeAddon(
+        {
+            instanceId: instance.id,
+            expectedProviderOrderId: null,
+            now: s.f.ports.clock.now()
+        },
+        { billingFacts: undefined }
+    );
     s.f.advanceTo(new Date(purchaseNow.getTime() + DAY_MS));
     return { s, instance, paid };
 }
@@ -205,11 +208,14 @@ describe('TEST:B11:20 HOS-2179 §5.10 the sweep searches page payments', () => {
                 s.ports
             )
         ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
-        await abandonOneTimeAddon({
-            instanceId: instance.id,
-            expectedProviderOrderId: null,
-            now: s.f.ports.clock.now()
-        });
+        await abandonOneTimeAddon(
+            {
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            },
+            { billingFacts: undefined }
+        );
         // Back at the price the payment carries: a re-read alone would now call it late money.
         await pagePriceIs(instance.productId, 10000);
         s.f.advanceTo(new Date(purchaseNow.getTime() + DAY_MS));
@@ -240,11 +246,14 @@ describe('TEST:B11:20 HOS-2179 §5.10 the sweep searches page payments', () => {
         const s = await pageSetup();
         const { instance, paymentPageId } = await boughtPage(s);
         s.f.fake.payOnPage({ paymentPageId, outcome: 'rejected' });
-        await abandonOneTimeAddon({
-            instanceId: instance.id,
-            expectedProviderOrderId: null,
-            now: s.f.ports.clock.now()
-        });
+        await abandonOneTimeAddon(
+            {
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            },
+            { billingFacts: undefined }
+        );
         const summary = await sweepPagePayments(s, [instance.id]);
         expect(summary.pagePayments).toMatchObject({ examined: 1, lateMarked: 0, failures: [] });
         expect(await pageMarks(instance.id)).toHaveLength(0);

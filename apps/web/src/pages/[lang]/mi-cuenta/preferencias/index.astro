@@ -8,14 +8,18 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import { PageHeader } from '@/components/account/ui';
 import { PreferenceToggles } from '@/components/account/PreferenceToggles.client';
 import { RestartTour } from '@/components/account/RestartTour.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -27,122 +31,39 @@ if (!user) {
 const { t } = createTranslations(locale);
 const title = t('account.pages.preferences.title', 'Preferencias');
 const apiUrl = getApiUrl();
+// HOS-2479: the locked search-history row names the catalog plans that include it
+// (never a literal). The catalog reader is server-only, so the names are read
+// here and handed to the island; the page itself stays session-blind.
+const historyGatePlanNames = planNamesWithEntitlement({
+	result: await fetchPublicPlans({ vertical: 'tourist' }),
+	entitlement: EntitlementKeyEnum.CAN_VIEW_SEARCH_HISTORY
+});
+const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="preferencias">
-	<AccountPageHeader title={title} />
+	<PageHeader title={title} locale={locale}>
+		<HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+	</PageHeader>
 
 	<PreferenceToggles
 		client:load
 		userId={user.id}
 		locale={locale}
 		apiUrl={apiUrl}
+		historyGatePlanNames={historyGatePlanNames}
+		plansHref={plansHref}
 	/>
 
 	<div class="preferencias-tour-gap">
-		<AccountSectionCard>
-			<RestartTour client:idle locale={locale} userRoles={user.roles} />
-		</AccountSectionCard>
+		<RestartTour client:idle locale={locale} userRoles={user.roles} />
 	</div>
 </AccountLayout>
 
 <style>
-	/* Stacked-card spacing: PreferenceToggles renders its own card (no outer
-	   margin, same as every other AccountSection.module.css consumer), so this
-	   page needs an explicit gap before the RestartTour card below it. */
+	/* The kit Sections inside PreferenceToggles have no outer margin, so the tour
+	   section needs an explicit gap before it. */
 	.preferencias-tour-gap {
 		margin-top: var(--space-6);
-	}
-
-	:global(.restart-tour) {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-	}
-
-	/*
-	 * Same dot-bullet + divider treatment as AccountSection.module.css's
-	 * `.cardTitle` (BETA-143c nitpick), so this heading matches every other
-	 * section card title. `margin` stays 0 (unlike `.cardTitle`'s
-	 * `margin: 0 0 var(--space-5)`) because `.restart-tour` already provides
-	 * vertical rhythm via its own flex `gap`.
-	 */
-	:global(.restart-tour__title) {
-		position: relative;
-		margin: 0;
-		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--core-foreground-a05);
-		font-family: var(--font-heading);
-		font-size: 1.125rem;
-		font-weight: 700;
-		color: var(--core-foreground);
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	:global(.restart-tour__title)::before {
-		content: "";
-		display: inline-block;
-		width: 8px;
-		height: 8px;
-		border-radius: var(--radius-pill);
-		background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
-		flex-shrink: 0;
-		box-shadow: 0 0 0 3px var(--brand-primary-a12);
-	}
-
-	:global(.restart-tour__desc) {
-		margin: 0;
-		font-size: 0.9375rem;
-		color: var(--core-muted-foreground);
-	}
-
-	/* HOS-788: a role set can match several welcome tours now (e.g. tourist +
-	   host), so RestartTour renders one row per tour instead of a single
-	   button. */
-	:global(.restart-tour__list) {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-3);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	:global(.restart-tour__item) {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-		flex-wrap: wrap;
-	}
-
-	:global(.restart-tour__item-name) {
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--core-foreground);
-	}
-
-	:global(.restart-tour__button) {
-		align-self: flex-start;
-		padding: var(--space-3) var(--space-4);
-		border: 1px solid var(--brand-primary-a30);
-		border-radius: var(--radius-button);
-		background-color: var(--core-card);
-		color: var(--brand-primary);
-		font-weight: 600;
-		cursor: pointer;
-		transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
-	}
-
-	:global(.restart-tour__button:hover:enabled) {
-		background-color: var(--brand-primary);
-		color: var(--primary-foreground);
-	}
-
-	:global(.restart-tour__button:disabled) {
-		opacity: 0.6;
-		cursor: default;
 	}
 </style>
