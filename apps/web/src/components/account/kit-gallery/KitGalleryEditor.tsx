@@ -1,6 +1,7 @@
 /**
  * KitGalleryEditor — the editor shell pieces in the kit gallery (HOS-2486,
- * HOS-2499): the section column, the switcher and the completeness meter.
+ * HOS-2499): the section column, the switcher, the completeness meter, the
+ * hours editor and the repeater (HOS-2490).
  *
  * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
  *
@@ -12,8 +13,11 @@ import {
     CompletenessMeter,
     EditorSectionNav,
     EditorSwitcher,
+    Field,
     HoursEditor,
-    type HoursWeek
+    type HoursWeek,
+    Repeater,
+    TextInput
 } from '@/components/account/ui';
 import type { EditorNavGroup } from '@/lib/editor/editor-route-nav-model';
 import { buildEditorSwitcherModel } from '@/lib/editor/editor-switcher-model';
@@ -110,6 +114,25 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
                 <Visual name="HoursEditor/week">
                     <GalleryHours locale={locale} />
                 </Visual>
+                <Visual name="Repeater/rows">
+                    <GalleryRepeater locale={locale} />
+                </Visual>
+                <Visual name="Repeater/empty">
+                    <Repeater
+                        locale={locale}
+                        label="Platos"
+                        items={[]}
+                        getKey={(_item: string, index) => `empty-${index}`}
+                        getItemLabel={(item) => item}
+                        renderItem={(item) => item}
+                        onAdd={() => undefined}
+                        addLabel="Agregar plato"
+                        empty={{
+                            title: 'Todavía no hay platos',
+                            description: 'Agregá el primero para armar la carta.'
+                        }}
+                    />
+                </Visual>
             </div>
         </section>
     );
@@ -143,6 +166,53 @@ function GalleryHours({ locale }: GalleryGroupProps) {
             idBase="kit-hours"
             value={week}
             onChange={setWeek}
+        />
+    );
+}
+
+/** Live Repeater with three rows: add, remove (with confirmation) and move. */
+function GalleryRepeater({ locale }: GalleryGroupProps) {
+    const [dishes, setDishes] = useState<readonly string[]>([
+        'Milanesa napolitana',
+        'Surubí a la parrilla',
+        'Flan casero'
+    ]);
+    const move = (index: number, delta: -1 | 1): void => {
+        setDishes((current) => {
+            const next = [...current];
+            const [row] = next.splice(index, 1);
+            if (row === undefined) return current;
+            next.splice(index + delta, 0, row);
+            return next;
+        });
+    };
+    return (
+        <Repeater
+            locale={locale}
+            label="Platos"
+            items={dishes}
+            getKey={(_dish, index) => `kit-dish-${index}`}
+            getItemLabel={(dish, index) => dish || `Plato ${index + 1}`}
+            renderItem={(dish, index) => (
+                <Field
+                    label="Nombre"
+                    locale={locale}
+                >
+                    <TextInput
+                        value={dish}
+                        onChange={(event) => {
+                            const value = event.currentTarget.value;
+                            setDishes((current) =>
+                                current.map((d, i) => (i === index ? value : d))
+                            );
+                        }}
+                    />
+                </Field>
+            )}
+            onMove={move}
+            onRemove={(index) => setDishes((current) => current.filter((_d, i) => i !== index))}
+            onAdd={() => setDishes((current) => [...current, ''])}
+            addLabel="Agregar plato"
         />
     );
 }
