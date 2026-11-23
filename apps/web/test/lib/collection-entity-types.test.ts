@@ -13,9 +13,19 @@ import {
     parseCollectionEntityType
 } from '../../src/lib/collection-entity-types';
 
-const pageSrc = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro'),
-    'utf8'
+const readSrc = (path: string): string => readFileSync(resolve(__dirname, path), 'utf8');
+
+/**
+ * HOS-2480: the page reads and validates the URL; the `CollectionDetailView`
+ * island draws the tabs, the cards and the pagination. Both are «the page».
+ */
+const pageSrc = [
+    readSrc('../../src/pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro'),
+    readSrc('../../src/components/account/favorites/CollectionDetailView.client.tsx')
+].join('\n');
+const cardSrc = readSrc('../../src/components/account/favorites/FavoriteBookmarkCard.tsx');
+const collectionsSrc = readSrc(
+    '../../src/components/account/favorites/FavoritesCollectionsSection.tsx'
 );
 
 const accountLocale = (locale: string): Record<string, unknown> =>
@@ -83,31 +93,26 @@ describe('collection entity types (HOS-2423)', () => {
 
 describe('collection page i18n keys (HOS-2432)', () => {
     it('does not use the "Sin colección" key as the untitled fallback', () => {
-        expect(pageSrc).not.toContain("collections.no_collection', 'Sin título'");
-        expect(pageSrc).toContain("t('common.untitled'");
+        expect(pageSrc + cardSrc).not.toContain("collections.no_collection', 'Sin título'");
+        expect(cardSrc).toContain("t('common.untitled'");
     });
 
     it('does not label the pagination nav with the type-filter key', () => {
         expect(pageSrc).not.toContain("filter.label', 'Paginación'");
-        expect(pageSrc).toContain("t('common.pagination'");
-    });
-
-    it('uses the short prev/next labels for the visible pagination text', () => {
-        expect(pageSrc).toContain("t('common.prev'");
-        expect(pageSrc).toContain("t('common.next'");
+        // HOS-2480: the kit Pagination owns its nav label and prev/next copy.
+        expect(pageSrc).toContain('<Pagination');
+        expect(pageSrc).toMatch(
+            /import \{[^}]*\bPagination\b[^}]*\} from '@\/components\/account\/ui'/
+        );
     });
 
     it('collection card count label is not the "Quitar de favoritos" remove label', () => {
-        const src = readFileSync(
-            resolve(__dirname, '../../src/components/account/UserFavoritesList.client.tsx'),
-            'utf8'
-        );
-        expect(src).not.toContain("bookmarksLabel={t('account.favorites.removeLabel'");
-        expect(src).toContain("'account.favorites.collections.bookmarksLabel'");
+        expect(collectionsSrc).not.toContain('account.favorites.removeLabel');
+        expect(collectionsSrc).toContain("'account.favorites.bookmarks.count'");
         for (const locale of ['es', 'en', 'pt']) {
-            expect(
-                lookup(accountLocale(locale), 'favorites.collections.bookmarksLabel')
-            ).toBeTypeOf('string');
+            expect(lookup(accountLocale(locale), 'favorites.bookmarks.count_one')).toBeTypeOf(
+                'string'
+            );
         }
     });
 });

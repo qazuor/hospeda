@@ -9,9 +9,11 @@
  * Grammar (lowercase kebab segments):
  *
  *   section:<vertical>.<slug>
- *   section:<vertical>.<slug>#<element>
  *
- * e.g. `section:venue.carta` or `section:venue.carta#save-disabled`.
+ * `<vertical>` is letters only (no hyphen), `<slug>` is lowercase kebab. There is
+ * no `#element` suffix. This mirrors `parseHelpAnchor` (`packages/help/src/anchors.ts`),
+ * the authoritative grammar; `help-anchor.test.ts` asserts both agree.
+ * e.g. `section:venue.carta` or `section:messages.owner-list`.
  *
  * The kit validates the SHAPE only. Whether an anchor resolves to a real
  * article is HOS-2410's guard. When `packages/help` lands, `HelpAnchor` is
@@ -21,13 +23,10 @@
  */
 
 /** A help-center anchor rendered as `data-help` on a kit component root. */
-export type HelpAnchor = `section:${string}.${string}` | `section:${string}.${string}#${string}`;
+export type HelpAnchor = `section:${string}.${string}`;
 
-/** One lowercase kebab segment: `carta`, `save-disabled`, `host-trade`. */
-const SEGMENT = '[a-z0-9]+(?:-[a-z0-9]+)*';
-
-/** The full anchor grammar. */
-const HELP_ANCHOR_PATTERN = new RegExp(`^section:${SEGMENT}\\.${SEGMENT}(?:#${SEGMENT})?$`);
+/** The full anchor grammar, identical to `parseHelpAnchor`'s `section` target check. */
+const HELP_ANCHOR_PATTERN = /^section:[a-z]+\.[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
  * Tells whether a value is a well-formed help anchor.

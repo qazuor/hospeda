@@ -278,6 +278,15 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         requiredPermission: OWNER_LIST_VERTICAL_PERMISSION.venue,
         items: [
             {
+                // HOS-2475: the venue owner dashboard, mirroring `hostDashboard`.
+                id: 'venueDashboard',
+                i18nKey: 'account.nav.venueDashboard',
+                href: 'mi-cuenta/tablero-locales',
+                icon: DashboardIcon,
+                requiredPermission: PermissionEnum.VENUE_EDIT_OWN,
+                surfaces: FULL_SURFACES
+            },
+            {
                 id: 'venue-listings',
                 i18nKey: OWNER_LIST_LABEL_KEYS.venue,
                 href: ownerListPath({ vertical: 'venue' }),
@@ -292,6 +301,15 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         i18nKey: 'account.nav.groupExperiences',
         requiredPermission: OWNER_LIST_VERTICAL_PERMISSION.experience,
         items: [
+            {
+                // HOS-2476: the experience owner dashboard.
+                id: 'experienceDashboard',
+                i18nKey: 'account.nav.experienceDashboard',
+                href: 'mi-cuenta/tablero-experiencias',
+                icon: DashboardIcon,
+                requiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN,
+                surfaces: FULL_SURFACES
+            },
             {
                 id: 'experience-listings',
                 i18nKey: OWNER_LIST_LABEL_KEYS.experience,

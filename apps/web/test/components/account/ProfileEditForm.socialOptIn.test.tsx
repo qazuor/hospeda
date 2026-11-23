@@ -28,10 +28,11 @@ vi.mock('../../../src/components/account/ProfileEditForm.module.css', () => ({
     })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
+vi.mock('../../../src/lib/i18n', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/lib/i18n')>();
     const t = (key: string, fallback?: string): string => fallback ?? key;
     const translations = { t } as const;
-    return { createTranslations: () => translations };
+    return { ...actual, createTranslations: () => translations };
 });
 
 vi.mock('../../../src/lib/avatar-utils', () => ({

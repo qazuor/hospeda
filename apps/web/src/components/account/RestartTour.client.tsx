@@ -4,6 +4,8 @@ import { getWelcomeToursForRoles } from '@/config/tours';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildTourDriverTexts, filterStepsPresentOnPage } from '@/lib/tour-driver';
+import styles from './RestartTour.module.css';
+import { Button, Section } from './ui';
 
 interface RestartTourProps {
     readonly locale: SupportedLocale;
@@ -89,10 +91,12 @@ export function RestartTour({ locale, userRoles }: RestartTourProps) {
     if (tours.length === 0) return null;
 
     return (
-        <div className="restart-tour">
-            <h2 className="restart-tour__title">{t('account.nav.repeatTour')}</h2>
-            <p className="restart-tour__desc">{t('account.nav.repeatTourDesc')}</p>
-            <ul className="restart-tour__list">
+        <Section
+            title={t('account.nav.repeatTour')}
+            description={t('account.nav.repeatTourDesc')}
+            helpId="section:preferences.tour"
+        >
+            <ul className={styles.list}>
                 {tours.map((tour) => {
                     // Every tour's first step is its "greeting" (see
                     // `src/config/tours.ts`), so its title doubles as the
@@ -102,23 +106,22 @@ export function RestartTour({ locale, userRoles }: RestartTourProps) {
                     return (
                         <li
                             key={tour.id}
-                            className="restart-tour__item"
+                            className={styles.item}
                         >
-                            <span className="restart-tour__item-name">{t(nameKey, tour.id)}</span>
-                            <button
-                                type="button"
-                                className="restart-tour__button"
+                            <span className={styles.name}>{t(nameKey, tour.id)}</span>
+                            <Button
+                                variant="secondary"
                                 onClick={() => handleStart(tour)}
                                 disabled={runningTourId !== null}
                             >
                                 {isRunning
                                     ? t('account.welcomeTour.running', 'Tour en curso...')
                                     : t('account.welcomeTour.restart', 'Ver tour')}
-                            </button>
+                            </Button>
                         </li>
                     );
                 })}
             </ul>
-        </div>
+        </Section>
     );
 }

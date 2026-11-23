@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import styles from './KitGallery.module.css';
 import { KitGalleryActions } from './KitGalleryActions';
+import { KitGalleryData } from './KitGalleryData';
 import { KitGalleryFeedback } from './KitGalleryFeedback';
 import { KitGalleryForms } from './KitGalleryForms';
 
@@ -46,6 +47,7 @@ export function KitGallery({ locale }: KitGalleryProps) {
         >
             <KitGalleryActions locale={locale} />
             <KitGalleryForms locale={locale} />
+            <KitGalleryData locale={locale} />
             <KitGalleryFeedback
                 locale={locale}
                 openOverlay={openOverlay}
