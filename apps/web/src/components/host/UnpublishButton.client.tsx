@@ -71,6 +71,14 @@ export interface UnpublishButtonProps {
     readonly recurringAddonNames?: readonly string[];
     readonly withdrawHref?: string;
     readonly withdrawLabel?: string;
+    /**
+     * Open straight on the confirmation step (HOS-2483): the card's action
+     * menu already asked «Despublicar», so the dialog shows the question, not
+     * a second button. @default false
+     */
+    readonly startConfirming?: boolean;
+    /** Called when the person cancels the confirmation (the menu closes its dialog). */
+    readonly onCancel?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,9 +106,11 @@ export function UnpublishButton({
     recurringNote,
     recurringAddonNames,
     withdrawHref,
-    withdrawLabel
+    withdrawLabel,
+    startConfirming = false,
+    onCancel
 }: UnpublishButtonProps): JSX.Element {
-    const [state, setState] = useState<UnpublishState>('idle');
+    const [state, setState] = useState<UnpublishState>(startConfirming ? 'confirming' : 'idle');
     const [apiError, setApiError] = useState<string | null>(null);
 
     /** User clicked the main "Despublicar" button → enter confirmation mode. */
@@ -111,6 +121,7 @@ export function UnpublishButton({
 
     /** User clicked "No" / Cancel → return to idle. */
     function handleCancel(): void {
+        onCancel?.();
         setState('idle');
         setApiError(null);
     }

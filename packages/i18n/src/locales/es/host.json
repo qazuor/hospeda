@@ -265,7 +265,8 @@
             "unpublishTrialNote": "La prueba gratis sigue corriendo: despublicar no detiene el reloj del trial.",
             "unpublishRecurringNote_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando aunque no esté publicada, hasta que lo des de baja.",
             "unpublishRecurringNote_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando aunque no esté publicada, hasta que los des de baja.",
-            "recurringWithdrawLink": "Dar de baja estos destaques"
+            "recurringWithdrawLink": "Dar de baja estos destaques",
+            "moreActions": "Más acciones para {{name}}"
         },
         "editor": {
             "section": {
@@ -797,7 +798,8 @@
             "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
         },
         "error": {
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "body": "Tus propiedades siguen ahí: probá de nuevo en un momento."
         }
     },
     "landing": {

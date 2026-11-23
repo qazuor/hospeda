@@ -110,8 +110,8 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`buildAdminPanelItem` over the same admin origin',
     'components/shared/navigation/UserMenu.client.tsx#{adminPanelItem.href}':
         '`buildAdminPanelItem` over the same admin origin',
-    'components/host/PropertyCard.astro#{viewOnSiteUrl}':
-        '`buildUrl` — an internal accommodation page opened in a new tab',
+    'components/account/ui/Menu.tsx#{item.href}':
+        'caller-built by contract (MenuItem.href JSDoc): the only external item today is the property card «Ver en el sitio», a `buildUrl` internal accommodation page opened in a new tab (HOS-2483); a URL from user data must go through the sanitizer before it reaches a Menu',
     'lib/help/help-entry.ts#helpArticlePath({ id: entry.id':
         '`helpLinkAttributes` builds the "?" link with `helpArticlePath` (lib/help/help-tokens.ts), an internal `mi-cuenta/ayuda/<id>` path from `buildUrl`; outbound only because the "?" opens the article in a new tab outside the help center (HOS-2410, HOS-2552)',
     'components/host/host-trades/TradeCard.tsx#{contactHref}':

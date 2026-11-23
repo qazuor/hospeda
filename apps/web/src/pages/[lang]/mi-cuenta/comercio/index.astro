@@ -27,9 +27,11 @@ import {
     LinkButton,
     ListingCard,
     ListingCardGrid,
-    Menu,
     PageHeader
 } from '@/components/account/ui';
+// Hydrated island: imported from its module, not the barrel, so the island
+// bundle carries the menu and not the whole kit.
+import { Menu } from '@/components/account/ui/Menu';
 import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PageLoadError } from '@/components/account/PageLoadError.client';
 import { ListingActions } from '@/components/listing/ListingActions.client';

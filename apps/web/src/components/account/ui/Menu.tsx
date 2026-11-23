@@ -55,7 +55,12 @@ type MenuItemBase = {
 export type MenuItem = MenuItemBase &
     (
         | {
-              /** Destination of a link entry. */
+              /**
+               * Destination of a link entry. Caller-built only (`buildUrl`): a
+               * URL that comes from user data must go through
+               * `resolveSafeExternalUrl` before it reaches a Menu (HOS-592; the
+               * outbound-href guard holds this exemption on that contract).
+               */
               readonly href: string;
               /** Opens in a new tab (`rel="noopener noreferrer"`). */
               readonly external?: boolean;

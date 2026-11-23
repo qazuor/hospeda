@@ -9,8 +9,9 @@
  *
  * Data: fetched server-side by forwarding the session cookie to the protected API
  * endpoint `GET /api/v1/protected/accommodations` (owner-scoped, see T-014).
- * On fetch error the page renders the empty state with an error log so the user
- * still has a functional page and can navigate to publish a new property.
+ * On fetch error the page renders the kit ErrorState with a retry — never the
+ * empty state, which would tell the host their properties are gone (HOS-2483).
+ * The list is paginated (`?page=N`, HOS-2440): no silent cap.
  *
  * @route    /[lang]/mi-cuenta/propiedades/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -18,7 +19,6 @@
 
 import { PublicationStatusEnum } from '@repo/schemas';
 import type { Accommodation } from '@repo/schemas';
-import { CreditCardIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
@@ -48,13 +48,19 @@ import {
     type ListingNoticesIndex
 } from '@/lib/listing/listing-notices';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import {
+    Alert,
+    EmptyState,
+    LinkButton,
+    ListingCardGrid,
+    PageHeader,
+    Pagination
+} from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageLoadError } from '@/components/account/PageLoadError.client';
 import PropertyCard from '@/components/host/PropertyCard.astro';
-import AccountPagination from '@/components/account/AccountPagination.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { BuildingIcon } from '@repo/icons';
-import btn from '@/components/account/AccountButton.module.css';
+import { resolveUsageAlertTone } from '@/lib/listing/usage-alert-tone';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 export const prerender = false;
@@ -102,7 +108,7 @@ let publishedTotal: number | null = null;
 let draftTotal: number | null = null;
 
 // ── Usage/limit data for plan-awareness badge ──
-let usageData: { currentUsage: number; maxAllowed: number; threshold: string } | null = null;
+let usageData: ReturnType<typeof buildUsageBadge> = null;
 
 // ── HOS-217: does the owner have a REAL owner/complex plan? ──
 // Fail-open (`true`) on any fetch error, so a transient API failure never
@@ -293,337 +299,103 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
-    <!-- Page header. The header CTA is hidden in the empty state to avoid
-         showing two stacked "Publicar ahora" buttons — the empty-state
-         illustration already owns the primary call to action. -->
-    <div class="props-page__header">
-        <div class="props-page__heading">
-            <AccountPageHeader title={title} description={subtitle} />
-        </div>
+    <div class="props-page">
+    <!-- The header CTA is hidden in the empty and error states: the empty
+         state already owns the primary call to action. -->
+    <PageHeader title={title} description={subtitle}>
+        <PageHelpLink slot="help" locale={locale} />
         {!isEmpty && !fetchError && (
-            <a href={publishNewUrl} class:list={['props-page__cta-btn', btn.primary]}>
+            <LinkButton slot="actions" href={publishNewUrl}>
                 {t('host.properties.list.publishAnother', 'Publicar otra')}
-            </a>
+            </LinkButton>
         )}
-    </div>
+    </PageHeader>
 
-    {/* ── HOS-217: proactive "pick a host plan" banner ── */}
+    {/* ── HOS-217 / HOS-2425: proactive "pick a host plan" notice. Info tone:
+         nothing is wrong, the host has a next step. ── */}
     {needsPlanBanner.kind !== 'hidden' && (
-        <aside class="props-page__needs-plan" role="note">
-            <div class="props-page__needs-plan-icon" aria-hidden="true">
-                <CreditCardIcon size={20} weight="fill" />
-            </div>
-            <div class="props-page__needs-plan-body">
-                <p class="props-page__needs-plan-title">{needsPlanTitle}</p>
-                <p class="props-page__needs-plan-text">{needsPlanDescription}</p>
-            </div>
+        <Alert locale={locale} tone="info" title={needsPlanTitle}>
+            {needsPlanDescription}
             {needsPlanBanner.kind === 'needsPlan' && (
-                <a href={ownerPlansUrl} class:list={['props-page__needs-plan-cta', btn.primary]}>
+                <LinkButton slot="action" href={ownerPlansUrl} size="sm">
                     {needsPlanCta}
-                </a>
+                </LinkButton>
             )}
-        </aside>
+        </Alert>
     )}
 
-    {/* ── Plan/limit awareness badge ── */}
+    {/* ── Plan/limit awareness (HOS-2443: the cap is informational) ── */}
     {usageData && usageData.maxAllowed > 0 && (
-        <div
-            class:list={[
-                'props-page__usage',
-                `props-page__usage--${usageData.threshold}`,
-                { 'props-page__usage--card': usageData.threshold !== 'ok' || usageData.currentUsage >= usageData.maxAllowed }
-            ]}
-            role="status"
+        <Alert
+            locale={locale}
+            tone={resolveUsageAlertTone({ threshold: usageData.threshold })}
+            title={tPlural('host.properties.usage.label', usageData.maxAllowed, {
+                current: usageData.currentUsage,
+                max: usageData.maxAllowed
+            })}
         >
-            <span class="props-page__usage-label">
-                {tPlural('host.properties.usage.label', usageData.maxAllowed, {
-                    current: usageData.currentUsage,
-                    max: usageData.maxAllowed
-                })}
-            </span>
             {usageData.threshold !== 'ok' && (
-                <a href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })} class="props-page__usage-upgrade">
+                <LinkButton
+                    slot="action"
+                    variant="secondary"
+                    size="sm"
+                    href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
+                >
                     {t('host.properties.usage.upgrade', 'Mejorar plan')}
-                </a>
+                </LinkButton>
             )}
-        </div>
+        </Alert>
     )}
 
     {fetchError ? (
-        /* Error state (e.g. API down or permission denied). Already a
-             standalone full-page card (bg/border/radius below); branded on
-             its own since it is no longer nested in AccountSectionCard. */
-        <div class:list={['props-page__error', accountSectionStyles.branded]} role="alert">
-            <p class="props-page__error-title">
-                {t('host.properties.empty.fetchError')}
-            </p>
-            <a
-                href={Astro.url.pathname}
-                class:list={['props-page__cta-btn', 'props-page__cta-btn--centered', btn.primary]}
-            >
-                {t('host.properties.error.retry')}
-            </a>
-        </div>
-    ) : !isEmpty ? (
-        /* Properties grid — each PropertyCard carries its own branded accent
-             bar (no outer wrapper). */
-        <>
-        <div class="props-page__grid" role="list" aria-label={title}>
-            {properties.map((property) => (
-                <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard
-                        property={property}
-                        locale={locale}
-                        publishAffordance={publishAffordance}
-                        notices={listingNotices.byListingId.get(property.id)}
-                        trialRunning={listingNotices.trialRunning}
-                    />
-                </div>
-            ))}
-        </div>
-        <AccountPagination
+        <PageLoadError
+            client:load
             locale={locale}
-            path="mi-cuenta/propiedades"
-            page={pageState.page}
-            totalPages={pageState.totalPages}
+            title={t('host.properties.empty.fetchError')}
+            description={t('host.properties.error.body')}
+            helpId="section:propiedades.listado"
         />
+    ) : !isEmpty ? (
+        <>
+        <ListingCardGrid label={title} helpId="section:propiedades.listado">
+            {properties.map((property) => (
+                <PropertyCard
+                    property={property}
+                    locale={locale}
+                    publishAffordance={publishAffordance}
+                    notices={listingNotices.byListingId.get(property.id)}
+                    trialRunning={listingNotices.trialRunning}
+                />
+            ))}
+        </ListingCardGrid>
+        {pageState.totalPages > 1 && (
+            <Pagination
+                locale={locale}
+                page={pageState.page}
+                pageCount={pageState.totalPages}
+                hrefFor={(page: number) => buildAccountPageHref({ locale, path: 'mi-cuenta/propiedades', page })}
+            />
+        )}
         </>
     ) : (
-        /* Empty state: uses the shared EmptyState component with a @repo/icons icon
-             for visual consistency with the rest of the web app. */
         <EmptyState
-            locale={locale}
-            variant="empty"
-            message={emptyMessage}
-            actionUrl={publishNewUrl}
-            actionLabel={emptyCta}
-            tone="warm"
+            title={emptyMessage}
+            helpId="section:propiedades.listado"
         >
-            <BuildingIcon size={56} weight="duotone" />
+            <BuildingIcon slot="icon" size="lg" aria-hidden="true" />
+            <LinkButton slot="action" href={publishNewUrl}>
+                {emptyCta}
+            </LinkButton>
         </EmptyState>
     )}
+    </div>
 </AccountLayout>
 
 <style>
-    /* ── Usage/limit awareness badge ── */
-    .props-page__usage {
-        display: inline-flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: var(--space-3, 0.75rem);
-        padding: 0.5rem 1rem;
-        margin-bottom: var(--space-6, 1.5rem);
-        border-radius: var(--radius-pill);
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        font-weight: 500;
-        background-color: var(--surface-warm);
-        color: var(--core-foreground);
-        border: 1px solid var(--border);
-    }
-
-    .props-page__usage--ok {
-        background-color: oklch(0.95 0.04 145);
-        color: oklch(0.35 0.12 145);
-        border-color: oklch(0.85 0.08 145);
-    }
-
-    .props-page__usage--warning {
-        background-color: oklch(0.95 0.05 65);
-        color: oklch(0.40 0.12 65);
-        border-color: oklch(0.85 0.10 65);
-    }
-
-    /* HOS-2443: reaching the cap is informational (neutral blue), never an error tone. */
-    .props-page__usage--atLimit {
-        background-color: oklch(0.95 0.03 240);
-        color: oklch(0.38 0.10 240);
-        border-color: oklch(0.85 0.06 240);
-    }
-
-    .props-page__usage--critical,
-    .props-page__usage--exceeded {
-        background-color: oklch(0.95 0.04 25);
-        color: oklch(0.45 0.15 25);
-        border-color: oklch(0.85 0.10 25);
-    }
-
-    .props-page__usage-label {
-        white-space: nowrap;
-    }
-
-    /* Content that can wrap (an upgrade CTA is present, or the plan is at its
-       cap) must never sit in a pill radius: a pill turns wrapped content into an
-       oval. Those states render as a full-width card (--radius-card, as the other
-       account notices); the plain "ok" badge stays a compact pill. */
-    .props-page__usage--card {
-        display: flex;
-        justify-content: space-between;
-        padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-        border-radius: var(--radius-card);
-    }
-
-    .props-page__usage--card .props-page__usage-label {
-        font-weight: 700;
-        white-space: normal;
-    }
-
-    .props-page__usage-upgrade {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: var(--radius-pill);
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground);
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: var(--text-caption);
-        text-decoration: none;
-        white-space: nowrap;
-        transition: opacity 150ms ease-out;
-    }
-
-    .props-page__usage-upgrade:hover {
-        opacity: 0.88;
-    }
-
-    /* ── HOS-217: proactive "pick a host plan" banner ──
-       Layout mirrors SearchContextBanner.astro's info-banner pattern (icon +
-       body + accent left-border), plus a CTA button since this one is
-       actionable (link to the subscription page), not purely informational. */
-    .props-page__needs-plan {
+    /* The account content slot has no flow gap: one stack owns the rhythm. */
+    .props-page {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-3, 0.75rem);
-        padding: 16px 20px;
-        margin-bottom: var(--space-6, 1.5rem);
-        background-color: var(--surface-warm);
-        border: 1px solid var(--border);
-        border-left: 4px solid var(--brand-accent);
-        border-radius: var(--radius-md);
-    }
-
-    @media (min-width: 640px) {
-        .props-page__needs-plan {
-            flex-direction: row;
-            align-items: center;
-        }
-    }
-
-    .props-page__needs-plan-icon {
-        color: var(--brand-accent);
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .props-page__needs-plan-body {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 0;
-        flex: 1;
-    }
-
-    .props-page__needs-plan-title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: var(--text-body-md);
-        line-height: 1.3;
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .props-page__needs-plan-text {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        line-height: 1.5;
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .props-page__needs-plan-cta {
-        flex-shrink: 0;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    /* ── Page header ── */
-    .props-page__header {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 1rem);
-        margin-bottom: var(--space-8, 2rem);
-    }
-
-    @media (min-width: 640px) {
-        .props-page__header {
-            flex-direction: row;
-            align-items: flex-start;
-            justify-content: space-between;
-        }
-    }
-
-    .props-page__heading {
-        display: flex;
-        flex-direction: column;
-    }
-
-    /* ── CTA button ──
-       Colors/radius/padding/font come from the shared AccountButton
-       `.primary` variant (BETA-143e, see the `btn` import above). This local
-       class only supplies layout (self-alignment) and the anchor-specific
-       underline reset. */
-    .props-page__cta-btn {
-        align-self: flex-start;
-        text-decoration: none;
-    }
-
-    .props-page__cta-btn--centered {
-        margin-top: var(--space-4, 1rem);
-    }
-
-    /* ── Properties grid: 1 col → 2 col → 3 col ── */
-    .props-page__grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--space-card-gap, 1.875rem);
-    }
-
-    @media (min-width: 640px) {
-        .props-page__grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .props-page__grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .props-page__item {
-        display: contents;
-    }
-
-    /* ── Error state (fetch failed) ── */
-    .props-page__error {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-4, 1rem);
-        padding: var(--space-12, 3rem) var(--space-8, 2rem);
-        background-color: var(--core-card);
-        border: 1px solid oklch(0.85 0.05 25 / 0.4);
-        border-radius: var(--radius-card);
-        text-align: center;
-    }
-
-    .props-page__error-title {
-        font-family: var(--font-sans);
-        font-size: var(--text-body);
-        color: var(--destructive-text);
-        margin: 0;
+        gap: var(--space-6);
     }
 </style>
