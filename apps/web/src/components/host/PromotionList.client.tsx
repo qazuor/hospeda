@@ -7,10 +7,13 @@
  * rest silently, HOS-2440).
  *
  * Plan gate: the effective set says whether `create_promotions` is granted.
- * Without it (or when the read fails) the «Nueva promoción» action is not
- * offered; an owner with no promotions sees a `LockedState` with the catalog
- * plan names (`lockPlanNames`, read by the page), and one who still has some
- * keeps the list with an upgrade notice above it.
+ * Like `PromotionForm`, only a SUCCESSFUL read that lacks the key locks: a
+ * failed read is not «no plan» (the API decides on save), and while the read
+ * is pending the list shows its normal loading state, never a lock flash.
+ * When locked, the «Nueva promoción» action is not offered; an owner with no
+ * promotions sees a `LockedState` with the catalog plan names
+ * (`lockPlanNames`, read by the page), and one who still has some keeps the
+ * list with an upgrade notice above it.
  *
  * @example
  * ```astro
@@ -71,6 +74,9 @@ export interface PromotionListProps {
     readonly help?: ReactNode;
 }
 
+/** Result of the plan check: pending, open (granted or unknown), or locked. */
+type PlanGate = 'checking' | 'open' | 'locked';
+
 type ListState =
     | { readonly status: 'loading' }
     | {
@@ -96,7 +102,7 @@ export function PromotionList({
     const [page, setPage] = useState(1);
     const [state, setState] = useState<ListState>({ status: 'loading' });
     const [deleteError, setDeleteError] = useState<string | null>(null);
-    const [canCreatePromotions, setCanCreatePromotions] = useState(false);
+    const [gate, setGate] = useState<PlanGate>('checking');
 
     const fetchPromotions = useCallback(async (target: number) => {
         setState({ status: 'loading' });
@@ -114,6 +120,12 @@ export function PromotionList({
                 items: result.data.items as ReadonlyArray<Record<string, unknown>>
             });
             const pageCount = Math.max(1, result.data.pagination?.totalPages ?? 1);
+            if (target > pageCount) {
+                // The page vanished (e.g. its last item was deleted): clamp and
+                // let the page effect refetch the last page that exists.
+                setPage(pageCount);
+                return;
+            }
             setState({ status: 'ready', items, pageCount });
         } catch {
             setState({ status: 'error' });
@@ -125,11 +137,19 @@ export function PromotionList({
     }, [fetchPromotions, page]);
 
     useEffect(() => {
-        void getEntitlementsCached({ vertical: 'accommodation' }).then((effectiveSet) => {
-            setCanCreatePromotions(
-                !effectiveSet.failed && (effectiveSet.entitlements.create_promotions ?? 0) > 0
-            );
-        });
+        let cancelled = false;
+        const check = async (): Promise<void> => {
+            const effectiveSet = await getEntitlementsCached({ vertical: 'accommodation' });
+            if (cancelled) return;
+            // A failed read is not «no plan»: the API decides on save.
+            const locked =
+                !effectiveSet.failed && (effectiveSet.entitlements.create_promotions ?? 0) <= 0;
+            setGate(locked ? 'locked' : 'open');
+        };
+        void check();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     const handleDelete = useCallback(
@@ -161,7 +181,8 @@ export function PromotionList({
     const items = state.status === 'ready' ? state.items : [];
 
     const listState: MyContentListState =
-        state.status === 'loading'
+        state.status === 'loading' ||
+        (gate === 'checking' && state.status === 'ready' && items.length === 0)
             ? { status: 'loading' }
             : state.status === 'error'
               ? {
@@ -171,9 +192,8 @@ export function PromotionList({
                 }
               : items.length > 0
                 ? { status: 'ready' }
-                : canCreatePromotions
-                  ? { status: 'empty' }
-                  : {
+                : gate === 'locked'
+                  ? {
                         status: 'locked',
                         reason: {
                             kind: 'plan',
@@ -182,11 +202,12 @@ export function PromotionList({
                             plans: lockPlanNames.map((name) => ({ name })),
                             plansHref
                         }
-                    };
+                    }
+                  : { status: 'empty' };
 
     const notice = (
         <>
-            {state.status === 'ready' && items.length > 0 && !canCreatePromotions ? (
+            {state.status === 'ready' && items.length > 0 && gate === 'locked' ? (
                 <Alert
                     tone="warning"
                     locale={locale}
@@ -223,7 +244,7 @@ export function PromotionList({
                 description={t('host.promotions.pageDescription')}
                 help={help}
                 createAction={
-                    canCreatePromotions ? (
+                    gate === 'open' ? (
                         <LinkButton href={createHref}>
                             {t('host.promotions.createButton')}
                         </LinkButton>
