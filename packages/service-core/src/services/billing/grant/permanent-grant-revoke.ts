@@ -207,6 +207,8 @@ export async function revokePermanentGrant(
         verticals: revokedVerticals,
         coverageNotices: ports.coverageNotices
     });
+    let provider: Awaited<ReturnType<typeof cancelAddonComplementsAtProvider>> = { results: [] };
+    // HOS-1883: notices, then the provider half, then analytics.
     if (committed.cancelled.length > 0)
         await emitAddonCoverageRemoved({
             cancelled: committed.cancelled,
@@ -216,12 +218,14 @@ export async function revokePermanentGrant(
                 actorKind: 'ADMIN',
                 billingFacts: ports.billingFacts,
                 listing: ports.orphanhood.listing
+            },
+            beforeFacts: async () => {
+                provider = await cancelAddonComplementsAtProvider(
+                    { cancelled: committed.cancelled },
+                    ports
+                );
             }
         });
-    const provider =
-        committed.cancelled.length > 0
-            ? await cancelAddonComplementsAtProvider({ cancelled: committed.cancelled }, ports)
-            : { results: [] };
     return {
         permanentGrantId: parsed.data.permanentGrantId,
         revokedAt: now,

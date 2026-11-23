@@ -154,6 +154,29 @@ export async function completeSuccessorCut(
             }
         }
     }
+    let addonProviderRan = false;
+    const addonProviderHalf = async () => {
+        addonProviderRan = true;
+        try {
+            if (cut.cancelledAddons.length > 0)
+                await cancelAddonComplementsAtProvider(
+                    { cancelled: cut.cancelledAddons },
+                    {
+                        provider: ports.provider,
+                        clock: ports.clock,
+                        beforeCancelNotice: ports.beforeCancelNotice,
+                        cancellationSeen: ports.cancellationSeen
+                    }
+                );
+        } catch (error) {
+            logger.error(
+                { successorId: cut.successorId, error },
+                'S31 addon provider cancellation failed'
+            );
+        }
+    };
+    // HOS-1883: notices, then the provider half, then analytics; without notices (or if they
+    // throw before reaching it) the provider half still runs.
     try {
         if (notices && cut.cancelledAddons.length > 0)
             await emitAddonCoverageRemoved({
@@ -164,7 +187,8 @@ export async function completeSuccessorCut(
                     actorKind: 'SYSTEM',
                     billingFacts: ports.billingFacts,
                     listing: ports.orphanhood?.listing
-                }
+                },
+                beforeFacts: addonProviderHalf
             });
     } catch (error) {
         logger.error(
@@ -172,23 +196,7 @@ export async function completeSuccessorCut(
             'Addon coverage notice failed after S31 commit'
         );
     }
-    try {
-        if (cut.cancelledAddons.length > 0)
-            await cancelAddonComplementsAtProvider(
-                { cancelled: cut.cancelledAddons },
-                {
-                    provider: ports.provider,
-                    clock: ports.clock,
-                    beforeCancelNotice: ports.beforeCancelNotice,
-                    cancellationSeen: ports.cancellationSeen
-                }
-            );
-    } catch (error) {
-        logger.error(
-            { successorId: cut.successorId, error },
-            'S31 addon provider cancellation failed'
-        );
-    }
+    if (!addonProviderRan) await addonProviderHalf();
     let retainedReevaluated = 0;
     try {
         retainedReevaluated = await reevaluateRetainedPayments(

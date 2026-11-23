@@ -259,6 +259,20 @@ export async function applyS12ByChargeback(
     } catch (error) {
         logger.error({ subscriptionId, error }, 'Coverage notice failed after chargeback S12');
     }
+    let addonProviderRan = false;
+    const addonProviderHalf = async () => {
+        addonProviderRan = true;
+        try {
+            await cancelAddonComplementsAtProvider({ cancelled: committed.cancelled }, ports);
+        } catch (error) {
+            logger.error(
+                { subscriptionId, error },
+                'Addon provider cancellation failed after chargeback S12'
+            );
+        }
+    };
+    // HOS-1883: notices, then the provider half, then analytics; the provider half still runs
+    // if the notices throw before reaching it.
     try {
         await emitAddonCoverageRemoved({
             cancelled: committed.cancelled,
@@ -268,7 +282,8 @@ export async function applyS12ByChargeback(
                 actorKind: 'SYSTEM',
                 billingFacts: ports.billingFacts,
                 listing: ports.orphanhood.listing
-            }
+            },
+            beforeFacts: addonProviderHalf
         });
     } catch (error) {
         logger.error(
@@ -276,14 +291,7 @@ export async function applyS12ByChargeback(
             'Addon coverage notice failed after chargeback S12'
         );
     }
-    try {
-        await cancelAddonComplementsAtProvider({ cancelled: committed.cancelled }, ports);
-    } catch (error) {
-        logger.error(
-            { subscriptionId, error },
-            'Addon provider cancellation failed after chargeback S12'
-        );
-    }
+    if (!addonProviderRan) await addonProviderHalf();
     if (ports.complements) {
         try {
             await pauseComplementsS32(

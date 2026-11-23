@@ -235,13 +235,19 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: owner withd
         if (!before.instance.startsAt) throw new Error('startsAt missing');
         const spy = spySink();
 
+        const emit = vi.fn(spy.sink.emit);
+
         // Act
         await withdrawAddon(
             { actor: s.actor, instanceId: s.instanceId },
-            { ...s.ports, billingFacts: spy.sink }
+            { ...s.ports, billingFacts: { emit } }
         );
 
-        // Assert
+        // Assert: the provider call happened before the analytics fact (I4).
+        expect(s.cancel).toHaveBeenCalledTimes(1);
+        expect(s.cancel.mock.invocationCallOrder[0]).toBeLessThan(
+            emit.mock.invocationCallOrder[0] ?? 0
+        );
         const now = s.f.ports.clock.now();
         expect(spy.addonFacts()).toEqual([
             {

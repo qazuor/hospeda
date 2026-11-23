@@ -164,15 +164,21 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-1883 add-on facts: real ending
         const startsAt = before.instance.startsAt;
         if (!startsAt) throw new Error('startsAt missing');
         const spy = addonFactSpy();
+        const emit = vi.fn(spy.sink.emit);
+        const cancel = vi.spyOn(h.f.fake, 'cancel');
 
         // Act
         const result = await cancelPurgedListingAddon(
             { instanceId: h.instanceId, correlationId: crypto.randomUUID() },
-            { ...h.ports, billingFacts: spy.sink }
+            { ...h.ports, billingFacts: { emit } }
         );
 
-        // Assert
+        // Assert: the provider call happened before the analytics fact.
         expect(result.outcome).toBe('CANCELLED');
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(cancel.mock.invocationCallOrder[0]).toBeLessThan(
+            emit.mock.invocationCallOrder[0] ?? 0
+        );
         const now = h.f.ports.clock.now();
         expect(spy.addonFacts()).toEqual([
             {
