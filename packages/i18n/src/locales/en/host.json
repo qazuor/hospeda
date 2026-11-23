@@ -427,7 +427,9 @@
                 "altWarningMessage_other": "People browsing with a screen reader need that text to know what each photo shows, and search engines use it to understand and index your images. You have {{count}} photos without that text filled in.",
                 "altWarningGoBack": "Complete now",
                 "altWarningContinue": "Continue anyway",
-                "metadataSavedConfirmation": "Saved"
+                "metadataSavedConfirmation": "Saved",
+                "uploading": "Uploading photo…",
+                "altMissing": "Description missing"
             },
             "video": {
                 "sectionTitle": "Videos",
@@ -598,7 +600,9 @@
                 "translationEmpty": "This translation has not been generated yet.",
                 "textUnavailable": "Just generated. Refresh the page to read it.",
                 "expandText": "Show full text",
-                "collapseText": "Show less"
+                "collapseText": "Show less",
+                "missingCount": "Untranslated fields: {{count}}",
+                "missingNotice": "Translations missing in {{locales}}."
             },
             "calendar": {
                 "title": "Occupancy calendar",

@@ -255,7 +255,12 @@
                 "saveSuccess": "Translations saved.",
                 "saveError": "Could not save translations.",
                 "generating": "Generating translations...",
-                "generateButton": "Generate missing translations"
+                "generateButton": "Generate missing translations",
+                "missingCount": "Empty fields: {{count}}",
+                "missingNotice": "Translations missing in {{locales}}.",
+                "statusFilled": "Filled",
+                "statusEmpty": "Empty",
+                "statusSource": "Original"
             },
             "faqManager": {
                 "sectionTitle": "Frequently asked questions",

@@ -255,7 +255,12 @@
                 "saveSuccess": "Traduções salvas.",
                 "saveError": "Não foi possível salvar as traduções.",
                 "generating": "Gerando traduções...",
-                "generateButton": "Gerar traduções ausentes"
+                "generateButton": "Gerar traduções ausentes",
+                "missingCount": "Campos vazios: {{count}}",
+                "missingNotice": "Faltam traduções em {{locales}}.",
+                "statusFilled": "Preenchido",
+                "statusEmpty": "Vazio",
+                "statusSource": "Original"
             },
             "faqManager": {
                 "sectionTitle": "Perguntas frequentes",

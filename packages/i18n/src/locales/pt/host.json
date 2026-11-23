@@ -427,7 +427,9 @@
                 "altWarningMessage_other": "Quem navega com leitor de tela precisa desse texto para saber o que cada foto mostra, e os buscadores o usam para entender e indexar suas imagens. Você tem {{count}} fotos sem esse texto preenchido.",
                 "altWarningGoBack": "Completar agora",
                 "altWarningContinue": "Continuar assim mesmo",
-                "metadataSavedConfirmation": "Salvo"
+                "metadataSavedConfirmation": "Salvo",
+                "uploading": "Enviando foto…",
+                "altMissing": "Falta a descrição"
             },
             "video": {
                 "sectionTitle": "Vídeos",
@@ -598,7 +600,9 @@
                 "translationEmpty": "Esta tradução ainda não foi gerada.",
                 "textUnavailable": "Foi gerada agora. Atualize a página para lê-la.",
                 "expandText": "Ver completo",
-                "collapseText": "Ver menos"
+                "collapseText": "Ver menos",
+                "missingCount": "Campos sem tradução: {{count}}",
+                "missingNotice": "Faltam traduções em {{locales}}."
             },
             "calendar": {
                 "title": "Calendário de ocupação",
