@@ -560,7 +560,13 @@
                 "UNEXPECTED": "Ocurrió un error inesperado.",
                 "USER_DECLINED": "No lo confirmaste.",
                 "USER_CANCELLED": "Cancelaste la confirmación."
-            }
+            },
+            "sectionTitle": "Acciones registradas"
+        },
+        "tabs": {
+            "label": "Secciones de asistentes de IA",
+            "assistants": "Asistentes",
+            "history": "Historial"
         }
     },
     "subscription": {
@@ -1034,7 +1040,14 @@
         },
         "errors": {
             "fetchFailed": "Error al cargar las reseñas"
-        }
+        },
+        "sectionTitle": "Reseñas que escribiste",
+        "ratingAria": "Calificación: {{value}} de {{max}}",
+        "loadError": {
+            "title": "No pudimos cargar tus reseñas",
+            "body": "Probá de nuevo en unos segundos."
+        },
+        "listLabel": "Tus reseñas"
     },
     "pages": {
         "accountLabel": "Mi cuenta",
@@ -2195,6 +2208,11 @@
             "done": "completado",
             "current": "paso actual",
             "upcoming": "pendiente"
+        },
+        "copyField": {
+            "copy": "Copiar",
+            "copied": "Copiado al portapapeles.",
+            "failed": "No pudimos copiar. Seleccioná el texto y copialo a mano."
         }
     },
     "ownerDashboard": {

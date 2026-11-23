@@ -8,12 +8,6 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiAssistantsPanel } from '../../../src/components/account/AiAssistantsPanel.client';
 
-vi.mock('../../../src/components/account/AiAssistantsPanel.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
 const API_URL = 'http://localhost:3001';
 const MCP_URL = 'https://api.hospeda.com.ar/mcp';
 
@@ -92,7 +86,7 @@ describe('AiAssistantsPanel', () => {
     it('shows the MCP URL, the capabilities and the empty state when the flag is on', async () => {
         await renderPanel({ items: [] });
 
-        expect(screen.getByText(MCP_URL)).toBeTruthy();
+        expect(screen.getByDisplayValue(MCP_URL)).toBeTruthy();
         expect(screen.getByText('Ver tus publicaciones y sus estadísticas')).toBeTruthy();
         expect(screen.getByText('Responder consultas de tus alojamientos')).toBeTruthy();
         expect(
@@ -117,7 +111,10 @@ describe('AiAssistantsPanel', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Copiar' }));
 
-        await waitFor(() => expect(screen.getByText('Copiada')).toBeTruthy());
+        // The kit CopyField announces the result in a polite live region
+        await waitFor(() =>
+            expect(screen.getByRole('status').textContent).toBe('Copiado al portapapeles.')
+        );
         expect(writeText).toHaveBeenCalledWith(MCP_URL);
     });
 
@@ -141,7 +138,7 @@ describe('AiAssistantsPanel', () => {
         expect(screen.getAllByRole('link')).toHaveLength(1);
     });
 
-    it('asks for confirmation inline, then DELETEs with the encoded id and removes the row', async () => {
+    it('asks for confirmation in a dialog, then DELETEs with the encoded id and removes the row', async () => {
         await renderPanel({ items: [URL_ID, CLAUDE] });
         vi.mocked(fetch).mockResolvedValueOnce(status(204));
 

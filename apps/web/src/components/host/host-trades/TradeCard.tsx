@@ -22,6 +22,7 @@
 
 import type { HostTradePublic } from '@repo/schemas';
 import type { JSX } from 'react';
+import { LinkButton, RatingStars } from '@/components/account/ui';
 import { formatNumber } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -172,27 +173,20 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
             {/* ── Stats: rating (only above the threshold) + the use pair ── */}
             {!stats.isEmpty && (
                 <p className={styles.statsRow}>
-                    {ratingText !== null && (
-                        <span className={styles.statsRating}>
-                            <span
-                                aria-hidden="true"
-                                className={styles.statsStar}
-                            >
-                                ★
-                            </span>
-                            <span aria-hidden="true">{ratingText}</span>
-                            <span className={styles.srOnly}>
-                                {t(
-                                    'host-trades.card.stats.ratingLabel',
-                                    '{{rating}} de 5 estrellas',
-                                    {
-                                        rating: ratingText
-                                    }
-                                )}
-                            </span>
-                        </span>
+                    {ratingText !== null && stats.average !== null && (
+                        <RatingStars
+                            value={stats.average}
+                            showValue
+                            valueText={ratingText}
+                            label={t(
+                                'host-trades.card.stats.ratingLabel',
+                                '{{rating}} de 5 estrellas',
+                                {
+                                    rating: ratingText
+                                }
+                            )}
+                        />
                     )}
-
                     {stats.reviewsCount > 0 && (
                         <span>
                             {tPlural('host-trades.card.stats.reviews', stats.reviewsCount, {
@@ -234,14 +228,24 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
             )}
 
             {/* ── Contact button ── */}
-            <a
-                href={contactHref}
-                className={styles.contactButton}
-                target={contactHref.startsWith('http') ? '_blank' : undefined}
-                rel={contactHref.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-                {t('host-trades.card.contact', 'Contactar')}
-            </a>
+            {contactHref.startsWith('http') ? (
+                // `external` opens a new tab with a safe rel and says so to screen readers
+                <LinkButton
+                    href={contactHref}
+                    className={styles.contactButton}
+                    external
+                    locale={locale}
+                >
+                    {t('host-trades.card.contact', 'Contactar')}
+                </LinkButton>
+            ) : (
+                <LinkButton
+                    href={contactHref}
+                    className={styles.contactButton}
+                >
+                    {t('host-trades.card.contact', 'Contactar')}
+                </LinkButton>
+            )}
         </article>
     );
 }

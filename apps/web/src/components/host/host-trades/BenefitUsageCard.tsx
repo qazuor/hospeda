@@ -1,20 +1,20 @@
 /**
  * @file BenefitUsageCard.tsx
- * @description One benefit-usage row, in the inbox or in the history (HOS-376 T-046).
+ * @description One benefit-usage row, in the inbox or in the history (HOS-376 T-046),
+ * as a kit `ListRow` inside the panel's `DataList` (HOS-2502).
  *
  * Presentational: every decision it renders is taken by the caller or by the
  * pure helpers in `@/lib/host/benefit-usage-view`. It holds no state and issues
  * no requests, so the panel above it owns the whole transition flow.
  */
 
+import { Button, ListRow, StatusPill } from '@/components/account/ui';
 import type { BenefitUsage } from '@/lib/api/endpoints-protected';
-import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/format-utils';
 import { canUndoRejection, parseCalendarDate } from '@/lib/host/benefit-usage-view';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { TRADE_CARD_MAX_BADGES } from '@/lib/trade-category-labels';
-import styles from './BenefitUsagesPanel.module.css';
 import { TradeCategoryBadges } from './TradeCategoryBadges';
 
 interface BenefitUsageCardProps {
@@ -31,28 +31,13 @@ interface BenefitUsageCardProps {
     readonly onReview?: (usage: BenefitUsage) => void;
 }
 
-/** Badge class per state, so the four are visually distinguishable at a glance. */
-const BADGE_CLASS: Readonly<Record<BenefitUsage['status'], string>> = {
-    PENDING: 'badgePending',
-    CONFIRMED: 'badgeConfirmed',
-    REJECTED: 'badgeRejected',
-    EXPIRED: 'badgeExpired'
-};
-
-/** Fallback copy per state, so an untranslated key never surfaces raw. */
-const STATUS_FALLBACK: Readonly<Record<BenefitUsage['status'], string>> = {
-    PENDING: 'Pendiente',
-    CONFIRMED: 'Confirmado',
-    REJECTED: 'Rechazado',
-    EXPIRED: 'Vencido'
-};
-
 /**
  * Renders one usage: who the provider is, when the service happened, what state
- * the record is in, and whichever actions the row actually admits.
+ * the record is in, and whichever actions the row actually admits (at most two,
+ * the `ListRow` limit: Confirm and Reject, or one of undo / review).
  *
  * @param props - The row, the locale, and the callbacks for its actions.
- * @returns The card element.
+ * @returns The row element (`<li>`).
  */
 export function BenefitUsageCard({
     locale,
@@ -67,7 +52,7 @@ export function BenefitUsageCard({
     const { t } = createTranslations(locale);
 
     // The provider should always resolve — the FK cascades — so this fallback is
-    // a label, not a feature: one unresolved name must not leave a card with a
+    // a label, not a feature: one unresolved name must not leave a row with a
     // blank heading the host cannot make sense of.
     const providerName =
         usage.hostTrade?.name ??
@@ -75,11 +60,6 @@ export function BenefitUsageCard({
 
     const servicedOn = parseCalendarDate(usage.servicedAt);
     const servicedLabel = servicedOn ? formatDate({ date: servicedOn, locale }) : usage.servicedAt;
-
-    const statusLabel = t(
-        `host-trades.usages.status.${usage.status}`,
-        STATUS_FALLBACK[usage.status]
-    );
 
     const showUndo = canUndoRejection(usage);
 
@@ -89,105 +69,114 @@ export function BenefitUsageCard({
     const showReview =
         usage.status === 'CONFIRMED' && usage.hostTrade !== null && onReview !== undefined;
 
+    const noteLines = [
+        usage.note ? `“${usage.note}”` : null,
+        usage.status === 'REJECTED' && usage.rejectionNote
+            ? t('host-trades.usages.card.rejectionNote', 'Motivo del rechazo: {{note}}', {
+                  note: usage.rejectionNote
+              })
+            : null
+    ].filter((line): line is string => line !== null);
+
+    const actions = answerable
+        ? ([
+              <Button
+                  key="confirm"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => onConfirm?.(usage)}
+              >
+                  {t('host-trades.usages.actions.confirm', 'Confirmar')}
+              </Button>,
+              <Button
+                  key="reject"
+                  size="sm"
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => onReject?.(usage)}
+              >
+                  {t('host-trades.usages.actions.reject', 'Rechazar')}
+              </Button>
+          ] as const)
+        : showUndo
+          ? ([
+                <Button
+                    key="undo"
+                    size="sm"
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => onUndoRejection?.(usage)}
+                >
+                    {t('host-trades.usages.actions.undoRejection', 'Deshacer el rechazo')}
+                </Button>
+            ] as const)
+          : showReview
+            ? ([
+                  <Button
+                      key="review"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => onReview?.(usage)}
+                  >
+                      {/* The dialog opens in edit mode when a review already
+                          exists, so a fixed "Valorar" label would announce the
+                          wrong action. `hasReview` comes on the row for exactly this. */}
+                      {usage.hasReview
+                          ? t('host-trades.review.ctaEdit', 'Editar tu valoración de {{name}}', {
+                                name: providerName
+                            })
+                          : t('host-trades.review.cta', 'Valorar a {{name}}', {
+                                name: providerName
+                            })}
+                  </Button>
+              ] as const)
+            : ([] as const);
+
     return (
-        <li className={styles.card}>
-            <div className={styles.cardHeader}>
-                <div>
-                    <h3 className={styles.cardTitle}>{providerName}</h3>
-                    {usage.hostTrade ? (
-                        <TradeCategoryBadges
-                            className={styles.cardCategories}
-                            categories={usage.hostTrade.categories}
-                            locale={locale}
-                            max={TRADE_CARD_MAX_BADGES}
-                        />
-                    ) : null}
-                </div>
-                <span className={cn(styles.badge, styles[BADGE_CLASS[usage.status]])}>
-                    {statusLabel}
-                </span>
-            </div>
-
-            <p className={styles.cardMeta}>
-                {t('host-trades.usages.card.servicedOn', 'Servicio del {{date}}', {
-                    date: servicedLabel
-                })}
-                {' · '}
-                {usage.declaredBy === 'HOST'
-                    ? t('host-trades.usages.card.declaredByYou', 'Lo registraste vos')
-                    : t('host-trades.usages.card.declaredByProvider', 'Lo registró el proveedor')}
-            </p>
-
-            {usage.note ? <p className={styles.cardNote}>“{usage.note}”</p> : null}
-
-            {usage.status === 'REJECTED' && usage.rejectionNote ? (
-                <p className={styles.cardNote}>
-                    {t('host-trades.usages.card.rejectionNote', 'Motivo del rechazo: {{note}}', {
-                        note: usage.rejectionNote
-                    })}
-                </p>
-            ) : null}
-
-            {answerable || showUndo || showReview ? (
-                <div className={styles.cardActions}>
-                    {answerable ? (
-                        <>
-                            <button
-                                className={styles.primaryAction}
-                                disabled={busy}
-                                onClick={() => onConfirm?.(usage)}
-                                type="button"
-                            >
-                                {t('host-trades.usages.actions.confirm', 'Confirmar')}
-                            </button>
-                            <button
-                                className={styles.secondaryAction}
-                                disabled={busy}
-                                onClick={() => onReject?.(usage)}
-                                type="button"
-                            >
-                                {t('host-trades.usages.actions.reject', 'Rechazar')}
-                            </button>
-                        </>
-                    ) : null}
-
-                    {showUndo ? (
-                        <button
-                            className={styles.secondaryAction}
-                            disabled={busy}
-                            onClick={() => onUndoRejection?.(usage)}
-                            type="button"
-                        >
-                            {t('host-trades.usages.actions.undoRejection', 'Deshacer el rechazo')}
-                        </button>
-                    ) : null}
-
-                    {showReview ? (
-                        <button
-                            className={styles.primaryAction}
-                            disabled={busy}
-                            onClick={() => onReview?.(usage)}
-                            type="button"
-                        >
-                            {/* The dialog opens in edit mode when a review
-                                already exists, so a fixed "Valorar" label would
-                                announce the wrong action. `hasReview` comes on
-                                the row for exactly this. */}
-                            {usage.hasReview
-                                ? t(
-                                      'host-trades.review.ctaEdit',
-                                      'Editar tu valoración de {{name}}',
-                                      {
-                                          name: providerName
-                                      }
-                                  )
-                                : t('host-trades.review.cta', 'Valorar a {{name}}', {
-                                      name: providerName
-                                  })}
-                        </button>
-                    ) : null}
-                </div>
-            ) : null}
-        </li>
+        <ListRow
+            rowId={usage.id}
+            title={providerName}
+            meta={
+                <>
+                    <span>
+                        {t('host-trades.usages.card.servicedOn', 'Servicio del {{date}}', {
+                            date: servicedLabel
+                        })}
+                    </span>
+                    <span aria-hidden="true"> · </span>
+                    <span>
+                        {usage.declaredBy === 'HOST'
+                            ? t('host-trades.usages.card.declaredByYou', 'Lo registraste vos')
+                            : t(
+                                  'host-trades.usages.card.declaredByProvider',
+                                  'Lo registró el proveedor'
+                              )}
+                    </span>
+                </>
+            }
+            description={
+                noteLines.length > 0
+                    ? noteLines.map((line) => <span key={line}>{line} </span>)
+                    : undefined
+            }
+            wrapDescription
+            extra={
+                usage.hostTrade ? (
+                    <TradeCategoryBadges
+                        categories={usage.hostTrade.categories}
+                        locale={locale}
+                        max={TRADE_CARD_MAX_BADGES}
+                    />
+                ) : undefined
+            }
+            trailing={
+                <StatusPill
+                    domain="benefitUsage"
+                    status={usage.status}
+                    locale={locale}
+                />
+            }
+            actions={actions}
+        />
     );
 }

@@ -3,8 +3,8 @@
  * @description React island for the host trades directory page.
  *
  * Features (HOS-919 US-5):
- * - Category filter pills ("Todos" + one pill per category present in the
- *   result set), multi-select with ANY-OF semantics: a provider is listed when
+ * - Category filter chips (kit `FilterChips`, "Todos" + one chip per category
+ *   present in the result set), multi-select with ANY-OF semantics: a provider is listed when
  *   it has at least one of the selected categories, and once however many it
  *   matches.
  * - Pills follow the catalog order (group weight, then category weight). The
@@ -24,12 +24,15 @@
 import type { HostTradePublic } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { Button, EmptyState, FilterChips } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolveTradeCategoryName } from '@/lib/trade-category-labels';
 import { TradeCard } from './TradeCard';
 import styles from './TradesDirectory.module.css';
+
+/** Value of the «Todos» chip. It is exclusive and never reaches `activeSlugs`. */
+const ALL_CHIP = '__all__';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -125,7 +128,7 @@ export function TradesDirectory({
     const { t } = createTranslations(locale);
 
     // Selected category slugs. Empty means "Todos" (no filter).
-    const [activeSlugs, setActiveSlugs] = useState<ReadonlySet<string>>(() => new Set());
+    const [activeSlugs, setActiveSlugs] = useState<readonly string[]>([]);
 
     const pills = useMemo(
         () => buildCategoryPills({ trades, locale, catalogOrder }),
@@ -135,28 +138,28 @@ export function TradesDirectory({
     // Any-of filter (client-side, no refetch). `filter` keeps each provider once.
     const visibleTrades = useMemo(
         () =>
-            activeSlugs.size === 0
+            activeSlugs.length === 0
                 ? trades
                 : trades.filter((trade) =>
-                      trade.categories.some((category) => activeSlugs.has(category.slug))
+                      trade.categories.some((category) => activeSlugs.includes(category.slug))
                   ),
         [trades, activeSlugs]
     );
 
     // Whether the active category filter returned an empty result
-    const isFilteredEmpty = activeSlugs.size > 0 && visibleTrades.length === 0;
+    const isFilteredEmpty = activeSlugs.length > 0 && visibleTrades.length === 0;
 
-    function togglePill(slug: string): void {
-        setActiveSlugs((prev) => {
-            const next = new Set(prev);
-            if (next.has(slug)) {
-                next.delete(slug);
-            } else {
-                next.add(slug);
-            }
-            return next;
-        });
-    }
+    const chipItems = useMemo(
+        () => [
+            {
+                value: ALL_CHIP,
+                label: t('host-trades.filter.all', 'Todos'),
+                exclusive: true
+            },
+            ...pills.map(({ slug, label }) => ({ value: slug, label }))
+        ],
+        [pills, t]
+    );
 
     // ---------------------------------------------------------------------------
     // Render
@@ -164,49 +167,35 @@ export function TradesDirectory({
 
     return (
         <div className={styles.container}>
-            {/* ── Category filter pills ── */}
-            <fieldset
-                className={styles.filterBar}
-                aria-label={t('host-trades.filter.all', 'Todos')}
-            >
-                {/* "Todos" pill */}
-                <button
-                    type="button"
-                    className={cn(
-                        styles.filterPill,
-                        activeSlugs.size === 0 && styles.filterPillActive
-                    )}
-                    onClick={() => setActiveSlugs(new Set())}
-                    aria-pressed={activeSlugs.size === 0}
-                >
-                    {t('host-trades.filter.all', 'Todos')}
-                </button>
+            {/* ── Category filter chips: "Todos" + one per category, in catalog order ── */}
+            <FilterChips
+                mode="multiple"
+                label={t('host-trades.filter.label', 'Filtrar por rubro')}
+                items={chipItems}
+                value={activeSlugs}
+                onChange={setActiveSlugs}
+            />
 
-                {/* One pill per category present in the data, in catalog order */}
-                {pills.map(({ slug, label }) => (
-                    <button
-                        key={slug}
-                        type="button"
-                        className={cn(
-                            styles.filterPill,
-                            activeSlugs.has(slug) && styles.filterPillActive
-                        )}
-                        onClick={() => togglePill(slug)}
-                        aria-pressed={activeSlugs.has(slug)}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </fieldset>
-
-            {/* ── Filtered-empty message ── */}
+            {/* ── Filtered-empty state, with a way out ── */}
             {isFilteredEmpty ? (
-                <output className={styles.filteredEmpty}>
-                    {t(
+                <EmptyState
+                    title={t(
+                        'host-trades.emptyState.filteredTitle',
+                        'Ningún proveedor con esos rubros'
+                    )}
+                    description={t(
                         'host-trades.emptyState.noTrades',
                         'No hay proveedores disponibles para tus destinos por ahora.'
                     )}
-                </output>
+                    action={
+                        <Button
+                            variant="secondary"
+                            onClick={() => setActiveSlugs([])}
+                        >
+                            {t('host-trades.filter.clear', 'Quitar filtros')}
+                        </Button>
+                    }
+                />
             ) : (
                 /* ── Trades grid ── */
                 <ul

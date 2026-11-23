@@ -19,6 +19,7 @@ import { KitGalleryActions } from './KitGalleryActions';
 import { KitGalleryData } from './KitGalleryData';
 import { KitGalleryFeedback } from './KitGalleryFeedback';
 import { KitGalleryForms } from './KitGalleryForms';
+import { KitGalleryLongTail } from './KitGalleryLongTail';
 
 /** Props of {@link KitGallery}. */
 export interface KitGalleryProps {
@@ -48,6 +49,7 @@ export function KitGallery({ locale }: KitGalleryProps) {
             <KitGalleryActions locale={locale} />
             <KitGalleryForms locale={locale} />
             <KitGalleryData locale={locale} />
+            <KitGalleryLongTail locale={locale} />
             <KitGalleryFeedback
                 locale={locale}
                 openOverlay={openOverlay}

@@ -3,20 +3,32 @@
  * @description React island that lists the authenticated user's reviews.
  *
  * Fetches GET /api/v1/protected/users/me/reviews on mount.
- * Renders a list of review cards showing: text, rating stars, entity link, date.
- * Read-only in beta (no inline edit/delete). 10 items per page.
+ * Renders the kit `DataList` of the user's reviews: entity link, `RatingStars`,
+ * date, type, moderation `StatusPill` and the text. Read-only. 10 per page.
+ * Loading, error with retry, empty and ready go through `AsyncRegion`.
  *
  * Hydration: caller must use `client:load`.
  */
 
 import { StarIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
-import { AccountEmptyState } from '@/components/account/AccountEmptyState';
-import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
+import {
+    AsyncRegion,
+    type AsyncResult,
+    DataList,
+    EmptyState,
+    ErrorState,
+    LinkButton,
+    ListRow,
+    Pagination,
+    RatingStars,
+    Section,
+    Skeleton,
+    StatusPill
+} from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { createT, createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import styles from './UserReviewsList.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -180,229 +192,190 @@ function normaliseReviews(data: ReviewsApiResponse['data'], locale: SupportedLoc
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-/**
- * Reviews list island.
- * Read-only in beta — no inline edit or delete.
- */
+/** Anchor of the reviews list section. */
+const HELP_ID = 'section:reviews.list' as const;
+
+/** Reviews list island. Read-only: no inline edit or delete. */
 export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
-    const { t, tPlural } = createTranslations(locale);
+    const t = createT(locale);
+    const { tPlural } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
-    const [reviews, setReviews] = useState<ReviewItem[]>([]);
+    const [state, setState] = useState<AsyncResult<readonly ReviewItem[]>>({ status: 'loading' });
     // `total` is the real count from the API (full DB count, ignoring page size);
-    // `reviews` holds the loaded set (capped at API_FETCH_SIZE per type, i.e. up
-    // to 200 rows). Client-side pagination operates over the loaded set. With
-    // more than 100 reviews of one type the header count can exceed what is
-    // navigable — an accepted trade-off given how rare that is in practice.
+    // the loaded set is capped at API_FETCH_SIZE per type and paginated here.
     const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
 
-    const totalPages = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
-    const pageReviews = reviews.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-    // ── Fetch all reviews (client-side pagination) ────────────────────────
-
-    // Pre-compute the fetch-error fallback string here so the useCallback
-    // below can depend on it without depending on `t` itself.
-    // `createTranslations(locale)` returns a new object every render, so
-    // putting `t` in the deps would re-create fetchReviews every render,
-    // re-fire the useEffect below, and spam the API in an infinite loop.
-    // The string returned from `t()` has value-based identity, so React
-    // sees the same dep across renders.
-    const fetchErrorMsg = t('account.reviews.errors.fetchFailed', 'Error al cargar reseñas');
-
     const fetchReviews = useCallback(async () => {
-        setLoading(true);
-        setError(null);
+        setState({ status: 'loading' });
         try {
-            // Request the max page size per type: this island paginates
-            // client-side after merging both review types, so it needs the
-            // full set in one shot. The API caps pageSize at 100 per type.
+            // The max page size per type: this island paginates client-side after
+            // merging both review types, so it needs the full set in one shot.
             const res = await fetch(`${base}${API_PATH}?type=all&pageSize=${API_FETCH_SIZE}`, {
                 credentials: 'include'
             });
-            if (!res.ok) {
-                throw new Error(fetchErrorMsg);
-            }
+            if (!res.ok) throw new Error(String(res.status));
             const body = (await res.json()) as ReviewsApiResponse;
-            if (!body.success) {
-                throw new Error(body.error?.message ?? fetchErrorMsg);
-            }
-            setReviews(normaliseReviews(body.data, locale));
+            if (!body.success) throw new Error(body.error?.message ?? 'reviews');
+            const items = normaliseReviews(body.data, locale);
             setTotal(body.data?.totals?.total ?? 0);
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : fetchErrorMsg;
-            setError(msg);
-        } finally {
-            setLoading(false);
+            setState(items.length === 0 ? { status: 'empty' } : { status: 'ready', data: items });
+        } catch {
+            setState({ status: 'error', retry: () => void fetchReviews() });
         }
-    }, [base, fetchErrorMsg, locale]);
+    }, [base, locale]);
 
     useEffect(() => {
         void fetchReviews();
     }, [fetchReviews]);
 
-    // ── Render ────────────────────────────────────────────────────────────
-
-    if (loading) {
-        return (
-            <div
-                className={styles.loadingWrap}
-                role="status"
-                aria-live="polite"
-                aria-busy="true"
-                aria-label={t('common.loading', 'Cargando…')}
-            >
-                <SkeletonCardList
-                    count={4}
-                    cardHeight="9rem"
-                    gap="var(--space-card-gap, 1rem)"
-                />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div
-                className={styles.errorWrap}
-                role="alert"
-            >
-                {error}
-            </div>
-        );
-    }
-
-    if (reviews.length === 0) {
-        return (
-            <AccountEmptyState
-                title={t('account.reviews.emptyTitle', 'Todavía no escribiste reseñas')}
-                description={t(
-                    'account.reviews.empty',
-                    'Visitá un alojamiento y compartí tu experiencia para ayudar a otros viajeros.'
-                )}
-                icon={<StarIcon size={28} />}
-                ctaLabel={t('account.reviews.emptyCta', 'Explorar alojamientos')}
-                ctaHref={buildUrl({ locale, path: 'alojamientos' })}
-            />
-        );
-    }
-
     return (
-        <div className={styles.root}>
-            <p className={styles.sectionTitle}>
-                {tPlural('account.reviews.total', total, { count: total })}
-            </p>
-
-            {/* ── Review cards ────────────────────────────────────────── */}
-            {pageReviews.map((review) => (
-                <article
-                    key={review.id}
-                    className={styles.card}
-                >
-                    <div className={styles.cardHeader}>
-                        {/* Entity name + link */}
-                        {review.entityUrl ? (
-                            <a
-                                href={review.entityUrl}
-                                className={styles.entityLink}
+        <Section
+            title={t('account.reviews.sectionTitle')}
+            description={
+                state.status === 'ready'
+                    ? tPlural('account.reviews.total', total, { count: total })
+                    : undefined
+            }
+            helpId={HELP_ID}
+        >
+            <AsyncRegion
+                state={state}
+                loading={() => (
+                    <Skeleton
+                        locale={locale}
+                        lines={4}
+                    />
+                )}
+                error={({ retry }) => (
+                    <ErrorState
+                        locale={locale}
+                        onRetry={retry}
+                        title={t('account.reviews.loadError.title')}
+                        description={t('account.reviews.loadError.body')}
+                    />
+                )}
+                empty={() => (
+                    <EmptyState
+                        icon={
+                            <StarIcon
+                                size={28}
+                                aria-hidden={true}
+                            />
+                        }
+                        title={t('account.reviews.emptyTitle')}
+                        description={t('account.reviews.empty')}
+                        action={
+                            <LinkButton
+                                href={buildUrl({ locale, path: 'alojamientos' })}
+                                variant="secondary"
                             >
-                                {review.entityName ?? t('common.untitled', 'Sin título')}
-                            </a>
-                        ) : (
-                            <span className={styles.entityName}>
-                                {review.entityName ?? t('common.untitled', 'Sin título')}
-                            </span>
-                        )}
-                        {review.entityGone && (
-                            <span className={styles.typeMeta}>
-                                {t('account.reviews.listingGone')}
-                            </span>
-                        )}
-
-                        {/* Rating + date + type badges */}
-                        <div className={styles.cardMeta}>
-                            {review.rating !== null && review.rating !== undefined && (
-                                <span
-                                    className={styles.ratingBadge}
-                                    role="img"
-                                    aria-label={`${t('account.reviews.ratingLabel', 'Calificación')}: ${review.rating}`}
-                                >
-                                    ★ {review.rating}
-                                </span>
+                                {t('account.reviews.emptyCta')}
+                            </LinkButton>
+                        }
+                    />
+                )}
+                locked={() => null}
+                ready={(reviews) => {
+                    const pageCount = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
+                    const pageReviews = reviews.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+                    return (
+                        <>
+                            <DataList label={t('account.reviews.listLabel')}>
+                                {pageReviews.map((review) => (
+                                    <ReviewRow
+                                        key={review.id}
+                                        review={review}
+                                        locale={locale}
+                                    />
+                                ))}
+                            </DataList>
+                            {pageCount > 1 && (
+                                <Pagination
+                                    page={page}
+                                    pageCount={pageCount}
+                                    onPageChange={setPage}
+                                    locale={locale}
+                                />
                             )}
-                            {review.createdAt && (
-                                <span className={styles.dateMeta}>
-                                    {formatDate(review.createdAt, locale)}
-                                </span>
-                            )}
-                            <span className={styles.typeMeta}>
-                                {review.type === 'accommodation'
-                                    ? t('account.reviews.typeAccommodation', 'Alojamiento')
-                                    : t('account.reviews.typeDestination', 'Destino')}
-                            </span>
-                            {review.moderationState && (
-                                <span
-                                    className={`${styles.statusBadge} ${
-                                        review.moderationState === 'APPROVED'
-                                            ? styles.statusApproved
-                                            : review.moderationState === 'PENDING'
-                                              ? styles.statusPending
-                                              : styles.statusRejected
-                                    }`}
-                                >
-                                    {review.moderationState === 'APPROVED'
-                                        ? t('account.reviews.status.approved', 'Publicada')
-                                        : review.moderationState === 'PENDING'
-                                          ? t(
-                                                'account.reviews.status.pending',
-                                                'Pendiente de aprobación'
-                                            )
-                                          : t('account.reviews.status.rejected', 'Rechazada')}
-                                </span>
-                            )}
-                        </div>
-                    </div>
+                        </>
+                    );
+                }}
+            />
+        </Section>
+    );
+}
 
-                    {/* Review title (user-supplied) */}
-                    {review.title && <h4 className={styles.reviewTitle}>{review.title}</h4>}
-
-                    {/* Review text */}
-                    {review.content && <p className={styles.reviewText}>{review.content}</p>}
-                </article>
-            ))}
-
-            {/* ── Pagination ─────────────────────────────────────────── */}
-            {totalPages > 1 && (
-                <nav
-                    className={styles.pagination}
-                    aria-label={t('common.pagination', 'Paginación')}
-                >
-                    <button
-                        type="button"
-                        className={styles.pageBtn}
-                        disabled={page === 1}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        aria-label={t('common.prevPage', 'Página anterior')}
-                    >
-                        {t('common.prev', 'Anterior')}
-                    </button>
-                    <span className={styles.pageInfo}>
-                        {page} / {totalPages}
-                    </span>
-                    <button
-                        type="button"
-                        className={styles.pageBtn}
-                        disabled={page === totalPages}
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        aria-label={t('common.nextPage', 'Página siguiente')}
-                    >
-                        {t('common.next', 'Siguiente')}
-                    </button>
-                </nav>
-            )}
-        </div>
+/** One review as a kit list row. */
+function ReviewRow({
+    review,
+    locale
+}: {
+    readonly review: ReviewItem;
+    readonly locale: SupportedLocale;
+}) {
+    const t = createT(locale);
+    const name = review.entityName ?? t('common.untitled');
+    const typeLabel =
+        review.type === 'accommodation'
+            ? t('account.reviews.typeAccommodation')
+            : t('account.reviews.typeDestination');
+    const date = formatDate(review.createdAt, locale);
+    const hasRating = review.rating !== null && review.rating !== undefined;
+    return (
+        <ListRow
+            rowId={review.id}
+            title={name}
+            href={review.entityUrl ?? undefined}
+            meta={
+                <>
+                    <span>{typeLabel}</span>
+                    {date ? (
+                        <>
+                            <span aria-hidden="true"> · </span>
+                            <span>{date}</span>
+                        </>
+                    ) : null}
+                    {review.entityGone ? (
+                        <>
+                            <span aria-hidden="true"> · </span>
+                            <span>{t('account.reviews.listingGone')}</span>
+                        </>
+                    ) : null}
+                </>
+            }
+            description={
+                review.title || review.content ? (
+                    <>
+                        {review.title ? <strong>{review.title}</strong> : null}
+                        {review.title && review.content ? ' ' : null}
+                        {review.content ? <span>{review.content}</span> : null}
+                    </>
+                ) : undefined
+            }
+            wrapDescription
+            trailing={
+                <>
+                    {hasRating && (
+                        <RatingStars
+                            value={review.rating ?? 0}
+                            showValue
+                            label={t('account.reviews.ratingAria', undefined, {
+                                value: review.rating ?? 0,
+                                max: 5
+                            })}
+                        />
+                    )}
+                    {review.moderationState && (
+                        <StatusPill
+                            domain="moderation"
+                            status={review.moderationState}
+                            locale={locale}
+                        />
+                    )}
+                </>
+            }
+        />
     );
 }

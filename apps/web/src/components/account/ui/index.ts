@@ -56,6 +56,8 @@ export {
     type ThreadMessage,
     type ThreadViewer
 } from './ConversationThread';
+// HOS-2502: tourist long tail pieces.
+export { COPY_FEEDBACK_MS, CopyField, type CopyFieldProps } from './CopyField';
 export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
@@ -69,6 +71,7 @@ export {
 } from './EntityCard';
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
+export { type FilterChipItem, FilterChips, type FilterChipsProps } from './FilterChips';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
@@ -88,6 +91,7 @@ export { type LoadMoreResult, Pagination, type PaginationProps } from './Paginat
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
 export { buildPageRange, type PageSlot } from './pagination-range';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
+export { RatingStars, type RatingStarsProps, starFill } from './RatingStars';
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton';

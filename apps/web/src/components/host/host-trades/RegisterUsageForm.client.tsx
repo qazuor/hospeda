@@ -16,14 +16,25 @@
  * surfaces the raw dotted key in production instead of copy.
  */
 
-import { useId, useState } from 'react';
+import { useState } from 'react';
+import {
+    Alert,
+    Button,
+    Field,
+    LinkButton,
+    Section,
+    Textarea,
+    TextInput
+} from '@/components/account/ui';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
-import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import styles from './RegisterUsageForm.module.css';
+
+/** Help anchor of the declaration form section. */
+const FORM_HELP_ID = 'section:hosttrades.register-usage' as const;
 
 /** Maximum length of the optional note, mirroring `HOST_TRADE_USAGE_NOTE_MAX`. */
 const NOTE_MAX = 300;
@@ -51,11 +62,6 @@ export function RegisterUsageForm({
     today
 }: RegisterUsageFormProps) {
     const { t } = createTranslations(locale);
-
-    const dateFieldId = useId();
-    const noteFieldId = useId();
-    const noteCounterId = useId();
-    const errorId = useId();
 
     // Pre-filled with today: the overwhelmingly common case is a host scanning
     // the code while the tradesperson is still standing there.
@@ -124,122 +130,112 @@ export function RegisterUsageForm({
 
     if (recorded) {
         return (
-            <div
-                className={cn(styles.panel, styles.success)}
-                role="status"
+            <Section
+                title={t('host-trades.registerUsage.success.title', 'Listo, lo registramos')}
+                helpId={FORM_HELP_ID}
+                footer={
+                    <>
+                        <LinkButton
+                            href={buildUrl({ locale, path: 'mi-cuenta/directorio-proveedores' })}
+                            variant="secondary"
+                        >
+                            {t('host-trades.registerUsage.backToDirectory', 'Volver al directorio')}
+                        </LinkButton>
+                        <LinkButton
+                            href={buildUrl({ locale, path: 'mi-cuenta/usos-de-beneficio' })}
+                        >
+                            {t(
+                                'host-trades.registerUsage.success.cta',
+                                'Ver mis usos del beneficio'
+                            )}
+                        </LinkButton>
+                    </>
+                }
             >
-                <h2 className={styles.successTitle}>
-                    {t('host-trades.registerUsage.success.title', 'Listo, lo registramos')}
-                </h2>
-                <p className={styles.successBody}>
+                <Alert
+                    tone="success"
+                    locale={locale}
+                >
                     {t(
                         'host-trades.registerUsage.success.body',
                         'Le pedimos a {{name}} que confirme el uso. Cuando lo haga, vas a poder valorarlo.',
                         { name: providerName }
                     )}
-                </p>
-                <a
-                    className={styles.primaryLink}
-                    href={buildUrl({ locale, path: 'mi-cuenta/usos-de-beneficio' })}
-                >
-                    {t('host-trades.registerUsage.success.cta', 'Ver mis usos del beneficio')}
-                </a>
-            </div>
+                </Alert>
+            </Section>
         );
     }
 
-    const noteRemaining = NOTE_MAX - note.length;
-
     return (
-        <form
-            className={styles.panel}
-            onSubmit={handleSubmit}
-            noValidate
+        <Section
+            title={t('host-trades.registerUsage.form.title', 'Registrar el uso')}
+            description={t(
+                'host-trades.registerUsage.form.footnote',
+                'Le vamos a pedir a {{name}} que confirme. Hasta que lo haga, el registro queda pendiente.',
+                { name: providerName }
+            )}
+            helpId={FORM_HELP_ID}
         >
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor={dateFieldId}
-                >
-                    {t('host-trades.registerUsage.form.date.label', '¿Qué día fue el servicio?')}
-                </label>
-                <input
-                    className={styles.input}
-                    id={dateFieldId}
-                    max={today}
-                    onChange={(event) => setServicedAt(event.target.value)}
-                    required
-                    type="date"
-                    value={servicedAt}
-                />
-                <p className={styles.hint}>
-                    {t(
+            <form
+                className={styles.form}
+                onSubmit={handleSubmit}
+                noValidate
+            >
+                <Field
+                    label={t(
+                        'host-trades.registerUsage.form.date.label',
+                        '¿Qué día fue el servicio?'
+                    )}
+                    locale={locale}
+                    hint={t(
                         'host-trades.registerUsage.form.date.hint',
                         'Ya viene con la fecha de hoy. Cambiala si el servicio fue otro día.'
                     )}
-                </p>
-            </div>
-
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor={noteFieldId}
+                    required
                 >
-                    {t('host-trades.registerUsage.form.note.label', 'Nota (opcional)')}
-                </label>
-                <textarea
-                    aria-describedby={noteCounterId}
-                    className={styles.textarea}
-                    id={noteFieldId}
-                    maxLength={NOTE_MAX}
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder={t(
-                        'host-trades.registerUsage.form.note.placeholder',
-                        'Por ejemplo: cambio de cerradura en el departamento 3.'
-                    )}
-                    rows={3}
-                    value={note}
-                />
-                <p
-                    className={styles.hint}
-                    id={noteCounterId}
+                    <TextInput
+                        type="date"
+                        max={today}
+                        value={servicedAt}
+                        onChange={(event) => setServicedAt(event.target.value)}
+                    />
+                </Field>
+
+                <Field
+                    label={t('host-trades.registerUsage.form.note.label', 'Nota (opcional)')}
+                    locale={locale}
                 >
-                    {t(
-                        'host-trades.registerUsage.form.note.counter',
-                        'Te quedan {{remaining}} caracteres.',
-                        { remaining: String(noteRemaining) }
-                    )}
-                </p>
-            </div>
+                    <Textarea
+                        limit={NOTE_MAX}
+                        locale={locale}
+                        rows={3}
+                        value={note}
+                        placeholder={t(
+                            'host-trades.registerUsage.form.note.placeholder',
+                            'Por ejemplo: cambio de cerradura en el departamento 3.'
+                        )}
+                        onChange={(event) => setNote(event.target.value)}
+                    />
+                </Field>
 
-            {errorMessage ? (
-                <p
-                    className={styles.error}
-                    id={errorId}
-                    role="alert"
+                {errorMessage ? (
+                    <Alert
+                        tone="danger"
+                        locale={locale}
+                    >
+                        {errorMessage}
+                    </Alert>
+                ) : null}
+
+                <Button
+                    type="submit"
+                    loading={submitting}
                 >
-                    {errorMessage}
-                </p>
-            ) : null}
-
-            <button
-                aria-describedby={errorMessage ? errorId : undefined}
-                className={styles.submit}
-                disabled={submitting}
-                type="submit"
-            >
-                {submitting
-                    ? t('host-trades.registerUsage.form.submitting', 'Registrando…')
-                    : t('host-trades.registerUsage.form.submit', 'Registrar el uso')}
-            </button>
-
-            <p className={styles.footnote}>
-                {t(
-                    'host-trades.registerUsage.form.footnote',
-                    'Le vamos a pedir a {{name}} que confirme. Hasta que lo haga, el registro queda pendiente.',
-                    { name: providerName }
-                )}
-            </p>
-        </form>
+                    {submitting
+                        ? t('host-trades.registerUsage.form.submitting', 'Registrando…')
+                        : t('host-trades.registerUsage.form.submit', 'Registrar el uso')}
+                </Button>
+            </form>
+        </Section>
     );
 }

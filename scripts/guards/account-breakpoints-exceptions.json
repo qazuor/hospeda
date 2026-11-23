@@ -38,9 +38,6 @@
     "apps/web/src/components/host/editor/amenity-catalog/AmenityDetailsDialog.module.css": {
         "media": 1
     },
-    "apps/web/src/components/host/host-trades/TradesDirectory.module.css": {
-        "media": 2
-    },
     "apps/web/src/components/listing/editor/BusinessLinesField.module.css": {
         "media": 1
     },

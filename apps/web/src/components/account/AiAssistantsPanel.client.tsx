@@ -20,6 +20,18 @@ import { AskToAiIcon } from '@repo/icons';
 import type { AiConnection } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Alert,
+    Button,
+    CopyField,
+    DataList,
+    EmptyState,
+    ErrorState,
+    ListRow,
+    Section,
+    Skeleton,
+    useConfirm
+} from '@/components/account/ui';
+import {
     AI_CAPABILITY_FALLBACKS,
     AI_CAPABILITY_KEYS,
     buildAiConnectionsUrl,
@@ -61,9 +73,8 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
 
     const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
     const [items, setItems] = useState<readonly AiConnection[]>([]);
-    const [confirmingId, setConfirmingId] = useState<string | null>(null);
     const [disconnectError, setDisconnectError] = useState<string | null>(null);
-    const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+    const { confirm: ask, confirmDialog } = useConfirm({ locale });
     const mounted = useRef(true);
 
     useEffect(() => {
@@ -106,7 +117,6 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
     /** Optimistic removal; the item goes back where it was if the API refuses. */
     async function disconnect(item: AiConnection): Promise<void> {
         const index = items.findIndex((candidate) => candidate.clientId === item.clientId);
-        setConfirmingId(null);
         setDisconnectError(null);
         setItems((current) => current.filter((candidate) => candidate.clientId !== item.clientId));
         try {
@@ -136,16 +146,21 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
         }
     }
 
-    async function copyMcpUrl(): Promise<void> {
-        if (!mcpUrl) {
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(mcpUrl);
-            setCopyState('copied');
-        } catch {
-            setCopyState('failed');
-        }
+    /** Asks first; the DELETE only goes out once the user confirms. */
+    async function askToDisconnect(item: AiConnection): Promise<void> {
+        const name = displayName(item);
+        setDisconnectError(null);
+        const confirmed = await ask({
+            title: t('account.aiAssistants.disconnect.confirmTitle', '¿Desconectar a {{name}}?', {
+                name
+            }),
+            description: t(
+                'account.aiAssistants.disconnect.confirmBody',
+                'Pierde el acceso a tu cuenta de inmediato. Podés volver a conectarlo cuando quieras.'
+            ),
+            confirmLabel: t('account.aiAssistants.disconnect.confirm', 'Sí, desconectar')
+        });
+        if (confirmed) await disconnect(item);
     }
 
     const visibility = resolveAiAssistantsVisibility({
@@ -157,50 +172,22 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
     return (
         <div className={styles.root}>
             {mcpUrl && (
-                <section
-                    className={styles.section}
-                    aria-labelledby="ai-connect-title"
+                <Section
+                    title={t('account.aiAssistants.connect.title', 'Cómo conectar un asistente')}
+                    description={t(
+                        'account.aiAssistants.connect.intro',
+                        'En Claude, ChatGPT, Gemini u otro asistente compatible con MCP, agregá un conector personalizado y pegá esta dirección. Después iniciá sesión en Hospeda y aprobá el acceso.'
+                    )}
+                    helpId="section:aiassistants.connect"
                 >
-                    <h2
-                        id="ai-connect-title"
-                        className={styles.sectionTitle}
-                    >
-                        {t('account.aiAssistants.connect.title', 'Cómo conectar un asistente')}
-                    </h2>
-                    <p className={styles.text}>
-                        {t(
-                            'account.aiAssistants.connect.intro',
-                            'En Claude, ChatGPT, Gemini u otro asistente compatible con MCP, agregá un conector personalizado y pegá esta dirección. Después iniciá sesión en Hospeda y aprobá el acceso.'
+                    <CopyField
+                        label={t(
+                            'account.aiAssistants.connect.urlLabel',
+                            'Dirección del servidor MCP'
                         )}
-                    </p>
-                    <span
-                        className={styles.urlLabel}
-                        id="ai-mcp-url-label"
-                    >
-                        {t('account.aiAssistants.connect.urlLabel', 'Dirección del servidor MCP')}
-                    </span>
-                    <div className={styles.urlRow}>
-                        <code className={styles.urlValue}>{mcpUrl}</code>
-                        <button
-                            type="button"
-                            className={styles.copyBtn}
-                            onClick={() => void copyMcpUrl()}
-                        >
-                            {t('account.aiAssistants.connect.copy', 'Copiar')}
-                        </button>
-                    </div>
-                    <p
-                        className={styles.copyFeedback}
-                        role="status"
-                    >
-                        {copyState === 'copied' &&
-                            t('account.aiAssistants.connect.copied', 'Copiada')}
-                        {copyState === 'failed' &&
-                            t(
-                                'account.aiAssistants.connect.copyFailed',
-                                'No pudimos copiarla. Seleccionala y copiala a mano.'
-                            )}
-                    </p>
+                        value={mcpUrl}
+                        locale={locale}
+                    />
                     <h3 className={styles.capabilitiesTitle}>
                         {t(
                             'account.aiAssistants.capabilitiesTitle',
@@ -217,132 +204,141 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
                             </li>
                         ))}
                     </ul>
-                </section>
+                </Section>
             )}
 
             {!mcpUrl && load.kind === 'ready' && visibility === 'manage-only' && (
-                <p className={styles.notice}>
+                <Alert
+                    tone="info"
+                    locale={locale}
+                >
                     {t(
                         'account.aiAssistants.paused',
                         'La conexión de nuevos asistentes está pausada por ahora. Podés desconectar los que ya tenés.'
                     )}
-                </p>
+                </Alert>
             )}
 
             {showUnavailable && (
-                <p className={styles.notice}>
-                    {t(
+                <EmptyState
+                    icon={
+                        <AskToAiIcon
+                            size={28}
+                            aria-hidden={true}
+                        />
+                    }
+                    title={t(
                         'account.aiAssistants.unavailable',
                         'La conexión de asistentes de IA todavía no está disponible.'
                     )}
-                </p>
+                />
             )}
 
             {load.kind === 'loading' && (
-                <p
-                    className={styles.loadingWrap}
-                    role="status"
+                <Section
+                    title={t('account.aiAssistants.list.title', 'Asistentes conectados')}
+                    helpId="section:aiassistants.connected"
                 >
-                    {t('account.aiAssistants.list.loading', 'Cargando tus asistentes...')}
-                </p>
+                    <Skeleton
+                        locale={locale}
+                        lines={3}
+                    />
+                    <span className={styles.visuallyHidden}>
+                        {t('account.aiAssistants.list.loading', 'Cargando tus asistentes...')}
+                    </span>
+                </Section>
             )}
 
             {load.kind === 'error' && (
-                <div
-                    className={styles.errorWrap}
-                    role="alert"
+                <Section
+                    title={t('account.aiAssistants.list.title', 'Asistentes conectados')}
+                    helpId="section:aiassistants.connected"
                 >
-                    <span>
-                        {t(
+                    <ErrorState
+                        locale={locale}
+                        onRetry={loadConnections}
+                        description={t(
                             'account.aiAssistants.errors.loadFailed',
                             'No pudimos cargar tus asistentes. Probá de nuevo.'
                         )}
-                    </span>
-                    <button
-                        type="button"
-                        className={styles.retryBtn}
-                        onClick={() => void loadConnections()}
-                    >
-                        {t('account.aiAssistants.errors.retry', 'Reintentar')}
-                    </button>
-                </div>
+                    />
+                </Section>
             )}
 
             {load.kind === 'ready' && visibility !== 'unavailable' && (
-                <section
-                    className={styles.section}
-                    aria-labelledby="ai-list-title"
+                <Section
+                    title={t('account.aiAssistants.list.title', 'Asistentes conectados')}
+                    helpId="section:aiassistants.connected"
                 >
-                    <h2
-                        id="ai-list-title"
-                        className={styles.sectionTitle}
-                    >
-                        {t('account.aiAssistants.list.title', 'Asistentes conectados')}
-                    </h2>
-
                     {disconnectError && (
-                        <p
-                            className={styles.errorWrap}
-                            role="alert"
+                        <Alert
+                            tone="danger"
+                            locale={locale}
                         >
                             {disconnectError}
-                        </p>
+                        </Alert>
                     )}
 
                     {items.length === 0 ? (
-                        <p className={styles.text}>
-                            {t(
+                        <EmptyState
+                            variant="compact"
+                            title={t(
                                 'account.aiAssistants.list.empty',
                                 'Todavía no conectaste ningún asistente.'
                             )}
-                        </p>
+                        />
                     ) : (
-                        <ul className={styles.list}>
+                        <DataList
+                            label={t('account.aiAssistants.list.title', 'Asistentes conectados')}
+                        >
                             {items.map((item) => {
                                 const name = displayName(item);
                                 const link = resolveSafeExternalUrl(
                                     toSafeHttpsUrl({ raw: item.uri }) ?? undefined
                                 );
-                                const confirming = confirmingId === item.clientId;
                                 return (
-                                    <li
+                                    <ListRow
                                         key={item.clientId}
-                                        className={styles.item}
-                                    >
-                                        <div className={styles.itemMain}>
+                                        rowId={item.clientId}
+                                        leading={
                                             <AskToAiIcon
                                                 size={24}
                                                 aria-hidden="true"
                                             />
-                                            <div className={styles.itemText}>
-                                                <p className={styles.itemName}>{name}</p>
+                                        }
+                                        title={name}
+                                        meta={
+                                            <>
                                                 {link && (
-                                                    <p className={styles.itemMeta}>
+                                                    <>
                                                         <a
-                                                            className={styles.itemLink}
                                                             href={link}
                                                             target="_blank"
                                                             rel="noopener noreferrer nofollow"
                                                         >
                                                             {new URL(link).host}
                                                         </a>
-                                                    </p>
+                                                        <span aria-hidden="true"> · </span>
+                                                    </>
                                                 )}
                                                 {item.connectedAt && (
-                                                    <p className={styles.itemMeta}>
-                                                        {t(
-                                                            'account.aiAssistants.list.connectedAt',
-                                                            'Conectado el {{date}}',
-                                                            {
-                                                                date: formatDate({
-                                                                    date: item.connectedAt,
-                                                                    locale
-                                                                })
-                                                            }
-                                                        )}
-                                                    </p>
+                                                    <>
+                                                        <span>
+                                                            {t(
+                                                                'account.aiAssistants.list.connectedAt',
+                                                                'Conectado el {{date}}',
+                                                                {
+                                                                    date: formatDate({
+                                                                        date: item.connectedAt,
+                                                                        locale
+                                                                    })
+                                                                }
+                                                            )}
+                                                        </span>
+                                                        <span aria-hidden="true"> · </span>
+                                                    </>
                                                 )}
-                                                <p className={styles.itemMeta}>
+                                                <span>
                                                     {item.lastUsedAt
                                                         ? t(
                                                               'account.aiAssistants.list.lastUsed',
@@ -358,75 +354,36 @@ export function AiAssistantsPanel({ locale, apiUrl, mcpUrl }: AiAssistantsPanelP
                                                               'account.aiAssistants.list.neverUsed',
                                                               'Sin uso registrado'
                                                           )}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {!confirming && (
-                                            <button
-                                                type="button"
-                                                className={styles.disconnectBtn}
+                                                </span>
+                                            </>
+                                        }
+                                        actions={[
+                                            <Button
+                                                key="disconnect"
+                                                variant="danger-ghost"
+                                                size="sm"
                                                 aria-label={t(
                                                     'account.aiAssistants.disconnect.ariaLabel',
                                                     'Desconectar {{name}}',
                                                     { name }
                                                 )}
-                                                onClick={() => {
-                                                    setDisconnectError(null);
-                                                    setConfirmingId(item.clientId);
-                                                }}
+                                                onClick={() => void askToDisconnect(item)}
                                             >
                                                 {t(
                                                     'account.aiAssistants.disconnect.action',
                                                     'Desconectar'
                                                 )}
-                                            </button>
-                                        )}
-                                        {confirming && (
-                                            <div className={styles.confirm}>
-                                                <p className={styles.confirmTitle}>
-                                                    {t(
-                                                        'account.aiAssistants.disconnect.confirmTitle',
-                                                        '¿Desconectar a {{name}}?',
-                                                        { name }
-                                                    )}
-                                                </p>
-                                                <p className={styles.confirmBody}>
-                                                    {t(
-                                                        'account.aiAssistants.disconnect.confirmBody',
-                                                        'Pierde el acceso a tu cuenta de inmediato. Podés volver a conectarlo cuando quieras.'
-                                                    )}
-                                                </p>
-                                                <div className={styles.confirmActions}>
-                                                    <button
-                                                        type="button"
-                                                        className={styles.confirmBtn}
-                                                        onClick={() => void disconnect(item)}
-                                                    >
-                                                        {t(
-                                                            'account.aiAssistants.disconnect.confirm',
-                                                            'Sí, desconectar'
-                                                        )}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={styles.cancelBtn}
-                                                        onClick={() => setConfirmingId(null)}
-                                                    >
-                                                        {t(
-                                                            'account.aiAssistants.disconnect.cancel',
-                                                            'Cancelar'
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </li>
+                                            </Button>
+                                        ]}
+                                    />
                                 );
                             })}
-                        </ul>
+                        </DataList>
                     )}
-                </section>
+                </Section>
             )}
+
+            {confirmDialog}
         </div>
     );
 }

@@ -198,13 +198,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.enums',
     'common.form',
     'common.loading',
-    'common.next',
-    'common.nextPage',
     'common.noImage',
     'common.optional',
-    'common.pagination',
-    'common.prev',
-    'common.prevPage',
     // HOS-982 — `ListingQrSheet.client.tsx` (the printable QR sheet download,
     // shared by the three verticals) names this subtree. It also carries the
     // three keys the PDF itself prints (`headline` / `invite` / `brandTagline`,

@@ -112,8 +112,6 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`buildUrl` — an internal accommodation page opened in a new tab',
     'lib/help/help-entry.ts#helpArticlePath({ id: entry.id':
         '`helpLinkAttributes` builds the "?" link with `helpArticlePath` (lib/help/help-tokens.ts), an internal `mi-cuenta/ayuda/<id>` path from `buildUrl`; outbound only because the "?" opens the article in a new tab outside the help center (HOS-2410, HOS-2552)',
-    'components/host/host-trades/TradeCard.tsx#{contactHref}':
-        '`resolveContactHref` in this same file: it asks the sanitizer first and degrades everything else to `tel:`',
     'components/destination/DestinationPOIFilter.client.tsx#{href}':
         'an internal POI facet URL from `buildMultiToggleParamHref`; outbound only because HOS-524 puts `rel="nofollow"` on facet chips',
     'components/destination/DestinationPOIFilter.client.tsx#{clearChip.href}':

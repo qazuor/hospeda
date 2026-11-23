@@ -17,19 +17,6 @@
         "font-size": 1,
         "shadow": 3
     },
-    "apps/web/src/components/account/AiActivityHistory.module.css": {
-        "font-size": 14
-    },
-    "apps/web/src/components/account/AiAssistantsPanel.module.css": {
-        "color": 1,
-        "font-size": 12
-    },
-    "apps/web/src/components/account/AllianceApplicationsSection.astro": {
-        "radius": 2
-    },
-    "apps/web/src/components/account/AllianceClaimBanner.module.css": {
-        "radius": 1
-    },
     "apps/web/src/components/account/AvatarUpload.module.css": {
         "color": 7,
         "font-size": 4
@@ -69,11 +56,6 @@
         "radius": 3,
         "shadow": 1
     },
-    "apps/web/src/components/account/PartnerStatsSection.astro": {
-        "color": 7,
-        "font-size": 9,
-        "radius": 2
-    },
     "apps/web/src/components/account/PartnerTrafficSection.module.css": {
         "color": 3,
         "font-size": 2,
@@ -87,11 +69,6 @@
     "apps/web/src/components/account/TrialSummary.module.css": {
         "font-size": 4,
         "radius": 1
-    },
-    "apps/web/src/components/account/UserReviewsList.module.css": {
-        "color": 1,
-        "font-size": 11,
-        "radius": 3
     },
     "apps/web/src/components/account/WhatsNewModal.module.css": {
         "color": 3,
@@ -273,49 +250,20 @@
     "apps/web/src/components/host/editor/forms/ServicesForm.module.css": {
         "font-size": 1
     },
-    "apps/web/src/components/host/host-trades/BenefitUsagesPanel.module.css": {
-        "color": 23,
-        "font-size": 14,
-        "radius": 10
-    },
     "apps/web/src/components/host/host-trades/DirectoryReviews.module.css": {
         "color": 3,
         "font-size": 11,
         "radius": 4
-    },
-    "apps/web/src/components/host/host-trades/HostTradesAccessDenied.astro": {
-        "color": 1,
-        "font-size": 3,
-        "radius": 2
     },
     "apps/web/src/components/host/host-trades/ProviderPanels.module.css": {
         "color": 22,
         "font-size": 17,
         "radius": 10
     },
-    "apps/web/src/components/host/host-trades/RegisterUsageForm.module.css": {
-        "color": 5,
-        "font-size": 9,
-        "radius": 5
-    },
     "apps/web/src/components/host/host-trades/ReviewFormDialog.module.css": {
         "color": 5,
         "font-size": 12,
         "radius": 5
-    },
-    "apps/web/src/components/host/host-trades/TradeCard.module.css": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 4
-    },
-    "apps/web/src/components/host/host-trades/TradeCategoryBadges.module.css": {
-        "font-size": 1,
-        "radius": 1
-    },
-    "apps/web/src/components/host/host-trades/TradesDirectory.module.css": {
-        "color": 4,
-        "font-size": 2,
-        "radius": 2
     },
     "apps/web/src/components/listing/HiddenByBusinessLinesSummary.module.css": {
         "color": 3,
@@ -439,12 +387,6 @@
         "font-size": 4,
         "shadow": 3
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/asistentes-ia/historial.astro": {
-        "font-size": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/asistentes-ia/index.astro": {
-        "font-size": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/datos.astro": {
         "font-size": 1
     },
@@ -463,16 +405,6 @@
     },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
         "color": 12
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 3
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/index.astro": {
-        "color": 3,
-        "font-size": 2,
-        "radius": 2
     },
     "apps/web/src/pages/[lang]/mi-cuenta/eventos/[id]/editar.astro": {
         "font-size": 2

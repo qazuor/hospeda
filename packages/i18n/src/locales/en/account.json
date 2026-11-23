@@ -560,7 +560,13 @@
                 "UNEXPECTED": "An unexpected error happened.",
                 "USER_DECLINED": "You didn’t confirm it.",
                 "USER_CANCELLED": "You cancelled the confirmation."
-            }
+            },
+            "sectionTitle": "Recorded actions"
+        },
+        "tabs": {
+            "label": "AI assistants sections",
+            "assistants": "Assistants",
+            "history": "History"
         }
     },
     "subscription": {
@@ -1034,7 +1040,14 @@
         },
         "errors": {
             "fetchFailed": "Error loading reviews"
-        }
+        },
+        "sectionTitle": "Reviews you wrote",
+        "ratingAria": "Rating: {{value}} out of {{max}}",
+        "loadError": {
+            "title": "We could not load your reviews",
+            "body": "Try again in a few seconds."
+        },
+        "listLabel": "Your reviews"
     },
     "pages": {
         "accountLabel": "My Account",
@@ -2195,6 +2208,11 @@
             "done": "completed",
             "current": "current step",
             "upcoming": "upcoming"
+        },
+        "copyField": {
+            "copy": "Copy",
+            "copied": "Copied to the clipboard.",
+            "failed": "We could not copy. Select the text and copy it by hand."
         }
     },
     "ownerDashboard": {

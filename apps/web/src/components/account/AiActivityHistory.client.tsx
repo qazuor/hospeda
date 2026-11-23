@@ -16,9 +16,20 @@
  */
 
 import { AskToAiIcon } from '@repo/icons';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { AccountEmptyState } from '@/components/account/AccountEmptyState';
-import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    Alert,
+    Checkbox,
+    DataList,
+    EmptyState,
+    ErrorState,
+    Field,
+    LinkButton,
+    Pagination,
+    Section,
+    Select,
+    Skeleton
+} from '@/components/account/ui';
 import {
     AI_ACTIVITY_OUTCOMES,
     type AiActivityItem as AiActivityItemData,
@@ -75,9 +86,6 @@ export function AiActivityHistory({
     signinUrl
 }: AiActivityHistoryProps) {
     const { t } = useMemo(() => createTranslations(locale), [locale]);
-    const toggleId = useId();
-    const hintId = useId();
-    const outcomeId = useId();
 
     const [page, setPage] = useState(1);
     const [includeReads, setIncludeReads] = useState(false);
@@ -133,185 +141,149 @@ export function AiActivityHistory({
 
     return (
         <div className={styles.root}>
-            <section
-                className={styles.filters}
-                aria-label={t(`${KEY}.filters.title`, 'Filtrar el historial')}
+            <Section
+                title={t(`${KEY}.sectionTitle`, 'Acciones registradas')}
+                helpId="section:aiassistants.activity"
             >
-                <div className={styles.toggleRow}>
-                    <input
-                        id={toggleId}
-                        type="checkbox"
-                        className={styles.toggle}
-                        aria-describedby={hintId}
+                <fieldset
+                    className={styles.filters}
+                    aria-label={t(`${KEY}.filters.title`, 'Filtrar el historial')}
+                >
+                    <Checkbox
+                        label={t(`${KEY}.filters.includeReads`, 'Mostrar también lo que solo miró')}
+                        description={t(
+                            `${KEY}.filters.includeReadsHint`,
+                            'Acciones en las que el asistente solo vio datos, sin cambiar nada.'
+                        )}
                         checked={includeReads}
                         onChange={(event) => {
                             setIncludeReads(event.target.checked);
                             setPage(1);
                         }}
                     />
-                    <div>
-                        <label
-                            htmlFor={toggleId}
-                            className={styles.toggleLabel}
-                        >
-                            {t(`${KEY}.filters.includeReads`, 'Mostrar también lo que solo miró')}
-                        </label>
-                        <span
-                            id={hintId}
-                            className={styles.hint}
-                        >
-                            {t(
-                                `${KEY}.filters.includeReadsHint`,
-                                'Acciones en las que el asistente solo vio datos, sin cambiar nada.'
-                            )}
-                        </span>
-                    </div>
-                </div>
-                <div className={styles.selectRow}>
-                    <label
-                        htmlFor={outcomeId}
-                        className={styles.selectLabel}
+                    <Field
+                        label={t(`${KEY}.filters.outcome`, 'Resultado')}
+                        locale={locale}
+                        className={styles.outcome}
                     >
-                        {t(`${KEY}.filters.outcome`, 'Resultado')}
-                    </label>
-                    <select
-                        id={outcomeId}
-                        className={styles.select}
-                        value={outcome ?? ''}
-                        onChange={(event) => {
-                            setOutcome(toOutcome(event.target.value));
-                            setPage(1);
-                        }}
-                    >
-                        <option value="">
-                            {t(`${KEY}.filters.outcomeAll`, 'Todos los resultados')}
-                        </option>
-                        {AI_ACTIVITY_OUTCOMES.map((value) => (
-                            <option
-                                key={value}
-                                value={value}
-                            >
-                                {t(`${KEY}.outcomes.${value}`, value)}
+                        <Select
+                            value={outcome ?? ''}
+                            onChange={(event) => {
+                                setOutcome(toOutcome(event.target.value));
+                                setPage(1);
+                            }}
+                        >
+                            <option value="">
+                                {t(`${KEY}.filters.outcomeAll`, 'Todos los resultados')}
                             </option>
-                        ))}
-                    </select>
-                </div>
-            </section>
+                            {AI_ACTIVITY_OUTCOMES.map((value) => (
+                                <option
+                                    key={value}
+                                    value={value}
+                                >
+                                    {t(`${KEY}.outcomes.${value}`, value)}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                </fieldset>
 
-            {load.kind === 'loading' && (
-                <div
-                    role="status"
-                    aria-live="polite"
-                    aria-busy="true"
-                    aria-label={t(`${KEY}.loading`, 'Cargando el historial...')}
-                >
-                    <SkeletonCardList
-                        count={4}
-                        cardHeight="5.5rem"
-                        gap="var(--space-4, 16px)"
+                {load.kind === 'loading' && (
+                    <Skeleton
+                        locale={locale}
+                        lines={4}
                     />
-                </div>
-            )}
+                )}
 
-            {load.kind === 'error' && (
-                <div
-                    className={styles.errorWrap}
-                    role="alert"
-                >
-                    <span>
-                        {t(
+                {load.kind === 'error' && (
+                    <ErrorState
+                        locale={locale}
+                        onRetry={() => loadPage()}
+                        description={t(
                             `${KEY}.errors.loadFailed`,
                             'No pudimos cargar el historial. Probá de nuevo.'
                         )}
-                    </span>
-                    <button
-                        type="button"
-                        className={styles.retryBtn}
-                        onClick={() => void loadPage()}
-                    >
-                        {t(`${KEY}.errors.retry`, 'Reintentar')}
-                    </button>
-                </div>
-            )}
+                    />
+                )}
 
-            {load.kind === 'signedOut' && (
-                <div
-                    className={styles.errorWrap}
-                    role="alert"
-                >
-                    <span>
+                {load.kind === 'signedOut' && (
+                    <Alert
+                        tone="danger"
+                        locale={locale}
+                        action={
+                            <LinkButton
+                                href={signinUrl}
+                                variant="secondary"
+                                size="sm"
+                            >
+                                {t(`${KEY}.errors.signIn`, 'Ingresar')}
+                            </LinkButton>
+                        }
+                    >
                         {t(
                             `${KEY}.errors.signedOut`,
                             'Tu sesión terminó. Volvé a ingresar para ver el historial.'
                         )}
-                    </span>
-                    <a
-                        className={styles.signInLink}
-                        href={signinUrl}
-                    >
-                        {t(`${KEY}.errors.signIn`, 'Ingresar')}
-                    </a>
-                </div>
-            )}
+                    </Alert>
+                )}
 
-            {emptyOnFirstPage && !filtered && (
-                <AccountEmptyState
-                    title={t(`${KEY}.empty.title`, 'Todavía no hay acciones de tus asistentes')}
-                    description={t(
-                        `${KEY}.empty.description`,
-                        'Cuando conectes un asistente de IA y le pidas algo, acá vas a ver lo que hizo con tu cuenta.'
-                    )}
-                    icon={<AskToAiIcon size={28} />}
-                    ctaHref={connectUrl}
-                    ctaLabel={t(`${KEY}.empty.cta`, 'Cómo conectar un asistente')}
-                />
-            )}
+                {emptyOnFirstPage && !filtered && (
+                    <EmptyState
+                        title={t(`${KEY}.empty.title`, 'Todavía no hay acciones de tus asistentes')}
+                        description={t(
+                            `${KEY}.empty.description`,
+                            'Cuando conectes un asistente de IA y le pidas algo, acá vas a ver lo que hizo con tu cuenta.'
+                        )}
+                        icon={
+                            <AskToAiIcon
+                                size={28}
+                                aria-hidden={true}
+                            />
+                        }
+                        action={
+                            <LinkButton
+                                href={connectUrl}
+                                variant="secondary"
+                            >
+                                {t(`${KEY}.empty.cta`, 'Cómo conectar un asistente')}
+                            </LinkButton>
+                        }
+                    />
+                )}
 
-            {emptyOnFirstPage && filtered && (
-                <p className={styles.notice}>
-                    {t(`${KEY}.emptyFiltered`, 'No hay acciones que coincidan con este filtro.')}
-                </p>
-            )}
+                {emptyOnFirstPage && filtered && (
+                    <EmptyState
+                        variant="compact"
+                        title={t(
+                            `${KEY}.emptyFiltered`,
+                            'No hay acciones que coincidan con este filtro.'
+                        )}
+                    />
+                )}
 
-            {load.kind === 'ready' && load.items.length > 0 && (
-                <ol className={styles.list}>
-                    {load.items.map((item) => (
-                        <AiActivityItem
-                            key={item.id}
-                            item={item}
-                            locale={locale}
-                            t={t}
-                        />
-                    ))}
-                </ol>
-            )}
+                {load.kind === 'ready' && load.items.length > 0 && (
+                    <DataList label={t(`${KEY}.sectionTitle`, 'Acciones registradas')}>
+                        {load.items.map((item) => (
+                            <AiActivityItem
+                                key={item.id}
+                                item={item}
+                                locale={locale}
+                                t={t}
+                            />
+                        ))}
+                    </DataList>
+                )}
 
-            {load.kind === 'ready' && totalPages > 1 && (
-                <nav
-                    className={styles.pagination}
-                    aria-label={t(`${KEY}.pagination.label`, 'Páginas del historial')}
-                >
-                    <button
-                        type="button"
-                        className={styles.pageBtn}
-                        disabled={page <= 1}
-                        onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    >
-                        {t(`${KEY}.pagination.prev`, 'Anterior')}
-                    </button>
-                    <span className={styles.pageInfo}>
-                        {page} / {totalPages}
-                    </span>
-                    <button
-                        type="button"
-                        className={styles.pageBtn}
-                        disabled={page >= totalPages}
-                        onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                    >
-                        {t(`${KEY}.pagination.next`, 'Siguiente')}
-                    </button>
-                </nav>
-            )}
+                {load.kind === 'ready' && totalPages > 1 && (
+                    <Pagination
+                        locale={locale}
+                        page={page}
+                        pageCount={totalPages}
+                        onPageChange={setPage}
+                        ariaLabel={t(`${KEY}.pagination.label`, 'Páginas del historial')}
+                    />
+                )}
+            </Section>
         </div>
     );
 }

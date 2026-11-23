@@ -28,6 +28,8 @@ import { describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/i18n', () => ({
+    // The kit LinkButton (`external`) names its «opens in a new tab» hint with createT
+    createT: () => (key: string) => key,
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string) => {
             const labels: Record<string, string> = {
@@ -515,7 +517,7 @@ describe('TradeCard — basic render', () => {
         );
 
         // Assert
-        expect(screen.getByRole('link', { name: 'Contactar' })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Contactar/ })).toBeInTheDocument();
     });
 
     it('resolves a raw phone number to a tel: href', () => {
@@ -528,7 +530,7 @@ describe('TradeCard — basic render', () => {
         );
 
         // Assert — +549 11 1234-5678 → tel:+54911 12345678 (spaces stripped)
-        const link = screen.getByRole('link', { name: 'Contactar' });
+        const link = screen.getByRole('link', { name: /Contactar/ });
         expect(link.getAttribute('href')).toMatch(/^tel:/);
     });
 
@@ -545,7 +547,7 @@ describe('TradeCard — basic render', () => {
         );
 
         // Assert
-        const link = screen.getByRole('link', { name: 'Contactar' });
+        const link = screen.getByRole('link', { name: /Contactar/ });
         expect(link.getAttribute('href')).toBe('https://wa.me/5491155555555');
     });
 
@@ -563,7 +565,7 @@ describe('TradeCard — basic render', () => {
         );
 
         // Assert — must be a fully-qualified HTTPS URL, NOT a bare domain path
-        const link = screen.getByRole('link', { name: 'Contactar' });
+        const link = screen.getByRole('link', { name: /Contactar/ });
         expect(link.getAttribute('href')).toBe('https://wa.me/5491155555555');
     });
 
@@ -580,7 +582,7 @@ describe('TradeCard — basic render', () => {
         );
 
         // Assert
-        const link = screen.getByRole('link', { name: 'Contactar' });
+        const link = screen.getByRole('link', { name: /Contactar/ });
         expect(link.getAttribute('href')).toBe('https://wa.me?phone=5491155555555');
     });
 });
