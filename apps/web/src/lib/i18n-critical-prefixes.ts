@@ -128,6 +128,7 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     'nav.mainNavigation',
     'nav.mobileMenu',
     'nav.publishCta',
+    'nav.publishCtaAria',
     'nav.signIn',
     'nav.theme',
     'ui.accessibility.closeToast',
