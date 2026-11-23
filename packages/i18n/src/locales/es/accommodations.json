@@ -28,7 +28,9 @@
         },
         "upsell": {
             "title": "Comparación de alojamientos",
-            "message": "Comparar alojamientos está disponible en los planes Plus y VIP.",
+            "message_one": "Comparar alojamientos está disponible en el plan {{plans}}.",
+            "message_other": "Comparar alojamientos está disponible en los planes {{plans}}.",
+            "messageNoPlans": "Comparar alojamientos no está incluido en tu plan actual.",
             "cta": "Ver planes"
         },
         "limit": {
@@ -819,7 +821,9 @@
             "cta": "Consultar por WhatsApp",
             "messageTemplate": "Hola, me interesa obtener más información sobre {{name}}",
             "numberLabel": "WhatsApp del anfitrión",
-            "upsellText": "Suscribite a Plus para ver el WhatsApp del anfitrión.",
+            "upsellText_one": "Suscribite al plan {{plans}} para ver el WhatsApp del anfitrión.",
+            "upsellText_other": "Suscribite a uno de los planes {{plans}} para ver el WhatsApp del anfitrión.",
+            "upsellTextNoPlans": "Tu plan actual no incluye ver el WhatsApp del anfitrión.",
             "upsellCta": "Ver planes"
         },
         "contact": {
@@ -829,7 +833,9 @@
             "emailAriaLabel": "Enviar email al alojamiento",
             "websiteAriaLabel": "Visitar sitio web del alojamiento",
             "facebookAriaLabel": "Facebook del alojamiento",
-            "instagramAriaLabel": "Instagram del alojamiento"
+            "instagramAriaLabel": "Instagram del alojamiento",
+            "fallbackNotice": "Para enviar la consulta desde acá necesitás JavaScript. Mientras tanto, contactá directo al alojamiento:",
+            "fallbackNoChannels": "Para enviar la consulta desde acá necesitás JavaScript. Recargá la página para intentarlo de nuevo."
         },
         "share": "Compartir",
         "checkIn": "Check-in",

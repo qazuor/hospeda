@@ -8,6 +8,12 @@ import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 
 type Row = z.infer<typeof OwnSubscriptionsResponseSchema>['subscriptions'][number];
 
+/** Copy key of the line that says what to do, for the two states without a self-service action. */
+export const MY_SUBSCRIPTION_TODO_KEY = {
+    PENDING_AUTHORIZATION: 'account.subscription.mine.pendingAuthorizationTodo',
+    CHARGE_DECLINED: 'account.subscription.mine.chargeDeclinedTodo'
+} as const;
+
 /** Find an active successor in the owner's own subscription list. */
 export function findActiveSuccessor({
     row,
@@ -52,7 +58,9 @@ export const MY_SUBSCRIPTION_PRICE_SHOWN: Record<OwnSubscriptionStatus, boolean>
     GRACE_PERIOD: true,
     SUSPENDED: false,
     PAUSED: false,
-    CANCEL_SCHEDULED: false
+    CANCEL_SCHEDULED: false,
+    PENDING_AUTHORIZATION: false,
+    CHARGE_DECLINED: false
 };
 
 /** Resolve all plan, vertical, price, and next-charge copy for a subscription card. */

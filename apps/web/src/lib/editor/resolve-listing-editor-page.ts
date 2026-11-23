@@ -127,7 +127,8 @@ export async function resolveListingEditorPage({
     const detail = await fetchOwnerListingDetail({ vertical, id: listingId, cookieHeader });
 
     // Defensive UX gate: the protected getById does not enforce ownership, so a
-    // non-owner (and non-staff) is bounced back to their listing index. The
+    // non-owner (and non-staff) gets the in-layout 404 (HOS-2556), identical to a
+    // missing id. The
     // write path (updateOwn) is the hard gate.
     // HOS-296: staff check over the role SET — an admin who also holds
     // VENUE_OWNER is still staff here.
@@ -135,7 +136,7 @@ export async function resolveListingEditorPage({
     const ownsListing = detail !== null && detail.ownerId === user.id;
     if (!detail || (!ownsListing && !isStaff)) {
         return {
-            redirect: astro.redirect(buildUrl({ locale, path: ownerListPath({ vertical }) }))
+            redirect: await astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'listings' }))
         };
     }
 

@@ -12,6 +12,7 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage --passWithNoTests",
         "verify:csp": "node scripts/verify-csp-over-the-wire.mjs",
+        "verify:zod-jitless": "node scripts/verify-zod-jitless-build.mjs",
         "lint": "biome check . && pnpm check-tokens && pnpm check:relative-colors",
         "format": "biome format --write .",
         "typecheck": "astro sync && astro check && tsc --noEmit --project ./tsconfig.json",
