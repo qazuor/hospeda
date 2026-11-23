@@ -19,7 +19,15 @@ import {
 const CLOSED = { closed: true, slots: [] } as const;
 
 function week(overrides: Partial<HoursWeek> = {}): HoursWeek {
-    const base = Object.fromEntries(HOURS_WEEKDAYS.map((day) => [day, CLOSED])) as HoursWeek;
+    const base: HoursWeek = {
+        mon: CLOSED,
+        tue: CLOSED,
+        wed: CLOSED,
+        thu: CLOSED,
+        fri: CLOSED,
+        sat: CLOSED,
+        sun: CLOSED
+    };
     return { ...base, ...overrides };
 }
 

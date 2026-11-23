@@ -12,7 +12,6 @@ import {
     CompletenessMeter,
     EditorSectionNav,
     EditorSwitcher,
-    HOURS_WEEKDAYS,
     HoursEditor,
     type HoursWeek
 } from '@/components/account/ui';
@@ -117,18 +116,22 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
 }
 
 /** A week with two open days, one of them split, for the HoursEditor entry. */
+const CLOSED_DAY = { closed: true, slots: [] } as const;
+
 const GALLERY_WEEK: HoursWeek = {
-    ...(Object.fromEntries(
-        HOURS_WEEKDAYS.map((day) => [day, { closed: true, slots: [] }])
-    ) as HoursWeek),
     mon: { closed: false, slots: [{ open: '09:00', close: '18:00' }] },
+    tue: CLOSED_DAY,
+    wed: CLOSED_DAY,
+    thu: CLOSED_DAY,
+    fri: CLOSED_DAY,
     sat: {
         closed: false,
         slots: [
             { open: '10:00', close: '13:00' },
             { open: '17:00', close: '21:00' }
         ]
-    }
+    },
+    sun: CLOSED_DAY
 };
 
 /** Live HoursEditor so the gallery shows its interactions too. */
