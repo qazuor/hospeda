@@ -1,5 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -80,12 +80,12 @@ export function AllianceLeadDecision({
                 </>
             )}
 
-            <Section style={styles.noteBox}>
+            <Callout tone="info">
                 <Text style={styles.noteText}>
                     ¿Tenés alguna consulta? Respondé este email o escribinos a
                     soporte@hospeda.com.ar.
                 </Text>
-            </Section>
+            </Callout>
         </EmailLayout>
     );
 }
@@ -103,15 +103,7 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    noteBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '20px 24px',
-        margin: '24px 0 0'
-    },
     noteText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'

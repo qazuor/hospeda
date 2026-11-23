@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -46,7 +45,7 @@ export function ConversationTokenExpiringDay25({
                 expire definitivamente.
             </Text>
 
-            <Section style={styles.urgentBox}>
+            <Callout tone="warning">
                 <InfoRow
                     label="Alojamiento"
                     value={accommodationName}
@@ -59,20 +58,18 @@ export function ConversationTokenExpiringDay25({
                     Estás en los últimos 5 días. Después de esta fecha perderás el acceso a la
                     conversación y no podrás recuperarla sin contactar al anfitrión nuevamente.
                 </Text>
-            </Section>
+            </Callout>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={renewUrl}>Renovar ahora — últimos 5 días</Button>
-            </Section>
+            <Button href={renewUrl}>Renovar ahora — últimos 5 días</Button>
 
             {/* Account-creation suggestion with urgency tone */}
-            <Section style={styles.accountBox}>
+            <Callout tone="success">
                 <Text style={styles.accountHeading}>Evitá perder el acceso para siempre</Text>
                 <Text style={styles.accountText}>
                     Con una cuenta gratuita en Hospeda tu historial de conversaciones nunca vence.
                     No dependás de enlaces temporales para hablar con anfitriones.
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.footerNote}>
                 Si ya no necesitás este acceso, podés ignorar este mensaje.
@@ -88,43 +85,24 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    urgentBox: {
-        backgroundColor: '#fff7ed',
-        borderRadius: '8px',
-        borderLeft: '4px solid #f97316',
-        padding: '24px',
-        margin: '24px 0'
-    },
     urgentNote: {
-        color: '#c2410c',
         fontSize: '14px',
         lineHeight: '20px',
         margin: '16px 0 0',
         fontWeight: '600'
     },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
-    },
-    accountBox: {
-        backgroundColor: '#fff1f2',
-        borderRadius: '8px',
-        borderLeft: '4px solid #f43f5e',
-        padding: '20px 24px',
-        margin: '24px 0'
-    },
     accountHeading: {
-        color: '#be123c',
         fontSize: '15px',
         fontWeight: '600',
         lineHeight: '22px',
-        margin: '0 0 8px'
+        margin: '0 0 8px',
+        textAlign: 'center' as const
     },
     accountText: {
-        color: '#9f1239',
         fontSize: '14px',
         lineHeight: '20px',
-        margin: '0'
+        margin: '0',
+        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

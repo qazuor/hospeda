@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import {
     formatTrialGreeting,
@@ -63,9 +62,7 @@ export function TrialWinBack1Day({
                 ficha vuelve a las búsquedas al instante.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Volver a publicar</Button>
-            </Section>
+            <Button href={upgradeUrl}>Volver a publicar</Button>
 
             <Text style={styles.footerNote}>
                 ¿Fue algo de la plataforma lo que te frenó? Respondé este mail y contanos qué pasó.

@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import {
     formatTrialGreeting,
@@ -54,14 +53,12 @@ export function TrialWinBack60Days({
                 avises antes ni que nos escribas para reactivarla.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button
-                    href={upgradeUrl}
-                    variant="secondary"
-                >
-                    Ver los planes
-                </Button>
-            </Section>
+            <Button
+                href={upgradeUrl}
+                variant="secondary"
+            >
+                Ver los planes
+            </Button>
 
             <Text style={styles.footerNote}>
                 Gracias por haber probado Hospeda. Ojalá nos crucemos de nuevo.

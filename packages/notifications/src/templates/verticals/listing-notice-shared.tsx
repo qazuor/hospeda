@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { Button } from '../components/button.js';
+import { Button } from '@repo/email';
 
 /**
  * Where a listing ended up after a moderation was lowered back to a fix

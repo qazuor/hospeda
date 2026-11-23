@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatDate } from '../utils/index.js';
@@ -46,7 +45,7 @@ export function TrialEndingReminder({
                 está próximo a finalizar.
             </Text>
 
-            <Section style={styles.warningBox}>
+            <Callout tone="warning">
                 <InfoRow
                     label="Plan de prueba"
                     value={planName}
@@ -61,16 +60,14 @@ export function TrialEndingReminder({
                     label="Fecha de finalización"
                     value={formattedEndDate}
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Para continuar disfrutando de todas las funcionalidades sin interrupciones,
                 suscríbete antes de que finalice tu período de prueba.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Ver planes y precios</Button>
-            </Section>
+            <Button href={upgradeUrl}>Ver planes y precios</Button>
 
             <Text style={styles.footerNote}>
                 Si no te suscribes, tu acceso a las funcionalidades premium se limitará
@@ -92,17 +89,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    warningBox: {
-        backgroundColor: '#fffbeb',
-        borderRadius: '8px',
-        borderLeft: '4px solid #f59e0b',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

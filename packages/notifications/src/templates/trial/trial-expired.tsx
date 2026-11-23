@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { formatDate } from '../utils/index.js';
 import {
@@ -56,22 +55,20 @@ export function TrialExpired({
                 exactamente qué pasó y no te enteres cuando alguien no te encuentre.
             </Text>
 
-            <Section style={styles.alertBox}>
+            <Callout tone="danger">
                 <Text style={styles.paragraph}>
                     <strong>No se borró nada.</strong> Tu ficha completa —{copy.expiredSavedLine}—
                     quedó guardada en tu cuenta, tal como la dejaste. Lo único que cambió es que ya
                     no se muestra en el sitio ni en las búsquedas.
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Para volver a estar online alcanza con elegir un plan. Tu publicación vuelve a
                 aparecer en el momento, sin que tengas que cargar nada de nuevo.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Volver a publicar</Button>
-            </Section>
+            <Button href={upgradeUrl}>Volver a publicar</Button>
 
             <Text style={styles.footerNote}>
                 Si decidiste no seguir, gracias por haberlo probado. Este mail es informativo: no

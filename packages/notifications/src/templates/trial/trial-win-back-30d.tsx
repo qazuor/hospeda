@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import {
     formatTrialGreeting,
@@ -60,17 +59,15 @@ export function TrialWinBack30Days({
                 cuanto elijas un plan.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Retomar mi publicación</Button>
-            </Section>
+            <Button href={upgradeUrl}>Retomar mi publicación</Button>
 
-            <Section style={styles.calmBox}>
+            <Callout tone="info">
                 <Text style={styles.paragraph}>
                     Y si la respuesta es no, también nos sirve saberlo. Respondé este mail con una
                     línea contándonos qué faltó: es la forma más directa que tenemos de mejorar la
                     plataforma.
                 </Text>
-            </Section>
+            </Callout>
         </EmailLayout>
     );
 }

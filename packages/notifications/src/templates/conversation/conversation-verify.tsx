@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { buildInquiryExcerpt, formatInquiryDates, maskPhone } from './inquiry-excerpt.js';
 
@@ -69,7 +68,7 @@ export function ConversationVerify({
             </Text>
 
             {excerpt ? (
-                <Section style={styles.messageBox}>
+                <Callout tone="info">
                     <Text style={styles.messageLabel}>Resumen de tu consulta</Text>
                     <Text style={styles.messageText}>Alojamiento: {accommodationName}</Text>
                     <Text style={styles.messageText}>Nombre: {safeName}</Text>
@@ -81,7 +80,7 @@ export function ConversationVerify({
                     ) : null}
                     {guests ? <Text style={styles.messageText}>Huéspedes: {guests}</Text> : null}
                     <Text style={styles.messageText}>Mensaje: {excerpt}</Text>
-                </Section>
+                </Callout>
             ) : null}
 
             <Text style={styles.paragraph}>
@@ -90,16 +89,14 @@ export function ConversationVerify({
                 se usan para gestionar esta conversación.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={verificationUrl}>Verificar mi email</Button>
-            </Section>
+            <Button href={verificationUrl}>Verificar mi email</Button>
 
-            <Section style={styles.expiryBox}>
+            <Callout tone="info">
                 <Text style={styles.expiryText}>
                     Este enlace es válido por <strong>24 horas</strong>. Si no lo usás dentro de ese
                     plazo, podés volver a enviar tu consulta desde la página del alojamiento.
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.footerNote}>
                 Si no enviaste esta consulta, podés ignorar este mensaje con tranquilidad.
@@ -121,39 +118,18 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    messageBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '12px 20px',
-        margin: '0 0 16px'
-    },
     messageLabel: {
-        color: '#64748b',
         fontSize: '12px',
         lineHeight: '16px',
         margin: '0 0 4px',
         textTransform: 'uppercase' as const
     },
     messageText: {
-        color: '#1e293b',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0 0 4px'
     },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
-    },
-    expiryBox: {
-        backgroundColor: '#f0f9ff',
-        borderRadius: '8px',
-        borderLeft: '4px solid #0ea5e9',
-        padding: '16px 20px',
-        margin: '24px 0'
-    },
     expiryText: {
-        color: '#0369a1',
         fontSize: '14px',
         lineHeight: '20px',
         margin: '0'

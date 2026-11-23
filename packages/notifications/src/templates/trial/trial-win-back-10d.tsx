@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatDate } from '../utils/index.js';
@@ -47,7 +46,7 @@ export function TrialWinBack10Days({
                 duda de encima: volver no es empezar de cero.
             </Text>
 
-            <Section style={styles.calmBox}>
+            <Callout tone="info">
                 <InfoRow
                     label="Tus fotos"
                     value="Guardadas, en el mismo orden"
@@ -64,16 +63,14 @@ export function TrialWinBack10Days({
                     label="Guardado desde"
                     value={formattedEndDate}
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Elegís un plan y tu ficha vuelve a publicarse exactamente como estaba. No hay nada
                 que volver a subir ni a completar.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Publicar de nuevo</Button>
-            </Section>
+            <Button href={upgradeUrl}>Publicar de nuevo</Button>
         </EmailLayout>
     );
 }
