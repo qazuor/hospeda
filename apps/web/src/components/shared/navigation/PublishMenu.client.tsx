@@ -63,6 +63,10 @@ export function PublishMenu({ locale, className }: PublishMenuProps): JSX.Elemen
     const menuRef = useRef<HTMLDivElement>(null);
     const { t } = createTranslations(locale);
     const triggerLabel = t('nav.publishCta', 'Publicar');
+    // The visible label is hidden below 480px (icon-only), which would leave
+    // the trigger without an accessible name. The aria-label always starts
+    // with the visible text (WCAG 2.5.3 Label in Name).
+    const triggerAriaLabel = t('nav.publishCtaAria', 'Publicar: elegí qué querés publicar');
 
     // ── Click-outside dismissal (copied from UserMenu.client.tsx) ────────
     useEffect(() => {
@@ -107,6 +111,7 @@ export function PublishMenu({ locale, className }: PublishMenuProps): JSX.Elemen
                 onClick={() => setIsOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
+                aria-label={triggerAriaLabel}
                 className={cn('btn-gradient btn-gradient--accent btn-gradient--sm', className)}
             >
                 <span
