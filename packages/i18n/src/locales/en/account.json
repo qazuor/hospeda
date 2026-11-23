@@ -1313,7 +1313,19 @@
             "occupationMin": "Occupation must be at least 2 characters.",
             "occupationMax": "Occupation cannot exceed 100 characters.",
             "submitFailed": "Could not complete profile. Please try again."
-        }
+        },
+        "sections": {
+            "basics": "Your details",
+            "preferences": "Contact and preferences",
+            "more": "About you",
+            "consent": "To finish"
+        },
+        "steps": {
+            "basics": "Your details",
+            "preferences": "Preferences",
+            "confirm": "Confirm"
+        },
+        "stepsLabel": "Your profile progress"
     },
     "setPassword": {
         "pageTitle": "Add password",
@@ -2164,6 +2176,11 @@
         },
         "entityCard": {
             "noImage": "No image"
+        },
+        "stepper": {
+            "done": "completed",
+            "current": "current step",
+            "upcoming": "upcoming"
         }
     },
     "ownerDashboard": {

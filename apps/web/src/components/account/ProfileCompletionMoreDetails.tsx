@@ -2,7 +2,7 @@
  * @file ProfileCompletionMoreDetails.tsx
  * @description Pure presentational subcomponent for the ProfileCompletion island.
  *
- * Renders the collapsible "Más detalles" section containing: bio (with char
+ * Renders the collapsible "Más detalles" block (kit fields, HOS-2501) containing: bio (with char
  * counter), website, occupation, social-network 6-input grid, and location
  * (country dropdown + region + city).
  *
@@ -12,19 +12,24 @@
  * Not a `.client.tsx` — mounts inside the already-hydrated parent island.
  */
 
-import { FieldError } from '@/components/ui/FieldError';
+import { ChevronDownIcon, ChevronUpIcon } from '@repo/icons';
 import type { FieldErrors } from '@/lib/forms/field-errors';
+import type { SupportedLocale } from '@/lib/i18n';
 import {
     LOCATION_COUNTRIES,
     SOCIAL_PLATFORMS,
     type SocialPlatform
 } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
+import { PcSelectField, PcTextField } from './ProfileCompletionFields';
+import { Button, Field, Textarea } from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Props for the more-details subcomponent. */
 export interface ProfileCompletionMoreDetailsProps {
+    /** Active locale, for the kit fields' fixed copy. */
+    readonly locale: SupportedLocale;
     /** Whether the collapsible panel is open. */
     readonly detailsOpen: boolean;
     /** Bio text value. */
@@ -80,6 +85,7 @@ export interface ProfileCompletionMoreDetailsProps {
  * @param props - Component props (see {@link ProfileCompletionMoreDetailsProps})
  */
 export function ProfileCompletionMoreDetails({
+    locale,
     detailsOpen,
     bio,
     website,
@@ -100,266 +106,165 @@ export function ProfileCompletionMoreDetails({
     onLocationRegionChange,
     onLocationCityChange
 }: ProfileCompletionMoreDetailsProps) {
+    const Chevron = detailsOpen ? ChevronUpIcon : ChevronDownIcon;
     return (
-        <div className={styles.detailsSection}>
+        <div className={styles.stack}>
             {/* ── Toggle button ─────────────────────────────────────── */}
-            <button
-                type="button"
-                className={styles.detailsToggle}
+            <Button
+                variant="secondary"
                 onClick={onDetailsToggle}
                 aria-expanded={detailsOpen}
                 aria-controls="pc-details-panel"
+                className={styles.detailsToggle}
             >
-                <span>
-                    {t('account.profileCompletion.moreDetails.toggle', 'Más detalles')}{' '}
-                    <span className={styles.detailsOptional}>
-                        ({t('account.profileCompletion.moreDetails.optional', 'opcional')})
-                    </span>
+                {t('account.profileCompletion.moreDetails.toggle', 'Más detalles')}{' '}
+                <span className={styles.detailsOptional}>
+                    ({t('account.profileCompletion.moreDetails.optional', 'opcional')})
                 </span>
-                <span
-                    className={styles.detailsChevron}
+                <Chevron
+                    size="sm"
                     aria-hidden="true"
-                >
-                    {detailsOpen ? '▲' : '▼'}
-                </span>
-            </button>
+                />
+            </Button>
 
             {/* ── Collapsible panel ─────────────────────────────────── */}
             {detailsOpen && (
                 <div
                     id="pc-details-panel"
-                    className={styles.detailsPanel}
+                    className={styles.stack}
                 >
                     {/* Bio */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="pc-bio"
-                            className={styles.label}
-                        >
-                            {t('account.profileCompletion.fields.bio', 'Bio')}
-                        </label>
-                        <textarea
-                            id="pc-bio"
-                            className={
-                                errors.bio
-                                    ? `${styles.textarea} ${styles.inputError}`
-                                    : styles.textarea
-                            }
+                    <Field
+                        label={t('account.profileCompletion.fields.bio', 'Bio')}
+                        locale={locale}
+                        idParts={{ prefix: 'pc', name: 'bio' }}
+                        error={errors.bio}
+                    >
+                        <Textarea
                             value={bio}
                             onChange={(e) => onBioChange(e.target.value)}
                             placeholder={t(
                                 'account.profileCompletion.fields.bioPlaceholder',
                                 'Contanos un poco sobre vos (10-300 caracteres)'
                             )}
-                            maxLength={300}
+                            limit={300}
+                            locale={locale}
                             rows={3}
                             disabled={submitting}
-                            aria-describedby={errors.bio ? 'pc-bio-error' : undefined}
                         />
-                        <div className={styles.bioFooter}>
-                            <FieldError
-                                id="pc-bio-error"
-                                message={errors.bio}
-                            />
-                            <span className={styles.charCount}>{bio.length}/300</span>
-                        </div>
-                    </div>
+                    </Field>
 
                     {/* Website */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="pc-website"
-                            className={styles.label}
-                        >
-                            {t('account.profileCompletion.fields.website', 'Sitio web')}
-                        </label>
-                        <input
-                            id="pc-website"
-                            type="url"
-                            className={
-                                errors.website
-                                    ? `${styles.input} ${styles.inputError}`
-                                    : styles.input
-                            }
-                            value={website}
-                            onChange={(e) => onWebsiteChange(e.target.value)}
-                            placeholder="https://mipagina.com"
-                            autoComplete="url"
-                            disabled={submitting}
-                            aria-describedby={errors.website ? 'pc-website-error' : undefined}
-                        />
-                        <FieldError
-                            id="pc-website-error"
-                            message={errors.website}
-                        />
-                    </div>
+                    <PcTextField
+                        name="website"
+                        type="url"
+                        label={t('account.profileCompletion.fields.website', 'Sitio web')}
+                        locale={locale}
+                        value={website}
+                        onChange={onWebsiteChange}
+                        error={errors.website}
+                        placeholder="https://mipagina.com"
+                        autoComplete="url"
+                        disabled={submitting}
+                    />
 
                     {/* Occupation */}
-                    <div className={styles.field}>
-                        <label
-                            htmlFor="pc-occupation"
-                            className={styles.label}
-                        >
-                            {t('account.profileCompletion.fields.occupation', 'Ocupación')}
-                        </label>
-                        <input
-                            id="pc-occupation"
-                            type="text"
-                            className={
-                                errors.occupation
-                                    ? `${styles.input} ${styles.inputError}`
-                                    : styles.input
-                            }
-                            value={occupation}
-                            onChange={(e) => onOccupationChange(e.target.value)}
-                            placeholder={t(
-                                'account.profileCompletion.fields.occupationPlaceholder',
-                                'Tu trabajo o profesión'
-                            )}
-                            maxLength={100}
-                            disabled={submitting}
-                            aria-describedby={errors.occupation ? 'pc-occupation-error' : undefined}
-                        />
-                        <FieldError
-                            id="pc-occupation-error"
-                            message={errors.occupation}
-                        />
-                    </div>
+                    <PcTextField
+                        name="occupation"
+                        label={t('account.profileCompletion.fields.occupation', 'Ocupación')}
+                        locale={locale}
+                        value={occupation}
+                        onChange={onOccupationChange}
+                        error={errors.occupation}
+                        placeholder={t(
+                            'account.profileCompletion.fields.occupationPlaceholder',
+                            'Tu trabajo o profesión'
+                        )}
+                        maxLength={100}
+                        disabled={submitting}
+                    />
 
                     {/* Social networks */}
-                    <fieldset className={styles.socialFieldset}>
-                        <legend className={styles.socialLegend}>
+                    <fieldset className={styles.fieldset}>
+                        <legend className={styles.legend}>
                             {t('account.profileCompletion.fields.socialNetworks', 'Redes sociales')}
                         </legend>
-                        <div className={styles.socialGrid}>
+                        <div className={styles.grid}>
                             {SOCIAL_PLATFORMS.map((platform) => (
-                                <div
+                                <PcTextField
                                     key={platform.key}
-                                    className={styles.field}
-                                >
-                                    <label
-                                        htmlFor={`pc-social-${platform.key}`}
-                                        className={styles.label}
-                                    >
-                                        {platform.label}
-                                    </label>
-                                    <input
-                                        id={`pc-social-${platform.key}`}
-                                        type="url"
-                                        className={
-                                            errors[`socialNetworks.${platform.key}`]
-                                                ? `${styles.input} ${styles.inputError}`
-                                                : styles.input
-                                        }
-                                        value={socialNetworks[platform.key] ?? ''}
-                                        onChange={(e) =>
-                                            onSocialNetworkChange(platform.key, e.target.value)
-                                        }
-                                        placeholder={platform.placeholder}
-                                        disabled={submitting}
-                                        aria-describedby={
-                                            errors[`socialNetworks.${platform.key}`]
-                                                ? `pc-social-${platform.key}-error`
-                                                : undefined
-                                        }
-                                    />
-                                    <FieldError
-                                        id={`pc-social-${platform.key}-error`}
-                                        message={errors[`socialNetworks.${platform.key}`]}
-                                    />
-                                </div>
+                                    name={`social-${platform.key}`}
+                                    type="url"
+                                    label={platform.label}
+                                    locale={locale}
+                                    value={socialNetworks[platform.key] ?? ''}
+                                    onChange={(value) => onSocialNetworkChange(platform.key, value)}
+                                    error={errors[`socialNetworks.${platform.key}`]}
+                                    placeholder={platform.placeholder}
+                                    disabled={submitting}
+                                />
                             ))}
                         </div>
                     </fieldset>
 
                     {/* Location */}
-                    <fieldset className={styles.socialFieldset}>
-                        <legend className={styles.socialLegend}>
+                    <fieldset className={styles.fieldset}>
+                        <legend className={styles.legend}>
                             {t('account.profileCompletion.fields.location', 'Ubicación')}
                         </legend>
-                        <div className={styles.locationGrid}>
-                            <div className={styles.field}>
-                                <label
-                                    htmlFor="pc-location-country"
-                                    className={styles.label}
-                                >
-                                    {t('account.profileCompletion.fields.locationCountry', 'País')}
-                                </label>
-                                <select
-                                    id="pc-location-country"
-                                    className={styles.select}
-                                    value={locationCountry}
-                                    onChange={(e) => onLocationCountryChange(e.target.value)}
-                                    disabled={submitting}
-                                    aria-describedby={
-                                        errors['location.country']
-                                            ? 'pc-location-country-error'
-                                            : undefined
-                                    }
-                                >
-                                    <option value="">
-                                        {t(
+                        <div className={styles.grid}>
+                            <PcSelectField
+                                name="location-country"
+                                label={t(
+                                    'account.profileCompletion.fields.locationCountry',
+                                    'País'
+                                )}
+                                locale={locale}
+                                value={locationCountry}
+                                onChange={onLocationCountryChange}
+                                error={errors['location.country']}
+                                disabled={submitting}
+                                options={[
+                                    {
+                                        value: '',
+                                        label: t(
                                             'account.profileCompletion.fields.locationCountryDefault',
                                             '— Seleccioná —'
-                                        )}
-                                    </option>
-                                    {LOCATION_COUNTRIES.map((c) => (
-                                        <option
-                                            key={c.code}
-                                            value={c.code}
-                                        >
-                                            {c.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <FieldError
-                                    id="pc-location-country-error"
-                                    message={errors['location.country']}
-                                />
-                            </div>
-                            <div className={styles.field}>
-                                <label
-                                    htmlFor="pc-location-region"
-                                    className={styles.label}
-                                >
-                                    {t(
-                                        'account.profileCompletion.fields.locationRegion',
-                                        'Provincia / Estado'
-                                    )}
-                                </label>
-                                <input
-                                    id="pc-location-region"
-                                    type="text"
-                                    className={styles.input}
-                                    value={locationRegion}
-                                    onChange={(e) => onLocationRegionChange(e.target.value)}
-                                    placeholder={t(
-                                        'account.profileCompletion.fields.locationRegionPlaceholder',
-                                        'Entre Ríos'
-                                    )}
-                                    disabled={submitting}
-                                />
-                            </div>
-                            <div className={styles.field}>
-                                <label
-                                    htmlFor="pc-location-city"
-                                    className={styles.label}
-                                >
-                                    {t('account.profileCompletion.fields.locationCity', 'Ciudad')}
-                                </label>
-                                <input
-                                    id="pc-location-city"
-                                    type="text"
-                                    className={styles.input}
-                                    value={locationCity}
-                                    onChange={(e) => onLocationCityChange(e.target.value)}
-                                    placeholder={t(
-                                        'account.profileCompletion.fields.locationCityPlaceholder',
-                                        'Concepción del Uruguay'
-                                    )}
-                                    disabled={submitting}
-                                />
-                            </div>
+                                        )
+                                    },
+                                    ...LOCATION_COUNTRIES.map((c) => ({
+                                        value: c.code,
+                                        label: c.label
+                                    }))
+                                ]}
+                            />
+                            <PcTextField
+                                name="location-region"
+                                label={t(
+                                    'account.profileCompletion.fields.locationRegion',
+                                    'Provincia / Estado'
+                                )}
+                                locale={locale}
+                                value={locationRegion}
+                                onChange={onLocationRegionChange}
+                                placeholder={t(
+                                    'account.profileCompletion.fields.locationRegionPlaceholder',
+                                    'Entre Ríos'
+                                )}
+                                disabled={submitting}
+                            />
+                            <PcTextField
+                                name="location-city"
+                                label={t('account.profileCompletion.fields.locationCity', 'Ciudad')}
+                                locale={locale}
+                                value={locationCity}
+                                onChange={onLocationCityChange}
+                                placeholder={t(
+                                    'account.profileCompletion.fields.locationCityPlaceholder',
+                                    'Concepción del Uruguay'
+                                )}
+                                disabled={submitting}
+                            />
                         </div>
                     </fieldset>
                 </div>

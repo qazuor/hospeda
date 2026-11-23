@@ -20,9 +20,9 @@ vi.mock('../../../src/components/account/ProfileCompletion.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    return { createTranslations: () => ({ t: tFromCatalog }), createT: () => tFromCatalog };
 });
 
 vi.mock('../../../src/lib/auth-client', () => ({
@@ -31,7 +31,7 @@ vi.mock('../../../src/lib/auth-client', () => ({
 
 // Mirrors CompleteProfileBodySchema's shape/bounds (HOS-190 slice 3) without
 // pulling in the full `@repo/schemas` package for a component test.
-vi.mock('@repo/schemas', () => {
+vi.mock('@repo/schemas', async (importOriginal) => {
     const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
     const CompleteProfileBodySchema = z
         .object({
@@ -70,7 +70,10 @@ vi.mock('@repo/schemas', () => {
             acceptedTerms: z.literal(true)
         })
         .strict();
-    return { CompleteProfileBodySchema };
+    return {
+        ...(await importOriginal<typeof import('@repo/schemas')>()),
+        CompleteProfileBodySchema
+    };
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

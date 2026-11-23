@@ -1313,7 +1313,19 @@
             "occupationMin": "A ocupação deve ter pelo menos 2 caracteres.",
             "occupationMax": "A ocupação não pode exceder 100 caracteres.",
             "submitFailed": "Não foi possível completar o perfil. Tente novamente."
-        }
+        },
+        "sections": {
+            "basics": "Seus dados",
+            "preferences": "Contato e preferências",
+            "more": "Sobre você",
+            "consent": "Para finalizar"
+        },
+        "steps": {
+            "basics": "Seus dados",
+            "preferences": "Preferências",
+            "confirm": "Confirmar"
+        },
+        "stepsLabel": "Progresso do seu perfil"
     },
     "setPassword": {
         "pageTitle": "Adicionar senha",
@@ -2164,6 +2176,11 @@
         },
         "entityCard": {
             "noImage": "Sem imagem"
+        },
+        "stepper": {
+            "done": "concluído",
+            "current": "etapa atual",
+            "upcoming": "pendente"
         }
     },
     "ownerDashboard": {
