@@ -60,6 +60,7 @@ import {
     subscriptionSuccessionReevaluationJob,
     subscriptionWindowExpiryJob,
     trialMachineExpiryJob,
+    unverifiedInquiryCleanupJob,
     venueEventsPastCleanupJob,
     viewMonthlyRollupJob
 } from './jobs/index.js';
@@ -94,6 +95,7 @@ export const cronJobs: CronJobDefinition[] = [
     conversationNotificationJob,
     conversationTokenReminderJob,
     conversationTokenCleanupJob,
+    unverifiedInquiryCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
     notificationScheduleJob,

@@ -1,10 +1,28 @@
 import { AddonPurchaseRequestSchema, AddonPurchaseResponseSchema } from '@repo/schemas';
-import { purchaseAddon, readAddonPurchase } from '@repo/service-core';
+import {
+    emitBillingFact,
+    type PurchaseAddonResult,
+    purchaseAddon,
+    readAddonPurchase
+} from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { buildAddonPurchasePorts } from './purchase-ports';
 import { answerAddonProviderError, answerPurchaseRefusal } from './purchase-rejections';
 import { addonPurchaseReturnUrl } from './purchase-return-url';
+
+/**
+ * HOS-1883: emits `addon_checkout_started` for a purchase A1 just created (only after its
+ * provider authorization or payment page succeeded: a refusal throws before this point) and
+ * strips the fact, which is never part of the answer.
+ */
+function withoutStartedFact(result: PurchaseAddonResult): PurchaseAddonResult {
+    if (result.outcome === 'REFUSED') return result;
+    const { startedFact, ...answer } = result;
+    if (startedFact) emitBillingFact({ sink: getAnalyticsFactSink(), fact: startedFact });
+    return answer;
+}
 
 /**
  * Buy an addon for the current actor. A recurring addon gets its provider checkout; a one-time
@@ -29,7 +47,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
         const parsed = AddonPurchaseRequestSchema.parse(body);
         const ports = buildAddonPurchasePorts();
         try {
-            const result = await purchaseAddon(
+            const purchased = await purchaseAddon(
                 {
                     ownerId: actor.id,
                     productId: parsed.productId,
@@ -44,6 +62,7 @@ export const protectedAddonPurchaseRoute = createProtectedRoute({
                 },
                 ports
             );
+            const result = withoutStartedFact(purchased);
             if (result.outcome === 'REFUSED')
                 return answerPurchaseRefusal({ reason: result.reason, ctx });
             if (result.outcome === 'PENDING_ELSEWHERE') return { ...result, processing: true };

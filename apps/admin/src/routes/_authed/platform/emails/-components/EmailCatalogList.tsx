@@ -1,12 +1,12 @@
 /**
  * @file EmailCatalogList.tsx
  * @description Left column of the email previewer (HOS-2519 §6.4, §8): search
- * box, domain multi-select, "N de M" count and the catalog grouped by domain,
+ * box, audience control, domain multi-select, "N de M" count and the catalog grouped by domain,
  * with the send-path badge and the "sin envío en producción" badge.
  */
 
 import type { TranslationKey } from '@repo/i18n';
-import type { EmailCatalogDomain, EmailPreviewEntrySummary } from '@repo/schemas';
+import type { EmailAudience, EmailCatalogDomain, EmailPreviewEntrySummary } from '@repo/schemas';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
+    type EmailAudienceFilter,
     filterEmailCatalog,
     groupEmailCatalogByDomain,
     listCatalogDomains
@@ -22,6 +23,16 @@ import {
 /** i18n key of a domain label. */
 export const domainLabelKey = ({ domain }: { readonly domain: EmailCatalogDomain }) =>
     `admin-pages.emailPreviews.domains.${domain}` as TranslationKey;
+
+/** Audience filter options, in display order. */
+const AUDIENCE_OPTIONS = ['all', 'user', 'staff'] as const satisfies readonly (
+    | 'all'
+    | EmailAudience
+)[];
+
+/** i18n key of an audience filter option label. */
+export const audienceLabelKey = ({ audience }: { readonly audience: EmailAudienceFilter }) =>
+    `admin-pages.emailPreviews.audiences.${audience}` as TranslationKey;
 
 /** i18n key of a send-path label. */
 export const sendPathLabelKey = ({
@@ -48,15 +59,16 @@ export interface EmailCatalogListProps {
 export function EmailCatalogList({ entries, selectedKey, onSelect }: EmailCatalogListProps) {
     const { t } = useTranslations();
     const [search, setSearch] = useState('');
+    const [audience, setAudience] = useState<EmailAudienceFilter>('all');
     const [domains, setDomains] = useState<readonly EmailCatalogDomain[]>([]);
 
     const allDomains = useMemo(() => listCatalogDomains({ entries }), [entries]);
     const filtered = useMemo(
-        () => filterEmailCatalog({ entries, search, domains }),
-        [entries, search, domains]
+        () => filterEmailCatalog({ entries, search, domains, audience }),
+        [entries, search, domains, audience]
     );
     const groups = useMemo(() => groupEmailCatalogByDomain({ entries: filtered }), [filtered]);
-    const isFiltered = search.trim() !== '' || domains.length > 0;
+    const isFiltered = search.trim() !== '' || domains.length > 0 || audience !== 'all';
 
     const toggleDomain = (domain: EmailCatalogDomain) => {
         setDomains((current) =>
@@ -76,6 +88,28 @@ export function EmailCatalogList({ entries, selectedKey, onSelect }: EmailCatalo
                     placeholder={t('admin-pages.emailPreviews.searchPlaceholder')}
                     aria-label={t('admin-pages.emailPreviews.searchLabel')}
                 />
+                <fieldset className="flex flex-wrap gap-1.5">
+                    <legend className="mb-1 text-muted-foreground text-xs">
+                        {t('admin-pages.emailPreviews.audienceFilterLabel')}
+                    </legend>
+                    {AUDIENCE_OPTIONS.map((option) => {
+                        const active = audience === option;
+                        return (
+                            <Button
+                                key={option}
+                                type="button"
+                                size="sm"
+                                variant={active ? 'default' : 'outline'}
+                                aria-pressed={active}
+                                data-testid={`email-audience-${option}`}
+                                className="h-7 px-2 text-xs"
+                                onClick={() => setAudience(option)}
+                            >
+                                {t(audienceLabelKey({ audience: option }))}
+                            </Button>
+                        );
+                    })}
+                </fieldset>
                 <fieldset className="flex flex-wrap gap-1.5">
                     <legend className="mb-1 text-muted-foreground text-xs">
                         {t('admin-pages.emailPreviews.domainFilterLabel')}
@@ -113,6 +147,7 @@ export function EmailCatalogList({ entries, selectedKey, onSelect }: EmailCatalo
                             onClick={() => {
                                 setSearch('');
                                 setDomains([]);
+                                setAudience('all');
                             }}
                         >
                             {t('admin-pages.emailPreviews.clearFilters')}
@@ -169,6 +204,16 @@ export function EmailCatalogList({ entries, selectedKey, onSelect }: EmailCatalo
                                                             })
                                                         )}
                                                     </Badge>
+                                                    {entry.audience === 'staff' && (
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="font-normal text-[10px]"
+                                                        >
+                                                            {t(
+                                                                'admin-pages.emailPreviews.staffBadge'
+                                                            )}
+                                                        </Badge>
+                                                    )}
                                                     {!entry.wired && (
                                                         <Badge
                                                             variant="destructive"

@@ -13,8 +13,10 @@ import { createLogger } from '@repo/logger';
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
+import { type AddonFactListing, emitAddonFact, wholeSecondsBetween } from './addon-fact-emit';
 import type { A5Ports } from './addon-instance-a5';
 
 const logger = createLogger('addon-instance-a2');
@@ -131,10 +133,66 @@ export async function applyA2Recurring(
     };
 }
 
-/** Emits one post-commit ADDED notice per owner and vertical, logging delivery failures. */
+/**
+ * Whether an activation is a PAID one that emits `addon_activated` (HOS-1883 §5.2). It is a
+ * required parameter so that every caller states it (T-5): the A2 callers pass the sink, the
+ * free choice (A1-bis) passes `NOT_A_PAID_ACTIVATION` (its event is `addon_granted_free`).
+ */
+export type AddonActivationFact =
+    | {
+          readonly billingFacts: BillingFactSink | undefined;
+          readonly listing?: AddonFactListing;
+          /** The act's instant from the injected clock; used only if `starts_at` is missing. */
+          readonly activatedAt: Date;
+      }
+    | 'NOT_A_PAID_ACTIVATION';
+
+/**
+ * Emits `addon_activated` once per instance after a paid activation committed, outside the
+ * per-vertical coverage dedupe. Never throws.
+ */
+async function emitAddonActivatedFacts(input: {
+    readonly activated: readonly ActivatedAddon[];
+    readonly fact: AddonActivationFact;
+}): Promise<void> {
+    if (input.fact === 'NOT_A_PAID_ACTIVATION') return;
+    const { billingFacts, listing, activatedAt } = input.fact;
+    for (const addon of input.activated)
+        await emitAddonFact({
+            billingFacts,
+            listing,
+            source: { instanceId: addon.instanceId },
+            build: (anchored) => {
+                const occurredAt = anchored.startsAt ?? activatedAt;
+                return {
+                    kind: 'ADDON_ACTIVATED',
+                    ...anchored.subject,
+                    actorKind: 'SYSTEM',
+                    occurredAt,
+                    amountMinor: anchored.amountMinor,
+                    currency: anchored.currency,
+                    ...(anchored.cycle ? { cycle: anchored.cycle } : {}),
+                    secondsInPending: wholeSecondsBetween({
+                        from: anchored.createdAt,
+                        to: occurredAt
+                    })
+                };
+            }
+        });
+}
+
+/**
+ * Emits one post-commit ADDED notice per owner and vertical, logging delivery failures, then the
+ * `addon_activated` fact of a paid activation. Analytics goes last so it never delays access.
+ *
+ * @param input.activated - What A2 (or A1-bis) activated
+ * @param input.coverageNotices - The coverage notice port
+ * @param input.fact - The fact sink of a paid activation, or `NOT_A_PAID_ACTIVATION`
+ */
 export async function emitAddonCoverageAdded(input: {
     readonly activated: readonly ActivatedAddon[];
     readonly coverageNotices: CoverageNotices;
+    readonly fact: AddonActivationFact;
 }): Promise<void> {
     const seen = new Set<string>();
     for (const addon of input.activated)
@@ -164,4 +222,5 @@ export async function emitAddonCoverageAdded(input: {
                 );
             }
         }
+    await emitAddonActivatedFacts({ activated: input.activated, fact: input.fact });
 }

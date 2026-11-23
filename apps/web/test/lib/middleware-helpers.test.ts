@@ -12,6 +12,7 @@ import {
     buildLocaleRedirect,
     buildLoginRedirect,
     buildProfileCompletionRedirect,
+    buildRedirectResponse,
     buildSetPasswordRedirect,
     extractLocaleFromPath,
     IMAGE_ENDPOINT_CACHE_CONTROL,
@@ -1777,5 +1778,63 @@ describe('HOS-838: onboarding redirects carry the interrupted destination', () =
                 })
             ).toBe('/es/mi-cuenta/cambiar-contrasena/');
         });
+    });
+});
+
+describe('signin return path keeps the query and stays same-origin (HOS-2555)', () => {
+    it('accepts a relative path carrying a query string', async () => {
+        const { resolveSafeReturnPath } = await import('../../src/lib/auth-redirect');
+        expect(
+            resolveSafeReturnPath({ rawReturn: '/es/mi-cuenta/propiedades/?page=2', locale: 'es' })
+        ).toBe('/es/mi-cuenta/propiedades/?page=2');
+    });
+
+    it('still rejects open-redirect shapes', async () => {
+        const { resolveSafeReturnPath } = await import('../../src/lib/auth-redirect');
+        for (const rawReturn of ['//evil.com/?a=1', 'https://evil.com/?a=1', '/\\evil.com']) {
+            expect(resolveSafeReturnPath({ rawReturn, locale: 'es' })).toBe('/es/mi-cuenta/');
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-2359 (OD-6): a redirect that copies the query string is never cacheable
+// ---------------------------------------------------------------------------
+describe('buildRedirectResponse', () => {
+    const context = {
+        redirect: (url: string, status?: number) =>
+            new Response(null, { status: status ?? 302, headers: { location: url } })
+    };
+
+    it('marks a redirect whose Location carries a query as Cache-Control: no-store', () => {
+        // Act
+        const response = buildRedirectResponse({
+            context,
+            location: '/es/?utm_source=x',
+            status: 301
+        });
+
+        // Assert
+        expect(response.status).toBe(301);
+        expect(response.headers.get('location')).toBe('/es/?utm_source=x');
+        expect(response.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('leaves a query-less redirect without no-store', () => {
+        const response = buildRedirectResponse({ context, location: '/es/', status: 301 });
+
+        expect(response.headers.get('location')).toBe('/es/');
+        expect(response.headers.get('cache-control')).toBeNull();
+    });
+
+    it('keeps the status it is given (308 legacy alias)', () => {
+        const response = buildRedirectResponse({
+            context,
+            location: '/es/mi-cuenta/consultas/?a=1',
+            status: 308
+        });
+
+        expect(response.status).toBe(308);
+        expect(response.headers.get('cache-control')).toBe('no-store');
     });
 });

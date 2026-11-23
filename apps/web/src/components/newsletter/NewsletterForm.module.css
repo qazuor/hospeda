@@ -192,8 +192,11 @@
     font-family: var(--font-sans);
     font-size: var(--text-body-sm, 0.9375rem);
     font-weight: 600;
+    /* AA pair in both themes (HOS-2572): --brand-accent-text is a deep orange in
+       light (4.53:1 with --core-card) and the brand orange in dark (5.65:1).
+       --brand-accent with white text was 2.63:1 in light. */
     color: var(--core-card, #fff);
-    background-color: var(--brand-accent);
+    background-color: var(--brand-accent-text);
     border: none;
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
@@ -204,7 +207,8 @@
 }
 
 .submitButton:hover:not(:disabled) {
-    background-color: var(--brand-accent-lm05);
+    /* Darken: keeps contrast above AA in both themes. */
+    filter: brightness(0.92);
     transform: translateY(-1px);
 }
 

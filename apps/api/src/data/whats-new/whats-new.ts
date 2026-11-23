@@ -206,6 +206,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4658, #4659, #4662
+    {
+        id: '2026-11-21-email-previewer-and-unified-layout',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Previsualizá todos los correos del sistema desde el panel',
+            en: 'Preview every system email from the panel',
+            pt: 'Visualize todos os e-mails do sistema pelo painel'
+        },
+        body: {
+            es: 'En Plataforma → Emails ves todos los correos que manda Hospeda, con datos de ejemplo: el asunto, el cuerpo y el texto plano, en ancho de escritorio o de celular. Podés buscar, filtrar por área y cambiar de escenario. Además, todos los correos comparten ahora un mismo diseño, con el logo y los colores de la marca.',
+            en: 'In Platform → Emails you see every email Hospeda sends, with sample data: the subject, the body and the plain text, at desktop or mobile width. You can search, filter by area and switch scenarios. All emails now also share one design, with the logo and the brand colors.',
+            pt: 'Em Plataforma → Emails você vê todos os e-mails que o Hospeda envia, com dados de exemplo: o assunto, o corpo e o texto simples, na largura de computador ou de celular. Você pode buscar, filtrar por área e trocar de cenário. Além disso, todos os e-mails agora compartilham um mesmo design, com o logo e as cores da marca.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4414
     {
         id: '2026-11-16-owners-can-downgrade-their-plan',

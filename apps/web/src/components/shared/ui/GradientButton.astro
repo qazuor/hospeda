@@ -11,7 +11,7 @@
  * - shape: pill | rounded (default pill — use 'rounded' for form submits / pricing cards)
  * - icon: pass "true" to render a trailing ArrowRightIcon
  * - as: 'a' | 'button'
- * - href, type, name, id, data, aria, class
+ * - href, target, rel, type, name, id, data, aria, class
  *
  * Slots:
  * - leading: rendered before the label (e.g. icon)
@@ -23,6 +23,10 @@ import { ArrowRightIcon } from '@repo/icons';
 interface Props {
   readonly label: string;
   readonly href?: string;
+  /** Link target (anchor only), e.g. `_blank` for external destinations. */
+  readonly target?: string;
+  /** Link rel (anchor only); pair `target="_blank"` with `noopener noreferrer`. */
+  readonly rel?: string;
   readonly as?: 'a' | 'button';
   readonly variant?: 'primary' | 'accent' | 'outline-primary' | 'outline-accent';
   readonly size?: 'sm' | 'md' | 'lg';
@@ -50,6 +54,8 @@ interface Props {
 const {
   label,
   href,
+  target,
+  rel,
   as: element = 'a',
   variant = 'accent',
   size = 'md',
@@ -94,7 +100,7 @@ const hasTrailingSlot = Astro.slots.has('trailing');
 ---
 
 {element === 'a' ? (
-  <a href={href} id={id} class={classes} {...dataAttrs} {...ariaAttrs}>
+  <a href={href} target={target} rel={rel} id={id} class={classes} {...dataAttrs} {...ariaAttrs}>
     {hasLeadingSlot && (
       <span class="gradient-btn__icon gradient-btn__icon--leading" aria-hidden="true">
         <slot name="leading" />

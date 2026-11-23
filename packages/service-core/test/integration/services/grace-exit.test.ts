@@ -12,7 +12,7 @@ import {
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
 import { exitGraceOnCreditedPayment } from '../../../src/services/billing/subscription/exit-grace.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -119,7 +119,7 @@ describe('TEST:B7:4 — S5 by the credited charge notice (AC:B7:6)', () => {
             fixture.advanceToAttempt(2);
             const approved = await fixture.provider.readCharge({ chargeId: fixture.chargeId });
             expect(approved.snapshot.status).toBe('approved');
-            const facts: BillingFact[] = [];
+            const facts: SinkFact[] = [];
             const result = await recordChargeFact(
                 { chargeId: fixture.chargeId },
                 { ...fixture.ports, billingFacts: { emit: (fact) => facts.push(fact) } }

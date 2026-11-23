@@ -19,10 +19,12 @@ import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { cancelOurAuthorization } from '../reconciliation/cancel-our-authorization';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service';
+import { emitAddonFact, wholeSecondsBetween } from './addon-fact-emit';
 import { applyA2Recurring, emitAddonCoverageAdded } from './addon-instance-a2';
 import type { A5Ports } from './addon-instance-a5';
 import { expireOneTimePageAddon } from './expire-addon-authorization-windows-one-time';
@@ -39,6 +41,8 @@ export interface ExpireAddonAuthorizationWindowsPorts extends A5Ports {
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly coverageNotices: CoverageNotices;
     readonly deadlines?: Awaited<ReturnType<typeof getCurrentBillingDeadlines>>;
+    /** HOS-1883: where `addon_activated` and `addon_checkout_abandoned` go. */
+    readonly billingFacts?: BillingFactSink;
 }
 
 /** Counts of one A3 expiry pass. */
@@ -228,24 +232,46 @@ export async function expireAddonAuthorizationWindows(
                     if (result.outcome === 'ACTIVATED') {
                         await emitAddonCoverageAdded({
                             activated: [result],
-                            coverageNotices: ports.coverageNotices
+                            coverageNotices: ports.coverageNotices,
+                            fact: {
+                                billingFacts: ports.billingFacts,
+                                listing: ports.listing,
+                                activatedAt: ports.clock.now()
+                            }
                         });
                         activated++;
                     } else deferred++;
                     continue;
                 }
             }
+            const abandonedAt = ports.clock.now();
             const wrote = await abandonRecurring({
                 instanceId: row.instance.id,
                 complementId: row.complement.id,
                 hasProviderLink: !!row.link,
-                now: ports.clock.now()
+                now: abandonedAt
             });
             if (!wrote) {
                 deferred++;
                 continue;
             }
             abandoned++;
+            await emitAddonFact({
+                billingFacts: ports.billingFacts,
+                listing: ports.listing,
+                source: { instanceId: row.instance.id },
+                build: (anchored) => ({
+                    kind: 'ADDON_CHECKOUT_ABANDONED',
+                    ...anchored.subject,
+                    actorKind: 'SYSTEM',
+                    occurredAt: abandonedAt,
+                    reason: 'WINDOW_EXPIRED',
+                    secondsInPending: wholeSecondsBetween({
+                        from: anchored.createdAt,
+                        to: abandonedAt
+                    })
+                })
+            });
             if (
                 row.link &&
                 prior &&

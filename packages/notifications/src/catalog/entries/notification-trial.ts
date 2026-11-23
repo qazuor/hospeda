@@ -63,6 +63,7 @@ export const NOTIFICATION_TRIAL_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.TRIAL_ENDING_REMINDER,
         name: 'Recordatorio de fin de prueba',
         domain: 'trial',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-days-remaining',
@@ -93,54 +94,63 @@ export const NOTIFICATION_TRIAL_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.TRIAL_ENDING_10D,
         name: 'Prueba: faltan 10 días',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_ENDING_10D })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_ENDING_5D,
         name: 'Prueba: faltan 5 días',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_ENDING_5D })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_ENDING_1D,
         name: 'Prueba: falta 1 día',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_ENDING_1D })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_EXPIRED,
         name: 'Prueba vencida',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_EXPIRED })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_WIN_BACK_1D,
         name: 'Reconquista: 1 día después',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_WIN_BACK_1D })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_WIN_BACK_5D,
         name: 'Reconquista: 5 días después',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_WIN_BACK_5D })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_WIN_BACK_10D,
         name: 'Reconquista: 10 días después',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_WIN_BACK_10D })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_WIN_BACK_30D,
         name: 'Reconquista: 30 días después',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_WIN_BACK_30D })
     }),
     defineNotificationEntry<TrialSeriesPayload>({
         type: NotificationType.TRIAL_WIN_BACK_60D,
         name: 'Reconquista: 60 días después',
         domain: 'trial',
+        audience: 'user',
         scenarios: buildTrialSeriesScenarios({ type: NotificationType.TRIAL_WIN_BACK_60D })
     })
 ];

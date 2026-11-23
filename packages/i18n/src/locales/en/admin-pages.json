@@ -2251,6 +2251,13 @@
         "description": "Preview of every email the platform sends, rendered on the server with sample data. Nothing is sent.",
         "searchLabel": "Search emails",
         "searchPlaceholder": "Search by name, key or id",
+        "audienceFilterLabel": "Recipient",
+        "staffBadge": "Staff",
+        "audiences": {
+            "all": "All",
+            "user": "Users",
+            "staff": "Staff"
+        },
         "domainFilterLabel": "Filter by domain",
         "clearFilters": "Clear filters",
         "count": "{{shown}} of {{total}}",

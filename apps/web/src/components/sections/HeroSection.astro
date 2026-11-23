@@ -8,6 +8,7 @@
 
 import { Image } from 'astro:assets';
 import heroBlobAccent from '@/assets/images/shapes/hero-blob-accent.png';
+import { buildHeroAvatarUrl } from '@/components/sections/hero-avatar';
 import { HeroImageRotator } from '@/components/sections/HeroImageRotator.client';
 import {
 	HERO_IMAGE_SIZES,
@@ -171,7 +172,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 						slot.kind === 'image' ? (
 							<img
 								class="social-proof__avatar social-proof__avatar--image"
-								src={slot.url}
+								src={buildHeroAvatarUrl({ url: slot.url })}
 								alt=""
 								width="30"
 								height="30"
@@ -396,7 +397,10 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 		width: 30px;
 		height: 30px;
 		border-radius: 9999px;
-		background-color: var(--brand-primary);
+		/* AA pair in both themes: --brand-primary-text is navy in light (10.9:1
+		   with --core-card) and the brand blue in dark (5.1:1). Plain
+		   --brand-primary with white text was 3.56:1 in light (HOS-2572). */
+		background-color: var(--brand-primary-text);
 		color: var(--core-card);
 		font-size: 10px;
 		font-weight: 700;

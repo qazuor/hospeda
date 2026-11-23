@@ -28,7 +28,9 @@
         },
         "upsell": {
             "title": "Comparação de hospedagens",
-            "message": "Comparar hospedagens está disponível nos planos Plus e VIP.",
+            "message_one": "Comparar hospedagens está disponível no plano {{plans}}.",
+            "message_other": "Comparar hospedagens está disponível nos planos {{plans}}.",
+            "messageNoPlans": "Comparar hospedagens não está incluído no seu plano atual.",
             "cta": "Ver planos"
         },
         "limit": {
@@ -429,6 +431,19 @@
         "clearFilters": "Limpar filtros"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Ler mais",
+            "less": "Ler menos"
+        },
+        "sectionTabs": {
+            "label": "Seções da acomodação",
+            "photos": "Fotos",
+            "details": "Detalhes",
+            "amenities": "Comodidades",
+            "location": "Localização",
+            "reviews": "Avaliações",
+            "host": "Anfitrião"
+        },
         "listingContact": {
             "bar": {
                 "inquire": "Enviar consulta",
@@ -441,7 +456,13 @@
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Ligar", "email": "E-mail" },
                 "trust": "Sua consulta vai direto para o anfitrião. Sem comissões."
             },
+            "channels": {
+                "title": "Contato",
+                "website": "Site",
+                "social": "Redes sociais"
+            },
             "fields": { "checkIn": "Chegada", "checkOut": "Saída", "guests": "Hóspedes" },
+            "card": { "direct": "Ou contate diretamente" },
             "errors": {
                 "checkOutAfterCheckIn": "A saída deve ser depois da chegada",
                 "invalidDate": "Informe uma data válida.",
@@ -481,7 +502,9 @@
             "cta": "Consultar pelo WhatsApp",
             "messageTemplate": "Olá, tenho interesse em mais informações sobre {{name}}",
             "numberLabel": "WhatsApp do anfitrião",
-            "upsellText": "Assine o Plus para ver o WhatsApp do anfitrião.",
+            "upsellText_one": "Assine o plano {{plans}} para ver o WhatsApp do anfitrião.",
+            "upsellText_other": "Assine um dos planos {{plans}} para ver o WhatsApp do anfitrião.",
+            "upsellTextNoPlans": "Seu plano atual não inclui ver o WhatsApp do anfitrião.",
             "upsellCta": "Ver planos"
         },
         "contact": {
@@ -491,7 +514,9 @@
             "emailAriaLabel": "Enviar email para a acomodação",
             "websiteAriaLabel": "Visitar o site da acomodação",
             "facebookAriaLabel": "Facebook da acomodação",
-            "instagramAriaLabel": "Instagram da acomodação"
+            "instagramAriaLabel": "Instagram da acomodação",
+            "fallbackNotice": "Para enviar a consulta daqui é preciso JavaScript. Enquanto isso, entre em contato direto com a acomodação:",
+            "fallbackNoChannels": "Para enviar a consulta daqui é preciso JavaScript. Recarregue a página para tentar de novo."
         },
         "share": "Compartilhar",
         "checkIn": "Check-in",
@@ -521,6 +546,8 @@
         "gallery": {
             "viewAll": "Ver todas as fotos",
             "moreOverlay": "+{{count}} mais",
+            "viewAllCount_one": "Ver a foto",
+            "viewAllCount_other": "Ver as {{count}} fotos",
             "viewFullscreen": "Ver foto {n} em tela cheia",
             "backToAccommodation": "← Voltar ao alojamento",
             "photosSubpage": "Fotos"
@@ -575,6 +602,8 @@
             }
         },
         "reviewsDetail": {
+            "anonymous": "Anônimo",
+            "stripLabel": "Avaliações em destaque",
             "noReviews": "Ainda não há avaliações",
             "viewAll_one": "Ver a {{count}} avaliação",
             "viewAll_other": "Ver todas as {{count}} avaliações",
@@ -597,6 +626,11 @@
                 "loading": "Carregando avaliações…"
             }
         },
+        "host": {
+            "title": "Seu anfitrião",
+            "since": "Anfitrião desde {date}",
+            "languages": "Atende em {languages}"
+        },
         "owner": {
             "memberSince": "Membro desde {date}",
             "contactUnavailable": "Informações de contato não disponíveis",
@@ -611,10 +645,14 @@
             "viewAll_one": "Ver a {{count}} comodidade",
             "viewAll_other": "Ver todas as {{count}} comodidades",
             "collapse": "Ver menos",
+            "close": "Fechar",
             "additionalCost": "(custo adicional)"
         },
         "features": {
-            "title": "Características"
+            "title": "Características",
+            "viewAll_one": "Ver a {{count}} característica",
+            "viewAll_other": "Ver todas as {{count}} características",
+            "close": "Fechar"
         },
         "faqsDetail": {
             "title": "Perguntas frequentes",

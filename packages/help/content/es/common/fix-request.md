@@ -42,12 +42,12 @@ covers:
   - "enum:PublicationStatus.MODERATED"
   - "file:apps/web/src/lib/listing/listing-notices.ts"
 entryFor: []
-reviewedAt: "2026-11-21"
+reviewedAt: "2026-11-22"
 ---
 
 ## Qué podés hacer
 
-Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}, corregir desde el editor y avisar a Hospeda.
+Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.
 
 ## Cómo se hace
 

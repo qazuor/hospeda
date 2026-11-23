@@ -21,6 +21,7 @@ export const NOTIFICATION_SUBSCRIPTION_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.SUBSCRIPTION_CANCELLED,
         name: 'Suscripción cancelada',
         domain: 'subscription',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-period-end',
@@ -47,6 +48,7 @@ export const NOTIFICATION_SUBSCRIPTION_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.SUBSCRIPTION_PAUSED,
         name: 'Suscripción pausada',
         domain: 'subscription',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -63,6 +65,7 @@ export const NOTIFICATION_SUBSCRIPTION_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.SUBSCRIPTION_REACTIVATED,
         name: 'Suscripción reactivada',
         domain: 'subscription',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-next-billing',
@@ -89,6 +92,7 @@ export const NOTIFICATION_SUBSCRIPTION_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED,
         name: 'Cancelación confirmada',
         domain: 'subscription',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -106,6 +110,7 @@ export const NOTIFICATION_SUBSCRIPTION_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON,
         name: 'El acceso termina pronto',
         domain: 'subscription',
+        audience: 'user',
         scenarios: [
             {
                 id: 'three-days',

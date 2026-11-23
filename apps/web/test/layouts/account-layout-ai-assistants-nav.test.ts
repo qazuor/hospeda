@@ -1,8 +1,10 @@
 /**
  * @file account-layout-ai-assistants-nav.test.ts
- * @description HOS-2184 T-028. The "Asistentes de IA" sidebar entry exists in the
- * single-source nav config and the account layout shows it only while the MCP
- * feature is on, without a per-request round trip.
+ * @description HOS-2184 T-028, HOS-2562. The "Asistentes de IA" sidebar entry
+ * exists in the single-source nav config, and the account layout lists it only
+ * for a real client (shared `isRealClient`, from the effective permissions)
+ * while the MCP feature is on. Nobody else gets a hidden copy or a reveal
+ * island (the HOS-2430 reveal is gone).
  *
  * Astro components cannot be rendered in Vitest, so the layout is checked at
  * source level, like the sibling `account-layout-*` tests.
@@ -53,11 +55,20 @@ describe('AI assistants nav entry', () => {
 });
 
 describe('AccountLayout gating of the AI assistants entry', () => {
-    it('renders the entry hidden while the feature is off and reveals it from an idle island', () => {
+    it('hands the model the effective permissions and the MCP flag, and renders no hidden copy', () => {
+        const shell = readFileSync(
+            resolve(__dirname, '../../src/layouts/AccountShell.astro'),
+            'utf8'
+        );
         expect(layout).toContain('getConfiguredMcpUrl');
-        expect(layout).toContain("'data-ai-assistants-entry': ''");
-        expect(layout).toMatch(/item\.id === AI_ASSISTANTS_NAV_ITEM_ID && !mcpEnabled/);
-        expect(layout).toMatch(/<AiAssistantsNavReveal client:idle \/>/);
+        expect(layout).toMatch(/permissions: userPermissions/);
+        expect(layout).toMatch(/Astro\.locals\.user\?\.permissions/);
+        for (const source of [layout, shell]) {
+            expect(source).not.toContain('AiAssistantsNavReveal');
+            expect(source).not.toContain('data-ai-assistants-entry');
+            expect(source).not.toContain('hiddenUntilRevealed');
+            expect(source).not.toContain('aiAssistantsHidden');
+        }
     });
 
     it('no longer passes the flag to the header menus, which do not list the entry (HOS-2551)', () => {

@@ -271,11 +271,14 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
                     .select()
                     .from(addonInstances)
                     .where(eq(addonInstances.orderRequestId, input.reference));
-                await abandonOneTimeAddon({
-                    instanceId: row?.id ?? '',
-                    expectedProviderOrderId: null,
-                    now: s.f.ports.clock.now()
-                });
+                await abandonOneTimeAddon(
+                    {
+                        instanceId: row?.id ?? '',
+                        expectedProviderOrderId: null,
+                        now: s.f.ports.clock.now()
+                    },
+                    { billingFacts: undefined }
+                );
                 return page;
             });
             const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
@@ -315,11 +318,14 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
             const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
             vi.spyOn(s.f.fake, 'requestOneTimePayment').mockImplementationOnce(async (input) => {
                 const page = await original(input);
-                await abandonOneTimeAddon({
-                    instanceId: row?.id ?? '',
-                    expectedProviderOrderId: null,
-                    now: s.f.ports.clock.now()
-                });
+                await abandonOneTimeAddon(
+                    {
+                        instanceId: row?.id ?? '',
+                        expectedProviderOrderId: null,
+                        now: s.f.ports.clock.now()
+                    },
+                    { billingFacts: undefined }
+                );
                 return page;
             });
             expect(
@@ -621,11 +627,14 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
         const s = await setup();
         const { instance, paymentPageId } = await bought(s);
         const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-        await abandonOneTimeAddon({
-            instanceId: instance.id,
-            expectedProviderOrderId: null,
-            now: s.f.ports.clock.now()
-        });
+        await abandonOneTimeAddon(
+            {
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            },
+            { billingFacts: undefined }
+        );
         expect(
             await confirmOneTimePagePayment(
                 { instanceId: instance.id, chargeId: paid.chargeId },
@@ -816,11 +825,14 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
                 .update(addonProducts)
                 .set({ price: 12000 })
                 .where(eq(addonProducts.id, instance.productId));
-            await abandonOneTimeAddon({
-                instanceId: instance.id,
-                expectedProviderOrderId: null,
-                now: s.f.ports.clock.now()
-            });
+            await abandonOneTimeAddon(
+                {
+                    instanceId: instance.id,
+                    expectedProviderOrderId: null,
+                    now: s.f.ports.clock.now()
+                },
+                { billingFacts: undefined }
+            );
             expect(
                 await confirmOneTimePagePayment(
                     { instanceId: instance.id, chargeId: paid.chargeId },
@@ -1058,11 +1070,14 @@ describe('HOS-2179 §5.7 closing a page', () => {
     it.skipIf(skip)('closes an abandoned purchase page and confirms by re-reading', async () => {
         const s = await setup();
         const { instance, paymentPageId } = await bought(s);
-        await abandonOneTimeAddon({
-            instanceId: instance.id,
-            expectedProviderOrderId: null,
-            now: s.f.ports.clock.now()
-        });
+        await abandonOneTimeAddon(
+            {
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            },
+            { billingFacts: undefined }
+        );
         s.f.advanceTo(new Date(purchaseNow.getTime() + 5 * MINUTE));
         const read = vi.spyOn(s.f.fake, 'readOneTimePayment');
         expect(await closeOneTimePaymentPage({ instanceId: instance.id }, s.f.ports)).toBe(
@@ -1078,11 +1093,14 @@ describe('HOS-2179 §5.7 closing a page', () => {
     it.skipIf(skip)('reports an unconfirmed close without touching the instance', async () => {
         const s = await setup();
         const { instance } = await bought(s);
-        await abandonOneTimeAddon({
-            instanceId: instance.id,
-            expectedProviderOrderId: null,
-            now: s.f.ports.clock.now()
-        });
+        await abandonOneTimeAddon(
+            {
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            },
+            { billingFacts: undefined }
+        );
         vi.spyOn(s.f.fake, 'closeOneTimePayment').mockResolvedValueOnce({
             accepted: true,
             resourceId: instance.paymentPageId ?? ''

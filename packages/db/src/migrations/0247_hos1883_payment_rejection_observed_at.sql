@@ -1,0 +1,1 @@
+ALTER TABLE "payment" ADD COLUMN "rejection_observed_at" timestamp with time zone;

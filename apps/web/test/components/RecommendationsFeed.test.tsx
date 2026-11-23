@@ -9,7 +9,7 @@
  *  - Cold-start feed renders the banner ABOVE the grid, items still render
  *  - True-empty feed (`items: []`, `isColdStart: false`) renders the empty state
  *  - Fetch error renders the error message + retry action; retry re-fetches
- *  - 403 response renders the rich upgrade gate (title + Plus/VIP message +
+ *  - 403 response renders the rich upgrade gate (title + plan-gate message +
  *    "Ver planes" CTA — BETA-168), not a bare one-line message
  *  - Unmounting mid-fetch does not trigger a React state-update warning
  */
@@ -357,13 +357,15 @@ describe('RecommendationsFeed', () => {
     // ── 6. Entitlement required (403) ─────────────────────────────────────────
 
     describe('Entitlement required', () => {
-        it('renders the rich upgrade gate (title + Plus/VIP message + CTA) on a 403 response', async () => {
+        it('renders the rich upgrade gate (title + catalog-driven message + CTA) on a 403 response', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementResponse());
             renderComponent();
             await waitFor(() => {
                 expect(screen.getByText('Sugerencias para vos')).toBeInTheDocument();
                 expect(
-                    screen.getByText(/las sugerencias personalizadas están disponibles/i)
+                    screen.getByText(
+                        /las sugerencias personalizadas no están incluidas en tu plan actual/i
+                    )
                 ).toBeInTheDocument();
                 expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
             });

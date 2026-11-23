@@ -30,7 +30,7 @@ function componentsOf(board: { readonly parameters: { readonly [key: string]: un
 }
 
 describe('buildBoardDefinitions', () => {
-    it('should build the six boards with the stable dashboard names', () => {
+    it('should build the seven boards with the stable dashboard names', () => {
         const boards = buildBoardDefinitions({ websiteId: WEBSITE_ID, reportIds: allReportIds() });
         expect(boards.map((board) => board.name)).toEqual([
             '00 Resumen',
@@ -38,7 +38,8 @@ describe('buildBoardDefinitions', () => {
             '02 Descubrimiento',
             '03 Owners',
             '04 Suscripciones',
-            '05 Calidad'
+            '05 Calidad',
+            'Attribution'
         ]);
         for (const board of boards) {
             expect(board.type).toBe('website');
@@ -72,6 +73,38 @@ describe('buildBoardDefinitions', () => {
         expect(typesByName['05 Calidad']).toEqual(
             new Set(['EventsChart', 'MetricsTable', 'Funnel'])
         );
+        expect(typesByName['Attribution']).toEqual(new Set(['MetricsTable', 'Goal']));
+    });
+
+    it('should lay out the Attribution board as UTM tables then conversions (HOS-2359 OD-10)', () => {
+        // Arrange
+        const reportIds = allReportIds();
+
+        // Act
+        const board = buildBoardDefinitions({ websiteId: WEBSITE_ID, reportIds }).find(
+            (candidate) => candidate.name === 'Attribution'
+        );
+
+        // Assert
+        const rows = (board?.parameters['rows'] ?? []) as readonly {
+            readonly columns: readonly { readonly component: ParsedComponent }[];
+        }[];
+        expect(
+            rows.map((row) =>
+                row.columns.map(({ component }) =>
+                    component.type === 'MetricsTable'
+                        ? `MetricsTable:${component.props?.type}`
+                        : `${component.type}:${component.props?.reportId}`
+                )
+            )
+        ).toEqual([
+            ['MetricsTable:utmSource', 'MetricsTable:utmMedium'],
+            ['MetricsTable:utmCampaign', 'MetricsTable:utmContent'],
+            [
+                `Goal:${reportIds['Goal · Registros completados']}`,
+                `Goal:${reportIds['Goal · Contactos completados']}`
+            ]
+        ]);
     });
 
     it('should resolve every Funnel and Goal reportId from the map', () => {

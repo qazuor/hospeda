@@ -26,6 +26,17 @@ export function makeHarness(
         readonly failTransaction?: boolean;
         readonly trialAvailable?: boolean;
         readonly setReturnsFalse?: boolean;
+        /** Listings whose status write answers "not changed" (HOS-1810, a deleted row). */
+        readonly setReturnsFalseFor?: readonly string[];
+        /**
+         * HOS-1810 one-address rule as `setPublicationStatus` applies it: a move into
+         * PUBLISHED answers "not changed" when another non-exempt PUBLISHED listing of
+         * the owner holds the same non-null key.
+         */
+        readonly locations?: ReadonlyMap<
+            string,
+            { readonly key: string | null; readonly exempt: boolean }
+        >;
         readonly listings?: readonly PublicationListing[];
         readonly publicationInstants?: ReadonlyMap<string, Date>;
         readonly incompleteListingIds?: readonly string[];
@@ -279,7 +290,19 @@ export function makeHarness(
             const { listingId: targetId, from, to } = input;
             statusWrites.push(input);
             if (args.setReturnsFalse) return false;
+            if (args.setReturnsFalseFor?.includes(targetId)) return false;
             if ((statuses.get(targetId) ?? status) !== from) return false;
+            const place = args.locations?.get(targetId);
+            if (to === PublicationStatusEnum.PUBLISHED && place?.key && !place.exempt) {
+                const taken = [...(args.locations ?? [])].some(
+                    ([otherId, other]) =>
+                        otherId !== targetId &&
+                        other.key === place.key &&
+                        !other.exempt &&
+                        statuses.get(otherId) === PublicationStatusEnum.PUBLISHED
+                );
+                if (taken) return false;
+            }
             statuses.set(targetId, to);
             if (targetId === listingId) status = to;
             if (from === PublicationStatusEnum.PUBLISHED) publishedCount -= 1;

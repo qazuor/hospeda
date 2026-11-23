@@ -14,7 +14,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import styles from './CreateEditCollectionModal.module.css';
+import styles from './CollectionForm.module.css';
 import { COLOR_PALETTE, ICON_OPTIONS } from './collection-picker-config';
 
 // ─── Color picker ─────────────────────────────────────────────────────────────

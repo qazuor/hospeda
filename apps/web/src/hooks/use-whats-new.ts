@@ -56,8 +56,13 @@ export function clearWhatsNewCache(): void {
 }
 
 export function useWhatsNew(): UseWhatsNewReturn {
-    const [items, setItems] = useState<readonly WhatsNewItem[]>(() => getCached() ?? []);
-    const [isLoading, setIsLoading] = useState<boolean>(() => !getCached());
+    // HOS-2452: the initial state must NOT read the module cache. `sharedCache`
+    // exists only in the browser (another island may have filled it before this one
+    // hydrates), so seeding state from it makes the first client render differ from
+    // the server HTML, which has no cache: React error #418. The mount effect below
+    // already adopts a fresh cache entry, so the cost is one effect tick.
+    const [items, setItems] = useState<readonly WhatsNewItem[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
     const mountedRef = useRef(true);
 

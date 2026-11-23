@@ -284,6 +284,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Purge expired guest conversation access tokens.'
     },
     {
+        name: 'unverified-inquiry-cleanup',
+        displayName: 'Limpieza de consultas anónimas sin verificar',
+        category: 'system',
+        schedule: '15 3 * * *',
+        description:
+            'Hard-delete anonymous inquiries still in PENDING_VERIFICATION after 7 days (HOS-2571).'
+    },
+    {
         name: 'conversation-token-reminder',
         displayName: 'Recordatorio de tokens de chat',
         category: 'notifications',

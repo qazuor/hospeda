@@ -23,8 +23,9 @@
  *   mapping has its own tests, the SQL its own db integration test), and
  *   `OauthConnectionModel` is a memory stand-in with the same operations;
  * - `getDb()`: answers only the bearer middleware's user lookup;
- * - `buildActorForUser` (the `/mcp` bearer path) and `getUserRoles` (the session
- *   path): a fixed HOST actor for the real user id (their own suites cover them);
+ * - `buildActorForUser` (the `/mcp` bearer path and the HOS-2562 real-client
+ *   guard) and `getUserRoles` (the session path): a fixed HOST actor holding
+ *   `accommodation.create` for the real user id (their own suites cover them);
  * - the two `auth.ts` hooks that read the user tables (deleted-user guard,
  *   baseline role);
  * - the CIMD metadata fetch (`safeExternalFetch` resolves public DNS and pins the IP);
@@ -67,7 +68,10 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
             ({
                 id: actorState.userId,
                 roles: ['HOST'],
-                permissions: [],
+                // HOS-2562: a real client (a business vertical), so the OAuth
+                // flow and `/mcp` let them through. The tourist journey is in
+                // `mcp-oauth-real-client.test.ts`.
+                permissions: ['accommodation.create'],
                 emailVerified: true
             }) as unknown as Actor
     )

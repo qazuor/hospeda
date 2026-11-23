@@ -1,8 +1,14 @@
 import { type AnalyticsEventName, AnalyticsEvents } from '@repo/analytics';
 import { createLogger } from '@repo/logger';
-import type { BillingFact, BillingFactSink } from '@repo/service-core';
+import {
+    type AddonFact,
+    type BillingFact,
+    type BillingFactSink,
+    isAddonFact
+} from '@repo/service-core';
 import { captureServerAnalyticsEvent } from '../../lib/analytics-client.js';
 import { deriveAnalyticsEventUuid } from '../../lib/analytics-event-uuid.js';
+import { translateAddonFact } from './analytics-facts-addon.js';
 
 const logger = createLogger('analytics-facts');
 /** A persisted trial fact translated into a catalog analytics event. */
@@ -55,6 +61,8 @@ type CheckoutStartedFact = {
     occurredAt: Date;
 };
 type Fact = BillingFact | TrialFact | CheckoutStartedFact;
+/** Every fact the sink accepts: HOS-1878's and the add-on facts (HOS-1883). */
+type AnyFact = Fact | AddonFact;
 type Capture = (input: {
     distinctId: string;
     name: AnalyticsEventName;
@@ -62,7 +70,7 @@ type Capture = (input: {
     uuid: string;
     timestamp: Date;
 }) => void;
-type AnyFactSink = { emit(fact: Fact): void };
+type AnyFactSink = { emit(fact: AnyFact): void };
 
 function toEvent(fact: Fact): {
     event: AnalyticsEventName;
@@ -273,7 +281,10 @@ export function createAnalyticsFactSink(options: { capture: Capture }): AnyFactS
                 );
                 return;
             }
-            const translated = toEvent(fact);
+            // HOS-1883: add-on facts go to the `addon_*` family only (P-10). They carry no
+            // `subscriptionClass`, so the PRINCIPAL filter above never lets a HOS-1878 kind with
+            // `COMPLEMENTO` through, and an add-on fact never reaches `toEvent`.
+            const translated = isAddonFact(fact) ? translateAddonFact(fact) : toEvent(fact);
             if (!translated) return;
             try {
                 options.capture({

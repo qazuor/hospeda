@@ -15,6 +15,11 @@
  * `ai-connections-count.ts`). It does not depend on `HOSPEDA_MCP_ENABLED`: a
  * user must be able to answer even while the feature is switched off.
  *
+ * HOS-2562: the «Ver mis asistentes de IA» link is rendered only for a real
+ * client (`canUseAiAssistants`, the shared rule); for anybody else that page
+ * answers 404. The question itself is still asked, because disconnecting is
+ * how a non-client clears connections they made before the rule existed.
+ *
  * Hydration: `client:idle`, mounted once in `BaseLayout`.
  */
 
@@ -22,6 +27,7 @@ import { ShieldAlertIcon } from '@repo/icons';
 import type { AiConnectionResetReviewAction } from '@repo/schemas';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { buildAiConnectionsResetReviewUrl } from '@/lib/ai-assistants';
+import { canUseAiAssistants } from '@/lib/ai-assistants-access';
 import { getAiConnectionsSnapshot, resetAiConnectionCount } from '@/lib/ai-connections-count';
 import { fetchAuthMe, readCachedAuthMe } from '@/lib/auth-cache';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -41,9 +47,9 @@ export interface AiResetReviewPromptProps {
 
 type PromptState =
     | { readonly kind: 'hidden' }
-    | { readonly kind: 'asking'; readonly count: number }
-    | { readonly kind: 'sending'; readonly count: number }
-    | { readonly kind: 'failed'; readonly count: number };
+    | { readonly kind: 'asking'; readonly count: number; readonly canOpenPage: boolean }
+    | { readonly kind: 'sending'; readonly count: number; readonly canOpenPage: boolean }
+    | { readonly kind: 'failed'; readonly count: number; readonly canOpenPage: boolean };
 
 /**
  * Post-password-reset prompt.
@@ -69,7 +75,14 @@ export function AiResetReviewPrompt({ locale, apiUrl }: AiResetReviewPromptProps
             if (mounted.current && pendingResetReview) {
                 setState({
                     kind: 'asking',
-                    count: pendingResetReview.connectionsBeforeReset.length
+                    count: pendingResetReview.connectionsBeforeReset.length,
+                    canOpenPage: canUseAiAssistants({
+                        user: {
+                            permissions: session.permissions,
+                            ownsHostTradeListing: session.ownsHostTradeListing === true,
+                            ownsPartner: session.ownsPartner === true
+                        }
+                    })
                 });
             }
         })();
@@ -82,11 +95,11 @@ export function AiResetReviewPrompt({ locale, apiUrl }: AiResetReviewPromptProps
         return null;
     }
 
-    const count = state.count;
+    const { count, canOpenPage } = state;
     const busy = state.kind === 'sending';
 
     async function answer(action: AiConnectionResetReviewAction): Promise<void> {
-        setState({ kind: 'sending', count });
+        setState({ kind: 'sending', count, canOpenPage });
         try {
             const res = await fetch(buildAiConnectionsResetReviewUrl({ apiUrl }), {
                 method: 'POST',
@@ -116,7 +129,7 @@ export function AiResetReviewPrompt({ locale, apiUrl }: AiResetReviewPromptProps
             }
         } catch {
             if (mounted.current) {
-                setState({ kind: 'failed', count });
+                setState({ kind: 'failed', count, canOpenPage });
             }
         }
     }
@@ -174,12 +187,14 @@ export function AiResetReviewPrompt({ locale, apiUrl }: AiResetReviewPromptProps
                     {t('account.aiAssistants.resetReview.keep', 'Mantenerlos')}
                 </button>
             </div>
-            <a
-                className={styles.link}
-                href={buildUrl({ locale, path: AI_ASSISTANTS_PATH })}
-            >
-                {t('account.aiAssistants.resetReview.link', 'Ver mis asistentes de IA')}
-            </a>
+            {canOpenPage ? (
+                <a
+                    className={styles.link}
+                    href={buildUrl({ locale, path: AI_ASSISTANTS_PATH })}
+                >
+                    {t('account.aiAssistants.resetReview.link', 'Ver mis asistentes de IA')}
+                </a>
+            ) : null}
         </section>
     );
 }

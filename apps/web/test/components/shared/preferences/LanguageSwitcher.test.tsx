@@ -91,6 +91,57 @@ describe('LanguageSwitcher', () => {
         );
     });
 
+    describe('query string (HOS-2559)', () => {
+        afterEach(() => {
+            window.history.replaceState(null, '', '/');
+        });
+
+        it('keeps the current query on every locale link after hydration', async () => {
+            // Arrange: a user with both verticals on the experiences list.
+            window.history.replaceState(null, '', '/es/mi-cuenta/comercio/?vertical=experience');
+
+            // Act
+            render(
+                <LanguageSwitcher
+                    locale="es"
+                    currentPath="/es/mi-cuenta/comercio/"
+                />
+            );
+
+            // Assert
+            await waitFor(() =>
+                expect(screen.getByRole('link', { name: 'EN English' })).toHaveAttribute(
+                    'href',
+                    '/en/mi-cuenta/comercio/?vertical=experience'
+                )
+            );
+            expect(screen.getByRole('link', { name: 'PT Português' })).toHaveAttribute(
+                'href',
+                '/pt/mi-cuenta/comercio/?vertical=experience'
+            );
+        });
+
+        it('follows a query rewritten after mount when the link is clicked', async () => {
+            // Arrange
+            window.history.replaceState(null, '', '/es/mi-cuenta/comercio/');
+            render(
+                <LanguageSwitcher
+                    locale="es"
+                    currentPath="/es/mi-cuenta/comercio/"
+                />
+            );
+            const link = screen.getByRole('link', { name: 'EN English' });
+            await waitFor(() => expect(link).toHaveAttribute('href', '/en/mi-cuenta/comercio/'));
+            window.history.replaceState(null, '', '/es/mi-cuenta/comercio/?vertical=experience');
+
+            // Act
+            fireEvent.click(link);
+
+            // Assert
+            expect(link).toHaveAttribute('href', '/en/mi-cuenta/comercio/?vertical=experience');
+        });
+    });
+
     it('persists the chosen locale to localStorage on click', () => {
         render(
             <LanguageSwitcher

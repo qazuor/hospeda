@@ -22,6 +22,7 @@
  */
 
 .grid {
+    position: relative;
     display: grid;
     border-radius: var(--radius-card, 24px);
     overflow: hidden;
@@ -451,6 +452,20 @@
 .inlineGrid .cellQuarter {
     border-radius: var(--radius-card, 24px);
     overflow: hidden;
+}
+
+/* HOS-2531: "Ver las N fotos" button, bottom-left over the featured photo
+ * (bottom-right is the "+N más" overlay cell). */
+.seeAllPhotos {
+    position: absolute;
+    inset-block-end: var(--space-3, 12px);
+    inset-inline-start: var(--space-3, 12px);
+    z-index: 2;
+}
+
+.seeAllPhotos :global(.btn-gradient) {
+    background: var(--core-card);
+    box-shadow: var(--shadow-card);
 }
 
 /* ── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ───── */

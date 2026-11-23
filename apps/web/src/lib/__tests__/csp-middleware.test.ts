@@ -346,3 +346,39 @@ describe("buildCspHeader — dev-only frame-src 'self'", () => {
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// buildCspHeader — HOS-2347: the Umami heatmap view may frame the page
+// ---------------------------------------------------------------------------
+
+const findFrameAncestors = (header: string): string =>
+    header.split('; ').find((d) => /^frame-ancestors /.test(d)) ?? '';
+
+describe('buildCspHeader — frame-ancestors allows only the Umami origin (HOS-2347)', () => {
+    const umamiScriptUrl = 'https://stats.example.com/app.js';
+
+    it('lets exactly the Umami origin frame the page in prod', () => {
+        const header = buildCspHeader({ ...NO_HASHES, isDev: false, umamiScriptUrl });
+
+        expect(findFrameAncestors(header)).toBe('frame-ancestors https://stats.example.com');
+    });
+
+    it("keeps 'self' and adds the Umami origin in dev", () => {
+        const header = buildCspHeader({ ...NO_HASHES, isDev: true, umamiScriptUrl });
+
+        expect(findFrameAncestors(header)).toBe("frame-ancestors 'self' https://stats.example.com");
+    });
+
+    it("stays 'none' in prod when the Umami script URL is unset or unusable", () => {
+        for (const url of [undefined, '', '   ', 'not a url', 'javascript:alert(1)']) {
+            const header = buildCspHeader({ ...NO_HASHES, isDev: false, umamiScriptUrl: url });
+            expect(findFrameAncestors(header)).toBe("frame-ancestors 'none'");
+        }
+    });
+
+    it('allows the origin only, never the script path', () => {
+        const header = buildCspHeader({ ...NO_HASHES, isDev: false, umamiScriptUrl });
+
+        expect(findFrameAncestors(header)).not.toContain('/app.js');
+    });
+});

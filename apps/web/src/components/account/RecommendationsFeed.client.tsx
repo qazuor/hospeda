@@ -25,7 +25,7 @@
  *
  * Card decision: `AccommodationCard.astro` cannot be used inside a React
  * island (established precedent — see `SearchChatPanel.client.tsx`'s
- * `ResultCard` and `BookmarkGrid.tsx`'s card). This file defines a
+ * `ResultCard` and the favorites `EntityCard`). This file defines a
  * lightweight `RecommendationCard` sub-component mirroring the same visual
  * signals (image, title, price, rating) instead of reusing an Astro-only
  * component.
@@ -43,6 +43,7 @@ import type {
 } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
+import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -65,6 +66,11 @@ export interface RecommendationsFeedProps {
     readonly locale: SupportedLocale;
     /** API base URL (`PUBLIC_API_URL`), passed by the Astro host page. */
     readonly apiUrl: string;
+    /**
+     * HOS-2554: catalog names of the plans that carry recommendations, read by the SSR page
+     * (the catalog reader is server-only). Empty when the catalog could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -215,7 +221,11 @@ function RecommendationCard({ scored, locale, t }: RecommendationCardProps) {
  * @param props - {@link RecommendationsFeedProps}
  * @returns The recommendations feed island.
  */
-export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps) {
+export function RecommendationsFeed({
+    locale,
+    apiUrl,
+    gatePlanNames = []
+}: RecommendationsFeedProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
@@ -327,10 +337,14 @@ export function RecommendationsFeed({ locale, apiUrl }: RecommendationsFeedProps
                     {t('account.recommendations.upgrade.title', 'Sugerencias para vos')}
                 </p>
                 <p className={styles.upgradeMessage}>
-                    {t(
-                        'account.recommendations.upgrade.message',
-                        'Las sugerencias personalizadas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
-                    )}
+                    {resolvePlanGateMessage({
+                        keyBase: 'account.recommendations.upgrade.message',
+                        locale,
+                        noPlansFallback:
+                            'Las sugerencias personalizadas no están incluidas en tu plan actual. Actualizá tu plan para acceder.',
+                        planNames: gatePlanNames,
+                        t
+                    })}
                 </p>
                 <a
                     href={upgradeHref}

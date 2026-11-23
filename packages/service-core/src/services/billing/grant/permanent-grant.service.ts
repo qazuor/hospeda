@@ -34,6 +34,7 @@ import {
     runS20InTransaction,
     type S20ProviderResult
 } from './permanent-grant-s20.js';
+import { emitS20GrantedFreeFacts } from './permanent-grant-s20-facts.js';
 
 /**
  * Creates a permanent grant with its initial vertical anchors and applies S13
@@ -152,17 +153,35 @@ export async function grantPermanentGrant(
         coverageNotices: ports.coverageNotices
     });
     const providerResult = await cancelS13AtProvider({ rows: committed.result.cancelled }, ports);
+    // HOS-1883: both provider halves (A5's, then S20's) run before any analytics fact.
+    let addonProviderCalls: Awaited<ReturnType<typeof cancelS20AtProvider>> = [];
+    const providerHalves = async () => {
+        if (committed.result.orphanedAddons.length > 0)
+            await cancelAddonComplementsAtProvider(
+                { cancelled: committed.result.orphanedAddons },
+                ports
+            );
+        addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
+    };
     if (committed.result.orphanedAddons.length > 0)
         await emitAddonCoverageRemoved({
             cancelled: committed.result.orphanedAddons,
-            coverageNotices: ports.coverageNotices
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            },
+            beforeFacts: providerHalves
         });
-    if (committed.result.orphanedAddons.length > 0)
-        await cancelAddonComplementsAtProvider(
-            { cancelled: committed.result.orphanedAddons },
-            ports
-        );
-    const addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
+    else await providerHalves();
+    await emitS20GrantedFreeFacts({
+        rows: committed.s20.rows,
+        now,
+        billingFacts: ports.billingFacts,
+        listing: ports.orphanhood.listing
+    });
     return {
         permanentGrantId: committed.grantId,
         anchorIds: committed.anchorIds,
@@ -324,17 +343,35 @@ export async function anchorPermanentGrantVertical(
         coverageNotices: ports.coverageNotices
     });
     const providerResult = await cancelS13AtProvider({ rows: committed.result.cancelled }, ports);
+    // HOS-1883: both provider halves (A5's, then S20's) run before any analytics fact.
+    let addonProviderCalls: Awaited<ReturnType<typeof cancelS20AtProvider>> = [];
+    const providerHalves = async () => {
+        if (committed.result.orphanedAddons.length > 0)
+            await cancelAddonComplementsAtProvider(
+                { cancelled: committed.result.orphanedAddons },
+                ports
+            );
+        addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
+    };
     if (committed.result.orphanedAddons.length > 0)
         await emitAddonCoverageRemoved({
             cancelled: committed.result.orphanedAddons,
-            coverageNotices: ports.coverageNotices
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            },
+            beforeFacts: providerHalves
         });
-    if (committed.result.orphanedAddons.length > 0)
-        await cancelAddonComplementsAtProvider(
-            { cancelled: committed.result.orphanedAddons },
-            ports
-        );
-    const addonProviderCalls = await cancelS20AtProvider({ rows: committed.s20.rows }, ports);
+    else await providerHalves();
+    await emitS20GrantedFreeFacts({
+        rows: committed.s20.rows,
+        now,
+        billingFacts: ports.billingFacts,
+        listing: ports.orphanhood.listing
+    });
     return {
         anchorId: committed.anchorId,
         cancelledSubscriptionIds: committed.result.cancelled.map(

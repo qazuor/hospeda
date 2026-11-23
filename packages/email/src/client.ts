@@ -41,7 +41,13 @@ const DEFAULT_BASE_URL = 'https://api.brevo.com/v3';
  * @example
  * ```ts
  * const client = createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY });
- * await sendEmail({ client, to, subject, react });
+ * await sendEmail({
+ *     client,
+ *     to,
+ *     subject,
+ *     react,
+ *     attribution: { medium: 'transactional', templateKey: 'auth.reset-password', includePixel: true }
+ * });
  * ```
  */
 export function createEmailClient({ apiKey, baseUrl }: CreateEmailClientInput): EmailClient {

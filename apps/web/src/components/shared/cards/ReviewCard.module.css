@@ -63,12 +63,16 @@
 
 .entityTypeAccommodation {
     background-color: var(--brand-primary-a12);
-    color: var(--brand-primary-dark);
+    /* 70% brand text colour + 30% foreground keeps the hue and clears AA on the
+       tint in both themes (light 11.4:1, dark 5.4:1). The old
+       --brand-primary-dark was 3.08:1 in dark (HOS-2572). */
+    color: color-mix(in srgb, var(--brand-primary-text) 70%, var(--core-foreground));
 }
 
 .entityTypeDestination {
     background-color: var(--brand-accent-a15);
-    color: var(--brand-accent-lm15);
+    /* Same recipe as the accommodation eyebrow: light 6.2:1, dark 5.5:1. */
+    color: color-mix(in srgb, var(--brand-accent-text) 70%, var(--core-foreground));
 }
 
 .entityName {
@@ -183,7 +187,9 @@
     font-family: var(--font-decorative);
     font-size: 1rem;
     font-weight: 700;
-    color: var(--brand-primary);
+    /* --brand-primary was 3.18:1 on the light avatar tint; this token is 9.8:1
+       in light and 5.5:1 in dark (HOS-2572). */
+    color: var(--brand-primary-text);
     line-height: 1;
 }
 

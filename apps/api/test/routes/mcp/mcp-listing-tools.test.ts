@@ -26,7 +26,12 @@ const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, loadFacts } = vi.ho
         USER_ID: userId,
         CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
         VALID_TOKEN: 'valid-access-token-0123456789',
-        ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
+        ACTOR: {
+            id: userId,
+            roles: ['HOST'],
+            permissions: ['accommodation.create'],
+            emailVerified: true
+        },
         findOneMock: vi.fn(),
         loadFacts: vi.fn()
     };

@@ -407,6 +407,52 @@ export function buildLocaleRedirect({
     return `/${DEFAULT_LOCALE}${normalizedPath}${search}`;
 }
 
+/** Redirect statuses Astro's `context.redirect` accepts. */
+export type RedirectStatus = 300 | 301 | 302 | 303 | 304 | 307 | 308;
+
+/** Input of {@link buildRedirectResponse}. */
+export interface BuildRedirectResponseInput {
+    /**
+     * The Astro context (only `redirect` is used). Passed whole, not as a bare
+     * `context.redirect`, so the method keeps its receiver.
+     */
+    readonly context: {
+        readonly redirect: (location: string, status?: RedirectStatus) => Response;
+    };
+    /** Redirect target, query string included when the caller copied one. */
+    readonly location: string;
+    /** HTTP status of the redirect (301, 302, 308 ...). */
+    readonly status: RedirectStatus;
+}
+
+/**
+ * Builds a redirect and, when its `Location` carries a query string, marks it
+ * `Cache-Control: no-store` (HOS-2359, owner decision OD-6).
+ *
+ * Why: three middleware redirects copy the visitor's query into `Location`
+ * (trailing slash, legacy aliases, locale). A cached redirect would replay one
+ * visitor's `?utm_*` (or any other parameter) to every later visitor of the same
+ * URL, misattributing their visit. A query-less redirect is identical for
+ * everyone and keeps its default caching.
+ *
+ * The response still comes from Astro's own `context.redirect`, so its status and
+ * `Location` semantics are unchanged; only the header is added.
+ *
+ * @param input - See {@link BuildRedirectResponseInput}
+ * @returns The redirect response
+ */
+export function buildRedirectResponse({
+    context,
+    location,
+    status
+}: BuildRedirectResponseInput): Response {
+    const response = context.redirect(location, status);
+    if (location.includes('?')) {
+        response.headers.set('Cache-Control', 'no-store');
+    }
+    return response;
+}
+
 /**
  * User information parsed from session cookie.
  */
@@ -772,6 +818,29 @@ export function resolveUmamiOrigin({
 }
 
 /**
+ * Builds the `frame-ancestors` directive (HOS-2347).
+ *
+ * Prod lets nobody frame the page except the Umami origin, whose heatmap view
+ * embeds it; dev also allows `'self'` for Astro's ClientRouter iframe. With no
+ * source at all it is `'none'`, since `'none'` cannot be combined with one.
+ *
+ * @param params - Object with the dev flag and the Umami origin (or `null`)
+ * @returns The full `frame-ancestors ...` directive
+ */
+export function buildFrameAncestors({
+    isDev,
+    umamiOrigin
+}: {
+    readonly isDev: boolean;
+    readonly umamiOrigin: string | null;
+}): string {
+    const sources = [isDev ? "'self'" : null, umamiOrigin].filter(
+        (source): source is string => source !== null
+    );
+    return sources.length > 0 ? `frame-ancestors ${sources.join(' ')}` : "frame-ancestors 'none'";
+}
+
+/**
  * Builds a Content-Security-Policy header value using content-hash-based
  * script/style policy.
  *
@@ -1030,7 +1099,15 @@ export function buildCspHeader({
         // (verified in the browser — the CSP violation simply changes name).
         // Dev widens it to 'self', so only our own origin may frame us; prod
         // keeps 'none' and stays unembeddable by anyone, ourselves included.
-        isDev ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
+        //
+        // HOS-2347: the Umami origin, and only it, may also frame us. The Umami
+        // heatmap view renders the real page inside an iframe and draws the
+        // clicks over it; without this the browser refuses to render the page
+        // ("will not allow ... if another site has embedded it"). The origin is
+        // the one derived from `PUBLIC_UMAMI_SCRIPT_URL` (our own first-party
+        // subdomain); when unset the directive is unchanged. See
+        // `buildFrameAncestors`.
+        buildFrameAncestors({ isDev, umamiOrigin }),
         "media-src 'self'",
         'upgrade-insecure-requests',
         sentryReportUri ? `report-uri ${sentryReportUri}` : null

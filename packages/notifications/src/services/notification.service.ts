@@ -146,6 +146,11 @@ export class NotificationService {
                 to: recipientEmail,
                 subject,
                 react: emailTemplate,
+                attribution: {
+                    medium: 'transactional',
+                    templateKey: `notification.${type}`,
+                    includePixel: true
+                },
                 tags: [
                     { name: 'notification_type', value: type },
                     { name: 'category', value: NOTIFICATION_CATEGORY_MAP[type] }

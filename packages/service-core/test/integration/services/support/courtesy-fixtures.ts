@@ -99,6 +99,7 @@ export async function createPermanentAnchor(
         planPolicy: currentFloorPolicy,
         clock,
         provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: async () => undefined },
         orphanhood: {

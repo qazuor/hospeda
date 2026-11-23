@@ -44,6 +44,7 @@ export async function createPreviewScenario() {
         planPolicy: currentFloorPolicy,
         clock: { now: () => previewNow },
         provider: namespaceFake(fake),
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: async () => undefined },
         orphanhood: {

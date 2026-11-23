@@ -152,6 +152,8 @@ describe('subscription-window-expiry cron', () => {
             clock: mockClock,
             beforeCancelNotice,
             coverageNotices: getCoverageNotices(),
+            // HOS-1883: A3 emits the add-on abandonment facts through the same sink.
+            billingFacts: getAnalyticsFactSink(),
             ...mockComplementPorts
         });
         // HOS-1533: S2 and the VIP closure notify the ONE process-wide registry (identity, not shape).

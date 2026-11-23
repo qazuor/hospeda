@@ -108,4 +108,6 @@ The test fails if an alias drifts or a ratio drops below its pin. A palette chan
 
 - SPEC: `.qtm/specs/SPEC-153-admin-design-tokens/spec.md`
 - Design proposal: `.claude/audit/admin-redesign/proposals/05-visual-tokens.md`
-- Phase 0 deliverables: `seed/web-baseline.json`, `apps/web/tests/visual-snapshots/`
+- Phase 0 deliverables: `seed/web-baseline.json`
+- Visual regression (light and dark): `apps/e2e/tests/visual/` (HOS-2471), see
+  `apps/e2e/README.md` → «Visual regression»

@@ -175,7 +175,11 @@ describe('QR resolution — a failing actor path degrades instead of 503ing', ()
 
         // The visit survives.
         expect(res.status).toBe(200);
-        expect(body.data?.targetUrl).toBe(TARGET_URL);
+        // HOS-2359 (OD-9): the response target carries the print UTMs; the scan
+        // row below keeps the raw target.
+        expect(body.data?.targetUrl).toBe(
+            `${TARGET_URL}?utm_source=qr&utm_medium=print&utm_campaign=manual`
+        );
 
         // And the scan is still counted — the half a status-only assertion
         // cannot see. This is exactly the shape mutation 4 exposed elsewhere in

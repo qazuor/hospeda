@@ -60,6 +60,25 @@ describe('sweep serial lock planning', () => {
                 mode: 'shared'
             });
     });
+    it('runs the manual installment sweep alone against MP4 reactivations (HOS-1640)', () => {
+        for (const file of [
+            'manual-installment-opened-notice.test.ts',
+            'manual-installment-open.test.ts',
+            'manual-payment-reimputation.test.ts'
+        ])
+            expect(planSerialLocks({ source: source(file) }), file).toContainEqual({
+                key: 1_999_005,
+                mode: 'exclusive'
+            });
+        for (const file of [
+            'manual-payment-register-late.test.ts',
+            'b7-manual-predecessor-retention.test.ts'
+        ])
+            expect(planSerialLocks({ source: source(file) }), file).toContainEqual({
+                key: 1_999_005,
+                mode: 'shared'
+            });
+    });
     it('guards every transitive fixture victim', () => {
         const support = path.join(here, 'support');
         const files = readdirSync(support).filter((file) => file.endsWith('.ts'));

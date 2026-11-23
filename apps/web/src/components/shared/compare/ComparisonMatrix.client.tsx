@@ -40,6 +40,7 @@ import type { AccommodationCardData } from '@/data/types';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { cn } from '@/lib/cn';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
@@ -67,6 +68,11 @@ type MatrixStatus =
 export interface ComparisonMatrixProps {
     /** Locale for labels, formatting and links. Defaults to `es`. */
     readonly locale?: SupportedLocale;
+    /**
+     * HOS-2554: catalog names of the plans that carry this feature, read server-side and
+     * handed down (the catalog reader is server-only). Empty when it could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 /** A single comparable attribute row rendered by the matrix. */
@@ -139,7 +145,10 @@ function classifyError(error: {
  * @param props - {@link ComparisonMatrixProps}
  * @returns The matrix, or an empty / loading / error panel.
  */
-export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) => {
+export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({
+    locale = 'es',
+    gatePlanNames = []
+}) => {
     const { t, tPlural } = createTranslations(locale);
     const { ids } = useCompareStore();
     // Needed only to interpolate the per-plan cap into the limit-reached
@@ -246,10 +255,13 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
               ? t('accommodations.comparison.limit.title', 'Llegaste al máximo')
               : t('accommodations.comparison.error.title', 'No pudimos cargar la comparación');
         const message = isUpsell
-            ? t(
-                  'accommodations.comparison.upsell.message',
-                  'Comparar alojamientos está disponible en los planes Plus y VIP.'
-              )
+            ? resolvePlanGateMessage({
+                  keyBase: 'accommodations.comparison.upsell.message',
+                  locale,
+                  noPlansFallback: 'Comparar alojamientos no está incluido en tu plan actual.',
+                  planNames: gatePlanNames,
+                  t
+              })
             : isLimit
               ? tPlural('accommodations.comparison.limit.message', maxItems, { max: maxItems })
               : t(

@@ -92,6 +92,7 @@ function ports(onNotice: () => Promise<void> = async () => undefined) {
         planPolicy: currentFloorPolicy,
         clock,
         provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: onNotice },
         orphanhood: {
@@ -298,6 +299,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         idNamespace: crypto.randomUUID(),
                         clock: s.fixture.clock
                     }),
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {

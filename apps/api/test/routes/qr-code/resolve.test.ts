@@ -99,6 +99,13 @@ const DELETED_ID = '33333333-3333-4333-8333-333333333333';
 
 const TARGET_URL = 'https://hospeda.com.ar/es/destinos/colon/';
 
+/**
+ * What the response sends the scanner to (HOS-2359 OD-9): the stored target plus
+ * the print UTMs. The fixture row is an operator-made code (no entity, no
+ * purpose), so its campaign is `manual` and it carries no `utm_content`.
+ */
+const DECORATED_TARGET_URL = `${TARGET_URL}?utm_source=qr&utm_medium=print&utm_campaign=manual`;
+
 /** A guest actor, which is what most real callers of this endpoint are. */
 const guestActor = {
     id: '00000000-0000-4000-8000-000000000000',
@@ -351,7 +358,7 @@ describe('GET /public/qr/{slug} — a live code', () => {
 
         expect(res.status).toBe(200);
         const data = (res.body as { data?: Record<string, unknown> }).data;
-        expect(data?.targetUrl).toBe(TARGET_URL);
+        expect(data?.targetUrl).toBe(DECORATED_TARGET_URL);
         expect(data?.slug).toBe(LIVE_SLUG);
         expect(data?.id).toBe(LIVE_ID);
 
@@ -425,17 +432,19 @@ describe('GET /public/qr/{slug} — the recorded scan context (HOS-1141)', () =>
     it('records the target the code held AT THE SCAN, not a re-read', async () => {
         // The reason the column exists. A code that is repointed keeps counting
         // against the same id, so without this the history is one number
-        // covering several destinations. Asserted as equal to the URL the
-        // RESPONSE sends the scanner to, which is the invariant that matters:
-        // the row cannot disagree with where the person actually went.
+        // covering several destinations. The row cannot disagree with where the
+        // person actually went: the response target is the stored target plus
+        // the print UTMs (HOS-2359 OD-9), and the row keeps the raw target, so
+        // the response must START with exactly what the row recorded.
         const app = await buildApp();
 
         const res = await probe(app, LIVE_SLUG);
 
-        const responseTarget = (res.body as { data?: { targetUrl?: string } }).data?.targetUrl;
-        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({
-            targetUrlAtScan: responseTarget
-        });
+        const responseTarget =
+            (res.body as { data?: { targetUrl?: string } }).data?.targetUrl ?? '';
+        const recorded = qrDb.createScan.mock.calls[0]?.[0]?.targetUrlAtScan as string;
+        expect(recorded).toBe(TARGET_URL);
+        expect(responseTarget.startsWith(`${recorded}?`)).toBe(true);
     });
 
     it('attributes the scan to a signed-in user, and to NOBODY when anonymous', async () => {
@@ -488,7 +497,9 @@ describe('GET /public/qr/{slug} — the recorded scan context (HOS-1141)', () =>
         });
 
         expect(res.status).toBe(200);
-        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(TARGET_URL);
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(
+            DECORATED_TARGET_URL
+        );
         expect(qrDb.createScan).toHaveBeenCalledTimes(1);
 
         const payload = qrDb.createScan.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -519,7 +530,9 @@ describe('GET /public/qr/{slug} — the recorded scan context (HOS-1141)', () =>
         const res = await probe(app, LIVE_SLUG, {}, /* omitUserAgent */ true);
 
         expect(res.status).toBe(200);
-        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(TARGET_URL);
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(
+            DECORATED_TARGET_URL
+        );
         expect(qrDb.createScan).toHaveBeenCalledTimes(1);
         // Stored as null, exactly like the empty case — the two facts are the
         // same fact once they reach the column, which is the property the
@@ -581,7 +594,9 @@ describe('GET /public/qr/{slug} — a failing scan write never costs the visit',
         const res = await probe(app, LIVE_SLUG);
 
         expect(res.status).toBe(200);
-        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(TARGET_URL);
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(
+            DECORATED_TARGET_URL
+        );
 
         // The behavioural half is guaranteed by the route's `catch`, so the
         // status assertion above cannot see this branch disappear. The log can.
@@ -600,6 +615,50 @@ describe('GET /public/qr/{slug} — a failing scan write never costs the visit',
         const res = await probe(app, LIVE_SLUG);
 
         expect(res.status).toBe(200);
-        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(TARGET_URL);
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(
+            DECORATED_TARGET_URL
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-2359 — UTMs on the redirect destination (OD-9)
+// ---------------------------------------------------------------------------
+
+describe('GET /public/qr/{slug} — campaign attribution on the target (HOS-2359)', () => {
+    it('decorates an own-origin target with the entity campaign and purpose, and stores it raw', async () => {
+        // Arrange: a printed accommodation listing code.
+        qrDb.rows.set(LIVE_SLUG, {
+            ...qrRow({ id: LIVE_ID, slug: LIVE_SLUG, isActive: true, deletedAt: null }),
+            source: 'ENTITY',
+            entityType: 'ACCOMMODATION',
+            entityId: '66666666-6666-4666-8666-666666666666',
+            purpose: 'LISTING'
+        });
+        const app = await buildApp();
+
+        // Act
+        const res = await probe(app, LIVE_SLUG);
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(
+            `${TARGET_URL}?utm_source=qr&utm_medium=print&utm_campaign=accommodation&utm_content=listing`
+        );
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({ targetUrlAtScan: TARGET_URL });
+    });
+
+    it('returns an external target unchanged', async () => {
+        const external = 'https://www.instagram.com/hospeda/';
+        qrDb.rows.set(LIVE_SLUG, {
+            ...qrRow({ id: LIVE_ID, slug: LIVE_SLUG, isActive: true, deletedAt: null }),
+            targetUrl: external
+        });
+        const app = await buildApp();
+
+        const res = await probe(app, LIVE_SLUG);
+
+        expect((res.body as { data?: { targetUrl?: string } }).data?.targetUrl).toBe(external);
+        expect(qrDb.createScan.mock.calls[0]?.[0]).toMatchObject({ targetUrlAtScan: external });
     });
 });

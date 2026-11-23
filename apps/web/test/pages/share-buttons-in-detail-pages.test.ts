@@ -135,4 +135,36 @@ describe('T-050 — ShareButtons in detail pages', () => {
             expect(authorCardSrc).not.toContain('publicaciones/autor/');
         });
     });
+
+    describe('HOS-2359 AC-14 — each page names its share campaign and keeps canonical URLs bare', () => {
+        it('eventos passes campaign="event" to its ShareButtons', () => {
+            const tag = readPage('eventos/[slug].astro').match(/<ShareButtons\b[\s\S]*?\/>/)?.[0];
+            expect(tag).toMatch(/\bcampaign="event"/);
+        });
+
+        it('publicaciones passes campaign="post" to its ShareButtons', () => {
+            const tag = readPage('publicaciones/[slug].astro').match(
+                /<ShareButtons\b[\s\S]*?\/>/
+            )?.[0];
+            expect(tag).toMatch(/\bcampaign="post"/);
+        });
+
+        it("alojamientos passes campaign: 'accommodation' through the gallery share prop", () => {
+            const src = readPage('alojamientos/[slug].astro');
+            const mobile = src
+                .match(/<ImageGallery\b[\s\S]*?\/>/)?.[0]
+                ?.match(/\bshare:\s*\{[^\n]*/)?.[0];
+            expect(mobile).toMatch(/\bcampaign:\s*'accommodation'/);
+        });
+
+        it.each([
+            'eventos/[slug].astro',
+            'publicaciones/[slug].astro',
+            'alojamientos/[slug].astro'
+        ])('%s never decorates a URL itself (canonical, OG and JSON-LD stay UTM-free)', (page) => {
+            // UTMs are added inside ShareButtons, per action. A page that called
+            // withUtm could leak them into SEOHead's canonical or OG tags.
+            expect(readPage(page)).not.toContain('withUtm');
+        });
+    });
 });

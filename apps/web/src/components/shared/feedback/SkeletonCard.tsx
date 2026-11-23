@@ -78,7 +78,7 @@ export interface SkeletonCardListProps {
 
 /**
  * Vertical stack of {@link SkeletonCard} placeholders for list/initial-load
- * patterns (e.g. UserFavoritesList, review modals).
+ * patterns (e.g. review modals).
  *
  * The wrapper is `aria-hidden`; pair it with a labelled live region for a11y.
  *

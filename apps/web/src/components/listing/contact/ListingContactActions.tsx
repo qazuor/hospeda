@@ -21,6 +21,13 @@ export interface ListingContactActionsProps {
     readonly panelId: string;
     readonly primaryLabelKey: string;
     readonly origin: 'bar' | 'summary';
+    /** In-page anchor the primary control falls back to before the panel is ready. */
+    readonly fallbackHref?: string;
+    /**
+     * Turns the primary control into a plain outbound link (the venue menu). Its
+     * click is reported by the page's delegated `[data-contact-channel]` listener.
+     */
+    readonly primaryLink?: { readonly href: string; readonly channel: 'menu' };
 }
 
 /** Shared triggers; the contact anchor remains usable before panel hydration or without JS. */
@@ -31,7 +38,9 @@ export function ListingContactActions({
     hasWhatsapp,
     panelId,
     primaryLabelKey,
-    origin
+    origin,
+    fallbackHref = '#contact',
+    primaryLink
 }: ListingContactActionsProps) {
     const { t } = createTranslations(locale);
     const panelReady = useSyncExternalStore(
@@ -48,13 +57,17 @@ export function ListingContactActions({
         readonly focus: 'form' | 'whatsapp';
     }): void {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        trackEvent(WebEvents.ListingContactClicked, {
-            listing_id: listingId,
-            vertical,
-            locale,
-            origin,
-            channel: focus === 'form' ? 'form_open' : 'whatsapp'
-        });
+        // Channel-only verticals have no form to open: opening their panel is not a
+        // channel, so only the links inside it are reported.
+        if (vertical === 'accommodation') {
+            trackEvent(WebEvents.ListingContactClicked, {
+                listing_id: listingId,
+                vertical,
+                locale,
+                origin,
+                channel: focus === 'form' ? 'form_open' : 'whatsapp'
+            });
+        }
         if (!isListingContactPanelReady({ panelId })) return;
         event.preventDefault();
         // Safari does not focus clicked links. Give Dialog a trigger to restore.
@@ -83,15 +96,29 @@ export function ListingContactActions({
                     />
                 </a>
             )}
-            {/* biome-ignore lint/a11y/useValidAnchor: the real contact anchor progressively enhances to a dialog. */}
-            <a
-                href="#contact"
-                className={`${styles.primary} btn-gradient--accent`}
-                aria-haspopup={panelReady ? 'dialog' : undefined}
-                onClick={(event) => activate({ event, focus: 'form' })}
-            >
-                {t(primaryLabelKey)}
-            </a>
+            {primaryLink ? (
+                <a
+                    href={primaryLink.href}
+                    className={`${styles.primary} btn-gradient--accent`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-contact-channel={primaryLink.channel}
+                    data-listing-id={listingId}
+                    data-vertical={vertical}
+                    data-contact-origin={origin}
+                >
+                    {t(primaryLabelKey)}
+                </a>
+            ) : (
+                <a
+                    href={fallbackHref}
+                    className={`${styles.primary} btn-gradient--accent`}
+                    aria-haspopup={panelReady ? 'dialog' : undefined}
+                    onClick={(event) => activate({ event, focus: 'form' })}
+                >
+                    {t(primaryLabelKey)}
+                </a>
+            )}
         </div>
     );
 }

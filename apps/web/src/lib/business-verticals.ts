@@ -1,38 +1,37 @@
 /**
  * @file business-verticals.ts
- * @description Resolves the business verticals a person has (HOS-2551), from
- * the `BUSINESS_SHORTCUTS` catalog. One answer feeds the header user menu's
- * «Administración» block and the «real client» check that gates «Asistentes
- * de IA», so the two can never disagree.
+ * @description The «Administrar …» shortcuts a person can use (HOS-2551).
  *
- * Pure: the caller passes the visibility predicate (`isVisibleByPermissions`
- * on the client, `isVisibleByRoles` on the server) and the ownership facts.
+ * Who has a business vertical is NOT decided here: it is
+ * `resolveBusinessVerticals` from `@repo/schemas` (HOS-2562), the one rule the
+ * API also applies to the MCP OAuth flow. This module only maps each granted
+ * vertical to its shortcut and picks the first destination the person's
+ * permissions open. The header user menu and the «real client» gate of
+ * «Asistentes de IA» therefore read the same answer, on both sides.
+ *
+ * Pure: the caller passes the effective permissions and the ownership facts.
  *
  * @module lib/business-verticals
  */
 
 import type { IconProps } from '@repo/icons';
+import {
+    type BusinessOwnershipFacts,
+    type ResolveBusinessVerticalsInput,
+    resolveBusinessVerticals
+} from '@repo/schemas';
 import type { ComponentType } from 'react';
 import { BUSINESS_SHORTCUTS, type BusinessShortcut } from '@/config/account-zones';
-import type { NavVisibilityPredicate } from '@/config/navigation';
+import { isVisibleByPermissions } from '@/lib/nav-gating';
 
-/** Row-ownership facts (from `/auth/me`) that grant a vertical. */
-export interface BusinessOwnershipFacts {
-    /** The account owns a host-trade directory listing (provider). */
-    readonly ownsHostTradeListing: boolean;
-    /** The account owns a partner row. */
-    readonly ownsPartner: boolean;
-}
+export type { BusinessOwnershipFacts };
 
 /** Input for {@link resolveBusinessShortcuts}. */
-export interface ResolveBusinessShortcutsParams extends BusinessOwnershipFacts {
-    /** Permission/role predicate for the gated shortcuts. */
-    readonly visibility: NavVisibilityPredicate;
-}
+export type ResolveBusinessShortcutsParams = ResolveBusinessVerticalsInput;
 
 /** A shortcut the person can use, with its destination resolved. */
 export interface ResolvedBusinessShortcut {
-    /** Stable id. */
+    /** Stable id (the business vertical). */
     readonly id: BusinessShortcut['id'];
     /** i18n key of the label. */
     readonly i18nKey: string;
@@ -45,23 +44,18 @@ export interface ResolvedBusinessShortcut {
 /**
  * Lists the «Administrar …» shortcuts a person can use, in catalog order.
  *
- * @param params - See {@link ResolveBusinessShortcutsParams}.
+ * @param params - Effective permissions and ownership facts.
  * @returns The visible shortcuts; empty for a pure tourist.
  */
-export function resolveBusinessShortcuts({
-    visibility,
-    ownsHostTradeListing,
-    ownsPartner
-}: ResolveBusinessShortcutsParams): readonly ResolvedBusinessShortcut[] {
+export function resolveBusinessShortcuts(
+    params: ResolveBusinessShortcutsParams
+): readonly ResolvedBusinessShortcut[] {
+    const granted = new Set(resolveBusinessVerticals(params).verticals);
     return BUSINESS_SHORTCUTS.flatMap((shortcut) => {
-        const owned =
-            shortcut.ownership === 'hostTradeListing'
-                ? ownsHostTradeListing
-                : shortcut.ownership === 'partner'
-                  ? ownsPartner
-                  : visibility(shortcut);
-        if (!owned) return [];
-        const target = shortcut.targets.find((candidate) => visibility(candidate));
+        if (!granted.has(shortcut.id)) return [];
+        const target = shortcut.targets.find((candidate) =>
+            isVisibleByPermissions(candidate, params.permissions)
+        );
         if (!target) return [];
         return [
             {
@@ -72,14 +66,4 @@ export function resolveBusinessShortcuts({
             }
         ];
     });
-}
-
-/**
- * Whether the person is a real client: at least one business vertical.
- *
- * @param params - See {@link ResolveBusinessShortcutsParams}.
- * @returns `true` when {@link resolveBusinessShortcuts} lists anything.
- */
-export function hasBusinessVertical(params: ResolveBusinessShortcutsParams): boolean {
-    return resolveBusinessShortcuts(params).length > 0;
 }

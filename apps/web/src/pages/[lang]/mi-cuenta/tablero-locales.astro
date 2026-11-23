@@ -1,0 +1,28 @@
+---
+/**
+ * @file mi-cuenta/tablero-locales.astro
+ * @description The venue owner dashboard (HOS-2475). All logic lives in
+ * `OwnerDashboardPage.astro`, shared with the other owner dashboard.
+ *
+ * @route    /[lang]/mi-cuenta/tablero-locales/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+import OwnerDashboardPage from '@/components/account/dashboard/OwnerDashboardPage.astro';
+import { resolveOwnerDashboardRedirect } from '@/lib/account/owner-listing-dashboard';
+import type { SupportedLocale } from '@/lib/i18n';
+
+export const prerender = false;
+
+// Auth + permission gate (a component cannot redirect, so it lives here).
+const redirect = resolveOwnerDashboardRedirect({
+    vertical: 'venue',
+    roles: Astro.locals.user ? Astro.locals.user.roles : null,
+    locale: Astro.locals.locale as SupportedLocale,
+    currentUrl: Astro.url.pathname + Astro.url.search
+});
+if (redirect) {
+    return Astro.redirect(redirect);
+}
+---
+
+<OwnerDashboardPage vertical="venue" />

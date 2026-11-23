@@ -55,7 +55,8 @@ export const protectedAddonFreeChoiceRoute = createProtectedRoute({
     handler: async (ctx, _params, body) => {
         const actor = getActorFromContext(ctx);
         const parsed = AddonFreeChoiceRequestSchema.parse(body);
-        const { clock, addonPolicy, listing, coverageNotices } = buildAddonPurchasePorts();
+        const { clock, addonPolicy, listing, coverageNotices, billingFacts } =
+            buildAddonPurchasePorts();
         const result = await chooseFreeAddon(
             {
                 ownerId: actor.id,
@@ -64,7 +65,7 @@ export const protectedAddonFreeChoiceRoute = createProtectedRoute({
                 orderRequestId: parsed.orderRequestId,
                 expectedAddonVersionId: parsed.addonVersionId
             },
-            { clock, addonPolicy, listing, coverageNotices }
+            { clock, addonPolicy, listing, coverageNotices, billingFacts }
         );
         if (result.outcome !== 'REFUSED') return result;
         const answer = refusals[result.reason];

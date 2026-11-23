@@ -29,3 +29,8 @@
     display: inline-block;
     color: var(--core-muted-foreground);
 }
+
+/* Without a price (venue) the action cluster keeps the trailing edge. */
+.bar > :last-child {
+    margin-inline-start: auto;
+}

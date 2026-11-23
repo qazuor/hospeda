@@ -120,7 +120,7 @@ describe('ExclusiveDealsList', () => {
         renderComponent();
         await waitFor(() => {
             expect(
-                screen.getByText(/las ofertas exclusivas están disponibles/i)
+                screen.getByText(/las ofertas exclusivas no están incluidas en tu plan actual/i)
             ).toBeInTheDocument();
             expect(screen.getByRole('link', { name: /ver planes/i })).toBeInTheDocument();
         });

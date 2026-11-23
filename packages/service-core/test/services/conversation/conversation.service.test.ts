@@ -108,6 +108,7 @@ import * as jose from 'jose';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { AccessTokenService } from '../../../src/services/conversation/access-token.service.js';
 import { ConversationService } from '../../../src/services/conversation/conversation.service.js';
+import { computeInquiryPayloadHash } from '../../../src/services/conversation/inquiry-payload-hash.js';
 import type { MessageService } from '../../../src/services/conversation/message.service.js';
 import type { NotificationScheduleService } from '../../../src/services/conversation/notification-schedule.service.js';
 import { withServiceTransaction } from '../../../src/utils/transaction.js';
@@ -168,6 +169,7 @@ const mockMailer = {
 const SERVICE_DEPS = {
     authSecret: 'test-secret-must-be-at-least-32-chars-long!!',
     siteUrl: 'https://test.hospeda.com',
+    apiUrl: 'https://api.test.hospeda.com',
     mailer: mockMailer
 } as const;
 
@@ -181,6 +183,7 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
         anonymousEmail: 'ana@example.com',
         anonymousEmailVerified: false,
         anonymousPhone: null,
+        pendingMessage: null,
         status: 'PENDING_VERIFICATION' as SelectConversation['status'],
         blockReason: null,
         locale: 'es',
@@ -377,6 +380,189 @@ describe('ConversationService', () => {
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
         });
 
+        it('HOS-2568: stores the guest message on the pending conversation', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([]);
+            const insertChain = makeInsertChainMock([makeConversation()]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola, ¿hay lugar en enero?'
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    pendingMessage: 'Hola, ¿hay lugar en enero?',
+                    status: 'PENDING_VERIFICATION'
+                })
+            );
+        });
+
+        it('HOS-2568: drops NUL characters from the text before storing it', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const insertChain = makeInsertChainMock([makeConversation()]);
+            mockGetDb.mockReturnValue({
+                select: makeSelectChainMock([]).select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'An\u0000a',
+                guestEmail: 'ana@example.com',
+                message: 'ho\u0000la'
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({ pendingMessage: 'hola', anonymousName: 'Ana' })
+            );
+        });
+
+        it('HOS-2568: a message that is only NUL characters is rejected as empty', async () => {
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana',
+                guestEmail: 'ana@example.com',
+                message: '\u0000\u0000'
+            });
+
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockGetDb).not.toHaveBeenCalled();
+        });
+
+        it('HOS-2568: the emailed link targets the API host with the token in the path', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            mockGetDb.mockReturnValue({
+                select: makeSelectChainMock([]).select,
+                insert: makeInsertChainMock([makeConversation()]).insert
+            });
+            asMock(SERVICE_DEPS.mailer.sendVerificationEmail).mockClear();
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                locale: 'pt'
+            });
+
+            // Assert
+            expectSuccess(result);
+            const { verificationUrl } = asMock(SERVICE_DEPS.mailer.sendVerificationEmail).mock
+                .calls[0]?.[0] as { verificationUrl: string };
+            const url = new URL(verificationUrl);
+            expect(url.origin).toBe('https://api.test.hospeda.com');
+            expect(url.origin).not.toBe(new URL(SERVICE_DEPS.siteUrl).origin);
+            expect(url.pathname).toBe('/api/v1/public/conversations/verify/mock.jwt.token');
+            expect(url.searchParams.get('token')).toBeNull();
+            expect(url.searchParams.get('locale')).toBe('pt');
+        });
+
+        it('HOS-2568: refuses to mail a link when no API base URL is configured', async () => {
+            // Arrange
+            const noApiService = new ConversationService(
+                { logger: createLoggerMock() },
+                {
+                    authSecret: SERVICE_DEPS.authSecret,
+                    siteUrl: SERVICE_DEPS.siteUrl,
+                    mailer: mockMailer
+                },
+                conversationModelMock,
+                messageModelMock,
+                accommodationModelMock,
+                accessTokenServiceMock,
+                notificationScheduleMock,
+                messageServiceMock
+            );
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            mockGetDb.mockReturnValue({
+                select: makeSelectChainMock([]).select,
+                insert: makeInsertChainMock([makeConversation()]).insert
+            });
+
+            // Act
+            const result = await noApiService.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola'
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('INTERNAL_ERROR');
+        });
+
+        it('HOS-2568: a resent replaces the held payload and mails a link bound to it', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([
+                makeConversation({ pendingMessage: 'Texto del atacante' })
+            ]);
+            const insertChain = makeInsertChainMock([]);
+            const updateChain = makeUpdateChainMock([]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert,
+                update: updateChain.update
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Texto de la víctima'
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(result.data?.status).toBe('resent');
+            expect(insertChain.insert).not.toHaveBeenCalled();
+            expect(updateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({ pendingMessage: 'Texto de la víctima' })
+            );
+            const expectedHash = computeInquiryPayloadHash({
+                payload: { message: 'Texto de la víctima', guestName: 'Ana García' }
+            }).hash;
+            expect(jose.SignJWT).toHaveBeenCalledWith(
+                expect.objectContaining({ payloadHash: expectedHash })
+            );
+            expect(SERVICE_DEPS.mailer?.sendVerificationEmail).toHaveBeenCalledWith(
+                expect.objectContaining({ message: 'Texto de la víctima' })
+            );
+        });
+
         it('persists the inquiry check-in, check-out and guests on the new row (HOS-2534)', async () => {
             // Arrange
             asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
@@ -461,6 +647,63 @@ describe('ConversationService', () => {
             expect(mockGetDb).not.toHaveBeenCalled();
         });
 
+        it('HOS-2568: a resent replaces the dates and guests and binds the link to them', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([
+                makeConversation({ pendingMessage: 'Hola', checkIn: '2026-12-01', guests: 9 })
+            ]);
+            const updateChain = makeUpdateChainMock([]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: makeInsertChainMock([]).insert,
+                update: updateChain.update
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 3
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(updateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    checkIn: '2027-01-09',
+                    checkOut: '2027-01-11',
+                    guests: 3
+                })
+            );
+            const expectedHash = computeInquiryPayloadHash({
+                payload: {
+                    message: 'Hola',
+                    guestName: 'Ana García',
+                    checkIn: '2027-01-09',
+                    checkOut: '2027-01-11',
+                    guests: 3
+                }
+            }).hash;
+            expect(jose.SignJWT).toHaveBeenCalledWith(
+                expect.objectContaining({ payloadHash: expectedHash })
+            );
+            expect(SERVICE_DEPS.mailer?.sendVerificationEmail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    checkIn: '2027-01-09',
+                    checkOut: '2027-01-11',
+                    guests: 3
+                })
+            );
+        });
+
         it('should re-send email and return status=resent for unverified duplicate', async () => {
             // Arrange
             const accommodationMock = makeAccommodation();
@@ -477,7 +720,10 @@ describe('ConversationService', () => {
 
             // select returns the existing pending row (unverified duplicate)
             const selectChain = makeSelectChainMock([existingPendingRow]);
-            mockGetDb.mockReturnValue({ select: selectChain.select });
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                update: makeUpdateChainMock([]).update
+            });
 
             // Act
             const result = await service.initiateAnonymous(ACTOR, {
@@ -491,44 +737,6 @@ describe('ConversationService', () => {
             expectSuccess(result);
             expect(result.data?.status).toBe('resent');
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
-        });
-
-        it('never writes to the pending row when re-submitted with other dates (HOS-2534)', async () => {
-            // Arrange
-            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
-            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
-                null
-            );
-            const pendingRow = makeConversation({
-                id: CONVERSATION_ID,
-                status: 'PENDING_VERIFICATION'
-            });
-            const selectChain = makeSelectChainMock([pendingRow]);
-            const updateChain = makeUpdateChainMock([]);
-            const insertChain = makeInsertChainMock([]);
-            mockGetDb.mockReturnValue({
-                select: selectChain.select,
-                update: updateChain.update,
-                insert: insertChain.insert
-            });
-
-            // Act
-            const result = await service.initiateAnonymous(ACTOR, {
-                accommodationId: ACCOMMODATION_ID,
-                guestName: 'Ana García',
-                guestEmail: 'ana@example.com',
-                message: 'Corrijo las fechas',
-                checkIn: '2027-01-09',
-                checkOut: '2027-01-11',
-                guests: 3
-            });
-
-            // Assert
-            expectSuccess(result);
-            expect(result.data?.status).toBe('resent');
-            // First submission wins until verified: no write of any kind.
-            expect(updateChain.update).not.toHaveBeenCalled();
-            expect(insertChain.insert).not.toHaveBeenCalled();
         });
 
         it('should throw ALREADY_EXISTS for a verified duplicate conversation', async () => {
@@ -661,61 +869,6 @@ describe('ConversationService', () => {
             expect(result.data?.messageId).toBe(newMsgId);
         });
 
-        it('persists the inquiry fields on the new conversation row (HOS-2534)', async () => {
-            // Arrange
-            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
-            asMock(conversationModelMock.findByUserIdAndAccommodationId).mockResolvedValue(null);
-            const newConv = makeConversation({
-                id: CONVERSATION_ID,
-                status: 'PENDING_OWNER',
-                userId: ACTOR.id
-            });
-            const conversationValues = vi.fn().mockReturnValue({
-                returning: vi.fn().mockResolvedValue([newConv])
-            });
-            let insertCallCount = 0;
-            asMock(withServiceTransaction).mockImplementationOnce(
-                async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) => {
-                    const fakeTx = {
-                        insert: vi.fn().mockImplementation(() => {
-                            insertCallCount++;
-                            if (insertCallCount === 1) return { values: conversationValues };
-                            return {
-                                values: vi.fn().mockReturnValue({
-                                    returning: vi.fn().mockResolvedValue([{ id: MESSAGE_ID }])
-                                })
-                            };
-                        }),
-                        update: vi.fn().mockReturnValue({
-                            set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue([])
-                            })
-                        })
-                    };
-                    return fn({ tx: fakeTx, hookState: {} });
-                }
-            );
-
-            // Act
-            const result = await service.initiateAuthenticated(ACTOR, {
-                accommodationId: ACCOMMODATION_ID,
-                message: 'Hola',
-                checkIn: '2026-12-12',
-                checkOut: '2026-12-15',
-                guests: 4
-            });
-
-            // Assert
-            expectSuccess(result);
-            expect(conversationValues).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    checkIn: '2026-12-12',
-                    checkOut: '2026-12-15',
-                    guests: 4
-                })
-            );
-        });
-
         it('should return isNew=false with messageId when an existing conversation is found', async () => {
             // Arrange
             const accommodationMock = makeAccommodation();
@@ -794,9 +947,12 @@ describe('ConversationService', () => {
                     const fakeTx = {
                         update: vi.fn().mockReturnValue({
                             set: vi.fn().mockReturnValue({
-                                where: vi.fn().mockResolvedValue([])
+                                where: vi.fn().mockReturnValue({
+                                    returning: vi.fn().mockResolvedValue([{ id: CONVERSATION_ID }])
+                                })
                             })
-                        })
+                        }),
+                        insert: vi.fn()
                     };
                     return fn({ tx: fakeTx, hookState: {} });
                 }
@@ -812,6 +968,182 @@ describe('ConversationService', () => {
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
             expect(result.data?.rawToken).toBe(rawToken);
             expect(notificationScheduleMock.upsertForMessage).toHaveBeenCalledOnce();
+        });
+
+        /** Runs a verification with a recording fake transaction (HOS-2568). */
+        async function verifyWithRecordingTx(args: {
+            readonly pendingMessage: string | null;
+            readonly claimed: boolean;
+            /** Hash carried by the token; defaults to the hash of the stored payload. */
+            readonly tokenHash?: string | null;
+            /** Status the row has when the claim finds nothing to flip. */
+            readonly statusAfterMiss?: string;
+        }) {
+            asMock(conversationModelMock.findById).mockResolvedValue(
+                makeConversation({ pendingMessage: args.pendingMessage })
+            );
+            const storedHash = args.pendingMessage
+                ? computeInquiryPayloadHash({
+                      payload: { message: args.pendingMessage, guestName: 'Ana García' }
+                  }).hash
+                : undefined;
+            const claim = args.tokenHash === undefined ? storedHash : (args.tokenHash ?? undefined);
+            asMock(jose.jwtVerify).mockResolvedValue({
+                payload: {
+                    conversationId: CONVERSATION_ID,
+                    email: 'ana@example.com',
+                    ...(claim ? { payloadHash: claim } : {})
+                }
+            });
+            const setCalls: Array<Record<string, unknown>> = [];
+            const insertedValues: Array<Record<string, unknown>> = [];
+            const originalTx = asMock(withServiceTransaction).getMockImplementation();
+            asMock(withServiceTransaction).mockImplementation(
+                async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) => {
+                    const fakeTx = {
+                        update: vi.fn().mockReturnValue({
+                            set: vi.fn().mockImplementation((values: Record<string, unknown>) => {
+                                setCalls.push(values);
+                                return {
+                                    where: vi.fn().mockReturnValue({
+                                        returning: vi
+                                            .fn()
+                                            .mockResolvedValue(
+                                                args.claimed ? [{ id: CONVERSATION_ID }] : []
+                                            )
+                                    })
+                                };
+                            })
+                        }),
+                        select: vi.fn().mockReturnValue({
+                            from: vi.fn().mockReturnValue({
+                                where: vi.fn().mockReturnValue({
+                                    limit: vi
+                                        .fn()
+                                        .mockResolvedValue([
+                                            { status: args.statusAfterMiss ?? 'PENDING_OWNER' }
+                                        ])
+                                })
+                            })
+                        }),
+                        insert: vi.fn().mockReturnValue({
+                            values: vi
+                                .fn()
+                                .mockImplementation((values: Record<string, unknown>) => {
+                                    insertedValues.push(values);
+                                    return Promise.resolve([]);
+                                })
+                        })
+                    };
+                    return fn({ tx: fakeTx, hookState: {} });
+                }
+            );
+            let result: Awaited<ReturnType<typeof service.verifyEmailToken>>;
+            try {
+                result = await service.verifyEmailToken(ACTOR, {
+                    verificationToken: 'mock.jwt.token'
+                });
+            } finally {
+                // Pre-transaction rejections never enter the fake: restore the default.
+                if (originalTx) asMock(withServiceTransaction).mockImplementation(originalTx);
+            }
+            return { result, setCalls, insertedValues };
+        }
+
+        it('HOS-2568: inserts the held message as the guest first message and sets the counters', async () => {
+            // Act
+            const { result, setCalls, insertedValues } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola, ¿hay lugar en enero?',
+                claimed: true
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertedValues).toEqual([
+                expect.objectContaining({
+                    conversationId: CONVERSATION_ID,
+                    senderType: 'GUEST',
+                    userId: null,
+                    body: 'Hola, ¿hay lugar en enero?',
+                    status: 'VISIBLE'
+                })
+            ]);
+            expect(setCalls[0]).toMatchObject({
+                status: 'PENDING_OWNER',
+                anonymousEmailVerified: true,
+                pendingMessage: null
+            });
+            expect(setCalls[1]).toMatchObject({
+                guestMessageCount: 1,
+                firstGuestMessageAt: expect.any(Date),
+                lastGuestMessageAt: expect.any(Date),
+                lastActivityAt: expect.any(Date)
+            });
+        });
+
+        it('HOS-2568: inserts nothing when another verification already claimed the row', async () => {
+            const { result, insertedValues } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola',
+                claimed: false
+            });
+
+            expectSuccess(result);
+            expect(insertedValues).toHaveLength(0);
+        });
+
+        it('HOS-2568: a stale link (hash of an older payload) delivers nothing and does not flip', async () => {
+            const staleHash = computeInquiryPayloadHash({
+                payload: { message: 'Texto del atacante', guestName: 'Ana García' }
+            }).hash;
+
+            const { result, insertedValues, setCalls } = await verifyWithRecordingTx({
+                pendingMessage: 'Texto de la víctima',
+                claimed: true,
+                tokenHash: staleHash
+            });
+
+            expect(result.error?.code).toBe('UNAUTHORIZED');
+            expect(result.error?.reason).toBe('VERIFICATION_TOKEN_INVALID');
+            expect(insertedValues).toHaveLength(0);
+            expect(setCalls).toHaveLength(0);
+            expect(notificationScheduleMock.upsertForMessage).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['a tampered hash', 'f'.repeat(64)],
+            ['no hash claim at all', null]
+        ])('HOS-2568: rejects a token with %s when a message is held', async (_label, tokenHash) => {
+            const { result, insertedValues, setCalls } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola',
+                claimed: true,
+                tokenHash
+            });
+
+            expect(result.error?.reason).toBe('VERIFICATION_TOKEN_INVALID');
+            expect(insertedValues).toHaveLength(0);
+            expect(setCalls).toHaveLength(0);
+        });
+
+        it('HOS-2568: a payload swapped after the hash check (claim misses) is rejected', async () => {
+            const { result, insertedValues } = await verifyWithRecordingTx({
+                pendingMessage: 'Hola',
+                claimed: false,
+                statusAfterMiss: 'PENDING_VERIFICATION'
+            });
+
+            expect(result.error?.reason).toBe('VERIFICATION_TOKEN_INVALID');
+            expect(insertedValues).toHaveLength(0);
+        });
+
+        it('HOS-2568: inserts nothing for a legacy row with no held message', async () => {
+            const { result, insertedValues, setCalls } = await verifyWithRecordingTx({
+                pendingMessage: null,
+                claimed: true
+            });
+
+            expectSuccess(result);
+            expect(insertedValues).toHaveLength(0);
+            expect(setCalls).toHaveLength(1);
         });
 
         it('should be idempotent — return fresh token when conversation is already past PENDING_VERIFICATION', async () => {

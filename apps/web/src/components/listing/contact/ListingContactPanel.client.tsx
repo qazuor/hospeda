@@ -15,6 +15,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
     buildInquiryMessage,
+    toInquiryFields,
     validateInquiryFields
 } from '@/lib/listing-contact/build-inquiry-message';
 import type { ListingContactPanelOpen } from '@/lib/listing-contact/listing-contact-events';
@@ -33,6 +34,11 @@ export interface ListingContactPanelProps {
     readonly price: ListingContactPrice;
     readonly hasWhatsapp: boolean;
     readonly whatsappPlansHref: string;
+    /**
+     * HOS-2554: catalog names of the plans that carry the host's WhatsApp number, read server-side and
+     * handed down (the catalog reader is server-only). Empty when it could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
     readonly phone?: string | null;
     readonly email?: string | null;
     readonly capacity?: number | null;
@@ -49,16 +55,6 @@ export function ListingContactPanel(props: ListingContactPanelProps) {
     );
 }
 
-/** Converts the raw panel inputs into the optional fields sent to the API. */
-function toInquiryFields(values: { checkIn: string; checkOut: string; guests: string }) {
-    const guests = values.guests === '' ? undefined : Number(values.guests);
-    return {
-        ...(values.checkIn ? { checkIn: values.checkIn } : {}),
-        ...(values.checkOut ? { checkOut: values.checkOut } : {}),
-        ...(guests !== undefined && Number.isInteger(guests) ? { guests } : {})
-    };
-}
-
 const fields = ['checkIn', 'checkOut', 'guests'] as const;
 const emptyFields = { checkIn: '', checkOut: '', guests: '' };
 
@@ -70,6 +66,7 @@ function ListingContactSheet({
     price,
     hasWhatsapp,
     whatsappPlansHref,
+    gatePlanNames = [],
     phone,
     email,
     capacity,
@@ -231,6 +228,7 @@ function ListingContactSheet({
                                 accommodationId={accommodation.id}
                                 accommodationName={accommodationName}
                                 plansHref={whatsappPlansHref}
+                                gatePlanNames={gatePlanNames}
                                 locale={locale}
                                 origin="panel"
                             />

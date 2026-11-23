@@ -28,8 +28,10 @@
     "dependencies": {
         "@react-email/components": "^1.0.12",
         "@react-email/render": "^2.1.0",
+        "@repo/analytics": "workspace:*",
         "@repo/design-tokens": "workspace:*",
-        "@repo/logger": "workspace:*"
+        "@repo/logger": "workspace:*",
+        "zod": "^4.0.8"
     },
     "peerDependencies": {
         "react": ">=18.2.0 || ^19"

@@ -109,6 +109,7 @@ async function runS13(origin: 'GRACE_PERIOD' | 'PENDING_AUTHORIZATION') {
             planPolicy: currentFloorPolicy,
             clock,
             provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
+            billingFacts: { emit: () => undefined },
             beforeCancelNotice: { beforeCancel: async () => 'SENT' },
             coverageNotices: { emitCoverageChanged: async () => {} },
             orphanhood: {
@@ -168,6 +169,7 @@ async function runS20(origin: 'GRACE_PERIOD' | 'PENDING_AUTHORIZATION') {
             planPolicy: currentFloorPolicy,
             clock,
             provider: fake,
+            billingFacts: { emit: () => undefined },
             beforeCancelNotice: { beforeCancel: async () => 'SENT' },
             coverageNotices: { emitCoverageChanged: async () => {} },
             orphanhood: {

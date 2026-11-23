@@ -44,22 +44,31 @@ describe('resolveConversationBubbleSide', () => {
     });
 });
 
+const src = resolve(__dirname, '../../src/components/account');
+
 describe.each([
     ['consultas', 'guest'],
     ['consultas-propietario', 'owner']
-])('%s thread page wiring (viewer %s)', (dir, role) => {
+])('%s thread page wiring (viewer %s, on the kit since HOS-2481)', (dir, role) => {
     const source = pageSource(dir);
 
+    it('hands the viewer to the shared panel instead of the sender type', () => {
+        expect(source).toMatch(new RegExp(`<ConversationPanel[\\s\\S]*?viewer="${role}"`));
+        expect(source).not.toMatch(/conv-thread__message--|resolveConversationBubbleSide/);
+    });
+});
+
+describe('the kit thread resolves the side from the viewer (HOS-2419)', () => {
+    const thread = readFileSync(resolve(src, 'ui/ConversationThread.tsx'), 'utf8');
+    const css = readFileSync(resolve(src, 'ui/MessageBubble.module.css'), 'utf8');
+
     it('classes each bubble by viewer-relative side, not by sender type', () => {
-        expect(source).toContain(`viewerRole: '${role}'`);
-        expect(source).toContain('conv-thread__message--${resolveConversationBubbleSide({');
-        expect(source).not.toMatch(/conv-thread__message--\$\{msg\.senderType/);
+        expect(thread).toContain('resolveConversationBubbleSide({');
+        expect(thread).toContain('viewerRole: viewer');
     });
 
     it('aligns mine to the right and theirs to the left', () => {
-        expect(source).toMatch(/\.conv-thread__message--mine\s*\{\s*justify-content:\s*flex-end;/);
-        expect(source).toMatch(
-            /\.conv-thread__message--theirs,\s*\.conv-thread__message--system\s*\{\s*justify-content:\s*flex-start;/
-        );
+        expect(css).toMatch(/\.mine\s*\{\s*align-items:\s*flex-end;/);
+        expect(css).toMatch(/\.theirs\s*\{\s*align-items:\s*flex-start;/);
     });
 });

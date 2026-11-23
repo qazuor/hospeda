@@ -66,6 +66,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: s.chargePorts.provider,
                     clock: s.fixture.clock,
                     planPolicy: currentFloorPolicy,
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice: s.chargePorts.beforeCancelNotice,
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {

@@ -9,7 +9,7 @@
  *  - "Re-run" action (rebuilds the search URL and navigates)
  *  - Delete-one action (inline confirmation)
  *  - "Clear all" action (inline confirmation)
- *  - Opt-out preference toggle
+ *  - Recording state (read-only; the switch lives in Preferences, HOS-2479)
  *
  * All API calls go to `/api/v1/protected/search-history/*`.
  * The initial `searchHistoryEnabled` state is provided by the Astro page
@@ -23,6 +23,7 @@ import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/sche
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { translateApiError } from '@/lib/api-errors';
+import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -31,6 +32,7 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './SearchHistoryList.module.css';
+import { StatusPill, TextLink } from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -85,6 +87,11 @@ export interface SearchHistoryListProps {
      * Fetched server-side to avoid a flash on mount.
      */
     readonly initialHistoryEnabled: boolean;
+    /**
+     * HOS-2554: catalog names of the plans that carry search history, read by the SSR page
+     * (the catalog reader is server-only). Empty when the catalog could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -233,7 +240,8 @@ export function SearchHistoryList({
     locale,
     apiUrl,
     userId: _userId,
-    initialHistoryEnabled
+    initialHistoryEnabled,
+    gatePlanNames = []
 }: SearchHistoryListProps) {
     // Memoized so `t` keeps a stable reference across renders — otherwise it
     // recreates on every render, which cascades into the useCallback deps
@@ -254,8 +262,8 @@ export function SearchHistoryList({
      * instead of the generic error message (BETA-148).
      */
     const [entitlementRequired, setEntitlementRequired] = useState(false);
-    const [isHistoryEnabled, setIsHistoryEnabled] = useState(initialHistoryEnabled);
-    const [isTogglingPreference, setIsTogglingPreference] = useState(false);
+    // HOS-2479: read-only here; the switch lives in Preferences.
+    const isHistoryEnabled = initialHistoryEnabled;
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [isClearing, setIsClearing] = useState(false);
@@ -278,10 +286,6 @@ export function SearchHistoryList({
         'No se pudo eliminar la búsqueda'
     );
     const clearErrorMsg = t('account.searchHistory.clearError', 'No se pudo borrar el historial');
-    const optOutErrorMsg = t(
-        'account.searchHistory.optOut.error',
-        'No se pudo actualizar la preferencia'
-    );
     const deleteSuccessMsg = t('account.searchHistory.deleteSuccess', 'Búsqueda eliminada');
     const clearSuccessMsg = t('account.searchHistory.clearSuccess', 'Historial borrado');
 
@@ -422,45 +426,6 @@ export function SearchHistoryList({
         }
     }, [base, clearErrorMsg, clearSuccessMsg, t]);
 
-    // ── Toggle opt-out ────────────────────────────────────────────────────────
-
-    /**
-     * Toggle the `searchHistoryEnabled` preference for the current user.
-     * Optimistically updates local state; reverts on API error.
-     */
-    const handleTogglePreference = useCallback(async () => {
-        const newEnabled = !isHistoryEnabled;
-        setIsHistoryEnabled(newEnabled);
-        setIsTogglingPreference(true);
-        try {
-            const res = await fetch(`${base}/api/v1/protected/search-history/preferences`, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled: newEnabled })
-            });
-            const body = (await res.json()) as MutationResponse;
-            if (!res.ok || !body.success) {
-                throw new Error(
-                    translateApiError({ error: body.error, t, fallback: optOutErrorMsg })
-                );
-            }
-        } catch (err) {
-            // Revert on failure
-            if (isMountedRef.current) {
-                setIsHistoryEnabled(!newEnabled);
-                addToast({
-                    type: 'error',
-                    message: err instanceof Error ? err.message : optOutErrorMsg
-                });
-            }
-        } finally {
-            if (isMountedRef.current) {
-                setIsTogglingPreference(false);
-            }
-        }
-    }, [base, isHistoryEnabled, optOutErrorMsg, t]);
-
     // ─────────────────────────────────────────────────────────────────────────
 
     // ── Render helpers ────────────────────────────────────────────────────────
@@ -478,6 +443,7 @@ export function SearchHistoryList({
     // convention as `AlertsList.client.tsx` and `PriceAlertButton.tsx`.
     // Points at the tourist pricing page, not the owner one (BETA-174) — this
     // is a tourist-only Área Turista feature.
+    const preferencesHref = buildUrl({ locale, path: 'mi-cuenta/preferencias' });
     const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
     // ── Loading state ─────────────────────────────────────────────────────────
@@ -526,7 +492,7 @@ export function SearchHistoryList({
 
     return (
         <div className={styles['search-history']}>
-            {/* ── Opt-out preference toggle ─────────────────────────────── */}
+            {/* ── Recording state (HOS-2479): the switch lives in Preferences ── */}
             <div className={styles['search-history__opt-out']}>
                 <div className={styles['search-history__opt-out-text']}>
                     <span className={styles['search-history__opt-out-label']}>
@@ -539,37 +505,14 @@ export function SearchHistoryList({
                         )}
                     </span>
                 </div>
-
-                <button
-                    type="button"
-                    role="switch"
-                    aria-checked={isHistoryEnabled}
-                    className={[
-                        styles['search-history__toggle'],
-                        isHistoryEnabled
-                            ? styles['search-history__toggle--on']
-                            : styles['search-history__toggle--off']
-                    ].join(' ')}
-                    onClick={() => void handleTogglePreference()}
-                    disabled={isTogglingPreference}
-                    aria-label={
-                        isTogglingPreference
-                            ? t('account.searchHistory.optOut.saving', 'Guardando...')
-                            : isHistoryEnabled
-                              ? t('account.searchHistory.optOut.enabled', 'Activado')
-                              : t('account.searchHistory.optOut.disabled', 'Desactivado')
-                    }
-                >
-                    <span
-                        className={styles['search-history__toggle-thumb']}
-                        aria-hidden="true"
-                    />
-                    <span className={styles['search-history__toggle-label-sr']}>
-                        {isHistoryEnabled
-                            ? t('account.searchHistory.optOut.enabled', 'Activado')
-                            : t('account.searchHistory.optOut.disabled', 'Desactivado')}
-                    </span>
-                </button>
+                <StatusPill tone={isHistoryEnabled ? 'success' : 'neutral'}>
+                    {isHistoryEnabled
+                        ? t('account.searchHistory.optOut.enabled', 'Activado')
+                        : t('account.searchHistory.optOut.disabled', 'Desactivado')}
+                </StatusPill>
+                <TextLink href={preferencesHref}>
+                    {t('account.preferences.changeInPreferences')}
+                </TextLink>
             </div>
 
             {/* ── Header with clear-all action ──────────────────────────── */}
@@ -622,10 +565,14 @@ export function SearchHistoryList({
                         title={t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
                         description={
                             entitlementRequired
-                                ? t(
-                                      'account.searchHistory.empty.upsellBody',
-                                      'Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo.'
-                                  )
+                                ? resolvePlanGateMessage({
+                                      keyBase: 'account.searchHistory.empty.upsellBody',
+                                      locale,
+                                      noPlansFallback:
+                                          'Tus búsquedas aparecerán acá cuando tu plan incluya el historial de búsquedas.',
+                                      planNames: gatePlanNames,
+                                      t
+                                  })
                                 : t(
                                       'account.searchHistory.empty.body',
                                       'Todavía no tenés búsquedas guardadas.'

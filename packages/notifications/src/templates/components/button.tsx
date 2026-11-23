@@ -16,18 +16,25 @@ export interface ButtonProps {
     children: React.ReactNode;
     /** Button style variant */
     variant?: ButtonVariant;
+    /**
+     * Link slot reported as `utm_content` when the link points at our web domain
+     * (HOS-2359). Rendered as `data-utm-content` on the anchor. Defaults to `'cta'`;
+     * a template with a second CTA can set e.g. `'secondary-cta'`.
+     */
+    utmContent?: string;
 }
 
 /**
  * CTA button component for email templates
  */
-export function Button({ href, children, variant = 'primary' }: ButtonProps) {
+export function Button({ href, children, variant = 'primary', utmContent = 'cta' }: ButtonProps) {
     const style = variant === 'primary' ? styles.primary : styles.secondary;
 
     return (
         <EmailButton
             href={href}
             style={style}
+            data-utm-content={utmContent}
         >
             {children}
         </EmailButton>

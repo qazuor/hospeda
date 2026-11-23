@@ -13,6 +13,8 @@ const BILLING_DIR = join(REPO_ROOT, 'packages/service-core/src/services/billing'
 
 /** Files allowed to cancel without recording, each with its reason. */
 const EXEMPT: Readonly<Record<string, string>> = {
+    'addon/addon-provider-cancellation.ts':
+        'A5 records its decision in addon-instance-a5.ts, inside the A5 transaction; this file only performs the call after the commit (HOS-1883 split)',
     'addon/addon-instance-a6-provider.ts':
         'A6 records its decision in addon-instance-a6.ts, inside the A6 transaction; this file only performs the call after the commit (AC:B10:6)',
     'subscription/successor-cut-after-commit.ts':

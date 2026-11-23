@@ -1,0 +1,110 @@
+/*
+ * Sticky section tabs. They stick under the navbar and the compact wave-header
+ * band (the same offset the detail sidebar uses). When the band slides out
+ * (`wave-header--hidden`) the tabs close the gap and stick to the navbar.
+ */
+.nav {
+    --tabs-top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 72px));
+
+    position: sticky;
+    top: var(--tabs-top);
+    z-index: calc(var(--z-nav, 50) - 2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-block-size: var(--listing-tabs-height, 48px);
+    background: var(--core-background);
+    border-block-end: 1px solid var(--border);
+    transition: top var(--wave-header-anim-duration, 0.45s)
+        var(--wave-header-anim-ease, ease-in-out);
+}
+
+:global(.wave-header--hidden) .nav {
+    --tabs-top: var(--navbar-height, 80px);
+}
+
+.list {
+    display: flex;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    gap: var(--space-1);
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+    display: none;
+}
+
+.list li {
+    flex: none;
+}
+
+.link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--listing-tabs-height, 48px);
+    padding-inline: var(--space-3);
+    color: var(--core-muted-foreground);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    border-block-end: 2px solid transparent;
+}
+
+.link:hover {
+    color: var(--core-foreground);
+}
+
+.link[aria-current] {
+    color: var(--core-foreground);
+    border-block-end-color: var(--brand-accent);
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: -2px;
+    border-radius: var(--radius-button, 8px);
+}
+
+/* Price and contact button: desktop only, mobile uses the dock. */
+.cta {
+    display: none;
+}
+
+@media (min-width: 1025px) {
+    .cta:not([hidden]) {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .price {
+        margin: 0;
+        font-size: var(--text-sm);
+        color: var(--core-foreground);
+    }
+
+    .price span {
+        color: var(--core-muted-foreground);
+    }
+}
+
+@media (min-width: 1025px) {
+    .narrowOnly {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav {
+        transition: none;
+    }
+}

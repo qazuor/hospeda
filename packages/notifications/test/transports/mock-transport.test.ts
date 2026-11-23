@@ -17,6 +17,11 @@ function makeSendInput(overrides?: Partial<SendEmailInput>): SendEmailInput {
         to: 'test@example.com',
         subject: 'Test Subject',
         react: {} as never,
+        attribution: {
+            medium: 'transactional',
+            templateKey: 'notification.payment_success',
+            includePixel: true
+        },
         ...overrides
     };
 }

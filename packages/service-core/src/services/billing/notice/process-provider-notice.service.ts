@@ -55,6 +55,7 @@ import {
     unknownFirstCharge
 } from '../subscription/subscription-billing-ports.js';
 import { activateAuthorizedPending } from './complement-authorized.js';
+import { emitComplementProviderCancelledFact } from './complement-provider-cancelled-fact.js';
 import { logProviderNoticeFailure } from './log-provider-notice-failure.js';
 import { mirrorOurCancellationOnActive } from './mirror-our-cancellation-on-active.js';
 import {
@@ -462,7 +463,12 @@ export async function processProviderNotice(
                             lostAt: cancelledAt,
                             clock: ports.clock
                         });
-                    return { userId: updated.userId, vertical: updated.vertical };
+                    return {
+                        userId: updated.userId,
+                        vertical: updated.vertical,
+                        subscriptionClass: updated.class,
+                        cancelledAt
+                    };
                 });
                 if (!cancelled) continue;
                 // CANCELLED emits no source (03-contrato-de-cobertura.md:474): notice after commit.
@@ -489,6 +495,14 @@ export async function processProviderNotice(
                         'Cancelled subscription has no coverage subject to notify'
                     );
                 }
+                // HOS-1883: after the coverage notice, the add-on fact nobody else reports.
+                await emitComplementProviderCancelledFact({
+                    subscriptionClass: cancelled.subscriptionClass,
+                    subscriptionId: row.id,
+                    cancelledAt: cancelled.cancelledAt,
+                    billingFacts: ports.billingFacts,
+                    listing: ports.complements?.listing
+                });
             }
             resolved = true;
             break;

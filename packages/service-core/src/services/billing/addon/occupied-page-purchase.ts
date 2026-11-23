@@ -93,11 +93,10 @@ export async function decideOccupiedPagePurchase(
     const found = await confirmOneTimePageByReference({ instanceId: input.occupant.id }, ports);
     if (found === 'ACTIVATED') return 'ACTIVATED';
     if (found === 'NONE_FOUND' || found === 'NONE_APPROVED') {
-        await abandonOneTimeAddon({
-            instanceId: input.occupant.id,
-            expectedProviderOrderId: null,
-            now
-        });
+        await abandonOneTimeAddon(
+            { instanceId: input.occupant.id, expectedProviderOrderId: null, now },
+            { billingFacts: ports.billingFacts, listing: ports.listing }
+        );
         return 'RETRY';
     }
     if (found === 'SETTLED') {

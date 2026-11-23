@@ -92,7 +92,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:15 AC:B10:13 LISTING free
             titleAnchorId: f.grant.anchorIds[0],
             targetId: target
         });
-        expect(listing).toHaveBeenCalledTimes(2);
+        // Two A1-bis reads, plus HOS-1883's post-commit read of the listing vertical for the
+        // `addon_granted_free` fact of the created instance.
+        expect(listing).toHaveBeenCalledTimes(3);
     });
 
     it('takes acceptsFeature from the listing port even when a DRAFT row exists', async () => {
@@ -132,7 +134,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B10:15 AC:B10:13 LISTING free
                 })
             ).toMatchObject({ outcome: 'CREATED', status: 'ACTIVE' });
             expect((await f.instances())[0]?.targetId).toBe(target);
-            expect(listing).toHaveBeenCalledTimes(2);
+            // Two A1-bis reads, plus HOS-1883's post-commit read for the fact's vertical.
+            expect(listing).toHaveBeenCalledTimes(3);
         } finally {
             await db.delete(accommodations).where(eq(accommodations.id, seeded.accommodationId));
             await db.delete(destinations).where(eq(destinations.id, seeded.destinationId));

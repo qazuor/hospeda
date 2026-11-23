@@ -54,7 +54,9 @@ import { QrCodeService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { buildQrRedirectTarget } from '../../../utils/qr-attribution';
 import { deriveQrScanContext } from '../../../utils/qr-scan-context';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -207,10 +209,21 @@ export const publicResolveQrCodeRoute = createPublicRoute({
         // Projected explicitly rather than handed the whole row: this response
         // needs no authentication, so `label`, `description` and every audit
         // column would be data leaking out of an open endpoint.
+        //
+        // HOS-2359 (OD-9): the hop the scanner takes carries the print UTMs,
+        // computed here because only this side knows the code's entity and
+        // purpose. The scan row above keeps the RAW target, and the printed code
+        // never changes. An external target and one that already carries UTMs
+        // pass through untouched.
         return {
             id: qrCode.id,
             slug: qrCode.slug,
-            targetUrl: qrCode.targetUrl
+            targetUrl: buildQrRedirectTarget({
+                targetUrl: qrCode.targetUrl,
+                entityType: qrCode.entityType,
+                purpose: qrCode.purpose,
+                siteUrl: env.HOSPEDA_SITE_URL
+            })
         };
     },
     options: {
