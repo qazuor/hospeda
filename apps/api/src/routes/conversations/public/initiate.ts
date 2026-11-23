@@ -126,7 +126,9 @@ const emailAccommodationRateLimiter = createKeyedRateLimitMiddleware({
             | undefined;
         if (!body?.guestEmail || !body.accommodationId) return null;
         const email = body.guestEmail.toLowerCase().trim();
-        return email.length > 0 ? `${email}|${body.accommodationId}` : null;
+        // UUIDs are case-insensitive in Postgres: normalise so a case variant cannot
+        // open a fresh bucket for the same listing.
+        return email.length > 0 ? `${email}|${body.accommodationId.toLowerCase()}` : null;
     }
 });
 

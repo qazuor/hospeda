@@ -77,6 +77,23 @@ describe('initiate per-email rate limits (HOS-2568)', () => {
         expect(statuses).toEqual([200, 200, 200, 429]);
     });
 
+    it('treats case variants of the same listing id as one bucket', async () => {
+        const email = `rl-${crypto.randomUUID()}@example.test`;
+        const accommodationId = crypto.randomUUID();
+
+        const statuses: number[] = [];
+        for (const id of [
+            accommodationId,
+            accommodationId.toUpperCase(),
+            accommodationId,
+            accommodationId.toUpperCase()
+        ]) {
+            statuses.push((await submit({ email, accommodationId: id })).status);
+        }
+
+        expect(statuses).toEqual([200, 200, 200, 429]);
+    });
+
     it('counts a different listing separately', async () => {
         const email = `rl-${crypto.randomUUID()}@example.test`;
         for (let i = 0; i < 3; i++) await submit({ email, accommodationId: crypto.randomUUID() });
