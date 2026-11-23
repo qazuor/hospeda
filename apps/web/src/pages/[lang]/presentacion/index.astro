@@ -22,6 +22,7 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
 import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import { PresentationShareRow } from '@/components/presentacion/PresentationShareRow.client';
 import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
 import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -45,7 +46,8 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_SITE_CONFIG]
 });
 
-const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/`;
+const siteUrl = getSiteUrl();
+const canonical = `${siteUrl.replace(/\/$/, '')}/${locale}/presentacion/`;
 ---
 
 <StandaloneLayout locale={locale}>
@@ -73,7 +75,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/`;
     <div class="rule"></div>
     <p class="masthead__lede">
       Una presentación para cada tipo de negocio o colaborador. Elegí la que corresponde y
-      compartí su enlace.
+      compartila con el botón de la red por la que la mandás: cada uno da su propio enlace
+      corto, así sabemos por dónde llegó cada visita.
     </p>
     </div>
     <HospedinFigure pose="saludando" placement="hero" say="¡Hola! Elegí la tuya" />
@@ -95,6 +98,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/`;
                 <span class="deck__url">hospeda.com.ar/presentacion/<wbr />{entry.slug}</span>
               </span>
             </a>
+            {/* HOS-2359: the links to SEND. Each hands out this presentation's
+                /go/ short link for its channel; the card link above stays canonical. */}
+            <PresentationShareRow presentation={entry} siteUrl={siteUrl} locale={locale} client:visible />
           </li>
         );
       })}

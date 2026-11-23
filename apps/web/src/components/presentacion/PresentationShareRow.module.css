@@ -1,0 +1,71 @@
+/**
+ * PresentationShareRow.module.css
+ * Share row under each `/presentacion/` index card (HOS-2359).
+ * Uses the presentation palette from `styles/presentacion.css`
+ * (`--surface`, `--ink`, `--line`, `--accent`, ...), so light and dark themes follow.
+ */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid var(--line-strong, #b2d3e4);
+    border-radius: 999px;
+    background: var(--surface, #ffffff);
+    color: var(--ink, #0d2b3e);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.action:hover {
+    border-color: var(--accent, #1479b0);
+    background: var(--accent-soft, #dcf0fa);
+}
+
+.action:focus-visible {
+    outline: 2px solid var(--accent, #1479b0);
+    outline-offset: 2px;
+}
+
+.label {
+    white-space: nowrap;
+}
+
+.url {
+    margin: 0;
+    color: var(--muted, #4e6473);
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+.status {
+    margin: 0;
+    min-height: 1.2em;
+    color: var(--good, #2b7a1f);
+    font-size: 0.8rem;
+}
+
+.statusFailed {
+    color: var(--stop, #c54a05);
+}

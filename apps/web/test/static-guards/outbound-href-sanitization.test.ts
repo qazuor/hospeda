@@ -91,7 +91,9 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
     'components/venue/VenueAddress.astro#{mapUrl}':
         '`buildVenueMapUrl` composes `https://www.openstreetmap.org/` from two `Number()`-parsed coordinates; non-finite values yield null, so the scheme and host are our literal',
     'components/ShareButtons.client.tsx#{link.href}':
-        'share intents composed in this file from literal provider bases (wa.me, facebook.com/sharer, t.me)',
+        'share intents composed by lib/share-intents.ts from literal provider bases (wa.me, facebook.com/sharer, twitter.com/intent, t.me)',
+    'components/presentacion/PresentationShareRow.client.tsx#{buildShareIntentUrl({ network: action.network, url: shortUrl(action.network), title: presentation.headline })}':
+        'HOS-2359: the same lib/share-intents.ts builder (literal provider bases), sharing a /go/ short link this app composed on its own site origin',
     'components/accommodation/ExternalReviews.client.tsx#{GOOGLE_ATTRIBUTION_HREF}':
         "module constant 'https://www.google.com/maps', required by the Google Places display policy",
     'components/accommodation/ExternalReputationSummaryRow.astro#{deepLinkHref}':
