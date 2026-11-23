@@ -10,13 +10,14 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { sendMessage, ownerReply } = vi.hoisted(() => ({
+const { sendMessage, ownerReply, getThread } = vi.hoisted(() => ({
     sendMessage: vi.fn(),
+    getThread: vi.fn(),
     ownerReply: vi.fn()
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
-    protectedConversationsApi: { sendMessage },
+    protectedConversationsApi: { sendMessage, getThread },
     ownerConversationsApi: { reply: ownerReply }
 }));
 
@@ -50,6 +51,8 @@ const reload = vi.fn();
 
 beforeEach(() => {
     sendMessage.mockReset();
+    getThread.mockReset();
+    getThread.mockResolvedValue({ ok: true, data: { messages: [] } });
     ownerReply.mockReset();
     reload.mockReset();
     Object.defineProperty(window, 'location', {
@@ -250,6 +253,93 @@ describe('ConversationPanel — optimistic send without reload (HOS-2439)', () =
         expect(sendMessage).toHaveBeenCalledTimes(2);
         expect(screen.queryByText('No se pudo enviar el mensaje.')).not.toBeInTheDocument();
         expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('retry does not resend a message that already landed on the server', async () => {
+        // Arrange: the first POST reached the API but its response was lost
+        sendMessage.mockResolvedValueOnce({ ok: false, error: { status: 0, message: 'lost' } });
+        getThread.mockResolvedValue({
+            ok: true,
+            data: {
+                messages: [
+                    ...MESSAGES,
+                    {
+                        id: 'srv-9',
+                        body: 'Hola',
+                        senderType: 'guest',
+                        createdAt: new Date(Date.now() + 1000).toISOString()
+                    }
+                ]
+            }
+        });
+        const user = userEvent.setup();
+        render(
+            <ConversationPanel
+                locale="es"
+                viewer="guest"
+                conversationId="c1"
+                initialMessages={MESSAGES}
+                canReply
+            />
+        );
+        await user.type(screen.getByRole('textbox'), 'Hola');
+        await user.click(screen.getByRole('button', { name: 'Enviar' }));
+        const bubble = await screen.findByText('Hola');
+        await waitFor(() =>
+            expect(bubble.closest('li')).toHaveAttribute('data-delivery', 'failed')
+        );
+
+        // Act
+        await user.click(
+            within(bubble.closest('li') as HTMLElement).getByRole('button', { name: 'Reintentar' })
+        );
+
+        // Assert: settled from the server copy, POST never repeated
+        await waitFor(() =>
+            expect(screen.getByText('Hola').closest('li')).not.toHaveAttribute('data-delivery')
+        );
+        expect(sendMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('a later success does not clear the error of another failed message', async () => {
+        // Arrange
+        sendMessage
+            .mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'down' } })
+            .mockResolvedValueOnce({
+                ok: true,
+                data: {
+                    id: 'srv-2',
+                    body: 'B',
+                    senderType: 'guest',
+                    createdAt: '2026-11-20T16:00:00Z'
+                }
+            });
+        const user = userEvent.setup();
+        render(
+            <ConversationPanel
+                locale="es"
+                viewer="guest"
+                conversationId="c1"
+                initialMessages={MESSAGES}
+                canReply
+            />
+        );
+
+        // Act: A fails, B succeeds
+        await user.type(screen.getByRole('textbox'), 'A');
+        await user.click(screen.getByRole('button', { name: 'Enviar' }));
+        await waitFor(() =>
+            expect(screen.getByText('A').closest('li')).toHaveAttribute('data-delivery', 'failed')
+        );
+        await user.type(screen.getByRole('textbox'), 'B');
+        await user.click(screen.getByRole('button', { name: 'Enviar' }));
+        await waitFor(() =>
+            expect(screen.getByText('B').closest('li')).not.toHaveAttribute('data-delivery')
+        );
+
+        // Assert: A is still failed and its reason is still shown
+        expect(screen.getByText('A').closest('li')).toHaveAttribute('data-delivery', 'failed');
+        expect(screen.getByText('No se pudo enviar el mensaje.')).toBeInTheDocument();
     });
 });
 

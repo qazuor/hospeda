@@ -57,6 +57,9 @@ export interface ConversationPanelProps {
     readonly children?: ReactNode;
 }
 
+/** Tolerated client/server clock difference when matching a landed message. */
+const LANDED_CLOCK_SKEW_MS = 5 * 60 * 1000;
+
 /** Help anchor of each thread section. */
 const THREAD_HELP_ID = {
     guest: 'section:messages.thread',
@@ -106,31 +109,100 @@ export function ConversationPanel({
 }: ConversationPanelProps) {
     const t = createT(locale);
     const [messages, setMessages] = useState<readonly ThreadMessage[]>(initialMessages);
-    const [error, setError] = useState<string | undefined>(undefined);
+    // One reason per failed message, so a later success never clears another failure's.
+    const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
     const [sentHere, setSentHere] = useState(false);
     const nextLocalId = useRef(0);
 
     const patch = (id: string, next: (message: ThreadMessage) => ThreadMessage) =>
         setMessages((current) => current.map((m) => (m.id === id ? next(m) : m)));
 
-    const deliver = async ({ id, body }: { readonly id: string; readonly body: string }) => {
+    const setErrorFor = ({ id, reason }: { readonly id: string; readonly reason?: string }) =>
+        setErrors((current) => {
+            const { [id]: _removed, ...rest } = current;
+            return reason === undefined ? rest : { ...rest, [id]: reason };
+        });
+
+    /**
+     * Re-reads the newest page and returns the server copy of a message that
+     * already landed (a failed send can have reached the API before the
+     * response was lost). `undefined` when it did not; `null` when the thread
+     * could not be read, which blocks the resend rather than risk a duplicate.
+     */
+    const findLanded = async ({
+        body,
+        since
+    }: {
+        readonly body: string;
+        readonly since: string;
+    }): Promise<ConversationMessageItem | undefined | null> => {
+        const thread =
+            viewer === 'guest'
+                ? await protectedConversationsApi.getThread({ id: conversationId, limit: 20 })
+                : await ownerConversationsApi.getById({ id: conversationId, limit: 20 });
+        if (!thread.ok) return null;
+        const known = new Set(messages.map((m) => m.id));
+        const floor = Date.parse(since) - LANDED_CLOCK_SKEW_MS;
+        return thread.data.messages.find(
+            (m) =>
+                m.senderType === viewer &&
+                m.body === body &&
+                !known.has(m.id) &&
+                Date.parse(m.createdAt) >= floor
+        );
+    };
+
+    const settle = ({
+        id,
+        saved
+    }: {
+        readonly id: string;
+        readonly saved: ConversationMessageItem | undefined;
+    }) => {
+        patch(id, (m) => ({
+            id: typeof saved?.id === 'string' ? saved.id : m.id,
+            body: m.body,
+            senderType: viewer,
+            createdAt: typeof saved?.createdAt === 'string' ? saved.createdAt : m.createdAt
+        }));
+        setErrorFor({ id });
+    };
+
+    const fail = ({ id, error }: { readonly id: string; readonly error: ApiError }) => {
+        patch(id, (m) => ({ ...m, delivery: 'failed' }));
+        setErrorFor({ id, reason: sendErrorMessage({ error, locale }) });
+    };
+
+    const deliver = async ({
+        id,
+        body,
+        retryOf
+    }: {
+        readonly id: string;
+        readonly body: string;
+        /** Instant of the failed attempt; set on a retry, which must not duplicate. */
+        readonly retryOf?: string;
+    }) => {
+        if (retryOf !== undefined) {
+            const landed = await findLanded({ body, since: retryOf });
+            if (landed === null) {
+                fail({ id, error: { status: 0, message: 'thread unreadable' } });
+                return;
+            }
+            if (landed !== undefined) {
+                settle({ id, saved: landed });
+                return;
+            }
+        }
         const result: ApiResult<ConversationMessageItem> =
             viewer === 'guest'
                 ? await protectedConversationsApi.sendMessage({ id: conversationId, body })
                 : await ownerConversationsApi.reply({ id: conversationId, message: body });
         if (result.ok) {
-            const saved = result.data;
-            patch(id, (m) => ({
-                id: typeof saved?.id === 'string' ? saved.id : m.id,
-                body: m.body,
-                senderType: viewer,
-                createdAt: typeof saved?.createdAt === 'string' ? saved.createdAt : m.createdAt
-            }));
-            setError(undefined);
+            settle({ id, saved: result.data });
             return;
         }
-        patch(id, (m) => ({ ...m, delivery: 'failed' }));
-        setError(sendErrorMessage({ error: result.error, locale }));
+        fail({ id, error: result.error });
     };
 
     const handleSend = ({ body }: { readonly body: string }) => {
@@ -154,8 +226,15 @@ export function ConversationPanel({
         const message = messages.find((m) => m.id === id);
         if (!message) return;
         patch(id, (m) => ({ ...m, delivery: 'sending' }));
-        void deliver({ id, body: message.body });
+        setErrorFor({ id });
+        void deliver({ id, body: message.body, retryOf: message.createdAt });
     };
+
+    // The composer shows the reason of the newest message that is still failed.
+    const error = [...messages]
+        .reverse()
+        .map((m) => errors[m.id])
+        .find((reason) => reason !== undefined);
 
     // A read receipt describes the thread as the page loaded it; once the
     // viewer writes again it no longer covers the newest message.
