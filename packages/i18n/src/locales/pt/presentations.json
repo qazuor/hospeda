@@ -1,0 +1,12 @@
+{
+    "share": {
+        "label": "Compartilhar a apresentação",
+        "whatsapp": "Compartilhar no WhatsApp",
+        "facebook": "Compartilhar no Facebook",
+        "x": "Compartilhar no X",
+        "telegram": "Compartilhar no Telegram",
+        "copy": "Copiar link",
+        "copied": "Link copiado",
+        "copyFailed": "Não foi possível copiar o link"
+    }
+}
