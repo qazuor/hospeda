@@ -19,29 +19,6 @@ import { UserReviewsList } from '../../../src/components/account/UserReviewsList
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../../src/components/account/UserReviewsList.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
-vi.mock('../../../src/components/shared/feedback/SkeletonCard.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
-vi.mock('../../../src/lib/i18n', async () => {
-    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
-    const t = (key: string, fallback?: string): string => fallback ?? tFromCatalog(key);
-    // tPlural was added in commit b138f3cbb ("fix(web,i18n): show review title
-    // and pluralise the totals line"). Returns a simple string with the count.
-    const tPlural = (key: string, count: number, _params?: Record<string, unknown>): string =>
-        `${count} ${key}`;
-    const translations = { t, tPlural } as const;
-    return { createTranslations: () => translations };
-});
-
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const ACCOMMODATION_REVIEW = {
@@ -120,15 +97,9 @@ describe('UserReviewsList', () => {
     it('shows skeleton loading state on mount (SPEC-228 T-020)', () => {
         globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => undefined));
         const { container } = renderList();
-        // No '⏳' or raw loading text — SkeletonCardList renders aria-hidden shimmer divs
-        expect(screen.queryByText('Cargando…')).not.toBeInTheDocument();
-        // Loading wrapper is busy with aria-label
-        const loadingWrap = container.querySelector('[aria-busy="true"]');
-        expect(loadingWrap).not.toBeNull();
-        expect(loadingWrap?.getAttribute('aria-label')).toBe('Cargando…');
-        // SkeletonCardList renders aria-hidden shimmer divs
-        const skeletons = container.querySelectorAll('[aria-hidden="true"]');
-        expect(skeletons.length).toBeGreaterThan(0);
+        // The kit Skeleton is a busy container with a hidden «Cargando…»
+        expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+        expect(screen.getByText('Cargando…')).toBeInTheDocument();
     });
 
     it('renders empty state when no reviews', async () => {
@@ -165,10 +136,10 @@ describe('UserReviewsList', () => {
             .mockResolvedValue(makeReviewsResponse([ACCOMMODATION_REVIEW], []));
         renderList();
         await waitFor(() => {
-            // average of [5,4,4,5,4,5] = 4.5
-            const badge = screen.getByLabelText(/calificación/i);
-            expect(badge).toBeInTheDocument();
-            expect(badge.textContent).toContain('4.5');
+            // average of [5,4,4,5,4,5] = 4.5, read once by RatingStars
+            const stars = screen.getByRole('img', { name: 'Calificación: 4.5 de 5' });
+            expect(stars).toBeInTheDocument();
+            expect(stars.textContent).toContain('4.5');
         });
     });
 
@@ -190,6 +161,23 @@ describe('UserReviewsList', () => {
         await waitFor(() => {
             expect(screen.getByRole('alert')).toBeInTheDocument();
         });
+        // A failed read is an error with a retry, never the empty state
+        expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+        expect(screen.queryByText(/Todavía no escribiste reseñas/i)).not.toBeInTheDocument();
+    });
+
+    it('paginates more than one page of reviews with the kit Pagination', async () => {
+        const many = Array.from({ length: 12 }, (_, index) => ({
+            ...ACCOMMODATION_REVIEW,
+            id: `rev-${index}`,
+            accommodationName: `Casa ${index}`
+        }));
+        globalThis.fetch = vi.fn().mockResolvedValue(makeReviewsResponse(many, []));
+        renderList();
+        await screen.findByText('Casa 0');
+        expect(screen.queryByText('Casa 11')).not.toBeInTheDocument();
+        const nav = screen.getByRole('navigation');
+        expect(nav).toBeInTheDocument();
     });
 
     it('does not render pagination for results <= PAGE_SIZE', async () => {
@@ -213,12 +201,12 @@ describe('TEST:1706:3 AC:1706:2 AC:1706:3 a review of a deleted listing', () => 
         renderList();
 
         const name = await screen.findByText('Casa del Litoral');
-        expect(name.tagName).toBe('SPAN');
+        expect(name.tagName).toBe('P');
         expect(screen.queryByRole('link', { name: 'Casa del Litoral' })).toBeNull();
         expect(screen.getByText('La ficha ya no existe')).toBeInTheDocument();
         expect(screen.getByText('Muy buen lugar, limpio y cómodo.')).toBeInTheDocument();
         expect(screen.getByText('Excelente estadía')).toBeInTheDocument();
-        expect(screen.getByText('1 account.reviews.total')).toBeInTheDocument();
+        expect(screen.getByText('Total: 1 reseña')).toBeInTheDocument();
     });
 
     it('does not link a gone listing when an older API still sends its slug', async () => {

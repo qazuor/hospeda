@@ -8,12 +8,11 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { UserReviewsList } from '@/components/account/UserReviewsList.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -29,9 +28,9 @@ const apiUrl = getApiUrl();
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="resenas">
-	<AccountPageHeader title={title} />
+	<PageHeader title={title} locale={locale}>
+		<PageHelpLink slot="help" locale={locale} />
+	</PageHeader>
 
-	<AccountSectionCard>
-		<UserReviewsList client:load locale={locale} apiUrl={apiUrl} />
-	</AccountSectionCard>
+	<UserReviewsList client:load locale={locale} apiUrl={apiUrl} />
 </AccountLayout>
