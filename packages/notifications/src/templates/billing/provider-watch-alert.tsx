@@ -1,6 +1,9 @@
-import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Hr, Text } from '@react-email/components';
+import { Button, EmailLayout, emailPalette } from '@repo/email';
 import { Heading } from '../components/heading.js';
+import { InfoRow } from '../components/info-row.js';
+import { formatDateTime } from '../utils/format-helpers.js';
+import { adminPanelHref } from './staff-notice.js';
 
 /** One change the watch battery found, as the mail shows it. */
 export interface ProviderWatchAlertLine {
@@ -33,6 +36,8 @@ export interface ProviderWatchAlertProps {
     };
     /** How many further alerts the run found that this mail does not carry. */
     readonly omitted?: number;
+    /** Admin base URL. Absent: no button to the provider watch page. */
+    readonly adminUrl?: string;
 }
 
 /** Human name of the account a run targeted. */
@@ -61,10 +66,32 @@ export function providerWatchAlertSubject(props: {
     return `Vigilancia del proveedor (${ACCOUNT_LABEL[props.account]}): ${props.count} ${props.count === 1 ? 'cambio' : 'cambios'}`;
 }
 
+/** What happened to one measurement, in a sentence. */
+function kindText(alert: ProviderWatchAlertLine): string {
+    switch (alert.kind) {
+        case 'value_changed':
+            return 'Devolvió otro valor';
+        case 'measurement_errored':
+            return 'No se pudo medir: la medición falló y no hay respuesta que comparar';
+        case 'shape_baseline_missing':
+            return 'No tiene una forma de respuesta aceptada: revisala y aceptala en el panel';
+        case 'shape_changed':
+            return `Cambió la forma de la respuesta${alert.label ? ` (${alert.label})` : ''}`;
+        default: {
+            const unreachable: never = alert.kind;
+            return unreachable;
+        }
+    }
+}
+
 /**
  * Tells the administrator what the provider watch battery found different: which
  * measurement, what it expected and what it obtained. The battery adjusts nothing; reading
  * this mail and deciding is the whole follow-up.
+ *
+ * The expected and obtained values, and the detail lines, are provider values shown
+ * verbatim (`raw`): translating a measured value would misreport what the provider
+ * returned.
  */
 export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
     const subject = providerWatchAlertSubject({
@@ -72,13 +99,15 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
         count: props.alerts.length,
         ...(props.run === undefined ? {} : { outcome: props.run.outcome })
     });
+    const panelHref = adminPanelHref({ adminUrl: props.adminUrl, path: '/billing/settings' });
     return (
         <EmailLayout previewText={subject}>
             <Heading>{subject}</Heading>
             <Text>
                 La batería de vigilancia midió al proveedor ({ACCOUNT_LABEL[props.account]}) el{' '}
-                {props.finishedAt} y encontró lo siguiente. No ajustó nada: decidí vos si el falso,
-                la lista o el código tienen que cambiar.
+                {formatDateTime({ dateString: props.finishedAt }) || props.finishedAt} y encontró lo
+                siguiente. No ajustó nada: decidí vos si el falso, la lista o el código tienen que
+                cambiar.
             </Text>
             {props.run !== undefined && (
                 <Text>
@@ -88,22 +117,34 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
                     : {props.run.reason ?? 'no registró un motivo'}.
                 </Text>
             )}
-            {props.alerts.map((alert) => (
+            {props.alerts.map((alert, index) => (
                 <div key={`${alert.measurementId}:${alert.kind}:${alert.label ?? ''}`}>
-                    <Text>
-                        <strong>{alert.measurementId}</strong>{' '}
-                        {alert.kind === 'value_changed'
-                            ? 'devolvió otro valor'
-                            : alert.kind === 'measurement_errored'
-                              ? 'no se pudo medir: la medición falló y no hay respuesta que comparar'
-                              : alert.kind === 'shape_baseline_missing'
-                                ? 'no tiene una forma de respuesta aceptada: revisala y aceptala en el panel'
-                                : `cambió la forma de la respuesta${alert.label ? ` (${alert.label})` : ''}`}
-                    </Text>
-                    <Text>Esperaba: {alert.expected}</Text>
-                    <Text>Obtuvo: {alert.obtained}</Text>
+                    {index > 0 ? <Hr style={dividerStyle} /> : null}
+                    <InfoRow
+                        label="Medición"
+                        value={alert.measurementId}
+                    />
+                    <InfoRow
+                        label="Qué pasó"
+                        value={kindText(alert)}
+                    />
+                    <InfoRow
+                        label="Esperaba"
+                        value={alert.expected}
+                        raw
+                    />
+                    <InfoRow
+                        label="Obtuvo"
+                        value={alert.obtained}
+                        raw
+                    />
                     {alert.details.map((detail) => (
-                        <Text key={detail}>{detail}</Text>
+                        <InfoRow
+                            key={detail}
+                            label="Detalle"
+                            value={detail}
+                            raw
+                        />
                     ))}
                 </div>
             ))}
@@ -116,6 +157,18 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
                     : están todos en el registro de la corrida.
                 </Text>
             )}
+            {panelHref ? (
+                <Button href={panelHref}>Abrir la vigilancia del proveedor</Button>
+            ) : (
+                <Text>
+                    Lo encontrás en el panel de administración: Facturación → Configuración.
+                </Text>
+            )}
         </EmailLayout>
     );
 }
+
+const dividerStyle = {
+    borderColor: emailPalette.border,
+    margin: '20px 0'
+};

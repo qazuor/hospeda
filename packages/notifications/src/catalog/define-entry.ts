@@ -15,6 +15,7 @@ import {
     type EmailCatalogRenderDeps,
     type EmailCatalogRendered,
     type EmailScenario,
+    type EmailScenarioLocale,
     type EmailSendPath,
     SUBJECT_FELL_BACK_WARNING
 } from './types.js';
@@ -56,12 +57,40 @@ export interface DefineEmailCatalogEntryInput<TInput> {
     }) => EmailCatalogRendered | Promise<EmailCatalogRendered>;
 }
 
+const SCENARIO_LOCALES: readonly EmailScenarioLocale[] = ['es', 'en', 'pt'];
+
+function isScenarioLocale(value: unknown): value is EmailScenarioLocale {
+    return SCENARIO_LOCALES.some((locale) => locale === value);
+}
+
+function recordOf(value: unknown): Readonly<Record<string, unknown>> | null {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? (value as Readonly<Record<string, unknown>>)
+        : null;
+}
+
+/**
+ * Reads the locale a scenario input carries, at the top level (notification payloads,
+ * conversation and digest samples) or inside `payload` (outbox rows).
+ *
+ * @param input - The scenario input
+ * @returns The locale the input carries, or `undefined` when it carries none
+ */
+export function readInputLocale(input: unknown): EmailScenarioLocale | undefined {
+    const top = recordOf(input);
+    if (!top) return undefined;
+    if (isScenarioLocale(top.locale)) return top.locale;
+    const payload = recordOf(top.payload);
+    return payload && isScenarioLocale(payload.locale) ? payload.locale : undefined;
+}
+
 /**
  * Builds a type-erased catalog entry while keeping its scenarios typed.
  *
  * @param input - The entry definition.
  * @returns The catalog entry.
- * @throws {Error} At module load when two scenarios share an id.
+ * @throws {Error} At module load when two scenarios share an id, or when a scenario's
+ * input carries a `locale` that differs from the locale the scenario declares (D14).
  */
 export function defineEmailCatalogEntry<TInput>(
     input: DefineEmailCatalogEntryInput<TInput>
@@ -75,6 +104,13 @@ export function defineEmailCatalogEntry<TInput>(
             );
         }
         seen.add(scenario.id);
+        const carried = readInputLocale(scenario.input);
+        const declared = scenario.locale ?? 'es';
+        if (carried !== undefined && carried !== declared) {
+            throw new Error(
+                `Scenario "${scenario.id}" of email catalog entry "${key}" carries locale "${carried}" but declares "${declared}"`
+            );
+        }
     }
     const { render, scenarios } = input;
     return {
@@ -85,7 +121,11 @@ export function defineEmailCatalogEntry<TInput>(
         domain: input.domain,
         audience: input.audience,
         wired: input.wired ?? true,
-        scenarios: scenarios.map(({ id, label }) => ({ id, label })),
+        scenarios: scenarios.map(({ id, label, locale }) => ({
+            id,
+            label,
+            locale: locale ?? 'es'
+        })),
         renderScenario: async ({ scenarioId, deps }) => {
             const scenario = scenarios.find((candidate) => candidate.id === scenarioId);
             if (!scenario) {

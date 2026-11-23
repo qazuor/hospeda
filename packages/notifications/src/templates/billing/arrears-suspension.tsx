@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
 
@@ -19,6 +19,8 @@ export interface ArrearsSuspensionProps {
     readonly touristVipLost: boolean;
     readonly oneTimeAddons: readonly ArrearsSuspensionOneTimeAddon[];
     readonly promoLost: boolean;
+    /** Absolute URL of Mi Suscripción, built by the renderer from the site URL. */
+    readonly actionUrl: string;
 }
 
 function comeBackLines(input: {
@@ -55,7 +57,8 @@ export function ArrearsSuspension({
     paymentMethod,
     touristVipLost,
     oneTimeAddons,
-    promoLost
+    promoLost,
+    actionUrl
 }: ArrearsSuspensionProps) {
     const verticalName = formatTrialVerticals({ verticals: [vertical] });
     return (
@@ -71,6 +74,7 @@ export function ArrearsSuspension({
             {oneTimeAddons.map((addon) => (
                 <Text key={`${addon.name}:${addon.remainingDays}`}>{addonLine(addon)}</Text>
             ))}
+            <Button href={actionUrl}>Volver a suscribirme</Button>
         </EmailLayout>
     );
 }

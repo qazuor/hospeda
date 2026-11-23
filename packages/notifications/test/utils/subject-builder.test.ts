@@ -230,7 +230,7 @@ describe('Subject Builder', () => {
                 const result = getSubject(NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED, data);
 
                 expect(result).toBe(
-                    'Cancellation confirmed — Pro Host access until 15 de julio de 2026'
+                    'Confirmamos tu baja: seguís con Pro Host hasta el 15 de julio de 2026'
                 );
                 // Must not contain a raw ISO timestamp
                 expect(result).not.toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:/);
@@ -250,7 +250,7 @@ describe('Subject Builder', () => {
 
                 const result = getSubject(NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON, data);
 
-                expect(result).toBe('Your Pro Host access ends in 3 days — act now to keep it');
+                expect(result).toBe('Tu acceso a Pro Host termina en 3 días');
                 // accessUntil is NOT in this subject pattern (it's used in the email body only)
                 expect(result).not.toContain('{accessUntil}');
             });

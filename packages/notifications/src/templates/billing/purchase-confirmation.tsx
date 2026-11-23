@@ -2,7 +2,7 @@ import { Section, Text } from '@react-email/components';
 import { Button, EmailLayout, emailPalette } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { formatCurrency, formatDate } from '../utils/index.js';
+import { formatBillingCycleLabel, formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for PurchaseConfirmation email template
@@ -61,7 +61,7 @@ export function PurchaseConfirmation({
                 {billingPeriod && (
                     <InfoRow
                         label="Período"
-                        value={billingPeriod}
+                        value={formatBillingCycleLabel({ cycle: billingPeriod })}
                     />
                 )}
                 {formattedNextBilling && (

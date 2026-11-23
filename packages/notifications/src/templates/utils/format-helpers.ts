@@ -133,3 +133,89 @@ export function formatDate({ dateString }: FormatDateInput): string {
         }) ?? ''
     );
 }
+
+/**
+ * Input parameters for {@link formatDateTime}.
+ */
+export interface FormatDateTimeInput {
+    /** ISO 8601 instant with a timezone (e.g. "2026-11-21T12:00:00.000Z"). */
+    readonly dateString: string;
+}
+
+/** Timezone staff read instants in. */
+const STAFF_TIME_ZONE = 'America/Argentina/Buenos_Aires';
+
+const dateTimeFormatter = new Intl.DateTimeFormat('es-AR', {
+    timeZone: STAFF_TIME_ZONE,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+});
+
+/**
+ * Formats an ISO instant as a short date and time in Argentina (HOS-2565 §7.2).
+ *
+ * Unlike {@link formatDate}, which names a calendar DAY under the UTC convention,
+ * this renders an INSTANT, so it converts to `America/Argentina/Buenos_Aires`.
+ * The parts are assembled by hand because `Intl` joins date and time with a
+ * locale-dependent separator ("21/11/2026, 09:00" in some ICU versions).
+ *
+ * @param params - ISO instant to format
+ * @returns "DD/MM/YYYY HH:mm" in Argentine time, or `''` when the value is not a real instant
+ *
+ * @example
+ * ```ts
+ * formatDateTime({ dateString: '2026-11-21T12:00:00.000Z' }) // "21/11/2026 09:00"
+ * formatDateTime({ dateString: 'not a date' })              // ""
+ * ```
+ */
+export function formatDateTime({ dateString }: FormatDateTimeInput): string {
+    const instant = new Date(dateString);
+    if (Number.isNaN(instant.getTime())) return '';
+    const parts = Object.fromEntries(
+        dateTimeFormatter.formatToParts(instant).map((part) => [part.type, part.value])
+    );
+    return `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}`;
+}
+
+/**
+ * Input parameters for {@link formatBillingCycleLabel}.
+ */
+export interface FormatBillingCycleLabelInput {
+    /** Billing cycle as stored (`monthly`, `quarterly`, `semiannual`, `annual`). */
+    readonly cycle: string;
+}
+
+/** Spanish label per known billing cycle (HOS-2565 D7). */
+const BILLING_CYCLE_LABELS: Readonly<Record<string, string>> = {
+    monthly: 'Mensual',
+    quarterly: 'Trimestral',
+    semiannual: 'Semestral',
+    annual: 'Anual'
+};
+
+/**
+ * Spanish label of a billing cycle. The ONE map shared by the purchase
+ * confirmation, the price-change notice and the reconciliation summary
+ * (HOS-2565 D7).
+ *
+ * An unknown value renders as received: the raw value keeps the information
+ * visible instead of hiding a row.
+ *
+ * @param params - The stored cycle
+ * @returns The Spanish label, or the cycle itself when it is not known
+ *
+ * @example
+ * ```ts
+ * formatBillingCycleLabel({ cycle: 'monthly' }) // "Mensual"
+ * formatBillingCycleLabel({ cycle: 'weekly' })  // "weekly"
+ * ```
+ */
+export function formatBillingCycleLabel({ cycle }: FormatBillingCycleLabelInput): string {
+    return Object.hasOwn(BILLING_CYCLE_LABELS, cycle)
+        ? (BILLING_CYCLE_LABELS[cycle] as string)
+        : cycle;
+}

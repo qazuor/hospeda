@@ -148,7 +148,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
     }),
     defineOutboxEntry({
         template: 'billing.mark-escalated',
-        name: 'Marca de conciliación escalada',
+        name: 'Marca de conciliación sin resolver',
         domain: 'billing',
         audience: 'staff',
         scenarios: [
@@ -289,6 +289,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'en-first',
+                locale: 'en',
                 label: 'Primera cuota con importe (inglés)',
                 input: {
                     payload: {
@@ -330,6 +331,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'en',
+                locale: 'en',
                 label: 'Inglés',
                 input: {
                     payload: {
@@ -384,6 +386,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'en-with-listing',
+                locale: 'en',
                 label: 'Con ficha y fecha de fin (inglés)',
                 input: {
                     payload: {

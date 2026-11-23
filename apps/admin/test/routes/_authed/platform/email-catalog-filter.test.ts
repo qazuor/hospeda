@@ -19,7 +19,7 @@ const entry = (
     ...input,
     sendPath: 'outbox',
     wired: true,
-    scenarios: [{ id: 'default', label: 'Por defecto' }]
+    scenarios: [{ id: 'default', label: 'Por defecto', locale: 'es' }]
 });
 
 const ENTRIES = [

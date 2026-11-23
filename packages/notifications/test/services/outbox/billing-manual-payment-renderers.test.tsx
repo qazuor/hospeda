@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createBillingManualPaymentRenderers } from '../../../src/services/outbox/billing-manual-payment-renderers.js';
 import { MANUAL_INSTALLMENT_UNPAID_SUBJECT } from '../../../src/templates/billing/manual-installment-unpaid.js';
 import { row } from './outbox-batch.harness.js';
@@ -23,6 +23,64 @@ describe('manual installment notice renderer', () => {
         expect(mail.subject).toBe(MANUAL_INSTALLMENT_UNPAID_SUBJECT);
         expect(html).toContain('septiembre');
         expect(html).toContain('subscription-1');
+        expect(html).toContain('Renovación');
+        expect(html).toContain('Vertical');
+        expect(html).not.toContain('class="hospeda-btn"');
+        expect(html).toContain('Facturación → Suscripciones');
+    });
+
+    it('links the subscription page in the admin panel and names the holder when it can', async () => {
+        const reader = vi.fn(async () => ({
+            subscriptions: new Map([
+                [
+                    'subscription-1',
+                    {
+                        holderName: 'Ana Pérez',
+                        holderEmail: null,
+                        vertical: 'partner',
+                        planName: 'Oro',
+                        cycle: null,
+                        amountMinor: null,
+                        currency: null,
+                        status: 'ACTIVE',
+                        listingNames: []
+                    }
+                ]
+            ]),
+            addonInstances: new Map(),
+            openMarks: new Map()
+        }));
+        const withAdmin = createBillingManualPaymentRenderers({
+            adminUrl: 'https://admin.hospeda.test/',
+            readSubjects: reader
+        })['billing.manual-installment-unpaid']!;
+        const mail = await withAdmin({
+            row: row({ template: 'billing.manual-installment-unpaid', payload })
+        });
+        const html = renderToStaticMarkup(mail.react);
+        expect(html).toContain(
+            'href="https://admin.hospeda.test/billing/subscriptions/subscription-1"'
+        );
+        expect(html).toContain('Ana Pérez');
+        expect(reader).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders without the holder, and reports it, when the reader throws', async () => {
+        const onEnrichmentError = vi.fn();
+        const failing = createBillingManualPaymentRenderers({
+            adminUrl: 'https://admin.hospeda.test',
+            readSubjects: async () => {
+                throw new Error('db down');
+            },
+            onEnrichmentError
+        })['billing.manual-installment-unpaid']!;
+        const mail = await failing({
+            row: row({ template: 'billing.manual-installment-unpaid', payload })
+        });
+        const html = renderToStaticMarkup(mail.react);
+        expect(html).not.toContain('Titular');
+        expect(html).toContain('/billing/subscriptions/subscription-1');
+        expect(onEnrichmentError).toHaveBeenCalledTimes(1);
     });
 
     it('throws TypeError for an invalid payload', () => {

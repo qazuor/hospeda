@@ -871,7 +871,7 @@ export interface SendNotificationOptions {
  *   customerId: 'cus-uuid',
  *   planName: 'Plan Standard',
  *   accessUntil: '2026-08-15T23:59:59.000Z',
- *   migrationHint: 'Re-subscribe to another plan to keep premium features',
+ *   migrationHint: 'Suscribite a otro plan para conservar tus beneficios',
  * };
  * ```
  */

@@ -1,4 +1,4 @@
-import { Text } from '@react-email/components';
+import { Link, Text } from '@react-email/components';
 import { EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
@@ -25,7 +25,9 @@ export function ListingContentEditedBySupport({
                 {partsText === null ? '.' : `: ${partsText}.`}
             </Text>
             <Text>No se publicó, no se destacó ni se borró por eso.</Text>
-            <Text>Si no lo pediste, escribinos: {contactUrl}</Text>
+            <Text>
+                Si no lo pediste, <Link href={contactUrl}>escribinos</Link>.
+            </Text>
         </EmailLayout>
     );
 }
