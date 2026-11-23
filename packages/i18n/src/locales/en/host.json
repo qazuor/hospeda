@@ -919,7 +919,8 @@
         "lifecycleStates": {
             "active": "Active",
             "draft": "Draft",
-            "archived": "Archived"
+            "archived": "Archived",
+            "inactive": "Paused"
         },
         "errors": {
             "loadFailed": "Could not load promotions. Please try again.",
@@ -934,7 +935,11 @@
             "entitlementRequired": "Your plan does not include promotions.",
             "entitlementRequiredHint": "Upgrade your plan to create promotions.",
             "notFound": "Promotion not found.",
-            "forbidden": "You do not have permission to access this promotion."
+            "forbidden": "You do not have permission to access this promotion.",
+            "pauseFailed": "We could not pause the promotion. Please try again.",
+            "lockedListHint": "With your current plan you can view and pause your promotions, but not create or edit them. Upgrade your plan to do so.",
+            "editLocked": "Your plan does not include editing promotions.",
+            "editLockedHint": "You can view and pause this promotion from the list. Upgrade your plan to edit it."
         },
         "success": {
             "created": "Promotion created",
@@ -947,7 +952,8 @@
             "saving": "Saving...",
             "cancel": "Cancel",
             "confirmDelete": "Delete this promotion? This action cannot be undone.",
-            "upgradePlan": "View plans"
+            "upgradePlan": "View plans",
+            "pause": "Pause"
         },
         "specialOffer": {
             "label": "Describe the benefit",
@@ -965,7 +971,8 @@
             "benefitSection": "The promotion",
             "conditionsSection": "Conditions",
             "loadFailedHint": "Go back to the list and try again.",
-            "backToList": "Back to my promotions"
+            "backToList": "Back to my promotions",
+            "pauseNamed": "Pause “{{title}}”"
         }
     },
     "dashboard": {

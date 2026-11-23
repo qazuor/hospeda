@@ -125,15 +125,15 @@ export function VenuePromotionList({
                                 key="primary"
                                 className={styles.actionGroup}
                             >
-                                {sectionState === 'available' ? (
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => onEdit(item)}
-                                    >
-                                        {actionLabel('edit')}
-                                    </Button>
-                                ) : null}
+                                {/* Owner decision 18: shown, but disabled, without the plan key. */}
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={sectionState !== 'available'}
+                                    onClick={() => onEdit(item)}
+                                >
+                                    {actionLabel('edit')}
+                                </Button>
                                 {item.lifecycleState === 'ACTIVE' ? (
                                     <Button
                                         variant="secondary"

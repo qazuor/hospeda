@@ -330,6 +330,15 @@ export function VenuePromotionsManager({
                             {lockedMessage()}
                         </Alert>
                     ))}
+                {/* Owner decision 18: locked promotions are view + pause only. */}
+                {sectionState === 'locked' && items.length > 0 ? (
+                    <Alert
+                        locale={locale}
+                        tone="info"
+                    >
+                        {t('venue.owner.editor.promotionsManager.lockedExisting')}
+                    </Alert>
+                ) : null}
                 {!loading &&
                     sectionState === 'available' &&
                     !isUnlimitedLimit({ value: maxActive }) &&

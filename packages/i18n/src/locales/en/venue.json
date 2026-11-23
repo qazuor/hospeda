@@ -495,7 +495,8 @@
                     "draft": "Draft"
                 },
                 "limitReached": "You reached the limit. The {{plan}} plan allows more promotions.",
-                "limitReachedNoPlan": "You reached your plan’s promotion limit."
+                "limitReachedNoPlan": "You reached your plan’s promotion limit.",
+                "lockedExisting": "With your current plan you can view and pause your promotions, but not create or edit them."
             }
         }
     },

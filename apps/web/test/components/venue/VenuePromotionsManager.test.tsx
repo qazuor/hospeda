@@ -200,7 +200,7 @@ describe('VenuePromotionsManager', () => {
         );
     });
 
-    it('keeps locked promotions listed with pause and delete, but no create or edit actions', async () => {
+    it('keeps locked promotions listed with pause and delete, edit disabled, no create (owner decision 18)', async () => {
         listWithPromotion();
         render(
             <VenuePromotionsManager
@@ -215,7 +215,11 @@ describe('VenuePromotionsManager', () => {
         expect(await screen.findByText('Oferta')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Pausar' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Borrar' })).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Editar' })).toBeDisabled();
+        // The mocked `t` answers the key itself.
+        expect(
+            screen.getByText('venue.owner.editor.promotionsManager.lockedExisting')
+        ).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Reactivar' })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Nueva promoción' })).not.toBeInTheDocument();
     });

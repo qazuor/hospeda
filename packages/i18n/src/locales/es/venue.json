@@ -495,7 +495,8 @@
                     "draft": "Borrador"
                 },
                 "limitReached": "Alcanzaste el tope. El plan {{plan}} permite más promociones.",
-                "limitReachedNoPlan": "Alcanzaste el tope de promociones de tu plan."
+                "limitReachedNoPlan": "Alcanzaste el tope de promociones de tu plan.",
+                "lockedExisting": "Con tu plan actual podés ver y pausar tus promociones, pero no crearlas ni editarlas."
             }
         }
     },

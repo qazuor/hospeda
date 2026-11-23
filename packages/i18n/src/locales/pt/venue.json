@@ -495,7 +495,8 @@
                     "draft": "Rascunho"
                 },
                 "limitReached": "Você atingiu o limite. O plano {{plan}} permite mais promoções.",
-                "limitReachedNoPlan": "Você atingiu o limite de promoções do seu plano."
+                "limitReachedNoPlan": "Você atingiu o limite de promoções do seu plano.",
+                "lockedExisting": "Com seu plano atual você pode ver e pausar suas promoções, mas não criá-las nem editá-las."
             }
         }
     },

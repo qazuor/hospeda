@@ -919,7 +919,8 @@
         "lifecycleStates": {
             "active": "Ativa",
             "draft": "Rascunho",
-            "archived": "Arquivada"
+            "archived": "Arquivada",
+            "inactive": "Pausada"
         },
         "errors": {
             "loadFailed": "Não foi possível carregar as promoções. Tente novamente.",
@@ -934,7 +935,11 @@
             "entitlementRequired": "Seu plano não inclui promoções.",
             "entitlementRequiredHint": "Faça upgrade do seu plano para criar promoções.",
             "notFound": "Promoção não encontrada.",
-            "forbidden": "Você não tem permissão para acessar esta promoção."
+            "forbidden": "Você não tem permissão para acessar esta promoção.",
+            "pauseFailed": "Não conseguimos pausar a promoção. Tente novamente.",
+            "lockedListHint": "Com seu plano atual você pode ver e pausar suas promoções, mas não criá-las nem editá-las. Melhore seu plano para fazer isso.",
+            "editLocked": "Seu plano não inclui editar promoções.",
+            "editLockedHint": "Você pode ver e pausar esta promoção pela lista. Melhore seu plano para editá-la."
         },
         "success": {
             "created": "Promoção criada",
@@ -947,7 +952,8 @@
             "saving": "Salvando...",
             "cancel": "Cancelar",
             "confirmDelete": "Excluir esta promoção? Esta ação não pode ser desfeita.",
-            "upgradePlan": "Ver planos"
+            "upgradePlan": "Ver planos",
+            "pause": "Pausar"
         },
         "specialOffer": {
             "label": "Descreva a vantagem",
@@ -965,7 +971,8 @@
             "benefitSection": "A promoção",
             "conditionsSection": "Condições",
             "loadFailedHint": "Volte para a lista e tente de novo.",
-            "backToList": "Voltar para minhas promoções"
+            "backToList": "Voltar para minhas promoções",
+            "pauseNamed": "Pausar “{{title}}”"
         }
     },
     "dashboard": {

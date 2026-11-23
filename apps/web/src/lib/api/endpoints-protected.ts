@@ -4595,6 +4595,21 @@ export const ownerPromotionApi = {
     },
 
     /**
+     * Pause an owner promotion: a PATCH whose body is ONLY a non-ACTIVE
+     * `lifecycleState`, which the API accepts without `create_promotions`
+     * (owner decision 18, Mi cuenta UI epic).
+     *
+     * @param params - Promotion ID to pause
+     * @returns The updated promotion record
+     */
+    pause({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/owner-promotions/${id}`,
+            body: { lifecycleState: 'INACTIVE' }
+        });
+    },
+
+    /**
      * Soft-delete an owner promotion.
      *
      * @param params - Promotion ID to delete
