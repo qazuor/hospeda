@@ -176,15 +176,30 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         // The page must load without redirect (role guard accepts VENUE_OWNER).
         expect(page.url()).toContain('/mi-cuenta/comercio');
 
-        // Her OWN listings appear in the index (the page renders listing.name in
-        // .mc-list__name and the edit link href contains the listing ID).
-        await expect(
-            page.locator('.mc-list__name', { hasText: 'La Parrilla del Puerto' })
-        ).toBeVisible();
+        // Her OWN listings appear in the index. Each listing is a kit
+        // `ListingCard`: a list item whose level-3 heading is the listing name,
+        // with an «Editar» link to its editor hub. Cards are found by that
+        // heading (accessible role + exact name), not by markup classes. The
+        // lookup is scoped to the page's listing list («Mis locales» /
+        // «Mis experiencias»): other widgets on the page (the menu-QR card)
+        // also carry the listing name as a heading.
+        const listingList = () => page.getByRole('list', { name: /^mis (locales|experiencias)$/i });
+        const listingHeading = (name: string) =>
+            listingList().getByRole('heading', { level: 3, name, exact: true });
+        const listingCard = (name: string) =>
+            listingList()
+                .getByRole('listitem')
+                .filter({ has: page.getByRole('heading', { level: 3, name, exact: true }) });
 
-        // The edit link for the venue must be present in the DOM (href contains
-        // the vertical segment + listing UUID).
-        const venueEditLink = page.locator(`a.mc-list__edit[href*="/venue/${venueId}/editar"]`);
+        await expect(listingList()).toBeVisible();
+        await expect(listingHeading('La Parrilla del Puerto')).toBeVisible();
+
+        // The edit link for the venue must be present (href carries the
+        // vertical segment + listing UUID).
+        const venueEditLink = listingCard('La Parrilla del Puerto').getByRole('link', {
+            name: 'Editar',
+            exact: true
+        });
         await expect(venueEditLink).toBeVisible();
         await expect(venueEditLink).toHaveAttribute(
             'href',
@@ -193,9 +208,7 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
 
         // Listings owned by OTHER venue owners must NOT appear.
         // La Cervecería del Río belongs to rodrigo (venue-owner-rodrigo@local.test).
-        await expect(
-            page.locator('.mc-list__name', { hasText: 'La Cervecería del Río' })
-        ).not.toBeVisible();
+        await expect(listingHeading('La Cervecería del Río')).toHaveCount(0);
 
         // HOS-2559: venues and experiences are separate lists. The bare URL lands
         // on the venue list; the experience list is its own `?vertical=` page.
@@ -203,19 +216,21 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/?vertical=experience`, {
             waitUntil: 'domcontentloaded'
         });
-        await expect(
-            page.locator('.mc-list__name', { hasText: 'La Parrilla del Puerto' })
-        ).toHaveCount(0);
+        await expect(listingList()).toBeVisible();
+        await expect(listingHeading('La Parrilla del Puerto')).toHaveCount(0);
 
         // Experience listing appears in its own list.
-        await expect(
-            page.locator('.mc-list__name', { hasText: 'Excursión al Río Uruguay' })
-        ).toBeVisible();
+        await expect(listingHeading('Excursión al Río Uruguay')).toBeVisible();
 
-        const experienceEditLink = page.locator(
-            `a.mc-list__edit[href*="/experience/${experienceId}/editar"]`
-        );
+        const experienceEditLink = listingCard('Excursión al Río Uruguay').getByRole('link', {
+            name: 'Editar',
+            exact: true
+        });
         await expect(experienceEditLink).toBeVisible();
+        await expect(experienceEditLink).toHaveAttribute(
+            'href',
+            new RegExp(`/mi-cuenta/comercio/experience/${experienceId}/editar/?$`)
+        );
 
         // ── Step 3: edit venue — change menuUrl ───────────────────────────
 
