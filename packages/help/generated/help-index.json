@@ -1,5 +1,5 @@
 {
-  "contentHash": "20bd61c6d9d77bca915ef5cf2acdbce3b0bbca0d6fd959257797aa89e45192ed",
+  "contentHash": "58a19e6fed8d03adeb94a3160b0d360acec217a5bcd67ca440dfe01e5a5e477c",
   "locales": {
     "es": [
       {
@@ -48,7 +48,7 @@
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Complementos»: está en el menú de tu cuenta, debajo de «Suscripción», y también como pestaña dentro de «Suscripción».",
+              "Entrá a «Comprar complementos».",
               "Elegí un complemento de la lista.",
               "Elegí la ficha (o la suscripción) a la que se aplica.",
               "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -639,7 +639,7 @@
             "after": "",
             "steps": [
               "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-              "Abrí «Más acciones» (el botón de tres puntos de la tarjeta) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+              "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
               "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
               "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
               "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -936,7 +936,7 @@
             "after": "",
             "steps": [
               "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-              "Abrí «Más acciones» (el botón de tres puntos de la tarjeta), elegí «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+              "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
               "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
               "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
               "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",

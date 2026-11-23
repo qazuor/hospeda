@@ -42,7 +42,7 @@ Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Comprar
 
 ## Cómo se hace
 
-1. Entrá a «Complementos»: está en el menú de tu cuenta, debajo de «Suscripción», y también como pestaña dentro de «Suscripción».
+1. Entrá a «Comprar complementos».
 2. Elegí un complemento de la lista.
 3. Elegí la ficha (o la suscripción) a la que se aplica.
 4. Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.
