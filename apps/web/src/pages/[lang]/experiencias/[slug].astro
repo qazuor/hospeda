@@ -293,7 +293,7 @@ const breadcrumbItems = [
                     variant="detail"
                     mobile={{
                         backHref: buildUrl({ locale, path: 'experiencias' }),
-                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: experience.name },
+                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: experience.name, campaign: 'experience' },
                         favorite: {
                             entityId: experience.id,
                             entityType: 'EXPERIENCE',
