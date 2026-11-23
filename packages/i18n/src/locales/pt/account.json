@@ -1034,7 +1034,14 @@
         },
         "errors": {
             "fetchFailed": "Erro ao carregar avaliações"
-        }
+        },
+        "sectionTitle": "Avaliações que você escreveu",
+        "ratingAria": "Avaliação: {{value}} de {{max}}",
+        "loadError": {
+            "title": "Não conseguimos carregar suas avaliações",
+            "body": "Tente de novo em alguns segundos."
+        },
+        "listLabel": "Suas avaliações"
     },
     "pages": {
         "accountLabel": "Minha conta",
@@ -2158,6 +2165,11 @@
         },
         "entityCard": {
             "noImage": "Sem imagem"
+        },
+        "copyField": {
+            "copy": "Copiar",
+            "copied": "Copiado para a área de transferência.",
+            "failed": "Não conseguimos copiar. Selecione o texto e copie manualmente."
         }
     },
     "ownerDashboard": {

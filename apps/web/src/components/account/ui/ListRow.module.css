@@ -109,6 +109,13 @@
     white-space: nowrap;
 }
 
+.descriptionWrap {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 .emphasis .description {
     color: var(--core-foreground);
 }

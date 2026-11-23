@@ -1,0 +1,36 @@
+/* CopyField.module.css — read-only value with a copy button (HOS-2502). */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    container-type: inline-size;
+}
+
+.row {
+    display: flex;
+    gap: var(--space-2);
+    align-items: stretch;
+}
+
+.row > :first-child {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+}
+
+.status {
+    min-block-size: var(--space-5);
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--status-success-fg);
+}
+
+.status[data-status="failed"] {
+    color: var(--status-danger-fg);
+}
+
+@container (width < 30rem) {
+    .row {
+        flex-direction: column;
+    }
+}

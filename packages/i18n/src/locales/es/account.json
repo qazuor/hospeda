@@ -1034,7 +1034,14 @@
         },
         "errors": {
             "fetchFailed": "Error al cargar las reseñas"
-        }
+        },
+        "sectionTitle": "Reseñas que escribiste",
+        "ratingAria": "Calificación: {{value}} de {{max}}",
+        "loadError": {
+            "title": "No pudimos cargar tus reseñas",
+            "body": "Probá de nuevo en unos segundos."
+        },
+        "listLabel": "Tus reseñas"
     },
     "pages": {
         "accountLabel": "Mi cuenta",
@@ -2158,6 +2165,11 @@
         },
         "entityCard": {
             "noImage": "Sin imagen"
+        },
+        "copyField": {
+            "copy": "Copiar",
+            "copied": "Copiado al portapapeles.",
+            "failed": "No pudimos copiar. Seleccioná el texto y copialo a mano."
         }
     },
     "ownerDashboard": {

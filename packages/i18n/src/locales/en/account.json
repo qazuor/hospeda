@@ -1034,7 +1034,14 @@
         },
         "errors": {
             "fetchFailed": "Error loading reviews"
-        }
+        },
+        "sectionTitle": "Reviews you wrote",
+        "ratingAria": "Rating: {{value}} out of {{max}}",
+        "loadError": {
+            "title": "We could not load your reviews",
+            "body": "Try again in a few seconds."
+        },
+        "listLabel": "Your reviews"
     },
     "pages": {
         "accountLabel": "My Account",
@@ -2158,6 +2165,11 @@
         },
         "entityCard": {
             "noImage": "No image"
+        },
+        "copyField": {
+            "copy": "Copy",
+            "copied": "Copied to the clipboard.",
+            "failed": "We could not copy. Select the text and copy it by hand."
         }
     },
     "ownerDashboard": {
