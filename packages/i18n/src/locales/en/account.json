@@ -1511,7 +1511,6 @@
         "item": {
             "vipBadge": "VIP only",
             "viewListing": "View listing",
-            "viewListingError": "We could not open the listing. Please try again.",
             "listingUnavailable": "This listing is no longer available.",
             "validUntil": "Valid until {{date}}"
         }
