@@ -78,6 +78,16 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
             expect(source).toContain("Astro.request.headers.get('cookie')");
         });
 
+        it('tells a failed read from an empty one inside each Section (HOS-2502)', () => {
+            expect(source).toContain('const leadsFailed = !myLeadsResult.ok;');
+            expect(source).toContain(
+                'const statsFailed = myPartner !== null && !myStats30Result.ok;'
+            );
+            expect(source).toContain(
+                'const mentionsFailed = myPartner !== null && !myMentionsResult.ok;'
+            );
+        });
+
         it('degrades to an empty list rather than erroring the hub', () => {
             // The applications panel is an addition to a hub that stood on its
             // own for two specs; an API failure must not take the page down.
@@ -88,8 +98,8 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
             expect(source).toContain(
                 "import AllianceApplicationsSection from '@/components/account/AllianceApplicationsSection.astro';"
             );
-            expect(source).toContain(
-                '<AllianceApplicationsSection locale={locale} leads={myLeads} />'
+            expect(source).toMatch(
+                /<AllianceApplicationsSection\s+locale=\{locale\}\s+leads=\{myLeads\}\s+loadFailed=\{leadsFailed\}/
             );
             expect(source.indexOf('<AllianceApplicationsSection')).toBeLessThan(
                 source.indexOf('<DiscoveryDoorHub')

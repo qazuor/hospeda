@@ -38,6 +38,8 @@
  */
 
 import { ExternalLinkIcon } from '@repo/icons';
+import { Section } from '@/components/account/ui';
+import { SectionLoadError } from '@/components/account/SectionLoadError';
 import type { MyPartnerMentionBatch } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -57,9 +59,17 @@ interface Props {
      * must never get one (HOS-277 NG-1).
      */
     readonly visible: boolean;
+    /**
+     * True when the owner HAS a partner listing but the mentions read failed.
+     * It says so inside the section (error plus a way to retry) instead of
+     * rendering the log as if it were empty, which would be a false «nothing yet».
+     */
+    readonly loadFailed?: boolean;
+    /** Where the retry link points: the current page. */
+    readonly retryHref?: string;
 }
 
-const { locale, batches, visible } = Astro.props;
+const { locale, batches, visible, loadFailed = false, retryHref = '' } = Astro.props;
 const { t } = createTranslations(locale);
 
 const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -71,15 +81,14 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
 
 {
     visible && (
-        <section class="partner-mentions">
-            <header class="partner-mentions__header">
-                <h2 class="partner-mentions__title">{t('account.partnerMentions.title')}</h2>
-                <p class="partner-mentions__subtitle">
-                    {t('account.partnerMentions.subtitle')}
-                </p>
-            </header>
-
-            {batches.length === 0 ? (
+        <Section
+            title={t('account.partnerMentions.title')}
+            description={t('account.partnerMentions.subtitle')}
+            helpId="section:partner.mentions"
+        >
+            {loadFailed ? (
+                <SectionLoadError locale={locale} retryHref={retryHref} />
+            ) : batches.length === 0 ? (
                 <div class="partner-mentions__empty">
                     <p class="partner-mentions__empty-text">
                         {t('account.partnerMentions.empty')}
@@ -151,39 +160,14 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
                     ))}
                 </ol>
             )}
-        </section>
+        </Section>
     )
 }
 
 <style>
-    .partner-mentions {
-        background-color: var(--core-card);
-        border-radius: var(--radius-card);
-        box-shadow: var(--shadow-card);
-        padding: var(--space-6);
-        margin-block-end: var(--space-6);
-    }
-
-    .partner-mentions__header {
-        margin-block-end: var(--space-5);
-    }
-
-    .partner-mentions__title {
-        font-family: var(--font-heading);
-        font-weight: 600;
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .partner-mentions__subtitle {
-        color: var(--core-muted-foreground);
-        margin: var(--space-2) 0 0;
-    }
-
     .partner-mentions__empty {
-        border-radius: var(--radius-md);
-        background-color: var(--surface-warm);
-        padding: var(--space-5);
+        padding: var(--space-4);
+        border-inline-start: 3px solid var(--border);
     }
 
     .partner-mentions__empty-text {
@@ -205,10 +189,15 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
         gap: var(--space-4);
     }
 
+    /* Batches are separated by a rule, never boxed: the Section is the only surface. */
     .partner-mentions__batch {
-        border-radius: var(--radius-md);
-        background-color: var(--surface-warm);
-        padding: var(--space-4);
+        padding-block-start: var(--space-4);
+        border-block-start: 1px solid var(--border);
+    }
+
+    .partner-mentions__batch:first-child {
+        padding-block-start: 0;
+        border-block-start: 0;
     }
 
     .partner-mentions__date {
@@ -243,7 +232,7 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
         display: inline-flex;
         align-items: center;
         gap: var(--space-1);
-        color: var(--brand-primary);
+        color: var(--brand-primary-link);
         text-decoration: underline;
     }
 
