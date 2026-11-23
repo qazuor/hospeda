@@ -1693,6 +1693,9 @@ importers:
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@repo/analytics':
+        specifier: workspace:*
+        version: link:../analytics
       '@repo/config':
         specifier: workspace:*
         version: link:../config
