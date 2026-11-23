@@ -73,13 +73,14 @@ vi.mock('@/hooks/useAccommodationChat', () => ({
 }));
 
 const mockReadCachedAuthMe = vi.fn();
+const mockFetchAuthMe = vi.fn();
 
 vi.mock('@/lib/auth-cache', () => ({
     readCachedAuthMe: () => mockReadCachedAuthMe(),
     // A cached AUTHENTICATED snapshot resolves synchronously inside the hook's
     // mount effect. Anything else falls through to this deliberately pending
     // fetch, which is the unresolved state a guest must also see.
-    fetchAuthMe: () => new Promise(() => undefined),
+    fetchAuthMe: () => mockFetchAuthMe(),
     writeCachedAuthMe: () => undefined,
     resetInFlightAuthMe: () => undefined
 }));
@@ -120,6 +121,8 @@ describe('AiChatWidget', () => {
         // only exists for a signed-in visitor. The gate has its own suite below.
         mockReadCachedAuthMe.mockReset();
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+        mockFetchAuthMe.mockReset();
+        mockFetchAuthMe.mockImplementation(() => new Promise(() => undefined));
     });
 
     describe('session gate (HOS-369 WB0-7)', () => {
@@ -132,9 +135,22 @@ describe('AiChatWidget', () => {
             expect(container).toBeEmptyDOMElement();
         });
 
-        it('renders nothing for a confirmed guest', () => {
-            mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: false }));
+        it('renders the FAB for a guest once /auth/me resolves as guest', async () => {
+            mockReadCachedAuthMe.mockReturnValue(null);
+            mockFetchAuthMe.mockResolvedValue(buildAuthSnapshot({ isAuthenticated: false }));
+            render(<AiChatWidget {...defaultProps} />);
+            expect(
+                await screen.findByRole('button', { name: 'Ask AI about this accommodation' })
+            ).toBeInTheDocument();
+        });
+
+        it('renders nothing when /auth/me fails (fail closed)', async () => {
+            mockReadCachedAuthMe.mockReturnValue(null);
+            mockFetchAuthMe.mockRejectedValue(new Error('network'));
             const { container } = render(<AiChatWidget {...defaultProps} />);
+            await act(async () => {
+                await Promise.resolve();
+            });
             expect(container).toBeEmptyDOMElement();
         });
 
@@ -143,6 +159,78 @@ describe('AiChatWidget', () => {
             expect(
                 screen.getByRole('button', { name: 'Ask AI about this accommodation' })
             ).toBeInTheDocument();
+        });
+    });
+
+    describe('guest upsell (HOS-2561)', () => {
+        const fabName = 'Ask AI about this accommodation';
+        let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+            mockReadCachedAuthMe.mockReturnValue(null);
+            mockFetchAuthMe.mockResolvedValue(buildAuthSnapshot({ isAuthenticated: false }));
+            fetchSpy = vi.spyOn(globalThis, 'fetch');
+            window.history.replaceState(null, '', '/es/alojamientos/casa-x/?a=1');
+        });
+
+        afterEach(() => {
+            fetchSpy.mockRestore();
+        });
+
+        async function openAsGuest() {
+            const user = userEvent.setup();
+            render(<AiChatWidget {...defaultProps} />);
+            await user.click(await screen.findByRole('button', { name: fabName }));
+            return user;
+        }
+
+        it('opens the upsell panel with both CTAs returning to the current page', async () => {
+            await openAsGuest();
+
+            expect(screen.getByTestId('ai-chat-guest-upsell')).toBeInTheDocument();
+            expect(screen.getByText('Es gratis con tu cuenta.')).toBeInTheDocument();
+            const returnUrl = encodeURIComponent('/es/alojamientos/casa-x/?a=1');
+            expect(screen.getByRole('link', { name: 'Crear cuenta gratis' })).toHaveAttribute(
+                'href',
+                `/es/auth/signup/?returnUrl=${returnUrl}`
+            );
+            expect(screen.getByRole('link', { name: 'Ingresar' })).toHaveAttribute(
+                'href',
+                `/es/auth/signin/?returnUrl=${returnUrl}`
+            );
+        });
+
+        it('shows no composer and moves focus to the primary CTA', async () => {
+            await openAsGuest();
+
+            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+            expect(screen.getByRole('link', { name: 'Crear cuenta gratis' })).toHaveFocus();
+        });
+
+        it('makes no request to the chat API', async () => {
+            await openAsGuest();
+
+            expect(fetchSpy).not.toHaveBeenCalled();
+            expect(idleChatState.send).not.toHaveBeenCalled();
+        });
+
+        it('closes on Escape and returns focus to the FAB', async () => {
+            const user = await openAsGuest();
+
+            await user.keyboard('{Escape}');
+
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+            expect(screen.getByRole('button', { name: fabName })).toHaveFocus();
+        });
+
+        it('keeps the composer for a signed-in visitor', async () => {
+            mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+            const user = userEvent.setup();
+            render(<AiChatWidget {...defaultProps} />);
+            await user.click(screen.getByRole('button', { name: fabName }));
+
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.queryByTestId('ai-chat-guest-upsell')).not.toBeInTheDocument();
         });
     });
 

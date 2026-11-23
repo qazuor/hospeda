@@ -150,3 +150,57 @@ describe('ConversationSchema', () => {
         });
     });
 });
+
+describe('ConversationSchema inquiry booking columns (HOS-2534)', () => {
+    const row = {
+        id: 'a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5',
+        accommodationId: 'b1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5',
+        userId: null,
+        anonymousName: null,
+        anonymousEmail: null,
+        anonymousEmailVerified: false,
+        anonymousPhone: null,
+        status: 'PENDING_OWNER',
+        blockReason: null,
+        locale: 'es',
+        archivedByGuest: false,
+        archivedByOwner: false,
+        lastReadAtByGuest: null,
+        lastReadAtByOwner: null,
+        firstGuestMessageAt: null,
+        firstOwnerReplyAt: null,
+        lastActivityAt: null,
+        lastGuestMessageAt: null,
+        lastOwnerMessageAt: null,
+        closedAt: null,
+        blockedAt: null,
+        guestMessageCount: 0,
+        ownerMessageCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+        createdById: null,
+        updatedById: null,
+        deletedById: null
+    };
+
+    it('exposes stored dates and guests', () => {
+        const parsed = ConversationSchema.parse({
+            ...row,
+            checkIn: '2026-12-12',
+            checkOut: '2026-12-15',
+            guests: 2
+        });
+        expect(parsed.checkIn).toBe('2026-12-12');
+        expect(parsed.checkOut).toBe('2026-12-15');
+        expect(parsed.guests).toBe(2);
+    });
+
+    it('accepts null columns and rows that predate them', () => {
+        expect(
+            ConversationSchema.safeParse({ ...row, checkIn: null, checkOut: null, guests: null })
+                .success
+        ).toBe(true);
+        expect(ConversationSchema.safeParse(row).success).toBe(true);
+    });
+});

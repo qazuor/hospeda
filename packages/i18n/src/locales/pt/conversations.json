@@ -153,6 +153,13 @@
         "sending": "Enviando…",
         "systemMessage": "Mensagem do sistema",
         "title": "Conversa com {senderName}",
+        "inquiry": {
+            "label": "Dados da consulta",
+            "from": "A partir de {{date}}",
+            "until": "Até {{date}}",
+            "guests_one": "{{count}} hóspede",
+            "guests_other": "{{count}} hóspedes"
+        },
         "listingAvailability": {
             "gone": "Este anúncio não existe mais.",
             "notPublished": "Por enquanto você não pode enviar mensagens sobre este anúncio."

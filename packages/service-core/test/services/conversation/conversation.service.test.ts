@@ -197,6 +197,9 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
         blockedAt: null,
         guestMessageCount: 0,
         ownerMessageCount: 0,
+        checkIn: null,
+        checkOut: null,
+        guests: null,
         createdAt: now,
         updatedAt: now,
         createdById: null,
@@ -374,6 +377,90 @@ describe('ConversationService', () => {
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
         });
 
+        it('persists the inquiry check-in, check-out and guests on the new row (HOS-2534)', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([]);
+            const insertChain = makeInsertChainMock([
+                makeConversation({ id: CONVERSATION_ID, status: 'PENDING_VERIFICATION' })
+            ]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                checkIn: '2026-12-12',
+                checkOut: '2026-12-15',
+                guests: 2
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    checkIn: '2026-12-12',
+                    checkOut: '2026-12-15',
+                    guests: 2
+                })
+            );
+        });
+
+        it('leaves the booking columns unset when the inquiry carries none (HOS-2534)', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([]);
+            const insertChain = makeInsertChainMock([
+                makeConversation({ id: CONVERSATION_ID, status: 'PENDING_VERIFICATION' })
+            ]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola'
+            });
+
+            // Assert
+            expectSuccess(result);
+            const inserted = insertChain.values.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(inserted.checkIn).toBeUndefined();
+            expect(inserted.checkOut).toBeUndefined();
+            expect(inserted.guests).toBeUndefined();
+        });
+
+        it('rejects a check-out that is not after the check-in without writing (HOS-2534)', async () => {
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                checkIn: '2026-12-15',
+                checkOut: '2026-12-12'
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockGetDb).not.toHaveBeenCalled();
+        });
+
         it('should re-send email and return status=resent for unverified duplicate', async () => {
             // Arrange
             const accommodationMock = makeAccommodation();
@@ -404,6 +491,44 @@ describe('ConversationService', () => {
             expectSuccess(result);
             expect(result.data?.status).toBe('resent');
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
+        });
+
+        it('never writes to the pending row when re-submitted with other dates (HOS-2534)', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const pendingRow = makeConversation({
+                id: CONVERSATION_ID,
+                status: 'PENDING_VERIFICATION'
+            });
+            const selectChain = makeSelectChainMock([pendingRow]);
+            const updateChain = makeUpdateChainMock([]);
+            const insertChain = makeInsertChainMock([]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                update: updateChain.update,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Corrijo las fechas',
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 3
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(result.data?.status).toBe('resent');
+            // First submission wins until verified: no write of any kind.
+            expect(updateChain.update).not.toHaveBeenCalled();
+            expect(insertChain.insert).not.toHaveBeenCalled();
         });
 
         it('should throw ALREADY_EXISTS for a verified duplicate conversation', async () => {
@@ -534,6 +659,61 @@ describe('ConversationService', () => {
             expect(result.data?.isNew).toBe(true);
             expect(result.data?.conversationId).toBe(CONVERSATION_ID);
             expect(result.data?.messageId).toBe(newMsgId);
+        });
+
+        it('persists the inquiry fields on the new conversation row (HOS-2534)', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByUserIdAndAccommodationId).mockResolvedValue(null);
+            const newConv = makeConversation({
+                id: CONVERSATION_ID,
+                status: 'PENDING_OWNER',
+                userId: ACTOR.id
+            });
+            const conversationValues = vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([newConv])
+            });
+            let insertCallCount = 0;
+            asMock(withServiceTransaction).mockImplementationOnce(
+                async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) => {
+                    const fakeTx = {
+                        insert: vi.fn().mockImplementation(() => {
+                            insertCallCount++;
+                            if (insertCallCount === 1) return { values: conversationValues };
+                            return {
+                                values: vi.fn().mockReturnValue({
+                                    returning: vi.fn().mockResolvedValue([{ id: MESSAGE_ID }])
+                                })
+                            };
+                        }),
+                        update: vi.fn().mockReturnValue({
+                            set: vi.fn().mockReturnValue({
+                                where: vi.fn().mockResolvedValue([])
+                            })
+                        })
+                    };
+                    return fn({ tx: fakeTx, hookState: {} });
+                }
+            );
+
+            // Act
+            const result = await service.initiateAuthenticated(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                message: 'Hola',
+                checkIn: '2026-12-12',
+                checkOut: '2026-12-15',
+                guests: 4
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(conversationValues).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    checkIn: '2026-12-12',
+                    checkOut: '2026-12-15',
+                    guests: 4
+                })
+            );
         });
 
         it('should return isNew=false with messageId when an existing conversation is found', async () => {

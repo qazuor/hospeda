@@ -153,6 +153,13 @@
         "sending": "Enviando…",
         "systemMessage": "Mensaje del sistema",
         "title": "Conversación con {senderName}",
+        "inquiry": {
+            "label": "Datos de la consulta",
+            "from": "Desde el {{date}}",
+            "until": "Hasta el {{date}}",
+            "guests_one": "{{count}} huésped",
+            "guests_other": "{{count}} huéspedes"
+        },
         "listingAvailability": {
             "gone": "Esta ficha ya no existe.",
             "notPublished": "Por ahora no podés mandar mensajes sobre esta ficha."

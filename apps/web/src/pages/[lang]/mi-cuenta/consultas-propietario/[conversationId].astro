@@ -22,6 +22,7 @@ import { ConversationPanel } from '@/components/account/conversations/Conversati
 import { ConversationLoadError } from '@/components/account/conversations/ConversationLoadError.client';
 import { OwnerInboxLocked } from '@/components/account/conversations/OwnerInboxLocked';
 import ListingGoneNotice from '@/components/account/ListingGoneNotice.astro';
+import { formatInquirySummary } from '@/lib/format-inquiry-summary';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -73,6 +74,7 @@ const back = {
 
 let pageTitle = t('conversations.inbox.ownerInboxTitle');
 let subtitle: string | undefined;
+let headerDescription: string | undefined;
 let canReply = false;
 let listingAdmitsMessages = true;
 let olderHref: string | undefined;
@@ -83,6 +85,7 @@ if (thread) {
         senderName: conversation.guestName || t('conversations.senderLabels.guest')
     });
     subtitle = conversation.accommodationName;
+    headerDescription = subtitle;
 
     // Reply only while the conversation is open AND its listing still admits
     // messages (HOS-1492, row 28). Otherwise the whole conversation stays
@@ -91,6 +94,15 @@ if (thread) {
     listingAdmitsMessages = listingAvailability === 'AVAILABLE';
     canReply = listingAdmitsMessages && !closedStatuses.includes(conversation.status.toUpperCase());
 
+    // HOS-2534: the visitor's dates and guest count; null when the inquiry carried none.
+    const inquirySummary = formatInquirySummary({
+        locale,
+        checkIn: conversation.checkIn,
+        checkOut: conversation.checkOut,
+        guests: conversation.guests
+    });
+    if (inquirySummary) headerDescription = `${subtitle} · ${inquirySummary}`;
+
     olderHref = nextCursor
         ? `${buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conversationId}` })}?cursor=${encodeURIComponent(nextCursor)}`
         : undefined;
@@ -98,7 +110,7 @@ if (thread) {
 ---
 
 <AccountLayout locale={locale} title={pageTitle} description={subtitle ?? pageTitle} activeSection="owner-messages">
-    <PageHeader title={pageTitle} description={subtitle} locale={locale} back={back} />
+    <PageHeader title={pageTitle} description={headerDescription} locale={locale} back={back} />
 
     {gate.action === 'locked' ? (
         <OwnerInboxLocked locale={locale} />

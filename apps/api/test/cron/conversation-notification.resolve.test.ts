@@ -413,4 +413,53 @@ describe('resolveNotification', () => {
             expect(ConversationNewMessage).toHaveBeenCalled();
         });
     });
+
+    describe('inquiry booking fields (HOS-2534)', () => {
+        const inquiryRow = {
+            id: CONVERSATION_ID,
+            accommodationId: ACCOMMODATION_ID,
+            userId: 'user-1',
+            anonymousEmail: null,
+            anonymousName: null,
+            locale: 'es',
+            checkIn: '2026-12-12',
+            checkOut: '2026-12-15',
+            guests: 2
+        };
+
+        async function resolveFor(recipientSide: string) {
+            const db = createFakeDb({ conversationRow: inquiryRow });
+            accommodationModel.findById.mockResolvedValue({
+                id: ACCOMMODATION_ID,
+                name: 'Test Accommodation',
+                slug: 'test-accommodation',
+                ownerId: 'owner-1'
+            });
+            userModel.findById.mockResolvedValue({ id: 'u', email: 'u@example.com' });
+            await resolveNotification({
+                schedule: makeSchedule({ recipientSide }),
+                db: db as never,
+                accommodationModel: accommodationModel as never,
+                userModel: userModel as never,
+                logger: logger as never
+            });
+        }
+
+        it('hands the dates and guests to the owner email', async () => {
+            await resolveFor(NotificationRecipientSideEnum.OWNER);
+
+            expect(ConversationNewMessage).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    inquiry: { checkIn: '2026-12-12', checkOut: '2026-12-15', guests: 2 }
+                })
+            );
+        });
+
+        it('does not repeat them to the guest, who already knows them', async () => {
+            await resolveFor(NotificationRecipientSideEnum.GUEST);
+
+            const props = vi.mocked(ConversationNewMessage).mock.calls[0]?.[0];
+            expect(props).not.toHaveProperty('inquiry');
+        });
+    });
 });

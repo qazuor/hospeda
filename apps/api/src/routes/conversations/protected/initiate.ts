@@ -117,7 +117,10 @@ router.post('/', async (c) => {
             {
                 accommodationId: body.accommodationId,
                 message: body.message,
-                locale: body.locale
+                locale: body.locale,
+                checkIn: body.checkIn,
+                checkOut: body.checkOut,
+                guests: body.guests
             }
         );
 

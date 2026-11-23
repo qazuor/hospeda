@@ -153,6 +153,13 @@
         "sending": "Sending…",
         "systemMessage": "System message",
         "title": "Conversation with {senderName}",
+        "inquiry": {
+            "label": "Inquiry details",
+            "from": "From {{date}}",
+            "until": "Until {{date}}",
+            "guests_one": "{{count}} guest",
+            "guests_other": "{{count}} guests"
+        },
         "listingAvailability": {
             "gone": "This listing no longer exists.",
             "notPublished": "For now you cannot send messages about this listing."

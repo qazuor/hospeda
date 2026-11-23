@@ -115,3 +115,50 @@ describe('ConversationNewMessage', () => {
         expect(html).not.toContain('…');
     });
 });
+
+describe('ConversationNewMessage inquiry details (HOS-2534)', () => {
+    const base: ConversationNewMessageProps = {
+        accommodationName: 'Apart Hotel Las Palmas',
+        guestIdentity: 'marcos@example.com',
+        messages: [{ excerpt: 'Hola, ¿hay lugar?', timestamp: '10:30' }],
+        ctaUrl: 'https://hospeda.com.ar/es/conversaciones/thread-1',
+        locale: 'es'
+    };
+
+    it('shows dates and guests when the inquiry carries them', () => {
+        // Arrange & Act
+        const html = renderToStaticMarkup(
+            ConversationNewMessage({
+                ...base,
+                inquiry: { checkIn: '2026-12-12', checkOut: '2026-12-15', guests: 2 }
+            })
+        ).replace(/\s/g, ' ');
+
+        // Assert
+        expect(html).toContain('Consulta:');
+        expect(html).toContain('12–15 dic');
+        expect(html).toContain('2 huéspedes');
+    });
+
+    it('shows only the guest count when no dates were given', () => {
+        const html = renderToStaticMarkup(
+            ConversationNewMessage({ ...base, inquiry: { guests: 1 } })
+        );
+
+        expect(html).toContain('1 huésped');
+        expect(html).not.toContain('Desde el');
+    });
+
+    it('omits the block when the inquiry is absent or empty', () => {
+        const withoutProp = renderToStaticMarkup(ConversationNewMessage(base));
+        const empty = renderToStaticMarkup(
+            ConversationNewMessage({
+                ...base,
+                inquiry: { checkIn: null, checkOut: null, guests: null }
+            })
+        );
+
+        expect(withoutProp).not.toContain('Consulta:');
+        expect(empty).not.toContain('Consulta:');
+    });
+});
