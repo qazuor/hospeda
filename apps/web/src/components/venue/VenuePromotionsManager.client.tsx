@@ -1,61 +1,49 @@
+/**
+ * @file VenuePromotionsManager.client.tsx
+ * @description Owner editor for the venue's own promotions, on the kit
+ * (HOS-2504): `Section`, `DataList` rows, `StatusPill`, `LockedState`,
+ * `ConfirmDialog` through `useConfirm`, and the editor's auto-save chip.
+ *
+ * This is an `auto` section: every action persists itself, so each one reports
+ * through `runRetryableEditorAutoSave`.
+ */
+
 import {
     LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
-    VenuePromotionCreateRequestSchema,
-    type VenuePromotionListOutput
+    VenuePromotionCreateRequestSchema
 } from '@repo/schemas';
-import { formatCalendarDate } from '@repo/utils';
-import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { runRetryableEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
+import { Alert } from '@/components/account/ui/Alert';
+import { Button } from '@/components/account/ui/Button';
+import { EmptyState } from '@/components/account/ui/EmptyState';
+import { ErrorState } from '@/components/account/ui/ErrorState';
+import { LockedState } from '@/components/account/ui/LockedState';
+import { Section } from '@/components/account/ui/Section';
+import { Skeleton } from '@/components/account/ui/Skeleton';
+import { useConfirm } from '@/components/account/ui/use-confirm';
 import { isUnlimitedLimit } from '@/components/billing/plan-card-delta';
-import fieldStyles from '@/components/listing/editor/editor-fields.module.css';
-import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { venuePromotionsApi } from '@/lib/api/endpoints-protected';
 import type { ApiError } from '@/lib/api/types';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
-import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
-import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
 import { buildUrl } from '@/lib/urls';
 import {
     resolveVenuePromotionLimitPlanName,
     type VenuePromotionLimitPlanOption
 } from '@/lib/venue/section-upsell-plan';
+import { type PromotionRow, toDateInputValue } from './promotion-lifecycle';
 import { VenuePromotionForm } from './VenuePromotionForm.client';
+import { VenuePromotionList } from './VenuePromotionList.client';
 import styles from './VenuePromotionsManager.module.css';
 
-type PromotionRow = VenuePromotionListOutput['items'][number];
+export { resolvePromotionLifecycleState } from './promotion-lifecycle';
+
 type VenueDiscountType = PromotionRow['discountType'];
-
-/** Lifecycle status waits for a client clock so SSR cannot guess active/expired. */
-export function resolvePromotionLifecycleState(
-    item: PromotionRow,
-    now: number | null
-): 'expired' | 'active' | 'draft' | 'paused' | null {
-    if (now === null) return null;
-    const isExpired =
-        item.lifecycleState === 'ACTIVE' &&
-        item.validUntil != null &&
-        toTimestamp(item.validUntil) < now;
-    return isExpired
-        ? 'expired'
-        : item.lifecycleState === 'ACTIVE'
-          ? 'active'
-          : item.lifecycleState === 'DRAFT'
-            ? 'draft'
-            : 'paused';
-}
-
-/** Converts a serialized or parsed API date to the native date input format. */
-function toDateInputValue(value: Date | string): string {
-    return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10);
-}
-
-/** Returns a timestamp for a serialized or parsed API date. */
-function toTimestamp(value: Date | string): number {
-    return value instanceof Date ? value.getTime() : new Date(value).getTime();
-}
 
 interface Props {
     readonly listingId: string;
@@ -74,7 +62,7 @@ export function VenuePromotionsManager({
     limitPlanOptions
 }: Props) {
     const { t } = createTranslations(locale);
-    const headingId = useId();
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
     const titleInputRef = useRef<HTMLInputElement>(null);
     const [items, setItems] = useState<readonly PromotionRow[]>([]);
     const [activeCount, setActiveCount] = useState(0);
@@ -100,6 +88,7 @@ export function VenuePromotionsManager({
     const [windowStart, setWindowStart] = useState('');
     const [windowEnd, setWindowEnd] = useState('');
     const [message, setMessage] = useState('');
+    const [messageTone, setMessageTone] = useState<'info' | 'danger'>('info');
     const [offerError, setOfferError] = useState('');
     const [now, setNow] = useState<number | null>(null);
 
@@ -167,7 +156,7 @@ export function VenuePromotionsManager({
 
     const openEdit = (item: PromotionRow) => {
         if (sectionState === 'locked') {
-            setMessage(lockedMessage());
+            notify(lockedMessage(), 'info');
             return;
         }
         setEditing(item);
@@ -182,6 +171,11 @@ export function VenuePromotionsManager({
         setWindowStart(item.window?.startTime ?? '');
         setWindowEnd(item.window?.endTime ?? '');
         setFormOpen(true);
+    };
+
+    const notify = (text: string, tone: 'info' | 'danger') => {
+        setMessageTone(tone);
+        setMessage(text);
     };
 
     const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -201,54 +195,73 @@ export function VenuePromotionsManager({
         };
         const parsed = VenuePromotionCreateRequestSchema.safeParse(body);
         if (!parsed.success) {
-            setMessage(
+            notify(
                 t(
                     'venue.owner.editor.promotionsManager.invalid',
                     'Revisá los campos del formulario.'
-                )
+                ),
+                'danger'
             );
             return;
         }
-        const result = editing
-            ? await venuePromotionsApi.update({
-                  id: listingId,
-                  promotionId: editing.id,
-                  body: parsed.data
-              })
-            : await venuePromotionsApi.create({ id: listingId, body: parsed.data });
-        if (!result.ok) {
-            const errorText = apiErrorMessage(result.error);
-            setMessage(errorText);
-            if (discountType === 'special_offer') setOfferError(errorText);
-            return;
-        }
-        const cacheNotice = t(
-            'venue.owner.editor.promotionsManager.cacheNotice',
-            'Puede tardar unos minutos en verse en la ficha.'
-        );
-        await load();
-        resetForm();
-        setMessage(cacheNotice);
+        const promotionId = editing?.id;
+        await runRetryableEditorAutoSave({
+            save: async () => {
+                const result = promotionId
+                    ? await venuePromotionsApi.update({
+                          id: listingId,
+                          promotionId,
+                          body: parsed.data
+                      })
+                    : await venuePromotionsApi.create({ id: listingId, body: parsed.data });
+                if (!result.ok) {
+                    const errorText = apiErrorMessage(result.error);
+                    notify(errorText, 'danger');
+                    if (discountType === 'special_offer') setOfferError(errorText);
+                    return false;
+                }
+                // The retry of a failed save re-runs this too, so the list and
+                // the form catch up whichever attempt succeeds.
+                await load();
+                resetForm();
+                notify(
+                    t(
+                        'venue.owner.editor.promotionsManager.cacheNotice',
+                        'Puede tardar unos minutos en verse en la ficha.'
+                    ),
+                    'info'
+                );
+                return true;
+            }
+        });
     };
 
     const changeState = async (item: PromotionRow, state: LifecycleStatusEnum) => {
         if (state === LifecycleStatusEnum.ACTIVE && sectionState === 'locked') {
-            setMessage(lockedMessage());
+            notify(lockedMessage(), 'info');
             return;
         }
-        const result = await venuePromotionsApi.patch({
-            id: listingId,
-            promotionId: item.id,
-            body: { lifecycleState: state }
+        await runRetryableEditorAutoSave({
+            save: async () => {
+                const result = await venuePromotionsApi.patch({
+                    id: listingId,
+                    promotionId: item.id,
+                    body: { lifecycleState: state }
+                });
+                if (!result.ok) {
+                    notify(apiErrorMessage(result.error), 'danger');
+                    return false;
+                }
+                await load();
+                return true;
+            }
         });
-        if (result.ok) await load();
-        else setMessage(apiErrorMessage(result.error));
     };
 
     const remove = async (item: PromotionRow) => {
-        const confirmed = await showConfirmationDialog({
+        const confirmed = await askConfirm({
             title: t('venue.owner.editor.promotionsManager.deleteTitle', 'Borrar promoción'),
-            message: t(
+            description: t(
                 'venue.owner.editor.promotionsManager.deleteConfirm',
                 '¿Querés borrar esta promoción?'
             ),
@@ -256,234 +269,168 @@ export function VenuePromotionsManager({
             cancelLabel: t('common.cancel', 'Cancelar')
         });
         if (!confirmed) return;
-        const result = await venuePromotionsApi.remove({ id: listingId, promotionId: item.id });
-        if (result.ok) await load();
-        else setMessage(apiErrorMessage(result.error));
-    };
-
-    const lifecycleLabel = (item: PromotionRow): string => {
-        const key = resolvePromotionLifecycleState(item, now);
-        if (key === null) return '';
-        const fallback =
-            key === 'active'
-                ? 'Activa'
-                : key === 'draft'
-                  ? 'Borrador'
-                  : key === 'paused'
-                    ? 'Pausada'
-                    : 'Vencida';
-        return t(`venue.owner.editor.promotionsManager.states.${key}`, fallback);
+        await runRetryableEditorAutoSave({
+            save: async () => {
+                const result = await venuePromotionsApi.remove({
+                    id: listingId,
+                    promotionId: item.id
+                });
+                if (!result.ok) {
+                    notify(apiErrorMessage(result.error), 'danger');
+                    return false;
+                }
+                await load();
+                return true;
+            }
+        });
     };
 
     return (
-        <section
-            className={fieldStyles.section}
-            aria-labelledby={headingId}
+        <Section
+            title={t('venue.owner.editor.promotionsManager.title', 'Promociones')}
+            helpId={sectionHelpId({ vertical: 'venue', slug: 'promociones' })}
         >
-            <h2
-                id={headingId}
-                className={fieldStyles.label}
-            >
-                {t('venue.owner.editor.promotionsManager.title', 'Promociones')}
-            </h2>
-            <p>
-                {isUnlimitedLimit({ value: maxActive })
-                    ? t(
-                          'venue.owner.editor.promotionsManager.unlimitedCount',
-                          'Promociones activas: {{count}} · sin tope',
-                          { count: activeCount }
-                      )
-                    : t(
-                          'venue.owner.editor.promotionsManager.count',
-                          'Promociones activas: {{count}} / {{max}}',
-                          { count: activeCount, max: maxActive }
-                      )}
-            </p>
-            {sectionState === 'locked' && (
-                <p role="status">
-                    {lockedMessage()}
-                    {upsellPlanName && (
-                        <>
-                            {' '}
-                            <a
-                                href={buildUrl({
+            <div className={styles.stack}>
+                <p className={styles.count}>
+                    {isUnlimitedLimit({ value: maxActive })
+                        ? t(
+                              'venue.owner.editor.promotionsManager.unlimitedCount',
+                              'Promociones activas: {{count}} · sin tope',
+                              { count: activeCount }
+                          )
+                        : t(
+                              'venue.owner.editor.promotionsManager.count',
+                              'Promociones activas: {{count}} / {{max}}',
+                              { count: activeCount, max: maxActive }
+                          )}
+                </p>
+                {sectionState === 'locked' &&
+                    (upsellPlanName ? (
+                        <LockedState
+                            locale={locale}
+                            reason={{
+                                kind: 'plan',
+                                feature: t(
+                                    'venue.owner.editor.promotionsManager.title',
+                                    'Promociones'
+                                ),
+                                description: lockedMessage(),
+                                plans: [{ name: upsellPlanName }],
+                                plansHref: buildUrl({
                                     locale,
                                     path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
-                                })}
-                            >
-                                {t('venue.owner.editor.menuManager.seePlans', 'Ver planes')}
-                            </a>
-                        </>
-                    )}
-                </p>
-            )}
-            {!loading &&
-                sectionState === 'available' &&
-                !isUnlimitedLimit({ value: maxActive }) &&
-                activeCount >= maxActive && (
-                    <p role="status">
-                        {limitUpsellPlanName
-                            ? t(
-                                  'venue.owner.editor.promotionsManager.limitReached',
-                                  'Alcanzaste el tope. El plan {{plan}} permite más promociones.',
-                                  { plan: limitUpsellPlanName }
-                              )
-                            : t(
-                                  'venue.owner.editor.promotionsManager.limitReachedNoPlan',
-                                  'Alcanzaste el tope de promociones de tu plan.'
-                              )}
-                    </p>
-                )}
-            {loading ? (
-                <p>{t('common.loading', 'Cargando…')}</p>
-            ) : error ? (
-                <GradientButton
-                    as="button"
-                    type="button"
-                    variant="outline-primary"
-                    shape="rounded"
-                    onClick={() => void load()}
-                    label={t('common.retry', 'Reintentar')}
-                />
-            ) : items.length === 0 ? (
-                <p>
-                    {t(
-                        'venue.owner.editor.promotionsManager.empty',
-                        'Todavía no cargaste promociones.'
-                    )}
-                </p>
-            ) : (
-                <ul className={styles.list}>
-                    {items.map((item) => (
-                        <li
-                            key={item.id}
-                            className={styles.item}
+                                })
+                            }}
+                        />
+                    ) : (
+                        <Alert
+                            locale={locale}
+                            tone="info"
                         >
-                            <strong>{item.title}</strong>
-                            <span>
-                                {formatPromotionBenefit({
-                                    discountType: item.discountType,
-                                    discountValue: item.discountValue,
-                                    locale,
-                                    specialOfferText: item.description
-                                })}
-                            </span>
-                            {lifecycleLabel(item) && <span>{lifecycleLabel(item)}</span>}
-                            <small>
-                                {formatCalendarDate({
-                                    value: item.validFrom,
-                                    locale,
-                                    options: { dateStyle: 'long' }
-                                })}{' '}
-                                –{' '}
-                                {item.validUntil
-                                    ? formatCalendarDate({
-                                          value: item.validUntil,
-                                          locale,
-                                          options: { dateStyle: 'long' }
-                                      })
-                                    : t('venue.detail.promotions.noEndDate', 'Sin fecha de fin')}
-                            </small>
-                            <div className={styles.itemActions}>
-                                {sectionState === 'available' && (
-                                    <GradientButton
-                                        as="button"
-                                        type="button"
-                                        variant="outline-primary"
-                                        size="sm"
-                                        shape="rounded"
-                                        onClick={() => openEdit(item)}
-                                        label={t(
-                                            'venue.owner.editor.promotionsManager.actions.edit'
-                                        )}
-                                    />
-                                )}
-                                {item.lifecycleState === 'ACTIVE' ? (
-                                    <GradientButton
-                                        as="button"
-                                        type="button"
-                                        variant="outline-primary"
-                                        size="sm"
-                                        shape="rounded"
-                                        onClick={() =>
-                                            void changeState(item, LifecycleStatusEnum.INACTIVE)
-                                        }
-                                        label={t(
-                                            'venue.owner.editor.promotionsManager.actions.pause'
-                                        )}
-                                    />
-                                ) : sectionState === 'available' ? (
-                                    <GradientButton
-                                        as="button"
-                                        type="button"
-                                        variant="outline-primary"
-                                        size="sm"
-                                        shape="rounded"
-                                        onClick={() =>
-                                            void changeState(item, LifecycleStatusEnum.ACTIVE)
-                                        }
-                                        label={t(
-                                            'venue.owner.editor.promotionsManager.actions.activate'
-                                        )}
-                                    />
-                                ) : null}
-                                <GradientButton
-                                    as="button"
-                                    type="button"
-                                    variant="outline-accent"
-                                    size="sm"
-                                    shape="rounded"
-                                    className={styles.dangerButton}
-                                    onClick={() => void remove(item)}
-                                    label={t('venue.owner.editor.promotionsManager.actions.delete')}
-                                />
-                            </div>
-                        </li>
+                            {lockedMessage()}
+                        </Alert>
                     ))}
-                </ul>
-            )}
-            {sectionState === 'available' && (
-                <GradientButton
-                    as="button"
-                    type="button"
-                    variant="accent"
-                    shape="rounded"
-                    disabled={activeCount >= maxActive}
-                    onClick={() => setFormOpen(true)}
-                    label={t('venue.owner.editor.promotionsManager.create', 'Nueva promoción')}
-                />
-            )}
-            {message && <p role="status">{message}</p>}
-            {(formOpen || editing) && (
-                <VenuePromotionForm
-                    locale={locale}
-                    titleInputRef={titleInputRef}
-                    onSubmit={(event) => void submit(event)}
-                    onCancel={resetForm}
-                    title={title}
-                    setTitle={setTitle}
-                    description={description}
-                    setDescription={setDescription}
-                    discountType={discountType}
-                    setDiscountType={setDiscountType}
-                    discountValue={discountValue}
-                    setDiscountValue={setDiscountValue}
-                    validFrom={validFrom}
-                    setValidFrom={setValidFrom}
-                    validUntil={validUntil}
-                    setValidUntil={setValidUntil}
-                    offerError={offerError}
-                    setOfferError={setOfferError}
-                    windowEnabled={windowEnabled}
-                    setWindowEnabled={setWindowEnabled}
-                    windowWeekdays={windowWeekdays}
-                    setWindowWeekdays={setWindowWeekdays}
-                    windowStart={windowStart}
-                    setWindowStart={setWindowStart}
-                    windowEnd={windowEnd}
-                    setWindowEnd={setWindowEnd}
-                />
-            )}
-        </section>
+                {!loading &&
+                    sectionState === 'available' &&
+                    !isUnlimitedLimit({ value: maxActive }) &&
+                    activeCount >= maxActive && (
+                        <Alert
+                            locale={locale}
+                            tone="warning"
+                        >
+                            {limitUpsellPlanName
+                                ? t(
+                                      'venue.owner.editor.promotionsManager.limitReached',
+                                      'Alcanzaste el tope. El plan {{plan}} permite más promociones.',
+                                      { plan: limitUpsellPlanName }
+                                  )
+                                : t(
+                                      'venue.owner.editor.promotionsManager.limitReachedNoPlan',
+                                      'Alcanzaste el tope de promociones de tu plan.'
+                                  )}
+                        </Alert>
+                    )}
+                {loading ? (
+                    <Skeleton
+                        locale={locale}
+                        lines={3}
+                    />
+                ) : error ? (
+                    <ErrorState
+                        locale={locale}
+                        onRetry={load}
+                    />
+                ) : items.length === 0 ? (
+                    <EmptyState
+                        variant="compact"
+                        title={t(
+                            'venue.owner.editor.promotionsManager.empty',
+                            'Todavía no cargaste promociones.'
+                        )}
+                    />
+                ) : (
+                    <VenuePromotionList
+                        locale={locale}
+                        items={items}
+                        now={now}
+                        sectionState={sectionState}
+                        onEdit={openEdit}
+                        onActivate={(item) => void changeState(item, LifecycleStatusEnum.ACTIVE)}
+                        onPause={(item) => void changeState(item, LifecycleStatusEnum.INACTIVE)}
+                        onDelete={(item) => void remove(item)}
+                    />
+                )}
+                {sectionState === 'available' && (
+                    <div>
+                        <Button
+                            variant="primary"
+                            disabled={activeCount >= maxActive}
+                            onClick={() => setFormOpen(true)}
+                        >
+                            {t('venue.owner.editor.promotionsManager.create', 'Nueva promoción')}
+                        </Button>
+                    </div>
+                )}
+                {message && (
+                    <Alert
+                        locale={locale}
+                        tone={messageTone}
+                    >
+                        {message}
+                    </Alert>
+                )}
+                {(formOpen || editing) && (
+                    <VenuePromotionForm
+                        locale={locale}
+                        titleInputRef={titleInputRef}
+                        onSubmit={(event) => void submit(event)}
+                        onCancel={resetForm}
+                        title={title}
+                        setTitle={setTitle}
+                        description={description}
+                        setDescription={setDescription}
+                        discountType={discountType}
+                        setDiscountType={setDiscountType}
+                        discountValue={discountValue}
+                        setDiscountValue={setDiscountValue}
+                        validFrom={validFrom}
+                        setValidFrom={setValidFrom}
+                        validUntil={validUntil}
+                        setValidUntil={setValidUntil}
+                        offerError={offerError}
+                        setOfferError={setOfferError}
+                        windowEnabled={windowEnabled}
+                        setWindowEnabled={setWindowEnabled}
+                        windowWeekdays={windowWeekdays}
+                        setWindowWeekdays={setWindowWeekdays}
+                        windowStart={windowStart}
+                        setWindowStart={setWindowStart}
+                        windowEnd={windowEnd}
+                        setWindowEnd={setWindowEnd}
+                    />
+                )}
+                {confirmDialog}
+            </div>
+        </Section>
     );
 }

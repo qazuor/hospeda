@@ -1,5 +1,5 @@
 import { LifecycleStatusEnum, LifecycleStatusEnumSchema } from '@repo/schemas';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     resolvePromotionLifecycleState,
@@ -26,10 +26,9 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
 vi.mock('../../../src/lib/billing-limit-error', () => ({
     buildLimitReachedPayloadFromDetails: mocks.limitMessage
 }));
-vi.mock('../../../src/lib/forms/show-confirmation-dialog', () => ({
-    showConfirmationDialog: vi.fn().mockResolvedValue(true)
-}));
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    // The kit reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string | number>) => {
             const messages: Record<string, string> = {
@@ -66,6 +65,12 @@ function listWithPromotion() {
         ok: true,
         data: { items: [promotion], meta: { activeCount: 1, maxActive: 5 } }
     });
+}
+
+/** The destructive confirm button of the kit dialog opened by «Borrar». */
+async function confirmDeletion(): Promise<HTMLElement> {
+    const dialog = await screen.findByRole('alertdialog');
+    return within(dialog).getByRole('button', { name: 'Borrar' });
 }
 
 describe('VenuePromotionsManager', () => {
@@ -185,9 +190,10 @@ describe('VenuePromotionsManager', () => {
                 limitPlanOptions={[]}
             />
         );
-        expect(await screen.findByRole('status')).toHaveTextContent(
-            'Disponible desde el plan Plan Profesional.'
-        );
+        expect(
+            await screen.findByText('Disponible desde el plan Plan Profesional.')
+        ).toBeInTheDocument();
+        expect(screen.getByText('Plan Profesional', { selector: 'span' })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
             'href',
             '/es/planes/comer-y-salir/precios/'
@@ -369,6 +375,7 @@ describe('VenuePromotionsManager', () => {
         );
 
         fireEvent.click(await screen.findByRole('button', { name: 'Borrar' }));
+        fireEvent.click(await confirmDeletion());
         expect(await screen.findByText('Límite localizado')).toBeInTheDocument();
         expect(mocks.limitMessage).toHaveBeenCalledWith({
             details: { limitKey: 'max_active_promotions' },
@@ -399,5 +406,92 @@ describe('VenuePromotionsManager', () => {
             )
         ).toBeInTheDocument();
         expect(screen.queryByText('host.promotions.invalid')).not.toBeInTheDocument();
+    });
+
+    it('asks before deleting and deletes nothing when the owner cancels', async () => {
+        listWithPromotion();
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+                limitPlanOptions={[]}
+            />
+        );
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Borrar' }));
+        const dialog = await screen.findByRole('alertdialog');
+        expect(mocks.remove).not.toHaveBeenCalled();
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+
+        await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+        expect(mocks.remove).not.toHaveBeenCalled();
+    });
+
+    it('deletes once the owner confirms and reloads the list', async () => {
+        listWithPromotion();
+        mocks.remove.mockResolvedValue({ ok: true, data: {} });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+                limitPlanOptions={[]}
+            />
+        );
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Borrar' }));
+        fireEvent.click(await confirmDeletion());
+
+        await waitFor(() =>
+            expect(mocks.remove).toHaveBeenCalledWith({
+                id: 'venue-id',
+                promotionId: 'promo-id'
+            })
+        );
+        await waitFor(() => expect(mocks.list).toHaveBeenCalledTimes(2));
+    });
+
+    it('shows the kit locked state with the plan and its pricing link', async () => {
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [], meta: { activeCount: 0, maxActive: 0 } }
+        });
+        const { container } = render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="locked"
+                upsellPlanName="Plan Profesional"
+                limitPlanOptions={[]}
+            />
+        );
+
+        await waitFor(() => expect(mocks.list).toHaveBeenCalled());
+        expect(container.querySelector('[data-reason="plan"]')).not.toBeNull();
+        expect(container.querySelector('[data-kit-section]')).not.toBeNull();
+    });
+
+    it('offers a retry when the list fails to load', async () => {
+        mocks.list.mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'x' } });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+                limitPlanOptions={[]}
+            />
+        );
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [promotion], meta: { activeCount: 1, maxActive: 5 } }
+        });
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Reintentar' }));
+
+        expect(await screen.findByText('Oferta')).toBeInTheDocument();
     });
 });
