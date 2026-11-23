@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+    getActionStatusKey,
     parsePlanNames,
     resolveDashboardFreeCard,
     resolveDashboardPlanStat,
@@ -224,6 +225,15 @@ describe('HOS-2553 subscription card with every subscription', () => {
         expect(statusNeedsAction({ statusKey: 'pending-authorization' })).toBe(true);
         expect(statusNeedsAction({ statusKey: 'active' })).toBe(false);
         expect(statusNeedsAction({ statusKey: 'grace-period' })).toBe(false);
+    });
+
+    it('narrows the action key to the two unsettled statuses and null otherwise', () => {
+        expect(getActionStatusKey({ statusKey: 'charge-declined' })).toBe('charge-declined');
+        expect(getActionStatusKey({ statusKey: 'pending-authorization' })).toBe(
+            'pending-authorization'
+        );
+        expect(getActionStatusKey({ statusKey: 'active' })).toBeNull();
+        expect(getActionStatusKey({ statusKey: 'grace-period' })).toBeNull();
     });
 });
 
