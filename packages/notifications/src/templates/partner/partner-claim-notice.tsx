@@ -1,6 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /** Resolved copy and link shown when an approved Partner needs to be claimed. */

@@ -1,5 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -49,10 +49,10 @@ export function HostTradeRevoked({ recipientName, listingName, reason }: HostTra
                 el directorio de proveedores de Hospeda. Los anfitriones ya no la ven.
             </Text>
 
-            <Section style={styles.reasonBox}>
+            <Callout tone="info">
                 <Text style={styles.reasonLabel}>El motivo que registramos fue:</Text>
                 <Text style={styles.reasonText}>{reason}</Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Si creés que hubo un error o querés conversarlo, respondé este email o escribinos a
@@ -75,15 +75,7 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    reasonBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '20px 24px',
-        margin: '0 0 24px'
-    },
     reasonLabel: {
-        color: '#64748b',
         fontSize: '13px',
         lineHeight: '18px',
         margin: '0 0 8px',
@@ -91,7 +83,6 @@ const styles = {
         letterSpacing: '0.04em'
     },
     reasonText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'

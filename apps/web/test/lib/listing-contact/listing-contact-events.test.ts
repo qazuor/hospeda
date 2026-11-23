@@ -26,7 +26,8 @@ describe('listing contact events', () => {
             'summary',
             'sidebar',
             'contact_block',
-            'gallery'
+            'gallery',
+            'tabs'
         ]);
         expect(handler.mock.calls).toEqual([[payload], [{ origin: 'gallery' }]]);
     });

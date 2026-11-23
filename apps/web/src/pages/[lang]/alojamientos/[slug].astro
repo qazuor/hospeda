@@ -36,7 +36,7 @@ import WaveDivider from '@/components/shared/ui/WaveDivider.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import ContactHostShell from '@/components/accommodation/ContactHostShell.astro';
-import OwnerCard from '@/components/accommodation/OwnerCard.astro';
+import ContactCard from '@/components/accommodation/ContactCard.astro';
 import HostSection from '@/components/accommodation/HostSection.astro';
 import { toReviewStripItems } from '@/lib/review-strip';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
@@ -547,6 +547,8 @@ const hasDescriptionSection = Boolean(
     accommodation.summary || accommodation.description || accommodation.richDescription
 );
 const hasAmenitiesSection = accommodation.features.length > 0 || accommodation.amenities.length > 0;
+// AC-2.5: a host section needs a real owner. Without one neither the section nor its tab render.
+const hasHostSection = Boolean(accommodation.owner.id);
 const sectionTabs = buildListingSectionTabs({
     present: {
         photos: true,
@@ -554,7 +556,7 @@ const sectionTabs = buildListingSectionTabs({
         amenities: hasAmenitiesSection,
         location: true,
         reviews: true,
-        host: true
+        host: hasHostSection
     }
 });
 
@@ -643,7 +645,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         />
         </div>
         <ListingSectionTabs
-            client:load
+            client:idle
             tabs={sectionTabs}
             locale={locale}
             vertical="accommodation"
@@ -693,7 +695,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram
              the host filled in via the editor's contact form, previously captured
              but never shown on the public page). The existing WhatsApp button
-             (sidebar, OwnerCard) is untouched — this block never carries that number. -->
+             (sidebar, ContactCard) is untouched — this block never carries that number. -->
         <AccommodationContactBlock
             listingId={accommodation.id}
             contactInfo={accommodation.contactInfo}
@@ -732,9 +734,11 @@ const faqSections = accommodation.faqs.map((faq) => ({
         )}
 
         <FaqAccordion faqs={accommodation.faqs} lang={locale} />
+        {hasHostSection && (
         <div id={LISTING_SECTION_IDS.host} class="acc-anchor">
         <HostSection owner={accommodation.owner} accommodationId={accommodation.id} panelId={panelId} spokenLanguages={accommodation.policies.spokenLanguages} lang={locale} />
         </div>
+        )}
         <div id={LISTING_SECTION_IDS.location} class="acc-anchor acc-anchor--stack">
         <LocationSection
             destination={accommodation.destination}
@@ -870,7 +874,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     ctaLabel={t('accommodations.detail.priceAlert.signInCta', 'Iniciá sesión para crear la alerta')}
                 />
             </PriceAlertButton>
-            <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} lang={locale}>
+            <ContactCard>
                 <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
                     <ListingContactCard
                         client:media="(min-width: 768px)"
@@ -885,7 +889,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                         locale={locale}
                     />
                 </ContactHostShell>
-            </OwnerCard>
+            </ContactCard>
             <!-- client:idle, NOT client:visible (which it used to be). The
                  island now SSRs the anonymous sign-in CTA and swaps itself in
                  after resolving a session; with client:visible a signed-in

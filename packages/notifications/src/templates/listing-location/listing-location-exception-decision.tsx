@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /** Locales this notice is written in (owner decision, HOS-2192). */
@@ -116,14 +115,12 @@ export function ListingLocationExceptionDecision({
             <Text style={styles.paragraph}>{copy.greeting(recipientName)}</Text>
             <Text style={styles.paragraph}>{variant.body(listingName)}</Text>
             {reasonLabel && decisionReason ? (
-                <Section style={styles.reasonBox}>
+                <Callout tone="info">
                     <Text style={styles.reasonLabel}>{reasonLabel}</Text>
                     <Text style={styles.reasonText}>{decisionReason}</Text>
-                </Section>
+                </Callout>
             ) : null}
-            <Section style={{ textAlign: 'center' as const, margin: '24px 0' }}>
-                <Button href={editorUrl}>{variant.cta}</Button>
-            </Section>
+            <Button href={editorUrl}>{variant.cta}</Button>
         </EmailLayout>
     );
 }
@@ -135,21 +132,12 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    reasonBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '20px 24px',
-        margin: '0 0 24px'
-    },
     reasonLabel: {
-        color: '#64748b',
         fontSize: '13px',
         lineHeight: '18px',
         margin: '0 0 8px'
     },
     reasonText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'

@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { formatDate } from '../utils/index.js';
 import {
@@ -34,9 +33,7 @@ export function TrialWinBack15Days({
                 Hace quince días terminó tu prueba, el {endDate}. Tu publicación sigue guardada y
                 puede volver a aparecer cuando elijas un plan.
             </Text>
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Ver los planes</Button>
-            </Section>
+            <Button href={upgradeUrl}>Ver los planes</Button>
         </EmailLayout>
     );
 }

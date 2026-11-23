@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -46,7 +45,7 @@ export function ConversationTokenExpiringDay15({
                 <strong>15 días</strong>.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="info">
                 <InfoRow
                     label="Alojamiento"
                     value={accommodationName}
@@ -55,25 +54,23 @@ export function ConversationTokenExpiringDay15({
                     label="Fecha de vencimiento"
                     value={expiryDate}
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Si aún necesitás estar en contacto con el anfitrión, podés renovar tu enlace
                 haciendo clic en el botón de abajo.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={renewUrl}>Renovar mi acceso</Button>
-            </Section>
+            <Button href={renewUrl}>Renovar mi acceso</Button>
 
             {/* Account-creation suggestion */}
-            <Section style={styles.accountBox}>
+            <Callout tone="success">
                 <Text style={styles.accountHeading}>¿Querés un acceso permanente?</Text>
                 <Text style={styles.accountText}>
                     Creá una cuenta gratuita en Hospeda y nunca más te preocupes por vencimientos.
                     Todas tus conversaciones quedan guardadas en un solo lugar.
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.footerNote}>
                 Si ya resolviste tu consulta, podés ignorar este recordatorio.
@@ -89,35 +86,18 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    infoBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
-    },
-    accountBox: {
-        backgroundColor: '#f0fdf4',
-        borderRadius: '8px',
-        borderLeft: '4px solid #22c55e',
-        padding: '20px 24px',
-        margin: '24px 0'
-    },
     accountHeading: {
-        color: '#15803d',
         fontSize: '15px',
         fontWeight: '600',
         lineHeight: '22px',
-        margin: '0 0 8px'
+        margin: '0 0 8px',
+        textAlign: 'center' as const
     },
     accountText: {
-        color: '#166534',
         fontSize: '14px',
         lineHeight: '20px',
-        margin: '0'
+        margin: '0',
+        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

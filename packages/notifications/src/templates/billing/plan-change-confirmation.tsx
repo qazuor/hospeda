@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatCurrency, formatDate } from '../utils/index.js';
@@ -46,7 +45,7 @@ export function PlanChangeConfirmation({
 
             <Text style={styles.paragraph}>Tu cambio de plan ha sido procesado exitosamente.</Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="success">
                 {oldPlanName && newPlanName && (
                     <InfoRow
                         label="Cambio"
@@ -65,16 +64,14 @@ export function PlanChangeConfirmation({
                         value={formattedRenewalDate}
                     />
                 )}
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Tu próximo cargo será por el nuevo plan. Puedes ver todos los detalles y beneficios
                 de tu plan actual desde tu cuenta.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi plan</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi plan</Button>
 
             <Text style={styles.footerNote}>
                 Si tienes alguna pregunta sobre los cambios, estamos aquí para ayudarte.
@@ -95,17 +92,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    infoBox: {
-        backgroundColor: '#f0fdf4',
-        borderRadius: '8px',
-        borderLeft: '4px solid #22c55e',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

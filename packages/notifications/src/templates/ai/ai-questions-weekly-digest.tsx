@@ -1,6 +1,5 @@
 import { Link, Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /** Locales this digest is written in (owner decision, HOS-2101). */
@@ -120,6 +119,7 @@ export function AiQuestionsWeeklyDigest({
                     <Section
                         key={listing.panelUrl}
                         style={styles.listingBox}
+                        data-card="list"
                     >
                         <Text style={styles.listingName}>{listing.listingName}</Text>
                         <Text style={styles.count}>{copy.count(listing.unansweredCount)}</Text>

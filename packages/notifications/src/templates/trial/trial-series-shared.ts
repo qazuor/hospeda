@@ -89,9 +89,10 @@ export function resolveTrialPlanName({
 /**
  * Visual tokens for the series.
  *
- * Three accent boxes, matching the arc: `calmBox` for the sends that are not
- * warning about anything, `warningBox` for the ones that name the risk, and
- * `alertBox` for the day the listing actually comes down.
+ * The accent boxes are the shared `Callout` from `@repo/email` (HOS-2565),
+ * matching the arc: `info` for the sends that are not warning about anything,
+ * `warning` for the ones that name the risk, and `danger` for the day the
+ * listing actually comes down.
  */
 export const trialSeriesStyles = {
     greeting: {
@@ -105,31 +106,6 @@ export const trialSeriesStyles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    calmBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #3aa7d9',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    warningBox: {
-        backgroundColor: '#fffbeb',
-        borderRadius: '8px',
-        borderLeft: '4px solid #f59e0b',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    alertBox: {
-        backgroundColor: '#fef2f2',
-        borderRadius: '8px',
-        borderLeft: '4px solid #dc2626',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

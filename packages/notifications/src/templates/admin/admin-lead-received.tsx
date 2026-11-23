@@ -1,5 +1,5 @@
-import { Button, Hr, Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Hr, Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -70,7 +70,7 @@ export function AdminLeadReceived({
                 Entró por el formulario de <strong>{funnelLabel}</strong> el {submittedAtLabel}.
             </Text>
 
-            <Section style={styles.detailBox}>
+            <Callout tone="info">
                 {businessName ? (
                     <Text style={styles.detail}>
                         <strong>Negocio:</strong> {businessName}
@@ -87,7 +87,7 @@ export function AdminLeadReceived({
                         <strong>Teléfono:</strong> {contactPhone}
                     </Text>
                 ) : null}
-            </Section>
+            </Callout>
 
             {message ? (
                 <>
@@ -97,14 +97,7 @@ export function AdminLeadReceived({
                 </>
             ) : null}
 
-            <Section style={styles.buttonWrapper}>
-                <Button
-                    href={adminUrl}
-                    style={styles.button}
-                >
-                    Ver el lead en el panel
-                </Button>
-            </Section>
+            <Button href={adminUrl}>Ver el lead en el panel</Button>
         </EmailLayout>
     );
 }
@@ -116,15 +109,7 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    detailBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '16px 20px',
-        margin: '0 0 20px'
-    },
     detail: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0 0 6px'
@@ -147,18 +132,5 @@ const styles = {
         lineHeight: '23px',
         margin: '0 0 24px',
         whiteSpace: 'pre-wrap' as const
-    },
-    buttonWrapper: {
-        margin: '0 0 8px'
-    },
-    button: {
-        backgroundColor: '#0f766e',
-        borderRadius: '8px',
-        color: '#ffffff',
-        display: 'inline-block',
-        fontSize: '15px',
-        fontWeight: 600,
-        padding: '12px 22px',
-        textDecoration: 'none'
     }
 };

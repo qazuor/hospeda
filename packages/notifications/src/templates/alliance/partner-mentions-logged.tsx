@@ -1,5 +1,5 @@
-import { Link, Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Link, Text } from '@react-email/components';
+import { Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -78,7 +78,7 @@ export function PartnerMentionsLogged({
                 {isSingle ? 'en el siguiente canal' : 'en los siguientes canales'}:
             </Text>
 
-            <Section style={styles.list}>
+            <Callout tone="info">
                 {mentions.map((mention) => (
                     <Text
                         key={`${mention.channelLabel}-${mention.url ?? 'sin-enlace'}`}
@@ -98,7 +98,7 @@ export function PartnerMentionsLogged({
                         ) : null}
                     </Text>
                 ))}
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Podés ver la bitácora completa de todo lo que difundimos desde tu cuenta, en la
@@ -126,25 +126,15 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    list: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '20px 24px',
-        margin: '0 0 24px'
-    },
     item: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0 0 8px'
     },
     channel: {
-        color: '#1e293b',
         fontWeight: 600
     },
     link: {
-        color: '#0f766e',
         textDecoration: 'underline'
     },
     footnote: {

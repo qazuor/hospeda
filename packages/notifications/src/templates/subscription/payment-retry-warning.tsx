@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -50,7 +49,7 @@ export function PaymentRetryWarning({
                 <strong>{failureCount}</strong> de <strong>{maxRetries}</strong>.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="danger">
                 <InfoRow
                     label="Intento"
                     value={`${failureCount} de ${maxRetries}`}
@@ -65,7 +64,7 @@ export function PaymentRetryWarning({
                         value={paymentMethodHint}
                     />
                 )}
-            </Section>
+            </Callout>
 
             {remainingAttempts > 0 ? (
                 <Text style={styles.paragraph}>
@@ -86,9 +85,7 @@ export function PaymentRetryWarning({
                 reintentará el cobro automáticamente.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
 
             <Text style={styles.footerNote}>
                 Si necesitás ayuda, contactá a nuestro equipo de soporte.
@@ -116,17 +113,6 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px',
         fontWeight: '600' as const
-    },
-    infoBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #dc2626',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

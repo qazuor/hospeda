@@ -38,6 +38,16 @@ describe('buildExperienceChannels', () => {
         expect(channels.at(-1)).toMatchObject({ external: true, text: 'ejemplo.com/tour' });
     });
 
+    it('renders one phone row when mobile and landline are the same number', () => {
+        const channels = buildExperienceChannels({
+            contactInfo: { ...contact, mobilePhone: '+54 3442 421234', workPhone: '+543442-421234' }
+        });
+
+        expect(channels.filter((channel) => channel.kind === 'phone')).toEqual([
+            { kind: 'phone', href: 'tel:+543442421234', text: '+54 3442 421234', external: false }
+        ]);
+    });
+
     it('drops whitespace values and unsafe website schemes instead of rendering them', () => {
         const channels = buildExperienceChannels({
             contactInfo: { ...contact, mobilePhone: '   ', website: 'javascript:alert(1)' }

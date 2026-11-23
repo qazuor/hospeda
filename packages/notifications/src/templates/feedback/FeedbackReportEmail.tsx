@@ -1,5 +1,5 @@
 import { Column, Link, Row, Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -206,10 +206,10 @@ export function FeedbackReportEmail({
             </Section>
 
             {/* Description */}
-            <Section style={styles.descriptionBox}>
+            <Callout tone="info">
                 <SectionTitle>Descripción</SectionTitle>
                 <Text style={styles.descriptionText}>{description}</Text>
-            </Section>
+            </Callout>
 
             {/* Optional: severity + reproduction steps */}
             {(hasReproSteps || Boolean(severity)) && (
@@ -361,7 +361,7 @@ export function FeedbackReportEmail({
 
             {/* Optional: error info */}
             {hasErrorInfo && environment.errorInfo && (
-                <Section style={styles.errorSection}>
+                <Callout tone="danger">
                     <SectionTitle>Información del Error</SectionTitle>
                     <Text style={styles.fieldLabel}>Mensaje</Text>
                     <Text style={styles.errorMessage}>{environment.errorInfo.message}</Text>
@@ -371,7 +371,7 @@ export function FeedbackReportEmail({
                             <Text style={styles.codeBlock}>{environment.errorInfo.stack}</Text>
                         </>
                     )}
-                </Section>
+                </Callout>
             )}
 
             {/* Automated footer note */}
@@ -402,15 +402,7 @@ const styles = {
         padding: '20px',
         margin: '16px 0'
     },
-    descriptionBox: {
-        backgroundColor: '#f0f9ff',
-        borderRadius: '6px',
-        borderLeft: '4px solid #0ea5e9',
-        padding: '20px',
-        margin: '16px 0'
-    },
     descriptionText: {
-        color: '#1e293b',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0',
@@ -445,15 +437,7 @@ const styles = {
         padding: '20px',
         margin: '16px 0'
     },
-    errorSection: {
-        backgroundColor: '#fef2f2',
-        borderRadius: '6px',
-        borderLeft: '4px solid #ef4444',
-        padding: '20px',
-        margin: '16px 0'
-    },
     errorMessage: {
-        color: '#991b1b',
         fontSize: '14px',
         fontWeight: '600',
         lineHeight: '20px',

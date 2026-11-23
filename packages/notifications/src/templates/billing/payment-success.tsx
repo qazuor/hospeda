@@ -1,7 +1,6 @@
 import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout, emailPalette } from '@repo/email';
 import type { Major } from '../../types/money.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatMajorCurrency } from '../utils/index.js';
@@ -74,9 +73,7 @@ export function PaymentSuccess({
                 Puedes descargar tu recibo desde tu panel de facturación.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver recibo</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver recibo</Button>
 
             <Text style={styles.footerNote}>Este correo confirma el pago de tu suscripción.</Text>
         </EmailLayout>
@@ -97,14 +94,11 @@ const styles = {
         margin: '0 0 16px'
     },
     receiptBox: {
-        backgroundColor: '#f8fafc',
+        backgroundColor: emailPalette.pageBackground,
+        border: `1px solid ${emailPalette.border}`,
         borderRadius: '8px',
         padding: '24px',
         margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

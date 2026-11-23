@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -76,7 +75,7 @@ export function PlanDowngradeLimitWarning({
                 activos, lo que supera el nuevo límite en <strong>{overLimit}</strong>.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="info">
                 <InfoRow
                     label="Plan actual"
                     value={planName}
@@ -97,21 +96,21 @@ export function PlanDowngradeLimitWarning({
                     label="Uso actual"
                     value={String(currentUsage)}
                 />
-            </Section>
+            </Callout>
 
-            <Section style={styles.gracePeriodBox}>
+            <Callout tone="warning">
                 <Text style={styles.gracePeriodText}>
                     <strong>Período de gracia:</strong> Tenés 7 días para ajustar tu uso. Después de
                     ese período, el contenido que exceda tu nuevo límite será desactivado
                     automáticamente.
                 </Text>
-            </Section>
+            </Callout>
 
             <Heading>¿Qué podés hacer?</Heading>
 
             <Text style={styles.ctaIntro}>Elegí la opción que mejor se adapte a tu situación:</Text>
 
-            <Section style={styles.ctaOption}>
+            <Callout tone="info">
                 <Text style={styles.ctaOptionTitle}>Opción 1: Actualizá tu plan</Text>
                 <Text style={styles.ctaOptionBody}>
                     Volvé a un plan que incluya el límite que necesitás y todo seguirá funcionando
@@ -127,26 +126,20 @@ export function PlanDowngradeLimitWarning({
                     `apps/web`, where a repointing pass scoped to the web app
                     never looks.
                 */}
-                <Section style={styles.buttonContainer}>
-                    <Button href={`${baseUrl}/es/planes/anfitriones/precios/`}>
-                        Ver planes disponibles
-                    </Button>
-                </Section>
-            </Section>
+                <Button href={`${baseUrl}/es/planes/anfitriones/precios/`}>
+                    Ver planes disponibles
+                </Button>
+            </Callout>
 
-            <Section style={styles.ctaOption}>
+            <Callout tone="info">
                 <Text style={styles.ctaOptionTitle}>Opción 2: Reducí tu uso</Text>
                 <Text style={styles.ctaOptionBody}>
                     Eliminá o archivá {limitLabel.toLowerCase()} hasta estar dentro del nuevo
                     límite. Tenés 7 días para hacerlo antes de que el contenido en exceso sea
                     desactivado automáticamente.
                 </Text>
-                <Section style={styles.buttonContainer}>
-                    <Button href={`${baseUrl}/es/mi-cuenta/propiedades/`}>
-                        Administrar contenido
-                    </Button>
-                </Section>
-            </Section>
+                <Button href={`${baseUrl}/es/mi-cuenta/propiedades/`}>Administrar contenido</Button>
+            </Callout>
 
             <Text style={styles.footerNote}>
                 Si necesitás ayuda para decidir qué hacer, nuestro equipo de soporte está disponible
@@ -169,26 +162,7 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    infoBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #0f766e',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '24px 0',
-        textAlign: 'center' as const
-    },
-    gracePeriodBox: {
-        backgroundColor: '#fefce8',
-        borderRadius: '8px',
-        borderLeft: '4px solid #ca8a04',
-        padding: '16px 24px',
-        margin: '24px 0'
-    },
     gracePeriodText: {
-        color: '#713f12',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'
@@ -199,22 +173,13 @@ const styles = {
         lineHeight: '22px',
         margin: '0 0 16px'
     },
-    ctaOption: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #0f766e',
-        padding: '20px 24px',
-        margin: '0 0 16px'
-    },
     ctaOptionTitle: {
-        color: '#1e293b',
         fontSize: '15px',
         fontWeight: 'bold',
         lineHeight: '22px',
         margin: '0 0 8px'
     },
     ctaOptionBody: {
-        color: '#475569',
         fontSize: '14px',
         lineHeight: '20px',
         margin: '0'
