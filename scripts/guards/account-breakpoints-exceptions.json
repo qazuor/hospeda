@@ -1,11 +1,5 @@
 {
-    "apps/web/src/components/account/ExclusiveDealsList.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/HostTradeEditForm.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/PartnerEditForm.module.css": {
         "media": 1
     },
     "apps/web/src/components/account/WhatsNewModal.module.css": {

@@ -60,6 +60,7 @@ export {
 export { COPY_FEEDBACK_MS, CopyField, type CopyFieldProps } from './CopyField';
 export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
+export { Disclosure, type DisclosureProps } from './Disclosure';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export {
@@ -74,6 +75,12 @@ export { Field, type FieldProps } from './Field';
 export { type FilterChipItem, FilterChips, type FilterChipsProps } from './FilterChips';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
+export {
+    DEFAULT_IMAGE_TYPES,
+    ImageUploader,
+    type ImageUploaderProps,
+    type ImageUploadResult
+} from './ImageUploader';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { type KeyValueItem, KeyValueList, type KeyValueListProps } from './KeyValueList';
 export { LinkButton, type LinkButtonProps } from './LinkButton';

@@ -1498,7 +1498,10 @@
         },
         "listLabel": "Your exclusive deals",
         "item": {
-            "vipBadge": "VIP only"
+            "vipBadge": "VIP only",
+            "viewListing": "View listing",
+            "viewListingError": "We could not open the listing. Please try again.",
+            "validUntil": "Valid until {{date}}"
         }
     },
     "recommendations": {
@@ -1896,7 +1899,13 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             },
-            "sectionTitle": "Your listing details"
+            "sectionTitle": "Your listing details",
+            "logo": {
+                "label": "Your brand logo",
+                "previewAlt": "Logo preview",
+                "pasteUrl": "Paste URL",
+                "urlHint": "If your logo is already online, paste its address instead of uploading it."
+            }
         },
         "presence": {
             "hidden": "Meanwhile, your page appears not to exist to the public.",
@@ -2213,6 +2222,20 @@
             "copy": "Copy",
             "copied": "Copied to the clipboard.",
             "failed": "We could not copy. Select the text and copy it by hand."
+        },
+        "imageUploader": {
+            "choose": "Choose image",
+            "replace": "Change image",
+            "compressing": "Optimizing…",
+            "uploading": "Uploading…",
+            "dropHint": "or drag and drop the image here",
+            "hint": "Formats: {{types}}. Maximum {{maxSize}} MB.",
+            "errors": {
+                "invalidType": "That format is not allowed. Use a {{types}} image.",
+                "tooLarge": "The image is larger than {{maxSize}} MB even after optimizing it. Choose a lighter one.",
+                "tooLargeNoCompression": "We could not optimize this image in your browser and it is larger than {{maxSize}} MB. Try another format or a lighter image.",
+                "uploadFailed": "We could not upload the image. Please try again."
+            }
         }
     },
     "ownerDashboard": {

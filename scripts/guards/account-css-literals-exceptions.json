@@ -32,10 +32,6 @@
         "font-size": 3,
         "radius": 2
     },
-    "apps/web/src/components/account/ExclusiveDealsList.module.css": {
-        "color": 1,
-        "font-size": 8
-    },
     "apps/web/src/components/account/HostTradeEditForm.module.css": {
         "color": 1,
         "font-size": 6,
@@ -49,12 +45,6 @@
     "apps/web/src/components/account/MySubscriptions.module.css": {
         "font-size": 1,
         "radius": 1
-    },
-    "apps/web/src/components/account/PartnerEditForm.module.css": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 3,
-        "shadow": 1
     },
     "apps/web/src/components/account/PartnerTrafficSection.module.css": {
         "color": 3,

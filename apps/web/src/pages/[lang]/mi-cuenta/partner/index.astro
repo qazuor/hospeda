@@ -35,7 +35,9 @@
  * HOS-2477 made this page the partner's dashboard on the account kit: a
  * PageHeader with the listing's StatusPill, the state banner as a «próxima
  * acción» Alert, the numbers `mineStats` computes (PartnerStatsGrid island) and
- * the edit form inside a Section. Test ids and copy the e2e suite reads are kept.
+ * the edit form, whose own Sections (identity, logo and texts, contact, social) are
+ * flat siblings on the page — the form is NOT wrapped in another Section (HOS-2506).
+ * Test ids and copy the e2e suite reads are kept.
  *
  * @route     /[lang]/mi-cuenta/partner/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -270,11 +272,7 @@ try {
                     </div>
                 )}
 
-                {!isRevoked && (
-                    <Section title={t('account.partner.form.sectionTitle')} helpId="section:partner.edit-form">
-                        <PartnerEditForm locale={locale} partner={partner} client:load />
-                    </Section>
-                )}
+                {!isRevoked && <PartnerEditForm locale={locale} partner={partner} client:load />}
             </>
         )
     }

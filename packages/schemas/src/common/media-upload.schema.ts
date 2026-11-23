@@ -98,6 +98,7 @@ export const MediaEntityTypeSchema = z.enum([
     'user',
     'postSponsor',
     'eventOrganizer',
+    'partner',
     'avatars'
 ]);
 
@@ -388,6 +389,10 @@ export const ENTITY_FOLDER_MAP = {
     eventOrganizer: ({ environment, entityId }) => {
         if (!entityId) throw new Error('ENTITY_FOLDER_MAP.eventOrganizer requires entityId');
         return `hospeda/${environment}/eventOrganizers/${entityId}`;
+    },
+    partner: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.partner requires entityId');
+        return `hospeda/${environment}/partners/${entityId}`;
     },
     avatars: ({ environment }) => `hospeda/${environment}/seed/avatars`
 } as const satisfies Readonly<Record<z.infer<typeof MediaEntityTypeSchema>, MediaFolderResolver>>;

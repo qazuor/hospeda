@@ -26,7 +26,7 @@ vi.mock('../../../src/lib/i18n', async () => {
     return { createTranslations: () => ({ t, tPlural: (key: string) => key }), createT: () => t };
 });
 
-for (const name of ['ExclusiveDealsList', 'RecommendationsFeed', 'SearchHistoryList']) {
+for (const name of ['RecommendationsFeed', 'SearchHistoryList']) {
     vi.doMock(`../../../src/components/account/${name}.module.css`, () => ({
         default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
     }));

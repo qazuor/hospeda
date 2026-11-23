@@ -9,24 +9,25 @@
  *  - Empty state
  *  - Populated list: title + discount label per discountType
  *  - VIP-only badge shown for touristAudience='vip', hidden for 'plus'
+ *  - Kit rows (HOS-2507): validity date, and the «Ver alojamiento» action that
+ *    resolves the listing slug from the accommodation id (no new API fields)
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExclusiveDealsList } from '../../../src/components/account/ExclusiveDealsList.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../../src/components/account/ExclusiveDealsList.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
+const { getByIdMock, addToastMock } = vi.hoisted(() => ({
+    getByIdMock: vi.fn(),
+    addToastMock: vi.fn()
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
-});
+vi.mock('../../../src/lib/api/endpoints', () => ({
+    accommodationsApi: { getById: getByIdMock }
+}));
+vi.mock('../../../src/store/toast-store', () => ({ addToast: addToastMock }));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -107,12 +108,14 @@ function renderComponent() {
 describe('ExclusiveDealsList', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
+        vi.clearAllMocks();
     });
 
-    it('shows loading text while fetch is in flight', () => {
+    it('shows a skeleton while fetch is in flight', () => {
         vi.mocked(global.fetch).mockImplementationOnce(() => new Promise<Response>(() => {}));
-        renderComponent();
-        expect(screen.getByText(/cargando ofertas exclusivas/i)).toBeInTheDocument();
+        const { container } = renderComponent();
+        expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+        expect(screen.getByText('Cargando…')).toBeInTheDocument();
     });
 
     it('shows the upgrade CTA on 403 ENTITLEMENT_REQUIRED', async () => {
@@ -126,12 +129,14 @@ describe('ExclusiveDealsList', () => {
         });
     });
 
-    it('shows a generic error state on a non-403 failure', async () => {
-        vi.mocked(global.fetch).mockResolvedValueOnce(makeErrorResponse());
+    it('shows an error state with a retry that refetches', async () => {
+        vi.mocked(global.fetch)
+            .mockResolvedValueOnce(makeErrorResponse())
+            .mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
         renderComponent();
-        await waitFor(() => {
-            expect(screen.getByRole('alert')).toBeInTheDocument();
-        });
+        const retry = await screen.findByRole('button', { name: /reintentar/i });
+        fireEvent.click(retry);
+        expect(await screen.findByText('Descuento fin de semana')).toBeInTheDocument();
     });
 
     it('shows the empty state when there are no deals', async () => {
@@ -167,5 +172,57 @@ describe('ExclusiveDealsList', () => {
             expect(screen.getByText('Noche gratis VIP')).toBeInTheDocument();
             expect(screen.getByText(/solo vip/i)).toBeInTheDocument();
         });
+    });
+
+    it('shows the validity date only when the deal has one', async () => {
+        vi.mocked(global.fetch).mockResolvedValueOnce(
+            makeListResponse([
+                { ...PLUS_DEAL, validUntil: '2026-12-31T12:00:00.000Z' },
+                { ...VIP_DEAL, accommodationId: null }
+            ])
+        );
+        renderComponent();
+        expect(await screen.findByText(/Válida hasta el/)).toBeInTheDocument();
+        expect(screen.getAllByText(/Válida hasta el/)).toHaveLength(1);
+    });
+
+    it('opens the listing the deal belongs to, resolving its slug from the id', async () => {
+        const assign = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { ...window.location, assign }
+        });
+        getByIdMock.mockResolvedValue({ ok: true, data: { slug: 'cabanas-del-rio' } });
+        vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
+        renderComponent();
+
+        fireEvent.click(await screen.findByRole('button', { name: /ver alojamiento/i }));
+
+        await waitFor(() =>
+            expect(assign).toHaveBeenCalledWith('/es/alojamientos/cabanas-del-rio/')
+        );
+        expect(getByIdMock).toHaveBeenCalledWith({ id: 'acc-001' });
+    });
+
+    it('tells the person when the listing could not be opened', async () => {
+        getByIdMock.mockResolvedValue({ ok: false, error: { code: 'NOT_FOUND' } });
+        vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
+        renderComponent();
+
+        fireEvent.click(await screen.findByRole('button', { name: /ver alojamiento/i }));
+
+        await waitFor(() =>
+            expect(addToastMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
+        );
+    });
+
+    it('offers no listing action for an owner-wide deal (no accommodation id)', async () => {
+        vi.mocked(global.fetch).mockResolvedValueOnce(
+            makeListResponse([{ ...PLUS_DEAL, accommodationId: null }])
+        );
+        renderComponent();
+
+        expect(await screen.findByText('Descuento fin de semana')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /ver alojamiento/i })).not.toBeInTheDocument();
     });
 });
