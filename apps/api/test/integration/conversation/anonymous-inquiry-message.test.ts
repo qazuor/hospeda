@@ -14,7 +14,7 @@ import { getDb, sql } from '@repo/db';
 import { PermissionEnum, PublicationStatusEnum } from '@repo/schemas';
 import { computeInquiryPayloadHash } from '@repo/service-core';
 import { SignJWT } from 'jose';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
@@ -25,6 +25,34 @@ import {
     createVerticalDestination,
     ensureAccommodationCatalog
 } from '../listing-publication/publication-routes.helpers';
+
+/** Verification emails the route actually dispatched, newest last (HOS-2568 review S2). */
+const sentVerificationEmails = vi.hoisted(
+    () => [] as Array<{ recipientEmail: string; verificationUrl: string; message?: string }>
+);
+
+// The production mailer is absent without an email key; swap in one that records what the
+// service really sends, so tests can verify with the link a guest would actually click.
+vi.mock('../../../src/lib/conversation-mailer', () => ({
+    createConversationMailer: () => ({
+        sendVerificationEmail: async (payload: {
+            recipientEmail: string;
+            verificationUrl: string;
+            message?: string;
+        }) => {
+            sentVerificationEmails.push(payload);
+        },
+        sendAccessLinkEmail: async () => undefined
+    })
+}));
+
+/** Token carried by the last verification email sent to `email`. */
+function capturedToken(email: string): string {
+    const sent = [...sentVerificationEmails].reverse().find((e) => e.recipientEmail === email);
+    const token = sent ? new URL(sent.verificationUrl).searchParams.get('token') : null;
+    if (!token) throw new Error(`no verification email captured for ${email}`);
+    return token;
+}
 
 const app = initApp();
 const createdListings: string[] = [];
@@ -402,7 +430,7 @@ describe('HOS-2568 anonymous inquiry message', () => {
         expect(row.pending_message).toBe('Consulta real');
     });
 
-    it('verifying twice does not duplicate the message or the counters', async () => {
+    it('verifying twice in sequence does not duplicate the message or the counters', async () => {
         const { listingId } = await createFixture();
         const created = await initiate({
             listingId,
@@ -414,12 +442,96 @@ describe('HOS-2568 anonymous inquiry message', () => {
             message: 'Una sola vez'
         });
 
-        await verify(token);
-        await verify(token);
-        await Promise.all([verify(token), verify(token)]);
+        const first = await verify(token);
+        const second = await verify(token);
 
+        expect(redirectTarget(first)).not.toContain('verify-expired');
+        expect(redirectTarget(second)).not.toContain('verify-expired');
         expect(await readMessages(created.conversationId)).toHaveLength(1);
         expect((await readConversation(created.conversationId)).guest_message_count).toBe(1);
+    });
+
+    it('concurrent verifications from a fresh pending row insert exactly one message', async () => {
+        const { listingId } = await createFixture();
+        const created = await initiate({
+            listingId,
+            email: `guest-${randomUUID()}@example.test`,
+            message: 'Carrera de verificaciones'
+        });
+        expect((await readConversation(created.conversationId)).status).toBe(
+            'PENDING_VERIFICATION'
+        );
+        const token = await mintToken({
+            conversationId: created.conversationId,
+            message: 'Carrera de verificaciones'
+        });
+
+        const responses = await Promise.all(Array.from({ length: 6 }, () => verify(token)));
+
+        for (const response of responses) {
+            expect(redirectTarget(response)).not.toContain('verify-expired');
+        }
+        expect(await readMessages(created.conversationId)).toHaveLength(1);
+        const row = await readConversation(created.conversationId);
+        expect(row.status).toBe('PENDING_OWNER');
+        expect(row.guest_message_count).toBe(1);
+    });
+
+    it('round trip: the link the mailer really sent verifies and delivers (producer to DB to hash)', async () => {
+        const { ownerId, listingId } = await createFixture();
+        const email = `guest-${randomUUID()}@example.test`;
+        const message = 'Consulta de punta a punta';
+
+        const created = await initiate({
+            listingId,
+            email,
+            message,
+            guestName: 'Ana Round',
+            checkIn: '2027-03-01',
+            checkOut: '2027-03-04',
+            guests: 3
+        });
+        const response = await verify(capturedToken(email));
+
+        expect(redirectTarget(response)).not.toContain('verify-expired');
+        const thread = await ownerThread({ ownerId, conversationId: created.conversationId });
+        expect(thread.data?.messages?.map((m) => m.body)).toEqual([message]);
+    });
+
+    it('round trip with a re-submit: only the newest emailed link delivers', async () => {
+        const { listingId } = await createFixture();
+        const email = `guest-${randomUUID()}@example.test`;
+
+        const first = await initiate({ listingId, email, message: 'Texto uno' });
+        const olderToken = capturedToken(email);
+        await initiate({ listingId, email, message: 'Texto dos' });
+        const newerToken = capturedToken(email);
+        expect(newerToken).not.toBe(olderToken);
+
+        const older = await verify(olderToken);
+        expect(redirectTarget(older)).toContain('verify-expired');
+        expect(await readMessages(first.conversationId)).toHaveLength(0);
+
+        const newer = await verify(newerToken);
+        expect(redirectTarget(newer)).not.toContain('verify-expired');
+        expect((await readMessages(first.conversationId)).map((m) => m.body)).toEqual([
+            'Texto dos'
+        ]);
+    });
+
+    it('a NUL character in the text is dropped instead of failing with a 500', async () => {
+        const { listingId } = await createFixture();
+        const email = `guest-${randomUUID()}@example.test`;
+
+        const created = await initiate({ listingId, email, message: 'hola\u0000 mundo' });
+
+        expect(created.status).toBe(200);
+        expect((await readConversation(created.conversationId)).pending_message).toBe('hola mundo');
+        const response = await verify(capturedToken(email));
+        expect(redirectTarget(response)).not.toContain('verify-expired');
+        expect((await readMessages(created.conversationId)).map((m) => m.body)).toEqual([
+            'hola mundo'
+        ]);
     });
 
     it('an expired token neither verifies nor delivers the message', async () => {
