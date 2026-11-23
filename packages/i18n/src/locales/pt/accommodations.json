@@ -429,6 +429,10 @@
         "clearFilters": "Limpar filtros"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Ler mais",
+            "less": "Ler menos"
+        },
         "sectionTabs": {
             "label": "Seções da acomodação",
             "photos": "Fotos",

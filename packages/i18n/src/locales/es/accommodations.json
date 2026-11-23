@@ -767,6 +767,10 @@
         "clearFilters": "Limpiar filtros"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Leer más",
+            "less": "Leer menos"
+        },
         "sectionTabs": {
             "label": "Secciones del alojamiento",
             "photos": "Fotos",

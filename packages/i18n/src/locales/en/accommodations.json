@@ -429,6 +429,10 @@
         "clearFilters": "Clear filters"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Read more",
+            "less": "Read less"
+        },
         "sectionTabs": {
             "label": "Listing sections",
             "photos": "Photos",
