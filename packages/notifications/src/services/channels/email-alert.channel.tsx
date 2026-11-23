@@ -5,6 +5,16 @@ import type { AlertDigestPayload } from '../../types/alert.types.js';
 import type { NotificationChannel } from '../alert-delivery.service.js';
 
 /**
+ * Attribution of the alert digest (HOS-2359): its catalog key is
+ * `alert-digest.alerts-digest`.
+ */
+export const ALERT_DIGEST_ATTRIBUTION = {
+    medium: 'transactional',
+    templateKey: 'alert-digest.alerts-digest',
+    includePixel: true
+} as const;
+
+/**
  * Dependencies for {@link EmailAlertChannel}.
  */
 export interface EmailAlertChannelDeps {
@@ -91,6 +101,7 @@ export class EmailAlertChannel implements NotificationChannel {
             to: payload.userEmail,
             subject,
             react: AlertDigestEmail(payload),
+            attribution: ALERT_DIGEST_ATTRIBUTION,
             tags: [{ name: 'notification_type', value: 'alerts_digest' }]
         });
 

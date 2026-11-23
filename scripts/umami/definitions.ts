@@ -1,4 +1,5 @@
 import { AnalyticsEventSchemas } from '../../packages/analytics/src/catalog.js';
+import { buildAttributionReport, HOSPEDA_ATTRIBUTION_REPORTS } from './attribution-definitions.js';
 import type { BoardType, JsonValue, ReportType } from './client.js';
 
 /**
@@ -309,19 +310,23 @@ export const HOSPEDA_GOALS: readonly BuildGoalReportInput[] = [
 ] as const;
 
 /**
- * Builds every report ported from PostHog, in a fixed order (funnels, then
- * goals). Pure: two calls return deeply equal values.
+ * Builds every saved report, in a fixed order: funnels, goals, then the
+ * HOS-2359 attribution reports. Pure: two calls return deeply equal values.
  *
  * @returns Report definitions, ready for `upsertReport`
  * @throws {UmamiDefinitionError} If a definition names a non-catalog event
  *
  * @example
  * ```ts
- * const reports = buildReportDefinitions(); // 5 funnels + 6 goals
+ * const reports = buildReportDefinitions(); // 5 funnels + 6 goals + 2 attribution
  * ```
  */
 export function buildReportDefinitions(): readonly ReportDefinition[] {
-    return [...HOSPEDA_FUNNELS.map(buildFunnelReport), ...HOSPEDA_GOALS.map(buildGoalReport)];
+    return [
+        ...HOSPEDA_FUNNELS.map(buildFunnelReport),
+        ...HOSPEDA_GOALS.map(buildGoalReport),
+        ...HOSPEDA_ATTRIBUTION_REPORTS.map(buildAttributionReport)
+    ];
 }
 
 /** Dimensions accepted by the `MetricsTable` board component (measured). */

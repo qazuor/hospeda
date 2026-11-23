@@ -787,6 +787,16 @@ td.mono {
         transform 0.15s ease,
         box-shadow 0.15s ease;
 }
+/* HOS-2359: each item stacks its card and its share row; the card still
+   stretches so cards in one grid row keep equal heights. */
+.deck__item {
+    display: flex;
+    flex-direction: column;
+}
+.deck__item > .deck__card {
+    flex: 1 1 auto;
+    height: auto;
+}
 .deck__item:nth-child(4n + 2) .deck__card {
     border-top-color: var(--brand-green);
 }

@@ -1,5 +1,6 @@
 import { render } from '@react-email/render';
 import type { ReactElement } from 'react';
+import { applyEmailAttribution, type EmailAttribution } from './attribution.js';
 
 /**
  * Input of {@link renderEmailBodies}.
@@ -7,6 +8,11 @@ import type { ReactElement } from 'react';
 export interface RenderEmailBodiesInput {
     /** React Email element to serialize. */
     readonly react: ReactElement;
+    /**
+     * Who the email is attributed to (HOS-2359). Required on purpose: every caller
+     * must decide which template or campaign it is, and whether it counts an open.
+     */
+    readonly attribution: EmailAttribution;
 }
 
 /**
@@ -29,20 +35,31 @@ export interface RenderedEmailBodies {
  * `sendEmail`, the notifications transport and the admin email preview all
  * call it, so a preview shows the bytes an inbox receives (HOS-2519 D4).
  *
+ * Attribution (UTMs on links to our web domain, and the open pixel) is applied
+ * here through {@link applyEmailAttribution} (HOS-2359). The admin preview passes
+ * `includePixel: false`, so opening a preview never counts as an open; that is the
+ * one difference between a preview and what an inbox receives.
+ *
  * @param input - The element to render.
  * @returns The HTML and plain-text bodies.
  *
  * @example
  * ```ts
  * const { html, text } = await renderEmailBodies({
- *     react: VerifyEmailTemplate({ name, verificationUrl })
+ *     react: VerifyEmailTemplate({ name, verificationUrl }),
+ *     attribution: { medium: 'transactional', templateKey: 'auth.verify-email', includePixel: true }
  * });
  * ```
  */
 export async function renderEmailBodies(
     input: RenderEmailBodiesInput
 ): Promise<RenderedEmailBodies> {
-    const html = await render(input.react);
-    const text = await render(input.react, { plainText: true });
+    const rawHtml = await render(input.react);
+    const rawText = await render(input.react, { plainText: true });
+    const { html, text = rawText } = applyEmailAttribution({
+        html: rawHtml,
+        text: rawText,
+        attribution: input.attribution
+    });
     return { html, text };
 }

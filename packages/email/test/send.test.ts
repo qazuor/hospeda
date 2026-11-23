@@ -7,8 +7,15 @@ vi.mock('@react-email/render', () => ({
 }));
 
 import type { EmailClient } from '../src/client.js';
+import { configureEmailAssets, resetEmailAssets } from '../src/email-assets.js';
 import type { SendEmailInput } from '../src/send.js';
 import { sendEmail } from '../src/send.js';
+
+const TEST_ATTRIBUTION = {
+    medium: 'transactional',
+    templateKey: 'auth.reset-password',
+    includePixel: true
+} as const;
 
 const TEST_CLIENT: EmailClient = {
     apiKey: 'xkeysib-test',
@@ -48,7 +55,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test Subject',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             };
 
             // Act
@@ -69,7 +77,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -90,7 +99,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: ['test1@example.com', 'test2@example.com'],
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -112,6 +122,7 @@ describe('sendEmail', () => {
                 to: 'test@example.com',
                 subject: 'Test',
                 react: mockReact,
+                attribution: TEST_ATTRIBUTION,
                 fromEmail: 'custom@example.com',
                 fromName: 'Custom Sender',
                 replyTo: 'reply@example.com'
@@ -133,7 +144,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -147,13 +159,45 @@ describe('sendEmail', () => {
             fetchMock.mockResolvedValueOnce(jsonResponse({ messageId: '<id>' }));
 
             // Act
-            await sendEmail({ client: TEST_CLIENT, to: 'a@b.com', subject: 's', react: mockReact });
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'a@b.com',
+                subject: 's',
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
+            });
 
             // Assert
             const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
             expect(JSON.stringify(body.headers ?? {}).toLowerCase()).not.toContain(
                 'list-unsubscribe'
             );
+        });
+
+        it('should forward the attribution into the Brevo body (HOS-2359)', async () => {
+            // Arrange
+            configureEmailAssets({
+                siteUrl: 'https://hospeda.com.ar',
+                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
+            });
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Hello',
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
+            });
+            resetEmailAssets();
+
+            // Assert
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.htmlContent).toContain(
+                '<img src="https://pulso.hospeda.com.ar/p/email-auth-reset-password"'
+            );
+            expect(body.textContent).toBe('rendered plain text');
         });
 
         it('should pass the rendered HTML and subject to the provider', async () => {
@@ -165,7 +209,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Hello',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -184,7 +229,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Reset your password',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -212,7 +258,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -235,7 +282,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -252,7 +300,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -269,7 +318,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -290,7 +340,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert
@@ -307,7 +358,8 @@ describe('sendEmail', () => {
                 client: TEST_CLIENT,
                 to: 'test@example.com',
                 subject: 'Test',
-                react: mockReact
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
             });
 
             // Assert

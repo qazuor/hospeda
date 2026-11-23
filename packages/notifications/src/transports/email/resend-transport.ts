@@ -1,4 +1,6 @@
 import { renderEmailBodies } from '@repo/email';
+import { createLogger } from '@repo/logger';
+import { findEmailCatalogEntry } from '../../catalog/catalog.js';
 import type { EmailClient } from '../../config/resend.config.js';
 import { EmailHardBounceError } from '../../services/outbox/email-outbox-delivery.service.js';
 import type {
@@ -6,6 +8,26 @@ import type {
     SendEmailInput,
     SendEmailResult
 } from './email-transport.interface.js';
+
+const attributionLogger = createLogger('email-attribution');
+const warnedTemplateKeys = new Set<string>();
+
+/**
+ * Logs one `warn` per process for a transactional template key that is not in the
+ * email catalog (HOS-2359 §6.A.4): such a key renders a pixel no `umami:setup` run
+ * creates, so its opens are lost. The per-caller tests are the real protection.
+ */
+function warnOnUnknownTemplateKey(input: SendEmailInput): void {
+    const { attribution } = input;
+    if (attribution.medium !== 'transactional') return;
+    const key = attribution.templateKey;
+    if (warnedTemplateKeys.has(key) || findEmailCatalogEntry({ key })) return;
+    warnedTemplateKeys.add(key);
+    attributionLogger.warn(
+        { templateKey: key },
+        'Email sent with a template key that is not in the email catalog: its pixel does not exist'
+    );
+}
 
 /**
  * Brevo email transport implementation.
@@ -33,7 +55,8 @@ import type {
  * const result = await transport.send({
  *   to: 'user@example.com',
  *   subject: 'Welcome to Hospeda',
- *   react: <WelcomeEmail userName="John" />
+ *   react: <WelcomeEmail userName="John" />,
+ *   attribution: { medium: 'transactional', templateKey: 'notification.welcome', includePixel: true }
  * });
  * ```
  */
@@ -81,8 +104,10 @@ export class BrevoEmailTransport implements EmailTransport {
         try {
             // HOS-1990: HTML-only mail scores worse with spam filters and is unreadable in
             // text clients; Brevo takes the plain part as `textContent`.
+            warnOnUnknownTemplateKey(input);
             const { html: htmlContent, text: textContent } = await renderEmailBodies({
-                react: input.react
+                react: input.react,
+                attribution: input.attribution
             });
 
             const body: Record<string, unknown> = {

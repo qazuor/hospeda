@@ -1,5 +1,6 @@
 import { createLogger } from '@repo/logger';
 import type { ReactElement } from 'react';
+import type { EmailAttribution } from './attribution.js';
 import type { EmailClient } from './client.js';
 import { renderEmailBodies } from './render.js';
 
@@ -52,6 +53,13 @@ export interface SendEmailInput {
      * rendered to HTML at send time.
      */
     readonly react: ReactElement;
+
+    /**
+     * Who the email is attributed to: UTMs on links to our web domain and the open
+     * pixel (HOS-2359). Transactional sends pass their email catalog key
+     * (`auth.reset-password`, `conversation.<id>`, ...).
+     */
+    readonly attribution: EmailAttribution;
 
     /**
      * Sender email address. Must be on a domain authenticated in the email
@@ -115,7 +123,8 @@ export interface SendEmailResult {
  *   client,
  *   to: 'user@example.com',
  *   subject: 'Verify your email',
- *   react: VerifyEmailTemplate({ name, verificationUrl })
+ *   react: VerifyEmailTemplate({ name, verificationUrl }),
+ *   attribution: { medium: 'transactional', templateKey: 'auth.verify-email', includePixel: true }
  * });
  *
  * if (!result.success) {
@@ -129,6 +138,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         to,
         subject,
         react,
+        attribution,
         fromEmail = DEFAULT_FROM_EMAIL,
         fromName = DEFAULT_FROM_NAME,
         replyTo
@@ -138,7 +148,10 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         // HOS-2107: send a text/plain alternative rendered from the same component.
         // HTML-only mail is flagged by spam filters (MIME_HTML_ONLY) and is
         // unreadable in text clients; Brevo takes the plain part as `textContent`.
-        const { html: htmlContent, text: textContent } = await renderEmailBodies({ react });
+        const { html: htmlContent, text: textContent } = await renderEmailBodies({
+            react,
+            attribution
+        });
 
         const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
 

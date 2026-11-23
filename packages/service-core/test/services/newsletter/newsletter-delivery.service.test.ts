@@ -545,6 +545,77 @@ describe('processBatch', () => {
         expect(renderCampaignEmailFn).toHaveBeenCalledTimes(2);
     });
 
+    it('passes the stored campaign attribution to every render and the top-level HTML (HOS-2359, AC-10)', async () => {
+        // Arrange
+        const email1 = `user-${DELIVERY_ID_1.slice(0, 8)}@example.com`;
+        queryBuilderResponses = [
+            [
+                makeCampaignRow({
+                    attributionSlug: 'otono-aaaaaaaa',
+                    umamiPixelSlug: 'newsletter-otono-aaaaaaaa'
+                })
+            ],
+            [makeDeliveryRow(DELIVERY_ID_1, SUBSCRIBER_ID_1)],
+            [makeSubscriberRow(SUBSCRIBER_ID_1, { email: email1 })],
+            [{ id: DELIVERY_ID_1 }]
+        ];
+        const sendBatchFn = vi.fn(async (_input: { payload: DeliveryBatchPayload }) =>
+            makeBatchResult([email1])
+        );
+        const renderCampaignEmailFn = vi.fn(() => '<html><body>campaign</body></html>');
+        const attributeCampaignHtmlFn = vi.fn(
+            ({ html }: { html: string }) => `${html}<!--attributed-->`
+        );
+        const svc = makeService({ sendBatchFn, renderCampaignEmailFn, attributeCampaignHtmlFn });
+        const expected = {
+            medium: 'campaign',
+            campaignSlug: 'otono-aaaaaaaa',
+            pixelSlug: 'newsletter-otono-aaaaaaaa'
+        };
+
+        // Act
+        await svc.processBatch({ campaignId: CAMPAIGN_ID, deliveryIds: [DELIVERY_ID_1] });
+
+        // Assert
+        expect(renderCampaignEmailFn).toHaveBeenCalledWith(
+            expect.objectContaining({ attribution: expected })
+        );
+        expect(attributeCampaignHtmlFn).toHaveBeenCalledWith({
+            html: '<p>Body HTML</p>',
+            attribution: expected
+        });
+        expect(sendBatchFn.mock.calls[0]?.[0].payload.htmlContent).toBe(
+            '<p>Body HTML</p><!--attributed-->'
+        );
+    });
+
+    it('recomputes the slug and renders no pixel for a campaign dispatched without them (HOS-2359)', async () => {
+        const email1 = `user-${DELIVERY_ID_1.slice(0, 8)}@example.com`;
+        queryBuilderResponses = [
+            [makeCampaignRow({ attributionSlug: null, umamiPixelSlug: null })],
+            [makeDeliveryRow(DELIVERY_ID_1, SUBSCRIBER_ID_1)],
+            [makeSubscriberRow(SUBSCRIBER_ID_1, { email: email1 })],
+            [{ id: DELIVERY_ID_1 }]
+        ];
+        const renderCampaignEmailFn = vi.fn(() => '<html><body>campaign</body></html>');
+        const svc = makeService({
+            sendBatchFn: vi.fn(async () => makeBatchResult([email1])),
+            renderCampaignEmailFn
+        });
+
+        await svc.processBatch({ campaignId: CAMPAIGN_ID, deliveryIds: [DELIVERY_ID_1] });
+
+        expect(renderCampaignEmailFn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                attribution: {
+                    medium: 'campaign',
+                    campaignSlug: 'test-campaign-aaaaaaaa',
+                    pixelSlug: null
+                }
+            })
+        );
+    });
+
     it('should return SERVICE_UNAVAILABLE when sendBatchFn is not configured', async () => {
         queryBuilderResponses = [
             [makeCampaignRow()], // campaign SELECT
@@ -672,6 +743,12 @@ describe('sendTestEmail', () => {
         expect(sendCall?.to).toBe('admin@example.com');
         expect(sendCall?.subject).toContain('[PRUEBA]');
         expect(sendCall?.subject).toContain('Test Subject');
+        // HOS-2359 AC-13: campaign UTMs, never a pixel.
+        expect(sendCall?.attribution).toEqual({
+            medium: 'campaign',
+            campaignSlug: 'test-campaign-aaaaaaaa',
+            pixelSlug: null
+        });
     });
 
     it('should return FORBIDDEN when actor lacks NEWSLETTER_CAMPAIGN_SEND', async () => {

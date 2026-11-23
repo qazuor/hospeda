@@ -1,0 +1,12 @@
+{
+    "share": {
+        "label": "Share the presentation",
+        "whatsapp": "Share on WhatsApp",
+        "facebook": "Share on Facebook",
+        "x": "Share on X",
+        "telegram": "Share on Telegram",
+        "copy": "Copy link",
+        "copied": "Link copied",
+        "copyFailed": "The link could not be copied"
+    }
+}

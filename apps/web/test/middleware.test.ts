@@ -1159,3 +1159,98 @@ describe('middleware — anonymous protected route keeps the query in returnUrl 
         );
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-2359 (OD-6, AC-15): a redirect that copies the visitor's query string is
+// never cacheable. A cached redirect would hand one visitor's UTMs to the next.
+// The three redirects that append `context.url.search` (trailing slash, legacy
+// alias, locale) all go through `buildRedirectResponse`.
+// ---------------------------------------------------------------------------
+describe('middleware onRequest — redirects carrying a query are no-store (HOS-2359)', () => {
+    it('locale redirect: /?utm_source=x keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.status).toBe(301);
+        expect(response?.headers.get('location')).toBe('/es/?utm_source=x');
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('trailing-slash redirect: /alojamientos?utm_source=x keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/alojamientos?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.status).toBe(301);
+        expect(response?.headers.get('location')).toBe('/alojamientos/?utm_source=x');
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('legacy alias redirect: /es/blog/?utm_source=x keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/es/blog/?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.headers.get('location')).toBe('/es/publicaciones/?utm_source=x');
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('legacy alias reached from a slashless path keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/tipo/cabin?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.headers.get('location')).toBe(
+            '/es/alojamientos/tipo/cabana/?utm_source=x'
+        );
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it.each([
+        '/',
+        '/alojamientos',
+        '/es/blog/'
+    ])('a query-less redirect (%s) carries no no-store', async (pathname) => {
+        const context = createContext({ pathname });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect([301, 308]).toContain(response?.status);
+        expect(response?.headers.get('cache-control')).not.toBe('no-store');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-2359 (OD-5, AC-17): `/go/<slug>/` presentation short links are
+// language-neutral like `/qr/`. `go` is two letters, so without the exemption the
+// locale step would EAT it and send `/go/aloj-wa/` to `/es/aloj-wa/` (a 404).
+// ---------------------------------------------------------------------------
+describe('middleware onRequest — HOS-2359 /go/ is language-neutral', () => {
+    it('does NOT redirect /go/{slug}/ into the locale tree', async () => {
+        const context = createContext({ pathname: '/go/aloj-wa/' });
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 302 }));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it('a slashless /go/aloj-wa gets the trailing-slash redirect, not a locale redirect', async () => {
+        const context = createContext({ pathname: '/go/aloj-wa' });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledTimes(1);
+        expect(context.redirect).toHaveBeenCalledWith('/go/aloj-wa/', 301);
+    });
+
+    it('control: a path merely CONTAINING /go/ is not exempt', async () => {
+        const context = createContext({ pathname: '/algo/go/aloj-wa/' });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/algo/go/aloj-wa/', 301);
+    });
+});

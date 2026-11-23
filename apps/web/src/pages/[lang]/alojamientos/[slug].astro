@@ -636,7 +636,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
             mobile={{
                 backHref: buildUrl({ locale, path: 'alojamientos' }),
-                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name },
+                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name, campaign: 'accommodation' },
                 favorite: { entityId: accommodation.id, entityType: 'ACCOMMODATION', variant: 'standalone' }
             }}
             client:load

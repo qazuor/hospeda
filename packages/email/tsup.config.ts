@@ -7,5 +7,7 @@ export default defineConfig({
     splitting: false,
     sourcemap: true,
     clean: true,
-    external: ['react']
+    external: ['react'],
+    // `@repo/analytics` ships ESM only; bundling it keeps the CJS output loadable.
+    noExternal: ['@repo/analytics']
 });

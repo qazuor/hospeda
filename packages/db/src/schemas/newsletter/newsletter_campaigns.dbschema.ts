@@ -78,6 +78,22 @@ export const newsletterCampaigns = pgTable(
         /** Reserved for V2 scheduled sends. Unused in MVP. */
         scheduledFor: timestamp('scheduled_for', { withTimezone: true }),
 
+        /**
+         * Campaign attribution slug (HOS-2359): the `utm_campaign` every own-origin link
+         * of this campaign carries (`<title token>-<id8>`). Set at dispatch, in the same
+         * UPDATE that moves the campaign to SENDING. NULL for campaigns sent before
+         * HOS-2359 and while in DRAFT; a re-batch with NULL recomputes it.
+         */
+        attributionSlug: varchar('attribution_slug', { length: 64 }),
+
+        /**
+         * Slug of the Umami open pixel created for this campaign at dispatch
+         * (`newsletter-<attribution_slug>`, HOS-2359). NULL when Umami was unreachable,
+         * the pixel key is unset, or the campaign predates HOS-2359: its emails then go
+         * out without a pixel (fail-open, OD-3).
+         */
+        umamiPixelSlug: varchar('umami_pixel_slug', { length: 100 }),
+
         /** FK → users.id. Admin who created the campaign. */
         createdBy: uuid('created_by')
             .notNull()

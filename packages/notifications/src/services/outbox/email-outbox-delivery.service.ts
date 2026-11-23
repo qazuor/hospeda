@@ -391,6 +391,11 @@ async function sendRow(input: {
             to: row.recipientEmail,
             subject: mail.subject,
             react: mail.react,
+            attribution: {
+                medium: 'transactional',
+                templateKey: `outbox.${row.template}`,
+                includePixel: true
+            },
             tags: [
                 { name: 'notification_type', value: row.template },
                 { name: 'category', value: emailClass },

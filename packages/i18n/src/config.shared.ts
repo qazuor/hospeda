@@ -76,7 +76,8 @@ export const webNamespaces = [
     'social',
     'notifications',
     'alliance-leads',
-    'authors'
+    'authors',
+    'presentations'
 ] as const;
 
 export type WebNamespace = (typeof webNamespaces)[number];
@@ -151,6 +152,7 @@ import newsletterEn from './locales/en/newsletter.json';
 import notificationsEn from './locales/en/notifications.json';
 import ownersEn from './locales/en/owners.json';
 import partnersEn from './locales/en/partners.json';
+import presentationsEn from './locales/en/presentations.json';
 import pricingEn from './locales/en/pricing.json';
 import privacyEn from './locales/en/privacy.json';
 import publishEn from './locales/en/publish.json';
@@ -208,6 +210,7 @@ import newsletterEs from './locales/es/newsletter.json';
 import notificationsEs from './locales/es/notifications.json';
 import ownersEs from './locales/es/owners.json';
 import partnersEs from './locales/es/partners.json';
+import presentationsEs from './locales/es/presentations.json';
 import pricingEs from './locales/es/pricing.json';
 import privacyEs from './locales/es/privacy.json';
 import publishEs from './locales/es/publish.json';
@@ -266,6 +269,7 @@ import newsletterPt from './locales/pt/newsletter.json';
 import notificationsPt from './locales/pt/notifications.json';
 import ownersPt from './locales/pt/owners.json';
 import partnersPt from './locales/pt/partners.json';
+import presentationsPt from './locales/pt/presentations.json';
 import pricingPt from './locales/pt/pricing.json';
 import privacyPt from './locales/pt/privacy.json';
 import publishPt from './locales/pt/publish.json';
@@ -343,7 +347,8 @@ export const rawWebTranslations = {
         social: socialEs,
         notifications: notificationsEs,
         'alliance-leads': allianceLeadsEs,
-        authors: authorsEs
+        authors: authorsEs,
+        presentations: presentationsEs
     },
     en: {
         about: aboutEn,
@@ -399,7 +404,8 @@ export const rawWebTranslations = {
         social: socialEn,
         notifications: notificationsEn,
         'alliance-leads': allianceLeadsEn,
-        authors: authorsEn
+        authors: authorsEn,
+        presentations: presentationsEn
     },
     pt: {
         about: aboutPt,
@@ -455,7 +461,8 @@ export const rawWebTranslations = {
         social: socialPt,
         notifications: notificationsPt,
         'alliance-leads': allianceLeadsPt,
-        authors: authorsPt
+        authors: authorsPt,
+        presentations: presentationsPt
     }
 } as const;
 
