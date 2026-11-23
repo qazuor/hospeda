@@ -302,7 +302,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     <div class="props-page">
     <!-- The header CTA is hidden in the empty and error states: the empty
          state already owns the primary call to action. -->
-    <PageHeader title={title} description={subtitle}>
+    <PageHeader locale={locale} title={title} description={subtitle}>
         <PageHelpLink slot="help" locale={locale} />
         {!isEmpty && !fetchError && (
             <LinkButton slot="actions" href={publishNewUrl}>

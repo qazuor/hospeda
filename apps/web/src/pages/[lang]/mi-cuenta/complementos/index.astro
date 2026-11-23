@@ -33,7 +33,7 @@ const listingId = Astro.url.searchParams.get('listing');
 
 <AccountLayout locale={locale} title={title} activeSection="complementos">
     <div class="addons-page">
-    <PageHeader title={title}>
+    <PageHeader locale={locale} title={title}>
         <PageHelpLink slot="help" locale={locale} />
         <SubscriptionTabs slot="tabs" locale={locale} current="addons" />
     </PageHeader>
