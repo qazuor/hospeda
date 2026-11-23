@@ -1459,7 +1459,10 @@
         },
         "listLabel": "Suas ofertas exclusivas",
         "item": {
-            "vipBadge": "Somente VIP"
+            "vipBadge": "Somente VIP",
+            "viewListing": "Ver acomodação",
+            "viewListingError": "Não conseguimos abrir a acomodação. Tente novamente.",
+            "validUntil": "Válida até {{date}}"
         }
     },
     "recommendations": {
@@ -1858,7 +1861,7 @@
             },
             "sectionTitle": "Dados da sua ficha",
             "logo": {
-                "label": "Logotipo",
+                "label": "Logotipo da sua marca",
                 "previewAlt": "Pré-visualização do logotipo",
                 "pasteUrl": "Colar URL",
                 "urlHint": "Se o seu logotipo já está na internet, cole o endereço dele em vez de enviá-lo."

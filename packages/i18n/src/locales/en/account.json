@@ -1459,7 +1459,10 @@
         },
         "listLabel": "Your exclusive deals",
         "item": {
-            "vipBadge": "VIP only"
+            "vipBadge": "VIP only",
+            "viewListing": "View listing",
+            "viewListingError": "We could not open the listing. Please try again.",
+            "validUntil": "Valid until {{date}}"
         }
     },
     "recommendations": {
@@ -1858,7 +1861,7 @@
             },
             "sectionTitle": "Your listing details",
             "logo": {
-                "label": "Logo",
+                "label": "Your brand logo",
                 "previewAlt": "Logo preview",
                 "pasteUrl": "Paste URL",
                 "urlHint": "If your logo is already online, paste its address instead of uploading it."

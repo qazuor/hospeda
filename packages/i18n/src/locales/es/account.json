@@ -1459,7 +1459,10 @@
         },
         "listLabel": "Tus ofertas exclusivas",
         "item": {
-            "vipBadge": "Solo VIP"
+            "vipBadge": "Solo VIP",
+            "viewListing": "Ver alojamiento",
+            "viewListingError": "No pudimos abrir el alojamiento. Probá de nuevo.",
+            "validUntil": "Válida hasta el {{date}}"
         }
     },
     "addons": {
@@ -1858,7 +1861,7 @@
             },
             "sectionTitle": "Datos de tu ficha",
             "logo": {
-                "label": "Logo",
+                "label": "Logo de tu marca",
                 "previewAlt": "Vista previa del logo",
                 "pasteUrl": "Pegar URL",
                 "urlHint": "Si tu logo ya está publicado en internet, pegá su dirección en lugar de subirlo."
