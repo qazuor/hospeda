@@ -201,11 +201,6 @@
         "font-size": 11,
         "radius": 6
     },
-    "apps/web/src/components/host/editor/CapacitySection.module.css": {
-        "color": 1,
-        "font-size": 4,
-        "radius": 1
-    },
     "apps/web/src/components/host/editor/CountryCodeCombobox.module.css": {
         "font-size": 6,
         "radius": 3
@@ -228,11 +223,6 @@
         "font-size": 3,
         "radius": 1
     },
-    "apps/web/src/components/host/editor/PricingSection.module.css": {
-        "color": 1,
-        "font-size": 4,
-        "radius": 1
-    },
     "apps/web/src/components/host/editor/PublishReadyDialog.module.css": {
         "color": 6,
         "font-size": 4,
@@ -241,11 +231,6 @@
     "apps/web/src/components/host/editor/RichTextEditor.module.css": {
         "font-size": 7,
         "radius": 3
-    },
-    "apps/web/src/components/host/editor/SeoSection.module.css": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 1
     },
     "apps/web/src/components/host/editor/amenity-catalog/AmenityCatalogBrowser.module.css": {
         "font-size": 13,

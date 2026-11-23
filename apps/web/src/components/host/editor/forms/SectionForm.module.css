@@ -1,4 +1,4 @@
-/* SectionForm.module.css — shared chrome for the editor's five form pages
+/* SectionForm.module.css — shared chrome for the editor form pages
    (HOS-318). One stylesheet instead of five, so the pages cannot drift apart
    visually. The card recipe is the same one the pre-split editor used. */
 
@@ -7,10 +7,6 @@
     flex-direction: column;
     gap: var(--space-5, 1.5rem);
     width: 100%;
-}
-
-.card {
-    composes: card from "../../../account/AccountSection.module.css";
 }
 
 /* The design system has no error/danger token (verified against global.css and

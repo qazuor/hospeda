@@ -149,29 +149,25 @@ export function CapacityPricingForm({
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
-                <CapacitySection
-                    locale={locale}
-                    data={form.values}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                    onPolicyChange={(key, value) =>
-                        form.setValue(
-                            'policies',
-                            setListingPolicy({ policies: form.values.policies, key, value })
-                        )
-                    }
-                />
-            </div>
+            <CapacitySection
+                locale={locale}
+                data={form.values}
+                errors={form.fieldErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+                onPolicyChange={(key, value) =>
+                    form.setValue(
+                        'policies',
+                        setListingPolicy({ policies: form.values.policies, key, value })
+                    )
+                }
+            />
 
-            <div className={styles.card}>
-                <PricingSection
-                    locale={locale}
-                    data={form.values}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                />
-            </div>
+            <PricingSection
+                locale={locale}
+                data={form.values}
+                errors={form.fieldErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+            />
 
             {form.formError && (
                 <div
