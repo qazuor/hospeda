@@ -16,6 +16,7 @@ import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../src/types.js';
+import { APP_IMPORT_TIMEOUT_MS } from '../helpers/app-import-timeout';
 
 const OWNER_A = '11111111-1111-4111-8111-111111111111';
 const OWNER_B = '99999999-9999-4999-8999-999999999999';
@@ -223,17 +224,21 @@ describe.each([
     'venues',
     'experiences'
 ] as const)('GET /api/v1/protected/%s/mine/stats through the full app', (segment) => {
-    it('answers 401 without a session, and is not swallowed by /{id}/stats', async () => {
-        // Arrange
-        const { initApp } = await import('../../src/app.js');
-        const app = initApp();
-        // Act
-        const res = await app.request(`/api/v1/protected/${segment}/mine/stats`, {
-            method: 'GET',
-            headers: { 'user-agent': 'vitest' }
-        });
-        // Assert
-        expect(res.status).toBe(401);
-        expect(mocks.count).not.toHaveBeenCalled();
-    });
+    it(
+        'answers 401 without a session, and is not swallowed by /{id}/stats',
+        async () => {
+            // Arrange
+            const { initApp } = await import('../../src/app.js');
+            const app = initApp();
+            // Act
+            const res = await app.request(`/api/v1/protected/${segment}/mine/stats`, {
+                method: 'GET',
+                headers: { 'user-agent': 'vitest' }
+            });
+            // Assert
+            expect(res.status).toBe(401);
+            expect(mocks.count).not.toHaveBeenCalled();
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });

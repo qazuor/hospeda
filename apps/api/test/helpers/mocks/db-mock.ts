@@ -1793,6 +1793,11 @@ export function createDbMock() {
         // construct all experience routes without a real DB.
         experienceModel: new ExperienceMockModel(),
         experienceReviewModel: new ExperienceReviewMockModel(),
+        // HOS-2476: `OwnerListingDashboardService` is constructed at module scope
+        // by the `/mine/stats` routes and builds an `ExperienceModel` (the venue
+        // half uses `VenueModel`, declared above); the CLASS has to be here or
+        // the whole route tree throws while it loads.
+        ExperienceModel: GenericMockModel,
 
         // HOS-1985: content-moderation term/threshold models (constructed by the
         // services' constructors, so the CLASSES must be in this inventory).
