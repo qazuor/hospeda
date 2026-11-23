@@ -1,0 +1,125 @@
+/* EntityCard.module.css — a saved or suggested entity (HOS-2480).
+   The grid adapts to its own container: 1 column, 2 from 30rem, 3 from 48rem. */
+
+.gridWrap {
+    container-type: inline-size;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@container (width >= 30rem) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (width >= 48rem) {
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    overflow: hidden;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    color: var(--core-foreground);
+}
+
+.card:focus-within {
+    border-color: var(--focus-ring);
+}
+
+.media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background-color: var(--surface-warm);
+}
+
+.image {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+}
+
+.visual,
+.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+}
+
+.placeholder {
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.badge {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+}
+
+.body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    min-inline-size: 0;
+}
+
+.title {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font: var(--app-card-title);
+    color: var(--core-foreground);
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.meta {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-block-start: 1px solid var(--border);
+}

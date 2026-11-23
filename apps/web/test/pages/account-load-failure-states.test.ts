@@ -2,8 +2,7 @@
  * @file account-load-failure-states.test.ts
  * @description Source-reading regression tests (HOS-2421, HOS-2422): an API
  * failure on `/mi-cuenta/comercio/` and `/mi-cuenta/consultas/` must render an
- * error state with a retry link, never the "you have none" empty state, and the
- * inbox pagination label must come from `@repo/i18n`.
+ * error state with a retry, never the "you have none" empty state.
  */
 
 import { readFileSync } from 'node:fs';
@@ -36,28 +35,25 @@ describe('mi-cuenta/comercio/index.astro — API failure (HOS-2421)', () => {
     });
 });
 
-describe('mi-cuenta/consultas/index.astro — API failure (HOS-2422)', () => {
+describe('mi-cuenta/consultas/index.astro — API failure (HOS-2422, on the kit since HOS-2481)', () => {
     const source = read('consultas/index.astro');
 
-    it('derives a failure flag from the API result', () => {
-        expect(source).toContain('const loadFailed = !result.ok');
+    it('reads no conversation on the server: the island owns the async states', () => {
+        expect(source).not.toContain('protectedConversationsApi');
+        expect(source).toContain('<ConversationInbox client:load locale={locale} viewer="guest"');
     });
 
-    it('renders the error state BEFORE the empty inbox, with a retry link', () => {
-        const errorAt = source.indexOf('loadFailed ? (');
-        const emptyAt = source.indexOf('conversations.length === 0 ? (');
-        expect(errorAt).toBeGreaterThan(-1);
-        expect(emptyAt).toBeGreaterThan(errorAt);
-        expect(source).toContain("t('conversations.inbox.loadError.retry'");
-        expect(source).toContain('ctaHref={Astro.url.pathname + Astro.url.search}');
-    });
-
-    it('keeps the real empty inbox', () => {
-        expect(source).toContain("'conversations.empty.guestInboxTitle'");
-    });
-
-    it('translates the pagination aria-label', () => {
-        expect(source).not.toContain('aria-label="Pagination"');
-        expect(source).toContain("aria-label={t('common.pagination'");
+    it('a forced fetch failure renders ErrorState, never the empty inbox', () => {
+        // Behaviour test: test/components/account/conversations/ConversationInbox.test.tsx
+        const island = readFileSync(
+            resolve(
+                __dirname,
+                '../../src/components/account/conversations/ConversationInbox.client.tsx'
+            ),
+            'utf8'
+        );
+        expect(island).toContain('settleAsync(');
+        expect(island).toContain('<AsyncRegion');
+        expect(island).toContain("t('conversations.inbox.loadError.title')");
     });
 });

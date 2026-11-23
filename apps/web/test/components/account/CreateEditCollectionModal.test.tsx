@@ -9,6 +9,7 @@
  *   sends an explicit `null` (not `undefined`) so the API actually clears the
  *   field, instead of silently leaving the previous value untouched.
  * - CREATE mode still omits color/icon cleanly when never touched.
+ * - HOS-2480: on the kit Dialog; a locked gate says why and never submits.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -16,24 +17,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateEditCollectionModal } from '../../../src/components/account/CreateEditCollectionModal.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
-
-vi.mock('../../../src/lib/i18n', async () => {
-    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
-    return { createT: (_locale: string) => tFromCatalog };
-});
-
-vi.mock('../../../src/components/account/CreateEditCollectionModal.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
-vi.mock('../../../src/components/shared/ui/Dialog.client', () => ({
-    Dialog: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
-        isOpen ? <div role="presentation">{children}</div> : null,
-    DialogHeader: ({ children, titleId }: { children: React.ReactNode; titleId: string }) => (
-        <div id={titleId}>{children}</div>
-    ),
-    DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-}));
 
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
@@ -134,7 +117,7 @@ describe('CreateEditCollectionModal', () => {
             fireEvent.submit(form);
 
             await waitFor(() => {
-                expect(document.getElementById('name-error')).toBeInTheDocument();
+                expect(document.getElementById('collection-name-error')).toBeInTheDocument();
             });
             expect(mockCreate).not.toHaveBeenCalled();
         });
@@ -147,11 +130,11 @@ describe('CreateEditCollectionModal', () => {
             fireEvent.submit(document.querySelector('form')!);
 
             await waitFor(() => {
-                expect(document.getElementById('name-error')).toBeInTheDocument();
+                expect(document.getElementById('collection-name-error')).toBeInTheDocument();
             });
 
             fireEvent.change(nameInput, { target: { value: 'Mi colección' } });
-            expect(document.getElementById('name-error')).not.toBeInTheDocument();
+            expect(document.getElementById('collection-name-error')).not.toBeInTheDocument();
         });
     });
 
@@ -233,6 +216,26 @@ describe('CreateEditCollectionModal', () => {
             const call = mockUpdate.mock.calls[0][0] as { input: Record<string, unknown> };
             expect(call.input.description).toBeNull();
             expect(call.input).not.toHaveProperty('description', undefined);
+        });
+    });
+
+    describe('collections gate (HOS-2480)', () => {
+        it('CREATE mode with a lock reason: says why, keeps submit disabled, never calls the API', () => {
+            renderCreateModal({ lockedReason: 'Tu plan no incluye colecciones.' });
+            fireEvent.change(document.getElementById('collection-name') as HTMLInputElement, {
+                target: { value: 'Nueva colección' }
+            });
+
+            expect(screen.getByText('Tu plan no incluye colecciones.')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /Crear/ })).toBeDisabled();
+            fireEvent.submit(document.querySelector('form')!);
+            expect(mockCreate).not.toHaveBeenCalled();
+        });
+
+        it('EDIT mode ignores the create lock', async () => {
+            renderEditModal({ lockedReason: 'Tu plan no incluye colecciones.' });
+            fireEvent.submit(document.querySelector('form')!);
+            await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
         });
     });
 });

@@ -18,7 +18,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import type { ProfileEditUser } from '../../../src/components/account/ProfileEditForm.client';
 import { ProfileEditForm } from '../../../src/components/account/ProfileEditForm.client';
-import { addToast } from '../../../src/store/toast-store';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -32,10 +31,11 @@ vi.mock('../../../src/components/account/ProfileEditForm.module.css', () => ({
 // which is what stops a size message shipping with a raw `{{maxSize}}` in it
 // (HOS-322). The previous stub returned the inline fallback that HOS-616
 // removed from these call sites.
-vi.mock('../../../src/lib/i18n', async () => {
+vi.mock('../../../src/lib/i18n', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/lib/i18n')>();
     const { tFromCatalog } = await import('../../helpers/i18n-catalog');
     const translations = { t: tFromCatalog } as const;
-    return { createTranslations: () => translations };
+    return { ...actual, createTranslations: () => translations };
 });
 
 vi.mock('../../../src/lib/avatar-utils', () => ({
@@ -112,7 +112,7 @@ describe('ProfileEditForm', () => {
     it('renders firstName and lastName fields', () => {
         renderForm();
         // Query by id to avoid label collision with "Nombre visible"
-        expect(document.getElementById('firstName')).toBeInTheDocument();
+        expect(document.getElementById('profile-firstName')).toBeInTheDocument();
         expect(screen.getByLabelText(/apellido/i)).toBeInTheDocument();
     });
 
@@ -128,9 +128,39 @@ describe('ProfileEditForm', () => {
         expect(input.value).toBe('+541134567890');
     });
 
-    it('shows submit button', () => {
+    it('hides the save bar until something changes (explicit save, D8)', () => {
         renderForm();
+        expect(screen.queryByRole('button', { name: /guardar cambios/i })).not.toBeInTheDocument();
+    });
+
+    it('shows the save bar with discard as soon as a field changes', () => {
+        renderForm();
+        fireEvent.change(screen.getByLabelText(/biografía/i), { target: { value: 'Otra bio' } });
         expect(screen.getByRole('button', { name: /guardar cambios/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /descartar/i })).toBeInTheDocument();
+    });
+
+    it('renders the five flat sections, each with its help anchor', () => {
+        const { container } = renderForm();
+        const anchors = Array.from(container.querySelectorAll('section[data-kit-section]')).map(
+            (section) => section.getAttribute('data-help')
+        );
+        expect(anchors).toEqual([
+            'section:profile.identity',
+            'section:profile.contact',
+            'section:profile.about',
+            'section:profile.social',
+            'section:profile.security'
+        ]);
+    });
+
+    it('restores every field when the edits are discarded', () => {
+        renderForm();
+        const bio = screen.getByLabelText(/biografía/i) as HTMLTextAreaElement;
+        fireEvent.change(bio, { target: { value: 'Otra bio' } });
+        fireEvent.click(screen.getByRole('button', { name: /descartar/i }));
+        expect(bio.value).toBe('Viajera apasionada.');
+        expect(screen.queryByRole('button', { name: /guardar cambios/i })).not.toBeInTheDocument();
     });
 
     it('shows avatar upload button', () => {
@@ -153,15 +183,14 @@ describe('ProfileEditForm', () => {
         const input = screen.getByLabelText(/nombre para mostrar/i);
         fireEvent.change(input, { target: { value: 'x'.repeat(101) } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
-        await waitFor(() => expect(screen.getAllByRole('alert').length).toBeGreaterThan(0));
+        await waitFor(() =>
+            expect(document.getElementById('profile-displayName-error')).toBeInTheDocument()
+        );
 
         fireEvent.change(input, { target: { value: 'Nuevo Nombre' } });
-        // Error for displayName should no longer be visible
-        await waitFor(() => {
-            const alerts = screen.queryAllByRole('alert');
-            const displayNameError = alerts.find((a) => a.id === 'displayName-error');
-            expect(displayNameError).toBeUndefined();
-        });
+        await waitFor(() =>
+            expect(document.getElementById('profile-displayName-error')).not.toBeInTheDocument()
+        );
     });
 
     // HOS-190 slice 3 bound-revert regression: a legacy single-character
@@ -237,11 +266,11 @@ describe('ProfileEditForm', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
-            expect(screen.getByRole('alert')).toBeInTheDocument();
+            expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
         });
     });
 
-    it('disables submit while submitting', async () => {
+    it('marks the save button busy while submitting', async () => {
         // Never resolving fetch to keep loading state
         globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => undefined));
         renderForm();
@@ -250,7 +279,7 @@ describe('ProfileEditForm', () => {
         });
         const btn = screen.getByRole('button', { name: /guardar cambios/i });
         fireEvent.click(btn);
-        await waitFor(() => expect(btn).toBeDisabled());
+        await waitFor(() => expect(btn).toHaveAttribute('aria-busy', 'true'));
     });
 
     // ── HOS-190 BETA-189 regressions ────────────────────────────────────────
@@ -262,11 +291,12 @@ describe('ProfileEditForm', () => {
         // the DB kept X. Asserts on the ACTUAL body of the SECOND save.
         renderForm();
         const bio = screen.getByLabelText(/biografía/i);
-        const saveBtn = screen.getByRole('button', { name: /guardar cambios/i });
+        // The save bar only exists while there are edits, so look it up each time.
+        const saveBtn = () => screen.getByRole('button', { name: /guardar cambios/i });
 
         // 1) Change bio and save → profile.bio carries the new value.
         fireEvent.change(bio, { target: { value: 'Nueva biografía de prueba' } });
-        fireEvent.click(saveBtn);
+        fireEvent.click(saveBtn());
         await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
         const firstCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
             string,
@@ -280,7 +310,7 @@ describe('ProfileEditForm', () => {
         // 2) Revert bio to the ORIGINAL value and save again → must issue a
         //    restoring PATCH carrying the original bio (not a "no changes").
         fireEvent.change(bio, { target: { value: 'Viajera apasionada.' } });
-        fireEvent.click(saveBtn);
+        fireEvent.click(saveBtn());
         await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
         const secondCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1] as [
             string,
@@ -292,17 +322,10 @@ describe('ProfileEditForm', () => {
         expect(secondBody.profile?.bio).toBe('Viajera apasionada.');
     });
 
-    it('shows a "no changes" info toast and does not PATCH when nothing changed (P2)', async () => {
+    it('never PATCHes when nothing changed (P2): there is nothing to save', () => {
         renderForm();
-        fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
-        await waitFor(() => {
-            expect(vi.mocked(addToast)).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: 'info',
-                    message: expect.stringMatching(/no hay cambios/i)
-                })
-            );
-        });
+        // The bar is hidden while pristine, and Ctrl/Cmd+S is not armed.
+        fireEvent.keyDown(document, { key: 's', ctrlKey: true });
         expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
@@ -311,7 +334,7 @@ describe('ProfileEditForm', () => {
         fireEvent.change(screen.getByLabelText(/nombre para mostrar/i), { target: { value: '' } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
-            const err = document.getElementById('displayName-error');
+            const err = document.getElementById('profile-displayName-error');
             expect(err).toBeInTheDocument();
         });
         expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -322,7 +345,7 @@ describe('ProfileEditForm', () => {
         fireEvent.change(screen.getByLabelText(/biografía/i), { target: { value: 'corta' } });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
-            expect(document.getElementById('bio-error')).toBeInTheDocument();
+            expect(document.getElementById('profile-bio-error')).toBeInTheDocument();
         });
         expect(globalThis.fetch).not.toHaveBeenCalled();
     });

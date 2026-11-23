@@ -12,11 +12,13 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const PAGES = [
-    ['detail', '[slug]/index.astro'],
-    ['register usage', '[slug]/registrar-uso/index.astro']
-] as const;
+const PAGES = [['register usage', '[slug]/registrar-uso/index.astro']] as const;
 
+/**
+ * The detail page moved to the account kit (HOS-2472): its categories are
+ * StatusPills inside the ProviderDetail island, covered by
+ * `directorio-proveedores-detail.test.ts`.
+ */
 const read = (rel: string): string =>
     readFileSync(
         resolve(__dirname, `../../src/pages/[lang]/mi-cuenta/directorio-proveedores/${rel}`),

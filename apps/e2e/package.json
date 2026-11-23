@@ -14,6 +14,8 @@
         "e2e:test:clock": "playwright test --grep @clock --workers=1",
         "e2e:test:p1": "bash -c 'set -a && . ./.env.e2e && set +a && playwright test --grep @p1'",
         "e2e:test:resilience": "bash -c 'set -a && . ./.env.e2e && set +a && playwright test --grep @resilience'",
+        "e2e:test:visual": "bash -c 'set -a && . ./.env.e2e && set +a && bash scripts/run-visual.sh \"$@\"' --",
+        "e2e:visual:update": "bash -c 'set -a && . ./.env.e2e && set +a && bash scripts/run-visual.sh --update-snapshots=changed \"$@\"' --",
         "e2e:report": "playwright show-report",
         "e2e:install": "playwright install chromium --with-deps",
         "lint": "biome check .",

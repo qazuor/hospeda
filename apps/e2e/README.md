@@ -52,6 +52,8 @@ Use `--debug` to step through interactively, `--headed` to watch the browser, `-
 ```
 apps/e2e/
 ├── playwright.config.ts          Workers / reporters / projects
+├── playwright.visual.config.ts   Visual regression (browser in the pinned image)
+├── scripts/run-visual.sh         Starts the pinned image + runs the visual suite
 ├── .env.e2e                      SSOT for dedicated E2E ports/URLs (sourced by scripts + CI)
 ├── docker-compose.e2e.yml        PG :15433, Redis :16380, Mailpit :11025/:18025
 ├── tests/
@@ -62,7 +64,8 @@ apps/e2e/
 │   ├── messaging/                MSG-01: conversation + notifications
 │   ├── admin/                    ADM-01..04: moderation, metrics, users, plans
 │   ├── spec-096/                 E2E-1..10: cross-app web/admin journeys
-│   └── resilience/               RES-01..06: failures, idempotency, concurrency
+│   ├── resilience/               RES-01..06: failures, idempotency, concurrency
+│   └── visual/                   @visual: Mi Cuenta kit + shell screenshots (+ __screenshots__/ baselines)
 ├── fixtures/
 │   ├── api-helpers.ts            Real API calls: signup, onboarding, accommodations
 │   ├── browser-helpers.ts        seedCookieConsent — suppress the consent banner backdrop
@@ -168,6 +171,114 @@ The outbox sender has no E2E cron of its own because `HOSPEDA_CRON_ADAPTER` is
 `manual`; trigger it as `SUPER_ADMIN` with
 `POST /api/v1/admin/cron/email-outbox-sender`, just like
 `trial-machine-expiry`. Closing the fake provider removes its file-backed clock.
+
+## Visual regression (`@visual`, HOS-2471)
+
+Screenshot comparison of Mi Cuenta in **light and dark**, at **desktop 1280** and
+**mobile 375** (HOS-2413 §6.11). It catches what a functional test cannot: a
+token, a border or a dark-mode color that changed without anyone approving it.
+
+### What is covered
+
+| Spec | Shots |
+|---|---|
+| `tests/visual/kit.visual.spec.ts` | Every `[data-visual]` block of the kit gallery `/es/mi-cuenta/kit/` (one per component state), plus the four overlays opened with `?open=dialog\|confirm\|drawer-bottom\|drawer-right`. The block list is read from the page, so a new gallery entry is covered automatically. |
+| `tests/visual/account-shell.visual.spec.ts` | The account shell on the dashboard `/es/mi-cuenta/` (header, sidebar, AccountBar, footer), plus the mobile drawer open. |
+
+Every shot is taken in all four `(theme, viewport)` combinations. The theme is
+pinned through `localStorage.theme` before the first paint (the key
+`ThemeFoucScript.astro` reads), and each test asserts `html[data-theme]` before
+shooting, so a dark baseline can never silently be a light one. Animations are
+disabled, the caret is hidden, fonts are awaited and every eager Astro island must
+have hydrated. Content that is not the shell and is not stable between runs
+(the time-of-day greeting, the client-loaded stat cards) is masked.
+
+**Every page migrated to the kit (phases 3-5) adds its own baselines** in
+`account-shell.visual.spec.ts` (or a sibling `*.visual.spec.ts`), with the same
+matrix and the helpers in `fixtures/visual-helpers.ts`.
+
+### Why it runs in Docker
+
+A baseline only matches the Chromium build and the fonts that produced it. The
+baselines are generated inside the pinned Playwright image
+`mcr.microsoft.com/playwright:v<version>-noble`, where `<version>` is the
+installed `@playwright/test` (resolved at run time, so a Playwright bump moves
+the image with it — and requires regenerating every baseline in that PR).
+
+`scripts/run-visual.sh` starts `playwright run-server` inside that image on
+the host network and runs `playwright test -c playwright.visual.config.ts` on
+the host, connected to it. The test runner, the sign-in and the app servers
+are the same as the rest of the suite; only the browser lives in the image.
+That config:
+
+- reuses `playwright.config.ts` (production builds through `webServer`, never
+  `astro dev`, which breaks island hydration in Astro 7.4.7);
+- turns on `HOSPEDA_ACCOUNT_KIT_GALLERY=true` for the web server it boots
+  (the gallery answers 404 without it; staging and production never set it);
+- writes baselines to `tests/visual/__screenshots__/<spec>/…` (committed) and
+  its run output to `playwright-report-visual/` and `test-results-visual/`
+  (ignored);
+- uses `maxDiffPixelRatio: 0.001`, no retries, one worker.
+
+`playwright.config.ts` ignores `tests/visual/`, so `e2e:test` and
+`e2e:test:p0` never shoot with the host browser.
+
+### Running it
+
+Prerequisites: Docker, plus the usual `e2e:up` + migrate + `e2e:seed` +
+`e2e:build` (Quick start above). Build with
+`HOSPEDA_USE_LOCAL_MEDIA_PLACEHOLDERS=true` exported, as CI does, or remote
+images render differently from CI.
+
+```bash
+pnpm --filter hospeda-e2e e2e:test:visual          # compare against the baselines
+pnpm --filter hospeda-e2e e2e:visual:update        # rewrite the baselines that differ + create missing ones (--update-snapshots=changed)
+pnpm --filter hospeda-e2e e2e:test:visual tests/visual/kit.visual.spec.ts   # one spec
+```
+
+If the API or web server is already running on the E2E ports, Playwright reuses
+it — and a reused web server must have been started with
+`HOSPEDA_ACCOUNT_KIT_GALLERY=true`, or the kit spec fails on a 404. When in
+doubt, stop it and let the run boot its own.
+
+Run from an AI coding agent's shell, Astro 7 detaches `astro preview` into the
+background, so Playwright reports `Process from config.webServer exited early`
+on the first run. The detached server keeps the env it was given (flag
+included): re-run and it is reused. Stop it afterwards with
+`pnpm --filter hospeda-web exec astro preview stop`. CI is not affected.
+
+The specs sign in as `e2e-tourist@local.test` and mark the dashboard welcome
+tours as seen first (`fixtures/visual-helpers.ts`); otherwise the tour overlay
+would cover the dashboard.
+
+### In CI
+
+`e2e-pr.yml` runs it as its own **«Visual regression»** step, right after the
+P0 suite, on the same builds and database. It runs whenever the P0 step ran
+(pass or fail). CI **only compares**: `updateSnapshots` is `'none'` there, so a
+missing or different screenshot fails the step and nothing is written back. On
+failure the artifact `playwright-visual-report-pr-<run>` holds the HTML report
+with the expected, actual and diff images of each failing shot.
+
+### Approving a visual change
+
+A diff is either a regression (fix the code) or an intended change (approve
+it). To approve one:
+
+1. Make the UI change on your branch.
+2. With the E2E stack up and the apps rebuilt (`e2e:build`), run
+   `pnpm --filter hospeda-e2e e2e:visual:update`. It regenerates the
+   baselines **inside the pinned image** — never with your host browser or a
+   different Playwright version, or CI will not match them.
+3. Review `git status` / `git diff --stat apps/e2e/tests/visual/__screenshots__/`:
+   only the shots your change should touch may change. Open the changed PNGs.
+4. Commit the PNGs **in the same PR** as the UI change. The reviewer reads the
+   image diff on GitHub and approves both together.
+5. A shot that no longer exists (a removed gallery state) leaves an orphan PNG
+   that nothing fails on: delete it in the same PR.
+
+Never "approve" by raising `maxDiffPixelRatio`, masking the changed region or
+adding a retry: each of those turns the check off for the next real regression.
 
 ## Concrete fixture usage
 

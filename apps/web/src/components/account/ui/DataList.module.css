@@ -1,0 +1,14 @@
+/* DataList.module.css — the container ListRows adapt to (HOS-2481).
+   No border of its own: the Section is the only box (D5). */
+
+.container {
+    container-type: inline-size;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}

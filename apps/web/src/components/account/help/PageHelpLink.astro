@@ -1,0 +1,26 @@
+---
+/**
+ * @file PageHelpLink.astro
+ * @description The page «?» for pages whose title is the kit `PageHeader`
+ * (HOS-2416). It derives the page's own `page:` anchor from
+ * `Astro.routePattern`, like `AccountPageHeader` does, and renders `HelpLink`,
+ * which renders nothing when no article claims the anchor.
+ *
+ * Usage: `<PageHeader ...><PageHelpLink slot="help" locale={locale} /></PageHeader>`.
+ */
+
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** Overrides the derived anchor; `null` renders no «?». */
+	readonly anchor?: string | null;
+}
+
+const { locale, anchor } = Astro.props;
+const resolved = anchor === undefined ? pageHelpAnchor({ routePattern: Astro.routePattern }) : anchor;
+---
+
+<HelpLink anchor={resolved} locale={locale} />

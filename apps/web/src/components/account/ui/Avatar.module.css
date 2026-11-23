@@ -1,0 +1,67 @@
+/* Avatar.module.css — picture or initials (HOS-2414, first consumer HOS-2473).
+   Colors come from the four --avatar-n gradients; sizes from the space scale. */
+
+.root {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    font: var(--app-ui);
+    font-weight: var(--app-title-weight);
+    color: var(--core-card);
+    user-select: none;
+}
+
+.sm {
+    inline-size: var(--space-8);
+    block-size: var(--space-8);
+    font: var(--app-meta);
+}
+
+.md {
+    inline-size: var(--space-10);
+    block-size: var(--space-10);
+}
+
+.lg {
+    inline-size: calc(var(--space-8) * 2);
+    block-size: calc(var(--space-8) * 2);
+    font: var(--app-section);
+}
+
+.p1 {
+    background: linear-gradient(135deg, var(--avatar-1-from), var(--avatar-1-to));
+}
+
+.p2 {
+    background: linear-gradient(135deg, var(--avatar-2-from), var(--avatar-2-to));
+}
+
+.p3 {
+    background: linear-gradient(135deg, var(--avatar-3-from), var(--avatar-3-to));
+}
+
+.p4 {
+    background: linear-gradient(135deg, var(--avatar-4-from), var(--avatar-4-to));
+}
+
+.image {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+}
+
+.visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}

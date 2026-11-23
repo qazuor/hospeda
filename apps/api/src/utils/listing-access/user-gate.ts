@@ -44,6 +44,43 @@ export async function enforceUserGate(args: {
     }
 }
 
+/**
+ * Read capability flags, THROWING when the effective set cannot be read.
+ *
+ * For callers that must tell "the plan lacks the key" from "we could not find
+ * out" (the owner dashboards render the second as `unavailable`, never as an
+ * upsell). {@link readEffectiveKeys} is this read with the failure swallowed.
+ *
+ * @throws {UnknownStepKeyError} for a key outside the catalog.
+ * @throws whatever the effective-set port throws.
+ */
+export async function probeEffectiveKeys(args: {
+    readonly userId: string;
+    readonly vertical: VerticalEnum;
+    readonly keys: readonly string[];
+    readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
+}): Promise<Readonly<Record<string, boolean>>> {
+    for (const key of args.keys) {
+        if (!getCatalogKey({ key })) throw new UnknownStepKeyError(key);
+    }
+    const effective =
+        args.effectiveSetSnapshot ??
+        (await getListingAccessPorts().effectiveSet({
+            userId: args.userId,
+            vertical: args.vertical
+        }));
+    return Object.fromEntries(
+        args.keys.map((key) => [
+            key,
+            (effective.entitlements.get({
+                key,
+                userId: args.userId,
+                vertical: args.vertical
+            }) ?? 0) > 0
+        ])
+    );
+}
+
 /** Read capability flags without rejecting the request; a failed set read grants nothing. */
 export async function readEffectiveKeys(args: {
     readonly userId: string;
@@ -54,30 +91,14 @@ export async function readEffectiveKeys(args: {
     for (const key of args.keys) {
         if (!getCatalogKey({ key })) throw new UnknownStepKeyError(key);
     }
-    const denied = Object.fromEntries(args.keys.map((key) => [key, false]));
     try {
-        const effective =
-            args.effectiveSetSnapshot ??
-            (await getListingAccessPorts().effectiveSet({
-                userId: args.userId,
-                vertical: args.vertical
-            }));
-        return Object.fromEntries(
-            args.keys.map((key) => [
-                key,
-                (effective.entitlements.get({
-                    key,
-                    userId: args.userId,
-                    vertical: args.vertical
-                }) ?? 0) > 0
-            ])
-        );
+        return await probeEffectiveKeys(args);
     } catch {
         apiLogger.warn(
             { userId: args.userId, vertical: args.vertical },
             'Effective keys lookup failed'
         );
-        return denied;
+        return Object.fromEntries(args.keys.map((key) => [key, false]));
     }
 }
 

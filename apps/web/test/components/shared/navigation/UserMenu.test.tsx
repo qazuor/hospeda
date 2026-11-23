@@ -235,8 +235,8 @@ describe('UserMenu — permission-gated items', () => {
         ]);
         expect(links).toEqual([
             ['Administrar alojamientos', '/es/mi-cuenta/host-dashboard/'],
-            ['Administrar Comer y salir', '/es/mi-cuenta/comercio/'],
-            ['Administrar experiencias', '/es/mi-cuenta/comercio/'],
+            ['Administrar Comer y salir', '/es/mi-cuenta/comercio/?vertical=venue'],
+            ['Administrar experiencias', '/es/mi-cuenta/comercio/?vertical=experience'],
             ['Administrar contenido editorial', '/es/mi-cuenta/publicaciones/'],
             ['Administrar ficha de proveedor', '/es/mi-cuenta/proveedor/']
         ]);
