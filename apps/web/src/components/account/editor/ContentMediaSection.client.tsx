@@ -44,60 +44,25 @@
  * author from uploading a photo only to collect a 403.
  */
 
-import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
-import { getGalleryCap, type Image } from '@repo/schemas';
+import { getGalleryCap } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
-import fieldStyles from '@/components/account/editor/content-editor-fields.module.css';
-import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
 import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
-import {
-    type ContentMediaEntity,
-    type ContentMediaRow,
-    contentMediaApi
-} from '@/lib/api/endpoints-protected';
+import { type ContentMediaEntity, contentMediaApi } from '@/lib/api/endpoints-protected';
 import { visibleApiMessage } from '@/lib/api-errors';
-import { getApiUrl } from '@/lib/env';
 import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
 import { useSingleFlight } from '@/lib/forms/use-single-flight';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import type { MediaAttribution } from '@/lib/media';
-import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
-import { buildUploadEntityError, describeUploadEntityError } from '@/lib/media/upload-entity-error';
 import { addToast } from '@/store/toast-store';
-import styles from './ContentMediaSection.module.css';
-
-/** Translator function shape (matches the editor's `createTranslations().t`). */
-type Translate = (
-    key: string,
-    fallback?: string,
-    params?: Record<string, string | number>
-) => string;
-
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_SIZE_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
-
-/**
- * Display item used by this component's local state — the DB row's essentials
- * plus the `id` needed to address it in remove / set-featured calls.
- */
-interface ContentMediaItem {
-    readonly id: string;
-    readonly url: string;
-    readonly publicId?: string;
-    readonly caption: string | undefined;
-    /**
-     * Longer photo description. Added by HOS-1036 alongside `attribution`:
-     * both columns existed on `post_media`/`event_media` from HOS-390 and were
-     * simply never read here, because nothing in this section could write them.
-     */
-    readonly description: string | undefined;
-    readonly alt: string | undefined;
-    /** Photo credit, when the author declared one. */
-    readonly attribution: MediaAttribution | undefined;
-    readonly isFeatured: boolean;
-}
+import { ContentMediaView } from './ContentMediaView';
+import {
+    type ContentMediaItem,
+    describeUploadError,
+    rowToItem,
+    uploadAndAddContentMedia,
+    validateContentMediaFile
+} from './content-media-upload';
 
 /** Props for {@link ContentMediaSection}. */
 export interface ContentMediaSectionProps {
@@ -108,134 +73,6 @@ export interface ContentMediaSectionProps {
     readonly entityId: string;
     /** `true` when the moderation lock forbids editing (HOS-374 §7.6.3). */
     readonly disabled?: boolean;
-}
-
-/**
- * Thrown when the upload exceeds its client-side budget.
- *
- * A distinct type because the browser's own abort error carries a
- * vendor-specific English message, and the catch path renders `err.message`
- * directly.
- */
-class UploadTimeoutError extends Error {
-    constructor() {
-        super('upload-timeout');
-        this.name = 'UploadTimeoutError';
-    }
-}
-
-/**
- * Map a `ContentMediaRow` (from the API) to the local display shape.
- */
-function rowToItem(row: ContentMediaRow): ContentMediaItem {
-    return {
-        id: row.id,
-        url: row.url,
-        publicId: row.publicId ?? undefined,
-        caption: row.caption ?? undefined,
-        description: row.description ?? undefined,
-        alt: row.alt ?? undefined,
-        attribution: row.attribution ?? undefined,
-        isFeatured: row.isFeatured
-    };
-}
-
-/**
- * Upload a single image to the protected entity-upload endpoint.
- *
- * `entityType` accepts `post` and `event` natively — this is the same endpoint
- * the accommodation and destination editors use.
- *
- * @returns The uploaded `Image` (Cloudinary url + metadata, moderationState APPROVED).
- */
-async function uploadEntityImage({
-    file,
-    entity,
-    entityId,
-    role
-}: {
-    readonly file: File;
-    readonly entity: ContentMediaEntity;
-    readonly entityId: string;
-    readonly role: 'featured' | 'gallery';
-}): Promise<Image> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('entityType', entity);
-    formData.append('entityId', entityId);
-    formData.append('role', role);
-
-    // Bounded like the accommodation and listing editors (BETA-134). Without a
-    // signal this `fetch` waits forever, so a stalled connection leaves the
-    // author on a spinner with no error and no way out but a reload.
-    //
-    // `AbortController` + `setTimeout` rather than `AbortSignal.timeout`: the
-    // latter needs Safari 16, and on an older iOS the property access throws
-    // before `fetch` runs, breaking uploads outright rather than degrading.
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), resolveUploadTimeoutMs(file.size));
-
-    let response: Response;
-    try {
-        response = await fetch(`${getApiUrl()}/api/v1/protected/media/upload-entity`, {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-            signal: controller.signal
-        });
-    } catch (error) {
-        // An abort surfaces as a vendor-specific English DOMException whose
-        // `message` would otherwise be rendered verbatim in a Spanish UI, since
-        // `DOMException` satisfies `instanceof Error`. Re-throw a typed marker.
-        if (controller.signal.aborted) {
-            throw new UploadTimeoutError();
-        }
-        throw error;
-    } finally {
-        clearTimeout(timer);
-    }
-
-    const json = (await response.json().catch(() => null)) as {
-        readonly success?: boolean;
-        readonly data?: Image;
-        readonly error?: {
-            readonly code?: string;
-            readonly reason?: string;
-            readonly message?: string;
-            readonly details?: unknown;
-        };
-    } | null;
-
-    if (!response.ok || !json?.data) {
-        throw buildUploadEntityError({ body: json, status: response.status });
-    }
-    return json.data;
-}
-
-/**
- * Turn an upload failure into a message worth showing.
- *
- * A timeout gets its own localized sentence: the browser's abort error carries
- * vendor-specific English text ("signal timed out"), and because `DOMException`
- * satisfies `instanceof Error`, a naive `err.message` would render it verbatim
- * in a Spanish UI.
- *
- * @param err - The thrown value
- * @param t - Active translator
- * @returns A user-facing message
- */
-function describeUploadError(err: unknown, t: Translate): string {
-    if (err instanceof UploadTimeoutError) {
-        return t(
-            'account.myContent.editor.media.uploadTimeout',
-            'La subida tardó demasiado. Probá de nuevo.'
-        );
-    }
-    return describeUploadEntityError({
-        err,
-        t,
-        fallback: t('account.myContent.editor.media.uploadFailed', 'Error al subir la imagen')
-    });
 }
 
 /**
@@ -310,25 +147,7 @@ export function ContentMediaSection({
     const canWrite = isHydrated && !disabled;
 
     /** Validate a selected file; returns a localized error message or null. */
-    const validateFile = useCallback(
-        (file: File): string | null => {
-            if (!ALLOWED_TYPES.includes(file.type)) {
-                return t(
-                    'account.myContent.editor.media.invalidType',
-                    'Solo se permiten archivos JPG, PNG o WebP'
-                );
-            }
-            if (file.size > MAX_SIZE_BYTES) {
-                return t(
-                    'account.myContent.editor.media.tooLarge',
-                    'El archivo no puede superar {{maxSize}}MB',
-                    { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                );
-            }
-            return null;
-        },
-        [t]
-    );
+    const validateFile = useCallback((file: File) => validateContentMediaFile({ file, t }), [t]);
 
     /**
      * Report a failure both inline and via the global toast store.
@@ -366,35 +185,18 @@ export function ContentMediaSection({
             setError(null);
             setIsUploading(true);
             try {
-                const uploaded = await uploadEntityImage({
+                const added = await uploadAndAddContentMedia({
                     file,
                     entity,
                     entityId,
-                    role: 'featured'
+                    role: 'featured',
+                    t
                 });
-
-                const addResult = await contentMediaApi.addMedia({
-                    entity,
-                    id: entityId,
-                    body: {
-                        url: uploaded.url,
-                        publicId: uploaded.publicId,
-                        moderationState: 'APPROVED'
-                    }
-                });
-
-                if (!addResult.ok) {
-                    reportError(
-                        visibleApiMessage({ error: addResult.error }) ??
-                            t(
-                                'account.myContent.editor.media.persistFailed',
-                                'No se pudo guardar la imagen en la base de datos'
-                            )
-                    );
+                if (!added.ok) {
+                    reportError(added.message);
                     return;
                 }
-
-                const newRow = addResult.data.media;
+                const newRow = added.row;
 
                 const featuredResult = await contentMediaApi.setFeaturedMedia({
                     entity,
@@ -501,35 +303,18 @@ export function ContentMediaSection({
             setError(null);
             setIsUploading(true);
             try {
-                const uploaded = await uploadEntityImage({
+                const added = await uploadAndAddContentMedia({
                     file,
                     entity,
                     entityId,
-                    role: 'gallery'
+                    role: 'gallery',
+                    t
                 });
-
-                const addResult = await contentMediaApi.addMedia({
-                    entity,
-                    id: entityId,
-                    body: {
-                        url: uploaded.url,
-                        publicId: uploaded.publicId,
-                        moderationState: 'APPROVED'
-                    }
-                });
-
-                if (!addResult.ok) {
-                    reportError(
-                        visibleApiMessage({ error: addResult.error }) ??
-                            t(
-                                'account.myContent.editor.media.persistFailed',
-                                'No se pudo guardar la imagen en la base de datos'
-                            )
-                    );
+                if (!added.ok) {
+                    reportError(added.message);
                     return;
                 }
-
-                setGalleryItems((prev) => [...prev, rowToItem(addResult.data.media)]);
+                setGalleryItems((prev) => [...prev, rowToItem(added.row)]);
             } catch (err) {
                 reportError(describeUploadError(err, t));
             } finally {
@@ -646,157 +431,25 @@ export function ContentMediaSection({
         [canWrite, entity, entityId, t, reportError]
     );
 
-    const anyOpInFlight = isUploading || opLoading;
-
-    const featuredLabel = t('account.myContent.editor.media.featured', 'Imagen principal');
-    const galleryLabel = t('account.myContent.editor.media.gallery', 'Galería de fotos');
-    const removeLabel = t('account.myContent.editor.media.remove', 'Eliminar');
-    const addLabel = t('account.myContent.editor.media.add', 'Agregar foto');
-    // The panel's own copy is reused verbatim from the accommodation editor —
-    // it is the same form, asking the same five questions, so a second set of
-    // strings would only be a second thing to keep translated. That includes
-    // these accessible names, which describe the panel, not the entity.
-    const featuredToggleAria = t(
-        'host.properties.editor.photo.editFeaturedDetailsAria',
-        'Editar textos de la portada'
-    );
-    const featuredCloseAria = t(
-        'host.properties.editor.photo.closeFeaturedDetailsAria',
-        'Cerrar edición de textos de la portada'
-    );
-
     return (
-        <div className={styles.media}>
-            <div className={styles.mediaGroup}>
-                <span className={fieldStyles.label}>{featuredLabel}</span>
-                {featuredItem ? (
-                    <div className={styles.mediaItem}>
-                        <div className={styles.mediaThumb}>
-                            <img
-                                src={featuredItem.url}
-                                alt={featuredItem.alt ?? featuredLabel}
-                                className={styles.mediaImage}
-                            />
-                            <button
-                                type="button"
-                                className={styles.mediaRemove}
-                                aria-label={removeLabel}
-                                disabled={anyOpInFlight || !canWrite || !featuredItem.id}
-                                onClick={handleFeaturedRemove}
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <PhotoMetadataEditor
-                            locale={locale}
-                            item={featuredItem}
-                            disabled={anyOpInFlight || !canWrite}
-                            toggleAriaLabel={featuredToggleAria}
-                            closeAriaLabel={featuredCloseAria}
-                            onSave={handleUpdateText}
-                        />
-                    </div>
-                ) : (
-                    <button
-                        type="button"
-                        className={styles.mediaAdd}
-                        disabled={anyOpInFlight || !canWrite}
-                        onClick={() => featuredInputRef.current?.click()}
-                    >
-                        {addLabel}
-                    </button>
-                )}
-                <input
-                    ref={featuredInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    aria-label={featuredLabel}
-                    className={styles.mediaFileInput}
-                    disabled={!canWrite}
-                    onChange={handleFeaturedSelect}
-                />
-            </div>
-
-            <div className={styles.mediaGroup}>
-                <span className={fieldStyles.label}>{galleryLabel}</span>
-                <div className={styles.mediaGallery}>
-                    {galleryItems.map((image, index) => (
-                        <div
-                            key={image.id || image.url}
-                            className={styles.mediaItem}
-                        >
-                            <div className={styles.mediaThumb}>
-                                <img
-                                    src={image.url}
-                                    alt={image.alt ?? galleryLabel}
-                                    className={styles.mediaImage}
-                                />
-                                <button
-                                    type="button"
-                                    className={styles.mediaRemove}
-                                    aria-label={removeLabel}
-                                    disabled={anyOpInFlight || !canWrite || !image.id}
-                                    onClick={() => handleGalleryRemove(image)}
-                                >
-                                    ×
-                                </button>
-                            </div>
-                            <PhotoMetadataEditor
-                                locale={locale}
-                                item={image}
-                                disabled={anyOpInFlight || !canWrite}
-                                compactLayout={true}
-                                toggleAriaLabel={t(
-                                    'host.properties.editor.photo.editDetailsAria',
-                                    'Editar textos de la foto {{index}}',
-                                    { index: index + 1 }
-                                )}
-                                closeAriaLabel={t(
-                                    'host.properties.editor.photo.closeDetailsAria',
-                                    'Cerrar edición de textos de la foto {{index}}',
-                                    { index: index + 1 }
-                                )}
-                                onSave={handleUpdateText}
-                            />
-                        </div>
-                    ))}
-                    {!isGalleryFull && (
-                        <button
-                            type="button"
-                            className={styles.mediaAdd}
-                            disabled={anyOpInFlight || !canWrite}
-                            aria-label={addLabel}
-                            onClick={() => galleryInputRef.current?.click()}
-                        >
-                            +
-                        </button>
-                    )}
-                </div>
-                <input
-                    ref={galleryInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    aria-label={galleryLabel}
-                    className={styles.mediaFileInput}
-                    disabled={!canWrite}
-                    onChange={handleGallerySelect}
-                />
-                <span className={styles.mediaHint}>
-                    {tPlural('account.myContent.editor.media.uploadHint', galleryCap, {
-                        cap: galleryCap,
-                        maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB
-                    })}
-                </span>
-            </div>
-
-            {error && (
-                <p
-                    className={fieldStyles.error}
-                    role="alert"
-                >
-                    {error}
-                </p>
-            )}
-        </div>
+        <ContentMediaView
+            locale={locale}
+            t={t}
+            tPlural={tPlural}
+            featuredItem={featuredItem}
+            galleryItems={galleryItems}
+            galleryCap={galleryCap}
+            isGalleryFull={isGalleryFull}
+            anyOpInFlight={isUploading || opLoading}
+            canWrite={canWrite}
+            error={error}
+            featuredInputRef={featuredInputRef}
+            galleryInputRef={galleryInputRef}
+            handleFeaturedSelect={handleFeaturedSelect}
+            handleGallerySelect={handleGallerySelect}
+            handleFeaturedRemove={handleFeaturedRemove}
+            handleGalleryRemove={handleGalleryRemove}
+            handleUpdateText={handleUpdateText}
+        />
     );
 }
