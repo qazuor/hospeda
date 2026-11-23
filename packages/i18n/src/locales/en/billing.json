@@ -874,7 +874,8 @@
         "title": "Buy add-ons",
         "noSubscription": {
             "title": "You need to subscribe to a plan first",
-            "description": "Add-ons are added to a plan. Choose your plan, then come back to buy add-ons."
+            "description": "Add-ons are added to a plan. Choose your plan, then come back to buy add-ons.",
+            "viewPlans": "View plans"
         },
         "chooseOffer": "Choose an add-on",
         "back": "Back",

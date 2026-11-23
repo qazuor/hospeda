@@ -81,7 +81,7 @@ export function AddonPurchaseGate({
                             href={buildUrl({ locale, path: plansPath })}
                             data-testid="addons-no-subscription-plans"
                         >
-                            {t('billing.common.viewPlans')}
+                            {t('billing.addonPurchase.noSubscription.viewPlans')}
                         </LinkButton>
                     }
                 />

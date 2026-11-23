@@ -874,7 +874,8 @@
         "title": "Comprar complementos",
         "noSubscription": {
             "title": "Antes tenés que suscribirte a un plan",
-            "description": "Los complementos se suman a un plan. Elegí tu plan y después volvé a comprar los complementos."
+            "description": "Los complementos se suman a un plan. Elegí tu plan y después volvé a comprar los complementos.",
+            "viewPlans": "Ver planes"
         },
         "chooseOffer": "Elegí un complemento",
         "back": "Volver",
