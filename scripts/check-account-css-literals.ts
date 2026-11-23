@@ -71,7 +71,7 @@ import {
 export const EXCEPTIONS_PATH = 'scripts/guards/account-css-literals-exceptions.json';
 
 /** Frozen maximum size of the exceptions list (entries = file × category pairs). */
-export const EXCEPTIONS_CEILING = { entries: 279, total: 1314 } as const;
+export const EXCEPTIONS_CEILING = { entries: 217, total: 1039 } as const;
 
 /** A scan below this many files means the scope moved or the cwd is wrong. */
 export const MIN_SCANNED_FILES = 300;
