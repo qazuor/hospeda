@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { configureEmailAssets, resetEmailAssets } from '../../src/email-assets.js';
 import { renderEmailBodies } from '../../src/render.js';
 import {
-    EMAIL_LOGO_HEIGHT,
-    EMAIL_LOGO_URL,
-    EMAIL_LOGO_WIDTH,
+    EMAIL_ISOTIPO_HEIGHT,
+    EMAIL_ISOTIPO_URL,
+    EMAIL_ISOTIPO_WIDTH,
     EMAIL_PREFERENCES_URL,
     EMAIL_PUBLIC_SITE_URL,
     EmailLayout
@@ -43,7 +43,7 @@ describe('EmailLayout', () => {
         expect(html).toContain('Vista previa');
     });
 
-    it('renders the hosted logo with explicit size and alt text', async () => {
+    it('renders the isotipo image with explicit size and the wordmark as live text', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
             react: (
@@ -52,14 +52,24 @@ describe('EmailLayout', () => {
                 </EmailLayout>
             )
         });
+        const img = html.match(/<img\b[^>]*>/)?.[0] ?? '';
+        const header = html.slice(0, html.indexOf(TAGLINE));
 
         // Assert
-        expect(EMAIL_LOGO_URL).toBe('https://hospeda.com.ar/email/hospeda-logo@2x.png');
-        expect(html).toContain(`src="${EMAIL_LOGO_URL}"`);
-        expect(html).toContain('alt="Hospeda"');
-        expect(html).toContain(`width="${EMAIL_LOGO_WIDTH}"`);
-        expect(html).toContain(`height="${EMAIL_LOGO_HEIGHT}"`);
+        expect(EMAIL_ISOTIPO_URL).toBe('https://hospeda.com.ar/email/hospeda-isotipo@2x.png');
+        expect(img).toContain(`src="${EMAIL_ISOTIPO_URL}"`);
+        expect(img).toContain('alt=""');
+        expect(img).toContain(`width="${EMAIL_ISOTIPO_WIDTH}"`);
+        expect(img).toContain(`height="${EMAIL_ISOTIPO_HEIGHT}"`);
+        expect(img).toContain('display:block');
+        expect(header).toMatch(
+            /<span style="[^"]*color:#003987[^"]*font-weight:800[^"]*">hospeda<\/span>/
+        );
+        expect(header).toContain('vertical-align:middle');
+        expect(header).toContain('role="img"');
+        expect(header).toContain('aria-label="Hospeda"');
         expect(html).toContain(TAGLINE);
+        expect(html).not.toContain('hospeda-logo@2x.png');
     });
 
     it('omits the preheader when previewText is not set', async () => {
@@ -193,11 +203,13 @@ describe('EmailLayout', () => {
         expect(text).toContain('Cuerpo del mensaje');
         expect(text).toContain(FOOTER_BRAND_LINE);
         expect(text).toContain(PREFERENCES_TEXT);
-        expect(text).not.toContain(EMAIL_LOGO_URL);
+        expect(text).not.toContain(EMAIL_ISOTIPO_URL);
         expect(text.replace(FOOTER_BRAND_LINE, '')).not.toContain('Turismo en el Litoral');
+        expect(text.replace(FOOTER_BRAND_LINE, '').toLowerCase()).not.toContain('hospeda -');
+        expect(text.split('\n').some((line) => line.trim() === 'hospeda')).toBe(false);
     });
 
-    describe('logo origin (HOS-2540)', () => {
+    describe('isotipo origin (HOS-2540)', () => {
         const render = async () =>
             renderEmailBodies({
                 react: (
@@ -207,12 +219,12 @@ describe('EmailLayout', () => {
                 )
             });
 
-        it('uses the production logo URL by default', async () => {
+        it('uses the production isotipo URL by default', async () => {
             // Act
             const { html } = await render();
 
             // Assert
-            expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-logo@2x.png"');
+            expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-isotipo@2x.png"');
         });
 
         it('follows the configured origin and strips a trailing slash', async () => {
@@ -224,10 +236,10 @@ describe('EmailLayout', () => {
 
             // Assert
             expect(html).toContain(
-                'src="https://staging.hospeda.com.ar/email/hospeda-logo@2x.png"'
+                'src="https://staging.hospeda.com.ar/email/hospeda-isotipo@2x.png"'
             );
             expect(html).not.toContain('src="https://hospeda.com.ar/email/');
-            expect(text).not.toContain('hospeda-logo');
+            expect(text).not.toContain('hospeda-isotipo');
         });
 
         it('keeps the footer and preferences links on production', async () => {
@@ -240,7 +252,7 @@ describe('EmailLayout', () => {
             // Assert
             expect(html).toContain('href="https://hospeda.com.ar"');
             expect(html).toContain(`href="${EMAIL_PREFERENCES_URL}"`);
-            expect(EMAIL_LOGO_URL).toBe('https://hospeda.com.ar/email/hospeda-logo@2x.png');
+            expect(EMAIL_ISOTIPO_URL).toBe('https://hospeda.com.ar/email/hospeda-isotipo@2x.png');
         });
 
         it.each([
@@ -282,7 +294,7 @@ describe('EmailLayout', () => {
             const { html } = await render();
 
             // Assert
-            expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-logo@2x.png"');
+            expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-isotipo@2x.png"');
         });
     });
 });

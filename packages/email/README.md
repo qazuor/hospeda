@@ -9,8 +9,8 @@ See [CLAUDE.md](./CLAUDE.md) for the full guide.
 | Export | What it is |
 |---|---|
 | `EmailLayout` | The single layout every Hospeda email renders inside (`previewText?`, `children`, `footerLink?: 'preferences' \| 'none'`) |
-| `configureEmailAssets({ siteUrl })`, `resolveEmailLogoUrl()`, `resetEmailAssets()` | Point the logo at the deployment's own origin (call once at startup; default is production; tests reset) |
-| `EMAIL_PUBLIC_SITE_URL`, `EMAIL_LOGO_URL` (production default), `EMAIL_LOGO_WIDTH`, `EMAIL_LOGO_HEIGHT`, `EMAIL_PREFERENCES_URL` | Absolute URLs and logo size used by the layout |
+| `configureEmailAssets({ siteUrl })`, `resolveEmailIsotipoUrl()`, `resetEmailAssets()` | Point the isotipo at the deployment's own origin (call once at startup; default is production; tests reset) |
+| `EMAIL_PUBLIC_SITE_URL`, `EMAIL_ISOTIPO_URL` (production default), `EMAIL_ISOTIPO_WIDTH`, `EMAIL_ISOTIPO_HEIGHT`, `EMAIL_PREFERENCES_URL` | Absolute URLs and isotipo size used by the layout |
 | `renderEmailBodies({ react })` | Renders `{ html, text }`, exactly what the provider receives |
 | `createEmailClient({ apiKey, baseUrl? })` | Opaque Brevo client |
 | `sendEmail({ client, to, subject, react, fromEmail?, fromName?, replyTo? })` | Sends through Brevo; never throws, returns `{ success, messageId?, error? }` |

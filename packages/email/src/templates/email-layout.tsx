@@ -13,30 +13,35 @@ import {
 } from '@react-email/components';
 import { emailPalette } from '@repo/design-tokens';
 import type { ReactNode } from 'react';
-import { EMAIL_LOGO_PATH, EMAIL_PUBLIC_SITE_URL, resolveEmailLogoUrl } from '../email-assets.js';
+import {
+    EMAIL_ISOTIPO_PATH,
+    EMAIL_PUBLIC_SITE_URL,
+    resolveEmailIsotipoUrl
+} from '../email-assets.js';
 
 export { EMAIL_PUBLIC_SITE_URL };
 
 /**
- * Hosted PNG logo shown in the header (HOS-2519 OQ-1).
+ * Hosted PNG isotipo (the drawing only, transparent background) shown in the header.
  *
- * Served from `apps/web/public/email/hospeda-logo@2x.png`.
+ * Served from `apps/web/public/email/hospeda-isotipo@2x.png`. The word "hospeda"
+ * next to it is live text, so dark-mode clients that recolor text keep it legible
+ * and nobody sees a baked-in white rectangle.
  *
  * This constant is the PRODUCTION default only. The layout renders
- * `resolveEmailLogoUrl()`, which follows the origin the host app configured with
- * `configureEmailAssets` (HOS-2540), so staging emails load the logo from staging.
+ * `resolveEmailIsotipoUrl()`, which follows the origin the host app configured with
+ * `configureEmailAssets` (HOS-2540), so staging emails load it from staging.
  */
-export const EMAIL_LOGO_URL = `${EMAIL_PUBLIC_SITE_URL}${EMAIL_LOGO_PATH}`;
+export const EMAIL_ISOTIPO_URL = `${EMAIL_PUBLIC_SITE_URL}${EMAIL_ISOTIPO_PATH}`;
 
-/** Rendered logo width in CSS pixels (the asset is 2x: 360x108). */
-export const EMAIL_LOGO_WIDTH = 180;
+/** Rendered isotipo width in CSS pixels (the asset is 2x: 89x96). */
+export const EMAIL_ISOTIPO_WIDTH = 44;
 
 /**
- * Rendered logo height in CSS pixels. Keep it at
- * `EMAIL_LOGO_WIDTH * assetHeight / assetWidth` (10:3 for the current asset),
- * since Outlook desktop honours the `height` attribute and would distort it.
+ * Rendered isotipo height in CSS pixels. Keep it at the asset's aspect ratio
+ * (89:96 ~ 44:48), since Outlook desktop honours the `height` attribute.
  */
-export const EMAIL_LOGO_HEIGHT = 54;
+export const EMAIL_ISOTIPO_HEIGHT = 48;
 
 /** Absolute URL of the logged-in notification preferences page (HOS-2519 OQ-2). */
 export const EMAIL_PREFERENCES_URL = `${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/preferencias/`;
@@ -114,13 +119,33 @@ export function EmailLayout({ previewText, children, footerLink = 'none' }: Emai
                 >
                     <Row data-skip-in-text="true">
                         <Column style={styles.header}>
-                            <Img
-                                src={resolveEmailLogoUrl()}
-                                width={EMAIL_LOGO_WIDTH}
-                                height={EMAIL_LOGO_HEIGHT}
-                                alt="Hospeda"
-                                style={styles.logo}
-                            />
+                            {/* One accessible name for the whole mark; no flex/grid, so a nested table lines the two up. */}
+                            <table
+                                role="img"
+                                aria-label="Hospeda"
+                                align="center"
+                                cellPadding={0}
+                                cellSpacing={0}
+                                border={0}
+                                style={styles.brandTable}
+                            >
+                                <tbody>
+                                    <tr>
+                                        <td style={styles.isotipoCell}>
+                                            <Img
+                                                src={resolveEmailIsotipoUrl()}
+                                                width={EMAIL_ISOTIPO_WIDTH}
+                                                height={EMAIL_ISOTIPO_HEIGHT}
+                                                alt=""
+                                                style={styles.isotipo}
+                                            />
+                                        </td>
+                                        <td style={styles.wordmarkCell}>
+                                            <span style={styles.wordmark}>hospeda</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                             <Text style={styles.tagline}>Turismo en el Litoral</Text>
                         </Column>
                     </Row>
@@ -208,19 +233,32 @@ const styles = {
         padding: '24px 24px 16px',
         textAlign: 'center' as const
     },
-    /** Also styles the alt text, so a blocked image still reads as a brand mark (R-7). */
-    logo: {
+    brandTable: {
+        margin: '0 auto',
+        borderCollapse: 'collapse' as const
+    },
+    isotipoCell: {
+        padding: '0 10px 0 0',
+        verticalAlign: 'middle' as const
+    },
+    isotipo: {
         display: 'block',
         border: '0',
-        margin: '0 auto',
-        maxWidth: '100%',
-        height: 'auto',
+        width: `${EMAIL_ISOTIPO_WIDTH}px`,
+        height: `${EMAIL_ISOTIPO_HEIGHT}px`
+    },
+    wordmarkCell: {
+        padding: '0',
+        verticalAlign: 'middle' as const
+    },
+    /** Live text next to the isotipo: recolorable by dark-mode clients that invert text. */
+    wordmark: {
         color: emailPalette.brandStrong,
         fontFamily: FONT_STACK,
-        fontSize: '28px',
-        fontWeight: 'bold',
-        lineHeight: `${EMAIL_LOGO_HEIGHT}px`,
-        textAlign: 'center' as const
+        fontSize: '30px',
+        fontWeight: '800',
+        letterSpacing: '-0.5px',
+        lineHeight: `${EMAIL_ISOTIPO_HEIGHT}px`
     },
     tagline: {
         color: emailPalette.mutedText,
