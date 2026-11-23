@@ -2158,6 +2158,10 @@
         },
         "entityCard": {
             "noImage": "Sin imagen"
+        },
+        "stepper": {
+            "progress": "Paso {{current}} de {{total}}",
+            "done": "completado"
         }
     },
     "ownerDashboard": {
