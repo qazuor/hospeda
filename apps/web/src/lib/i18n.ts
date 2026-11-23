@@ -103,29 +103,27 @@ export function parseAcceptLanguage(header: string | null): SupportedLocale {
     return locale as SupportedLocale;
 }
 
-/** Client-only memo of the last-resolved locale dictionary. */
-let clientI18nCache: { locale: string; m: Record<string, string> } | null = null;
-
 /**
  * Reads the current page's flattened dictionary from `window.__HOSPEDA_I18N__`
- * (client only). The global is assigned by the hashed, immutable classic script
- * that `I18nClientData.astro` links from `<head>` (HOS-369 Wave D) — the
- * dictionary used to be inlined as a `#hospeda-i18n` JSON data block, which
- * re-shipped ~632 KB of byte-identical HTML on every navigation.
+ * (client only). The global is filled by the two hashed, immutable classic
+ * scripts that `I18nClientData.astro` links from `<head>` (HOS-369 Wave D,
+ * split by HOS-2572): the parser-blocking CRITICAL part first, the deferred
+ * REST part later. Both MERGE into the same per-locale object, so this sees the
+ * critical keys immediately and every client key once the deferred script ran.
+ *
+ * Deliberately NOT memoized. The old memo kept whichever object it saw first;
+ * with two parts that could be an object a later script replaced (an older
+ * deployment's page assigned rather than merged). A property lookup per call
+ * costs nothing next to reasoning about that.
  *
  * This lookup MUST stay synchronous: islands call it while they render, so a
  * `fetch` would hand the first ones an empty map. Returns an empty map — keys
  * then fall through to their fallback — when the global has no entry for the
- * requested locale, which does not happen on a normally rendered page. The
- * result is memoized per locale, and a change of locale re-reads the global.
+ * requested locale, which does not happen on a normally rendered page.
  */
 function getClientLocaleDict(locale: SupportedLocale): Record<string, string> {
-    if (clientI18nCache?.locale === locale) return clientI18nCache.m;
     if (typeof window === 'undefined') return {};
-    const m = window.__HOSPEDA_I18N__?.[locale];
-    if (!m) return {};
-    clientI18nCache = { locale, m };
-    return m;
+    return window.__HOSPEDA_I18N__?.[locale] ?? {};
 }
 
 /**

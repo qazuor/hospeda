@@ -2,7 +2,7 @@
 /**
  * @file I18nClientData.astro
  * @description Links the current page to the CURRENT locale's flattened
- * translation dictionary, served as a hashed immutable asset by
+ * translation dictionary, served as two hashed immutable assets by
  * `src/pages/i18n/[file].js.ts`. Client islands read it via `getClientLocaleDict`
  * in `@/lib/i18n` instead of importing the full `@repo/i18n` catalog, so the
  * other two locales never ship in the JS bundle (HOS-160 lever A).
@@ -12,23 +12,33 @@
  * a listing page's HTML — so every navigation re-downloaded it. As an asset the
  * browser fetches it once per session per locale (HOS-369 Wave D).
  *
- * Three constraints shape the tag below, and none is cosmetic:
+ * ## Two scripts, not one (HOS-2572)
  *
- *  - It is a CLASSIC script assigning a global, never a `fetch`.
- *    `getClientLocaleDict` is synchronous and runs while islands render;
- *    anything asynchronous would hand the first islands an empty dictionary and
- *    every key would silently fall back.
- *  - It is parser-BLOCKING: no `defer`, no `async` (HOS-2388). Astro does not
- *    hydrate islands through deferred module scripts. The inline `astro-island`
- *    runtime starts a `client:load` island's dynamic `import()` as soon as the
- *    parser reaches it, and that import can resolve before deferred scripts run
- *    (they wait for the end of parsing AND for the ~600 KB dictionary to
- *    download). On a cold first load the island then rendered raw keys, or its
- *    Spanish fallbacks, and kept them. A blocking script costs one download on
- *    the first visit only (the asset is `immutable`), and it guarantees the
- *    global exists before any island code runs.
- *  - It is rendered in `<head>`, in all four HTML shells, so it precedes every
- *    island in document order.
+ * HOS-2388 made the whole dictionary parser-blocking, because a deferred one
+ * could run after an island had rendered against an empty dictionary (raw keys
+ * on the partner claim page and the cookie banner). That cost the home ~680 ms
+ * of render-blocking time on mobile. So it is split:
+ *
+ *  - **critical** — parser-BLOCKING, no `defer`/`async`. It carries only the keys
+ *    of the islands allowed to hydrate early (`EARLY_HYDRATION_ISLANDS`), plus a
+ *    hydration gate that holds EVERY OTHER island back until
+ *    `DOMContentLoaded`. Without the gate the split would be unsafe: in Astro
+ *    7.4 every directive — `client:idle` and `client:visible` included — can
+ *    hydrate before a deferred script runs. The analysis is in
+ *    `@/lib/i18n-critical-prefixes`, the gate in `@/lib/i18n-hydration-gate`.
+ *  - **rest** — `defer`. Every other client key. The HTML spec fires
+ *    `DOMContentLoaded` only after it has run (or failed), which is exactly the
+ *    gate's release signal, so a gated island always sees the full dictionary.
+ *
+ * Three constraints shape the tags below, and none is cosmetic:
+ *
+ *  - Both are CLASSIC scripts merging into a global, never a `fetch`.
+ *    `getClientLocaleDict` is synchronous and runs while islands render.
+ *  - The critical one comes FIRST and stays blocking: it must have installed the
+ *    gate and the early keys before the parser reaches any `<astro-island>`.
+ *  - Both are rendered in `<head>`, in all four HTML shells, so they precede
+ *    every island in document order. `defer` on the second one keeps it from
+ *    blocking the parser while it still downloads in parallel from the start.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
@@ -41,4 +51,5 @@ interface Props {
 const { locale } = Astro.props;
 ---
 
-<script src={i18nAssetUrl(locale)} is:inline></script>
+<script src={i18nAssetUrl({ locale, part: 'critical' })} is:inline></script>
+<script src={i18nAssetUrl({ locale, part: 'rest' })} defer is:inline></script>

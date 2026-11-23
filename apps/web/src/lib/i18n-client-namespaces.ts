@@ -400,6 +400,36 @@ const ALL_CLIENT_PREFIXES: readonly string[] = [
 ];
 
 /**
+ * Keeps the keys of a flattened dictionary that some prefix covers. A prefix
+ * covers itself and every key beneath it (`nav.signIn` covers `nav.signIn` and
+ * `nav.signIn.aria`, never `nav.signInLater`).
+ *
+ * Shared by the client-asset narrowing below and by the critical/rest split of
+ * that asset (`./i18n-critical-prefixes`, HOS-2572), so both cut by the same
+ * rule.
+ *
+ * @param input.messages - A flattened `{ "namespace.key": value }` dictionary.
+ * @param input.prefixes - The prefixes to keep.
+ * @returns A new dictionary containing only the covered keys.
+ */
+export function pickKeysByPrefixes(input: {
+    readonly messages: Readonly<Record<string, string>>;
+    readonly prefixes: readonly string[];
+}): Record<string, string> {
+    const { messages, prefixes } = input;
+    const out: Record<string, string> = {};
+    for (const [key, value] of Object.entries(messages)) {
+        for (const prefix of prefixes) {
+            if (key === prefix || key.startsWith(`${prefix}.`)) {
+                out[key] = value;
+                break;
+            }
+        }
+    }
+    return out;
+}
+
+/**
  * Narrows a flattened `{ "namespace.key": value }` dictionary to the keys the
  * browser can actually name.
  *
@@ -409,14 +439,5 @@ const ALL_CLIENT_PREFIXES: readonly string[] = [
 export function pickClientNamespaces(
     messages: Readonly<Record<string, string>>
 ): Record<string, string> {
-    const out: Record<string, string> = {};
-    for (const [key, value] of Object.entries(messages)) {
-        for (const prefix of ALL_CLIENT_PREFIXES) {
-            if (key === prefix || key.startsWith(`${prefix}.`)) {
-                out[key] = value;
-                break;
-            }
-        }
-    }
-    return out;
+    return pickKeysByPrefixes({ messages, prefixes: ALL_CLIENT_PREFIXES });
 }
