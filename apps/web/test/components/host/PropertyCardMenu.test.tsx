@@ -119,4 +119,57 @@ describe('PropertyCardMenu', () => {
         await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
         expect(unpublishMock).not.toHaveBeenCalled();
     });
+
+    it('refuses Escape while the confirmed action is in flight, then shows its error', async () => {
+        // Arrange: the unpublish request stays open until we settle it.
+        let settle: (value: { ok: false }) => void = () => {};
+        unpublishMock.mockReturnValue(
+            new Promise((resolve) => {
+                settle = resolve;
+            })
+        );
+        render(
+            <PropertyCardMenu
+                locale="es"
+                label="Más acciones para Casa"
+                unpublish={UNPUBLISH}
+            />
+        );
+        openMenu();
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Despublicar' }));
+        const dialog = await screen.findByRole('alertdialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Sí, despublicar' }));
+        await waitFor(() => expect(unpublishMock).toHaveBeenCalledWith({ id: 'p1' }));
+
+        // Act: try to dismiss it mid-request, then let the request fail.
+        fireEvent.keyDown(dialog, { key: 'Escape' });
+        settle({ ok: false });
+
+        // Assert: still open, and the error is on screen.
+        expect(await screen.findByText('No se pudo despublicar.')).toBeInTheDocument();
+        expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    });
+
+    it('closes on Escape again once the failed action is no longer in flight', async () => {
+        // Arrange
+        unpublishMock.mockResolvedValue({ ok: false });
+        render(
+            <PropertyCardMenu
+                locale="es"
+                label="Más acciones para Casa"
+                unpublish={UNPUBLISH}
+            />
+        );
+        openMenu();
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Despublicar' }));
+        const dialog = await screen.findByRole('alertdialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Sí, despublicar' }));
+        await screen.findByText('No se pudo despublicar.');
+
+        // Act
+        fireEvent.keyDown(screen.getByRole('alertdialog'), { key: 'Escape' });
+
+        // Assert
+        await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    });
 });

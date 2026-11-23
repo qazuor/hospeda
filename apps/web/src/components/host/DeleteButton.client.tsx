@@ -76,6 +76,12 @@ export interface DeleteButtonProps {
     readonly startConfirming?: boolean;
     /** Called when the person cancels the confirmation (the menu closes its dialog). */
     readonly onCancel?: () => void;
+    /**
+     * Called with `true` when the request starts and `false` when it fails, so
+     * a host dialog can refuse to close while it is in flight (a closed dialog
+     * would hide the error). A success reloads the page and never reports false.
+     */
+    readonly onPendingChange?: (pending: boolean) => void;
 }
 
 /**
@@ -98,7 +104,8 @@ export function DeleteButton({
     confirmNo,
     errorText,
     startConfirming = false,
-    onCancel
+    onCancel,
+    onPendingChange
 }: DeleteButtonProps): JSX.Element {
     const [state, setState] = useState<DeleteState>(startConfirming ? 'confirming' : 'idle');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -156,12 +163,14 @@ export function DeleteButton({
         if (preview.status !== 'ready') return;
         setState('pending');
         setApiError(null);
+        onPendingChange?.(true);
 
         const result = await publishApi.purge({ vertical, id: listingId });
 
         if (!result.ok) {
             setApiError(errorText);
             setState('error');
+            onPendingChange?.(false);
             return;
         }
 

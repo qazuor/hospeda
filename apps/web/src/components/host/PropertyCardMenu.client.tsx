@@ -31,9 +31,12 @@ export interface PropertyCardMenuProps {
     /** «Ver en el sitio» link (published only); opens in a new tab. */
     readonly viewOnSite?: { readonly href: string; readonly label: string };
     /** Despublicar: the UnpublishButton props (published only). */
-    readonly unpublish?: Omit<UnpublishButtonProps, 'startConfirming' | 'onCancel'>;
+    readonly unpublish?: Omit<
+        UnpublishButtonProps,
+        'startConfirming' | 'onCancel' | 'onPendingChange'
+    >;
     /** Eliminar: the DeleteButton props (every state but purged). */
-    readonly remove?: Omit<DeleteButtonProps, 'startConfirming' | 'onCancel'>;
+    readonly remove?: Omit<DeleteButtonProps, 'startConfirming' | 'onCancel' | 'onPendingChange'>;
 }
 
 /**
@@ -51,7 +54,13 @@ export function PropertyCardMenu({
     remove
 }: PropertyCardMenuProps): JSX.Element | null {
     const [open, setOpen] = useState<OpenConfirm>(null);
+    // While a confirmed action is in flight the dialog refuses Escape, the
+    // backdrop and its close button: closing it would hide the error.
+    const [pending, setPending] = useState(false);
     const close = () => setOpen(null);
+    const requestClose = (next: boolean) => {
+        if (!next && !pending) close();
+    };
 
     const items: MenuItem[] = [];
     if (edit) items.push({ id: 'edit', label: edit.label, href: edit.href });
@@ -82,7 +91,7 @@ export function PropertyCardMenu({
             {unpublish ? (
                 <Dialog
                     open={open === 'unpublish'}
-                    onOpenChange={(next) => (next ? undefined : close())}
+                    onOpenChange={requestClose}
                     title={unpublish.label}
                     locale={locale}
                     size="sm"
@@ -93,6 +102,7 @@ export function PropertyCardMenu({
                             {...unpublish}
                             startConfirming
                             onCancel={close}
+                            onPendingChange={setPending}
                         />
                     ) : null}
                 </Dialog>
@@ -100,7 +110,7 @@ export function PropertyCardMenu({
             {remove ? (
                 <Dialog
                     open={open === 'delete'}
-                    onOpenChange={(next) => (next ? undefined : close())}
+                    onOpenChange={requestClose}
                     title={remove.label}
                     locale={locale}
                     size="sm"
@@ -111,6 +121,7 @@ export function PropertyCardMenu({
                             {...remove}
                             startConfirming
                             onCancel={close}
+                            onPendingChange={setPending}
                         />
                     ) : null}
                 </Dialog>
