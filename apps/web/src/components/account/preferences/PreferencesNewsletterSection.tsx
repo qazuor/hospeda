@@ -161,9 +161,9 @@ export function PreferencesNewsletterSection({
         });
     };
 
-    const handleSwitch = (next: boolean) => {
+    const handleSwitch = async (next: boolean) => {
         if (next) {
-            void setSubscribed(true).catch(() => undefined);
+            await setSubscribed(true).catch(() => undefined);
             return;
         }
         // Unsubscribing asks first, as the old page did.

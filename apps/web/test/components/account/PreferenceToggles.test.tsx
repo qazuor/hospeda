@@ -278,6 +278,8 @@ describe('PreferenceToggles: newsletter (D11)', () => {
         fireEvent.click(
             await screen.findByRole('switch', { name: /Recibir el newsletter por mail/ })
         );
+        // Unsubscribing asks first.
+        fireEvent.click(await screen.findByRole('button', { name: 'Desuscribirme' }));
         await waitFor(() => {
             expect(
                 callsTo({ fetchMock, method: 'DELETE', path: '/newsletter/unsubscribe' })
