@@ -770,8 +770,20 @@ Any act that cancels addons (A5: the owner withdrawal, the orphanhood run by a
 subscription cancellation or revocation, S12) answers 409 `ALREADY_EXISTS` with
 `reason: ADDON_LISTING_SOFT_DELETED` when a LISTING-scoped addon targets a listing
 that no longer resolves (legacy data). Nothing is cancelled: the act's transaction
-rolls back. It is never a 500. In the S12 cron the row is counted as failed and
-logged, the others go on, and it is retried on the next run.
+rolls back. It is never a 500.
+
+Check order on the owner withdrawal: 401, then 404 (not the owner's instance),
+then 409 `ADDON_NOT_WITHDRAWABLE`, then 409 `ADDON_LISTING_SOFT_DELETED`. The
+admin and self cancellation routes run their own 401, 403, 404 and state checks
+first; the listing check happens last, inside the transaction.
+
+In the S12 cron the row is counted as failed and the others go on. A
+`CANCEL_SCHEDULED` row blocked this way stays blocked on every run, and the service
+is never cut, until the legacy data is fixed (or the listing restored). It is
+detected from the run result (`rows[].error`, `failed` counters) and from the
+`logger.error` line `S12 failed on a principal; retried next run` (or `...on a
+complement...`). Any state of the addon blocks the row, because the candidate scan
+reads the listing before looking at the addon state.
 
 ## Actions 3 and 4 manual payment rejections
 
