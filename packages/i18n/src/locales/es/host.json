@@ -938,6 +938,20 @@
         "specialOffer": {
             "label": "Describí el beneficio",
             "help": "Contá el beneficio en pocas palabras, por ejemplo 2x1 en tragos."
+        },
+        "kit": {
+            "sectionTitle": "Tus promociones",
+            "statusLabel": "Estado",
+            "validityLabel": "Vigencia",
+            "validRange": "Del {{from}} al {{until}}",
+            "validOpen": "Desde el {{from}}, sin vencimiento",
+            "editNamed": "Editar «{{title}}»",
+            "deleteNamed": "Eliminar «{{title}}»",
+            "deleteTitle": "¿Eliminar «{{title}}»?",
+            "benefitSection": "La promoción",
+            "conditionsSection": "Condiciones",
+            "loadFailedHint": "Volvé a la lista e intentá de nuevo.",
+            "backToList": "Volver a mis promociones"
         }
     },
     "dashboard": {
