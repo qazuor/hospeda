@@ -46,8 +46,18 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const partnerService = new PartnerService({ logger: apiLogger });
 
 /**
+ * Formats a partner logo may use. Narrower than the entity allowlist on
+ * purpose: HEIC and AVIF are refused here, as the route description promises.
+ */
+export const PARTNER_LOGO_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
+/**
  * Handler for the logo upload. Exported standalone so it is unit-testable
  * against a mocked `Context` without booting Hono.
+ *
+ * Follows `apps/api/docs/error-contract.md`: the input (size, multipart shape,
+ * presence, emptiness, type and content) is judged first, then existence (no
+ * partner listing → 404), and only then the provider (503).
  *
  * @param ctx - The Hono request context (multipart body)
  * @returns The upload result, or an error response
@@ -57,32 +67,6 @@ export async function handleUploadMyPartnerLogo(ctx: Context) {
     ctx.header('Cache-Control', 'no-store');
 
     const actor = getActorFromContext(ctx);
-
-    // Resolve the listing from the actor before reading the body: an account
-    // with no partner listing has nothing to upload for.
-    const owned = await partnerService.getOwn(actor);
-    if (owned.error) {
-        throw new ServiceError(owned.error.code, owned.error.message);
-    }
-    const partner = owned.data?.partner ?? null;
-    if (partner === null) {
-        throw new ServiceError(
-            ServiceErrorCode.NOT_FOUND,
-            'No partner listing is owned by this account'
-        );
-    }
-
-    const provider = getMediaProvider();
-    if (!provider) {
-        return createErrorResponse(
-            {
-                code: 'CLOUDINARY_NOT_CONFIGURED',
-                message: 'Media upload service is not configured'
-            },
-            ctx,
-            503
-        );
-    }
 
     const lengthError = validateContentLength(Number(ctx.req.header('content-length') ?? 0));
     if (lengthError) {
@@ -121,11 +105,48 @@ export async function handleUploadMyPartnerLogo(ctx: Context) {
         );
     }
 
+    if (!(PARTNER_LOGO_ALLOWED_MIME_TYPES as readonly string[]).includes(fileEntry.type)) {
+        return createErrorResponse(
+            {
+                code: 'UNPROCESSABLE_ENTITY',
+                message: 'File validation failed: INVALID_FILE_TYPE'
+            },
+            ctx,
+            422
+        );
+    }
+
     const buffer = Buffer.from(await fileEntry.arrayBuffer());
 
     const fileError = validateFile(buffer, fileEntry.type);
     if (fileError) {
         return createErrorResponse(fileError, ctx, fileError.status);
+    }
+
+    // The listing is resolved from the actor, never from the request: an
+    // account with no partner listing has nothing to upload for.
+    const owned = await partnerService.getOwn(actor);
+    if (owned.error) {
+        throw new ServiceError(owned.error.code, owned.error.message);
+    }
+    const partner = owned.data?.partner ?? null;
+    if (partner === null) {
+        throw new ServiceError(
+            ServiceErrorCode.NOT_FOUND,
+            'No partner listing is owned by this account'
+        );
+    }
+
+    const provider = getMediaProvider();
+    if (!provider) {
+        return createErrorResponse(
+            {
+                code: 'CLOUDINARY_NOT_CONFIGURED',
+                message: 'Media upload service is not configured'
+            },
+            ctx,
+            503
+        );
     }
 
     const result = await uploadToProvider(provider, {
