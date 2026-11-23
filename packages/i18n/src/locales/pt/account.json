@@ -1324,7 +1324,7 @@
         "steps": {
             "basics": "Seus dados",
             "preferences": "Preferências",
-            "confirm": "Confirmar"
+            "confirm": "Confirmação"
         },
         "stepsLabel": "Progresso do seu perfil"
     },
@@ -1978,7 +1978,7 @@
         "accountNotice": "Você vai alterar a senha desta conta:",
         "successTitle": "Senha atualizada",
         "successSection": "Tudo pronto",
-        "continue": "Continuar",
+        "continue": "Avançar",
         "back": "Voltar",
         "sectionTitle": "Sua nova senha"
     },
