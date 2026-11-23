@@ -113,7 +113,9 @@ const draftCampaign: SelectNewsletterCampaign = {
     createdBy: ACTOR_ID,
     createdAt: new Date('2025-05-01T00:00:00Z'),
     updatedAt: new Date('2025-05-01T00:00:00Z'),
-    deletedAt: null
+    deletedAt: null,
+    attributionSlug: null,
+    umamiPixelSlug: null
 };
 
 const validCreateBody = {

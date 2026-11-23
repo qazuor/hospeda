@@ -29,6 +29,12 @@ vi.mock('../../src/utils/env', () => ({
 
 const { sendAppEmail } = await import('../../src/utils/email-sender');
 
+const TEST_ATTRIBUTION = {
+    medium: 'transactional',
+    templateKey: 'auth.reset-password',
+    includePixel: true
+} as const;
+
 describe('sendAppEmail', () => {
     beforeEach(() => {
         mockSendEmail.mockReset();
@@ -47,7 +53,8 @@ describe('sendAppEmail', () => {
             client: {} as never,
             to: 'user@example.com',
             subject: 'Restablece tu contraseña de Hospeda',
-            react: {} as never
+            react: {} as never,
+            attribution: TEST_ATTRIBUTION
         });
 
         // Assert
@@ -55,6 +62,8 @@ describe('sendAppEmail', () => {
         const [input] = mockSendEmail.mock.calls[0] as [Record<string, unknown>];
         expect(input.subject).toBe('[STAGING] Restablece tu contraseña de Hospeda');
         expect(input.fromName).toBe('Hospeda [STAGING]');
+        // HOS-2359: the attribution reaches @repo/email untouched
+        expect(input.attribution).toEqual(TEST_ATTRIBUTION);
     });
 
     it('sends production email unmarked', async () => {
@@ -66,7 +75,8 @@ describe('sendAppEmail', () => {
             client: {} as never,
             to: 'user@example.com',
             subject: 'Restablece tu contraseña de Hospeda',
-            react: {} as never
+            react: {} as never,
+            attribution: TEST_ATTRIBUTION
         });
 
         // Assert
@@ -86,7 +96,8 @@ describe('sendAppEmail', () => {
             client: {} as never,
             to: 'user@example.com',
             subject: 'Aviso',
-            react: {} as never
+            react: {} as never,
+            attribution: TEST_ATTRIBUTION
         });
 
         // Assert
@@ -105,7 +116,8 @@ describe('sendAppEmail', () => {
             client: {} as never,
             to: 'user@example.com',
             subject: 'Aviso',
-            react: {} as never
+            react: {} as never,
+            attribution: TEST_ATTRIBUTION
         });
 
         // Assert

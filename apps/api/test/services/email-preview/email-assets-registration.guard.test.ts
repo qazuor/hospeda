@@ -27,7 +27,13 @@ describe('HOS-2540: email assets are configured at API startup', () => {
 
     it('passes the validated HOSPEDA_SITE_URL', () => {
         expect(indexSource).toMatch(
-            /configureEmailAssets\(\s*\{\s*siteUrl:\s*env\.HOSPEDA_SITE_URL\s*\}\s*\)/
+            /configureEmailAssets\(\s*\{\s*siteUrl:\s*env\.HOSPEDA_SITE_URL\s*[,}]/
+        );
+    });
+
+    it('passes the Umami URL as the open-pixel origin (HOS-2359)', () => {
+        expect(indexSource).toMatch(
+            /configureEmailAssets\(\s*\{[^}]*pixelBaseUrl:\s*checkEmailPixelBaseUrl\(\s*\{\s*umamiUrl:\s*env\.HOSPEDA_UMAMI_URL/s
         );
     });
 

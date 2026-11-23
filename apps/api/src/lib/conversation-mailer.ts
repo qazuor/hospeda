@@ -37,6 +37,10 @@ import type {
     ConversationMailer,
     VerificationEmailPayload
 } from '@repo/service-core';
+import {
+    buildTransactionalAttribution,
+    CONVERSATION_EMAIL_KEYS
+} from '../utils/email-attribution.js';
 import { sendAppEmail } from '../utils/email-sender.js';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
@@ -88,6 +92,9 @@ export function createConversationMailer(): ConversationMailer | undefined {
                     verificationUrl: payload.verificationUrl,
                     guestName: payload.guestName,
                     locale: payload.locale
+                }),
+                attribution: buildTransactionalAttribution({
+                    templateKey: CONVERSATION_EMAIL_KEYS.verify
                 })
             });
 
@@ -121,6 +128,9 @@ export function createConversationMailer(): ConversationMailer | undefined {
                     verificationUrl: payload.accessUrl,
                     guestName: payload.guestName,
                     locale: payload.locale
+                }),
+                attribution: buildTransactionalAttribution({
+                    templateKey: CONVERSATION_EMAIL_KEYS.accessLink
                 })
             });
 

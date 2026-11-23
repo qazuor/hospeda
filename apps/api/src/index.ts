@@ -46,6 +46,7 @@ import { createTranslationServiceAdapter } from './services/translation-service.
 import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { subscribeEffectiveSetCoverageInvalidation } from './utils/effective-set-coverage-invalidation';
+import { checkEmailPixelBaseUrl } from './utils/email-pixel-config';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { subscribeListingFeaturedSync } from './utils/listing-featured/featured-sync-listener';
@@ -69,7 +70,17 @@ validateApiEnv();
 // serves it, production may not yet). Runs before the cron scheduler, the outbox
 // sender and the admin previewer can render a single email; they all live in this
 // one process (tsup builds a single entry).
-configureEmailAssets({ siteUrl: env.HOSPEDA_SITE_URL });
+// HOS-2359: emails carry one Umami open pixel, served by the public Umami origin.
+// `@repo/email` renders it only for an `https:` URL; a non-https one in production
+// is warned here, once.
+configureEmailAssets({
+    siteUrl: env.HOSPEDA_SITE_URL,
+    pixelBaseUrl: checkEmailPixelBaseUrl({
+        umamiUrl: env.HOSPEDA_UMAMI_URL,
+        nodeEnv: env.NODE_ENV,
+        logger: apiLogger
+    })
+});
 
 // Apply the global logger LEVEL and output FORMAT at server bootstrap (both are
 // process-wide settings). Previously only FORMAT was wired, so the level stayed
