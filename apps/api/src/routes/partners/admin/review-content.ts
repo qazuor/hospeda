@@ -16,6 +16,7 @@ import { PermissionEnum, partnerSchema } from '@repo/schemas';
 import { PartnerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { deletePartnerLogoOrphans } from '../../../services/partner-presence/partner-logo-orphan-cleanup';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -55,6 +56,14 @@ export const adminReviewPartnerContentRoute = createAdminRoute({
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        // Decision 16: the replaced live logo, or the rejected pending one.
+        if (result.data) {
+            await deletePartnerLogoOrphans({
+                partnerId: id,
+                urls: result.data.discardedLogoUrls
+            });
         }
 
         return result.data?.partner;
