@@ -313,14 +313,16 @@ export function VenueEventsManager({
             result.error.status === 400
                 ? describeAgendaSaveError({ message: result.error.message, entries, t })
                 : null;
-        setMessage(
-            specific ??
+        // Told by the save bar alone (owner decision 7), never repeated below.
+        return {
+            ok: false,
+            message:
+                specific ??
                 t(
                     'venue.owner.editor.venueEventsManager.saveError',
                     'No se pudo guardar la agenda.'
                 )
-        );
-        return { ok: false };
+        };
     }, [basePath, entries, t, upsellPlanName]);
 
     /**

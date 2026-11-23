@@ -212,11 +212,12 @@ export function PromotionForm({
                 onVipOnlyChange={form.onVipOnlyChange}
             />
 
-            {failure ? (
+            {/* A generic failure is told by the save bar alone (owner decision 7);
+                a limit or entitlement refusal keeps this notice for its plans CTA. */}
+            {failure && failure.kind !== 'generic' ? (
                 <Alert
-                    tone={failure.kind === 'generic' ? 'danger' : 'warning'}
+                    tone="warning"
                     locale={locale}
-                    title={failure.message}
                     action={
                         failure.kind === 'entitlement' ? (
                             <LinkButton
@@ -255,6 +256,7 @@ export function PromotionForm({
             <StickySaveBar
                 locale={locale}
                 status={saveBar.status}
+                errorMessage={failure?.message}
                 onSave={() => void saveBar.save()}
                 onDiscard={saveBar.discard}
                 onGoToFirstError={() => {

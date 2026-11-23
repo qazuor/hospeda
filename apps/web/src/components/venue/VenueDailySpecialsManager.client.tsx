@@ -279,10 +279,14 @@ export function VenueDailySpecialsManager({
             return { ok: false };
         }
 
-        setMessage(
-            t('venue.owner.editor.dailySpecials.saveError', 'No se pudo guardar el menú del día.')
-        );
-        return { ok: false };
+        // Told by the save bar alone (owner decision 7), never repeated below.
+        return {
+            ok: false,
+            message: t(
+                'venue.owner.editor.dailySpecials.saveError',
+                'No se pudo guardar el menú del día.'
+            )
+        };
     }, [basePath, specials, t, upsellPlanName]);
 
     /**
