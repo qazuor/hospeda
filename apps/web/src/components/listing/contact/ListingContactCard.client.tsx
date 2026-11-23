@@ -17,6 +17,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
     buildInquiryMessage,
+    toInquiryFields,
     validateInquiryFields
 } from '@/lib/listing-contact/build-inquiry-message';
 import styles from './ListingContactCard.module.css';
@@ -27,6 +28,8 @@ export interface ListingContactCardProps {
     readonly accommodationName: string;
     readonly hasWhatsapp: boolean;
     readonly whatsappPlansHref: string;
+    /** Plan names shown in the WhatsApp upsell, read from the catalog by the page. */
+    readonly gatePlanNames?: readonly string[];
     readonly phone?: string | null;
     readonly capacity?: number | null;
     /** Message prefilled from the search context; replaced once the visitor fills a field. */
@@ -46,6 +49,7 @@ export function ListingContactCard({
     accommodationName,
     hasWhatsapp,
     whatsappPlansHref,
+    gatePlanNames = [],
     phone,
     capacity,
     initialMessage,
@@ -104,6 +108,8 @@ export function ListingContactCard({
         if (result.message !== undefined) setDraft(result.message);
     }
 
+    // HOS-2534: the booking fields travel as columns only while they validate.
+    const inquiry = errors ? undefined : toInquiryFields(values);
     const tel = phone?.trim().replace(/[\s().-]/g, '');
     const phoneHref = tel && /^\+?\d+$/.test(tel) ? `tel:${tel}` : undefined;
 
@@ -151,6 +157,7 @@ export function ListingContactCard({
                 locale={locale}
                 initialMessage={draft}
                 initialMessageInvalid={Boolean(errors)}
+                inquiry={inquiry}
                 onMessageEdited={() => setMessageEdited(true)}
                 origin="sidebar"
             />
@@ -167,6 +174,7 @@ export function ListingContactCard({
                             accommodationId={accommodation.id}
                             accommodationName={accommodationName}
                             plansHref={whatsappPlansHref}
+                            gatePlanNames={gatePlanNames}
                             locale={locale}
                             origin="sidebar"
                         />

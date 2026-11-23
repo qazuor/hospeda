@@ -3,7 +3,8 @@
  * @description HOS-2531 (AC-2.7): the desktop sidebar card feeds the inquiry through the
  * same message builder as the mobile sheet and shows the "contact directly" row.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { CreateConversationAnonSchema } from '@repo/schemas';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ListingContactCard,
@@ -52,6 +53,7 @@ function message(): HTMLTextAreaElement {
 describe('ListingContactCard', () => {
     afterEach(() => {
         vi.clearAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it('renders the three booking fields next to the host form', () => {
@@ -126,6 +128,90 @@ describe('ListingContactCard', () => {
             />
         );
         expect(message().value).toBe('Hola, estoy mirando del 9/1 al 11/1.');
+    });
+
+    describe('structured inquiry fields (HOS-2534)', () => {
+        function stubFetch() {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+            vi.stubGlobal('fetch', fetchMock);
+            return fetchMock;
+        }
+
+        async function submitAsGuest() {
+            fireEvent.change(screen.getByRole('textbox', { name: /^Nombre/ }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /^Email|^Correo/ }), {
+                target: { value: 'ana@example.test' }
+            });
+            await act(async () =>
+                fireEvent.click(
+                    screen.getByRole('button', { name: t('conversations.form.submit') })
+                )
+            );
+        }
+
+        it('sends dates and guests as columns and in the message', async () => {
+            const fetchMock = stubFetch();
+            render(<ListingContactCard {...baseProps} />);
+
+            fireEvent.change(screen.getByLabelText('Llegada'), { target: { value: '2027-01-09' } });
+            fireEvent.change(screen.getByLabelText('Salida'), { target: { value: '2027-01-11' } });
+            fireEvent.change(screen.getByLabelText('Huéspedes'), { target: { value: '4' } });
+            await submitAsGuest();
+
+            expect(fetchMock).toHaveBeenCalledOnce();
+            const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+            expect(CreateConversationAnonSchema.safeParse(body).success).toBe(true);
+            expect(body).toMatchObject({
+                accommodationId: baseProps.accommodation.id,
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 4
+            });
+            expect(body.message).toContain('9/1');
+        });
+
+        it('sends only the booking fields the visitor filled', async () => {
+            const fetchMock = stubFetch();
+            render(<ListingContactCard {...baseProps} />);
+
+            fireEvent.change(screen.getByLabelText('Huéspedes'), { target: { value: '2' } });
+            await submitAsGuest();
+
+            const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+            expect(body.guests).toBe(2);
+            expect(body).not.toHaveProperty('checkIn');
+            expect(body).not.toHaveProperty('checkOut');
+        });
+
+        it('sends no booking fields when the visitor filled none', async () => {
+            const fetchMock = stubFetch();
+            render(<ListingContactCard {...baseProps} />);
+
+            await submitAsGuest();
+
+            const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+            expect(body).not.toHaveProperty('checkIn');
+            expect(body).not.toHaveProperty('checkOut');
+            expect(body).not.toHaveProperty('guests');
+        });
+
+        it('sends no booking fields while they are invalid', async () => {
+            const fetchMock = stubFetch();
+            render(<ListingContactCard {...baseProps} />);
+
+            fireEvent.change(screen.getByLabelText('Llegada'), { target: { value: '2027-01-11' } });
+            fireEvent.change(screen.getByLabelText('Salida'), { target: { value: '2027-01-09' } });
+            fireEvent.change(message(), { target: { value: 'Consulta propia' } });
+            await submitAsGuest();
+
+            const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+            expect(body).not.toHaveProperty('checkIn');
+            expect(body).not.toHaveProperty('checkOut');
+        });
     });
 
     describe('contact directly row', () => {
