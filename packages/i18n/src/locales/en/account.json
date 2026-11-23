@@ -2181,6 +2181,20 @@
         "editorShell": {
             "backToHub": "Back to the editor",
             "backToList": "Back to the list"
+        },
+        "hoursEditor": {
+            "title": "Opening hours",
+            "hint": "Turn on the days you open and add their time slots. «Copy to every day» repeats one day's hours across the week.",
+            "open": "Open",
+            "closed": "Closed",
+            "openAria": "{{day}} open",
+            "openTimeAria": "{{day}}, slot {{index}} opening time",
+            "closeTimeAria": "{{day}}, slot {{index}} closing time",
+            "removeSlotAria": "Remove slot {{index}} from {{day}}",
+            "addSlot": "Add slot",
+            "addSlotAria": "Add slot to {{day}}",
+            "copyToAll": "Copy to every day",
+            "copyToAllAria": "Copy to every day the hours of {{day}}"
         }
     },
     "ownerDashboard": {
@@ -2215,5 +2229,33 @@
         "trafficHint_one": "in the last {{days}} days · {{unique}} person",
         "trafficHint_other": "in the last {{days}} days · {{unique}} people",
         "trafficLockedDescription": "Visits to your listings come with these plans."
+    },
+    "editorFields": {
+        "contact": {
+            "title": "Contact details",
+            "publicHint": "These contact details are shown publicly on your listing.",
+            "phone": "Phone",
+            "landline": "Landline",
+            "whatsapp": "WhatsApp",
+            "email": "Email",
+            "website": "Website",
+            "whatsappVisibility": {
+                "legend": "Who sees the WhatsApp button",
+                "PUBLIC": "Everyone",
+                "LOGGED_IN_ONLY": "Only signed-in people",
+                "publicWarning": "Your number will be visible on the page and anyone can copy it, including automated programs.",
+                "loggedInHint": "The number is not shown on the page: only people who signed in can see it."
+            }
+        },
+        "social": {
+            "title": "Social networks",
+            "hint": "Paste the link of each profile you want to show on your listing.",
+            "facebook": "Facebook",
+            "instagram": "Instagram",
+            "twitter": "X (Twitter)",
+            "tiktok": "TikTok",
+            "youtube": "YouTube",
+            "linkedIn": "LinkedIn"
+        }
     }
 }

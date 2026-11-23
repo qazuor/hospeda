@@ -39,7 +39,7 @@ export function useListingEditState({
     // the change without a full page reload.
     const [baseline, setBaseline] = useState<ListingEditData>(buildInitialEditData);
 
-    const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
+    const [status, setStatus] = useState<ListingSaveStatus>({ kind: 'idle' });
 
     /**
      * Generic single-field change, shared by every scalar input in the form —

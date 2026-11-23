@@ -2181,6 +2181,20 @@
         "editorShell": {
             "backToHub": "Voltar ao editor",
             "backToList": "Voltar à lista"
+        },
+        "hoursEditor": {
+            "title": "Horário de funcionamento",
+            "hint": "Ative os dias em que você abre e cadastre os horários. Com «Copiar para todos os dias» você repete o horário de um dia na semana inteira.",
+            "open": "Aberto",
+            "closed": "Fechado",
+            "openAria": "{{day}} aberto",
+            "openTimeAria": "{{day}}, abertura do horário {{index}}",
+            "closeTimeAria": "{{day}}, fechamento do horário {{index}}",
+            "removeSlotAria": "Remover o horário {{index}} de {{day}}",
+            "addSlot": "Adicionar horário",
+            "addSlotAria": "Adicionar horário em {{day}}",
+            "copyToAll": "Copiar para todos os dias",
+            "copyToAllAria": "Copiar para todos os dias o horário de {{day}}"
         }
     },
     "ownerDashboard": {
@@ -2215,5 +2229,33 @@
         "trafficHint_one": "nos últimos {{days}} dias · {{unique}} pessoa",
         "trafficHint_other": "nos últimos {{days}} dias · {{unique}} pessoas",
         "trafficLockedDescription": "As visitas aos seus anúncios vêm com estes planos."
+    },
+    "editorFields": {
+        "contact": {
+            "title": "Dados de contato",
+            "publicHint": "Estes dados de contato aparecem publicamente no seu anúncio.",
+            "phone": "Telefone",
+            "landline": "Telefone fixo",
+            "whatsapp": "WhatsApp",
+            "email": "E-mail",
+            "website": "Site",
+            "whatsappVisibility": {
+                "legend": "Quem vê o botão do WhatsApp",
+                "PUBLIC": "Todas as pessoas",
+                "LOGGED_IN_ONLY": "Só pessoas com sessão iniciada",
+                "publicWarning": "Seu número vai ficar visível na página e qualquer pessoa pode copiá-lo, inclusive programas automáticos.",
+                "loggedInHint": "O número não aparece na página: só quem iniciou sessão consegue vê-lo."
+            }
+        },
+        "social": {
+            "title": "Redes sociais",
+            "hint": "Cole o link de cada perfil que você quer mostrar no seu anúncio.",
+            "facebook": "Facebook",
+            "instagram": "Instagram",
+            "twitter": "X (Twitter)",
+            "tiktok": "TikTok",
+            "youtube": "YouTube",
+            "linkedIn": "LinkedIn"
+        }
     }
 }

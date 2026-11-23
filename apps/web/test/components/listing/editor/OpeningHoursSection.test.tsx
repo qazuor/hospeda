@@ -1,37 +1,35 @@
 /**
  * @file OpeningHoursSection.test.tsx
- * @description Unit coverage for the listing editor's opening-hours section
- * (HOS-258).
+ * @description The listing editor's opening-hours section on the kit
+ * `HoursEditor` (HOS-258, HOS-2491).
  *
  * The section is fully controlled and rebuilds the COMPLETE `OpeningHours` on
  * every edit, so most of the value here is asserting that an edit to one day
- * never drops the others or the timezone.
+ * never drops the others or the timezone, and that the errors land on the
+ * exact control (HOS-814).
  *
  * @module test/components/listing/editor/OpeningHoursSection
  */
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+
 import type { OpeningHours } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { OpeningHoursSection } from '../../../../src/components/listing/editor/OpeningHoursSection.client';
+import {
+    fromHoursWeek,
+    OpeningHoursSection,
+    toHoursWeek
+} from '@/components/listing/editor/OpeningHoursSection.client';
 
-vi.mock('../../../../src/lib/i18n', () => ({
-    createTranslations: () => ({
-        t: (key: string, fallback?: string, params?: Record<string, unknown>) =>
-            (fallback ?? `[MISSING:${key}]`).replace(/\{\{(\w+)\}\}/g, (_m, name: string) =>
-                String(params?.[name] ?? '')
-            )
-    })
-}));
-
-/** An OpeningHours with Tuesday already configured and a non-default timezone. */
+/** Tuesday configured and a non-default timezone. */
 const seeded = {
     timezone: 'America/Montevideo',
-    days: {
-        tue: { closed: false, shifts: [{ open: '10:00', close: '14:00' }] }
-    }
+    days: { tue: { closed: false, shifts: [{ open: '10:00', close: '14:00' }] } }
 } as unknown as OpeningHours;
+
+type Emitted = {
+    timezone: string;
+    days: Record<string, { closed: boolean; shifts: Array<{ open: string; close: string }> }>;
+};
 
 function renderSection(overrides: Partial<React.ComponentProps<typeof OpeningHoursSection>> = {}): {
     onChange: ReturnType<typeof vi.fn>;
@@ -40,6 +38,7 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof OpeningHou
     render(
         <OpeningHoursSection
             locale="es"
+            vertical="venue"
             value={null}
             errors={{}}
             onChange={onChange}
@@ -49,51 +48,49 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof OpeningHou
     return { onChange };
 }
 
-/** The OpeningHours emitted by the most recent onChange call. */
-function lastEmitted(onChange: ReturnType<typeof vi.fn>): {
-    timezone: string;
-    days: Record<string, { closed: boolean; shifts: Array<{ open: string; close: string }> }>;
-} {
+function lastEmitted(onChange: ReturnType<typeof vi.fn>): Emitted {
     return onChange.mock.calls.at(-1)?.[0];
 }
 
 describe('OpeningHoursSection', () => {
-    it('renders one row per ISO weekday', () => {
+    it('renders one kit Section with the horarios help anchor and seven days', () => {
         renderSection();
 
-        for (const label of ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']) {
-            expect(screen.getByText(label)).toBeInTheDocument();
+        expect(screen.getByRole('region', { name: 'Horarios de atención' })).toHaveAttribute(
+            'data-help',
+            'section:venue.horarios'
+        );
+        expect(screen.getAllByRole('switch')).toHaveLength(7);
+        for (const day of [
+            'Lunes',
+            'Martes',
+            'Miércoles',
+            'Jueves',
+            'Viernes',
+            'Sábado',
+            'Domingo'
+        ]) {
+            expect(screen.getByText(day)).toBeInTheDocument();
         }
     });
 
-    it('marks a day closed and clears its shifts', () => {
-        const { onChange } = renderSection({ value: seeded });
+    it('reads a day nobody configured as closed (HOS-906)', () => {
+        renderSection({ value: seeded });
 
-        fireEvent.click(screen.getByLabelText('Mar cerrado'));
-
-        expect(lastEmitted(onChange).days.tue).toEqual({ closed: true, shifts: [] });
+        expect(screen.getByRole('switch', { name: 'Lunes abierto' })).toHaveAttribute(
+            'aria-checked',
+            'false'
+        );
+        expect(screen.getByRole('switch', { name: 'Martes abierto' })).toHaveAttribute(
+            'aria-checked',
+            'true'
+        );
     });
 
-    it('preserves the other days when one is edited', () => {
+    it('opens a closed day with one default slot (HOS-2446)', () => {
         const { onChange } = renderSection({ value: seeded });
 
-        // Monday is absent from `seeded.days`, so it renders at `dayOf()`'s
-        // default — CLOSED since HOS-906 — and this click UNchecks it.
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
-
-        const emitted = lastEmitted(onChange);
-        expect(emitted.days.mon.closed).toBe(false);
-        // Editing Monday must not wipe Tuesday's configured shift.
-        expect(emitted.days.tue).toEqual({
-            closed: false,
-            shifts: [{ open: '10:00', close: '14:00' }]
-        });
-    });
-
-    it('seeds a default 09:00-18:00 shift when "Cerrado" is unticked (HOS-2446)', () => {
-        const { onChange } = renderSection();
-
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByRole('switch', { name: 'Lunes abierto' }));
 
         expect(lastEmitted(onChange).days.mon).toEqual({
             closed: false,
@@ -101,308 +98,156 @@ describe('OpeningHoursSection', () => {
         });
     });
 
-    it('keeps the existing shifts when re-opening a day that already had them (HOS-2446)', () => {
-        const wasClosedWithShifts = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: { mon: { closed: true, shifts: [{ open: '08:00', close: '12:00' }] } }
-        } as unknown as OpeningHours;
-        const { onChange } = renderSection({ value: wasClosedWithShifts });
-
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
-
-        expect(lastEmitted(onChange).days.mon.shifts).toEqual([{ open: '08:00', close: '12:00' }]);
-    });
-
-    it('wraps the shift row so it does not overflow on narrow screens (HOS-2446)', () => {
-        const css = readFileSync(
-            resolve(
-                __dirname,
-                '../../../../src/components/listing/editor/OpeningHoursSection.module.css'
-            ),
-            'utf8'
-        );
-        expect(css).toMatch(/\.shiftRow\s*\{[^}]*flex-wrap:\s*wrap/);
-    });
-
-    it('emits all seven days on every edit, not just the touched one', () => {
-        const { onChange } = renderSection();
-
-        fireEvent.click(screen.getByLabelText('Vie cerrado'));
-
-        expect(Object.keys(lastEmitted(onChange).days).sort()).toEqual(
-            ['fri', 'mon', 'sat', 'sun', 'thu', 'tue', 'wed'].sort()
-        );
-    });
-
-    it('preserves a non-default timezone', () => {
+    it('closes an open day and clears its slots', () => {
         const { onChange } = renderSection({ value: seeded });
 
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByRole('switch', { name: 'Martes abierto' }));
 
-        expect(lastEmitted(onChange).timezone).toBe('America/Montevideo');
+        expect(lastEmitted(onChange).days.tue).toEqual({ closed: true, shifts: [] });
+    });
+
+    it('emits all seven days and keeps the timezone on every edit', () => {
+        const { onChange } = renderSection({ value: seeded });
+
+        fireEvent.change(screen.getByLabelText('Martes, cierre de la franja 1'), {
+            target: { value: '15:00' }
+        });
+
+        const emitted = lastEmitted(onChange);
+        expect(Object.keys(emitted.days)).toEqual([
+            'mon',
+            'tue',
+            'wed',
+            'thu',
+            'fri',
+            'sat',
+            'sun'
+        ]);
+        expect(emitted.timezone).toBe('America/Montevideo');
+        expect(emitted.days.tue?.shifts).toEqual([{ open: '10:00', close: '15:00' }]);
+        expect(emitted.days.mon).toEqual({ closed: true, shifts: [] });
     });
 
     it('defaults the timezone when the listing had none', () => {
         const { onChange } = renderSection();
 
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByRole('switch', { name: 'Lunes abierto' }));
 
         expect(lastEmitted(onChange).timezone).toBe('America/Argentina/Buenos_Aires');
     });
 
-    it('adds a shift with sensible default hours', () => {
-        // HOS-906: an untouched day now defaults to CLOSED, which hides the
-        // add-shift control — seed Monday explicitly as open-with-no-shifts
-        // (the legitimate in-progress state while the host is building it)
-        // to reach the button this test exercises.
-        const openNoShifts = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: { mon: { closed: false, shifts: [] } }
-        } as unknown as OpeningHours;
-        const { onChange } = renderSection({ value: openNoShifts });
-
-        fireEvent.click(screen.getByLabelText('Agregar turno Lun'));
-
-        expect(lastEmitted(onChange).days.mon.shifts).toEqual([{ open: '09:00', close: '18:00' }]);
-    });
-
-    it('edits the open and close times of an existing shift', () => {
+    it('adds a slot to an open day', () => {
         const { onChange } = renderSection({ value: seeded });
 
-        fireEvent.change(screen.getByLabelText('Mar apertura 1'), { target: { value: '11:30' } });
-        expect(lastEmitted(onChange).days.tue.shifts).toEqual([{ open: '11:30', close: '14:00' }]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar franja a Martes' }));
 
-        fireEvent.change(screen.getByLabelText('Mar cierre 1'), { target: { value: '20:00' } });
-        expect(lastEmitted(onChange).days.tue.shifts).toEqual([{ open: '10:00', close: '20:00' }]);
+        expect(lastEmitted(onChange).days.tue?.shifts).toEqual([
+            { open: '10:00', close: '14:00' },
+            { open: '09:00', close: '18:00' }
+        ]);
     });
 
-    it('removes a shift', () => {
+    it('closes the day when its last slot is removed', () => {
         const { onChange } = renderSection({ value: seeded });
 
-        fireEvent.click(screen.getByLabelText('Quitar turno Mar 1'));
+        fireEvent.click(screen.getByRole('button', { name: 'Quitar la franja 1 de Martes' }));
 
-        expect(lastEmitted(onChange).days.tue.shifts).toEqual([]);
+        expect(lastEmitted(onChange).days.tue).toEqual({ closed: true, shifts: [] });
     });
 
-    it('hides the shift controls for a closed day', () => {
-        // HOS-906: Tuesday must be seeded explicitly OPEN — an untouched day
-        // now defaults to closed too, which would hide BOTH add-shift buttons
-        // and defeat the "open day still shows it" half of this assertion.
-        const closed = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: {
-                mon: { closed: true, shifts: [] },
-                tue: { closed: false, shifts: [{ open: '09:00', close: '18:00' }] }
-            }
-        } as unknown as OpeningHours;
-        renderSection({ value: closed });
+    it('copies one day to the whole week, each with its own slot objects', () => {
+        const { onChange } = renderSection({ value: seeded });
 
-        expect(screen.queryByLabelText('Agregar turno Lun')).toBeNull();
-        expect(screen.getByLabelText('Agregar turno Mar')).toBeInTheDocument();
-    });
-
-    // -----------------------------------------------------------------------
-    // HOS-814 — a rejected schedule must MARK a control, not just raise a toast
-    //
-    // Before this, the section was handed `fieldErrors.openingHours`, a key Zod
-    // never produces: it reports at the deepest path
-    // (`openingHours.days.mon.shifts.0.close`). So a rejected schedule rendered
-    // no message and marked no input, while the toast told the user to review
-    // fields that carried no mark anywhere on the page.
-    //
-    // These assert the MARK and the ASSOCIATION, never just that some text is
-    // on screen — a message floating in the document with no `aria-describedby`
-    // pointing at it is the bug this closes, and it would satisfy a getByText.
-    // -----------------------------------------------------------------------
-
-    it('surfaces the aggregate section error', () => {
-        renderSection({ errors: { openingHours: 'Horario inválido' } });
-
-        expect(screen.getByText('Horario inválido')).toBeInTheDocument();
-    });
-
-    it('marks the group and points its first control at the aggregate message', () => {
-        // No per-shift entry: the rejection is of the object itself, so the
-        // aggregate copy is the only message there is.
-        renderSection({ errors: { openingHours: 'Horario inválido' } });
-
-        // The group's first control is the one carrying the derived field id,
-        // and the one `focusFirstInvalidField` lands on.
-        const firstControl = screen.getByLabelText('Lun cerrado');
-        expect(firstControl).toHaveAttribute('aria-invalid', 'true');
-
-        const describedBy = firstControl.getAttribute('aria-describedby');
-        expect(describedBy).toBeTruthy();
-        expect(document.getElementById(describedBy as string)).toHaveTextContent(
-            'Horario inválido'
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Copiar a todos los días el horario de Martes' })
         );
-    });
-
-    it('marks the exact close input that Zod rejected, with the message attached', () => {
-        const value = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: { mon: { closed: false, shifts: [{ open: '22:00', close: '22:00' }] } }
-        } as unknown as OpeningHours;
-
-        renderSection({
-            value,
-            errors: {
-                openingHours: 'La hora de cierre no puede ser igual a la de apertura',
-                'openingHours.days.mon.shifts.0.close':
-                    'La hora de cierre no puede ser igual a la de apertura'
-            }
-        });
-
-        const closeInput = screen.getByLabelText('Lun cierre 1');
-        expect(closeInput).toHaveAttribute('aria-invalid', 'true');
-
-        const describedBy = closeInput.getAttribute('aria-describedby');
-        expect(describedBy).toBeTruthy();
-        expect(document.getElementById(describedBy as string)).toHaveTextContent(
-            'La hora de cierre no puede ser igual a la de apertura'
-        );
-
-        // The sibling bound is NOT marked — a blanket mark on the whole row
-        // would pass the assertions above while telling the user nothing.
-        expect(screen.getByLabelText('Lun apertura 1')).not.toHaveAttribute('aria-invalid');
-    });
-
-    it('shows the message ONCE, and points the group at the specific one', () => {
-        const value = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: { mon: { closed: false, shifts: [{ open: '22:00', close: '22:00' }] } }
-        } as unknown as OpeningHours;
-        const message = 'La hora de cierre no puede ser igual a la de apertura';
-
-        renderSection({
-            value,
-            // Exactly what `useZodForm` produces once `aggregateFields` rolls up:
-            // the nested entry AND a copy under the bare key.
-            errors: {
-                openingHours: message,
-                'openingHours.days.mon.shifts.0.close': message
-            }
-        });
-
-        // The aggregate copy would repeat the sentence verbatim at the foot of
-        // the section. Only the shift-level one is rendered.
-        expect(screen.getAllByText(message)).toHaveLength(1);
-
-        // ...and the group's focus target is described by THAT message, not by
-        // an aggregate element that is no longer in the document.
-        const groupDescribedBy = screen
-            .getByLabelText('Lun cerrado')
-            .getAttribute('aria-describedby');
-        const closeDescribedBy = screen
-            .getByLabelText('Lun cierre 1')
-            .getAttribute('aria-describedby');
-
-        expect(groupDescribedBy).toBeTruthy();
-        expect(groupDescribedBy).toBe(closeDescribedBy);
-
-        // The id must actually resolve to the message — a matching pair of
-        // dangling ids would satisfy the equality above and announce nothing.
-        expect(document.getElementById(groupDescribedBy as string)).toHaveTextContent(message);
-    });
-
-    it('leaves every control unmarked when the schedule is valid', () => {
-        const value = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: { mon: { closed: false, shifts: [{ open: '22:00', close: '02:00' }] } }
-        } as unknown as OpeningHours;
-
-        renderSection({ value, errors: {} });
-
-        expect(screen.getByLabelText('Lun cierre 1')).not.toHaveAttribute('aria-invalid');
-        expect(screen.getByLabelText('Lun cerrado')).not.toHaveAttribute('aria-invalid');
-        expect(screen.getByLabelText('Lun cerrado')).not.toHaveAttribute('aria-describedby');
-    });
-
-    // -----------------------------------------------------------------------
-    // HOS-825 — the add/remove controls carry the section's own button styling
-    //
-    // The CSS-module class name is hashed at build time, so asserting a literal
-    // is impossible; asserting that a class was applied AT ALL is what separates
-    // "styled by the site" from the bare browser chrome that was there before.
-    // The accessible names are re-asserted because they are what makes the
-    // icon-only buttons usable, and restyling is exactly when they get lost.
-    // -----------------------------------------------------------------------
-
-    it('styles the add and remove shift buttons and keeps their accessible names', () => {
-        const value = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: { mon: { closed: false, shifts: [{ open: '09:00', close: '18:00' }] } }
-        } as unknown as OpeningHours;
-
-        renderSection({ value });
-
-        const removeButton = screen.getByLabelText('Quitar turno Lun 1');
-        const addButton = screen.getByLabelText('Agregar turno Lun');
-
-        expect(removeButton.className).not.toBe('');
-        expect(addButton.className).not.toBe('');
-        expect(removeButton).toHaveAttribute('type', 'button');
-        expect(addButton).toHaveAttribute('type', 'button');
-    });
-
-    it('renders the scrollspy anchor the section nav will target', () => {
-        renderSection();
-
-        expect(document.getElementById('editor-openingHours')).not.toBeNull();
-    });
-});
-
-// ---------------------------------------------------------------------------
-// HOS-1763 — the seven days open CLOSED (HOS-906) with no way to learn how to
-// fill them and no shortcut to repeat one day across the week. The help line
-// must be visible even with a null value, and the copy-to-all shortcut must
-// exist only where it makes sense (an open day with at least one shift).
-// ---------------------------------------------------------------------------
-
-describe('help and copy-to-all (HOS-1763)', () => {
-    it('shows the always-visible help line with a null value (TEST:1763:3a)', () => {
-        renderSection();
-
-        expect(screen.getByText(/Todos los días arrancan/)).toBeInTheDocument();
-    });
-
-    it('copies the Tuesday schedule to all seven days, keeping the timezone (TEST:1763:3b)', () => {
-        const { onChange } = renderSection({ value: seeded });
-
-        fireEvent.click(screen.getByRole('button', { name: /Copiar a todos los días.*Mar/ }));
 
         const emitted = lastEmitted(onChange);
-        for (const day of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) {
-            expect(emitted.days[day]).toEqual({
-                closed: false,
-                shifts: [{ open: '10:00', close: '14:00' }]
-            });
+        for (const day of Object.values(emitted.days)) {
+            expect(day).toEqual({ closed: false, shifts: [{ open: '10:00', close: '14:00' }] });
         }
+        expect(emitted.days.mon?.shifts[0]).not.toBe(emitted.days.tue?.shifts[0]);
         expect(emitted.timezone).toBe('America/Montevideo');
     });
 
-    it('hides the shortcut on a closed day and on an open day with no shifts (TEST:1763:3c)', () => {
-        // Every day falls through `dayOf()`'s HOS-906 default: all closed.
-        renderSection();
+    it('hides the slot controls of a closed day', () => {
+        renderSection({ value: seeded });
 
-        expect(screen.queryByRole('button', { name: /Copiar a todos/ })).toBeNull();
-
-        // ...and an explicitly open day with zero shifts has nothing to copy.
-        const openNoShifts = {
-            timezone: 'America/Argentina/Buenos_Aires',
-            days: { tue: { closed: false, shifts: [] } }
-        } as unknown as OpeningHours;
-        renderSection({ value: openNoShifts });
-
-        expect(screen.queryByRole('button', { name: /Copiar a todos/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Agregar franja a Lunes' })).toBeNull();
+        expect(screen.queryByLabelText('Lunes, apertura de la franja 1')).toBeNull();
     });
 
-    it('gives every copied day its own shift objects (TEST:1763:3d)', () => {
-        const { onChange } = renderSection({ value: seeded });
+    it('puts the field id on Monday’s switch and describes it with the aggregate error', () => {
+        renderSection({ errors: { openingHours: 'Revisá los horarios.' } });
 
-        fireEvent.click(screen.getByRole('button', { name: /Copiar a todos los días.*Mar/ }));
+        const first = screen.getByRole('switch', { name: 'Lunes abierto' });
+        expect(first).toHaveAttribute('id', 'ce-openingHours');
+        expect(first).toHaveAccessibleDescription('Revisá los horarios.');
+    });
 
-        const { days } = lastEmitted(onChange);
-        expect(days.mon.shifts[0]).not.toBe(days.tue.shifts[0]);
+    it('marks the exact bound Zod rejected and shows the message once', () => {
+        renderSection({
+            value: seeded,
+            errors: {
+                openingHours: 'El cierre debe ser posterior a la apertura.',
+                'openingHours.days.tue.shifts.0.close':
+                    'El cierre debe ser posterior a la apertura.'
+            }
+        });
+
+        const close = screen.getByLabelText('Martes, cierre de la franja 1');
+        expect(close).toHaveAttribute('aria-invalid', 'true');
+        expect(close).toHaveAccessibleDescription('El cierre debe ser posterior a la apertura.');
+        expect(screen.getByLabelText('Martes, apertura de la franja 1')).not.toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
+        expect(screen.getAllByText('El cierre debe ser posterior a la apertura.')).toHaveLength(1);
+    });
+
+    it('round-trips a stored schedule through the kit week', () => {
+        expect(fromHoursWeek({ week: toHoursWeek(seeded), previous: seeded })).toEqual({
+            timezone: 'America/Montevideo',
+            days: {
+                mon: { closed: true, shifts: [] },
+                tue: { closed: false, shifts: [{ open: '10:00', close: '14:00' }] },
+                wed: { closed: true, shifts: [] },
+                thu: { closed: true, shifts: [] },
+                fri: { closed: true, shifts: [] },
+                sat: { closed: true, shifts: [] },
+                sun: { closed: true, shifts: [] }
+            }
+        });
+    });
+});
+
+describe('OpeningHoursSection in other locales (HOS-2436, HOS-2491)', () => {
+    it.each([
+        ['en', 'Opening hours', 'Monday', 'Tuesday, slot 1 closing time', 'Add slot to Tuesday'],
+        [
+            'pt',
+            'Horário de funcionamento',
+            'Segunda-feira',
+            'Terça-feira, fechamento do horário 1',
+            'Adicionar horário em Terça-feira'
+        ]
+    ] as const)('renders day names and aria-labels in %s', (locale, title, monday, close, add) => {
+        renderSection({ locale, value: seeded });
+
+        expect(screen.getByRole('region', { name: title })).toBeInTheDocument();
+        expect(screen.getByText(monday)).toBeInTheDocument();
+        expect(screen.getByLabelText(close)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: add })).toBeInTheDocument();
+    });
+
+    it('leaks no Spanish into the English accessible names', () => {
+        renderSection({ locale: 'en', value: seeded });
+
+        const names = [...screen.getAllByRole('switch'), ...screen.getAllByRole('button')].map(
+            (element) => element.getAttribute('aria-label') ?? element.textContent ?? ''
+        );
+        for (const name of names) {
+            expect(name).not.toMatch(/Lunes|Martes|apertura|cierre|franja|Agregar|Quitar/);
+        }
     });
 });

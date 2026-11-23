@@ -2181,6 +2181,20 @@
         "editorShell": {
             "backToHub": "Volver al editor",
             "backToList": "Volver a la lista"
+        },
+        "hoursEditor": {
+            "title": "Horarios de atención",
+            "hint": "Activá los días que abrís y cargá sus franjas. Con «Copiar a todos los días» repetís el horario de un día en toda la semana.",
+            "open": "Abierto",
+            "closed": "Cerrado",
+            "openAria": "{{day}} abierto",
+            "openTimeAria": "{{day}}, apertura de la franja {{index}}",
+            "closeTimeAria": "{{day}}, cierre de la franja {{index}}",
+            "removeSlotAria": "Quitar la franja {{index}} de {{day}}",
+            "addSlot": "Agregar franja",
+            "addSlotAria": "Agregar franja a {{day}}",
+            "copyToAll": "Copiar a todos los días",
+            "copyToAllAria": "Copiar a todos los días el horario de {{day}}"
         }
     },
     "ownerDashboard": {
@@ -2215,5 +2229,33 @@
         "trafficHint_one": "en los últimos {{days}} días · {{unique}} persona",
         "trafficHint_other": "en los últimos {{days}} días · {{unique}} personas",
         "trafficLockedDescription": "Las visitas a tus fichas vienen con estos planes."
+    },
+    "editorFields": {
+        "contact": {
+            "title": "Datos de contacto",
+            "publicHint": "Estos datos de contacto se muestran públicamente en tu ficha.",
+            "phone": "Teléfono",
+            "landline": "Teléfono fijo",
+            "whatsapp": "WhatsApp",
+            "email": "Email",
+            "website": "Sitio web",
+            "whatsappVisibility": {
+                "legend": "Quién ve el botón de WhatsApp",
+                "PUBLIC": "Todas las personas",
+                "LOGGED_IN_ONLY": "Solo personas con sesión iniciada",
+                "publicWarning": "Tu número va a quedar visible en la página y cualquiera puede copiarlo, incluidos programas automáticos.",
+                "loggedInHint": "El número no aparece en la página: solo lo ven las personas que iniciaron sesión."
+            }
+        },
+        "social": {
+            "title": "Redes sociales",
+            "hint": "Pegá el enlace de cada perfil que quieras mostrar en tu ficha.",
+            "facebook": "Facebook",
+            "instagram": "Instagram",
+            "twitter": "X (Twitter)",
+            "tiktok": "TikTok",
+            "youtube": "YouTube",
+            "linkedIn": "LinkedIn"
+        }
     }
 }

@@ -326,6 +326,11 @@ function firstRealOption(select: HTMLElement): string {
     return real.value;
 }
 
+/** The phone number inputs in DOM order: main, landline, WhatsApp (HOS-2497). */
+function phoneNumbers(): HTMLInputElement[] {
+    return Array.from(document.querySelectorAll<HTMLInputElement>('input[type="tel"]'));
+}
+
 describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
     beforeEach(() => {
         mockPatch.mockReset();
@@ -492,7 +497,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             // recomposed as `"<dialCode> <number>"`. The seeded
             // `+5491100000000` parses back to (+54, "91100000000").
             // HOS-2042: the landline pair follows, so take the FIRST number input.
-            fireEvent.change(screen.getAllByLabelText('Número')[0] as HTMLElement, {
+            fireEvent.change(phoneNumbers()[0] as HTMLElement, {
                 target: { value: '91199999999' }
             });
             fireEvent.click(saveButton());
@@ -518,7 +523,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             );
 
             // Two phone pairs now: the main phone first, the landline second.
-            const [, landlineNumber] = screen.getAllByLabelText('Número');
+            const [, landlineNumber] = phoneNumbers();
             fireEvent.change(landlineNumber as HTMLElement, { target: { value: '3442 45-2345' } });
             fireEvent.click(saveButton());
 
@@ -540,7 +545,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             );
 
             // Three phone pairs now: main, landline, WhatsApp.
-            const numbers = screen.getAllByLabelText('Número');
+            const numbers = phoneNumbers();
             fireEvent.change(numbers[2] as HTMLElement, { target: { value: '9 343 1234567' } });
             fireEvent.click(saveButton());
 
@@ -557,7 +562,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         it('HOS-2256: sends the chosen WhatsApp mode and nothing else (AC-16)', async () => {
             renderEditor('venue', buildListing({ contactInfo: {} }), 'contact');
 
-            fireEvent.click(screen.getByLabelText('Solo usuarios logueados'));
+            fireEvent.click(screen.getByLabelText('Solo personas con sesión iniciada'));
             fireEvent.click(saveButton());
 
             const body = await wireBody();
@@ -574,10 +579,12 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
                 'contact'
             );
 
-            expect((screen.getByLabelText('Público') as HTMLInputElement).checked).toBe(true);
+            expect((screen.getByLabelText('Todas las personas') as HTMLInputElement).checked).toBe(
+                true
+            );
             expect(screen.queryByText(/Hasta que elijas una opción/)).toBeNull();
 
-            const numbers = screen.getAllByLabelText('Número');
+            const numbers = phoneNumbers();
             fireEvent.change(numbers[2] as HTMLElement, { target: { value: '9 343 1234567' } });
             fireEvent.click(saveButton());
 
@@ -588,9 +595,9 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         it('HOS-2557: an owner who picks Solo usuarios logueados with the number keeps it', async () => {
             renderEditor('venue', buildListing({ contactInfo: {} }), 'contact');
 
-            const numbers = screen.getAllByLabelText('Número');
+            const numbers = phoneNumbers();
             fireEvent.change(numbers[2] as HTMLElement, { target: { value: '9 343 1234567' } });
-            fireEvent.click(screen.getByLabelText('Solo usuarios logueados'));
+            fireEvent.click(screen.getByLabelText('Solo personas con sesión iniciada'));
             fireEvent.click(saveButton());
 
             const body = await wireBody();
@@ -628,8 +635,10 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         it('HOS-2256: an experience editor offers no WhatsApp controls at all', () => {
             renderEditor('experience', buildListing({ contactInfo: {} }), 'contact');
 
-            expect(screen.queryByLabelText('Solo usuarios logueados')).not.toBeInTheDocument();
-            expect(screen.getAllByLabelText('Número')).toHaveLength(2);
+            expect(
+                screen.queryByLabelText('Solo personas con sesión iniciada')
+            ).not.toBeInTheDocument();
+            expect(phoneNumbers()).toHaveLength(2);
         });
 
         it('HOS-2042: does not write an explicit null landline when none was ever stored (AC-3)', async () => {
@@ -655,7 +664,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
                 'contact'
             );
 
-            const [, landlineNumber] = screen.getAllByLabelText('Número');
+            const [, landlineNumber] = phoneNumbers();
             fireEvent.change(landlineNumber as HTMLElement, { target: { value: '' } });
             fireEvent.click(saveButton());
 
@@ -706,7 +715,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
                 'contact'
             );
 
-            fireEvent.change(screen.getByLabelText('facebook'), {
+            fireEvent.change(screen.getByLabelText(/^Facebook/), {
                 target: { value: 'https://facebook.com/new' }
             });
             fireEvent.click(saveButton());
@@ -736,7 +745,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
                 'contact'
             );
 
-            fireEvent.change(screen.getByLabelText('facebook'), { target: { value: '' } });
+            fireEvent.change(screen.getByLabelText(/^Facebook/), { target: { value: '' } });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
@@ -1025,7 +1034,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
             expect(screen.queryByLabelText('Nombre del comercio')).toBeNull();
             expect(screen.queryByLabelText('Resumen')).toBeNull();
-            expect(screen.queryByLabelText('Número')).toBeNull();
+            expect(phoneNumbers()).toHaveLength(0);
 
             fireEvent.change(screen.getByLabelText('Rango de precios'), {
                 target: { value: '' }

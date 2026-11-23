@@ -42,6 +42,10 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Facebook: ['en', 'pt'],
     Instagram: ['en', 'pt'],
     YouTube: ['en', 'pt'],
+    // Brand names of the editor social links (HOS-2497).
+    TikTok: ['en', 'pt'],
+    LinkedIn: ['en', 'pt'],
+    'X (Twitter)': ['en', 'pt'],
     Hospeda: ['en', 'pt'],
     Hotel: ['en', 'pt'],
     Motel: ['en', 'pt'],
@@ -74,6 +78,9 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Lista: ['pt'],
     'Lista numerada': ['pt'],
     Sáb: ['pt'],
+    // Same adjectives in Brazilian Portuguese (HOS-2415 editor nav status).
+    Completa: ['pt'],
+    Incompleta: ['pt'],
     Dom: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
     '{{count}} de {{max}} caracteres': ['pt'],
