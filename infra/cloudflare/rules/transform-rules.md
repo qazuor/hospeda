@@ -49,7 +49,7 @@ What is unchanged:
 | `any(...[*])` | **Yes.** It is a core Rules-language function with no plan gate. The field page shows `any(http.request.uri.args.names[*] == "search")`. | [Functions → any](https://developers.cloudflare.com/ruleset-engine/rules-language/functions/), [Values → Arrays](https://developers.cloudflare.com/ruleset-engine/rules-language/values/) |
 | `remove_query_args()` | **Yes.** It is allowed "in rewrite expressions of Transform Rules", with no plan restriction. The `field` must be `http.request.uri.query`. Each param is named explicitly, and every repeated occurrence of a named param is removed. | [Functions → remove_query_args](https://developers.cloudflare.com/ruleset-engine/rules-language/functions/) |
 | Rewrite runs before the cache | **Yes.** Execution order: Single Redirects → **URL Rewrite Rules** → … → **Cache Rules**. Fields "will have a different value in phases after `http_request_transform`". | [Cache Rules → Order](https://developers.cloudflare.com/cache/how-to/cache-rules/order/), [Field values during rule evaluation](https://developers.cloudflare.com/ruleset-engine/about/rules/#field-values-during-rule-evaluation) |
-| Expression length | 4,096 characters, on any plan. The rule below is about 3,140. | [Expressions](https://developers.cloudflare.com/ruleset-engine/rules-language/expressions/) |
+| Expression length | 4,096 characters, on any plan. The rule below is about 3,900 once whitespace is collapsed (the dashboard accepts it on one line). Measure it before saving; the margin is small. | [Expressions](https://developers.cloudflare.com/ruleset-engine/rules-language/expressions/) |
 
 **One point the docs do not show literally.** They document `[*]` on transformation
 functions (`any(lower(names[*])[*] == "x")`), but none of their examples calls
@@ -64,14 +64,16 @@ Transform Rule, but the dashboard has drifted from this directory before (see
 ### Filter expression (staging)
 
 Build it from the **live** rule 1 expression, not from this page. `cache-rules.md`
-says the same thing: read the dashboard first. Make two edits and nothing else:
+says the same thing: read the dashboard first. Make these edits and nothing else:
 
 1. Replace `http.request.uri.query eq ""` with
    `any(starts_with(http.request.uri.args.names[*], "utm_"))`.
 2. Add `and ends_with(http.request.uri.path, "/")` right after it.
 
 Keep everything else exactly as rule 1 has it: the host, the method set, the
-session-cookie exclusion, the exact path set and the 36 prefixes. As documented
+session-cookie exclusion, the exact path set and the canonical prefixes. Then
+add the alias exclusion (the `and not (...)` block, see "Why aliases are
+excluded") and drop any legacy alias prefix from rule 1's list. As documented
 today, that gives:
 
 ```
@@ -80,6 +82,14 @@ today, that gives:
  and any(starts_with(http.request.uri.args.names[*], "utm_"))
  and ends_with(http.request.uri.path, "/")
  and not http.cookie contains "better-auth.session_token"
+ and not (starts_with(substring(http.request.uri.path, 3), "/alojamientos/tipo/") or
+        starts_with(substring(http.request.uri.path, 3), "/alojamientos/comodidades/") or
+        starts_with(substring(http.request.uri.path, 3), "/alojamientos/caracteristicas/") or
+        starts_with(substring(http.request.uri.path, 3), "/eventos/categoria/") or
+        starts_with(substring(http.request.uri.path, 3), "/publicaciones/categoria/") or
+        starts_with(substring(http.request.uri.path, 3), "/publicaciones/autor") or
+        starts_with(substring(http.request.uri.path, 3), "/planes/<RETIRED_VENUE_URL_PREFIXES[1]>") or
+        starts_with(substring(http.request.uri.path, 3), "/presentacion/<RETIRED_VENUE_URL_PREFIXES[2]>"))
  and (http.request.uri.path in {"/es/" "/en/" "/pt/"
         "/es/nosotros/" "/es/beneficios/" "/es/funcionalidades/" "/es/contacto/"
         "/es/preguntas-frecuentes/" "/es/legal/cookies/" "/es/legal/privacidad/"
@@ -111,11 +121,8 @@ today, that gives:
    or starts_with(http.request.uri.path, "/es/publicaciones")
    or starts_with(http.request.uri.path, "/en/publicaciones")
    or starts_with(http.request.uri.path, "/pt/publicaciones")
-   or starts_with(http.request.uri.path, "/es/gastronomia")
    or starts_with(http.request.uri.path, "/es/comer-y-salir")
-   or starts_with(http.request.uri.path, "/en/gastronomia")
    or starts_with(http.request.uri.path, "/en/comer-y-salir")
-   or starts_with(http.request.uri.path, "/pt/gastronomia")
    or starts_with(http.request.uri.path, "/pt/comer-y-salir")
    or starts_with(http.request.uri.path, "/es/experiencias")
    or starts_with(http.request.uri.path, "/en/experiencias")
@@ -181,31 +188,28 @@ plus `utm_term`, which external tools add.
   rewrite runs only where the cache rule would then cache. Anywhere else, removing the
   UTMs would gain nothing and would only hide them from the origin.
 
-### Residual risk: known losses
+### Why aliases are excluded
 
-A redirect the origin issues on a matched path loses the UTMs, because the origin
-received the rewritten query. The middleware's own redirects with `Cache-Control:
-no-store` (locale and trailing slash) are excluded by the clauses above. What remains
-are the `resolveLegacyRedirectTarget` sources (`apps/web/src/lib/legacy-redirects.ts`,
-`catalog-retired-slugs.ts`) that live under a cached prefix and end in `/`:
+The origin 301s every `resolveLegacyRedirectTarget` source and copies the query
+(`apps/web/src/middleware.ts`, Step 3.1). If the edge stripped the UTMs first, the
+origin would never see them and the redirect target would arrive without
+attribution. So the filter lists **canonical cached paths only**:
 
-| Source (any locale) | Redirects to |
-|---|---|
-| `/{l}/gastronomia/…` | `/{l}/comer-y-salir/…` |
-| `/{l}/planes/<retired venue segment>/…` (`RETIRED_VENUE_URL_PREFIXES[1]`) | `/{l}/planes/comer-y-salir/…` |
-| `/{l}/presentacion/<retired venue segment>/…` (`RETIRED_VENUE_URL_PREFIXES[2]`) | `/{l}/presentacion/comer-y-salir/…` |
-| `/{l}/publicaciones/autor/…` | `/{l}/autores/…` |
-| `/{l}/alojamientos/tipo/<legacy English slug>/` | the Spanish slug |
-| `/{l}/eventos/categoria/<legacy English slug>/` | the Spanish slug |
-| `/{l}/publicaciones/categoria/<legacy English slug>/` | the Spanish slug |
-| `/{l}/alojamientos/{comodidades,caracteristicas}/<retired slug>/` | the surviving slug's landing |
+- The retired venue prefix (`RETIRED_VENUE_URL_PREFIXES[0]`) is not in the prefix
+  list at all. Only its canonical replacement, `comer-y-salir`, is.
+- Aliases that live inside a cached prefix are excluded by the `and not (...)` block.
+  `substring(path, 3)` drops the locale so one clause covers `es`, `en` and `pt`:
+  `/planes/<RETIRED_VENUE_URL_PREFIXES[1]>` and `/presentacion/<RETIRED_VENUE_URL_PREFIXES[2]>`
+  (write the constant's value, with no locale, in place of each placeholder),
+  `/publicaciones/autor`, and the facet landings that carry legacy slugs
+  (`alojamientos/{tipo,comodidades,caracteristicas}`, `eventos/categoria`,
+  `publicaciones/categoria`).
+- The facet exclusions are wider than the aliases: they also cover canonical slugs
+  under those prefixes, which therefore behave as today (`DYNAMIC` with UTMs). That
+  is deliberate. Listing only the legacy slugs would not fit in 4,096 characters.
 
-These are **known losses**. A campaign link built on one of these old URLs arrives
-without UTMs. Every link Hospeda generates today points at the canonical URL
-(`withUtm` on the entity URL, `/go/` → `/es/presentacion/<audience>/`, QR →
-`targetUrl`), so none of them takes this path. These redirects carry no query, so
-they get no `no-store` either. They stay out of the cache because rules 1 and 4 use
-`bypass_by_default` and a redirect response does not opt in.
+Redirects outside the cached prefixes (`/blog`, `/mi-cuenta/messages`) are not in
+the filter, so the rewrite never touches them.
 
 The `/` root is not affected. The edge Single Redirect (`redirect-rules.md`) runs
 **before** the rewrite and keeps the query string.
