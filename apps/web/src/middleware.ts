@@ -188,7 +188,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         headers: context.request.headers,
         fn: () => runMiddlewarePipeline(context, next, isNestedPass)
     });
-    applySecurityHeaders({ headers: response.headers });
+    applySecurityHeaders({ headers: response.headers, pathname: context.url.pathname });
     return response;
 });
 

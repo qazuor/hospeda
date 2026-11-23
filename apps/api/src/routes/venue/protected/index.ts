@@ -39,6 +39,7 @@ import { protectedListMyVenueRoute } from './listMine';
 import { protectedListVenuePromotionsRoute } from './listPromotions';
 import { protectedGetVenueMenuQrRoute } from './menuQr';
 import { protectedGetVenueMenuQrScansRoute } from './menuQrScans';
+import { protectedVenueMineStatsRoute } from './mineStats';
 import { protectedPatchVenueRoute } from './patch';
 import { protectedPatchVenuePromotionRoute } from './patchPromotion';
 import { protectedPublishVenueRoute } from './publish';
@@ -86,6 +87,10 @@ app.route('/', protectedListMyVenueRoute);
 // is not load-bearing (Hono matches exact segment counts), but registered
 // alongside /mine for readability.
 app.route('/', protectedVenueViewStatsRoute);
+// GET /mine/stats — owner dashboard aggregate (HOS-2475). LOAD-BEARING order:
+// `/{id}/stats` (registered below) has the same segment count, so this literal
+// route MUST come first or `mine` would be captured as a venue id.
+app.route('/', protectedVenueMineStatsRoute);
 app.route('/', protectedVenueViewStatsDailySeriesRoute);
 app.route('/', protectedGetVenueStatsRoute);
 

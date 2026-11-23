@@ -4,7 +4,7 @@ import {
     createUser,
     markProfileCompleted
 } from '../../fixtures/api-helpers.ts';
-import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
+import { seedCookieConsent, waitForIslandHydration } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -154,6 +154,7 @@ test.describe('Publish card affordance @p0 @verticals @billing', () => {
             await expect(list.getByRole('link', { name: /elegir plan/i })).toHaveCount(0);
             await expect(list.getByTestId('publish-check-failed')).toHaveCount(0);
 
+            await waitForIslandHydration({ locator: publish });
             await publish.click();
             await page.getByRole('button', { name: 'Sí, publicar', exact: true }).click();
 

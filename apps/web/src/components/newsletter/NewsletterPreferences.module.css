@@ -1,8 +1,7 @@
 /* NewsletterPreferences.module.css
  *
  * Styling for the newsletter row on the account preferences page.
- * Status badges combine COLOUR + TEXT so accessibility doesn't depend
- * on colour alone (AC-101-13.4).
+ * The status is the kit StatusPill (colour + text, AC-101-13.4).
  */
 
 .wrapper {
@@ -36,36 +35,6 @@
     opacity: 0.85;
 }
 
-.badge {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-pill);
-    font-size: var(--text-meta);
-    font-weight: 600;
-    line-height: 1;
-}
-
-.badgeActive {
-    background-color: oklch(0.92 0.08 145);
-    color: oklch(0.32 0.12 145);
-}
-
-.badgePending {
-    background-color: oklch(0.93 0.08 90);
-    color: oklch(0.4 0.12 70);
-}
-
-.badgeNeutral {
-    background-color: oklch(0.92 0.01 240);
-    color: oklch(0.4 0.02 240);
-}
-
-.badgeError {
-    background-color: oklch(0.92 0.07 25);
-    color: oklch(0.4 0.18 25);
-}
-
 .pendingBanner {
     margin: 0;
     padding: var(--space-3) var(--space-4);
@@ -73,13 +42,6 @@
     background-color: var(--surface-warm);
     color: var(--surface-warm-foreground);
     font-size: var(--text-body-sm);
-}
-
-.terminalNote {
-    margin: 0;
-    font-size: var(--text-body-sm);
-    color: var(--core-foreground);
-    opacity: 0.85;
 }
 
 .loading {
@@ -93,38 +55,12 @@
     margin: 0;
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
-    background-color: oklch(0.95 0.04 25);
-    color: oklch(0.35 0.18 25);
+    background-color: var(--status-danger-bg);
+    color: var(--status-danger-fg);
     font-size: var(--text-body-sm);
 }
 
-/* Confirm-cancel inline dialog */
-.confirmBox {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    background-color: var(--surface-warm);
-    border: 1px solid var(--border);
-}
-
-.confirmTitle {
-    margin: 0;
-    font-weight: 600;
-    color: var(--surface-warm-foreground);
-}
-
-.confirmActions {
-    display: flex;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-}
-
-/* Buttons */
-.primaryButton,
-.secondaryButton,
-.dangerButton {
+.primaryButton {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -160,29 +96,7 @@
     outline-offset: 2px;
 }
 
-.secondaryButton {
-    background-color: transparent;
-    color: var(--brand-primary);
-    border: 1px solid var(--brand-primary);
-}
-
-.secondaryButton:hover:not(:disabled) {
-    background-color: var(--brand-primary-a08);
-}
-
-.dangerButton {
-    background-color: var(--destructive);
-    color: var(--destructive-foreground);
-    border-color: var(--destructive);
-}
-
-.dangerButton:hover:not(:disabled) {
-    background-color: var(--destructive-lm04);
-}
-
-.primaryButton:disabled,
-.secondaryButton:disabled,
-.dangerButton:disabled {
+.primaryButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }

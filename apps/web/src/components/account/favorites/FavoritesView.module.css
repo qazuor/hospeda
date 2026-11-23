@@ -1,0 +1,23 @@
+/* FavoritesView.module.css — layout bits of the favorites page (HOS-2480).
+   Tokens only. */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+.createAction {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+}
+
+.lockReason {
+    max-inline-size: 22rem;
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+    text-align: end;
+}

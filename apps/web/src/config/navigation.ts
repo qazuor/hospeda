@@ -264,6 +264,24 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         suppressHeaderWhenSingle: true,
         items: [
             {
+                // HOS-2475: the venue owner dashboard, mirroring `hostDashboard`.
+                id: 'venueDashboard',
+                i18nKey: 'account.nav.venueDashboard',
+                href: 'mi-cuenta/tablero-locales',
+                icon: DashboardIcon,
+                requiredPermission: PermissionEnum.VENUE_EDIT_OWN,
+                surfaces: FULL_SURFACES
+            },
+            {
+                // HOS-2476: the experience owner dashboard.
+                id: 'experienceDashboard',
+                i18nKey: 'account.nav.experienceDashboard',
+                href: 'mi-cuenta/tablero-experiencias',
+                icon: DashboardIcon,
+                requiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN,
+                surfaces: FULL_SURFACES
+            },
+            {
                 id: 'comercio-listings',
                 i18nKey: 'listing.owner.nav',
                 href: 'mi-cuenta/comercio',

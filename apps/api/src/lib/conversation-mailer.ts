@@ -14,6 +14,7 @@
  *   {
  *     authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
  *     siteUrl:    env.HOSPEDA_SITE_URL,
+ *     apiUrl:     env.HOSPEDA_API_URL,
  *     mailer:     createConversationMailer(),
  *   }
  * );
@@ -91,7 +92,12 @@ export function createConversationMailer(): ConversationMailer | undefined {
                     accommodationName: payload.accommodationName,
                     verificationUrl: payload.verificationUrl,
                     guestName: payload.guestName,
-                    locale: payload.locale
+                    locale: payload.locale,
+                    message: payload.message,
+                    guestPhone: payload.guestPhone,
+                    checkIn: payload.checkIn,
+                    checkOut: payload.checkOut,
+                    guests: payload.guests
                 }),
                 attribution: buildTransactionalAttribution({
                     templateKey: CONVERSATION_EMAIL_KEYS.verify

@@ -1,5 +1,5 @@
 {
-  "id": "8f2d183a-cf9a-479a-ba4f-4f1704b94b93",
+  "id": "93c7553c-6675-41f8-825a-9062e1f4e88d",
   "prevId": "667df3fe-d2bd-49bb-8a51-faa9273a1eb1",
   "version": "7",
   "dialect": "postgresql",
@@ -5504,6 +5504,12 @@
         "anonymous_phone": {
           "name": "anonymous_phone",
           "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pending_message": {
+          "name": "pending_message",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -14997,18 +15003,6 @@
         "scheduled_for": {
           "name": "scheduled_for",
           "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attribution_slug": {
-          "name": "attribution_slug",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "umami_pixel_slug": {
-          "name": "umami_pixel_slug",
-          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": false
         },
