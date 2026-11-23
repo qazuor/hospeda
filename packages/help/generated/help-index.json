@@ -1,5 +1,5 @@
 {
-  "contentHash": "593be7161434ffdd59ae6ac37999bb9b3a717ec9b7fb536c81cbca1302c08d2a",
+  "contentHash": "83cfeab8c68c6e7eff88cda583300f0ad5414b02b4b190809697ca47b75a78ca",
   "locales": {
     "es": [
       {
@@ -112,7 +112,7 @@
           "amenities",
           "help-center"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-22",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
           "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.",
@@ -128,7 +128,7 @@
               "Si ves el aviso de que la conexión de nuevos asistentes está pausada, por ahora no se pueden conectar más, pero sí desconectar los que ya tenés."
             ]
           },
-          "notExpect": "- Conectar asistentes nuevos mientras la conexión está pausada; los que ya tenés se pueden desconectar igual.\n- Que el asistente haga cambios sin pedirte confirmación en las acciones que la piden.",
+          "notExpect": "- Usarlo con una cuenta que no administra ningún negocio en Hospeda: los asistentes de IA son solo para cuentas con alojamientos, comercios, experiencias, publicaciones, ficha de aliado o ficha de proveedor.\n- Conectar asistentes nuevos mientras la conexión está pausada; los que ya tenés se pueden desconectar igual.\n- Que el asistente haga cambios sin pedirte confirmación en las acciones que la piden.",
           "troubleshooting": "### Cambié la contraseña {#cambie-contrasena}\n\nEl sitio te pregunta si querés desconectar también los asistentes conectados.\n\n### El asistente no encuentra la dirección {#direccion}\n\nCopiá de nuevo la dirección del servidor MCP desde {{link:aiAssistants|Asistentes de IA}} y pegala completa."
         },
         "summary": "Cómo conectar Claude, ChatGPT, Gemini u otro asistente compatible con MCP, y cómo desconectarlo.",
@@ -710,9 +710,9 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-22",
         "sections": {
-          "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}, corregir desde el editor y avisar a Hospeda.",
+          "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.",
           "expect": "- Con un pedido de arreglo la publicación sigue a la vista mientras corregís.\n- «Ya lo corregí» avisa al equipo; el pedido lo cierra Hospeda.\n- Una publicación moderada se puede ver, exportar y editar, pero no publicar.",
           "howTo": {
             "after": "",
@@ -793,15 +793,15 @@
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Ayuda» desde el menú de tu cuenta.",
+              "Entrá a «Ayuda» con el botón «?» de arriba de todo, en el encabezado de tu cuenta. Está siempre, en todas las pantallas.",
               "Escribí en el buscador lo que querés hacer, con tus palabras. Los resultados aparecen mientras escribís, desde la segunda letra.",
               "Si dejás marcado «Solo para mi tipo de cuenta», ves solo los artículos de la pestaña elegida. Desmarcalo para buscar en todos.",
               "Para ver todo lo que hay, elegí la pestaña de lo que publicás: alojamientos, comer y salir, experiencias, proveedores o aliados.",
-              "En las pantallas de tu cuenta, tocá el botón «?» que está al lado del título para abrir en otra pestaña la ayuda de esa pantalla.",
+              "En las pantallas de tu cuenta, tocá el botón «?» que está al lado del título para abrir en otra pestaña la ayuda de esa pantalla. El «?» del encabezado abre la ayuda general; el del título, la de esa pantalla.",
               "Dentro de un artículo, usá el índice para ir directo a una parte."
             ]
           },
-          "notExpect": "- Que todas las pantallas tengan el botón «?»: aparece solo donde ya hay un artículo para esa pantalla.\n- Que la ayuda haga cambios en tu cuenta: solo explica cómo hacerlos. Para que un asistente los haga por vos, mirá {{article:ai-assistants|cómo conectar un asistente de IA}}.",
+          "notExpect": "- Que todas las pantallas tengan el botón «?» al lado del título: aparece solo donde ya hay un artículo para esa pantalla. El «?» del encabezado sí está siempre.\n- Que la ayuda haga cambios en tu cuenta: solo explica cómo hacerlos. Para que un asistente los haga por vos, mirá {{article:ai-assistants|cómo conectar un asistente de IA}}.",
           "troubleshooting": "### No encuentro lo que busco {#no-encuentro}\n\nProbá con otras palabras o desmarcá «Solo para mi tipo de cuenta». Si igual no aparece, mirá las {{link:faq|preguntas frecuentes}} o {{link:contact|escribinos}}.\n\n### El artículo está en español {#en-espanol}\n\nAlgunos artículos todavía no están traducidos. Mientras tanto se muestran en español, con un aviso arriba."
         },
         "summary": "Buscá una respuesta, elegí la pestaña de lo que publicás, abrí la ayuda de cada pantalla con el botón «?» y leé un artículo por partes.",
@@ -928,9 +928,9 @@
           "addons",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-22",
         "sections": {
-          "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mi comercio}} se pausan y reanudan con un asistente de IA.",
+          "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.",
           "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
           "howTo": {
             "after": "",
@@ -1170,9 +1170,9 @@
           "change-plan",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-22",
         "sections": {
-          "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
+          "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
           "expect": "- El editor marca cada sección incompleta y la tarjeta de la publicación también.\n- Publicar pide un plan activo o la prueba gratis; si no te corresponde la prueba, te lleva a elegir un plan.\n- Un pedido de excepción lo revisa Hospeda y te responde por email.",
           "howTo": {
             "after": "",
