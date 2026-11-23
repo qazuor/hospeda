@@ -14,16 +14,10 @@
     "apps/web/src/components/account/PartnerEditForm.module.css": {
         "media": 1
     },
-    "apps/web/src/components/account/ProfileCompletion.module.css": {
-        "media": 3
-    },
     "apps/web/src/components/account/RecommendationsFeed.module.css": {
         "media": 2
     },
     "apps/web/src/components/account/SearchHistoryList.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/SetPassword.module.css": {
         "media": 1
     },
     "apps/web/src/components/account/WhatsNewModal.module.css": {

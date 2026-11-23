@@ -88,12 +88,6 @@
         "radius": 2,
         "shadow": 1
     },
-    "apps/web/src/components/account/ProfileCompletion.module.css": {
-        "color": 6,
-        "font-size": 18,
-        "radius": 6,
-        "shadow": 5
-    },
     "apps/web/src/components/account/RecommendationsFeed.module.css": {
         "color": 1,
         "font-size": 15
@@ -101,12 +95,6 @@
     "apps/web/src/components/account/SearchHistoryList.module.css": {
         "color": 4,
         "font-size": 12
-    },
-    "apps/web/src/components/account/SetPassword.module.css": {
-        "color": 7,
-        "font-size": 10,
-        "radius": 3,
-        "shadow": 2
     },
     "apps/web/src/components/account/SubscriptionCancel.module.css": {
         "font-size": 1,
@@ -146,11 +134,6 @@
         "color": 5,
         "font-size": 2,
         "radius": 2
-    },
-    "apps/web/src/components/auth/ChangePasswordForm.module.css": {
-        "color": 2,
-        "font-size": 5,
-        "radius": 3
     },
     "apps/web/src/components/billing/addon-purchase/AddonPurchase.module.css": {
         "font-size": 1
