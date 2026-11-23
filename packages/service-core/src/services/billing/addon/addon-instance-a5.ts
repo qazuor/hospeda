@@ -35,6 +35,7 @@ import {
     emitAddonEndingFacts
 } from './addon-coverage-removed';
 import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
+import { failClosedOnDeletedListing } from './addon-listing-soft-deleted';
 import { findOrphanhoodCandidates, isAddonInstanceOrphaned } from './addon-orphanhood';
 import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
 
@@ -201,17 +202,22 @@ export async function applyA5(
           })
         : null;
 
+    // A deleted listing makes `ficha` refuse: fail closed with a typed rejection (HOS-2128).
     const coverageVerticals = EMITTED_SOURCE[from]
-        ? await coverageVerticalsOf({
-              tx,
-              scopeType: (await ports.addonPolicy({ addonVersionId: instance.addonVersionId }))
-                  .scopeType,
-              targetId: instance.targetId,
-              compatibleVerticals: await compatibleVerticalsOf({
-                  tx,
-                  productId: instance.productId
-              }),
-              ports
+        ? await failClosedOnDeletedListing({
+              run: async () =>
+                  coverageVerticalsOf({
+                      tx,
+                      scopeType: (
+                          await ports.addonPolicy({ addonVersionId: instance.addonVersionId })
+                      ).scopeType,
+                      targetId: instance.targetId,
+                      compatibleVerticals: await compatibleVerticalsOf({
+                          tx,
+                          productId: instance.productId
+                      }),
+                      ports
+                  })
           })
         : [];
 
@@ -337,31 +343,43 @@ export async function runOrphanhood(
         );
     if (row.class !== 'PRINCIPAL' || isStillLive(row.status)) return { cancelled: [] };
 
-    const { candidates } = await findOrphanhoodCandidates(
-        {
-            tx,
-            leftRow: {
-                id: row.id,
-                userId: row.userId,
-                vertical: row.vertical,
-                predecessorId: row.predecessorId
+    // A deleted listing makes `ficha` refuse: fail closed with a typed rejection (HOS-2128).
+    const cancelled = await failClosedOnDeletedListing({
+        run: async () => {
+            const { candidates } = await findOrphanhoodCandidates(
+                {
+                    tx,
+                    leftRow: {
+                        id: row.id,
+                        userId: row.userId,
+                        vertical: row.vertical,
+                        predecessorId: row.predecessorId
+                    }
+                },
+                ports
+            );
+            const cancelled: CancelledAddon[] = [];
+            for (const candidate of candidates) {
+                const orphaned = await isAddonInstanceOrphaned(
+                    { tx, instance: candidate, scopeType: candidate.scopeType },
+                    ports
+                );
+                if (!orphaned) continue;
+                const result = await applyA5(
+                    {
+                        tx,
+                        instanceId: candidate.id,
+                        clause: 'ORPHANED',
+                        now,
+                        s21Cause: input.s21Cause
+                    },
+                    ports
+                );
+                if (result.outcome === 'CANCELLED') cancelled.push(result.addon);
             }
-        },
-        ports
-    );
-    const cancelled: CancelledAddon[] = [];
-    for (const candidate of candidates) {
-        const orphaned = await isAddonInstanceOrphaned(
-            { tx, instance: candidate, scopeType: candidate.scopeType },
-            ports
-        );
-        if (!orphaned) continue;
-        const result = await applyA5(
-            { tx, instanceId: candidate.id, clause: 'ORPHANED', now, s21Cause: input.s21Cause },
-            ports
-        );
-        if (result.outcome === 'CANCELLED') cancelled.push(result.addon);
-    }
+            return cancelled;
+        }
+    });
     return { cancelled };
 }
 

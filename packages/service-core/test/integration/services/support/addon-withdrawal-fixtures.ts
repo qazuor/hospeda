@@ -10,6 +10,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { encodeFakeNotice } from '@repo/payments/fake';
+import type { VerticalEnum } from '@repo/schemas';
 import { vi } from 'vitest';
 import { purchaseAddon } from '../../../../src/services/billing/addon/purchase-addon.service';
 import type { WithdrawAddonPorts } from '../../../../src/services/billing/addon/withdraw-addon.service';
@@ -30,15 +31,23 @@ export async function withdrawalFixture(
         readonly state?: 'ACTIVE' | 'PENDING_AUTHORIZATION';
         readonly deliver?: boolean;
         readonly withCharge?: boolean;
+        /** A LISTING-scoped addon bought over a listing the fixture `ficha` knows (HOS-2128). */
+        readonly listing?: { readonly id: string; readonly vertical: VerticalEnum };
     } = {}
 ) {
     const f = await purchaseFixture({
-        scopeType: 'USER',
+        scopeType: input.listing ? 'LISTING' : 'USER',
         chargeKind: input.chargeKind ?? 'PERIODICO'
     });
     owners.push(f.ownerId);
     const principal = await payingPrincipal(f);
-    const bought = await purchaseAddon(f.input(), f.ports);
+    if (input.listing)
+        f.setListing(input.listing.id, {
+            vertical: input.listing.vertical,
+            ownerId: f.ownerId,
+            acceptsFeature: true
+        });
+    const bought = await purchaseAddon(f.input(undefined, input.listing?.id ?? null), f.ports);
     if (bought.outcome !== 'CREATED') throw new Error(`Purchase returned ${bought.outcome}`);
     const db = getServiceTestDb();
     const [initial] = await db
