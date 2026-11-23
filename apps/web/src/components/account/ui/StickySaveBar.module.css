@@ -96,6 +96,16 @@
     }
 }
 
+/* In-flow variant for previews (kit gallery): never fixed or sticky, so it
+   cannot cover the demos around it. Placed after the media query so it wins
+   at every width. */
+.bar.contained {
+    position: static;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    padding-block-end: var(--space-3);
+}
+
 /* ── AutoSaveChip ───────────────────────────────────────────────────── */
 
 .chip {

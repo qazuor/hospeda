@@ -60,12 +60,12 @@ covers:
   - "entitlement:publish_venue"
   - "entitlement:publish_experience"
 entryFor: []
-reviewedAt: "2026-11-21"
+reviewedAt: "2026-11-22"
 ---
 
 ## Qué podés hacer
 
-Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}} o {{link:list:venue|Mi comercio}}.
+Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.
 
 Pedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.
 

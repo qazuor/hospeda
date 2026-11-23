@@ -205,14 +205,14 @@ describe('web tours config', () => {
                 ],
                 'web.venue.welcome': [
                     'center',
-                    '[data-tour="comercio-listings"]',
+                    '[data-tour="comercio-listings-venue"]',
                     '[data-tour="listings"]',
                     '[data-tour="venue-qr"]',
                     '[data-tour="listing-views"]'
                 ],
                 'web.experience.welcome': [
                     'center',
-                    '[data-tour="comercio-listings"]',
+                    '[data-tour="comercio-listings-experience"]',
                     '[data-tour="listings"]',
                     '[data-tour="listing-views"]'
                 ],

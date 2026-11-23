@@ -57,6 +57,10 @@ test-results/
 # Playwright e2e artifacts (regenerated each run; see apps/e2e/playwright.config.ts)
 apps/e2e/playwright-report/
 apps/e2e/test-results-p0/
+# Visual regression run output (HOS-2471). The baselines themselves live in
+# apps/e2e/tests/visual/__screenshots__/ and ARE committed.
+apps/e2e/playwright-report-visual/
+apps/e2e/test-results-visual/
 apps/e2e/mappings/id-mappings.json
 
 # =========================

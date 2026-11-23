@@ -272,9 +272,16 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'external-reputation.reviews',
     'external-reputation.status',
     // HOS-2413 — `AccountFooter.tsx` (account kit) names the legal links and bottom line.
+    'footer.accommodations',
     'footer.bottom',
+    'footer.contact',
     'footer.cookies',
+    'footer.destinations',
+    'footer.experiences',
+    'footer.exploreTitle',
+    'footer.forYouTitle',
     'footer.newsletter',
+    'footer.plans',
     'footer.privacy',
     'footer.terms',
     // HOS-1077: venue half of the permission-value pair described at
@@ -284,6 +291,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-1787 leaf 6.3 — `VenueOpenNowBadge.client.tsx` renders
     // `venue.card.openNow` / `opensAt` / `closedNow` in the browser.
     'venue.card',
+    'venue.collections',
     // HOS-1787 leaf 5.1 — `NightInfoSection.client.tsx` reuses the approved
     // public `venue.detail.nightInfo.*` labels. The two-segment ancestor is what
     // the guard derives from a literal under that subtree; the three-segment
@@ -336,7 +344,13 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'maps.attribution',
     'maps.hideSurroundings',
     'maps.showSurroundings',
+    'nav.accommodations',
+    'nav.blog',
     'nav.closeMenu',
+    'nav.contact',
+    'nav.destinations',
+    'nav.events',
+    'nav.experiences',
     'nav.goHome',
     'nav.language',
     'nav.mainNavigation',
@@ -345,6 +359,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'nav.publishCtaAria',
     'nav.signIn',
     'nav.theme',
+    'nav.venue',
     'newsletter.confirmYourEmail',
     'newsletter.error',
     'newsletter.errorMessage',

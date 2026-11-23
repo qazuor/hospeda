@@ -30,7 +30,8 @@ describe('getNavForSurface (selector)', () => {
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
             'anfitrion',
-            'comercio',
+            'comercio-venue',
+            'comercio-experience',
             'editorial',
             'turista'
         ]);
@@ -42,7 +43,8 @@ describe('getNavForSurface (selector)', () => {
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
             'anfitrion',
-            'comercio',
+            'comercio-venue',
+            'comercio-experience',
             'editorial',
             'turista'
         ]);
@@ -101,25 +103,26 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         ]);
     });
 
-    it('adds comercio (with its "comercio-listings" item) when the user has VENUE_EDIT_OWN', () => {
+    it('adds only «Comer y salir» when the user has VENUE_EDIT_OWN (HOS-2559)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
         });
-        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio', 'turista']);
-        const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual([
-            'venueDashboard',
-            'comercio-listings'
-        ]);
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio-venue', 'turista']);
+        const venues = findGroup(groups, 'comercio-venue');
+        expect(venues?.items.map((item) => item.id)).toEqual(['venueDashboard', 'venue-listings']);
     });
 
-    it('shows comercio with only the experience permission', () => {
+    it('adds only «Experiencias» with only the experience permission (HOS-2559)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.EXPERIENCE_EDIT_OWN])
         });
-        expect(groups.map((group) => group.id)).toContain('comercio');
+        expect(groups.map((group) => group.id)).toEqual([
+            'cuenta',
+            'comercio-experience',
+            'turista'
+        ]);
     });
 
     it('shows all four groups when the user has both business permissions', () => {
@@ -134,7 +137,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
             'anfitrion',
-            'comercio',
+            'comercio-venue',
             'turista'
         ]);
     });
@@ -189,20 +192,17 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(anfitrion?.items.some((item) => item.id === 'properties')).toBe(true);
     });
 
-    it('adds comercio (with its "comercio-listings" item) for a VENUE_OWNER role', () => {
+    it('adds only «Comer y salir» for a VENUE_OWNER role (HOS-2559)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
         });
-        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio', 'turista']);
-        const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual([
-            'venueDashboard',
-            'comercio-listings'
-        ]);
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio-venue', 'turista']);
+        const venues = findGroup(groups, 'comercio-venue');
+        expect(venues?.items.map((item) => item.id)).toEqual(['venueDashboard', 'venue-listings']);
     });
 
-    it('adds anfitrion, comercio and editorial for platform staff (ADMIN)', () => {
+    it('adds anfitrion, both listing areas and editorial for platform staff (ADMIN)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByRoles(node, [RoleEnum.ADMIN])
@@ -210,7 +210,8 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',
             'anfitrion',
-            'comercio',
+            'comercio-venue',
+            'comercio-experience',
             'editorial',
             'turista'
         ]);

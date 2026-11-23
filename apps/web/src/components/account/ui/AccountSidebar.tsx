@@ -14,7 +14,8 @@
  * `/mi-cuenta/` sits on top of the business verticals.
  *
  * Count pills are the EXISTING islands, passed as named slots from the Astro
- * shell (`whatsNewCount`, `benefitUsagesCount`, `aiAssistantsReveal`).
+ * shell (`benefitUsagesCount`). «Qué hay de nuevo» left the sidebar for a
+ * header icon (HOS-2550), and its pill with it.
  *
  * @module components/account/ui/AccountSidebar
  */
@@ -37,18 +38,8 @@ export interface AccountSidebarProps {
     readonly lockedItemIds?: ReadonlySet<string>;
     /** Icon per item id (the server passes component references; optional). */
     readonly icons?: Readonly<Record<string, ComponentType<IconProps>>>;
-    /** Slot after the «Novedades» label (an existing count-pill island). */
-    readonly whatsNewCount?: ReactNode;
     /** Slot after the «Usos de beneficio» label. */
     readonly benefitUsagesCount?: ReactNode;
-    /** Slot after the AI-assistants label (the reveal island). */
-    readonly aiAssistantsReveal?: ReactNode;
-    /**
-     * Ids of entries that start `hidden` but must show (the React-side reveal
-     * the mobile drawer uses, where the DOM-querying island cannot target the
-     * drawer's own copy).
-     */
-    readonly revealedItemIds?: ReadonlySet<string>;
     /** Extra class from the caller (layout only). */
     readonly className?: string;
 }
@@ -60,11 +51,9 @@ function SidebarLink({
     Icon,
     after,
     lockedLabel,
-    door,
-    revealed = false
+    door
 }: {
     readonly item: SidebarItemView;
-    readonly revealed?: boolean;
     readonly locked: boolean;
     readonly Icon?: ComponentType<IconProps>;
     readonly after?: ReactNode;
@@ -72,11 +61,7 @@ function SidebarLink({
     readonly door?: boolean;
 }) {
     return (
-        <li
-            hidden={(item.hidden && !revealed) || undefined}
-            data-ai-assistants-entry={item.hidden ? '' : undefined}
-            data-door={door ? '' : undefined}
-        >
+        <li data-door={door ? '' : undefined}>
             <a
                 href={item.href}
                 className={styles.link}
@@ -125,22 +110,13 @@ export function AccountSidebar({
     locale,
     lockedItemIds,
     icons,
-    whatsNewCount,
     benefitUsagesCount,
-    aiAssistantsReveal,
-    revealedItemIds,
     className
 }: AccountSidebarProps) {
     const t = createT(locale);
     const lockedLabel = t('account.ui.sidebar.lockedLabel');
     const afterFor = (id: string): ReactNode =>
-        id === 'whatsNew'
-            ? whatsNewCount
-            : id === 'benefitUsages'
-              ? benefitUsagesCount
-              : id === 'aiAssistants'
-                ? aiAssistantsReveal
-                : undefined;
+        id === 'benefitUsages' ? benefitUsagesCount : undefined;
 
     return (
         <nav
@@ -166,7 +142,6 @@ export function AccountSidebar({
                             <SidebarLink
                                 key={item.id}
                                 item={item}
-                                revealed={revealedItemIds?.has(item.id) ?? false}
                                 locked={lockedItemIds?.has(item.id) ?? false}
                                 Icon={icons?.[item.id]}
                                 after={afterFor(item.id)}

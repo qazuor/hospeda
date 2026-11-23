@@ -135,6 +135,37 @@ describe('StickySaveBar + useSaveBar', () => {
         await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
     });
 
+    it('renders in flow without a spacer when contained (gallery preview)', () => {
+        // Arrange + Act
+        render(
+            <StickySaveBar
+                status="error"
+                locale="es"
+                onSave={() => {}}
+                onDiscard={() => {}}
+                contained
+            />
+        );
+        // Assert
+        const region = screen.getByRole('region', { name: 'Guardar cambios' });
+        expect(region).toHaveAttribute('data-contained');
+        expect(screen.queryByTestId('save-bar-spacer')).toBeNull();
+    });
+
+    it('keeps the fixed bar and its spacer by default', () => {
+        render(
+            <StickySaveBar
+                status="dirty"
+                locale="es"
+                onSave={() => {}}
+                onDiscard={() => {}}
+            />
+        );
+        const region = screen.getByRole('region', { name: 'Guardar cambios' });
+        expect(region).not.toHaveAttribute('data-contained');
+        expect(screen.getByTestId('save-bar-spacer')).toBeInTheDocument();
+    });
+
     it('registers exactly one leave warning, through the shared guard', async () => {
         const user = userEvent.setup();
         render(<Form onSave={async () => ({ ok: true })} />);
