@@ -67,10 +67,6 @@
         "font-size": 1,
         "radius": 1
     },
-    "apps/web/src/components/account/MySubscriptions.module.css": {
-        "font-size": 1,
-        "radius": 1
-    },
     "apps/web/src/components/account/PartnerEditForm.module.css": {
         "color": 1,
         "font-size": 6,
@@ -169,11 +165,6 @@
         "color": 20,
         "font-size": 16,
         "radius": 14
-    },
-    "apps/web/src/components/host/PropertyCard.astro": {
-        "color": 11,
-        "font-size": 5,
-        "radius": 2
     },
     "apps/web/src/components/host/editor/ActionBar.module.css": {
         "color": 2,
@@ -499,9 +490,6 @@
         "font-size": 1,
         "radius": 1
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
-        "color": 12
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro": {
         "color": 1,
         "font-size": 6,
@@ -519,9 +507,6 @@
         "color": 2,
         "font-size": 1,
         "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
-        "color": 13
     },
     "apps/web/src/pages/[lang]/mi-cuenta/proveedor/index.astro": {
         "color": 1,
