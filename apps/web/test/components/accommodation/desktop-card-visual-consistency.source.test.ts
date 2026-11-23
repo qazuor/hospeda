@@ -50,7 +50,8 @@ describe('sidebar contact card (AC-2.7)', () => {
     });
 
     it('no longer mounts the bare ContactHost or WhatsAppContact in the page', () => {
-        expect(PAGE).not.toContain('<ContactHost');
+        // `<ContactHostShell` (HOS-2537) is the no-JS wrapper, not the bare island.
+        expect(PAGE).not.toMatch(/<ContactHost[\s>]/);
         expect(PAGE).not.toContain('<WhatsAppContact');
     });
 });
@@ -61,6 +62,12 @@ describe('duplicate host on mobile', () => {
             /@media \(max-width: 767px\)\s*\{\s*\.owner-card\s*\{\s*display: none;\s*\}\s*\}/
         );
         expect(PAGE).toContain('<HostSection');
+    });
+
+    it('re-shows the OwnerCard below 768px without JS so the no-JS contact fallback stays reachable (HOS-2537)', () => {
+        expect(OWNER_CARD).toMatch(
+            /<noscript>\s*<style is:inline>\s*@media \(max-width: 767px\)\s*\{\s*\.owner-card\s*\{\s*display: block !important;\s*\}\s*\}\s*<\/style>\s*<\/noscript>/
+        );
     });
 });
 
