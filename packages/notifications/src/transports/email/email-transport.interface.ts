@@ -1,4 +1,18 @@
+import type { EmailAttribution } from '@repo/email';
 import type { ReactElement } from 'react';
+import type { EmailCatalogKey } from '../../catalog/types.js';
+
+/**
+ * Attribution of one email (HOS-2359): `@repo/email`'s {@link EmailAttribution}
+ * with the transactional `templateKey` narrowed to an email catalog key.
+ */
+export type NotificationEmailAttribution =
+    | {
+          readonly medium: 'transactional';
+          readonly templateKey: EmailCatalogKey;
+          readonly includePixel: boolean;
+      }
+    | Extract<EmailAttribution, { readonly medium: 'campaign' }>;
 
 /**
  * Input for sending an email
@@ -10,6 +24,11 @@ export interface SendEmailInput {
     subject: string;
     /** React Email component to render */
     react: ReactElement;
+    /**
+     * Who the email is attributed to: UTMs on links to our web domain and the
+     * Umami open pixel (HOS-2359). Required so every sender names its catalog key.
+     */
+    attribution: NotificationEmailAttribution;
     /** Sender email (overrides default) */
     from?: string;
     /** Reply-to address */

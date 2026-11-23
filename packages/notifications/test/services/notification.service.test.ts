@@ -15,6 +15,7 @@
 import type { getDb } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { findEmailCatalogEntry } from '../../src/catalog/catalog';
 import {
     NotificationService,
     type NotificationServiceDeps
@@ -131,6 +132,16 @@ describe('NotificationService', () => {
                 Record<string, unknown>
             ];
             expect(sendInput).not.toHaveProperty('from');
+
+            // HOS-2359: attributed to the catalog key `notification.<type>`, which exists.
+            expect(sendInput.attribution).toEqual({
+                medium: 'transactional',
+                templateKey: `notification.${NotificationType.PAYMENT_SUCCESS}`,
+                includePixel: true
+            });
+            expect(
+                findEmailCatalogEntry({ key: `notification.${NotificationType.PAYMENT_SUCCESS}` })
+            ).toBeDefined();
 
             // Verify database logging
             expect(mockDb.insert).toHaveBeenCalledTimes(1);
