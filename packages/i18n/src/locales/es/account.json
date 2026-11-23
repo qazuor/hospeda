@@ -2158,6 +2158,29 @@
         },
         "entityCard": {
             "noImage": "Sin imagen"
+        },
+        "editorNav": {
+            "label": "Secciones de la ficha",
+            "switcherLabel": "Cambiar de sección",
+            "previous": "Sección anterior: {{section}}",
+            "next": "Sección siguiente: {{section}}",
+            "position": "Sección {{position}} de {{total}}",
+            "allSections": "Todas las secciones",
+            "status": {
+                "complete": "Completa",
+                "incomplete": "Incompleta",
+                "locked": "Bloqueada por tu plan"
+            }
+        },
+        "completeness": {
+            "title": "Completitud de la ficha",
+            "summary": "{{done}} de {{total}} secciones completas",
+            "complete": "Tu ficha tiene todo lo necesario para publicarse.",
+            "missingTitle": "Te falta completar:"
+        },
+        "editorShell": {
+            "backToHub": "Volver al editor",
+            "backToList": "Volver a la lista"
         }
     },
     "ownerDashboard": {

@@ -1,0 +1,201 @@
+/* EditorSwitcher.module.css — the sticky section switcher (HOS-2486).
+   Sticky under the account bars (`--editor-switcher-top`, set by the shell);
+   the menu is a native <details> whose panel drops below the bar. */
+
+.root {
+    position: sticky;
+    inset-block-start: var(--editor-switcher-top, 0);
+    z-index: 9;
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-1);
+    box-sizing: border-box;
+    margin-block-end: var(--space-5);
+    padding: var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    background-color: var(--core-card);
+    box-shadow: var(--shadow-sticky);
+}
+
+.step {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--control-h-lg);
+    min-block-size: var(--control-h-lg);
+    border-radius: var(--radius-control);
+    color: var(--core-foreground);
+    text-decoration: none;
+}
+
+.step:hover {
+    background-color: var(--muted);
+}
+
+.step:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.stepInert {
+    color: var(--control-border);
+}
+
+.stepInert:hover {
+    background-color: transparent;
+}
+
+.menu {
+    position: relative;
+    flex: 1;
+    min-inline-size: 0;
+}
+
+.summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-control);
+    color: var(--core-foreground);
+    cursor: pointer;
+    list-style: none;
+}
+
+.summary::-webkit-details-marker {
+    display: none;
+}
+
+.summary:hover {
+    background-color: var(--muted);
+}
+
+.summary:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.titles {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+}
+
+.entity {
+    overflow: hidden;
+    font: var(--app-caption);
+    color: var(--core-muted-foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.section {
+    overflow: hidden;
+    font: var(--app-control);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.position {
+    flex: none;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.chevron {
+    flex: none;
+    transition: transform var(--duration-fast) ease-out;
+}
+
+.menu[open] .chevron {
+    transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chevron {
+        transition: none;
+    }
+}
+
+.panel {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: calc(100% + var(--space-2));
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    box-sizing: border-box;
+    max-block-size: 70vh;
+    overflow-y: auto;
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: var(--shadow-overlay);
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.heading {
+    margin: 0;
+    padding-inline: var(--space-2);
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+    box-sizing: border-box;
+    min-block-size: var(--control-h-lg);
+    padding: var(--space-2);
+    border-radius: var(--radius-control);
+    color: inherit;
+    font: var(--app-control);
+    text-decoration: none;
+}
+
+.item:hover {
+    background-color: var(--muted);
+}
+
+.item:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+
+.item[aria-current="page"] {
+    background-color: var(--nav-active-bg);
+    color: var(--nav-active-fg);
+}
+
+.srOnly {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

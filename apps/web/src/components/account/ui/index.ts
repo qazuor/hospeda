@@ -47,6 +47,11 @@ export {
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
+export {
+    type CompletenessItem,
+    CompletenessMeter,
+    type CompletenessMeterProps
+} from './CompletenessMeter';
 export { Composer, type ComposerProps } from './Composer';
 export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog';
 export {
@@ -59,6 +64,8 @@ export {
 export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
+export { EditorSectionNav, type EditorSectionNavProps } from './EditorSectionNav';
+export { EditorSwitcher, type EditorSwitcherProps } from './EditorSwitcher';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export {
     EntityCard,

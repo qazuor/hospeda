@@ -17,6 +17,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import styles from './KitGallery.module.css';
 import { KitGalleryActions } from './KitGalleryActions';
 import { KitGalleryData } from './KitGalleryData';
+import { KitGalleryEditor } from './KitGalleryEditor';
 import { KitGalleryFeedback } from './KitGalleryFeedback';
 import { KitGalleryForms } from './KitGalleryForms';
 
@@ -48,6 +49,7 @@ export function KitGallery({ locale }: KitGalleryProps) {
             <KitGalleryActions locale={locale} />
             <KitGalleryForms locale={locale} />
             <KitGalleryData locale={locale} />
+            <KitGalleryEditor locale={locale} />
             <KitGalleryFeedback
                 locale={locale}
                 openOverlay={openOverlay}

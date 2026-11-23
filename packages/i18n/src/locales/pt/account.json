@@ -2158,6 +2158,29 @@
         },
         "entityCard": {
             "noImage": "Sem imagem"
+        },
+        "editorNav": {
+            "label": "Seções do anúncio",
+            "switcherLabel": "Trocar de seção",
+            "previous": "Seção anterior: {{section}}",
+            "next": "Próxima seção: {{section}}",
+            "position": "Seção {{position}} de {{total}}",
+            "allSections": "Todas as seções",
+            "status": {
+                "complete": "Completa",
+                "incomplete": "Incompleta",
+                "locked": "Bloqueada pelo seu plano"
+            }
+        },
+        "completeness": {
+            "title": "Completude do anúncio",
+            "summary": "{{done}} de {{total}} seções completas",
+            "complete": "Seu anúncio tem tudo o que precisa para ser publicado.",
+            "missingTitle": "Falta completar:"
+        },
+        "editorShell": {
+            "backToHub": "Voltar ao editor",
+            "backToList": "Voltar à lista"
         }
     },
     "ownerDashboard": {

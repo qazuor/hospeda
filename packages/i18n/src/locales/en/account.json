@@ -2158,6 +2158,29 @@
         },
         "entityCard": {
             "noImage": "No image"
+        },
+        "editorNav": {
+            "label": "Listing sections",
+            "switcherLabel": "Switch section",
+            "previous": "Previous section: {{section}}",
+            "next": "Next section: {{section}}",
+            "position": "Section {{position}} of {{total}}",
+            "allSections": "All sections",
+            "status": {
+                "complete": "Complete",
+                "incomplete": "Incomplete",
+                "locked": "Locked by your plan"
+            }
+        },
+        "completeness": {
+            "title": "Listing completeness",
+            "summary": "{{done}} of {{total}} sections complete",
+            "complete": "Your listing has everything it needs to be published.",
+            "missingTitle": "Still to complete:"
+        },
+        "editorShell": {
+            "backToHub": "Back to the editor",
+            "backToList": "Back to the list"
         }
     },
     "ownerDashboard": {
