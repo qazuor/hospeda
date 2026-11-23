@@ -9,7 +9,12 @@ import { useCallback, useState } from 'react';
 import type { AmenityAttributeValue } from '@/lib/api/types';
 import { setListingPolicy } from '@/lib/listing/listing-policies';
 import type { ListingI18nValues } from '../ListingTranslationPanel.client';
-import type { ContactValues, ListingEditData, SocialValues } from './listing-edit-data';
+import type {
+    ContactValues,
+    ListingEditData,
+    LocationValues,
+    SocialValues
+} from './listing-edit-data';
 import type { ListingPolicyChange } from './PoliciesPanel.client';
 
 /** The save lifecycle the island shows (`aria-busy`) and resets on every edit. */
@@ -57,6 +62,16 @@ export function useListingEditState({
 
     const updateContact = useCallback((patch: Partial<ContactValues>) => {
         setFormData((prev) => ({ ...prev, contact: { ...prev.contact, ...patch } }));
+        setStatus({ kind: 'idle' });
+    }, []);
+
+    /**
+     * Merges a patch into the venue `location` members against the CURRENT
+     * state, never against a render's snapshot: a map pin move must not revert
+     * the address typed since that render (HOS-2496 review).
+     */
+    const updateLocation = useCallback((patch: Partial<LocationValues>) => {
+        setFormData((prev) => ({ ...prev, location: { ...prev.location, ...patch } }));
         setStatus({ kind: 'idle' });
     }, []);
 
@@ -145,6 +160,7 @@ export function useListingEditState({
         setStatus,
         onFieldChange,
         updateContact,
+        updateLocation,
         updateSocial,
         onPolicyChange,
         toggleAmenity,

@@ -43,6 +43,17 @@ export function LocationPickerMap({
     const leafletMapRef = useRef<unknown>(null);
     const markerRef = useRef<unknown>(null);
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
+    // The Leaflet handlers below are registered ONCE, at mount. Reading the
+    // callback (and the lock) through refs keeps them on the LATEST render's
+    // values: a closure over the first render's `onMove` wrote a pin move
+    // against the form state of that first render, reverting every address
+    // edit typed since (HOS-2496 review).
+    const onMoveRef = useRef(onMove);
+    const disabledRef = useRef(disabled);
+    useEffect(() => {
+        onMoveRef.current = onMove;
+        disabledRef.current = disabled;
+    });
 
     // Initialize Leaflet map
     // biome-ignore lint/correctness/useExhaustiveDependencies: Leaflet map needs full re-init on prop changes
@@ -111,14 +122,14 @@ export function LocationPickerMap({
             // Handle marker drag
             marker.on('dragend', () => {
                 const pos = marker.getLatLng();
-                onMove(pos.lat, pos.lng);
+                onMoveRef.current(pos.lat, pos.lng);
             });
 
             // Handle map click (drop/move pin)
             map.on('click', (e: { latlng: { lat: number; lng: number } }) => {
-                if (disabled) return;
+                if (disabledRef.current) return;
                 marker.setLatLng(e.latlng);
-                onMove(e.latlng.lat, e.latlng.lng);
+                onMoveRef.current(e.latlng.lat, e.latlng.lng);
             });
 
             leafletMapRef.current = map;

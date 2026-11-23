@@ -4,23 +4,38 @@
  * the shared location section since HOS-2496: the listing editor's `location`
  * renderer, exactly as `ListingEditor` mounts it.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useRef } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LISTING_FIELD_PREFIX } from '@/components/listing/editor/field-ids';
 import type {
     ListingEditData,
-    ListingFieldChange
+    ListingFieldChange,
+    LocationValues
 } from '@/components/listing/editor/listing-edit-data';
 import {
     LISTING_SECTION_RENDERERS,
     type ListingSectionRenderContext
 } from '@/components/listing/editor/section-renderers';
+import { useListingEditState } from '@/components/listing/editor/use-listing-edit-state';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import { buildEditData } from '../../listing/editor/edit-data-fixture';
 
-// The map is Leaflet: out of scope here, covered by LocationPickerMap.test.tsx.
+/**
+ * The map is Leaflet: out of scope here, covered by LocationPickerMap.test.tsx.
+ * The stand-in keeps the `onMove` of its FIRST render, exactly as a Leaflet
+ * handler registered once at mount would, so a test can move the pin with a
+ * callback that is as stale as the real one could be.
+ */
+const mapStandIn = vi.hoisted(() => ({
+    firstOnMove: null as ((lat: number, lng: number) => void) | null
+}));
 vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
-    LocationPickerMap: () => null
+    LocationPickerMap: ({ onMove }: { readonly onMove: (lat: number, lng: number) => void }) => {
+        const captured = useRef(onMove);
+        mapStandIn.firstOnMove = captured.current;
+        return null;
+    }
 }));
 
 const idOf = (name: string) => buildFieldId({ prefix: LISTING_FIELD_PREFIX, name });
@@ -30,11 +45,18 @@ interface VenueLocationSectionProps {
     readonly locale: 'es';
     readonly data: ListingEditData;
     readonly errors: Readonly<Record<string, string>>;
-    readonly onFieldChange: ListingFieldChange;
+    readonly onFieldChange?: ListingFieldChange;
+    readonly onLocationChange?: (patch: Partial<LocationValues>) => void;
 }
 
 /** Mounts the venue `location` renderer with an otherwise inert context. */
-function VenueLocationSection({ locale, data, errors, onFieldChange }: VenueLocationSectionProps) {
+function VenueLocationSection({
+    locale,
+    data,
+    errors,
+    onFieldChange = vi.fn(),
+    onLocationChange = vi.fn()
+}: VenueLocationSectionProps) {
     const context: ListingSectionRenderContext = {
         locale,
         vertical: 'venue',
@@ -47,6 +69,7 @@ function VenueLocationSection({ locale, data, errors, onFieldChange }: VenueLoca
         onFieldChange,
         onPolicyChange: vi.fn(),
         onContactChange: vi.fn(),
+        onLocationChange,
         onSocialChange: vi.fn(),
         onToggleAmenity: vi.fn(),
         onToggleFeature: vi.fn(),
@@ -56,6 +79,23 @@ function VenueLocationSection({ locale, data, errors, onFieldChange }: VenueLoca
         listingId: 'listing-1'
     };
     return LISTING_SECTION_RENDERERS.location(context);
+}
+
+/** Mounts the venue section on the editor's REAL form state, as `ListingEditor` does. */
+function StatefulVenueLocation({ initial }: { readonly initial: ListingEditData }) {
+    const state = useListingEditState({ buildInitialEditData: () => initial });
+    return (
+        <>
+            <VenueLocationSection
+                locale="es"
+                data={state.formData}
+                errors={{}}
+                onFieldChange={state.onFieldChange}
+                onLocationChange={state.updateLocation}
+            />
+            <output data-testid="location-state">{JSON.stringify(state.formData.location)}</output>
+        </>
+    );
 }
 
 describe('venue location (ListingLocationSection)', () => {
@@ -86,14 +126,14 @@ describe('venue location (ListingLocationSection)', () => {
         ).toBe('-58.2');
     });
 
-    it('reports an edit as a whole replacement of the location state', () => {
-        const onFieldChange = vi.fn();
+    it('reports an edit as a patch of the one member it changed', () => {
+        const onLocationChange = vi.fn();
         render(
             <VenueLocationSection
                 locale="es"
                 data={buildEditData()}
                 errors={{}}
-                onFieldChange={onFieldChange}
+                onLocationChange={onLocationChange}
             />
         );
 
@@ -101,14 +141,7 @@ describe('venue location (ListingLocationSection)', () => {
             target: { value: '99' }
         });
 
-        expect(onFieldChange).toHaveBeenCalledWith('location', {
-            street: '',
-            number: '99',
-            floor: '',
-            apartment: '',
-            lat: '',
-            long: ''
-        });
+        expect(onLocationChange).toHaveBeenCalledWith({ number: '99' });
     });
 
     it('shows a field error', () => {
@@ -143,7 +176,7 @@ describe('venue location (ListingLocationSection)', () => {
     });
 
     it('writes both coordinates when one is typed, keeping the address', () => {
-        const onFieldChange = vi.fn();
+        const onLocationChange = vi.fn();
         render(
             <VenueLocationSection
                 locale="es"
@@ -158,20 +191,13 @@ describe('venue location (ListingLocationSection)', () => {
                     }
                 })}
                 errors={{}}
-                onFieldChange={onFieldChange}
+                onLocationChange={onLocationChange}
             />
         );
 
         fireEvent.change(screen.getByLabelText(/^Latitud/), { target: { value: '-32.48' } });
 
-        expect(onFieldChange).toHaveBeenCalledWith('location', {
-            street: 'Mitre',
-            number: '10',
-            floor: '',
-            apartment: '',
-            lat: '-32.48',
-            long: '-58.2'
-        });
+        expect(onLocationChange).toHaveBeenCalledWith({ lat: '-32.48', long: '-58.2' });
     });
 
     it('opens the coordinates disclosure when a coordinate has an error', () => {
@@ -202,5 +228,55 @@ describe('venue location — what only the accommodation has', () => {
 
         expect(screen.queryByLabelText('Buscar en el mapa')).not.toBeInTheDocument();
         expect(screen.queryByText(/Usar mi ubicación actual/)).not.toBeInTheDocument();
+    });
+});
+
+describe('venue location — a pin move after an address edit (HOS-2496 review)', () => {
+    beforeEach(() => {
+        mapStandIn.firstOnMove = null;
+    });
+
+    it('keeps the address typed after mount when the pin is moved', () => {
+        render(
+            <StatefulVenueLocation
+                initial={buildEditData({
+                    location: {
+                        street: 'Mitre',
+                        number: '10',
+                        floor: '',
+                        apartment: '',
+                        lat: '-32.4',
+                        long: '-58.2'
+                    }
+                })}
+            />
+        );
+
+        fireEvent.change(document.getElementById(idOf('location.street')) as HTMLInputElement, {
+            target: { value: 'Rocamora' }
+        });
+        fireEvent.change(document.getElementById(idOf('location.number')) as HTMLInputElement, {
+            target: { value: '850' }
+        });
+        fireEvent.change(document.getElementById(idOf('location.floor')) as HTMLInputElement, {
+            target: { value: '2' }
+        });
+
+        // The map moves the pin through the callback it captured at mount.
+        act(() => {
+            mapStandIn.firstOnMove?.(-32.48, -58.23);
+        });
+
+        expect(JSON.parse(screen.getByTestId('location-state').textContent ?? '{}')).toEqual({
+            street: 'Rocamora',
+            number: '850',
+            floor: '2',
+            apartment: '',
+            lat: '-32.480000',
+            long: '-58.230000'
+        });
+        expect((document.getElementById(idOf('location.street')) as HTMLInputElement).value).toBe(
+            'Rocamora'
+        );
     });
 });

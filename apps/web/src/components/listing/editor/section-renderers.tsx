@@ -70,6 +70,8 @@ export interface ListingSectionRenderContext {
     /** Sets or removes one house-rule key (HOS-2060). */
     readonly onPolicyChange: ListingPolicyChange;
     readonly onContactChange: (patch: Partial<ContactValues>) => void;
+    /** Merges a patch into the venue `location` members against the current state. */
+    readonly onLocationChange: (patch: Partial<LocationValues>) => void;
     readonly onSocialChange: (key: keyof SocialValues, value: string) => void;
     readonly onToggleAmenity: (id: string) => void;
     readonly onToggleFeature: (id: string) => void;
@@ -165,7 +167,7 @@ const VENUE_ADDRESS_FIELDS = [
  * City, neighborhood and department are NOT asked here; they come from the
  * destination chosen in the basic-info page. A venue is a business open to the
  * public, so this address is the one its public page shows, and the pin is
- * exact. Every edit replaces the whole `location` member set.
+ * exact. Every edit merges into the CURRENT `location` member set.
  *
  * @param context - The render context.
  * @returns The location section.
@@ -173,9 +175,9 @@ const VENUE_ADDRESS_FIELDS = [
 function renderVenueLocation(context: ListingSectionRenderContext): JSX.Element {
     const t = createT(context.locale);
     const location = context.data.location;
-    const setMembers = (patch: Partial<LocationValues>) => {
-        context.onFieldChange('location', { ...location, ...patch });
-    };
+    // Functional on purpose: the patch merges into the state at write time, so a
+    // pin move never reverts an address edit typed after this render.
+    const setMembers = context.onLocationChange;
 
     return (
         <ListingLocationSection
