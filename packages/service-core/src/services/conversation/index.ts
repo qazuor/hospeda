@@ -20,3 +20,4 @@ export type { GetMessagesResult } from './message.service.js';
 export * from './message.service.js';
 export type { AdvanceScheduleResult } from './notification-schedule.service';
 export * from './notification-schedule.service';
+export * from './purge-unverified-inquiries.service.js';
