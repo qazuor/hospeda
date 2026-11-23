@@ -1,0 +1,59 @@
+---
+/**
+ * @file OwnerDashboardPage.astro
+ * @description Shared body of the venue and experience owner dashboards
+ * (HOS-2475, HOS-2476): auth guard, permission gate, catalog plan names for
+ * the traffic lock, PageHeader, the stats island and the quick actions.
+ *
+ * The access gate is NOT here: a component cannot redirect, so each page runs
+ * `resolveOwnerDashboardRedirect` before rendering this.
+ */
+
+import { EntitlementKeyEnum, type OwnerDashboardVertical } from '@repo/schemas';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
+import { buildOwnerDashboardRows, OWNER_DASHBOARD_PATH } from '@/lib/account/owner-listing-dashboard';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { PageHeader } from '@/components/account/ui';
+import { DashboardLinksSection } from './DashboardLinksSection';
+import { OwnerListingDashboard } from './OwnerListingDashboard.client';
+import styles from './Dashboard.module.css';
+
+interface Props {
+    /** Which owner dashboard to render. */
+    readonly vertical: OwnerDashboardVertical;
+}
+
+const { vertical } = Astro.props;
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// The traffic lock names the catalog plans that carry basic stats (HOS-2214).
+const planNames = planNamesWithEntitlement({
+    result: await fetchPublicPlans({ vertical }),
+    entitlement: EntitlementKeyEnum.VIEW_BASIC_STATS
+});
+const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPathForAudience({ audience: vertical }) });
+
+const title = t(`account.ownerDashboard.${vertical}.title`);
+const description = t(`account.ownerDashboard.${vertical}.description`);
+const activeSection = OWNER_DASHBOARD_PATH[vertical].replace('mi-cuenta/', '');
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection={activeSection} template="dashboard">
+    <div class={styles.page}>
+        <PageHeader locale={locale} title={title} description={description} helpId={`section:${vertical}.dashboard`} />
+
+        <OwnerListingDashboard client:load locale={locale} vertical={vertical} planNames={planNames} plansHref={plansHref} />
+
+        <DashboardLinksSection
+            locale={locale}
+            title={t('account.ownerDashboard.quickActions')}
+            helpId={`section:${vertical}.dashboard`}
+            rows={buildOwnerDashboardRows({ vertical })}
+        />
+    </div>
+</AccountLayout>

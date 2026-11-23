@@ -1,22 +1,21 @@
 /**
  * @file consultas-index-mobile-layout.test.ts
- * @description Source-level layout guards for the guest inbox cards (HOS-1767).
+ * @description Layout guards for the guest inbox rows (HOS-1767), now carried by
+ * the kit `ListRow` inside a `DataList` (HOS-2481). The date no longer competes
+ * with the name and excerpt on a narrow screen: below 40rem of the LIST's width
+ * the trailing piece stacks under the content, and from 40rem the row is one
+ * line. The page itself keeps no `<style>` block of its own.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const source = readFileSync(
-    resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/consultas/index.astro'),
-    'utf8'
-);
+const src = resolve(__dirname, '../../src');
+const page = readFileSync(resolve(src, 'pages/[lang]/mi-cuenta/consultas/index.astro'), 'utf8');
+const rowCss = readFileSync(resolve(src, 'components/account/ui/ListRow.module.css'), 'utf8');
 
-const style = source.slice(source.indexOf('<style>'));
-const mobileBreakpoint = '@media (max-width: 480px)';
-const mobile = style.slice(style.lastIndexOf(mobileBreakpoint));
-const base = style.slice(0, style.lastIndexOf(mobileBreakpoint));
-
+/** Body of the first `selector {` rule found in `scope`. */
 function ruleIn({
     scope,
     selector
@@ -26,31 +25,28 @@ function ruleIn({
 }): string {
     const start = scope.indexOf(`${selector} {`);
     expect(start, `missing ${selector} rule`).toBeGreaterThanOrEqual(0);
-    const end = scope.indexOf('}', start);
-    return scope.slice(start, end);
+    return scope.slice(start, scope.indexOf('}', start));
 }
 
-describe('mi-cuenta/consultas/index.astro — mobile card layout (HOS-1767)', () => {
-    it('TEST:1767:18 — stacks the date under the content at 480px and below', () => {
-        expect(style.split(mobileBreakpoint)).toHaveLength(2);
+const wideAt = rowCss.indexOf('@container (width >= 40rem)');
+const narrow = rowCss.slice(0, wideAt);
+const wide = rowCss.slice(wideAt);
 
-        const link = ruleIn({ scope: mobile, selector: '.messages-inbox__link' });
-        expect(link).toContain('display: grid;');
-        expect(link).toContain('grid-template-columns: 48px minmax(0, 1fr);');
-
-        const avatar = ruleIn({ scope: mobile, selector: '.messages-inbox__avatar' });
-        expect(avatar).toContain('grid-row: 1 / span 2;');
-
-        const meta = ruleIn({ scope: mobile, selector: '.messages-inbox__meta' });
-        expect(meta).toContain('grid-column: 2;');
-        expect(meta).toContain('flex-direction: row;');
+describe('mi-cuenta/consultas — inbox row layout (HOS-1767 on the kit)', () => {
+    it('the page renders the kit inbox and keeps no style block', () => {
+        expect(page).toContain('<ConversationInbox client:load');
+        expect(page).not.toContain('<style');
     });
 
-    it('TEST:1767:19 — keeps the desktop flex rows unchanged', () => {
-        const link = ruleIn({ scope: base, selector: '.messages-inbox__link' });
-        expect(link).toContain('display: flex;');
+    it('TEST:1767:18 — below 40rem the trailing piece (date) stacks under the content', () => {
+        expect(wideAt).toBeGreaterThan(-1);
+        const row = ruleIn({ scope: narrow, selector: '.row' });
+        expect(row).toContain('display: grid;');
+        expect(row).toMatch(/"leading body"\s*"leading trailing"/);
+    });
 
-        const meta = ruleIn({ scope: base, selector: '.messages-inbox__meta' });
-        expect(meta).toContain('flex-direction: column;');
+    it('TEST:1767:19 — from 40rem the row is one line with the date at the end', () => {
+        const row = ruleIn({ scope: wide, selector: '.row' });
+        expect(row).toContain('grid-template-areas: "leading body trailing actions";');
     });
 });

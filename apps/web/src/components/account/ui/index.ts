@@ -26,6 +26,13 @@ export {
     formatSavedTime
 } from './AutoSaveChip';
 export {
+    Avatar,
+    type AvatarProps,
+    type AvatarSize,
+    avatarInitials,
+    avatarPalette
+} from './Avatar';
+export {
     ACCOUNT_SHELL_TEMPLATES,
     type AccountShellTemplate,
     DEFAULT_ACCOUNT_SHELL_TEMPLATE,
@@ -40,18 +47,42 @@ export {
 export { Button, type ButtonContentProps, type ButtonProps } from './Button';
 export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
+export { Composer, type ComposerProps } from './Composer';
 export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog';
+export {
+    ConversationThread,
+    type ConversationThreadProps,
+    formatMessageTime,
+    type ThreadMessage,
+    type ThreadViewer
+} from './ConversationThread';
+export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export {
+    EntityCard,
+    EntityCardGrid,
+    type EntityCardGridProps,
+    type EntityCardImage,
+    type EntityCardProps
+} from './EntityCard';
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
+export { type KeyValueItem, KeyValueList, type KeyValueListProps } from './KeyValueList';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
+export { ListRow, type ListRowActions, type ListRowProps } from './ListRow';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
+export {
+    MessageBubble,
+    type MessageBubbleProps,
+    type MessageBubbleSide,
+    type MessageDelivery
+} from './MessageBubble';
 export { type Breadcrumb, PageHeader, type PageHeaderProps } from './PageHeader';
 export { type LoadMoreResult, Pagination, type PaginationProps } from './Pagination';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
@@ -60,6 +91,13 @@ export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radi
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton';
+export {
+    StatCard,
+    type StatCardProps,
+    StatGrid,
+    type StatGridProps,
+    type StatValue
+} from './StatCard';
 export { CountPill, type CountPillProps, StatusPill, type StatusPillProps } from './StatusPill';
 export { StickySaveBar, type StickySaveBarProps } from './StickySaveBar';
 export {

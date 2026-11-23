@@ -33,6 +33,7 @@ import { protectedCreateExperienceReviewRoute } from './createReview';
 import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
 import { protectedListMyExperienceRoute } from './listMine';
+import { protectedExperienceMineStatsRoute } from './mineStats';
 import { protectedPatchExperienceRoute } from './patch';
 import { protectedPublishExperienceRoute } from './publish';
 import { protectedPurgeExperienceRoute } from './purge';
@@ -72,6 +73,7 @@ app.route('/', protectedListMyExperienceRoute);
 // is not load-bearing (Hono matches exact segment counts), but registered
 // alongside /mine for readability.
 app.route('/', protectedExperienceViewStatsRoute);
+app.route('/', protectedExperienceMineStatsRoute);
 app.route('/', protectedExperienceViewStatsDailySeriesRoute);
 
 // GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before

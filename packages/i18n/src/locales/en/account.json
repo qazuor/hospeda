@@ -152,8 +152,8 @@
         "editProfile": "Edit profile",
         "subscription": "Subscription",
         "preferences": "Preferences",
-        "newsletter": "Newsletter",
-        "whatsNew": "What's new",
+        "newsletter": "Email newsletter",
+        "whatsNew": "Hospeda updates",
         "aiAssistants": "AI assistants",
         "favorites": "Favorites",
         "searchHistory": "Search history",
@@ -170,7 +170,9 @@
         "provider": "My provider listing",
         "repeatTour": "Repetir tour",
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
-        "help": "Help"
+        "help": "Help",
+        "venueDashboard": "Venues dashboard",
+        "experienceDashboard": "Experiences dashboard"
     },
     "doors": {
         "sectionLabel": "Discover more",
@@ -334,7 +336,8 @@
             "appearance": "Appearance",
             "notifications": "Notifications",
             "onboarding": "Onboarding",
-            "newsletter": "Newsletter"
+            "newsletter": "Email newsletter",
+            "searchHistory": "Search history"
         },
         "onboarding": {
             "restartTour": "Repeat welcome tour",
@@ -367,7 +370,7 @@
             "description": "Idioma de la plataforma web"
         },
         "newsletter": {
-            "label": "Receive newsletter",
+            "label": "Receive the email newsletter",
             "description": "Recibir novedades, ofertas y destinos destacados"
         },
         "errors": {
@@ -382,6 +385,10 @@
             "title": "Weekly AI questions digest",
             "label": "Receive the weekly digest",
             "description": "An email on Mondays with the questions your listings' assistant could not answer. If there were none, we do not write."
+        },
+        "changeInPreferences": "Change in Preferences",
+        "searchHistory": {
+            "planFallback": "Higher plan"
         }
     },
     "aiAssistants": {
@@ -927,7 +934,14 @@
                 "message_other": "Collections are available on the {{plans}} plans. Upgrade your plan to access this feature.",
                 "messageNoPlans": "Collections are not included in your current plan. Upgrade your plan to access this feature.",
                 "cta": "View plans"
-            }
+            },
+            "lock": {
+                "plan": "Your plan does not include collections.",
+                "description": "Group your favorites by trip or theme and come back to them whenever you want."
+            },
+            "loadError": "We could not load your collections",
+            "emptyDescription": "Create a collection to group your favorites by trip or theme.",
+            "detailSectionTitle": "Favorites in this collection"
         },
         "filter": {
             "all": "All",
@@ -951,7 +965,9 @@
             "cancel": "Cancel",
             "placeholder": "Add a personal note...",
             "save": "Save note",
-            "saved": "Note saved"
+            "saved": "Note saved",
+            "label": "Personal note",
+            "edit": "Edit note"
         },
         "removeBtn": "Remove",
         "removeLabel": "Remove from favorites",
@@ -1048,7 +1064,9 @@
                 "recommendations": "Suggestions",
                 "recommendationsDesc": "Accommodations picked for you",
                 "myListingDesc": "Manage your listing, photos and subscription",
-                "myMessagesListingDesc": "Enquiries you receive about your business"
+                "myMessagesListingDesc": "Enquiries you receive about your business",
+                "venueDashboardDesc": "Your venues and their visits",
+                "experienceDashboardDesc": "Your experiences and their visits"
             },
             "stats": {
                 "favorites": "My Favorites",
@@ -1075,6 +1093,8 @@
                 "viewAllSubscriptions": "View all",
                 "multipleSubscriptions_one": "{{count}} active subscription",
                 "multipleSubscriptions_other": "{{count}} active subscriptions",
+                "subscriptionsCount_one": "{{count}} subscription",
+                "subscriptionsCount_other": "{{count}} subscriptions",
                 "properties": "My properties",
                 "propertiesDesc": "Published accommodations",
                 "messages": "Unread messages",
@@ -1090,11 +1110,15 @@
                 "viewReviews": "View my reviews",
                 "viewSubscription": "View my subscription"
             },
-            "sectionsLabel": "Sections"
+            "sectionsLabel": "Sections",
+            "linksTitle": "Shortcuts"
         },
         "editProfile": {
             "title": "Edit Profile",
             "description": "Update your personal information and account preferences.",
+            "identitySection": "Your identity",
+            "contactSection": "Contact and location",
+            "aboutSection": "About you",
             "avatarSection": "Profile picture",
             "personalSection": "Personal information",
             "extrasSection": "Más sobre vos",
@@ -1144,7 +1168,7 @@
             }
         },
         "whatsNew": {
-            "title": "What's New",
+            "title": "Hospeda updates",
             "desc": "News and platform updates"
         },
         "searchHistory": {
@@ -1165,7 +1189,7 @@
         }
     },
     "newsletter": {
-        "title": "Newsletter",
+        "title": "Email newsletter",
         "loading": "Loading preferences…",
         "statusLabel": "Status",
         "statusActive": "Active",
@@ -1778,7 +1802,8 @@
         "pageSubtitle": "Manage your presence as a Hospeda partner",
         "empty": {
             "text": "You don't have a partner listing yet. Apply from \"Become a partner\" and, once your application is approved, your listing will show up here.",
-            "cta": "Go to Become a partner"
+            "cta": "Go to Become a partner",
+            "title": "Your partner listing"
         },
         "status": {
             "empty": "Your application was approved. Add your logo and copy so an admin can review them. You are not published yet.",
@@ -1826,13 +1851,15 @@
                 "linkedIn": "LinkedIn",
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
-            }
+            },
+            "sectionTitle": "Your listing details"
         },
         "presence": {
             "hidden": "Meanwhile, your page appears not to exist to the public.",
             "notDeleted": "Nothing was deleted: your listing and data are still saved.",
             "returnsAlone": "Your presence returns on its own when you regain the plan that grants it.",
-            "moderated": "An administrator moderated your presence. Even with the plan, it will not appear until moderation is lifted."
+            "moderated": "An administrator moderated your presence. Even with the plan, it will not appear until moderation is lifted.",
+            "title": "Your presence is hidden"
         },
         "installment": {
             "title": "Your installment to pay",
@@ -1841,6 +1868,17 @@
             "amountPending": "The team will confirm the amount along with the transfer details.",
             "dueOn": "Due on {{date}}",
             "howToPay": "You pay by bank transfer. The Hospeda team will email you the transfer details. Once we record the payment, your subscription is up to date."
+        },
+        "nextAction": {
+            "title": "Next step"
+        },
+        "statusPill": {
+            "revoked": "Taken down",
+            "active": "Active",
+            "approved": "Approved",
+            "underReview": "Under review",
+            "rejected": "Changes requested",
+            "draft": "Draft"
         }
     },
     "partnerStats": {
@@ -2082,6 +2120,62 @@
         "breadcrumbs": "Breadcrumb",
         "gallery": {
             "title": "Component kit"
+        },
+        "stat": {
+            "unavailable": "Data unavailable"
+        },
+        "thread": {
+            "label": "Conversation messages",
+            "you": "You",
+            "sender": {
+                "guest": "Guest",
+                "owner": "Host",
+                "system": "System message"
+            },
+            "sending": "Sending…",
+            "failed": "Couldn't send",
+            "retry": "Try again"
+        },
+        "composer": {
+            "label": "Your message",
+            "placeholder": "Write your message…",
+            "send": "Send"
+        },
+        "entityCard": {
+            "noImage": "No image"
         }
+    },
+    "ownerDashboard": {
+        "venue": {
+            "title": "Venues dashboard",
+            "description": "How your venues are doing on Hospeda.",
+            "listingsLabel": "Your venues",
+            "listingsLink": "See my venues",
+            "listingsLinkDesc": "Edit, publish or archive your listings",
+            "newListing": "Publish a venue",
+            "onboardingSection": "Getting started",
+            "onboardingTitle": "You haven't published a venue yet",
+            "onboardingDescription": "Add your first venue so travellers can find it.",
+            "trafficLockedFeature": "Visits to your venues"
+        },
+        "experience": {
+            "title": "Experiences dashboard",
+            "description": "How your experiences are doing on Hospeda.",
+            "listingsLabel": "Your experiences",
+            "listingsLink": "See my experiences",
+            "listingsLinkDesc": "Edit, publish or archive your listings",
+            "newListing": "Publish an experience",
+            "onboardingSection": "Getting started",
+            "onboardingTitle": "You haven't published an experience yet",
+            "onboardingDescription": "Add your first experience so travellers can find it.",
+            "trafficLockedFeature": "Visits to your experiences"
+        },
+        "listingsHint": "{{published}} published · {{draft}} drafts",
+        "manage": "Manage",
+        "quickActions": "Quick actions",
+        "trafficLabel": "Visits",
+        "trafficHint_one": "in the last {{days}} days · {{unique}} person",
+        "trafficHint_other": "in the last {{days}} days · {{unique}} people",
+        "trafficLockedDescription": "Visits to your listings come with these plans."
     }
 }

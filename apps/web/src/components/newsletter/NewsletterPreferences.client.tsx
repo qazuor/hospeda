@@ -3,52 +3,34 @@
  * @description React island that drives the newsletter preferences row on
  * the account page (SPEC-101 T-101-34).
  *
- * The island fetches `/api/v1/protected/newsletter/status` on mount and
- * renders ONE of the following layouts based on the lifecycle status:
+ * HOS-2479: the on/off (subscribe, cancel) and the per-content-type switches
+ * moved to Preferences (D11). This island now SHOWS the lifecycle status as a
+ * StatusPill and links to Preferences to change it. It keeps the read-only
+ * extras (subscribed-since, channels) and the resend-verification action,
+ * which is not an on/off. The rest of the page is HOS-2501.
  *
- *   active                → Status badge + subscribed-since + "Cancel"
- *                           button. Clicking "Cancel" reveals an inline
- *                           confirm dialog (Confirm + Stay) before the
- *                           DELETE /unsubscribe call fires.
- *   pending_verification  → Yellow badge + pending banner + "Resend"
- *                           button (POST /resend-verification).
- *   unsubscribed | null   → Grey badge + "Subscribe" button (POST
- *                           /subscribe with source='account_preferences').
- *   bounced               → Red badge with "Email inválido" message.
- *                           No actions exposed (terminal state).
- *   complained            → Red badge with "Cancelado" message.
- *                           No actions exposed (terminal state).
- *
- * Status badges use both colour AND a text label so the preference is
- * readable for users who can't perceive colour differences (AC-101-13.4).
+ * Status pills carry both colour AND a text label (AC-101-13.4).
  *
  * All copy comes from `account.newsletter.*` keys via `@repo/i18n`.
  */
 
-import { DEFAULT_NEWSLETTER_PREFERENCES, type NewsletterContentPreferences } from '@repo/schemas';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { NewsletterContentTypeToggles } from './NewsletterContentTypeToggles.client';
+import { buildUrl } from '@/lib/urls';
+import { StatusPill, type StatusTone, TextLink } from '../account/ui';
 import styles from './NewsletterPreferences.module.css';
-import { NewsletterStatusBadge } from './NewsletterStatusBadge';
 
 /** Subset of NewsletterSubscriberStatusEnum values returned by GET /status. */
 type Status = 'active' | 'pending_verification' | 'unsubscribed' | 'bounced' | 'complained' | null;
-
-type Preferences = NewsletterContentPreferences;
-
-/** Canonical all-true default used when the server returns null preferences. */
-const ALL_TRUE_PREFERENCES: Preferences = DEFAULT_NEWSLETTER_PREFERENCES;
 
 interface StatusResponse {
     readonly subscribed: boolean;
     readonly status: Status;
     readonly subscribedAt: string | null;
     readonly verifiedAt: string | null;
-    readonly preferences: Preferences | null;
 }
 
 /** Public props consumed from `mi-cuenta/newsletter.astro`. */
@@ -106,7 +88,6 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
 
     const [island, setIsland] = useState<IslandState>({ kind: 'loading' });
     const [actionInFlight, setActionInFlight] = useState<boolean>(false);
-    const [confirmCancel, setConfirmCancel] = useState<boolean>(false);
     const [statusText, setStatusText] = useState<string>('');
     const isMountedRef = useRef<boolean>(true);
 
@@ -180,7 +161,7 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
     }, []);
 
     const callAction = useCallback(
-        async (path: string, method: 'POST' | 'DELETE'): Promise<boolean> => {
+        async (path: string, method: 'POST'): Promise<boolean> => {
             setActionInFlight(true);
             const genericFallback = t(
                 'newsletter.errorMessage',
@@ -189,12 +170,7 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
             try {
                 const res = await fetch(joinApi(apiUrl, path), {
                     method,
-                    credentials: 'include',
-                    headers: method === 'POST' ? { 'Content-Type': 'application/json' } : {},
-                    body:
-                        method === 'POST' && path.endsWith('/subscribe')
-                            ? JSON.stringify({ locale, source: 'account_preferences' })
-                            : undefined
+                    credentials: 'include'
                 });
                 if (!res.ok) {
                     const apiError = await readApiError(res);
@@ -220,23 +196,6 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
         [apiUrl, locale, t, announce]
     );
 
-    const handleSubscribe = useCallback(
-        async (e: FormEvent<HTMLFormElement>) => {
-            e.preventDefault();
-            const ok = await callAction('/api/v1/protected/newsletter/subscribe', 'POST');
-            if (ok) {
-                announce(
-                    t(
-                        'account.newsletter.pendingBanner',
-                        'Revisá tu email para confirmar tu suscripción.'
-                    )
-                );
-                await fetchStatus();
-            }
-        },
-        [callAction, fetchStatus, t, announce]
-    );
-
     const handleResend = useCallback(
         async (e: FormEvent<HTMLFormElement>) => {
             e.preventDefault();
@@ -251,18 +210,6 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
             }
         },
         [callAction, t, announce]
-    );
-
-    const handleUnsubscribe = useCallback(
-        async (e: FormEvent<HTMLFormElement>) => {
-            e.preventDefault();
-            const ok = await callAction('/api/v1/protected/newsletter/unsubscribe', 'DELETE');
-            if (ok) {
-                setConfirmCancel(false);
-                await fetchStatus();
-            }
-        },
-        [callAction, fetchStatus]
     );
 
     // ------------------------------------------------------------------
@@ -299,6 +246,7 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
 
     const data = island.data;
     const status = data.status;
+    const preferencesHref = buildUrl({ locale, path: 'mi-cuenta/preferencias' });
 
     return (
         <section className={styles.wrapper}>
@@ -306,10 +254,9 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 <span className={styles.statusLabel}>
                     {t('account.newsletter.statusLabel', 'Estado')}
                 </span>
-                <NewsletterStatusBadge
-                    status={status}
-                    t={t}
-                />
+                <StatusPill tone={STATUS_PRESENTATION[status ?? 'unsubscribed'].tone}>
+                    {t(STATUS_PRESENTATION[status ?? 'unsubscribed'].key)}
+                </StatusPill>
             </header>
 
             {data.subscribedAt && status !== null && (
@@ -329,59 +276,16 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 {statusText}
             </div>
 
-            {/* === Active state — per-channel + per-content-type + cancel === */}
-            {status === 'active' && (
-                <>
-                    <ChannelList t={t} />
-                    <NewsletterContentTypeToggles
-                        locale={locale}
-                        apiUrl={apiUrl}
-                        initialPreferences={data.preferences ?? ALL_TRUE_PREFERENCES}
-                        disabled={actionInFlight || confirmCancel}
-                    />
-                </>
-            )}
+            {/* HOS-2479: the on/off lives in Preferences (one source per setting). */}
+            <p>
+                <TextLink href={preferencesHref}>
+                    {t('account.preferences.changeInPreferences')}
+                </TextLink>
+            </p>
 
-            {status === 'active' && !confirmCancel && (
-                <button
-                    type="button"
-                    className={styles.dangerButton}
-                    onClick={() => setConfirmCancel(true)}
-                    disabled={actionInFlight}
-                >
-                    {t('account.newsletter.cancelButton', 'Cancelar suscripción')}
-                </button>
-            )}
+            {status === 'active' && <ChannelList t={t} />}
 
-            {status === 'active' && confirmCancel && (
-                <form
-                    className={styles.confirmBox}
-                    onSubmit={handleUnsubscribe}
-                >
-                    <p className={styles.confirmTitle}>
-                        {t('account.newsletter.confirmCancelTitle', '¿Cancelar suscripción?')}
-                    </p>
-                    <div className={styles.confirmActions}>
-                        <button
-                            type="submit"
-                            className={styles.dangerButton}
-                            disabled={actionInFlight}
-                        >
-                            {t('account.newsletter.confirmCancelYes', 'Sí, cancelar')}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.secondaryButton}
-                            onClick={() => setConfirmCancel(false)}
-                            disabled={actionInFlight}
-                        >
-                            {t('account.newsletter.confirmCancelNo', 'No, quedarme')}
-                        </button>
-                    </div>
-                </form>
-            )}
-
-            {/* === Pending verification — resend === */}
+            {/* === Pending verification — resend (not an on/off) === */}
             {status === 'pending_verification' && (
                 <>
                     <p className={styles.pendingBanner}>
@@ -404,31 +308,21 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                     </form>
                 </>
             )}
-
-            {/* === Unsubscribed | null — subscribe === */}
-            {(status === null || status === 'unsubscribed') && (
-                <form onSubmit={handleSubscribe}>
-                    <button
-                        type="submit"
-                        className={styles.primaryButton}
-                        disabled={actionInFlight}
-                    >
-                        {t('account.newsletter.subscribeButton', 'Suscribirme')}
-                    </button>
-                </form>
-            )}
-
-            {/* === Bounced / complained — terminal, no actions === */}
-            {(status === 'bounced' || status === 'complained') && (
-                <p className={styles.terminalNote}>
-                    {status === 'bounced'
-                        ? t('account.newsletter.statusBounced', 'Email inválido')
-                        : t('account.newsletter.statusComplained', 'Cancelado')}
-                </p>
-            )}
         </section>
     );
 }
+
+/** Lifecycle status to its pill tone and i18n key. */
+const STATUS_PRESENTATION: Record<
+    Exclude<Status, null>,
+    { readonly tone: StatusTone; readonly key: string }
+> = {
+    active: { tone: 'success', key: 'account.newsletter.statusActive' },
+    pending_verification: { tone: 'warning', key: 'account.newsletter.statusPending' },
+    unsubscribed: { tone: 'neutral', key: 'account.newsletter.statusUnsubscribed' },
+    bounced: { tone: 'danger', key: 'account.newsletter.statusBounced' },
+    complained: { tone: 'danger', key: 'account.newsletter.statusComplained' }
+};
 
 // ---------------------------------------------------------------------------
 // Sub-component: per-channel section (Email always enabled, WhatsApp soon)
