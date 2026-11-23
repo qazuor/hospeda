@@ -2155,7 +2155,8 @@
         "manage": "Gerenciar",
         "quickActions": "Ações rápidas",
         "trafficLabel": "Visualizações",
-        "trafficHint": "nos últimos {{days}} dias · {{unique}} pessoas",
+        "trafficHint_one": "nos últimos {{days}} dias · {{unique}} pessoa",
+        "trafficHint_other": "nos últimos {{days}} dias · {{unique}} pessoas",
         "trafficLockedDescription": "As visitas aos seus anúncios vêm com estes planos."
     }
 }

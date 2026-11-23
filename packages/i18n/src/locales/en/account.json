@@ -2155,7 +2155,8 @@
         "manage": "Manage",
         "quickActions": "Quick actions",
         "trafficLabel": "Visits",
-        "trafficHint": "in the last {{days}} days · {{unique}} people",
+        "trafficHint_one": "in the last {{days}} days · {{unique}} person",
+        "trafficHint_other": "in the last {{days}} days · {{unique}} people",
         "trafficLockedDescription": "Visits to your listings come with these plans."
     }
 }

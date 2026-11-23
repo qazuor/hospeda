@@ -2155,7 +2155,8 @@
         "manage": "Gestionar",
         "quickActions": "Acciones rápidas",
         "trafficLabel": "Visitas",
-        "trafficHint": "en los últimos {{days}} días · {{unique}} personas",
+        "trafficHint_one": "en los últimos {{days}} días · {{unique}} persona",
+        "trafficHint_other": "en los últimos {{days}} días · {{unique}} personas",
         "trafficLockedDescription": "Las visitas a tus fichas vienen con estos planes."
     }
 }

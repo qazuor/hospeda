@@ -64,6 +64,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.featureCategories',
     'accommodations.featureNames',
     'accommodations.types',
+    'api.whatsapp',
     'account.aiAssistants',
     'account.alerts',
     'account.alliances',
@@ -87,7 +88,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-278 D3 — named by `PartnerEditForm.client.tsx`, the partner
     // self-service island. Sibling of `account.provider` below, which the
     // provider form needs for the same reason.
+    'account.ownerDashboard',
     'account.partner',
+    'account.partnerStats',
     'account.preferences',
     'account.profileCompletion',
     'account.provider',
@@ -195,7 +198,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.enums',
     'common.form',
     'common.loading',
-    'common.modal',
     'common.next',
     'common.nextPage',
     'common.noImage',
@@ -209,14 +211,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // resolved server-side by `qr-sheet-content.ts`): a prefix is two segments
     // by design, so those ride along. ~150 bytes for one panel's copy.
     'common.qrSheet',
-    'common.removing',
     'common.retry',
     // HOS-957 — the rich-text toolbar's link dialog, which replaced
     // `window.prompt('URL del enlace', …)`. Named by `LinkUrlDialog.client.tsx`
     // through `RichTextEditor.client.tsx`, so it is reachable from all four
     // editors that mount it (accommodation, venue/experience, event, post).
     'common.richText',
-    'common.saving',
     'common.untitled',
     // HOS-734 — `ListingViewsWidget.client.tsx` names `common.window.7d` /
     // `.30d` / `.ariaLabel` for its time-window toggle, reusing the same keys
@@ -226,10 +226,13 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'contact.form',
     'contributions.form',
     'conversations.actions',
+    'conversations.empty',
     'conversations.errors',
     'conversations.form',
     'conversations.inbox',
     'conversations.notifications',
+    'conversations.ownerLocked',
+    'conversations.senderLabels',
     'conversations.thread',
     'cookieConsent.buttons',
     'cookieConsent.categories',
@@ -300,6 +303,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'host-trades.card',
     // The provider detail page's review list (HOS-376 T-053), for the same
     // reason as the islands below.
+    'host-trades.detail',
     'host-trades.directory',
     'host-trades.emptyState',
     'host-trades.filter',

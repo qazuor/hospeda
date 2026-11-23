@@ -31,7 +31,7 @@ import {
     resolveOwnerDashboardView
 } from '@/lib/account/owner-listing-dashboard';
 import { ownerDashboardApi } from '@/lib/api/endpoints-protected-dashboards';
-import { createT, type SupportedLocale } from '@/lib/i18n';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 import { buildUrl } from '@/lib/urls';
 
@@ -59,7 +59,7 @@ export function OwnerListingDashboard({
     planNames,
     plansHref
 }: OwnerListingDashboardProps): JSX.Element {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
     const [view, setView] = useState<OwnerDashboardView>(() =>
         resolveOwnerDashboardView({ read: { status: 'loading' } })
     );
@@ -118,7 +118,7 @@ export function OwnerListingDashboard({
     }));
     const trafficState = toAsync(view.traffic, (traffic) => ({
         value: traffic.total,
-        hint: t('account.ownerDashboard.trafficHint', undefined, {
+        hint: tPlural('account.ownerDashboard.trafficHint', traffic.unique, {
             days: traffic.windowDays,
             unique: traffic.unique
         })
