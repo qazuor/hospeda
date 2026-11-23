@@ -48,6 +48,18 @@ describe('AmenitiesGrid.astro (AC-2.3)', () => {
         expect(AMENITIES).not.toContain('nth-child');
         expect(AMENITIES).not.toContain('data-expanded');
     });
+
+    it('renders every amenity past the visible pills in SSR, outside the closed sheet island (SEO / no-JS)', () => {
+        expect(AMENITIES).toContain('entries.slice(DESKTOP_COUNT)');
+        expect(AMENITIES).toContain('data-amenities-rest');
+        // The rest list is a sibling of the island, never one of its children.
+        const island = AMENITIES.slice(
+            AMENITIES.indexOf('<ListingItemsSheet'),
+            AMENITIES.indexOf('</ListingItemsSheet>')
+        );
+        expect(island).not.toContain('data-amenities-rest');
+        expect(AMENITIES).toMatch(/<noscript>\s*<style is:inline>[\s\S]*data-amenities-rest/);
+    });
 });
 
 describe('FeaturesGrid.astro (AC-2.3)', () => {
@@ -56,6 +68,17 @@ describe('FeaturesGrid.astro (AC-2.3)', () => {
         expect(FEATURES).toContain('features.length > SUMMARY_COUNT');
         expect(FEATURES).toContain('<ListingItemsSheet');
         expect(FEATURES).toContain('features.slice(0, SUMMARY_COUNT)');
+    });
+
+    it('renders the features past the summary in SSR, outside the closed sheet island (SEO / no-JS)', () => {
+        expect(FEATURES).toContain('features.slice(SUMMARY_COUNT)');
+        expect(FEATURES).toContain('data-features-rest');
+        const island = FEATURES.slice(
+            FEATURES.indexOf('<ListingItemsSheet'),
+            FEATURES.indexOf('</ListingItemsSheet>')
+        );
+        expect(island).not.toContain('data-features-rest');
+        expect(FEATURES).toMatch(/<noscript>\s*<style is:inline>[\s\S]*data-features-rest/);
     });
 });
 
@@ -86,6 +109,14 @@ describe('HostSection.astro (AC-2.5)', () => {
         expect(HOST).toContain('spokenLanguages.length > 0');
         expect(HOST).toContain('<HostContactButton');
         expect(HOST).toContain('panelId={panelId}');
+    });
+
+    it('never invents a «since» date and renders only for a real owner (AC-2.5)', () => {
+        expect(HOST).toContain('owner.createdAt ?');
+        expect(HOST).toContain('{sinceDate && <span class="host-section__since"');
+        expect(PAGE).toContain('const hasHostSection = Boolean(accommodation.owner.id)');
+        expect(PAGE).toContain('host: hasHostSection');
+        expect(PAGE).toMatch(/\{hasHostSection && \(\s*<div id=\{LISTING_SECTION_IDS\.host\}/);
     });
 
     it('does not claim data that does not exist', () => {

@@ -644,7 +644,6 @@
             "title": "Comodidades",
             "viewAll_one": "Ver a {{count}} comodidade",
             "viewAll_other": "Ver todas as {{count}} comodidades",
-            "collapse": "Ver menos",
             "close": "Fechar",
             "additionalCost": "(custo adicional)"
         },

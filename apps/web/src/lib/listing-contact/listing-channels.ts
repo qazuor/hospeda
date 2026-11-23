@@ -54,10 +54,14 @@ export function buildExperienceChannels({
 }): readonly ListingChannel[] {
     if (!contactInfo) return [];
     const channels: ListingChannel[] = [];
+    const seenPhoneHrefs = new Set<string>();
     for (const phone of [clean(contactInfo.mobilePhone), clean(contactInfo.workPhone)]) {
-        if (phone) {
-            channels.push({ kind: 'phone', href: toTelHref(phone), text: phone, external: false });
-        }
+        if (!phone) continue;
+        const href = toTelHref(phone);
+        // The same number entered twice (or spelled differently) is one row, not two.
+        if (seenPhoneHrefs.has(href)) continue;
+        seenPhoneHrefs.add(href);
+        channels.push({ kind: 'phone', href, text: phone, external: false });
     }
     const email = clean(contactInfo.workEmail);
     if (email) {
