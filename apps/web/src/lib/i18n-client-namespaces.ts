@@ -351,6 +351,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.errorPage',
     // Partner claim copy is read in the browser after consuming the link fragment.
     'partners.claim',
+    // Presentation index share row (HOS-2359): channel labels and copy feedback.
+    'presentations.share',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',
