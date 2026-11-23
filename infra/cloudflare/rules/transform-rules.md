@@ -192,8 +192,8 @@ are the `resolveLegacyRedirectTarget` sources (`apps/web/src/lib/legacy-redirect
 | Source (any locale) | Redirects to |
 |---|---|
 | `/{l}/gastronomia/…` | `/{l}/comer-y-salir/…` |
-| `/{l}/planes/gastronomia/…` | `/{l}/planes/comer-y-salir/…` |
-| `/{l}/presentacion/gastronomia/…` | `/{l}/presentacion/comer-y-salir/…` |
+| `/{l}/planes/<retired venue segment>/…` (`RETIRED_VENUE_URL_PREFIXES[1]`) | `/{l}/planes/comer-y-salir/…` |
+| `/{l}/presentacion/<retired venue segment>/…` (`RETIRED_VENUE_URL_PREFIXES[2]`) | `/{l}/presentacion/comer-y-salir/…` |
 | `/{l}/publicaciones/autor/…` | `/{l}/autores/…` |
 | `/{l}/alojamientos/tipo/<legacy English slug>/` | the Spanish slug |
 | `/{l}/eventos/categoria/<legacy English slug>/` | the Spanish slug |
