@@ -19,15 +19,13 @@ import { ExclusiveDealsList } from '../../../src/components/account/ExclusiveDea
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-const { getByIdMock, addToastMock } = vi.hoisted(() => ({
-    getByIdMock: vi.fn(),
-    addToastMock: vi.fn()
+const { getByIdMock } = vi.hoisted(() => ({
+    getByIdMock: vi.fn()
 }));
 
 vi.mock('../../../src/lib/api/endpoints', () => ({
     accommodationsApi: { getById: getByIdMock }
 }));
-vi.mock('../../../src/store/toast-store', () => ({ addToast: addToastMock }));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -204,16 +202,38 @@ describe('ExclusiveDealsList', () => {
         expect(getByIdMock).toHaveBeenCalledWith({ id: 'acc-001' });
     });
 
-    it('tells the person when the listing could not be opened', async () => {
-        getByIdMock.mockResolvedValue({ ok: false, error: { code: 'NOT_FOUND' } });
+    it('says inline, in the row, that a gone listing is no longer available and drops the action', async () => {
+        getByIdMock.mockResolvedValue({
+            ok: false,
+            error: { status: 404, code: 'NOT_FOUND', message: 'Not found' }
+        });
         vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
         renderComponent();
 
         fireEvent.click(await screen.findByRole('button', { name: /ver alojamiento/i }));
 
+        const row = document.querySelector('[data-row="promo-001"]') as HTMLElement;
         await waitFor(() =>
-            expect(addToastMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
+            expect(row).toHaveTextContent('Este alojamiento ya no está disponible.')
         );
+        expect(screen.queryByRole('button', { name: /ver alojamiento/i })).not.toBeInTheDocument();
+    });
+
+    it('says inline when the listing read fails for another reason, and keeps the action to retry', async () => {
+        getByIdMock.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'INTERNAL_ERROR', message: 'boom' }
+        });
+        vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
+        renderComponent();
+
+        fireEvent.click(await screen.findByRole('button', { name: /ver alojamiento/i }));
+
+        expect(
+            await screen.findByText('No pudimos abrir el alojamiento. Probá de nuevo.')
+        ).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /ver alojamiento/i })).toBeInTheDocument();
     });
 
     it('offers no listing action for an owner-wide deal (no accommodation id)', async () => {

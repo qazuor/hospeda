@@ -13,8 +13,11 @@
  *    the validity date, and a «Ver alojamiento» action for a deal tied to one
  *    accommodation (`accommodationId`). The listing page is addressed by slug,
  *    which the payload does not carry, so the action resolves it on click
- *    through the existing public `accommodations/:id` read. Owner-wide deals
- *    (`accommodationId` null) point nowhere and stay informational.
+ *    through the existing public `accommodations/:id` read (no real link is
+ *    possible without a new API field). When that read says the listing is
+ *    gone (404) the row says so inline and drops the action; any other
+ *    failure says so inline and keeps the action for a retry. Owner-wide
+ *    deals (`accommodationId` null) point nowhere and stay informational.
  *
  * All API calls go to `/api/v1/protected/owner-promotions/exclusive-deals`,
  * mirroring the fetch pattern used by `AlertsList.client.tsx`: plain `fetch`
@@ -34,6 +37,7 @@ import type { OwnerPromotionListItem } from '@repo/schemas';
 import { TouristAudienceEnum } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+    Alert,
     AsyncRegion,
     type AsyncResult,
     Button,
@@ -54,7 +58,6 @@ import { webLogger } from '@/lib/logger';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
 import { buildUrl } from '@/lib/urls';
-import { addToast } from '@/store/toast-store';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -81,6 +84,9 @@ type ListStatus =
     | { readonly kind: 'ready' }
     | { readonly kind: 'upgrade' }
     | { readonly kind: 'error'; readonly message: string };
+
+/** Why a deal's listing could not be opened: gone for good, or a failed read. */
+type ListingIssue = 'unavailable' | 'failed';
 
 /** Props for the ExclusiveDealsList island. */
 export interface ExclusiveDealsListProps {
@@ -124,6 +130,8 @@ export function ExclusiveDealsList({
     const [deals, setDeals] = useState<OwnerPromotionListItem[]>([]);
     /** The deal whose listing link is being resolved, if any. */
     const [openingId, setOpeningId] = useState<string | null>(null);
+    /** Per-deal inline message after a failed open, keyed by deal id. */
+    const [listingIssues, setListingIssues] = useState<Readonly<Record<string, ListingIssue>>>({});
 
     const isMountedRef = useRef(true);
 
@@ -200,17 +208,26 @@ export function ExclusiveDealsList({
     async function openListing(deal: OwnerPromotionListItem): Promise<void> {
         if (!deal.accommodationId || openingId !== null) return;
         setOpeningId(deal.id);
+        const flag = (issue: ListingIssue | null): void => {
+            if (!isMountedRef.current) return;
+            setListingIssues((current) => {
+                const { [deal.id]: _previous, ...rest } = current;
+                return issue === null ? rest : { ...rest, [deal.id]: issue };
+            });
+        };
         try {
             const result = await accommodationsApi.getById({ id: deal.accommodationId });
+            if (!result.ok && result.error.status === 404) {
+                flag('unavailable');
+                return;
+            }
             const slug = result.ok ? result.data.slug : undefined;
             if (!slug) throw new Error('listing slug unavailable');
+            flag(null);
             window.location.assign(buildUrl({ locale, path: `alojamientos/${slug}` }));
         } catch (err) {
             webLogger.error('[ExclusiveDealsList] failed to resolve the listing', err);
-            addToast({
-                type: 'error',
-                message: t('account.exclusiveDeals.item.viewListingError')
-            });
+            flag('failed');
         } finally {
             if (isMountedRef.current) setOpeningId(null);
         }
@@ -287,47 +304,65 @@ export function ExclusiveDealsList({
             )}
             ready={(items) => (
                 <DataList label={t('account.exclusiveDeals.listLabel', 'Tus ofertas exclusivas')}>
-                    {items.map((deal) => (
-                        <ListRow
-                            key={deal.id}
-                            rowId={deal.id}
-                            title={deal.title}
-                            meta={
-                                deal.validUntil
-                                    ? t('account.exclusiveDeals.item.validUntil', undefined, {
-                                          date: formatDate({ date: deal.validUntil, locale })
-                                      })
-                                    : undefined
-                            }
-                            description={formatPromotionBenefit({
-                                discountType: deal.discountType,
-                                discountValue: deal.discountValue,
-                                locale
-                            })}
-                            trailing={
-                                deal.touristAudience === TouristAudienceEnum.VIP ? (
-                                    <StatusPill tone="plan">
-                                        {t('account.exclusiveDeals.item.vipBadge', 'Solo VIP')}
-                                    </StatusPill>
-                                ) : undefined
-                            }
-                            actions={
-                                deal.accommodationId
-                                    ? [
-                                          <Button
-                                              key="open"
-                                              variant="secondary"
-                                              size="sm"
-                                              loading={openingId === deal.id}
-                                              onClick={() => void openListing(deal)}
-                                          >
-                                              {t('account.exclusiveDeals.item.viewListing')}
-                                          </Button>
-                                      ]
-                                    : []
-                            }
-                        />
-                    ))}
+                    {items.map((deal) => {
+                        const issue = listingIssues[deal.id];
+                        return (
+                            <ListRow
+                                key={deal.id}
+                                rowId={deal.id}
+                                title={deal.title}
+                                meta={
+                                    deal.validUntil
+                                        ? t('account.exclusiveDeals.item.validUntil', undefined, {
+                                              date: formatDate({ date: deal.validUntil, locale })
+                                          })
+                                        : undefined
+                                }
+                                description={formatPromotionBenefit({
+                                    discountType: deal.discountType,
+                                    discountValue: deal.discountValue,
+                                    locale
+                                })}
+                                trailing={
+                                    deal.touristAudience === TouristAudienceEnum.VIP ? (
+                                        <StatusPill tone="plan">
+                                            {t('account.exclusiveDeals.item.vipBadge', 'Solo VIP')}
+                                        </StatusPill>
+                                    ) : undefined
+                                }
+                                extra={
+                                    issue ? (
+                                        <Alert
+                                            tone={issue === 'unavailable' ? 'warning' : 'danger'}
+                                            variant="inline"
+                                            locale={locale}
+                                        >
+                                            {issue === 'unavailable'
+                                                ? t(
+                                                      'account.exclusiveDeals.item.listingUnavailable'
+                                                  )
+                                                : t('account.exclusiveDeals.item.viewListingError')}
+                                        </Alert>
+                                    ) : undefined
+                                }
+                                actions={
+                                    deal.accommodationId && issue !== 'unavailable'
+                                        ? [
+                                              <Button
+                                                  key="open"
+                                                  variant="secondary"
+                                                  size="sm"
+                                                  loading={openingId === deal.id}
+                                                  onClick={() => void openListing(deal)}
+                                              >
+                                                  {t('account.exclusiveDeals.item.viewListing')}
+                                              </Button>
+                                          ]
+                                        : []
+                                }
+                            />
+                        );
+                    })}
                 </DataList>
             )}
         />

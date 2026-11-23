@@ -1501,6 +1501,7 @@
             "vipBadge": "Somente VIP",
             "viewListing": "Ver acomodação",
             "viewListingError": "Não conseguimos abrir a acomodação. Tente novamente.",
+            "listingUnavailable": "Esta acomodação não está mais disponível.",
             "validUntil": "Válida até {{date}}"
         }
     },

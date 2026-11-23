@@ -1501,6 +1501,7 @@
             "vipBadge": "Solo VIP",
             "viewListing": "Ver alojamiento",
             "viewListingError": "No pudimos abrir el alojamiento. Probá de nuevo.",
+            "listingUnavailable": "Este alojamiento ya no está disponible.",
             "validUntil": "Válida hasta el {{date}}"
         }
     },
