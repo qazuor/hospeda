@@ -13,7 +13,12 @@ import {
     PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import type { Mock } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
+import type {
+    OwnListingsCounter,
+    OwnListingViewStatsReader
+} from '../../../src/services/owner-dashboard/owner-listing-dashboard.service';
 import { OwnerListingDashboardService } from '../../../src/services/owner-dashboard/owner-listing-dashboard.service';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
@@ -25,14 +30,16 @@ const OWNER = createActor({
 });
 const OTHER_ID = getMockId('user', 'od-other-owner');
 
+type CountMock = Mock<OwnListingsCounter['count']>;
+type ViewsMock = Mock<OwnListingViewStatsReader['getStatsForOwnListings']>;
 type Row = { ownerId: string; publicationStatus: PublicationStatusEnum };
 const rows = (ownerId: string, status: PublicationStatusEnum, n: number): Row[] =>
     Array.from({ length: n }, () => ({ ownerId, publicationStatus: status }));
 
 /** A fake model whose `count` applies the equality filter to an in-memory table. */
-const fakeModel = (table: readonly Row[]) =>
-    vi.fn(
-        async (where: Record<string, unknown>) =>
+const fakeModel = (table: readonly Row[]): CountMock =>
+    vi.fn<OwnListingsCounter['count']>(
+        async (where) =>
             table.filter((row) =>
                 Object.entries(where).every(([key, value]) =>
                     key === 'deletedAt' ? value === null : row[key as keyof Row] === value
@@ -48,14 +55,14 @@ const MIXED: Row[] = [
     ...rows(OTHER_ID, PublicationStatusEnum.PUBLISHED, 7)
 ];
 
-const make = (overrides: {
-    venue?: ReturnType<typeof vi.fn>;
-    experience?: ReturnType<typeof vi.fn>;
-    views?: ReturnType<typeof vi.fn>;
-}) => {
+const make = (overrides: { venue?: CountMock; experience?: CountMock; views?: ViewsMock }) => {
     const venueCount = overrides.venue ?? fakeModel(MIXED);
     const experienceCount = overrides.experience ?? fakeModel([]);
-    const views = overrides.views ?? vi.fn().mockResolvedValue({ data: [] });
+    const views =
+        overrides.views ??
+        vi
+            .fn<OwnListingViewStatsReader['getStatsForOwnListings']>()
+            .mockResolvedValue({ data: [] });
     const service = new OwnerListingDashboardService({
         logger: createLoggerMock(),
         venueModel: { count: venueCount },
@@ -138,12 +145,14 @@ describe('OwnerListingDashboardService.getForOwner', () => {
     });
 
     it('sums unique and total over the listings when granted', async () => {
-        const views = vi.fn().mockResolvedValue({
-            data: [
-                { entityId: 'a', unique: 2, total: 5 },
-                { entityId: 'b', unique: 1, total: 3 }
-            ]
-        });
+        const views = vi
+            .fn<OwnListingViewStatsReader['getStatsForOwnListings']>()
+            .mockResolvedValue({
+                data: [
+                    { unique: 2, total: 5 },
+                    { unique: 1, total: 3 }
+                ]
+            });
         const { service } = make({ views });
         const out = await run(service, async () => true, 'venue', '7d');
         expect(out.data).toMatchObject({
@@ -168,8 +177,18 @@ describe('OwnerListingDashboardService.getForOwner', () => {
     });
 
     it.each([
-        ['an error result', vi.fn().mockResolvedValue({ error: { code: 'X', message: 'm' } })],
-        ['a throw', vi.fn().mockRejectedValue(new Error('db down'))]
+        [
+            'an error result',
+            vi.fn<OwnListingViewStatsReader['getStatsForOwnListings']>().mockResolvedValue({
+                error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'm' }
+            })
+        ],
+        [
+            'a throw',
+            vi
+                .fn<OwnListingViewStatsReader['getStatsForOwnListings']>()
+                .mockRejectedValue(new Error('db down'))
+        ]
     ])('is unavailable without traffic when the view read is %s', async (_n, views) => {
         const { service } = make({ views });
         const out = await run(service, async () => true);
@@ -179,7 +198,9 @@ describe('OwnerListingDashboardService.getForOwner', () => {
     });
 
     it('returns INTERNAL_ERROR, never zero counts, when a count fails', async () => {
-        const { service, views } = make({ venue: vi.fn().mockRejectedValue(new Error('boom')) });
+        const { service, views } = make({
+            venue: vi.fn<OwnListingsCounter['count']>().mockRejectedValue(new Error('boom'))
+        });
         const out = await run(service, async () => true);
         expect(out.data).toBeUndefined();
         expect(out.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
