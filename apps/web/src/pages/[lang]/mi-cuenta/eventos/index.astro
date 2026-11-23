@@ -1,38 +1,29 @@
 ---
 /**
  * @file mi-cuenta/eventos/index.astro
- * @description Editor own-content listing — shows every event authored by the
- * authenticated user, in every moderation and lifecycle state (HOS-374
- * Phase 2 slice 2C-1). Structural mirror of `mi-cuenta/publicaciones` — see
- * that page's JSDoc for the shared rationale. The only real differences are
- * data-driven: events carry `name` (not `title`) and gate on `EVENT_CREATE`
- * (not `POST_CREATE`) — both are real differences in the underlying data,
- * not incidental drift between the two pages.
+ * @description Editor own-content listing on the account kit (HOS-2505): every
+ * event authored by the user, in every moderation and lifecycle state, through
+ * the shared `MyContentList` template (`OwnContentListView`). Structural twin
+ * of `mi-cuenta/publicaciones`; the real differences are data-driven (events
+ * carry `name`, not `title`, and gate on `EVENT_CREATE`).
  *
- * A header CTA and an empty-state CTA both link to `eventos/nuevo` (HOS-374
- * §5.2.2), so an editor with no events yet has something to click.
+ * Auth: middleware AND this page check for a session.
  *
- * Auth protection: both middleware AND this page check for a valid user
- * session, matching the `/mi-cuenta/propiedades` convention.
+ * Gate: only users whose role grants `EVENT_CREATE` (see `hasEventsNavAccess`
+ * in `@/lib/nav-gating`) manage events. Anyone else sees a `LockedState`
+ * (`reason.kind = 'permission'`) with the editor application link, never a
+ * redirect, and the list is not even requested.
  *
- * Role gate: only users whose role grants `EVENT_CREATE` (EDITOR, ADMIN,
- * SUPER_ADMIN — see `hasEventsNavAccess` in `@/lib/nav-gating`) may manage
- * events. Anyone else sees the "no access" state with the editor application
- * link instead of the listing.
- *
- * Data: fetched server-side through `eventEditApi.listOwn` (`lib/api/`),
- * which forwards the session cookie to `GET /api/v1/protected/events`.
- * Authorship is resolved from the session server-side — no client-supplied
- * identifier can widen the scope past the caller's own content.
+ * Data: `eventEditApi.listOwn` (`lib/api/`) forwards the session cookie to
+ * `GET /api/v1/protected/events`; authorship comes from the session, never
+ * from a query filter. Paginated with `?page=N` (HOS-2440): no silent cap.
  *
  * @route    /[lang]/mi-cuenta/eventos/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import { CalendarIcon, LockIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import {
     ACCOUNT_LIST_PAGE_SIZE,
@@ -46,13 +37,12 @@ import { eventEditApi } from '@/lib/api/endpoints-protected';
 import { transformEventEditCardList } from '@/lib/api/transforms';
 import type { EventEditListItem } from '@/lib/api/types';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountPagination from '@/components/account/AccountPagination.astro';
-import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
-import EditableContentCard from '@/components/account/EditableContentCard.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import accountSectionStyles from '@/components/account/AccountSection.module.css';
-import btn from '@/components/account/AccountButton.module.css';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import {
+    OwnContentListView,
+    type OwnContentListStatus
+} from '@/components/account/my-content/OwnContentListView';
+import { ContentListReloadError } from '@/components/account/my-content/ContentListReloadError.client';
 
 export const prerender = false;
 
@@ -63,14 +53,8 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-// Role gate: only editor-tier roles may see their own-content dashboard.
+// Gate: only editor-tier roles see their own-content dashboard.
 const canManageEvents = hasEventsNavAccess({ roles: user.roles });
-
-// ---------------------------------------------------------------------------
-// Server-side fetch: the author's own events, in every moderation/lifecycle
-// state. Session cookie is forwarded so the protected endpoint can identify
-// the caller — never sent as a query filter.
-// ---------------------------------------------------------------------------
 
 let events: readonly EventEditListItem[] = [];
 let fetchError = false;
@@ -101,33 +85,9 @@ if (result) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// i18n
-// ---------------------------------------------------------------------------
-
 const { t } = createTranslations(locale);
-
-const title = t('account.myContent.events.list.title', 'Mis eventos');
-const subtitle = t(
-    'account.myContent.events.list.subtitle',
-    'Revisá el estado de tus eventos'
-);
-const emptyMessage = t(
-    'account.myContent.events.list.empty',
-    'Todavía no creaste ningún evento'
-);
-const fetchErrorMessage = t(
-    'account.myContent.events.list.fetchError',
-    'No se pudo cargar la lista. Intentá recargar la página.'
-);
-const retryLabel = t('account.myContent.card.retry', 'Reintentar');
-const createCtaLabel = t('account.myContent.events.list.createCta', '+ Nuevo evento');
-const emptyCtaLabel = t(
-    'account.myContent.events.list.emptyCta',
-    'Crear mi primer evento'
-);
-
-const createUrl = buildUrl({ locale, path: 'mi-cuenta/eventos/nuevo' });
+const title = t('account.myContent.events.list.title');
+const subtitle = t('account.myContent.events.list.subtitle');
 
 const pageState = resolveAccountPageState({ requestedPage, total: totalItems });
 if (!fetchError && pageState.isPastEnd) {
@@ -137,141 +97,33 @@ if (!fetchError && pageState.isPastEnd) {
     );
 }
 
-const isEmpty = events.length === 0;
+const status: OwnContentListStatus = !canManageEvents
+    ? 'locked'
+    : fetchError
+      ? 'error'
+      : events.length === 0
+        ? 'empty'
+        : 'ready';
+
+const items = events.map((event) => ({
+    id: event.id,
+    title: event.name,
+    moderationState: event.moderationState,
+    visibility: event.visibility,
+    lifecycleState: event.lifecycleState
+}));
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="eventos">
-    <div class="my-content-page__header">
-        <AccountPageHeader title={title} description={subtitle} />
-        {canManageEvents && (
-            <a
-                class:list={['my-content-page__create-btn', btn.primary]}
-                href={createUrl}
-            >
-                {createCtaLabel}
-            </a>
-        )}
-    </div>
-
-    {!canManageEvents ? (
-        <AccountEmptyState
-            title={t(
-                'account.myContent.events.noAccess.title',
-                'Esta sección es para editores'
-            )}
-            description={t(
-                'account.myContent.events.noAccess.description',
-                'Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.'
-            )}
-            ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
-            ctaLabel={t('account.myContent.events.noAccess.cta', 'Quiero ser editor')}
-        >
-            <LockIcon slot="icon" size={28} aria-hidden={true} />
-        </AccountEmptyState>
-    ) : fetchError ? (
-        <div class:list={['my-content-page__error', accountSectionStyles.branded]} role="alert">
-            <p class="my-content-page__error-title">{fetchErrorMessage}</p>
-            <a
-                href={Astro.url.pathname}
-                class:list={['my-content-page__retry-btn', btn.primary]}
-            >
-                {retryLabel}
-            </a>
-        </div>
-    ) : !isEmpty ? (
-        <>
-        <div class="my-content-page__grid" role="list" aria-label={title}>
-            {events.map((event) => (
-                <div class="my-content-page__item" role="listitem" data-reveal="up">
-                    <EditableContentCard
-                        title={event.name}
-                        id={event.id}
-                        editBasePath="mi-cuenta/eventos"
-                        moderationState={event.moderationState}
-                        visibility={event.visibility}
-                        lifecycleState={event.lifecycleState}
-                        locale={locale}
-                    />
-                </div>
-            ))}
-        </div>
-        <AccountPagination
-            locale={locale}
-            path="mi-cuenta/eventos"
-            page={pageState.page}
-            totalPages={pageState.totalPages}
-        />
-        </>
-    ) : (
-        <EmptyState
-            locale={locale}
-            variant="empty"
-            message={emptyMessage}
-            actionUrl={createUrl}
-            actionLabel={emptyCtaLabel}
-            tone="warm"
-        >
-            <CalendarIcon size={56} weight="duotone" />
-        </EmptyState>
-    )}
+    <OwnContentListView
+        locale={locale}
+        kind="events"
+        status={status}
+        items={items}
+        page={pageState.page}
+        pageCount={pageState.totalPages}
+    >
+        <PageHelpLink slot="help" locale={locale} />
+        {status === 'error' && <ContentListReloadError slot="errorRegion" client:visible locale={locale} />}
+    </OwnContentListView>
 </AccountLayout>
-
-<style>
-    .my-content-page__header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: var(--space-4, 1rem);
-        flex-wrap: wrap;
-    }
-
-    .my-content-page__create-btn {
-        flex-shrink: 0;
-        text-decoration: none;
-    }
-
-    .my-content-page__grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--space-card-gap, 1.875rem);
-    }
-
-    @media (min-width: 640px) {
-        .my-content-page__grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .my-content-page__grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .my-content-page__item {
-        display: contents;
-    }
-
-    .my-content-page__error {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-4, 1rem);
-        padding: var(--space-12, 3rem) var(--space-8, 2rem);
-        background-color: var(--core-card);
-        border: 1px solid oklch(0.85 0.05 25 / 0.4);
-        border-radius: var(--radius-card, 24px);
-        text-align: center;
-    }
-
-    .my-content-page__error-title {
-        font-family: var(--font-sans);
-        font-size: var(--text-body, 1rem);
-        color: oklch(0.55 0.22 25);
-        margin: 0;
-    }
-
-    .my-content-page__retry-btn {
-        text-decoration: none;
-    }
-</style>

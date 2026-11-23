@@ -79,6 +79,22 @@ const avatarUploadMultipartSchema = {
 } as const;
 
 /**
+ * Multipart schema for the partner logo upload endpoint. Mirrors the
+ * handler-side validation in `apps/api/src/routes/partners/protected/mine-logo.ts`.
+ */
+const partnerLogoUploadMultipartSchema = {
+    type: 'object',
+    required: ['file'],
+    properties: {
+        file: {
+            type: 'string',
+            format: 'binary',
+            description: 'Logo image binary (JPEG, PNG, or WebP). Required.'
+        }
+    }
+} as const;
+
+/**
  * Map of OpenAPI route key (path + method) to the multipart schema that
  * should be injected. Adding a new multipart endpoint is a one-line
  * change here — no factory or middleware changes needed.
@@ -97,6 +113,11 @@ const MULTIPART_OVERRIDES: ReadonlyArray<{
         path: '/api/v1/protected/media/upload',
         method: 'post',
         schema: avatarUploadMultipartSchema
+    },
+    {
+        path: '/api/v1/protected/partners/mine/logo',
+        method: 'post',
+        schema: partnerLogoUploadMultipartSchema
     }
 ];
 

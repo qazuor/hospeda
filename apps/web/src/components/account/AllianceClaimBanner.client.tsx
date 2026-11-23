@@ -29,9 +29,9 @@
  */
 
 import { useEffect, useState } from 'react';
+import { Alert, type AlertTone } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import styles from './AllianceClaimBanner.module.css';
+import { createT } from '@/lib/i18n';
 
 const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
@@ -42,6 +42,13 @@ export interface AllianceClaimBannerProps {
 }
 
 type ClaimState = 'working' | 'confirmed' | 'failed' | 'idle';
+
+/** Tone of the kit alert for each visible state. */
+const CLAIM_TONE: Readonly<Record<Exclude<ClaimState, 'idle'>, AlertTone>> = {
+    working: 'info',
+    confirmed: 'success',
+    failed: 'danger'
+};
 
 /**
  * Reads `?lead=&claim=` out of the current URL.
@@ -74,7 +81,7 @@ function stripClaimFromUrl(): void {
  * @param props - Component props (see {@link AllianceClaimBannerProps}).
  */
 export function AllianceClaimBanner({ locale }: AllianceClaimBannerProps) {
-    const { t } = createTranslations(locale);
+    const t = createT(locale);
     const [state, setState] = useState<ClaimState>('idle');
 
     useEffect(() => {
@@ -119,23 +126,11 @@ export function AllianceClaimBanner({ locale }: AllianceClaimBannerProps) {
     if (state === 'idle') return null;
 
     return (
-        <div
-            className={`${styles.banner} ${state === 'failed' ? styles.bannerError : ''}`}
-            role="status"
-            aria-live="polite"
+        <Alert
+            tone={CLAIM_TONE[state]}
+            locale={locale}
         >
-            {state === 'working' &&
-                t('account.alliances.claim.working', 'Confirmando tu postulación…')}
-            {state === 'confirmed' &&
-                t(
-                    'account.alliances.claim.confirmed',
-                    '¡Listo! Vinculamos la postulación a tu cuenta.'
-                )}
-            {state === 'failed' &&
-                t(
-                    'account.alliances.claim.failed',
-                    'No pudimos confirmar esa postulación. El enlace pudo haber vencido o ya haberse usado.'
-                )}
-        </div>
+            {t(`account.alliances.claim.${state}`)}
+        </Alert>
     );
 }

@@ -1,0 +1,50 @@
+/* FilterChips.module.css — toggle chips that filter a list (HOS-2502).
+   44px tall hit area, wraps inside its own container. */
+
+.root {
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--control-bg);
+    color: var(--core-foreground);
+    font: var(--app-control);
+    cursor: pointer;
+    transition:
+        background-color var(--duration-fast),
+        border-color var(--duration-fast);
+}
+
+.chip:hover {
+    border-color: var(--brand-primary-link);
+}
+
+.chip:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.chip[aria-pressed="true"] {
+    border-color: var(--action-primary);
+    background-color: var(--action-primary);
+    color: var(--on-action-primary);
+}
+
+.count {
+    font: var(--app-caption);
+    opacity: 0.85;
+}

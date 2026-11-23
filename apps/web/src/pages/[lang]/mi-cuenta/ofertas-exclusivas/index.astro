@@ -8,10 +8,10 @@
  * Auth protection: middleware redirects unauthenticated visitors. The in-page
  * guard is a safety net for SSR edge cases (mirrors `alertas/index.astro`).
  *
- * The list itself, entitlement upgrade-CTA state, and VIP-only badge are all
- * owned by the `ExclusiveDealsList` client island — this page is a thin SSR
+ * The page is a kit `PageHeader` plus the `ExclusiveDealsList` island, which
+ * owns the list, the plan lock and the VIP-only badge — this page is a thin SSR
  * shell that only resolves the authenticated user and hands off `apiUrl` +
- * `userId`.
+ * `userId` (HOS-2507).
  *
  * @route    /[lang]/mi-cuenta/ofertas-exclusivas/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -25,8 +25,8 @@ import { getApiUrl } from '@/lib/env';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageHeader } from '@/components/account/ui';
 import { ExclusiveDealsList } from '@/components/account/ExclusiveDealsList.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -53,15 +53,15 @@ const gatePlanNames = planNamesWithEntitlement({
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="ofertas-exclusivas">
-    <AccountPageHeader title={title} />
+    <PageHeader title={title} description={description} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
-    <AccountSectionCard>
-        <ExclusiveDealsList
-            client:load
-            locale={locale}
-            apiUrl={apiUrl}
-            userId={user.id}
-            gatePlanNames={gatePlanNames}
-        />
-    </AccountSectionCard>
+    <ExclusiveDealsList
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+        userId={user.id}
+        gatePlanNames={gatePlanNames}
+    />
 </AccountLayout>

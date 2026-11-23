@@ -23,12 +23,6 @@ vi.mock('../../../src/components/newsletter/NewsletterPreferences.module.css', (
     })
 }));
 
-vi.mock('../../../src/components/shared/feedback/Spinner.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -142,13 +136,13 @@ function renderIsland() {
 }
 
 describe('NewsletterPreferences: initial render', () => {
-    it('shows a Spinner and loading text before the status request resolves', () => {
+    it('shows a kit Skeleton (busy, with loading text) before the status request resolves', () => {
         vi.stubGlobal(
             'fetch',
             vi.fn(() => new Promise<Response>(() => undefined))
         );
         renderIsland();
-        expect(screen.getByText('Cargando preferencias…')).toBeInTheDocument();
+        expect(screen.getByText('Cargando…')).toBeInTheDocument();
         expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument();
     });
 
@@ -158,6 +152,17 @@ describe('NewsletterPreferences: initial render', () => {
         await waitFor(() => {
             expect(screen.getByRole('alert')).toBeInTheDocument();
         });
+    });
+});
+
+describe('NewsletterPreferences: retry (HOS-2501)', () => {
+    it('offers a retry on the error state that loads the status again', async () => {
+        mockFetchSequence({ error: 500 }, subscribed);
+        renderIsland();
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Reintentar' }));
+
+        expect(await screen.findByText('Activo')).toBeInTheDocument();
     });
 });
 

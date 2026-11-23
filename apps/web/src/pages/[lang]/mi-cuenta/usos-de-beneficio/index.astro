@@ -22,7 +22,8 @@
  * @rendering SSR (prerender = false — requires an authenticated host)
  */
 
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { BenefitUsagesPanel } from '@/components/host/host-trades/BenefitUsagesPanel.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { BenefitUsage } from '@/lib/api/endpoints-protected';
@@ -93,7 +94,9 @@ const subtitle = t(
     description={subtitle}
     activeSection="usos-de-beneficio"
 >
-    <AccountPageHeader title={title} description={subtitle} />
+    <PageHeader title={title} description={subtitle} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
     <BenefitUsagesPanel
         client:load

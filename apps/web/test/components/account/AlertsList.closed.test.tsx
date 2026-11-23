@@ -66,7 +66,7 @@ async function renderList(items: readonly object[]) {
         />
     );
     await waitFor(() => {
-        expect(screen.queryByText('Cargando alertas...')).not.toBeInTheDocument();
+        expect(screen.queryByText('Cargando…')).not.toBeInTheDocument();
     });
 }
 
@@ -86,7 +86,7 @@ describe('AlertsList — closed alerts (HOS-1492, V8a row 27)', () => {
         // Assert
         const closedList = screen.getByRole('list', { name: 'Tus alertas de precio cerradas' });
         const item = within(closedList).getByRole('listitem');
-        expect(item).toHaveAttribute('data-alert-state', 'closed');
+        expect(item).toHaveAttribute('data-row', 'alert-closed');
         expect(item).toHaveTextContent('Casa del Palmar');
         expect(item).toHaveTextContent('Esta alerta se cerró porque esa ficha ya no existe.');
         expect(screen.getByRole('heading', { name: 'Alertas cerradas' })).toBeInTheDocument();
@@ -128,10 +128,10 @@ describe('AlertsList — closed alerts (HOS-1492, V8a row 27)', () => {
 
         // Assert
         const item = screen.getByRole('listitem');
-        expect(item).toHaveAttribute('data-alert-state', 'active');
+        expect(item).toHaveAttribute('data-row', 'alert-active');
         expect(item).toHaveTextContent('Alertar cuando baje: 10% o más');
         expect(item).not.toHaveTextContent('ya no existe');
-        expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+        expect(screen.queryByRole('heading', { name: 'Alertas cerradas' })).not.toBeInTheDocument();
         expect(
             screen.queryByRole('list', { name: 'Tus alertas de precio cerradas' })
         ).not.toBeInTheDocument();

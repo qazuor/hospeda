@@ -13,19 +13,15 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiActivityHistory } from '../../../src/components/account/AiActivityHistory.client';
 
-vi.mock('../../../src/components/account/AiActivityHistory.module.css', () => ({
-    default: new Proxy<Record<string, string>>(
-        {},
-        {
-            get: (_target, prop) => String(prop)
-        }
-    )
-}));
-
 const API_URL = 'http://localhost:3001';
 const CONNECT_URL = '/es/mi-cuenta/asistentes-ia/';
 const SIGNIN_URL = '/es/auth/signin/?returnUrl=%2Fes%2Fmi-cuenta%2Fasistentes-ia%2Fhistorial%2F';
 const LISTING = '11111111-1111-4111-8111-111111111111';
+
+/** The page the kit Pagination marks as current. */
+function currentPage(): string | null {
+    return document.querySelector('[aria-current="page"]')?.textContent ?? null;
+}
 
 let sequence = 0;
 
@@ -240,11 +236,10 @@ describe('AiActivityHistory', () => {
             page([item({ tool: 'get_listing', isWrite: false })])
         );
 
-        const toggle = screen.getByRole('checkbox', { name: 'Mostrar también lo que solo miró' });
-        expect(toggle.getAttribute('aria-describedby')).toBeTruthy();
-        expect(
-            document.getElementById(toggle.getAttribute('aria-describedby') ?? '')?.textContent
-        ).toBe('Acciones en las que el asistente solo vio datos, sin cambiar nada.');
+        // The kit Checkbox puts the hint inside its label, so it is part of the name
+        const toggle = screen.getByRole('checkbox', {
+            name: /Mostrar también lo que solo miró.*Acciones en las que el asistente solo vio datos/
+        });
         fireEvent.click(toggle);
 
         await waitFor(() => expect(screen.getByText('Ver una publicación')).toBeTruthy());
@@ -270,15 +265,18 @@ describe('AiActivityHistory', () => {
         await renderHistory(page([item()], { page: 1, totalPages: 2 }));
         vi.mocked(fetch).mockResolvedValueOnce(page([item()], { page: 2, totalPages: 2 }));
 
-        fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
 
-        await waitFor(() => expect(screen.getByText('2 / 2')).toBeTruthy());
+        await waitFor(() => expect(currentPage()).toBe('2'));
         expect(requested(1).searchParams.get('page')).toBe('2');
-        expect(screen.getByRole('button', { name: 'Siguiente' })).toHaveProperty('disabled', true);
+        expect(screen.getByRole('button', { name: 'Página siguiente' })).toHaveProperty(
+            'disabled',
+            true
+        );
 
         vi.mocked(fetch).mockResolvedValueOnce(page([item()], { page: 1, totalPages: 2 }));
-        fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
-        await waitFor(() => expect(screen.getByText('1 / 2')).toBeTruthy());
+        fireEvent.click(screen.getByRole('button', { name: 'Página anterior' }));
+        await waitFor(() => expect(currentPage()).toBe('1'));
         expect(requested(2).searchParams.get('page')).toBe('1');
     });
 
@@ -291,13 +289,13 @@ describe('AiActivityHistory', () => {
     it('goes back to the last page when a later page comes back empty', async () => {
         await renderHistory(page([item()], { page: 1, totalPages: 3 }));
         vi.mocked(fetch).mockResolvedValueOnce(page([item()], { page: 2, totalPages: 3 }));
-        fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
-        await waitFor(() => expect(screen.getByText('2 / 3')).toBeTruthy());
+        fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
+        await waitFor(() => expect(currentPage()).toBe('2'));
 
         // The history shrank to one page while the user paged.
         vi.mocked(fetch).mockResolvedValueOnce(page([], { page: 3, totalPages: 1 }));
         vi.mocked(fetch).mockResolvedValueOnce(page([item()], { page: 1, totalPages: 1 }));
-        fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Página siguiente' }));
 
         await waitFor(() => expect(requested(3).searchParams.get('page')).toBe('1'));
         await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(1));

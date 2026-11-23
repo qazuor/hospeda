@@ -940,6 +940,20 @@
         "specialOffer": {
             "label": "Describe the benefit",
             "help": "Describe the benefit briefly, for example, two drinks for the price of one."
+        },
+        "kit": {
+            "sectionTitle": "Your promotions",
+            "statusLabel": "Status",
+            "validityLabel": "Valid",
+            "validRange": "From {{from}} to {{until}}",
+            "validOpen": "From {{from}}, no end date",
+            "editNamed": "Edit “{{title}}”",
+            "deleteNamed": "Delete “{{title}}”",
+            "deleteTitle": "Delete “{{title}}”?",
+            "benefitSection": "The promotion",
+            "conditionsSection": "Conditions",
+            "loadFailedHint": "Go back to the list and try again.",
+            "backToList": "Back to my promotions"
         }
     },
     "dashboard": {

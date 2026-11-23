@@ -74,8 +74,9 @@ export const ACCOUNT_SCOPE_DIRS: readonly string[] = [
     'apps/web/src/components/billing/addon-purchase/'
 ];
 
-/** Account layouts (spec §6.7): `layouts/{Account,Editor,ListingEditor}*.astro`. */
-const ACCOUNT_LAYOUT = /^apps\/web\/src\/layouts\/(?:Account|Editor|ListingEditor)[^/]*\.astro$/;
+/** Account layouts (spec §6.7): `layouts/{Account,Editor,ListingEditor,Focus}*.astro`. */
+const ACCOUNT_LAYOUT =
+    /^apps\/web\/src\/layouts\/(?:Account|Editor|ListingEditor|Focus)[^/]*\.astro$/;
 
 /**
  * Components in shared directories that an account page imports directly.
@@ -114,7 +115,8 @@ export const ACCOUNT_SCOPE_COMPONENT_FILES: readonly string[] = [
 const STRICT_DIR = 'apps/web/src/components/account/ui/';
 const STRICT_FILES: readonly string[] = [
     'apps/web/src/layouts/AccountShell.astro',
-    'apps/web/src/layouts/AccountHeader.astro'
+    'apps/web/src/layouts/AccountHeader.astro',
+    'apps/web/src/layouts/FocusShell.astro'
 ];
 
 /** Extensions both guards read. */

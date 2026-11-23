@@ -113,7 +113,7 @@ describe('PartnerMentionsSection — web styling rules', () => {
     it('uses CSS custom properties, never hardcoded colours', () => {
         // Every declared colour/spacing value must be a token, or dark mode
         // breaks silently on this section alone.
-        expect(SOURCE).toContain('var(--core-card)');
+        expect(SOURCE).toContain('var(--border)');
         expect(SOURCE).toContain('var(--core-muted-foreground)');
         expect(MARKUP).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
     });

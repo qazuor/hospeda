@@ -57,13 +57,30 @@ describe('DiscoveryDoorHub.astro — wiring', () => {
         expect(source).toContain("t('account.doors.common.comingSoonBadge')");
     });
 
-    it('renders the acquired badge with a legible foreground token, not the brand-tertiary SURFACE token (WCAG AA — HOS-134)', () => {
-        const badgeBlock = source.slice(
-            source.indexOf('.door-hub__acquired-badge'),
-            source.indexOf('.door-hub__coming-soon-badge')
+    it('renders the badges as kit StatusPills and the buttons as kit LinkButtons (HOS-2501)', () => {
+        expect(source).toContain(
+            "import { LinkButton, StatusPill } from '@/components/account/ui';"
         );
-        expect(badgeBlock).toContain('color: var(--core-muted-foreground)');
-        expect(badgeBlock).not.toContain('color: var(--brand-tertiary');
+        expect(source).toContain('<StatusPill tone="success">');
+        expect(source).toContain('<StatusPill tone="neutral">');
+        expect(source).not.toContain('GradientButton');
+    });
+
+    it('uses the accent button variant only for the acquire CTA (upsell), secondary otherwise', () => {
+        const unacquiredBranch = source.slice(source.indexOf("state === 'unacquired'"));
+        expect(unacquiredBranch).toContain('variant="accent"');
+        const acquiredBranch = source.slice(
+            source.indexOf("state === 'acquired'"),
+            source.indexOf("state === 'comingSoon'")
+        );
+        expect(acquiredBranch).not.toContain('variant="accent"');
+    });
+
+    it('carries no color literal, font size or legacy breakpoint in its styles (AC-8)', () => {
+        const styles = source.slice(source.indexOf('<style>'));
+        expect(styles).not.toMatch(/oklch|#[0-9a-fA-F]{3,8}\b/);
+        expect(styles).not.toMatch(/font-size|max-width:|min-width: 768px/);
+        expect(styles).toContain('@media (min-width: 48rem)');
     });
 
     it('reads the comingSoon CTA label from option.ctaI18nKey, not a hardcoded key (avoids drift with the config)', () => {

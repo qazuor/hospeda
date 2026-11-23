@@ -26,11 +26,16 @@
         }
     },
     "filter": {
-        "all": "Todos"
+        "all": "Todos",
+        "label": "Filtrar por rubro",
+        "clear": "Quitar filtros"
     },
     "emptyState": {
         "noAccommodations": "Necesitás tener alojamientos registrados para ver este directorio.",
-        "noTrades": "No hay proveedores disponibles para tus destinos por ahora."
+        "noTrades": "No hay proveedores disponibles para tus destinos por ahora.",
+        "filteredTitle": "Ningún proveedor con esos rubros",
+        "titleNoTrades": "Todavía no hay proveedores",
+        "titleNoAccommodations": "Primero registrá un alojamiento"
     },
     "accessDenied": {
         "title": "Esta sección es exclusiva para anfitriones",
@@ -70,7 +75,8 @@
             },
             "submit": "Registrar el uso",
             "submitting": "Registrando…",
-            "footnote": "Le vamos a pedir a {{name}} que confirme. Hasta que lo haga, el registro queda pendiente."
+            "footnote": "Le vamos a pedir a {{name}} que confirme. Hasta que lo haga, el registro queda pendiente.",
+            "title": "Registrar el uso"
         },
         "errors": {
             "dateRequired": "Elegí el día del servicio.",
@@ -101,7 +107,8 @@
         "subtitle": "Confirmá los usos que registran los proveedores y consultá tu historial.",
         "pending": {
             "title": "Esperan tu confirmación",
-            "empty": "No tenés usos pendientes de confirmar."
+            "empty": "No tenés usos pendientes de confirmar.",
+            "countLabel": "Pendientes de confirmar: {{count}}"
         },
         "history": {
             "title": "Historial",

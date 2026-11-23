@@ -7,7 +7,7 @@
  */
 
 import { EntitlementKeyEnum } from '@repo/schemas';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlertsList } from '../../../src/components/account/AlertsList.client';
 import {
@@ -58,7 +58,7 @@ async function renderGate(gatePlanNames?: readonly string[]) {
             gatePlanNames={gatePlanNames}
         />
     );
-    await waitFor(() => expect(screen.queryByText('Cargando alertas...')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('Cargando…')).not.toBeInTheDocument());
 }
 
 beforeEach(() => {
@@ -94,31 +94,33 @@ describe('planNamesWithEntitlement (HOS-2437)', () => {
     });
 });
 
-describe('AlertsList plan gate (HOS-2437)', () => {
-    it('names the catalog plans it receives, whatever they are called', async () => {
+describe('AlertsList plan gate (HOS-2437, HOS-2501)', () => {
+    it('shows the kit LockedState naming the catalog plans it receives, whatever they are called', async () => {
         mockGateApi();
         await renderGate(['Explorador', 'Aventurero']);
-        await waitFor(() =>
-            expect(
-                screen.getByText(/disponibles en los planes Explorador y Aventurero/)
-            ).toBeInTheDocument()
-        );
+
+        const lock = await screen.findByRole('heading', { name: 'Alertas de precio' });
+        const state = lock.closest('[data-reason]') as HTMLElement;
+        expect(state).toHaveAttribute('data-reason', 'plan');
+        expect(within(state).getByText('Explorador')).toBeInTheDocument();
+        expect(within(state).getByText('Aventurero')).toBeInTheDocument();
         expect(screen.queryByText(/Plus/)).not.toBeInTheDocument();
     });
 
-    it('uses the singular form for a single plan', async () => {
+    it('links to the tourist pricing page', async () => {
         mockGateApi();
         await renderGate(['Explorador']);
-        await waitFor(() =>
-            expect(screen.getByText(/disponibles en el plan Explorador\./)).toBeInTheDocument()
-        );
+
+        const link = await screen.findByRole('link', { name: 'Ver planes' });
+        expect(link.getAttribute('href')).toMatch(/\/es\//);
     });
 
     it('names no plan at all when it receives none', async () => {
         mockGateApi();
         await renderGate();
-        const message = await screen.findByText(/no están incluidas en tu plan actual/);
-        expect(message.textContent).not.toMatch(/Plus|VIP/);
+        const lock = await screen.findByRole('heading', { name: 'Alertas de precio' });
+        const state = lock.closest('[data-reason]') as HTMLElement;
+        expect(state.textContent).not.toMatch(/Plus|VIP/);
     });
 
     it('never calls the plan catalog from the browser', async () => {

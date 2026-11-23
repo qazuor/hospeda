@@ -47,7 +47,7 @@ describe('listing areas: who sees which (HOS-2559)', () => {
         const [venues] = shell.groups;
         expect(venues?.suppressHeader).toBe(true);
         expect(venues?.shellDefaultOpen).toBe(true);
-        // HOS-2477 added the area's dashboard before its list.
+        // HOS-2475: the venue dashboard sits above the list in the same area.
         expect(venues?.items.map((entry) => [entry.item.id, entry.active])).toEqual([
             ['venueDashboard', false],
             ['venue-listings', true]
@@ -62,6 +62,7 @@ describe('listing areas: who sees which (HOS-2559)', () => {
         });
         expect(shell.mode).toBe('business');
         expect(shell.groups.map((entry) => entry.group.id)).toEqual(['comercio-experience']);
+        // HOS-2476: the experience dashboard comes first; the list is the active entry.
         expect(shell.groups[0]?.items.map((entry) => [entry.item.id, entry.active])).toEqual([
             ['experienceDashboard', false],
             ['experience-listings', true]

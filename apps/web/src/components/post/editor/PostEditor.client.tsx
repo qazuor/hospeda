@@ -5,7 +5,7 @@
  *
  * Follows `AccommodationEditor.client.tsx`: one component owns the form state,
  * the mutable baseline, the PATCH diff and the submit; the section components
- * only render. The sticky `EditorSectionNav` and the `ActionBar` are the same
+ * only render. The kit `Section`s and the `StickySaveBar` (HOS-2505) are the same
  * generic components that editor uses — the listing editor's omission of both
  * is a known gap, not a lighter-weight variant to copy.
  */
@@ -17,16 +17,19 @@ import { ContentMediaSection } from '@/components/account/editor/ContentMediaSec
 import styles from '@/components/account/editor/content-editor-layout.module.css';
 import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
 import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
-import { ActionBar } from '@/components/host/editor/ActionBar.client';
-import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
-import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
+import {
+    Alert,
+    type SaveOutcome,
+    Section,
+    StickySaveBar,
+    useSaveBar
+} from '@/components/account/ui';
 import { postEditApi } from '@/lib/api/endpoints-protected';
 import type {
     EditorContentModerationState,
     EditorContentVisibility,
     PostEditDetail
 } from '@/lib/api/types';
-import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -140,7 +143,6 @@ export function PostEditor({
     const [moderationState, setModerationState] = useState<EditorContentModerationState>(
         initialData.moderationState
     );
-    const [isSaving, setIsSaving] = useState(false);
 
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
         useZodForm({
@@ -189,73 +191,57 @@ export function PostEditor({
 
     const isDirty = Object.keys(patchPayload).length > 0;
 
-    useUnsavedChangesGuard({
-        isDirty,
-        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
-        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
-        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
-        message: t(
-            'account.myContent.posts.editor.unsavedChanges',
-            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
-        )
+    const save = useCallback(async (): Promise<SaveOutcome> => {
+        setFormError(null);
+
+        // Only the CHANGED fields are validated, so a pre-existing invalid
+        // value the author is not touching never blocks an unrelated save.
+        const parsed = validate(patchPayload);
+        if (!parsed.success) {
+            return {
+                ok: false,
+                invalidFields: parsed.error.issues.map((issue) => String(issue.path[0] ?? ''))
+            };
+        }
+
+        // Snapshot what this request persists, so the baseline resync below
+        // records exactly that even if the author keeps typing in flight.
+        const persisted = formData;
+
+        const result = await postEditApi.update({ id: initialData.id, data: patchPayload });
+
+        if (result.ok) {
+            setBaseline(persisted);
+            addToast({
+                type: 'success',
+                message: t('account.myContent.posts.editor.toast.saved', 'Cambios guardados')
+            });
+            return { ok: true };
+        }
+
+        handleApiError(
+            result.error,
+            t(
+                'account.myContent.posts.editor.error.saveFailed',
+                'No se pudieron guardar los cambios.'
+            )
+        );
+        return { ok: false };
+    }, [patchPayload, formData, initialData.id, validate, handleApiError, setFormError, t]);
+
+    const discard = useCallback(() => {
+        setFormData(baseline);
+        setFormError(null);
+    }, [baseline, setFormError]);
+
+    const saveBar = useSaveBar({
+        locale,
+        isDirty: !isEditLocked && isDirty,
+        onSave: save,
+        onDiscard: discard,
+        idPrefix: POST_FIELD_PREFIX,
+        suffixes: POST_FIELD_ID_SUFFIXES
     });
-
-    const handleSubmit = useCallback(
-        async (event: React.FormEvent) => {
-            event.preventDefault();
-            setFormError(null);
-
-            if (!isDirty) {
-                // Never save silently (HOS-190): "Save" always visibly does
-                // something, even when there is nothing to persist.
-                addToast({
-                    type: 'info',
-                    message: t(
-                        'account.myContent.posts.editor.toast.noChanges',
-                        'No hay cambios para guardar'
-                    )
-                });
-                return;
-            }
-
-            // Only the CHANGED fields are validated, so a pre-existing invalid
-            // value the author is not touching never blocks an unrelated save.
-            const parsed = validate(patchPayload);
-            if (!parsed.success) {
-                return;
-            }
-
-            // Snapshot what this request persists, so the baseline resync below
-            // records exactly that even if the author keeps typing in flight.
-            const persisted = formData;
-
-            setIsSaving(true);
-            const result = await postEditApi.update({ id: initialData.id, data: patchPayload });
-            setIsSaving(false);
-
-            if (result.ok) {
-                setBaseline(persisted);
-                addToast({
-                    type: 'success',
-                    message: t('account.myContent.posts.editor.toast.saved', 'Cambios guardados')
-                });
-                return;
-            }
-
-            handleApiError(
-                result.error,
-                t(
-                    'account.myContent.posts.editor.error.saveFailed',
-                    'No se pudieron guardar los cambios.'
-                )
-            );
-        },
-        [isDirty, patchPayload, formData, initialData.id, validate, handleApiError, setFormError, t]
-    );
-
-    const handleCancel = useCallback(() => {
-        window.location.href = buildUrl({ locale, path: 'mi-cuenta/publicaciones' });
-    }, [locale]);
 
     /**
      * Entity-specific copy for the shared `PublicationSection`. Resolved here,
@@ -313,162 +299,144 @@ export function PostEditor({
         [t]
     );
 
-    const navSections = useMemo<EditorSectionNavItem[]>(
-        () => [
-            { id: 'post-editor-basicInfo', label: sectionLabels.basicInfo },
-            { id: 'post-editor-content', label: sectionLabels.content },
-            { id: 'post-editor-details', label: sectionLabels.details },
-            { id: 'post-editor-media', label: sectionLabels.media },
-            { id: 'post-editor-publication', label: sectionLabels.publication }
-        ],
-        [sectionLabels]
-    );
-
     return (
         <form
             className={styles.editor}
-            onSubmit={handleSubmit}
+            onSubmit={(event) => {
+                event.preventDefault();
+                void saveBar.save();
+            }}
             noValidate
         >
-            <div className={styles.layout}>
-                <div className={styles.navSlot}>
-                    <EditorSectionNav
+            {isEditLocked && (
+                <div data-testid="post-editor-lock-notice">
+                    <Alert
+                        tone="info"
                         locale={locale}
-                        sections={navSections}
-                    />
+                    >
+                        {t(
+                            'account.myContent.posts.editor.lockNotice',
+                            'Esta nota ya fue aprobada y publicada, así que no podés editarla. Escribile al equipo si necesitás cambiar algo.'
+                        )}
+                    </Alert>
                 </div>
+            )}
 
-                <div className={styles.cardsColumn}>
-                    {isEditLocked && (
-                        <p
-                            className={styles.lockNotice}
-                            role="status"
-                            data-testid="post-editor-lock-notice"
-                        >
-                            {t(
-                                'account.myContent.posts.editor.lockNotice',
-                                'Esta nota ya fue aprobada y publicada, así que no podés editarla. Escribile al equipo si necesitás cambiar algo.'
-                            )}
-                        </p>
-                    )}
+            <Section
+                id="post-editor-basicInfo"
+                title={sectionLabels.basicInfo}
+                helpId="section:content.post-basic"
+            >
+                <BasicInfoSection
+                    locale={locale}
+                    data={formData}
+                    errors={fieldErrors}
+                    disabled={isEditLocked}
+                    onFieldChange={handleTextFieldChange}
+                />
+            </Section>
 
-                    <section
-                        id="post-editor-basicInfo"
-                        className={styles.card}
-                        aria-label={sectionLabels.basicInfo}
-                    >
-                        <BasicInfoSection
-                            locale={locale}
-                            data={formData}
-                            errors={fieldErrors}
-                            disabled={isEditLocked}
-                            onFieldChange={handleTextFieldChange}
-                        />
-                    </section>
+            <Section
+                id="post-editor-content"
+                title={sectionLabels.content}
+                helpId="section:content.post-content"
+            >
+                <ContentSection
+                    locale={locale}
+                    value={formData.content}
+                    error={fieldErrors.content}
+                    disabled={isEditLocked}
+                    onChange={handleContentChange}
+                />
+            </Section>
 
-                    <section
-                        id="post-editor-content"
-                        className={styles.card}
-                        aria-label={sectionLabels.content}
-                    >
-                        <ContentSection
-                            locale={locale}
-                            value={formData.content}
-                            error={fieldErrors.content}
-                            disabled={isEditLocked}
-                            onChange={handleContentChange}
-                        />
-                    </section>
+            <Section
+                id="post-editor-details"
+                title={sectionLabels.details}
+                helpId="section:content.post-details"
+            >
+                <DetailsSection
+                    locale={locale}
+                    data={formData}
+                    destinations={destinations}
+                    errors={fieldErrors}
+                    disabled={isEditLocked}
+                    onReadingTimeChange={handleReadingTimeChange}
+                    onDestinationChange={handleDestinationChange}
+                />
+            </Section>
 
-                    <section
-                        id="post-editor-details"
-                        className={styles.card}
-                        aria-label={sectionLabels.details}
-                    >
-                        <DetailsSection
-                            locale={locale}
-                            data={formData}
-                            destinations={destinations}
-                            errors={fieldErrors}
-                            disabled={isEditLocked}
-                            onReadingTimeChange={handleReadingTimeChange}
-                            onDestinationChange={handleDestinationChange}
-                        />
-                    </section>
+            {/*
+             * Photos persist per-operation against `post_media` (HOS-390) —
+             * they never travel in this form's PATCH diff, which is why the
+             * section takes no value/onChange and sits outside `formData`.
+             */}
+            <Section
+                id="post-editor-media"
+                title={sectionLabels.media}
+                helpId="section:content.post-media"
+            >
+                <ContentMediaSection
+                    locale={locale}
+                    entity="post"
+                    entityId={initialData.id}
+                    disabled={isEditLocked}
+                />
+            </Section>
 
-                    {/*
-                     * Photos persist per-operation against `post_media`
-                     * (HOS-390) — they never travel in this form's PATCH diff,
-                     * which is why the section takes no value/onChange and sits
-                     * outside the `formData` flow entirely.
-                     */}
-                    <section
-                        id="post-editor-media"
-                        className={styles.card}
-                        aria-label={sectionLabels.media}
-                    >
-                        <ContentMediaSection
-                            locale={locale}
-                            entity="post"
-                            entityId={initialData.id}
-                            disabled={isEditLocked}
-                        />
-                    </section>
+            <Section
+                id="post-editor-publication"
+                title={sectionLabels.publication}
+                helpId="section:content.post-publication"
+            >
+                <PublicationSection
+                    locale={locale}
+                    labels={publicationLabels}
+                    listHref={buildUrl({ locale, path: 'mi-cuenta/publicaciones' })}
+                    onSetPublishState={({ visibility: next }) =>
+                        postEditApi.setPublishState({
+                            id: initialData.id,
+                            visibility: next
+                        })
+                    }
+                    onApprove={() => postEditApi.moderate({ id: initialData.id })}
+                    onDelete={() => postEditApi.softDelete({ id: initialData.id })}
+                    visibility={visibility}
+                    moderationState={moderationState}
+                    lifecycleState={initialData.lifecycleState}
+                    canPublish={canPublish}
+                    canDelete={canDelete}
+                    hasUnsavedChanges={isDirty}
+                    onVisibilityChange={setVisibility}
+                    onModerationStateChange={setModerationState}
+                />
+            </Section>
 
-                    <section
-                        id="post-editor-publication"
-                        className={styles.card}
-                        aria-label={sectionLabels.publication}
-                    >
-                        <PublicationSection
-                            locale={locale}
-                            labels={publicationLabels}
-                            listHref={buildUrl({ locale, path: 'mi-cuenta/publicaciones' })}
-                            onSetPublishState={({ visibility: next }) =>
-                                postEditApi.setPublishState({
-                                    id: initialData.id,
-                                    visibility: next
-                                })
-                            }
-                            onApprove={() => postEditApi.moderate({ id: initialData.id })}
-                            onDelete={() => postEditApi.softDelete({ id: initialData.id })}
-                            visibility={visibility}
-                            moderationState={moderationState}
-                            lifecycleState={initialData.lifecycleState}
-                            canPublish={canPublish}
-                            canDelete={canDelete}
-                            hasUnsavedChanges={isDirty}
-                            onVisibilityChange={setVisibility}
-                            onModerationStateChange={setModerationState}
-                        />
-                    </section>
+            {formError && (
+                <Alert
+                    tone="danger"
+                    locale={locale}
+                >
+                    {formError}
+                </Alert>
+            )}
 
-                    {formError && (
-                        <div
-                            className={styles.submitError}
-                            role="alert"
-                        >
-                            {formError}
-                        </div>
-                    )}
-
-                    {/*
-                     * Absent — not disabled — while the moderation lock holds:
-                     * there is nothing the author can do to make saving work,
-                     * so a greyed-out Save would only pose a question with no
-                     * answer (the same reasoning as the publish/delete controls,
-                     * HOS-374 OQ-3). Cancel still exists as the page's own
-                     * "back to my posts" link.
-                     */}
-                    {!isEditLocked && (
-                        <ActionBar
-                            locale={locale}
-                            isSaving={isSaving}
-                            onCancel={handleCancel}
-                        />
-                    )}
-                </div>
-            </div>
+            {/*
+             * Absent — not disabled — while the moderation lock holds: nothing
+             * the author can do makes saving work (HOS-374 OQ-3). The page's
+             * back link stays as the exit.
+             */}
+            {!isEditLocked && (
+                <StickySaveBar
+                    locale={locale}
+                    status={saveBar.status}
+                    onSave={() => void saveBar.save()}
+                    onDiscard={saveBar.discard}
+                    onGoToFirstError={() => {
+                        saveBar.goToFirstError();
+                    }}
+                />
+            )}
         </form>
     );
 }

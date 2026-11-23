@@ -561,7 +561,13 @@
                 "UNEXPECTED": "Aconteceu um erro inesperado.",
                 "USER_DECLINED": "Você não confirmou.",
                 "USER_CANCELLED": "Você cancelou a confirmação."
-            }
+            },
+            "sectionTitle": "Ações registradas"
+        },
+        "tabs": {
+            "label": "Seções dos assistentes de IA",
+            "assistants": "Assistentes",
+            "history": "Histórico"
         }
     },
     "subscription": {
@@ -1040,7 +1046,14 @@
         },
         "errors": {
             "fetchFailed": "Erro ao carregar avaliações"
-        }
+        },
+        "sectionTitle": "Avaliações que você escreveu",
+        "ratingAria": "Avaliação: {{value}} de {{max}}",
+        "loadError": {
+            "title": "Não conseguimos carregar suas avaliações",
+            "body": "Tente de novo em alguns segundos."
+        },
+        "listLabel": "Suas avaliações"
     },
     "pages": {
         "accountLabel": "Minha conta",
@@ -1062,9 +1075,9 @@
                 "mySubscriptionDesc": "Plano atual e faturamento",
                 "myMessages": "Minhas consultas",
                 "myMessagesDesc": "Conversas com anfitriões",
-                "newsletter": "Boletim de novidades",
+                "newsletter": "Newsletter por e-mail",
                 "newsletterDesc": "Gerencie sua assinatura do boletim",
-                "whatsNew": "Novidades",
+                "whatsNew": "Novidades do Hospeda",
                 "whatsNewDesc": "Novidades e atualizações da plataforma",
                 "myProperties": "Meus imóveis",
                 "myPropertiesDesc": "Gerencie suas acomodações publicadas",
@@ -1234,7 +1247,8 @@
             "guidesDesc": "Guias editoriais e roteiros selecionados.",
             "productNews": "Novidades do produto",
             "productNewsDesc": "Novas funcionalidades e atualizações da plataforma."
-        }
+        },
+        "sectionStatus": "Sua assinatura"
     },
     "profileCompletion": {
         "pageTitle": "Complete seu perfil",
@@ -1319,7 +1333,19 @@
             "occupationMin": "A ocupação deve ter pelo menos 2 caracteres.",
             "occupationMax": "A ocupação não pode exceder 100 caracteres.",
             "submitFailed": "Não foi possível completar o perfil. Tente novamente."
-        }
+        },
+        "sections": {
+            "basics": "Seus dados",
+            "preferences": "Contato e preferências",
+            "more": "Sobre você",
+            "consent": "Para finalizar"
+        },
+        "steps": {
+            "basics": "Seus dados",
+            "preferences": "Preferências",
+            "confirm": "Confirmação"
+        },
+        "stepsLabel": "Progresso do seu perfil"
     },
     "setPassword": {
         "pageTitle": "Adicionar senha",
@@ -1370,7 +1396,8 @@
             "special": "Al menos 1 carácter especial (por ejemplo ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
-        "showPassword": "Mostrar contraseña"
+        "showPassword": "Mostrar contraseña",
+        "sectionTitle": "Sua senha"
     },
     "searchHistory": {
         "loading": "Carregando histórico...",
@@ -1414,7 +1441,13 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filtro",
             "filterCount_other": "{{count}} filtros"
-        }
+        },
+        "recordingTitle": "Salvar buscas",
+        "listTitle": "Suas buscas recentes",
+        "deleteConfirmTitle": "Excluir esta busca?",
+        "deleteConfirmBody": "“{{query}}” é removida do seu histórico. Não é possível desfazer.",
+        "clearConfirmTitle": "Apagar todo o seu histórico?",
+        "clearConfirmBody": "Todas as suas buscas salvas são removidas. Não é possível desfazer."
     },
     "alerts": {
         "loading": "Carregando alertas...",
@@ -1447,7 +1480,13 @@
         "closedNotice": "Este alerta foi encerrado porque esse anúncio não existe mais.",
         "activeHeading": "Alertas ativos",
         "closedHeading": "Alertas encerrados",
-        "closedListLabel": "Seus alertas de preço encerrados"
+        "closedListLabel": "Seus alertas de preço encerrados",
+        "lock": {
+            "description": "Ative alertas para saber quando o preço de uma hospedagem que você curte baixar."
+        },
+        "deleteConfirmTitle": "Excluir este alerta?",
+        "deleteConfirmBody": "Você deixa de receber avisos de queda de preço de {{name}}.",
+        "closedStatus": "Encerrado"
     },
     "exclusiveDeals": {
         "loading": "Carregando ofertas exclusivas...",
@@ -1465,7 +1504,11 @@
         },
         "listLabel": "Suas ofertas exclusivas",
         "item": {
-            "vipBadge": "Somente VIP"
+            "vipBadge": "Somente VIP",
+            "viewListing": "Ver acomodação",
+            "viewListingError": "Não conseguimos abrir a acomodação. Tente novamente.",
+            "listingUnavailable": "Esta acomodação não está mais disponível.",
+            "validUntil": "Válida até {{date}}"
         }
     },
     "recommendations": {
@@ -1484,7 +1527,8 @@
         },
         "empty": {
             "title": "Nenhuma recomendação por enquanto",
-            "body": "Volte mais tarde ou explore todo o nosso catálogo de acomodações."
+            "body": "Volte mais tarde ou explore todo o nosso catálogo de acomodações.",
+            "cta": "Explorar hospedagens"
         },
         "upgrade": {
             "title": "Sugestões para você",
@@ -1727,6 +1771,25 @@
                     "startDateRequired": "O evento precisa de uma data de início."
                 }
             }
+        },
+        "contentList": {
+            "editNamed": "Editar “{{title}}”",
+            "events": {
+                "create": "Novo evento",
+                "sectionTitle": "Seus eventos",
+                "locked": {
+                    "feature": "Gerenciar eventos é uma função dos editores",
+                    "description": "Sua conta ainda não tem permissão para gerenciar eventos. Se quiser publicar eventos na Hospeda, preencha a solicitação para se tornar editor."
+                }
+            },
+            "posts": {
+                "create": "Nova publicação",
+                "sectionTitle": "Suas publicações",
+                "locked": {
+                    "feature": "Escrever publicações é uma função dos editores",
+                    "description": "Sua conta ainda não tem permissão para gerenciar publicações. Se quiser escrever na Hospeda, preencha a solicitação para se tornar editor."
+                }
+            }
         }
     },
     "alliances": {
@@ -1805,6 +1868,10 @@
         },
         "suspended": {
             "noReason": "Suspendemos temporariamente o registro de usos a partir da sua ficha."
+        },
+        "kit": {
+            "pendingCount": "Usos aguardando sua resposta: {{count}}",
+            "reviewsCount": "Avaliações recebidas: {{count}}"
         }
     },
     "partner": {
@@ -1862,7 +1929,13 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             },
-            "sectionTitle": "Dados da sua ficha"
+            "sectionTitle": "Dados da sua ficha",
+            "logo": {
+                "label": "Logotipo da sua marca",
+                "previewAlt": "Pré-visualização do logotipo",
+                "pasteUrl": "Colar URL",
+                "urlHint": "Se o seu logotipo já está na internet, cole o endereço dele em vez de enviá-lo."
+            }
         },
         "presence": {
             "hidden": "Enquanto isso, sua página aparece como inexistente para o público.",
@@ -1954,7 +2027,12 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Escolha uma nova senha para a sua conta. Você vai precisar da atual.",
-        "accountNotice": "Você vai alterar a senha desta conta:"
+        "accountNotice": "Você vai alterar a senha desta conta:",
+        "successTitle": "Senha atualizada",
+        "successSection": "Tudo pronto",
+        "continue": "Avançar",
+        "back": "Voltar",
+        "sectionTitle": "Sua nova senha"
     },
     "notFound": {
         "title": "Não encontramos o que você procurava",
@@ -2168,6 +2246,28 @@
         "stepper": {
             "progress": "Etapa {{current}} de {{total}}",
             "done": "concluída"
+        },
+        "copyField": {
+            "copy": "Copiar",
+            "copied": "Copiado para a área de transferência.",
+            "failed": "Não conseguimos copiar. Selecione o texto e copie manualmente."
+        },
+        "imageUploader": {
+            "choose": "Escolher imagem",
+            "replace": "Trocar imagem",
+            "compressing": "Otimizando…",
+            "uploading": "Enviando…",
+            "dropHint": "ou arraste e solte a imagem aqui",
+            "hint": "Formatos: {{types}}. Máximo de {{maxSize}} MB.",
+            "errors": {
+                "invalidType": "Esse formato não é permitido. Use uma imagem {{types}}.",
+                "tooLarge": "A imagem pesa mais de {{maxSize}} MB mesmo depois de otimizada. Escolha uma mais leve.",
+                "tooLargeNoCompression": "Não conseguimos otimizar esta imagem no seu navegador e ela pesa mais de {{maxSize}} MB. Tente outro formato ou uma imagem mais leve.",
+                "uploadFailed": "Não conseguimos enviar a imagem. Tente novamente."
+            }
+        },
+        "contentCard": {
+            "statuses": "Status"
         }
     },
     "ownerDashboard": {

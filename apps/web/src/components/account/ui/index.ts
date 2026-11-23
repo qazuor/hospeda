@@ -49,6 +49,7 @@ export type { ButtonSize, ButtonVariant } from './button-class';
 export { Checkbox, CheckboxGroup, type CheckboxGroupProps, type CheckboxProps } from './Checkbox';
 export { Composer, type ComposerProps } from './Composer';
 export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog';
+export { ContentCard, type ContentCardProps, type ContentCardStatus } from './ContentCard';
 export {
     ConversationThread,
     type ConversationThreadProps,
@@ -56,8 +57,11 @@ export {
     type ThreadMessage,
     type ThreadViewer
 } from './ConversationThread';
+// HOS-2502: tourist long tail pieces.
+export { COPY_FEEDBACK_MS, CopyField, type CopyFieldProps } from './CopyField';
 export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
+export { Disclosure, type DisclosureProps } from './Disclosure';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export {
@@ -69,8 +73,15 @@ export {
 } from './EntityCard';
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
+export { type FilterChipItem, FilterChips, type FilterChipsProps } from './FilterChips';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
+export {
+    DEFAULT_IMAGE_TYPES,
+    ImageUploader,
+    type ImageUploaderProps,
+    type ImageUploadResult
+} from './ImageUploader';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { type KeyValueItem, KeyValueList, type KeyValueListProps } from './KeyValueList';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
@@ -93,6 +104,12 @@ export {
     type MessageDelivery
 } from './MessageBubble';
 export {
+    MyContentList,
+    type MyContentListPagination,
+    type MyContentListProps,
+    type MyContentListState
+} from './MyContentList';
+export {
     OptionCard,
     OptionCardGrid,
     type OptionCardGridProps,
@@ -104,6 +121,7 @@ export { PhoneField, type PhoneFieldProps } from './PhoneField';
 export { PlanSummary, type PlanSummaryProps } from './PlanSummary';
 export { buildPageRange, type PageSlot } from './pagination-range';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
+export { RatingStars, type RatingStarsProps, starFill } from './RatingStars';
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton';

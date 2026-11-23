@@ -5,7 +5,7 @@
  * entries and reveals the rest on demand, marking only visible entries as seen.
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { markSeen } = vi.hoisted(() => ({ markSeen: vi.fn() }));
@@ -23,7 +23,7 @@ const FIXTURE = Array.from({ length: 25 }, (_, i) => ({
 let items: typeof FIXTURE = [];
 
 vi.mock('@/hooks/use-whats-new', () => ({
-    useWhatsNew: () => ({ items, isLoading: false, markSeen })
+    useWhatsNew: () => ({ items, isLoading: false, error: null, markSeen })
 }));
 
 import {
@@ -44,15 +44,15 @@ describe('WhatsNewPageList pagination (HOS-2449)', () => {
         expect(screen.getByText('Showing 10 of 25')).toBeInTheDocument();
     });
 
-    it('reveals the next page on demand, in the active locale', () => {
+    it('reveals the next page on demand, in the active locale', async () => {
         const { container } = render(<WhatsNewPageList locale="en" />);
 
-        fireEvent.click(screen.getByRole('button', { name: 'Show more updates' }));
-        expect(container.querySelectorAll('article')).toHaveLength(20);
+        fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+        await waitFor(() => expect(container.querySelectorAll('article')).toHaveLength(20));
 
-        fireEvent.click(screen.getByRole('button', { name: 'Show more updates' }));
-        expect(container.querySelectorAll('article')).toHaveLength(25);
-        expect(screen.queryByRole('button', { name: 'Show more updates' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+        await waitFor(() => expect(container.querySelectorAll('article')).toHaveLength(25));
+        expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
     });
 
     it('marks only the visible entries as seen', () => {
@@ -63,11 +63,12 @@ describe('WhatsNewPageList pagination (HOS-2449)', () => {
         expect(marked).not.toContain('entry-11');
     });
 
-    it('marks the newly revealed entries as seen after "show more"', () => {
+    it('marks the newly revealed entries as seen after "show more"', async () => {
         render(<WhatsNewPageList locale="en" />);
         markSeen.mockClear();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Show more updates' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+        await waitFor(() => expect(markSeen).toHaveBeenCalled());
 
         const marked = markSeen.mock.calls.flatMap(([ids]) => ids as string[]);
         expect(marked).toContain('entry-11');

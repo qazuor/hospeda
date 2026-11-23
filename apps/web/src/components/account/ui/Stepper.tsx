@@ -1,7 +1,7 @@
 /**
  * Stepper — where a person is in a short multi-step flow (HOS-2485, spec
- * HOS-2414 §6.2). First consumer: the add-on purchase (choose → target →
- * confirm).
+ * HOS-2414 §6.2). Consumers: the add-on purchase (choose → target → confirm)
+ * and the profile completion (HOS-2501).
  *
  * A labelled `<ol>`; the current step carries `aria-current="step"` and the
  * finished ones a hidden translated «completed». Above the list, a
@@ -31,7 +31,10 @@ export interface StepperStep {
 export interface StepperProps {
     /** The steps, in order. */
     readonly steps: readonly StepperStep[];
-    /** Index (0-based) of the current step; clamped to the list. */
+    /**
+     * Index (0-based) of the current step, clamped to `0…steps.length`.
+     * `steps.length` means every step is done (no step is current).
+     */
     readonly current: number;
     /** Translated accessible name of the flow (e.g. «Compra de complemento»). */
     readonly label: string;
@@ -52,7 +55,7 @@ export interface StepperProps {
 export function Stepper({ steps, current, label, locale, className, helpId }: StepperProps) {
     if (steps.length === 0) return null;
     const t = createT(locale);
-    const at = Math.min(Math.max(current, 0), steps.length - 1);
+    const at = Math.min(Math.max(current, 0), steps.length);
     return (
         <nav
             {...helpAttr({ helpId })}
@@ -61,7 +64,7 @@ export function Stepper({ steps, current, label, locale, className, helpId }: St
         >
             <p className={styles.progress}>
                 {t('account.ui.stepper.progress', undefined, {
-                    current: at + 1,
+                    current: Math.min(at + 1, steps.length),
                     total: steps.length
                 })}
             </p>

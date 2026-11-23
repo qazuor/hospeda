@@ -1,5 +1,5 @@
 {
-  "contentHash": "58a19e6fed8d03adeb94a3160b0d360acec217a5bcd67ca440dfe01e5a5e477c",
+  "contentHash": "b2b5474a6f73f235f36e602f73fd27906d3b416428fcbda56e47c7eb1945c83b",
   "locales": {
     "es": [
       {
@@ -112,7 +112,7 @@
           "amenities",
           "help-center"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Conectar un asistente de IA a tu cuenta y desconectarlo cuando quieras, desde {{link:aiAssistants|Asistentes de IA}}.\n\nCon un asistente conectado podés, por ejemplo, {{article:reviews|leer tus reseñas}} o {{article:inquiries|responder consultas}}.",
           "expect": "- Antes de aprobar el acceso, la pantalla te muestra qué puede hacer el asistente.\n- Al desconectarlo pierde el acceso de inmediato, y podés volver a conectarlo.",
@@ -262,7 +262,7 @@
           "provider-directory",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Registrar un uso desde el proveedor en el {{link:providerDirectory|directorio}} y responder los que te registran en {{link:benefitUsages|Usos del beneficio}}.",
           "expect": "- Un uso queda pendiente hasta que la otra parte lo confirma, y solo cuenta cuando está confirmado.\n- Un rechazo se puede deshacer.\n- El historial se filtra por pendientes, confirmados, rechazados o vencidos.",
@@ -324,7 +324,7 @@
           "benefit-usage",
           "provider-directory"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Registrar usos, descargar tu código QR y confirmar los usos pendientes desde {{link:providerPanel|Mi ficha de proveedor}}.",
           "expect": "- Lo que registrás queda pendiente hasta que el anfitrión lo confirme (mirá {{article:benefit-usage|cómo lo ve el anfitrión}}).\n- Los usos confirmados suman a tus números.",
@@ -1072,7 +1072,7 @@
           "benefit-usage",
           "benefit-usage-provider"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Buscar proveedores locales de confianza y ver su beneficio para anfitriones en {{link:providerDirectory|Directorio de proveedores}}.",
           "expect": "- Necesitás tener alojamientos registrados para ver el directorio.\n- Cada proveedor muestra su beneficio, su horario y las valoraciones de otros anfitriones.\n- Después de usar un servicio, {{article:benefit-usage|registrás el uso del beneficio}}.",

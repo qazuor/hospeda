@@ -1,11 +1,13 @@
 ---
 /**
  * @file mi-cuenta/promociones/index.astro
- * @description Owner promotions listing page — shows the authenticated owner's
- * promotions via the PromotionList React island.
+ * @description Owner promotions list on the account kit (HOS-2505): the
+ * `PromotionList` island renders the shared `MyContentList` template
+ * (PageHeader with «Nueva promoción», the list Section, Pagination).
  *
- * Auth protection: middleware redirects unauthenticated users. This page
- * is only reachable by users with an active session.
+ * The page reads one thing on the server: the catalog names of the owner plans
+ * that include promotions, for the island's LockedState (the catalog reader is
+ * server-only). Per-user data is read by the island.
  *
  * @route    /[lang]/mi-cuenta/promociones/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -13,32 +15,36 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PromotionList } from '@/components/host/PromotionList.client';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
-const title = t('host.promotions.pageTitle', 'Mis promociones');
-const description = t('host.promotions.pageDescription', 'Gestioná tus promociones y descuentos');
+const title = t('host.promotions.pageTitle');
+const description = t('host.promotions.pageDescription');
 
 // Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
 const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
+
+// HOS-2505: the LockedState names the catalog plans that include promotions.
+const lockPlanNames = planNamesWithEntitlement({
+    result: await fetchPublicPlans({ vertical: 'accommodation' }),
+    entitlement: EntitlementKeyEnum.CREATE_PROMOTIONS
+});
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
-    <AccountPageHeader title={title} description={description} />
-
-    <AccountSectionCard>
-        <PromotionList client:load locale={locale} />
-    </AccountSectionCard>
+    <PromotionList client:load locale={locale} lockPlanNames={lockPlanNames}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PromotionList>
 </AccountLayout>

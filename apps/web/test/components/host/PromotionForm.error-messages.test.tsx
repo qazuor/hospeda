@@ -29,6 +29,14 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
+vi.mock('@/lib/entitlements-cache', () => ({
+    getEntitlementsCached: async () => ({
+        entitlements: { create_promotions: 1 },
+        limits: {},
+        failed: false
+    })
+}));
+
 beforeEach(() => {
     vi.clearAllMocks();
     mockListOwn.mockResolvedValue({
@@ -54,6 +62,7 @@ describe('PromotionForm — human validation messages (HOS-190 BETA-190)', () =>
                 mode="create"
             />
         );
+        await waitFor(() => expect(document.querySelector('[name="title"]')).not.toBeNull());
 
         // Fill required fields so the explicit required-checks pass, but push
         // discountValue negative so the OwnerPromotion schema's `.min(0)` fires

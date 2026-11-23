@@ -11,8 +11,6 @@
  * - Edit mode pre-fills fields from initialData
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -29,7 +27,8 @@ vi.mock('../../../src/components/host/PromotionForm.module.css', () => ({
 }));
 
 /** i18n: return the fallback string so assertions can use human-readable text. */
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) =>
             fallback ?? `${_key} ${JSON.stringify(params ?? {})}`
@@ -54,6 +53,10 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
         listOwn: (...args: unknown[]) => mockListOwn(...args)
     }
 }));
+
+/** Effective set: promotions granted unless a test says otherwise (HOS-2505 plan gate). */
+const mockEntitlements = vi.fn();
+vi.mock('@/lib/entitlements-cache', () => ({ getEntitlementsCached: () => mockEntitlements() }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -82,6 +85,12 @@ function getSubmitButton(): HTMLElement {
 
 beforeEach(() => {
     vi.clearAllMocks();
+
+    mockEntitlements.mockResolvedValue({
+        entitlements: { create_promotions: 1 },
+        limits: {},
+        failed: false
+    });
 
     // Default: listOwn returns an empty list — no accommodations loaded yet.
     // Individual tests that need accommodations will override this.
@@ -114,6 +123,7 @@ describe('PromotionForm — feedback and action styling (HOS-2451)', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
         fillCreateFields();
 
         fireEvent.click(getSubmitButton());
@@ -123,16 +133,18 @@ describe('PromotionForm — feedback and action styling (HOS-2451)', () => {
         expect(queued).toMatchObject({ type: 'success', message: 'Promoción creada' });
     });
 
-    it('gives Cancelar its own action style instead of an undefined global class', () => {
+    it('gives Cancelar its own action style instead of an undefined global class', async () => {
         render(
             <PromotionForm
                 locale="es"
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
+        // Kit LinkButton (secondary), not an undefined global class.
         const cancel = screen.getByRole('link', { name: /cancelar/i });
-        expect(cancel.className).toContain('cancelLink');
+        expect(cancel.className).toMatch(/\bsecondary\b/);
         expect(cancel.className).not.toContain('btn-secondary');
     });
 
@@ -147,24 +159,64 @@ describe('PromotionForm — feedback and action styling (HOS-2451)', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
         fillCreateFields();
 
         fireEvent.click(getSubmitButton());
 
         const plansLink = await screen.findByRole('link', { name: /ver planes/i });
-        expect(plansLink.className).toContain('upgradeLink');
+        expect(plansLink.className).toMatch(/\baccent\b/);
     });
 
-    it('spaces the action buttons so Cancelar cannot sit on top of Guardar', () => {
-        const css = readFileSync(resolve(__dirname, '../../../src/styles/components.css'), 'utf8');
-        const block = css.match(/\.form-actions\s*\{([^}]*)\}/)?.[1] ?? '';
-        expect(block).toMatch(/gap:/);
-        expect(block).toMatch(/align-items:\s*center/);
+    it('keeps Cancelar out of the save bar so it cannot sit on top of Guardar', async () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+        fireEvent.change(await screen.findByLabelText(/Título/i), {
+            target: { value: 'Oferta' }
+        });
+
+        const save = screen.getByRole('button', { name: /Guardar/i });
+        const cancel = screen.getByRole('link', { name: /cancelar/i });
+        const bar = save.closest('section');
+        expect(bar).not.toBeNull();
+        expect(bar?.contains(cancel)).toBe(false);
+    });
+
+    it('HOS-2505: shows a LockedState naming the catalog plans BEFORE the form when the plan lacks promotions', async () => {
+        mockEntitlements.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+                lockPlanNames={['Plan Catálogo']}
+            />
+        );
+
+        expect(await screen.findByText('Plan Catálogo')).toBeInTheDocument();
+        expect(document.querySelector('[data-reason="plan"]')).not.toBeNull();
+        expect(screen.queryByLabelText(/Título/i)).not.toBeInTheDocument();
+    });
+
+    it('HOS-2505: a failed plan read does not lock the form (the API decides on save)', async () => {
+        mockEntitlements.mockResolvedValue({ entitlements: {}, limits: {}, failed: true });
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        expect(await screen.findByLabelText(/Título/i)).toBeInTheDocument();
+        expect(document.querySelector('[data-reason="plan"]')).toBeNull();
     });
 });
 
 describe('PromotionForm — audience hint (HOS-2544)', () => {
-    it('names the catalog plan it receives in the VIP-only hint, never a hardcoded Plus', () => {
+    it('names the catalog plan it receives in the VIP-only hint, never a hardcoded Plus', async () => {
         // Arrange + Act
         render(
             <PromotionForm
@@ -173,6 +225,7 @@ describe('PromotionForm — audience hint (HOS-2544)', () => {
                 audiencePlanNames={['Explorador']}
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         // Assert
         const hint = screen.getByText(/Explorador/);
@@ -180,19 +233,20 @@ describe('PromotionForm — audience hint (HOS-2544)', () => {
         expect(hint.textContent).not.toMatch(/Plus/);
     });
 
-    it('names no plan when the catalog could not be read', () => {
+    it('names no plan when the catalog could not be read', async () => {
         render(
             <PromotionForm
                 locale="es"
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
         expect(screen.queryByText(/Plus/)).not.toBeInTheDocument();
     });
 });
 
 describe('PromotionForm — create mode', () => {
-    it('renders all expected fields', () => {
+    it('renders all expected fields', async () => {
         // Arrange + Act
         render(
             <PromotionForm
@@ -200,6 +254,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         // Assert — each field is present
         expect(screen.getByLabelText(/Título/i)).toBeInTheDocument();
@@ -212,8 +267,8 @@ describe('PromotionForm — create mode', () => {
         expect(screen.getByLabelText(/Usos máximos/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/Propiedad/i)).toBeInTheDocument();
 
-        // Actions
-        expect(getSubmitButton()).toBeInTheDocument();
+        // Actions: the save bar stays hidden while the form is clean (D8).
+        expect(screen.queryByRole('button', { name: /Guardar/i })).not.toBeInTheDocument();
         expect(screen.getByRole('link', { name: /Cancelar/i })).toBeInTheDocument();
     });
 
@@ -225,8 +280,10 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
-        // Act — submit without filling title
+        // Act — dirty a non-required field, submit without a title
+        fireEvent.change(screen.getByLabelText(/Descripción/i), { target: { value: 'x' } });
         fireEvent.click(getSubmitButton());
 
         // Assert — Zod error for title should appear
@@ -248,6 +305,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         // Act — fill all required fields but set discountValue > 100 with percentage type
         fireEvent.change(screen.getByLabelText(/Título/i), {
@@ -283,6 +341,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         fillCreateFields();
 
@@ -305,13 +364,14 @@ describe('PromotionForm — create mode', () => {
         expect(callArg.body.validFrom).toBeDefined();
     });
 
-    it('renders the VIP-only toggle unchecked by default (HOS-21 T-013)', () => {
+    it('renders the VIP-only toggle unchecked by default (HOS-21 T-013)', async () => {
         render(
             <PromotionForm
                 locale="es"
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         expect(screen.getByRole('checkbox', { name: /vip/i })).not.toBeChecked();
     });
@@ -325,6 +385,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         fillCreateFields();
         fireEvent.click(screen.getByRole('checkbox', { name: /vip/i }));
@@ -355,6 +416,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         fillCreateFields();
         fireEvent.click(getSubmitButton());
@@ -380,6 +442,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         fillCreateFields();
 
@@ -388,7 +451,9 @@ describe('PromotionForm — create mode', () => {
 
         // Assert
         await waitFor(() => {
-            expect(screen.getByRole('alert', { name: undefined })).toBeInTheDocument();
+            expect(
+                screen.getByText('No se pudo guardar la promoción. Intentá de nuevo.')
+            ).toBeInTheDocument();
         });
 
         // Location must NOT have changed
@@ -408,6 +473,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         fillCreateFields();
 
@@ -445,6 +511,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         fillCreateFields();
 
@@ -472,6 +539,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         await waitFor(() => {
             expect(screen.getByRole('combobox', { name: /Propiedad/i })).toBeInTheDocument();
@@ -492,6 +560,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         // Wait for listOwn to resolve and select to update
         await waitFor(() => {
@@ -528,6 +597,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         await waitFor(() => {
             expect(screen.getByRole('option', { name: 'Casa del lago' })).toBeInTheDocument();
@@ -557,6 +627,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         // Wait for options to load
         await waitFor(() => {
@@ -590,6 +661,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         await waitFor(() => {
             const select = screen.getByRole('combobox', { name: /Propiedad/i });
@@ -620,6 +692,7 @@ describe('PromotionForm — create mode', () => {
                 mode="create"
             />
         );
+        await screen.findByLabelText(/Título/i);
 
         // Wait for the error path to resolve
         await waitFor(() => {
@@ -727,7 +800,8 @@ describe('PromotionForm — edit mode', () => {
             />
         );
 
-        // Act — submit without changes (all fields already valid from initialData)
+        // Act — one change (the save bar shows only while dirty), then save
+        fireEvent.change(screen.getByLabelText(/Noches mínimas/i), { target: { value: '4' } });
         fireEvent.click(getSubmitButton());
 
         // Assert — update called, create NOT called
@@ -748,8 +822,8 @@ describe('PromotionForm — edit mode', () => {
             discountValue: 15
         });
 
-        // Redirect on success
-        expect(window.location.href).toBe('/es/mi-cuenta/promociones/');
+        // Redirect on success, once the baseline caught up
+        await waitFor(() => expect(window.location.href).toBe('/es/mi-cuenta/promociones/'));
     });
 
     it('fetches promotion via getById when no initialData is provided and shows loading indicator', async () => {

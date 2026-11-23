@@ -37,15 +37,15 @@ const OWNER_DASHBOARD = read('components/account/dashboard/OwnerDashboardPage.as
 /**
  * What gives a page the «?» of ITS OWN article (HOS-2546): the title row of
  * `AccountPageHeader`, directly or through an editor layout, or the kit
- * `PageHeader` with a `PageHelpLink` in its `help` slot (or the owner dashboard
+ * `PageHeader` with `<PageHelpLink slot="help">` (or the owner dashboard
  * template, which carries one). Since `PageHelpRow` is gone, the account layout
  * alone is not enough.
  */
 const PAGE_HELP_PATH =
-    /<AccountPageHeader\b|<PageHelpLink\b|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
+    /<AccountPageHeader\b|<PageHelpLink\b[^>]*slot="help"|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
 
 /** What gives a page at least the general «?»: a page «?», or the account header's. */
-const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b`);
+const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b|<OwnerDashboardPage\\b`);
 
 /**
  * Onboarding gates the middleware sends a user to before the account itself:

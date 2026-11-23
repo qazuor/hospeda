@@ -53,6 +53,8 @@
  * correct here — the same note the mentions component carries.
  */
 
+import { Section } from '@/components/account/ui';
+import { SectionLoadError } from '@/components/account/SectionLoadError';
 import type { MyPartnerStats } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -71,9 +73,17 @@ interface Props {
      * drops one line, never the panel.
      */
     readonly stats7: MyPartnerStats | null;
+    /**
+     * True when the owner HAS a partner listing but the 30-day read failed. The
+     * section then says so with a retry link instead of vanishing, because a
+     * missing panel reads as «no statistics» when the truth is «we could not load them».
+     */
+    readonly loadFailed?: boolean;
+    /** Where the retry link points: the current page. */
+    readonly retryHref?: string;
 }
 
-const { locale, stats30, stats7 } = Astro.props;
+const { locale, stats30, stats7, loadFailed = false, retryHref = '' } = Astro.props;
 const { t } = createTranslations(locale);
 
 /**
@@ -97,15 +107,24 @@ const numberFormatter = new Intl.NumberFormat(locale);
 ---
 
 {
-    visible && (
-        <section class="partner-stats">
-            <header class="partner-stats__header">
-                <h2 class="partner-stats__title">{t('account.partnerStats.title')}</h2>
-                <p class="partner-stats__subtitle">
-                    {t('account.partnerStats.subtitle')}
-                </p>
-            </header>
+    loadFailed && !visible && (
+        <Section
+            title={t('account.partnerStats.title')}
+            description={t('account.partnerStats.subtitle')}
+            helpId="section:partner.stats"
+        >
+            <SectionLoadError locale={locale} retryHref={retryHref} />
+        </Section>
+    )
+}
 
+{
+    visible && (
+        <Section
+            title={t('account.partnerStats.title')}
+            description={t('account.partnerStats.subtitle')}
+            helpId="section:partner.stats"
+        >
             <div class="partner-stats__cards">
                 {showViewsCard ? (
                     <article class="partner-stats__card" data-card="views">
@@ -199,72 +218,40 @@ const numberFormatter = new Intl.NumberFormat(locale);
             <p class="partner-stats__scope">
                 {t('account.partnerStats.scopeNote')}
             </p>
-        </section>
+        </Section>
     )
 }
 
 <style>
-    .partner-stats {
-        margin-block: 2rem;
-        padding: 1.5rem;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-lg, 12px);
-        background-color: var(--core-card);
-    }
-
-    .partner-stats__header {
-        margin-bottom: 1.25rem;
-    }
-
-    .partner-stats__title {
-        font-family: var(--font-heading);
-        font-size: var(--text-h3, 1.25rem);
-        font-weight: 700;
-        color: var(--core-foreground);
-        margin: 0 0 0.35rem;
-    }
-
-    .partner-stats__subtitle {
-        margin: 0;
-        color: var(--core-muted-foreground, #6b7280);
-        font-size: 0.95rem;
-    }
-
+    /* The Section is the only surface: the cards are tiles on it, bordered, never shadowed. */
     .partner-stats__cards {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-        gap: 1rem;
+        gap: var(--space-4);
     }
-
     .partner-stats__card {
-        padding: 1rem;
+        padding: var(--space-4);
         border: 1px solid var(--border);
-        border-radius: var(--radius-md, 8px);
-        background-color: var(--core-background, #fafafa);
+        border-radius: var(--radius-surface);
+        background-color: var(--core-card);
     }
-
     .partner-stats__card--na {
         background-color: transparent;
         border-style: dashed;
     }
-
     .partner-stats__card-label {
-        margin: 0 0 0.35rem;
-        font-size: 0.85rem;
+        margin: 0 0 var(--space-1);
+        font: var(--app-meta);
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--core-muted-foreground, #6b7280);
+        color: var(--core-muted-foreground);
     }
-
     .partner-stats__card-value {
-        margin: 0 0 0.35rem;
-        font-family: var(--font-heading);
-        font-size: 2rem;
-        font-weight: 700;
-        line-height: 1.1;
+        margin: 0 0 var(--space-1);
+        font: var(--app-stat);
+        font-variant-numeric: tabular-nums;
         color: var(--core-foreground);
     }
-
     /*
       The window label under the headline figure. Deliberately adjacent to the
       number rather than a single caption for the whole panel: with two figures
@@ -272,49 +259,43 @@ const numberFormatter = new Intl.NumberFormat(locale);
       attached to the wrong one by the reader.
     */
     .partner-stats__card-window {
-        margin: 0 0 0.6rem;
-        font-size: 0.8rem;
+        margin: 0 0 var(--space-2);
+        font: var(--app-caption);
         text-transform: uppercase;
         letter-spacing: 0.03em;
-        color: var(--core-muted-foreground, #6b7280);
+        color: var(--core-muted-foreground);
     }
-
     /*
       The 7-day line: context, not a peer of the headline. Same colour as the
-      helper text and roughly half the size of the primary figure, so the
-      hierarchy is visible before either number is read.
+      helper text and smaller than the primary figure, so the hierarchy is
+      visible before either number is read.
     */
     .partner-stats__card-secondary {
         display: flex;
         flex-wrap: wrap;
         align-items: baseline;
-        gap: 0.35rem;
-        margin: 0 0 0.6rem;
-        padding-top: 0.6rem;
-        border-top: 1px solid var(--border);
-        font-size: 0.9rem;
-        color: var(--core-muted-foreground, #6b7280);
+        gap: var(--space-1);
+        margin: 0 0 var(--space-2);
+        padding-block-start: var(--space-2);
+        border-block-start: 1px solid var(--border);
+        font: var(--app-meta);
+        color: var(--core-muted-foreground);
     }
-
     .partner-stats__card-secondary-value {
-        font-family: var(--font-heading);
-        font-size: 1.05rem;
-        font-weight: 700;
+        font: var(--app-control);
         color: var(--core-foreground);
     }
-
     .partner-stats__card-help,
     .partner-stats__card-na {
         margin: 0;
-        font-size: 0.9rem;
-        color: var(--core-muted-foreground, #6b7280);
+        font: var(--app-meta);
+        color: var(--core-muted-foreground);
     }
-
     .partner-stats__scope {
-        margin: 0.75rem 0 0;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--border);
-        font-size: 0.9rem;
-        color: var(--core-muted-foreground, #6b7280);
+        margin: var(--space-3) 0 0;
+        padding-block-start: var(--space-3);
+        border-block-start: 1px solid var(--border);
+        font: var(--app-meta);
+        color: var(--core-muted-foreground);
     }
 </style>

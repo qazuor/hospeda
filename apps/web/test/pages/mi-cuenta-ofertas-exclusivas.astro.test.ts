@@ -47,3 +47,16 @@ describe('mi-cuenta/ofertas-exclusivas/index.astro (HOS-21 T-011)', () => {
         expect(source).toContain('activeSection="ofertas-exclusivas"');
     });
 });
+
+describe('exclusive deals page on the kit (HOS-2507)', () => {
+    it('renders one PageHeader with the page «?» and none of the legacy primitives', () => {
+        expect(source.match(/<PageHeader\b/g)).toHaveLength(1);
+        expect(source).toContain('<PageHelpLink slot="help"');
+        expect(source).not.toContain('AccountPageHeader');
+        expect(source).not.toContain('AccountSectionCard');
+    });
+
+    it('mounts the island directly, with no wrapping card (the island owns its surfaces)', () => {
+        expect(source).toContain('<ExclusiveDealsList');
+    });
+});
