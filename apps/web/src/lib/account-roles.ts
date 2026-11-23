@@ -208,3 +208,40 @@ export function resolveSubscriptionPlansPathForAudience({
     }
     return PRICING_PAGE_PATH_BY_AUDIENCE[audience];
 }
+
+/** The roles that each map to exactly one owner vertical's plans page. */
+const OWNER_VERTICAL_PLANS_PATH_BY_ROLE = {
+    HOST: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
+    VENUE_OWNER: PRICING_PAGE_PATH_BY_AUDIENCE.venue,
+    EXPERIENCE_OWNER: PRICING_PAGE_PATH_BY_AUDIENCE.experience
+} as const satisfies Readonly<Record<string, string>>;
+
+/** Where an account goes when its owner vertical cannot be told from its roles. */
+export const OWNER_PLANS_FALLBACK_PATH = 'mi-cuenta/publica';
+
+/**
+ * Where a «Ver planes» CTA for an account WITHOUT any subscription points
+ * (owner decision 2, Mi cuenta UI epic): the public plans page of the one owner
+ * vertical the account's roles name — `HOST` → accommodation, `VENUE_OWNER` →
+ * venue, `EXPERIENCE_OWNER` → experience. When the roles name several of those
+ * verticals, or none, there is no single right catalogue, so the account goes
+ * to `/mi-cuenta/publica`, which lets it choose.
+ *
+ * Unlike {@link resolveSubscriptionPlansPath} there is no precedence between
+ * hats and no tourist fallback: staff roles (`ADMIN`, `SUPER_ADMIN`) name no
+ * vertical and are ignored.
+ *
+ * @param params.roles - Every role the user holds, or `null`.
+ * @returns The locale-agnostic path segment of the plans destination.
+ */
+export function resolveEmptySubscriptionPlansPath({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): string {
+    const roleSet = new Set(roles ?? []);
+    const paths = Object.entries(OWNER_VERTICAL_PLANS_PATH_BY_ROLE)
+        .filter(([role]) => roleSet.has(role))
+        .map(([, path]) => path);
+    return paths.length === 1 && paths[0] ? paths[0] : OWNER_PLANS_FALLBACK_PATH;
+}
