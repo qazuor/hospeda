@@ -3,13 +3,14 @@
  * @description React island for the search history page (SPEC-289 P3).
  *
  * Renders the authenticated user's past search entries with:
- *  - Query summary + compact filter chips
- *  - Relative timestamp
- *  - Result count badge
+ *  - Query summary + compact filter chips, relative timestamp, result count
+ *    (kit `ListRow`s, see `search-history/SearchHistoryEntries.tsx`)
  *  - "Re-run" action (rebuilds the search URL and navigates)
- *  - Delete-one action (inline confirmation)
- *  - "Clear all" action (inline confirmation)
+ *  - Delete-one and "Clear all" actions, both asked with the kit ConfirmDialog
  *  - Recording state (read-only; the switch lives in Preferences, HOS-2479)
+ *  - Plan gate as a kit LockedState with the catalog plan names (HOS-2554)
+ *
+ * HOS-2501: kit Sections, Skeleton, ErrorState, EmptyState and LockedState.
  *
  * All API calls go to `/api/v1/protected/search-history/*`.
  * The initial `searchHistoryEnabled` state is provided by the Astro page
@@ -21,18 +22,25 @@
 import { SearchIcon } from '@repo/icons';
 import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { translateApiError } from '@/lib/api-errors';
-import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
-import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
-import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
-import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './SearchHistoryList.module.css';
-import { StatusPill, TextLink } from './ui';
+import { SearchHistoryEntries } from './search-history/SearchHistoryEntries';
+import {
+    Button,
+    EmptyState,
+    ErrorState,
+    LockedState,
+    Section,
+    Skeleton,
+    StatusPill,
+    TextLink,
+    useConfirm
+} from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,138 +104,6 @@ export interface SearchHistoryListProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/**
- * Build the "re-run" URL from a stored search entry.
- *
- * Maps stored `SearchHistoryFilters` fields to the URL params accepted by
- * `/[lang]/alojamientos/`. Date fields are formatted as ISO date strings
- * (YYYY-MM-DD). For `minGuests`, we approximate with the `adults` param since
- * the original adults/children split is not stored.
- *
- * @param params - Entry data and locale for URL building
- * @returns A full URL path with query string
- */
-function buildRerunUrl({
-    locale,
-    queryText,
-    filtersJson
-}: {
-    readonly locale: SupportedLocale;
-    readonly queryText: string | null;
-    readonly filtersJson: SearchHistoryFilters | null;
-}): string {
-    const params: Record<string, string> = {};
-
-    if (queryText) {
-        params.q = queryText;
-    }
-
-    if (filtersJson) {
-        if (filtersJson.destinationId) {
-            params.destinationIds = filtersJson.destinationId;
-        }
-        if (filtersJson.minPrice != null) {
-            params.minPrice = String(filtersJson.minPrice);
-        }
-        if (filtersJson.maxPrice != null) {
-            params.maxPrice = String(filtersJson.maxPrice);
-        }
-        if (filtersJson.minGuests != null) {
-            params.adults = String(filtersJson.minGuests);
-        }
-        if (filtersJson.minBedrooms != null) {
-            params.minBedrooms = String(filtersJson.minBedrooms);
-        }
-        if (filtersJson.minBathrooms != null) {
-            params.minBathrooms = String(filtersJson.minBathrooms);
-        }
-        if (filtersJson.minRating != null) {
-            params.minRating = String(filtersJson.minRating);
-        }
-        if (filtersJson.hasPool) {
-            params.hasPool = 'true';
-        }
-        if (filtersJson.hasWifi) {
-            params.hasWifi = 'true';
-        }
-        if (filtersJson.hasParking) {
-            params.hasParking = 'true';
-        }
-        if (filtersJson.allowsPets) {
-            params.allowsPets = 'true';
-        }
-        if (filtersJson.isFeatured) {
-            params.isFeatured = 'true';
-        }
-        // `type` (single) takes precedence; fall through to `types` (array) otherwise.
-        if (filtersJson.type) {
-            params.types = filtersJson.type;
-        } else if (filtersJson.types?.length) {
-            // HOS-524: canonical order, like every other writer of these CSV
-            // params. A saved search replayed from history has to land on the
-            // SAME listing URL the chips and the sidebar produce for that
-            // selection — otherwise one filter keeps two edge-cache entries and
-            // two rows in the analytics.
-            params.types = canonicalizeFacetValues({ values: filtersJson.types }).join(',');
-        }
-        if (filtersJson.amenities?.length) {
-            params.amenities = canonicalizeFacetValues({
-                values: filtersJson.amenities
-            }).join(',');
-        }
-        if (filtersJson.features?.length) {
-            params.features = canonicalizeFacetValues({
-                values: filtersJson.features
-            }).join(',');
-        }
-        if (filtersJson.checkIn) {
-            const d =
-                filtersJson.checkIn instanceof Date
-                    ? filtersJson.checkIn
-                    : new Date(filtersJson.checkIn as unknown as string); // TYPE-WORKAROUND: JSON-parsed date fields are typed as `unknown` in the JSONB filter blob; after the `instanceof Date` guard fails we know the value is a date string.
-            params.checkIn = d.toISOString().split('T')[0] ?? '';
-        }
-        if (filtersJson.checkOut) {
-            const d =
-                filtersJson.checkOut instanceof Date
-                    ? filtersJson.checkOut
-                    : new Date(filtersJson.checkOut as unknown as string); // TYPE-WORKAROUND: JSON-parsed date fields are typed as `unknown` in the JSONB filter blob; after the `instanceof Date` guard fails we know the value is a date string.
-            params.checkOut = d.toISOString().split('T')[0] ?? '';
-        }
-    }
-
-    return buildUrlWithParams({ locale, path: 'alojamientos', params });
-}
-
-/**
- * Count the number of active filters in a `SearchHistoryFilters` object.
- *
- * Used to render a concise "N filters" badge on each entry.
- *
- * @param filtersJson - Stored filter object, or null
- * @returns Number of distinct active filters
- */
-function countActiveFilters(filtersJson: SearchHistoryFilters | null): number {
-    if (!filtersJson) return 0;
-    let count = 0;
-    if (filtersJson.destinationId) count++;
-    if (filtersJson.minPrice != null || filtersJson.maxPrice != null) count++;
-    if (filtersJson.minGuests != null || filtersJson.maxGuests != null) count++;
-    if (filtersJson.minBedrooms != null) count++;
-    if (filtersJson.minBathrooms != null) count++;
-    if (filtersJson.minRating != null) count++;
-    if (filtersJson.hasPool) count++;
-    if (filtersJson.hasWifi) count++;
-    if (filtersJson.hasParking) count++;
-    if (filtersJson.allowsPets) count++;
-    if (filtersJson.isFeatured) count++;
-    if (filtersJson.type || filtersJson.types?.length) count++;
-    if (filtersJson.amenities?.length) count++;
-    if (filtersJson.features?.length) count++;
-    if (filtersJson.checkIn || filtersJson.checkOut) count++;
-    return count;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
@@ -248,7 +124,7 @@ export function SearchHistoryList({
     // below (fetchEntries, etc.) and re-triggers the mount effect in an
     // infinite loop (fetch -> setState -> render -> new `t` -> fetch -> ...).
     // Same fix as ExternalReputationSection.client.tsx.
-    const { t, tPlural } = useMemo(() => createTranslations(locale), [locale]);
+    const { t } = useMemo(() => createTranslations(locale), [locale]);
     const base = apiUrl.replace(/\/$/, '');
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -264,10 +140,7 @@ export function SearchHistoryList({
     const [entitlementRequired, setEntitlementRequired] = useState(false);
     // HOS-2479: read-only here; the switch lives in Preferences.
     const isHistoryEnabled = initialHistoryEnabled;
-    const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-    const [isClearing, setIsClearing] = useState(false);
-    const [confirmClearVisible, setConfirmClearVisible] = useState(false);
+    const { confirm, confirmDialog } = useConfirm({ locale });
 
     const isMountedRef = useRef(true);
 
@@ -354,361 +227,167 @@ export function SearchHistoryList({
     // ── Delete one ────────────────────────────────────────────────────────────
 
     /**
-     * Hard-delete a single history entry.
-     * Shows inline confirmation before calling the API.
+     * Hard-delete a single history entry. Asks with the kit ConfirmDialog; the
+     * dialog runs the request and stays open with a retry when it fails.
      */
-    const handleDeleteConfirm = useCallback(
-        async (id: string) => {
-            setDeletingId(id);
-            setConfirmDeleteId(null);
-            try {
-                const res = await fetch(`${base}/api/v1/protected/search-history/${id}`, {
+    const requestDelete = useCallback(
+        async (entry: SearchHistoryApiItem) => {
+            await confirm({
+                title: t('account.searchHistory.deleteConfirmTitle'),
+                description: t('account.searchHistory.deleteConfirmBody', undefined, {
+                    query: entry.queryText ?? t('account.searchHistory.noQuery')
+                }),
+                confirmLabel: t('account.searchHistory.deleteOneConfirm'),
+                cancelLabel: t('account.searchHistory.clearAllCancel'),
+                onConfirm: async () => {
+                    const res = await fetch(`${base}/api/v1/protected/search-history/${entry.id}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
+                    const body = (await res.json()) as MutationResponse;
+                    if (!res.ok || !body.success) {
+                        throw new Error(
+                            translateApiError({ error: body.error, t, fallback: deleteErrorMsg })
+                        );
+                    }
+                    if (isMountedRef.current) {
+                        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+                        addToast({ type: 'success', message: deleteSuccessMsg });
+                    }
+                }
+            });
+        },
+        [base, confirm, deleteErrorMsg, deleteSuccessMsg, t]
+    );
+
+    // ── Clear all ─────────────────────────────────────────────────────────────
+
+    /** Hard-delete all history entries for this user, after the kit ConfirmDialog. */
+    const requestClearAll = useCallback(async () => {
+        await confirm({
+            title: t('account.searchHistory.clearConfirmTitle'),
+            description: t('account.searchHistory.clearConfirmBody'),
+            confirmLabel: t('account.searchHistory.clearAllInline'),
+            cancelLabel: t('account.searchHistory.clearAllCancel'),
+            onConfirm: async () => {
+                const res = await fetch(`${base}/api/v1/protected/search-history`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });
                 const body = (await res.json()) as MutationResponse;
                 if (!res.ok || !body.success) {
                     throw new Error(
-                        translateApiError({ error: body.error, t, fallback: deleteErrorMsg })
+                        translateApiError({ error: body.error, t, fallback: clearErrorMsg })
                     );
                 }
                 if (isMountedRef.current) {
-                    setEntries((prev) => prev.filter((e) => e.id !== id));
-                    addToast({ type: 'success', message: deleteSuccessMsg });
-                }
-            } catch (err) {
-                addToast({
-                    type: 'error',
-                    message: err instanceof Error ? err.message : deleteErrorMsg
-                });
-            } finally {
-                if (isMountedRef.current) {
-                    setDeletingId(null);
+                    setEntries([]);
+                    addToast({ type: 'success', message: clearSuccessMsg });
                 }
             }
-        },
-        [base, deleteErrorMsg, deleteSuccessMsg, t]
-    );
+        });
+    }, [base, clearErrorMsg, clearSuccessMsg, confirm, t]);
 
-    // ── Clear all ─────────────────────────────────────────────────────────────
+    // ── Render ────────────────────────────────────────────────────────────────
 
-    /**
-     * Hard-delete all history entries for this user.
-     * Requires inline confirmation before calling the API.
-     */
-    const handleClearAll = useCallback(async () => {
-        setIsClearing(true);
-        setConfirmClearVisible(false);
-        try {
-            const res = await fetch(`${base}/api/v1/protected/search-history`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-            const body = (await res.json()) as MutationResponse;
-            if (!res.ok || !body.success) {
-                throw new Error(
-                    translateApiError({ error: body.error, t, fallback: clearErrorMsg })
-                );
-            }
-            if (isMountedRef.current) {
-                setEntries([]);
-                addToast({ type: 'success', message: clearSuccessMsg });
-            }
-        } catch (err) {
-            addToast({
-                type: 'error',
-                message: err instanceof Error ? err.message : clearErrorMsg
-            });
-        } finally {
-            if (isMountedRef.current) {
-                setIsClearing(false);
-            }
-        }
-    }, [base, clearErrorMsg, clearSuccessMsg, t]);
-
-    // ─────────────────────────────────────────────────────────────────────────
-
-    // ── Render helpers ────────────────────────────────────────────────────────
-
-    /** Format result count as a readable string. */
-    function formatResultCount(count: number | null): string {
-        if (count === null) return '';
-        if (count === 0) return t('account.searchHistory.noResults', 'Sin resultados');
-        return tPlural('account.searchHistory.results', count);
-    }
-
-    // Locale-aware upgrade CTA target for the entitlement-gated empty state
-    // (BETA-148). Built locally rather than trusting the API gate's raw
-    // `details.upgradeUrl` (`/billing/plans`, not a real web route) — same
-    // convention as `AlertsList.client.tsx` and `PriceAlertButton.tsx`.
-    // Points at the tourist pricing page, not the owner one (BETA-174) — this
-    // is a tourist-only Área Turista feature.
+    // Locale-aware upgrade CTA target for the plan gate (BETA-148). Built locally
+    // rather than trusting the API gate's raw `details.upgradeUrl`
+    // (`/billing/plans`, not a real web route). Points at the tourist pricing
+    // page, not the owner one (BETA-174): this is a tourist-only feature.
     const preferencesHref = buildUrl({ locale, path: 'mi-cuenta/preferencias' });
     const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
-    // ── Loading state ─────────────────────────────────────────────────────────
-
     if (loading) {
         return (
-            <div
-                className={styles['search-history']}
-                aria-busy="true"
+            <Section
+                title={t('account.searchHistory.listTitle')}
+                helpId="section:account.search-history-list"
             >
-                <p
-                    className={styles['search-history__loading']}
-                    aria-live="polite"
-                >
-                    {t('account.searchHistory.loading', 'Cargando historial...')}
-                </p>
-            </div>
+                <Skeleton.Row locale={locale} />
+                <Skeleton.Row locale={locale} />
+            </Section>
         );
     }
-
-    // ── Error state ───────────────────────────────────────────────────────────
 
     if (error) {
         return (
-            <div className={styles['search-history']}>
-                <p
-                    className={styles['search-history__error']}
-                    role="alert"
-                >
-                    {error}
-                </p>
-                <button
-                    type="button"
-                    className={styles['search-history__retry-btn']}
-                    onClick={() => void fetchEntries()}
-                >
-                    {t('common.retry', 'Reintentar')}
-                </button>
-            </div>
+            <ErrorState
+                locale={locale}
+                description={error}
+                onRetry={() => fetchEntries()}
+            />
         );
     }
 
-    // ── Empty state ───────────────────────────────────────────────────────────
+    // The plan gate: the catalog plan names come from the SSR page (HOS-2554).
+    if (entitlementRequired) {
+        return (
+            <LockedState
+                locale={locale}
+                reason={{
+                    kind: 'plan',
+                    feature: t('account.pages.searchHistory.title'),
+                    description: t('account.searchHistory.optOut.description'),
+                    plans: gatePlanNames.map((name) => ({ name })),
+                    plansHref: upgradeUrl
+                }}
+            />
+        );
+    }
 
     const isEmpty = entries.length === 0;
 
     return (
-        <div className={styles['search-history']}>
+        <div className={styles.groups}>
             {/* ── Recording state (HOS-2479): the switch lives in Preferences ── */}
-            <div className={styles['search-history__opt-out']}>
-                <div className={styles['search-history__opt-out-text']}>
-                    <span className={styles['search-history__opt-out-label']}>
-                        {t('account.searchHistory.optOut.label', 'Historial de búsquedas')}
-                    </span>
-                    <span className={styles['search-history__opt-out-desc']}>
-                        {t(
-                            'account.searchHistory.optOut.description',
-                            'Guardá tus búsquedas recientes para repetirlas con un clic.'
-                        )}
-                    </span>
+            <Section
+                title={t('account.searchHistory.recordingTitle')}
+                description={t('account.searchHistory.optOut.description')}
+                helpId="section:account.search-history-recording"
+            >
+                <div className={styles.recording}>
+                    <StatusPill tone={isHistoryEnabled ? 'success' : 'neutral'}>
+                        {isHistoryEnabled
+                            ? t('account.searchHistory.optOut.enabled')
+                            : t('account.searchHistory.optOut.disabled')}
+                    </StatusPill>
+                    <TextLink href={preferencesHref}>
+                        {t('account.preferences.changeInPreferences')}
+                    </TextLink>
                 </div>
-                <StatusPill tone={isHistoryEnabled ? 'success' : 'neutral'}>
-                    {isHistoryEnabled
-                        ? t('account.searchHistory.optOut.enabled', 'Activado')
-                        : t('account.searchHistory.optOut.disabled', 'Desactivado')}
-                </StatusPill>
-                <TextLink href={preferencesHref}>
-                    {t('account.preferences.changeInPreferences')}
-                </TextLink>
-            </div>
+            </Section>
 
-            {/* ── Header with clear-all action ──────────────────────────── */}
-            {!isEmpty && (
-                <div className={styles['search-history__header']}>
-                    {confirmClearVisible ? (
-                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
-                        <div
-                            className={styles['search-history__confirm-inline']}
-                            role="group"
-                            aria-label={t('account.searchHistory.clearAll', 'Borrar todo')}
+            {/* ── The saved searches ───────────────────────────────────────── */}
+            <Section
+                title={t('account.searchHistory.listTitle')}
+                helpId="section:account.search-history-list"
+                actions={
+                    isEmpty ? undefined : (
+                        <Button
+                            variant="danger-ghost"
+                            size="sm"
+                            onClick={() => void requestClearAll()}
                         >
-                            <span className={styles['search-history__confirm-question']}>
-                                {t('account.searchHistory.clearAll', 'Borrar todo')}?
-                            </span>
-                            <button
-                                type="button"
-                                className={styles['search-history__confirm-yes']}
-                                onClick={() => void handleClearAll()}
-                            >
-                                {t('account.searchHistory.clearAllInline', 'Sí, borrar todo')}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles['search-history__confirm-no']}
-                                onClick={() => setConfirmClearVisible(false)}
-                            >
-                                {t('account.searchHistory.clearAllCancel', 'Cancelar')}
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            className={styles['search-history__clear-btn']}
-                            onClick={() => setConfirmClearVisible(true)}
-                            disabled={isClearing}
-                        >
-                            {isClearing
-                                ? t('common.deleting')
-                                : t('account.searchHistory.clearAll', 'Borrar todo')}
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* ── List ──────────────────────────────────────────────────── */}
-            {isEmpty ? (
-                <div aria-live="polite">
-                    <AccountEmptyState
-                        title={t('account.searchHistory.empty.title', 'Sin búsquedas guardadas')}
-                        description={
-                            entitlementRequired
-                                ? resolvePlanGateMessage({
-                                      keyBase: 'account.searchHistory.empty.upsellBody',
-                                      locale,
-                                      noPlansFallback:
-                                          'Tus búsquedas aparecerán acá cuando tu plan incluya el historial de búsquedas.',
-                                      planNames: gatePlanNames,
-                                      t
-                                  })
-                                : t(
-                                      'account.searchHistory.empty.body',
-                                      'Todavía no tenés búsquedas guardadas.'
-                                  )
-                        }
+                            {t('account.searchHistory.clearAll')}
+                        </Button>
+                    )
+                }
+            >
+                {isEmpty ? (
+                    <EmptyState
+                        title={t('account.searchHistory.empty.title')}
+                        description={t('account.searchHistory.empty.body')}
                         icon={<SearchIcon size={28} />}
-                        ctaHref={entitlementRequired ? upgradeUrl : undefined}
-                        ctaLabel={
-                            entitlementRequired
-                                ? t('account.alerts.upgrade.cta', 'Ver planes')
-                                : undefined
-                        }
                     />
-                </div>
-            ) : (
-                <ul
-                    className={styles['search-history__list']}
-                    aria-label={t('account.pages.searchHistory.title', 'Historial de búsquedas')}
-                >
-                    {entries.map((entry) => {
-                        const rerunUrl = buildRerunUrl({
-                            locale,
-                            queryText: entry.queryText,
-                            filtersJson: entry.filtersJson
-                        });
-                        const filterCount = countActiveFilters(entry.filtersJson);
-                        const isDeleting = deletingId === entry.id;
-                        const confirmingThis = confirmDeleteId === entry.id;
-
-                        return (
-                            <li
-                                key={entry.id}
-                                className={[
-                                    styles['search-history__item'],
-                                    isDeleting ? styles['search-history__item--deleting'] : ''
-                                ].join(' ')}
-                                aria-busy={isDeleting}
-                            >
-                                {/* Query + filter summary */}
-                                <div className={styles['search-history__item-content']}>
-                                    <p className={styles['search-history__item-query']}>
-                                        {entry.queryText
-                                            ? entry.queryText.length > 70
-                                                ? `${entry.queryText.slice(0, 70)}…`
-                                                : entry.queryText
-                                            : t(
-                                                  'account.searchHistory.noQuery',
-                                                  'Búsqueda sin texto'
-                                              )}
-                                    </p>
-
-                                    <div className={styles['search-history__item-meta']}>
-                                        {filterCount > 0 && (
-                                            <span
-                                                className={styles['search-history__filter-badge']}
-                                            >
-                                                {tPlural(
-                                                    'account.searchHistory.filters.filterCount',
-                                                    filterCount
-                                                )}
-                                            </span>
-                                        )}
-
-                                        {entry.resultCount !== null && (
-                                            <span
-                                                className={styles['search-history__result-count']}
-                                            >
-                                                {formatResultCount(entry.resultCount)}
-                                            </span>
-                                        )}
-
-                                        <time
-                                            className={styles['search-history__item-time']}
-                                            dateTime={entry.createdAt}
-                                            title={new Date(entry.createdAt).toLocaleString()}
-                                        >
-                                            {formatRelativeTime({ date: entry.createdAt, locale })}
-                                        </time>
-                                    </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className={styles['search-history__item-actions']}>
-                                    <a
-                                        href={rerunUrl}
-                                        className={styles['search-history__rerun-btn']}
-                                        aria-label={`${t('account.searchHistory.rerun', 'Repetir búsqueda')}: ${entry.queryText ?? t('account.searchHistory.noQuery', 'Búsqueda sin texto')}`}
-                                    >
-                                        {t('account.searchHistory.rerun', 'Repetir búsqueda')}
-                                    </a>
-
-                                    {confirmingThis ? (
-                                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
-                                        <div
-                                            className={styles['search-history__delete-confirm']}
-                                            role="group"
-                                            aria-label={`${t('account.searchHistory.deleteConfirmAria', 'Confirmar eliminación')}: ${entry.queryText ?? t('account.searchHistory.noQuery', 'Búsqueda sin texto')}`}
-                                        >
-                                            <button
-                                                type="button"
-                                                className={styles['search-history__confirm-yes']}
-                                                onClick={() => void handleDeleteConfirm(entry.id)}
-                                            >
-                                                {t(
-                                                    'account.searchHistory.deleteOneConfirm',
-                                                    'Sí, eliminar'
-                                                )}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={styles['search-history__confirm-no']}
-                                                onClick={() => setConfirmDeleteId(null)}
-                                            >
-                                                {t(
-                                                    'account.searchHistory.clearAllCancel',
-                                                    'Cancelar'
-                                                )}
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            className={styles['search-history__delete-btn']}
-                                            onClick={() => setConfirmDeleteId(entry.id)}
-                                            disabled={isDeleting || deletingId !== null}
-                                            aria-label={`${t('account.searchHistory.deleteOne', 'Eliminar')}: ${entry.queryText ?? t('account.searchHistory.noQuery', 'Búsqueda sin texto')}`}
-                                        >
-                                            {t('account.searchHistory.deleteOne', 'Eliminar')}
-                                        </button>
-                                    )}
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
+                ) : (
+                    <SearchHistoryEntries
+                        entries={entries}
+                        locale={locale}
+                        onDelete={(entry) => void requestDelete(entry)}
+                    />
+                )}
+            </Section>
+            {confirmDialog}
         </div>
     );
 }

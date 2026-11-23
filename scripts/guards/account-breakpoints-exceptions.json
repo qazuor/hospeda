@@ -14,9 +14,6 @@
     "apps/web/src/components/account/RecommendationsFeed.module.css": {
         "media": 2
     },
-    "apps/web/src/components/account/SearchHistoryList.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/WhatsNewModal.module.css": {
         "media": 1
     },

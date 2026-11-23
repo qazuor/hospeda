@@ -1422,7 +1422,13 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filter",
             "filterCount_other": "{{count}} filters"
-        }
+        },
+        "recordingTitle": "Saving searches",
+        "listTitle": "Your recent searches",
+        "deleteConfirmTitle": "Delete this search?",
+        "deleteConfirmBody": "“{{query}}” is removed from your history. This cannot be undone.",
+        "clearConfirmTitle": "Clear your whole history?",
+        "clearConfirmBody": "All your saved searches are removed. This cannot be undone."
     },
     "alerts": {
         "loading": "Loading alerts...",

@@ -1422,7 +1422,13 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filtro",
             "filterCount_other": "{{count}} filtros"
-        }
+        },
+        "recordingTitle": "Salvar buscas",
+        "listTitle": "Suas buscas recentes",
+        "deleteConfirmTitle": "Excluir esta busca?",
+        "deleteConfirmBody": "“{{query}}” é removida do seu histórico. Não é possível desfazer.",
+        "clearConfirmTitle": "Apagar todo o seu histórico?",
+        "clearConfirmBody": "Todas as suas buscas salvas são removidas. Não é possível desfazer."
     },
     "alerts": {
         "loading": "Carregando alertas...",

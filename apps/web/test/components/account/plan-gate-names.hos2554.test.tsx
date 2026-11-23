@@ -1,7 +1,7 @@
 /**
  * @file plan-gate-names.hos2554.test.tsx
  * @description HOS-2554: the plan gates of exclusive deals, recommendations and search
- * history name the plans the SSR page read from the catalog, never a hardcoded "Plus y VIP".
+ * history (a kit LockedState since HOS-2501) name the plans the SSR page read from the catalog, never a hardcoded "Plus y VIP".
  * Each surface is fed a DIFFERENT plan name so a regression to a literal fails all three,
  * and an empty catalog read must name no plan at all.
  */
@@ -12,11 +12,17 @@ import { ExclusiveDealsList } from '../../../src/components/account/ExclusiveDea
 import { RecommendationsFeed } from '../../../src/components/account/RecommendationsFeed.client';
 import { SearchHistoryList } from '../../../src/components/account/SearchHistoryList.client';
 
-vi.mock('../../../src/lib/i18n', () => {
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
     const t = (key: string, fallback?: string, params?: Record<string, unknown>): string =>
         // Plural keys carry no fallback: echo key + params so plan names stay assertable.
-        fallback ?? `${key} ${JSON.stringify(params ?? {})}`;
-    return { createTranslations: () => ({ t, tPlural: (key: string) => key }) };
+        // Keys the kit and the LockedState surfaces own resolve against the real catalog.
+        key.startsWith('account.ui.') ||
+        key.startsWith('account.searchHistory.') ||
+        key.startsWith('account.pages.')
+            ? tFromCatalog(key, fallback, params)
+            : (fallback ?? `${key} ${JSON.stringify(params ?? {})}`);
+    return { createTranslations: () => ({ t, tPlural: (key: string) => key }), createT: () => t };
 });
 
 for (const name of ['ExclusiveDealsList', 'RecommendationsFeed', 'SearchHistoryList']) {
@@ -78,24 +84,42 @@ const SURFACES: readonly Surface[] = [
                     gatePlanNames={names}
                 />
             )
-    },
-    {
-        label: 'search history',
-        planName: 'Viajero',
-        keyBase: 'account.searchHistory.empty.upsellBody',
-        noPlans: /cuando tu plan incluya el historial de búsquedas/,
-        renderIt: (names) =>
-            render(
-                <SearchHistoryList
-                    locale="es"
-                    apiUrl={API_URL}
-                    userId="u1"
-                    initialHistoryEnabled
-                    gatePlanNames={names}
-                />
-            )
     }
 ];
+
+describe('search history plan gate (HOS-2554, HOS-2501)', () => {
+    beforeEach(() => {
+        mockEntitlementRequired();
+    });
+
+    const renderHistory = (names?: readonly string[]) =>
+        render(
+            <SearchHistoryList
+                locale="es"
+                apiUrl={API_URL}
+                userId="u1"
+                initialHistoryEnabled
+                gatePlanNames={names}
+            />
+        );
+
+    it('shows each catalog plan it receives as a plan pill, whatever it is called', async () => {
+        renderHistory(['Viajero', 'Premium']);
+        const feature = await screen.findByRole('heading', { name: 'Historial de búsquedas' });
+        const state = feature.closest('[data-reason]') as HTMLElement;
+        expect(state).toHaveTextContent('Viajero');
+        expect(state).toHaveTextContent('Premium');
+        expect(state.textContent).not.toMatch(/Plus|VIP/);
+    });
+
+    it('names no plan when the catalog could not be read', async () => {
+        renderHistory([]);
+        const feature = await screen.findByRole('heading', { name: 'Historial de búsquedas' });
+        expect((feature.closest('[data-reason]') as HTMLElement).textContent).not.toMatch(
+            /Plus|VIP/
+        );
+    });
+});
 
 describe('plan gates name the catalog plans (HOS-2554)', () => {
     beforeEach(() => {

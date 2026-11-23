@@ -40,7 +40,7 @@ function collectSourceFiles(dir: string): readonly string[] {
  * The first version of this guard anchored on `.set(x, y.join(','))` instead,
  * and five real shapes walked straight past it: `.append()`, a plain object
  * property (`params.types = values.join(',')` — which is how the seventh
- * writer, `SearchHistoryList.client.tsx`, was already doing it), a template
+ * writer, `search-history/search-history-url.ts`, was already doing it), a template
  * literal, an object literal passed to `new URLSearchParams({...})`, and any
  * `.set(` whose arguments wrapped past the pattern's character budget. Matching
  * the join itself has no such holes.
@@ -76,7 +76,7 @@ const FACET_CSV_WRITERS: readonly string[] = [
     'lib/filters/toggle-multi-query-param.ts',
     'components/shared/filters/filter-reducer.ts',
     'components/sections/SearchBar.client.tsx',
-    'components/account/SearchHistoryList.client.tsx',
+    'components/account/search-history/search-history-url.ts',
     'components/ai-search/useSearchChat.ts',
     'pages/[lang]/destinos/index.astro',
     'pages/[lang]/alojamientos/index.astro',
