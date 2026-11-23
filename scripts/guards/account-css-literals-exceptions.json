@@ -515,11 +515,6 @@
     "apps/web/src/pages/[lang]/mi-cuenta/eventos/[id]/editar.astro": {
         "font-size": 2
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro": {
-        "color": 2,
-        "font-size": 1,
-        "radius": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
         "color": 13
     },
@@ -530,10 +525,5 @@
     },
     "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/[id]/editar.astro": {
         "font-size": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/index.astro": {
-        "color": 2,
-        "font-size": 1,
-        "radius": 1
     }
 }
