@@ -441,7 +441,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         parsePlanNames,
         resolveDashboardFreeCard,
         resolveDashboardPlanStat,
-        statusNeedsAction
+        getActionStatusKey
     } from '@/lib/billing/dashboard-plan-stat';
     import {
         markStatsUnavailable,
@@ -614,14 +614,19 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                             const viewAll = linkEl?.getAttribute('data-label-view-all');
                             if (linkEl && viewAll) linkEl.textContent = viewAll;
                         }
-                        const needsAction = planStat.rows.find((row) => statusNeedsAction({ statusKey: row.statusKey }));
-                        if (needsAction) actionKey = needsAction.statusKey;
+                        for (const row of planStat.rows) {
+                            const rowAction = getActionStatusKey({ statusKey: row.statusKey });
+                            if (rowAction) {
+                                actionKey = rowAction;
+                                break;
+                            }
+                        }
                         break;
                     }
                     case 'single':
                         subscriptionValue = planStat.label;
                         statusAttribute = statusAttributeByKey[planStat.statusKey];
-                        if (statusNeedsAction({ statusKey: planStat.statusKey })) actionKey = planStat.statusKey;
+                        actionKey = getActionStatusKey({ statusKey: planStat.statusKey });
                         break;
                     default: {
                         const exhaustive: never = planStat;

@@ -57,6 +57,23 @@ export function statusNeedsAction(input: { readonly statusKey: DashboardStatusKe
     return input.statusKey === 'charge-declined' || input.statusKey === 'pending-authorization';
 }
 
+/** Status keys that need the owner to act (a subset of `DashboardStatusKey`). */
+export type DashboardActionStatusKey = 'charge-declined' | 'pending-authorization';
+
+/**
+ * The action key of a status, narrowed from `DashboardStatusKey` (HOS-2553).
+ *
+ * @param input.statusKey - The card label key of the status.
+ * @returns The key when `statusNeedsAction` holds for it, otherwise `null`.
+ */
+export function getActionStatusKey(input: {
+    readonly statusKey: DashboardStatusKey;
+}): DashboardActionStatusKey | null {
+    return input.statusKey === 'charge-declined' || input.statusKey === 'pending-authorization'
+        ? input.statusKey
+        : null;
+}
+
 /** One subscription row of the `/mi-cuenta/` card. */
 export interface DashboardSubscriptionRow {
     /** Plan name, read from the catalog (translated when the slug has a name). */
