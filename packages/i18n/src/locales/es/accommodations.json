@@ -1054,6 +1054,14 @@
         "pets": "Acepta mascotas"
     },
     "aiChat": {
+        "guestIntro": "Preguntale a la IA lo que quieras saber de este alojamiento.",
+        "guestExample1": "¿Aceptan mascotas?",
+        "guestExample2": "¿Tiene pileta y estacionamiento?",
+        "guestExample3": "¿Cómo es el check-in?",
+        "guestExamplesLead": "Por ejemplo:",
+        "guestFree": "Es gratis con tu cuenta.",
+        "guestSignUp": "Crear cuenta gratis",
+        "guestSignIn": "Ingresar",
         "fabLabel": "Preguntarle a la IA sobre este alojamiento",
         "panelLabel": "Chat con IA — Preguntas sobre el alojamiento",
         "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el alojamiento.",

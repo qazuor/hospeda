@@ -12,7 +12,7 @@
  */
 
 import type { CreateConversationAnon } from '@repo/schemas';
-import { CreateConversationAnonSchema } from '@repo/schemas';
+import { CreateConversationAnonObjectSchema } from '@repo/schemas';
 import { useContext, useId, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
@@ -68,6 +68,13 @@ interface ContactHostUser {
     readonly email?: string | null;
 }
 
+/** Optional booking fields a visitor attached to the inquiry (HOS-2534). */
+export interface ContactHostInquiry {
+    readonly checkIn?: string;
+    readonly checkOut?: string;
+    readonly guests?: number;
+}
+
 interface ContactHostProps {
     readonly accommodation: ContactHostAccommodation;
     readonly locale: SupportedLocale;
@@ -81,6 +88,12 @@ interface ContactHostProps {
     /** Panel coordination: block the generated draft while its booking fields are invalid.
      * Defaults to no extra submission block. */
     readonly initialMessageInvalid?: boolean;
+    /**
+     * Panel coordination (HOS-2534): the booking fields the visitor filled in,
+     * sent to the API as columns alongside the message. The caller passes it
+     * only while those fields are valid; omitted fields are not sent.
+     */
+    readonly inquiry?: ContactHostInquiry;
     /** Panel coordination: notify on the visitor's first message edit. Defaults to no notification. */
     readonly onMessageEdited?: () => void;
     readonly sourcePage?: string;
@@ -98,9 +111,12 @@ const MAX_MESSAGE_LENGTH = 5000;
  * tests. `locale` is also excluded (never surfaced as a field). The full
  * `accommodationId` is added back onto the payload after validation succeeds.
  */
-const ContactHostAnonFieldsSchema = CreateConversationAnonSchema.omit({
+const ContactHostAnonFieldsSchema = CreateConversationAnonObjectSchema.omit({
     accommodationId: true,
-    locale: true
+    locale: true,
+    checkIn: true,
+    checkOut: true,
+    guests: true
 });
 
 /**
@@ -163,6 +179,7 @@ export function ContactHost({
     locale,
     initialMessage,
     initialMessageInvalid,
+    inquiry,
     onMessageEdited,
     sourcePage = 'accommodation_detail',
     origin
@@ -220,6 +237,7 @@ export function ContactHost({
             t={t}
             initialMessage={initialMessage}
             initialMessageInvalid={initialMessageInvalid}
+            inquiry={inquiry}
             onMessageEdited={onMessageEdited}
             sourcePage={sourcePage}
             origin={origin}
@@ -244,6 +262,7 @@ function ContactForm({
     t,
     initialMessage,
     initialMessageInvalid,
+    inquiry,
     onMessageEdited,
     sourcePage,
     origin
@@ -306,6 +325,14 @@ function ContactForm({
         // can be submitted without dismissing the confirmation first.
         setSubmitState({ phase: 'idle' });
 
+        // Only the fields the visitor actually filled; the message text still carries
+        // them too, so the inquiry reads complete even without the columns.
+        const inquiryFields: ContactHostInquiry = {
+            ...(inquiry?.checkIn ? { checkIn: inquiry.checkIn } : {}),
+            ...(inquiry?.checkOut ? { checkOut: inquiry.checkOut } : {}),
+            ...(inquiry?.guests === undefined ? {} : { guests: inquiry.guests })
+        };
+
         // Mode A (anonymous): validate against the same schema the API
         // validates the request body with — catches an invalid email format,
         // an over-limit name/phone, etc. BEFORE hitting the network, and
@@ -319,7 +346,7 @@ function ContactForm({
                 message: message.trim()
             });
             if (!parsed.success) return;
-            anonPayload = { accommodationId: accommodation.id, ...parsed.data };
+            anonPayload = { accommodationId: accommodation.id, ...parsed.data, ...inquiryFields };
         }
 
         const resetSubmittedDraft = panelDraft?.captureDraftReset();
@@ -349,7 +376,8 @@ function ContactForm({
                     credentials: 'include',
                     body: JSON.stringify({
                         accommodationId: accommodation.id,
-                        message: message.trim()
+                        message: message.trim(),
+                        ...inquiryFields
                     })
                 });
 

@@ -4,8 +4,10 @@
  * Renders a FAB + slide-out panel with focus trap, ESC-to-close,
  * aria-live region for streaming tokens, and price disclaimer.
  *
- * The chat is for signed-in visitors only, and that gate is resolved
- * CLIENT-SIDE (HOS-369 WB0-7). The page used to wrap the whole mount in
+ * The chat itself is for signed-in visitors only, and that gate is resolved
+ * CLIENT-SIDE (HOS-369 WB0-7). A confirmed guest (HOS-2561) still gets the FAB,
+ * and the panel shows a sign-up invitation instead of the composer, with no
+ * request to the chat API. The page used to wrap the whole mount in
  * `{isAuthenticated && ...}`, which baked the visitor into HTML that must be
  * edge-cacheable; now the page mounts it unconditionally and the widget renders
  * nothing until a session resolves. Unlike the sidebar islands this needs no
@@ -34,6 +36,7 @@ import { trapFocus } from '@/lib/focus-trap';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { AiChatFab } from './AiChatFab';
+import { AiChatGuestUpsell } from './AiChatGuestUpsell';
 import styles from './AiChatWidget.module.css';
 
 /**
@@ -63,7 +66,10 @@ export interface AiChatWidgetProps {
 export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWidgetProps) {
     // Simple mode (no `initialUser`): `user` starts null, so the server and the
     // first paint render nothing — the anonymous variant (HOS-369 D-11).
-    const { user } = useAccountPermissions();
+    // `isResolved` tells a confirmed guest (`user === null` + resolved) from the
+    // not-yet-resolved window, so a signed-in visitor never sees the guest FAB.
+    const { user, isResolved } = useAccountPermissions();
+    const isGuest = isResolved && !user;
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [draft, setDraft] = useState('');
@@ -79,6 +85,8 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
      * opens (W14 — target the textarea, not the first focusable button).
      */
     const composerTextareaRef = useRef<HTMLTextAreaElement>(null);
+    /** Guest panel has no composer: focus lands on the primary CTA instead. */
+    const guestCtaRef = useRef<HTMLAnchorElement>(null);
     /** Tracks whether the chat panel has been opened at least once. Prevents
      *  the focus-return effect from stealing focus on the initial render when
      *  `isOpen` is already `false` (WCAG dialog focus-return guard). */
@@ -109,7 +117,7 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
         // useful focus target matching their intent (typing a question).
         // Synchronous call is safe here because this effect only runs when
         // isOpen=true, meaning the panel (and its textarea) are already in the DOM.
-        composerTextareaRef.current?.focus();
+        (composerTextareaRef.current ?? guestCtaRef.current)?.focus();
 
         const handleKeyDown = (e: KeyboardEvent) => {
             // `isTopmost` (HOS-350): when a second overlay opens above this
@@ -154,9 +162,15 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
     const showThinking = chat.state.status === 'streaming' && !chat.state.currentAssistantContent;
 
     // Every hook above runs unconditionally (Rules of Hooks); the gate is the
-    // first thing after them. `user === null` covers both a real guest and the
-    // not-yet-resolved window, and neither may see the chat.
-    if (!user) return null;
+    // first thing after them. Not-yet-resolved renders nothing; a confirmed
+    // guest gets the upsell panel; a signed-in visitor gets the chat.
+    if (!user && !isGuest) return null;
+
+    /** Current page, read client-side only (this branch never runs on the server). */
+    const returnUrl =
+        typeof window === 'undefined'
+            ? ''
+            : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
     return (
         <>
@@ -214,135 +228,155 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                         </div>
                     </div>
 
-                    <div className={styles.disclaimer}>{copy('headerDisclaimer')}</div>
-                    <div
-                        className={styles.disclaimer}
-                        data-testid="ai-chat-read-notice"
-                    >
-                        {copy('readNotice')}
-                    </div>
-
-                    <div
-                        className={styles.messages}
-                        aria-live="polite"
-                        aria-atomic="false"
-                    >
-                        {chat.state.messages.map((m, i) =>
-                            m.role === 'assistant' ? (
-                                <div
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
-                                    key={`${m.role}-${i}`}
-                                    className={`${styles.bubble} ${styles.assistantBubble}`}
-                                    // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
-                                    dangerouslySetInnerHTML={{
-                                        // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-                                        __html: renderChatMarkdown({ raw: m.content })
-                                    }}
-                                />
-                            ) : (
-                                <div
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
-                                    key={`${m.role}-${i}`}
-                                    className={`${styles.bubble} ${styles.userBubble}`}
-                                >
-                                    {m.content}
-                                </div>
-                            )
-                        )}
-                        {chat.state.currentAssistantContent && (
+                    {isGuest ? (
+                        <AiChatGuestUpsell
+                            entityType={entityType}
+                            locale={locale}
+                            returnUrl={returnUrl}
+                            primaryRef={guestCtaRef}
+                        />
+                    ) : (
+                        <>
+                            <div className={styles.disclaimer}>{copy('headerDisclaimer')}</div>
                             <div
-                                className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
-                                // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
-                                dangerouslySetInnerHTML={{
-                                    // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-                                    __html: renderChatMarkdown({
-                                        raw: chat.state.currentAssistantContent
-                                    })
-                                }}
-                            />
-                        )}
-                        {showThinking && (
-                            <output
-                                className={styles.thinking}
-                                aria-label={copy('thinking')}
+                                className={styles.disclaimer}
+                                data-testid="ai-chat-read-notice"
                             >
-                                <span>{copy('thinking')}</span>
-                                <span
-                                    className={styles.thinkingDots}
-                                    aria-hidden="true"
-                                >
-                                    <span className={styles.thinkingDot} />
-                                    <span className={styles.thinkingDot} />
-                                    <span className={styles.thinkingDot} />
-                                </span>
-                            </output>
-                        )}
-                        {chat.state.showPriceDisclaimer && (
-                            <div className={styles.priceNotice}>{copy('priceDisclaimer')}</div>
-                        )}
-                        {chat.state.status === 'error' && (
-                            <div className={styles.errorBubble}>
-                                {resolveChatError({
-                                    t,
-                                    entityType,
-                                    code: chat.state.errorCode,
-                                    message: chat.state.errorMessage
-                                })}
+                                {copy('readNotice')}
                             </div>
-                        )}
-                        {chat.state.status === 'at_cap' && (
-                            <div className={styles.capBanner}>
-                                {copy('atCapMessage')}
-                                <button
-                                    type="button"
-                                    className={styles.resetButton}
-                                    onClick={chat.reset}
-                                >
-                                    {copy('newConversation')}
-                                </button>
-                            </div>
-                        )}
-                    </div>
 
-                    <form
-                        className={styles.composer}
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            handleSend();
-                        }}
-                    >
-                        <textarea
-                            ref={composerTextareaRef}
-                            className={styles.textarea}
-                            placeholder={copy('placeholder')}
-                            value={draft}
-                            onChange={(e) => setDraft(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
+                            <div
+                                className={styles.messages}
+                                aria-live="polite"
+                                aria-atomic="false"
+                            >
+                                {chat.state.messages.map((m, i) =>
+                                    m.role === 'assistant' ? (
+                                        <div
+                                            // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
+                                            key={`${m.role}-${i}`}
+                                            className={`${styles.bubble} ${styles.assistantBubble}`}
+                                            // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                            dangerouslySetInnerHTML={{
+                                                // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                                __html: renderChatMarkdown({ raw: m.content })
+                                            }}
+                                        />
+                                    ) : (
+                                        <div
+                                            // biome-ignore lint/suspicious/noArrayIndexKey: messages are append-only (never reordered/removed except a full reset), and ChatMessage has no stable id
+                                            key={`${m.role}-${i}`}
+                                            className={`${styles.bubble} ${styles.userBubble}`}
+                                        >
+                                            {m.content}
+                                        </div>
+                                    )
+                                )}
+                                {chat.state.currentAssistantContent && (
+                                    <div
+                                        className={`${styles.bubble} ${styles.assistantBubble} ${styles.streaming}`}
+                                        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
+                                        dangerouslySetInnerHTML={{
+                                            // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+                                            __html: renderChatMarkdown({
+                                                raw: chat.state.currentAssistantContent
+                                            })
+                                        }}
+                                    />
+                                )}
+                                {showThinking && (
+                                    <output
+                                        className={styles.thinking}
+                                        aria-label={copy('thinking')}
+                                    >
+                                        <span>{copy('thinking')}</span>
+                                        <span
+                                            className={styles.thinkingDots}
+                                            aria-hidden="true"
+                                        >
+                                            <span className={styles.thinkingDot} />
+                                            <span className={styles.thinkingDot} />
+                                            <span className={styles.thinkingDot} />
+                                        </span>
+                                    </output>
+                                )}
+                                {chat.state.showPriceDisclaimer && (
+                                    <div className={styles.priceNotice}>
+                                        {copy('priceDisclaimer')}
+                                    </div>
+                                )}
+                                {chat.state.status === 'error' && (
+                                    <div className={styles.errorBubble}>
+                                        {resolveChatError({
+                                            t,
+                                            entityType,
+                                            code: chat.state.errorCode,
+                                            message: chat.state.errorMessage
+                                        })}
+                                    </div>
+                                )}
+                                {chat.state.status === 'at_cap' && (
+                                    <div className={styles.capBanner}>
+                                        {copy('atCapMessage')}
+                                        <button
+                                            type="button"
+                                            className={styles.resetButton}
+                                            onClick={chat.reset}
+                                        >
+                                            {copy('newConversation')}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <form
+                                className={styles.composer}
+                                onSubmit={(e) => {
                                     e.preventDefault();
                                     handleSend();
-                                }
-                            }}
-                            disabled={
-                                chat.state.status === 'streaming' || chat.state.status === 'at_cap'
-                            }
-                            rows={2}
-                        />
-                        <button
-                            type="submit"
-                            className={styles.sendButton}
-                            disabled={
-                                chat.state.status === 'streaming' ||
-                                chat.state.status === 'at_cap' ||
-                                !draft.trim()
-                            }
-                            aria-label={
-                                chat.state.status === 'streaming' ? copy('sending') : copy('send')
-                            }
-                        >
-                            {chat.state.status === 'streaming' ? <Spinner size="sm" /> : '↑'}
-                        </button>
-                    </form>
+                                }}
+                            >
+                                <textarea
+                                    ref={composerTextareaRef}
+                                    className={styles.textarea}
+                                    placeholder={copy('placeholder')}
+                                    value={draft}
+                                    onChange={(e) => setDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSend();
+                                        }
+                                    }}
+                                    disabled={
+                                        chat.state.status === 'streaming' ||
+                                        chat.state.status === 'at_cap'
+                                    }
+                                    rows={2}
+                                />
+                                <button
+                                    type="submit"
+                                    className={styles.sendButton}
+                                    disabled={
+                                        chat.state.status === 'streaming' ||
+                                        chat.state.status === 'at_cap' ||
+                                        !draft.trim()
+                                    }
+                                    aria-label={
+                                        chat.state.status === 'streaming'
+                                            ? copy('sending')
+                                            : copy('send')
+                                    }
+                                >
+                                    {chat.state.status === 'streaming' ? (
+                                        <Spinner size="sm" />
+                                    ) : (
+                                        '↑'
+                                    )}
+                                </button>
+                            </form>
+                        </>
+                    )}
                 </div>
             )}
         </>

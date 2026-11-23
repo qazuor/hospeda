@@ -1054,6 +1054,14 @@
         "pets": "Pet-friendly"
     },
     "aiChat": {
+        "guestIntro": "Ask the AI anything you want to know about this accommodation.",
+        "guestExample1": "Are pets allowed?",
+        "guestExample2": "Is there a pool and parking?",
+        "guestExample3": "How does check-in work?",
+        "guestExamplesLead": "For example:",
+        "guestFree": "It is free with your account.",
+        "guestSignUp": "Create a free account",
+        "guestSignIn": "Sign in",
         "fabLabel": "Ask AI about this accommodation",
         "panelLabel": "AI Chat — Accommodation Questions",
         "headerDisclaimer": "Responses are AI-generated and may contain errors. Always verify information with the accommodation.",

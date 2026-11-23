@@ -54,6 +54,16 @@ export function ListingContactPanel(props: ListingContactPanelProps) {
     );
 }
 
+/** Converts the raw panel inputs into the optional fields sent to the API. */
+function toInquiryFields(values: { checkIn: string; checkOut: string; guests: string }) {
+    const guests = values.guests === '' ? undefined : Number(values.guests);
+    return {
+        ...(values.checkIn ? { checkIn: values.checkIn } : {}),
+        ...(values.checkOut ? { checkOut: values.checkOut } : {}),
+        ...(guests !== undefined && Number.isInteger(guests) ? { guests } : {})
+    };
+}
+
 const fields = ['checkIn', 'checkOut', 'guests'] as const;
 const emptyFields = { checkIn: '', checkOut: '', guests: '' };
 
@@ -87,6 +97,8 @@ function ListingContactSheet({
     const submission = useContactSubmission();
     const [messageEdited, setMessageEdited] = useState(false);
     const fieldId = useId();
+    // HOS-2534: the booking fields travel as columns only while they validate.
+    const inquiry = errors ? undefined : toInquiryFields(values);
     const guestLimit =
         capacity && Number.isInteger(capacity) && capacity > 0 ? capacity : undefined;
 
@@ -317,6 +329,7 @@ function ListingContactSheet({
                         locale={locale}
                         initialMessage={draft}
                         initialMessageInvalid={Boolean(errors)}
+                        inquiry={inquiry}
                         onMessageEdited={() => setMessageEdited(true)}
                         sourcePage="accommodation_contact_panel"
                         origin={request?.origin}

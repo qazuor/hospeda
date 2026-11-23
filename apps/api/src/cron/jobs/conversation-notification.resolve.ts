@@ -183,7 +183,18 @@ export async function resolveNotification(
               guestIdentity,
               messages: messageExcerpts,
               ctaUrl,
-              locale
+              locale,
+              // HOS-2534: the host sees what the guest asked about; the guest
+              // already knows it, so only the owner side carries it.
+              ...(isGuestRecipient
+                  ? {}
+                  : {
+                        inquiry: {
+                            checkIn: conversation.checkIn,
+                            checkOut: conversation.checkOut,
+                            guests: conversation.guests
+                        }
+                    })
           });
 
     return {

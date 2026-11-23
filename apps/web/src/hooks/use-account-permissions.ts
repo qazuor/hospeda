@@ -94,6 +94,13 @@ export interface UseAccountPermissionsResult {
      */
     readonly roles: ReadonlyArray<string>;
     /**
+     * `true` once the visitor's session has been settled (a trusted cache hit
+     * or a successful `/auth/me` answer). Before that, `user === null` means
+     * "unknown", not "guest". A failed fetch leaves it `false` (fail closed).
+     * Lets a consumer tell a confirmed guest from the not-yet-resolved window.
+     */
+    readonly isResolved: boolean;
+    /**
      * Whether the account owns a host-trade directory listing (HOS-2551).
      * `false` for guests and while still resolving (fail-closed).
      */
@@ -109,7 +116,7 @@ export interface UseAccountPermissionsResult {
  * Resolves the current visitor's `/auth/me` snapshot on mount, cache-first.
  *
  * @param params - `{ initialUser?, skip? }` (RO-RO). See the two modes above.
- * @returns `{ user, permissions, roles, ownsHostTradeListing, ownsPartner }`.
+ * @returns `{ user, permissions, roles, isResolved, ownsHostTradeListing, ownsPartner }`.
  */
 export function useAccountPermissions({
     initialUser,
@@ -120,6 +127,7 @@ export function useAccountPermissions({
     const [user, setUser] = useState<AuthMeUser | null>(initialUser ?? null);
     const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
     const [roles, setRoles] = useState<ReadonlyArray<string>>(initialRoles ?? []);
+    const [isResolved, setIsResolved] = useState(false);
     const [ownsHostTradeListing, setOwnsHostTradeListing] = useState(false);
     const [ownsPartner, setOwnsPartner] = useState(false);
 
@@ -150,6 +158,7 @@ export function useAccountPermissions({
             setUser(cached.user);
             setPermissions(cached.permissions);
             setRoles(cached.roles);
+            setIsResolved(true);
             setOwnsHostTradeListing(cached.ownsHostTradeListing === true);
             setOwnsPartner(cached.ownsPartner === true);
             if (shouldSyncAttribute) {
@@ -170,6 +179,7 @@ export function useAccountPermissions({
                 setUser(snapshot.user);
                 setPermissions(snapshot.permissions);
                 setRoles(snapshot.roles);
+                setIsResolved(true);
                 setOwnsHostTradeListing(snapshot.ownsHostTradeListing === true);
                 setOwnsPartner(snapshot.ownsPartner === true);
                 if (shouldSyncAttribute) {
@@ -189,5 +199,5 @@ export function useAccountPermissions({
         };
     }, [skip]);
 
-    return { user, permissions, roles, ownsHostTradeListing, ownsPartner };
+    return { user, permissions, roles, isResolved, ownsHostTradeListing, ownsPartner };
 }

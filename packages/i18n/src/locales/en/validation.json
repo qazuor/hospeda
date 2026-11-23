@@ -2071,6 +2071,13 @@
         }
     },
     "conversation": {
+        "checkIn": {
+            "invalid": "The check-in date is not valid"
+        },
+        "checkOut": {
+            "afterCheckIn": "The check-out date must be after the check-in date",
+            "invalid": "The check-out date is not valid"
+        },
         "guestEmail": {
             "invalid": "El email no es válido"
         },
@@ -2080,6 +2087,11 @@
         },
         "guestPhone": {
             "max": "El teléfono no puede superar los {{max}} caracteres"
+        },
+        "guests": {
+            "invalid": "The number of guests must be a whole number",
+            "max": "The number of guests cannot exceed {{max}}",
+            "min": "There must be at least one guest"
         },
         "message": {
             "max": "El mensaje no puede superar los {{max}} caracteres",

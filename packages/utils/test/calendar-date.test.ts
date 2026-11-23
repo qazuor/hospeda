@@ -19,7 +19,12 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { formatCalendarDate, getCalendarDateParts, parseCalendarDate } from '../src/calendar-date';
+import {
+    formatCalendarDate,
+    formatCalendarDateRange,
+    getCalendarDateParts,
+    parseCalendarDate
+} from '../src/calendar-date';
 
 /** The timezone every operator of this project actually reads the screen in. */
 const ARGENTINA = 'America/Argentina/Buenos_Aires';
@@ -184,5 +189,41 @@ describe('parseCalendarDate', () => {
 
     it('rejects an impossible day rather than rolling it into the next month', () => {
         expect(parseCalendarDate({ value: '2026-02-31' })).toBeNull();
+    });
+});
+
+describe('formatCalendarDateRange', () => {
+    it('collapses a shared month into one compact range', () => {
+        expect(
+            formatCalendarDateRange({ from: '2026-12-12', to: '2026-12-15', locale: 'es' })
+        ).toBe('12\u201315 dic');
+    });
+
+    it('keeps both months when the range crosses a month boundary', () => {
+        const range = formatCalendarDateRange({
+            from: '2026-11-29',
+            to: '2026-12-02',
+            locale: 'en'
+        });
+
+        // ICU separates the two ends with thin/no-break spaces; normalise before comparing.
+        expect(range?.replace(/\s/g, ' ')).toBe('Nov 29 \u2013 Dec 2');
+    });
+
+    it('names the same day as the instant UTC midnight does, in any timezone', () => {
+        expect(
+            formatCalendarDateRange({
+                from: '2026-12-12T00:00:00.000Z',
+                to: '2026-12-15T00:00:00.000Z',
+                locale: 'es'
+            })
+        ).toBe('12\u201315 dic');
+    });
+
+    it('returns null when either end names no real day', () => {
+        expect(
+            formatCalendarDateRange({ from: '2026-02-31', to: '2026-03-02', locale: 'es' })
+        ).toBeNull();
+        expect(formatCalendarDateRange({ from: '2026-12-12', to: null, locale: 'es' })).toBeNull();
     });
 });
