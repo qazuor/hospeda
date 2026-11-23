@@ -37,10 +37,10 @@ export interface CollectionDetailActionsProps {
 export function CollectionDetailActions({ collection, locale }: CollectionDetailActionsProps) {
     const t = createT(locale);
     const [editOpen, setEditOpen] = useState(false);
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
 
     async function handleDelete(): Promise<void> {
-        const deleted = await confirm({
+        const deleted = await askConfirm({
             title: t('account.favorites.collections.deleteDialogTitle'),
             description: t('account.favorites.collections.delete_confirm'),
             confirmLabel: t('account.favorites.collections.deleteConfirmButton'),

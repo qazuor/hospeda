@@ -84,7 +84,7 @@ export function CollectionDetailView({
 }: CollectionDetailViewProps) {
     const { t, tPlural } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
     const [removingId, setRemovingId] = useState<string | null>(null);
     const path = `mi-cuenta/favoritos/colecciones/${collectionId}`;
 
@@ -117,7 +117,7 @@ export function CollectionDetailView({
         : { status: 'error', retry: () => window.location.reload() };
 
     async function handleRemove(bookmark: BookmarkItem): Promise<void> {
-        const done = await confirm({
+        const done = await askConfirm({
             title: t('account.favorites.collections.removeConfirmTitle'),
             description: t('account.favorites.collections.removeConfirm'),
             confirmLabel: t('account.favorites.collections.removeConfirmButton'),

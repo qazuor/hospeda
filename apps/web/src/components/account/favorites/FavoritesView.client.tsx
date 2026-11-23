@@ -71,7 +71,7 @@ export function FavoritesView({
         [initialAccessDenied, initialUsage]
     );
     const collections = useCollections({ base, initialGate, lockReason });
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
     const runSingleFlight = useSingleFlight();
     const [toMove, setToMove] = useState<BookmarkItem | null>(null);
 
@@ -81,7 +81,7 @@ export function FavoritesView({
             // A double click must not stack two dialogs.
             const hasNote = Boolean(bookmark.description?.trim());
             const confirmed = await runSingleFlight(() =>
-                confirm({
+                askConfirm({
                     title: t('account.favorites.removeFavoriteConfirm.title'),
                     description: hasNote
                         ? t('account.favorites.removeFavoriteConfirm.messageWithNote')
@@ -103,7 +103,7 @@ export function FavoritesView({
                 });
             }
         },
-        [confirm, list, runSingleFlight, t]
+        [askConfirm, list, runSingleFlight, t]
     );
 
     const handleMoved = useCallback(
