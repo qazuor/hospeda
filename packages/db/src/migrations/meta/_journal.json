@@ -1737,6 +1737,13 @@
       "when": 1795400639982,
       "tag": "0247_hos1883_payment_rejection_observed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 248,
+      "version": "7",
+      "when": 1795415625451,
+      "tag": "0248_hos2568_conversation_pending_message",
+      "breakpoints": true
     }
   ]
 }
