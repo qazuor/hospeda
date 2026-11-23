@@ -176,7 +176,8 @@
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
         "help": "Help",
         "venueDashboard": "Venues dashboard",
-        "experienceDashboard": "Experiences dashboard"
+        "experienceDashboard": "Experiences dashboard",
+        "addons": "Add-ons"
     },
     "doors": {
         "sectionLabel": "Discover more",
@@ -866,6 +867,11 @@
             "forever": "Your subscription price changes to {{amount}}, with no end date.",
             "trialExtension_one": "You added {{count}} trial day.",
             "trialExtension_other": "You added {{count}} trial days."
+        },
+        "tabs": {
+            "ariaLabel": "Subscription sections",
+            "plan": "Plan",
+            "addons": "Add-ons"
         }
     },
     "favorites": {
@@ -2158,6 +2164,10 @@
         },
         "entityCard": {
             "noImage": "No image"
+        },
+        "stepper": {
+            "progress": "Step {{current}} of {{total}}",
+            "done": "completed"
         }
     },
     "ownerDashboard": {

@@ -1,3 +1,5 @@
+import { OptionCard, OptionCardGrid } from '@/components/account/ui/OptionCard';
+import { StatusPill } from '@/components/account/ui/StatusPill';
 import type { AddonSubscriptionTarget } from '@/lib/billing/addon-purchase';
 import type { createTranslations } from '@/lib/i18n';
 import styles from './AddonPurchase.module.css';
@@ -37,25 +39,24 @@ export function AddonSubscriptionPicker(input: {
                     </a>
                 </div>
             )}
-            <div className={styles.grid}>
+            <OptionCardGrid>
                 {input.items.map((item) => (
-                    <button
+                    <OptionCard
                         key={item.id}
-                        type="button"
-                        className={styles.card}
                         data-testid={`addon-subscription-${item.id}`}
                         disabled={input.isActive?.(item) === true}
                         onClick={() => input.onSelect(item)}
-                    >
-                        <strong>{item.planName}</strong>
-                        {input.isActive?.(item) && (
-                            <span className={styles.activeBadge}>
-                                {input.t('billing.addonPurchase.active')}
-                            </span>
-                        )}
-                    </button>
+                        title={item.planName}
+                        badge={
+                            input.isActive?.(item) ? (
+                                <StatusPill tone="success">
+                                    {input.t('billing.addonPurchase.active')}
+                                </StatusPill>
+                            ) : undefined
+                        }
+                    />
                 ))}
-            </div>
+            </OptionCardGrid>
         </section>
     );
 }

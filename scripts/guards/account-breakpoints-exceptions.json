@@ -35,9 +35,6 @@
     "apps/web/src/components/host/PromotionForm.module.css": {
         "media": 1
     },
-    "apps/web/src/components/host/PropertyCard.astro": {
-        "media": 1
-    },
     "apps/web/src/components/host/editor/CalendarSection.module.css": {
         "media": 3
     },
@@ -74,14 +71,8 @@
     "apps/web/src/layouts/EditorShellLayout.astro": {
         "media": 1
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
-        "media": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro": {
         "media": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
-        "media": 4
     },
     "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/index.astro": {
         "media": 2

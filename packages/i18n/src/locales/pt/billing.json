@@ -937,6 +937,12 @@
             "cancel": "Voltar",
             "withdrawn": "O destaque foi cancelado.",
             "withdrawError": "Não foi possível cancelar o destaque."
+        },
+        "steps": {
+            "label": "Etapas da compra",
+            "offer": "Complemento",
+            "target": "Destino",
+            "confirm": "Confirmar"
         }
     }
 }

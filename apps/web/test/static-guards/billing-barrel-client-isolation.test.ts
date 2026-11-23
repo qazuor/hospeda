@@ -562,7 +562,8 @@ describe('HOS-360 static guard — @repo/billing never enters the web client gra
             'components/accommodation/PriceAlertButton.tsx',
             'components/account/kit-gallery/KitGallery.tsx',
             'components/account/ui/AccountBar.tsx',
-            'components/account/ui/AccountToastRegion.tsx'
+            'components/account/ui/AccountToastRegion.tsx',
+            'components/account/ui/Menu.tsx'
         ]);
     });
 

@@ -47,7 +47,7 @@ describe('listing areas: who sees which (HOS-2559)', () => {
         const [venues] = shell.groups;
         expect(venues?.suppressHeader).toBe(true);
         expect(venues?.shellDefaultOpen).toBe(true);
-        // The F3 dashboard leads the area, ahead of the listing list.
+        // HOS-2477 added the area's dashboard before its list.
         expect(venues?.items.map((entry) => [entry.item.id, entry.active])).toEqual([
             ['venueDashboard', false],
             ['venue-listings', true]

@@ -24,9 +24,8 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import HelpLink from '@/components/account/help/HelpLink.astro';
-import { pageHelpAnchor } from '@/lib/help/help-entry';
 import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ProfileEditForm } from '@/components/account/ProfileEditForm.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -194,7 +193,7 @@ const hasPassword = profileStatus ? profileStatus.hasCredentialAccount : true;
 
 <AccountLayout locale={locale} title={title} activeSection="editar">
 	<PageHeader title={title} locale={locale}>
-		<HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+	    <PageHelpLink slot="help" locale={locale} />
 	</PageHeader>
 
 	<ProfileEditForm

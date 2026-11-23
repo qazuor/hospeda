@@ -937,6 +937,12 @@
             "cancel": "Cancel",
             "withdrawn": "The featured add-on was withdrawn.",
             "withdrawError": "We could not withdraw the featured add-on."
+        },
+        "steps": {
+            "label": "Purchase steps",
+            "offer": "Add-on",
+            "target": "Target",
+            "confirm": "Confirm"
         }
     }
 }

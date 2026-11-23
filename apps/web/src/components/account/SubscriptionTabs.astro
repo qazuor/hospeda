@@ -1,0 +1,37 @@
+---
+/**
+ * @file SubscriptionTabs.astro
+ * @description The «Plan / Complementos» tabs shared by the subscription and
+ * the add-ons pages (HOS-2485, AC-8): kit `NavTabs`, real links between the
+ * two pages, the current one marked.
+ */
+import { NavTabs } from '@/components/account/ui';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+    /** Page locale. */
+    readonly locale: SupportedLocale;
+    /** Which page renders the tabs. */
+    readonly current: 'plan' | 'addons';
+}
+
+const { locale, current } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<NavTabs
+    ariaLabel={t('account.subscription.tabs.ariaLabel')}
+    items={[
+        {
+            href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }),
+            label: t('account.subscription.tabs.plan'),
+            current: current === 'plan'
+        },
+        {
+            href: buildUrl({ locale, path: 'mi-cuenta/complementos' }),
+            label: t('account.subscription.tabs.addons'),
+            current: current === 'addons'
+        }
+    ]}
+/>

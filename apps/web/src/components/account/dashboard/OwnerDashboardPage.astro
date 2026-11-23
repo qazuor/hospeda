@@ -18,6 +18,7 @@ import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-
 import { buildOwnerDashboardRows, OWNER_DASHBOARD_PATH } from '@/lib/account/owner-listing-dashboard';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { DashboardLinksSection } from './DashboardLinksSection';
 import { OwnerListingDashboard } from './OwnerListingDashboard.client';
 import styles from './Dashboard.module.css';
@@ -45,7 +46,9 @@ const activeSection = OWNER_DASHBOARD_PATH[vertical].replace('mi-cuenta/', '');
 
 <AccountLayout locale={locale} title={title} description={description} activeSection={activeSection} template="dashboard">
     <div class={styles.page}>
-        <PageHeader locale={locale} title={title} description={description} helpId={`section:${vertical}.dashboard`} />
+        <PageHeader locale={locale} title={title} description={description} helpId={`section:${vertical}.dashboard`}>
+            <PageHelpLink slot="help" locale={locale} />
+        </PageHeader>
 
         <OwnerListingDashboard client:load locale={locale} vertical={vertical} planNames={planNames} plansHref={plansHref} />
 

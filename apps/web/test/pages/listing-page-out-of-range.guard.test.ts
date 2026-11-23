@@ -84,6 +84,18 @@ describe('every paginated listing 404s out-of-range pages (HOS-1981)', () => {
     for (const listing of listings) {
         // The destinations listing no longer paginates; its shim only redirects.
         if (REDIRECT_ONLY.has(rel(listing))) continue;
+        // Account lists are session pages, never indexed: a stale `?page=` past
+        // the end goes to the last page instead of a 404 (HOS-2440). Assert
+        // that contract rather than skipping them.
+        if (rel(listing).startsWith('mi-cuenta/')) {
+            it(`${rel(listing)} sends a past-end page to the last page (HOS-2440)`, () => {
+                const source = readFileSync(listing, 'utf8');
+                expect(source).toMatch(
+                    /resolveAccountPageState\([\s\S]{0,200}?isPastEnd\)[\s\S]{0,120}?Astro\.redirect\(/
+                );
+            });
+            continue;
+        }
         it(`${rel(listing)} answers 404 through the shared predicate`, () => {
             const source = readFileSync(listing, 'utf8');
             expect(source).toMatch(

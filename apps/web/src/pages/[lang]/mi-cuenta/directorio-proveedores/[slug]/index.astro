@@ -32,9 +32,8 @@
  * @rendering SSR (prerender = false — requires an authenticated host)
  */
 
-import HelpLink from '@/components/account/help/HelpLink.astro';
-import { pageHelpAnchor } from '@/lib/help/help-entry';
 import { EmptyState, LinkButton, PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { DirectoryReviewsList } from '@/components/host/host-trades/DirectoryReviewsList.client';
 import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
 import { ProviderDetail } from '@/components/host/host-trades/ProviderDetail.client';
@@ -166,8 +165,9 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
         description={subtitle}
         locale={locale}
         back={{ label: backToDirectory, href: directoryHref }}
-        helpId="section:hosttrade.detalle">
-        <HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+        helpId="section:hosttrade.detalle"
+    >
+        <PageHelpLink slot="help" locale={locale} />
     </PageHeader>
 
     {outcome === 'ok' && provider ? (

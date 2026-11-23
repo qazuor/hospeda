@@ -28,18 +28,18 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
             expect(propiedadesIndexSource).not.toContain('billing/usage/MAX_ACCOMMODATIONS');
         });
 
-        it('should render a usage badge when usageData is available', () => {
-            expect(propiedadesIndexSource).toContain('props-page__usage');
+        it('should render the usage as a kit Alert when usageData is available (HOS-2483)', () => {
+            expect(propiedadesIndexSource).toContain('<Alert');
             expect(propiedadesIndexSource).toContain('host.properties.usage.label');
         });
 
         it('should show upgrade link when threshold is not ok', () => {
-            expect(propiedadesIndexSource).toContain('props-page__usage-upgrade');
+            expect(propiedadesIndexSource).toMatch(
+                /usageData\.threshold !== 'ok' && \(\s*<LinkButton/
+            );
             expect(propiedadesIndexSource).toContain('host.properties.usage.upgrade');
         });
 
-        // HOS-727's add-on offer next to the quota pointed at the old add-on
-        // purchase page and was removed with it (HOS-1637, AC:B13a:20).
         it('should NOT offer the removed add-on page from the quota badge', () => {
             expect(propiedadesIndexSource).not.toContain('limit-addon-offer');
             expect(propiedadesIndexSource).not.toContain('resolveLimitAddonOffer');
@@ -48,16 +48,13 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
         });
 
         it('should keep the plan-upgrade route offered on the quota badge', () => {
-            expect(propiedadesIndexSource).toContain('props-page__usage-upgrade');
             expect(propiedadesIndexSource).toContain('path: PRICING_PAGE_PATH_BY_AUDIENCE.owner');
         });
 
-        it('should include CSS classes for all threshold variants', () => {
-            expect(propiedadesIndexSource).toContain('props-page__usage--ok');
-            expect(propiedadesIndexSource).toContain('props-page__usage--warning');
-            expect(propiedadesIndexSource).toContain('props-page__usage--critical');
-            expect(propiedadesIndexSource).toContain('props-page__usage--atLimit');
-            expect(propiedadesIndexSource).toContain('props-page__usage--exceeded');
+        it('maps every threshold through the shared never-danger tone (HOS-2443)', () => {
+            expect(propiedadesIndexSource).toContain(
+                'tone={resolveUsageAlertTone({ threshold: usageData.threshold })}'
+            );
         });
     });
 

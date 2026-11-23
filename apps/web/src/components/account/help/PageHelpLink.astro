@@ -1,0 +1,28 @@
+---
+/**
+ * @file PageHelpLink.astro
+ * @description The page's own «?» for a page whose header is the kit
+ * `PageHeader` (HOS-2546: the title row carries it, the header «?» opens the
+ * help center). The kit header is a React component and cannot read
+ * `Astro.routePattern`, so this Astro wrapper derives the page anchor the same
+ * way `AccountPageHeader` does and renders `HelpLink`, which renders nothing
+ * when no article claims the anchor.
+ *
+ * Usage: `<PageHeader …><PageHelpLink slot="help" locale={locale} /></PageHeader>`.
+ */
+
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** Overrides the anchor derived from the route; `null` turns the «?» off. */
+	readonly anchor?: string | null;
+}
+
+const { locale, anchor } = Astro.props;
+const resolved = anchor === undefined ? pageHelpAnchor({ routePattern: Astro.routePattern }) : anchor;
+---
+
+<HelpLink anchor={resolved} locale={locale} />

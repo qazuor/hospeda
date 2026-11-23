@@ -68,6 +68,20 @@ export interface DeleteButtonProps {
     readonly confirmNo: string;
     /** Error message shown on API failure (already-translated). */
     readonly errorText: string;
+    /**
+     * Open straight on the confirmation step (HOS-2483): the card's action
+     * menu already asked «Eliminar», so the dialog shows the question and the
+     * add-ons that would be lost, not a second button. @default false
+     */
+    readonly startConfirming?: boolean;
+    /** Called when the person cancels the confirmation (the menu closes its dialog). */
+    readonly onCancel?: () => void;
+    /**
+     * Called with `true` when the request starts and `false` when it fails, so
+     * a host dialog can refuse to close while it is in flight (a closed dialog
+     * would hide the error). A success reloads the page and never reports false.
+     */
+    readonly onPendingChange?: (pending: boolean) => void;
 }
 
 /**
@@ -88,9 +102,12 @@ export function DeleteButton({
     confirmText,
     confirmYes,
     confirmNo,
-    errorText
+    errorText,
+    startConfirming = false,
+    onCancel,
+    onPendingChange
 }: DeleteButtonProps): JSX.Element {
-    const [state, setState] = useState<DeleteState>('idle');
+    const [state, setState] = useState<DeleteState>(startConfirming ? 'confirming' : 'idle');
     const [apiError, setApiError] = useState<string | null>(null);
     const [previewAttempt, setPreviewAttempt] = useState(0);
     const [preview, setPreview] = useState<PurgePreviewState>({ status: 'idle' });
@@ -136,6 +153,7 @@ export function DeleteButton({
 
     /** User clicked "No" / Cancel → return to idle. */
     function handleCancel(): void {
+        onCancel?.();
         setState('idle');
         setApiError(null);
     }
@@ -145,12 +163,14 @@ export function DeleteButton({
         if (preview.status !== 'ready') return;
         setState('pending');
         setApiError(null);
+        onPendingChange?.(true);
 
         const result = await publishApi.purge({ vertical, id: listingId });
 
         if (!result.ok) {
             setApiError(errorText);
             setState('error');
+            onPendingChange?.(false);
             return;
         }
 

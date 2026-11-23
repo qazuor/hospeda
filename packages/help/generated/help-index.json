@@ -1,5 +1,5 @@
 {
-  "contentHash": "35c158e29710e76904fb7c01c4122507abe8d6753836580b1c75df9c4f300408",
+  "contentHash": "58a19e6fed8d03adeb94a3160b0d360acec217a5bcd67ca440dfe01e5a5e477c",
   "locales": {
     "es": [
       {
@@ -41,7 +41,7 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Comprar complementos}}.",
           "expect": "- El resumen muestra el importe y la frecuencia antes de confirmar.\n- Si tu beneficio incluye el complemento, aparece «Gratis por tu beneficio».\n- Dar de baja un destaque recurrente corta el cobro y lo apaga ese mismo día.",
@@ -476,7 +476,7 @@
           "publish-requirements",
           "calendar"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
           "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",
@@ -631,7 +631,7 @@
           "addons",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis propiedades}}.\n\nPara un comercio o una experiencia, {{link:contact|escribinos}}.",
           "expect": "- Antes de confirmar ves los complementos que se pierden con la publicación, sin devolución (mirá {{article:addons|los complementos}}).\n- El borrado es definitivo: textos, fotos y preguntas se borran.",
@@ -710,7 +710,7 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.",
           "expect": "- Con un pedido de arreglo la publicación sigue a la vista mientras corregís.\n- «Ya lo corregí» avisa al equipo; el pedido lo cierra Hospeda.\n- Una publicación moderada se puede ver, exportar y editar, pero no publicar.",
@@ -928,7 +928,7 @@
           "addons",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.",
           "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
@@ -1170,7 +1170,7 @@
           "change-plan",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
           "expect": "- El editor marca cada sección incompleta y la tarjeta de la publicación también.\n- Publicar pide un plan activo o la prueba gratis; si no te corresponde la prueba, te lleva a elegir un plan.\n- Un pedido de excepción lo revisa Hospeda y te responde por email.",

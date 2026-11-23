@@ -1,0 +1,73 @@
+/* Menu.module.css — the overflow «more actions» menu (HOS-2483).
+   Popover surface under the trigger; tokens only. */
+
+.root {
+    position: relative;
+    display: inline-flex;
+}
+
+.menu {
+    position: absolute;
+    z-index: 20;
+    inset-block-start: calc(100% + var(--space-1));
+    min-inline-size: 12rem;
+    max-inline-size: min(20rem, 90vw);
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: var(--space-1);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-overlay);
+}
+
+.alignEnd {
+    inset-inline-end: 0;
+}
+
+.alignStart {
+    inset-inline-start: 0;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-3);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: none;
+    color: inherit;
+    font: var(--app-control);
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.item:hover,
+.item:focus-visible {
+    background-color: var(--surface-warm);
+}
+
+.item:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+
+.item[aria-disabled="true"] {
+    color: var(--core-muted-foreground);
+    cursor: not-allowed;
+}
+
+.danger {
+    color: var(--destructive-text);
+}
+
+.danger:hover,
+.danger:focus-visible {
+    background-color: var(--status-danger-bg);
+}

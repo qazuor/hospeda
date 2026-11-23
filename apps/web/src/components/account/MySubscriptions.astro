@@ -1,4 +1,13 @@
 ---
+/**
+ * @file MySubscriptions.astro
+ * @description The owner's subscriptions on the subscription page, one kit
+ * `PlanSummary` each (HOS-2485). Presentation only: every line, condition,
+ * island and testid below is the Fase 1 behaviour (unsettled statuses
+ * `PENDING_AUTHORIZATION` / `CHARGE_DECLINED` with their to-do line, grace,
+ * pause, plan change, scheduled cancellation), moved into the kit piece. The
+ * plan name and price line come from `resolveMySubscriptionSummary` (catalog).
+ */
 import { OwnSubscriptionsResponseSchema, type PricingSituationVertical } from '@repo/schemas';
 import type { z } from 'zod';
 import { SubscriptionCancel } from './SubscriptionCancel.client';
@@ -18,6 +27,9 @@ import {
 } from '@/lib/billing/my-subscription-notices';
 import { MY_SUBSCRIPTION_TODO_KEY, findActiveSuccessor, resolveMySubscriptionSummary, resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { EmptyState, LinkButton, PlanSummary, StatusPill, toneFor } from '@/components/account/ui';
+import { PageLoadError } from './PageLoadError.client';
+import { buildUrl } from '@/lib/urls';
 import styles from './MySubscriptions.module.css';
 
 type OwnSubscriptionsResult = z.infer<typeof OwnSubscriptionsResponseSchema>;
@@ -35,10 +47,16 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
     return resolveScheduledRenewal({ row }).kind;
 };
 ---
-<section class={styles.list} aria-label={t('account.subscription.mine.title')}>
-    <h2 class={styles.title}>{t('account.subscription.mine.title')}</h2>
-    {!result && <p class={styles.line}>{t('account.subscription.mine.loadError')}</p>}
-    {result && result.subscriptions.length === 0 && result.deferredCourtesies.length === 0 && <p class={styles.line}>{t('account.subscription.mine.empty')}</p>}
+<section class={styles.list} aria-labelledby="my-subscriptions-title" data-help="section:suscripcion.plan">
+    <h2 id="my-subscriptions-title" class={styles.title}>{t('account.subscription.mine.title')}</h2>
+    {!result && <PageLoadError client:load locale={locale} title={t('account.subscription.mine.loadError')} helpId="section:suscripcion.plan" />}
+    {result && result.subscriptions.length === 0 && result.deferredCourtesies.length === 0 && (
+        <EmptyState variant="compact" title={t('account.subscription.mine.empty')}>
+            <LinkButton slot="action" href={buildUrl({ locale, path: 'mi-cuenta/publica' })} data-testid="my-subscription-empty-plans">
+                {t('billing.common.viewPlans')}
+            </LinkButton>
+        </EmptyState>
+    )}
     {result?.subscriptions.map((row) => {
         const summary = resolveMySubscriptionSummary({ row, locale, t });
         const activeSuccessor = findActiveSuccessor({ row, subscriptions: result.subscriptions });
@@ -46,16 +64,16 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
             ? resolveMySubscriptionSummary({ row: activeSuccessor, locale, t })
             : null;
         return (
-            <article class={styles.item} data-testid="my-subscription" data-subscription-id={row.id} data-renewal={renewalKind(row)}>
-                <h3 class={styles.title}>{summary.title}</h3>
-                <p class={styles.line} data-testid="my-subscription-vertical">{t(summary.verticalLabelKey)}</p>
+            <div class={styles.item} data-testid="my-subscription" data-subscription-id={row.id} data-renewal={renewalKind(row)}>
+            <PlanSummary name={summary.title}>
+                <span slot="scope" data-testid="my-subscription-vertical">{t(summary.verticalLabelKey)}</span>
+                {!(activeSuccessor && successorSummary) && <StatusPill slot="status" tone={toneFor({ domain: 'subscription', status: row.status })}>{t(statusKey(row))}</StatusPill>}
+                {!(activeSuccessor && successorSummary) && summary.priceLine && <span slot="price" data-testid="my-subscription-price">{summary.priceLine}</span>}
+                {!(activeSuccessor && successorSummary) && summary.nextChargeLine && <span slot="renewal" data-testid="my-subscription-next-charge">{summary.nextChargeLine}</span>}
                 {activeSuccessor && successorSummary
                     ? <p class={styles.line} data-testid="my-subscription-replaced">{t('account.subscription.mine.replacedBy', undefined, { plan: successorSummary.title })}</p>
                     : <>
-                <p class={styles.line}>{t(statusKey(row))}</p>
                 {(row.status === 'PENDING_AUTHORIZATION' || row.status === 'CHARGE_DECLINED') && <p class={styles.line} data-testid="my-subscription-todo">{t(MY_SUBSCRIPTION_TODO_KEY[row.status])}</p>}
-                {summary.priceLine && <p class={styles.line} data-testid="my-subscription-price">{summary.priceLine}</p>}
-                {summary.nextChargeLine && <p class={styles.line} data-testid="my-subscription-next-charge">{summary.nextChargeLine}</p>}
                 {(row.status === 'ACTIVE' || (row.status === 'PAUSED' && row.pause?.reason === 'COURTESY')) && <PauseOffer client:visible subscriptionId={row.id} locale={locale} />}
                 {row.status === 'ACTIVE' && row.scheduledChange && <p class={styles.line} data-testid="my-subscription-scheduled-change">{t('account.subscription.mine.planChange.downgrade', undefined, { date: date(row.scheduledChange.effectiveAt) })}</p>}
                 {row.status === 'ACTIVE' && row.succession?.checkoutOpen ? <p class={styles.line} data-testid="my-subscription-plan-change-checkout">{t('account.subscription.mine.planChange.reason.succession')}</p> : row.status === 'ACTIVE' && <PlanChangeOffer client:visible subscriptionId={row.id} vertical={row.vertical as PricingSituationVertical} locale={locale} promo={row.promo !== null} courtesyMonths={totalCourtesyMonths({ row, deferredCourtesies: result.deferredCourtesies })} />}
@@ -75,13 +93,15 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
                 {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} planName={summary.title} verticalLabel={t(summary.verticalLabelKey)} />}
                 {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />}
                     </>}
-            </article>
+            </PlanSummary>
+            </div>
         );
     })}
     {result?.deferredCourtesies.map((c) => (
-        <article class={styles.item} data-testid="my-subscription-deferred-courtesy" data-courtesy-grant-id={c.courtesyGrantId}>
-            <h3 class={styles.title}>{t(resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical }))}</h3>
-            <p class={styles.line}>{tPlural(DEFERRED_COURTESY_KEY, c.balanceMonths, { count: c.balanceMonths })}</p>
-        </article>
+        <div class={styles.item} data-testid="my-subscription-deferred-courtesy" data-courtesy-grant-id={c.courtesyGrantId}>
+            <PlanSummary name={t(resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical }))}>
+                <p class={styles.line}>{tPlural(DEFERRED_COURTESY_KEY, c.balanceMonths, { count: c.balanceMonths })}</p>
+            </PlanSummary>
+        </div>
     ))}
 </section>

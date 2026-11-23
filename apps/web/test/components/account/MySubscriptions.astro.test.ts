@@ -59,7 +59,10 @@ describe('MySubscriptions SSR block', () => {
     });
     it('offers promo redemption only through the status and payment-method eligibility record (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
         expect(source).toContain('PROMO_REDEEM_OFFERED[row.status][row.paymentMethod]');
-        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const article = source.slice(
+            source.indexOf('<PlanSummary name={summary.title}>'),
+            source.indexOf('</PlanSummary>')
+        );
         expect(article).toContain('PROMO_REDEEM_OFFERED[row.status][row.paymentMethod]');
         expect(article).toContain(
             '<PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />'
@@ -67,7 +70,10 @@ describe('MySubscriptions SSR block', () => {
     });
 
     it('TEST:B8b:14 mounts the plan-change offer only for ACTIVE rows', () => {
-        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const article = source.slice(
+            source.indexOf('<PlanSummary name={summary.title}>'),
+            source.indexOf('</PlanSummary>')
+        );
         expect(article).toContain("row.status === 'ACTIVE' && <PlanChangeOffer client:visible");
         expect(article).toContain('subscriptionId={row.id}');
         expect(article).toContain('vertical={row.vertical as PricingSituationVertical}');
@@ -92,7 +98,10 @@ describe('MySubscriptions SSR block', () => {
         expect(source).toContain('date: date(row.succession.checkoutDeadline)');
     });
     it('HOS-2381 shows the queued plan change date from the read, so it survives a reload', () => {
-        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const article = source.slice(
+            source.indexOf('<PlanSummary name={summary.title}>'),
+            source.indexOf('</PlanSummary>')
+        );
         const notice = article.match(
             /\{([^{}]+) && <p class=\{styles\.line\} data-testid="my-subscription-scheduled-change">\{t\('account\.subscription\.mine\.planChange\.downgrade', undefined, \{ date: date\(row\.scheduledChange\.effectiveAt\) \}\)\}<\/p>\}/u
         );
@@ -114,7 +123,10 @@ describe('MySubscriptions SSR block', () => {
         );
     });
     it('TEST:B9b:8 mounts pause for ACTIVE and PAUSED courtesy, but not other PAUSED reasons', () => {
-        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const article = source.slice(
+            source.indexOf('<PlanSummary name={summary.title}>'),
+            source.indexOf('</PlanSummary>')
+        );
         const pauseOffer = article.match(/\{\(([^{}]+)\) && <PauseOffer client:visible/u);
         expect(pauseOffer).not.toBeNull();
         expect([...article.matchAll(/<PauseOffer client:visible/gu)]).toHaveLength(1);
@@ -139,7 +151,10 @@ describe('MySubscriptions SSR block', () => {
         expect(source).toContain('data-testid="my-subscription-deferred-courtesy"');
     });
     it('TEST:B8b:25 mounts resume only for customer pauses and keeps the paused change-plan refusal', () => {
-        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const article = source.slice(
+            source.indexOf('<PlanSummary name={summary.title}>'),
+            source.indexOf('</PlanSummary>')
+        );
         expect(article).toContain(
             "row.status === 'PAUSED' && row.pause?.reason === 'CUSTOMER_REQUEST' && <ResumeOffer client:visible"
         );
@@ -169,27 +184,35 @@ describe('MySubscriptions SSR block', () => {
 
 describe('MySubscriptions plan summary — TEST:1755:9', () => {
     it('wires the summary helper, conditional price and next charge lines inside each subscription card', () => {
-        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const article = source.slice(
+            source.indexOf('<PlanSummary name={summary.title}>'),
+            source.indexOf('</PlanSummary>')
+        );
         expect(source).toContain('resolveMySubscriptionSummary({ row, locale, t })');
-        expect(article).toContain('<h3 class={styles.title}>{summary.title}</h3>');
+        // HOS-2485: each subscription is a kit PlanSummary, the plan name its heading.
+        expect(article).not.toBe('');
+        expect(source).toContain('<PlanSummary name={summary.title}>');
         expect(article).toContain('data-testid="my-subscription-price"');
-        expect(article).toContain('{summary.priceLine &&');
+        expect(article).toContain('summary.priceLine && <span slot="price"');
         expect(article).toContain('data-testid="my-subscription-next-charge"');
-        expect(article).toContain('{summary.nextChargeLine &&');
+        expect(article).toContain('summary.nextChargeLine && <span slot="renewal"');
         expect(article).toContain('data-testid="my-subscription-vertical"');
     });
 
     it('uses the account vertical label for deferred courtesy cards (AC:1755:6)', () => {
         expect(source).toContain('resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical })');
         expect(source).toContain(
-            '<h3 class={styles.title}>{t(resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical }))}</h3>'
+            '<PlanSummary name={t(resolveMySubscriptionVerticalLabelKey({ vertical: c.vertical }))}>'
         );
     });
 });
 
 describe('MySubscriptions cancellation confirmation — TEST:1762:5', () => {
     it('names the plan and the vertical of each subscription on its cancel island', () => {
-        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const article = source.slice(
+            source.indexOf('<PlanSummary name={summary.title}>'),
+            source.indexOf('</PlanSummary>')
+        );
         const open = article.indexOf('<SubscriptionCancel');
         const cancel = article.slice(open, article.indexOf('/>', open));
 

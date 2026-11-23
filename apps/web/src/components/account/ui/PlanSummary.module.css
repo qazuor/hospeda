@@ -1,0 +1,59 @@
+/* PlanSummary.module.css — one subscription at a glance (HOS-2485). */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+}
+
+.heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.name {
+    margin: 0;
+    font: var(--app-card-title);
+    color: var(--core-foreground);
+}
+
+.lines {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.scope,
+.line {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.price {
+    margin: 0;
+    font: var(--app-body);
+    font-weight: var(--app-card-title-weight);
+    color: var(--core-foreground);
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+    font: var(--app-body);
+}
+
+.body p {
+    margin: 0;
+}

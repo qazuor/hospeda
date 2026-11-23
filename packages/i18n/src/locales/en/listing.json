@@ -111,7 +111,8 @@
                 "title": "We couldn't load your listings",
                 "body": "There was a problem reading your listings. They haven't gone anywhere: please try again in a moment.",
                 "retry": "Try again"
-            }
+            },
+            "moreActions": "More actions for {{name}}"
         },
         "editor": {
             "sectionNav": {
