@@ -237,12 +237,15 @@ describe('ContactSection', () => {
             expect(screen.queryByLabelText('Público')).not.toBeInTheDocument();
         });
 
-        it('says the button stays hidden until the owner chooses (AC-16)', () => {
+        it('opens on Publico while no choice is stored (HOS-2557)', () => {
             renderSection({ whatsapp: whatsapp('') });
 
-            expect(screen.getByText(/el botón de WhatsApp no se muestra/)).toBeInTheDocument();
-            expect(screen.getByLabelText('Público')).not.toBeChecked();
+            expect(
+                screen.queryByText(/el botón de WhatsApp no se muestra/)
+            ).not.toBeInTheDocument();
+            expect(screen.getByLabelText('Público')).toBeChecked();
             expect(screen.getByLabelText('Solo usuarios logueados')).not.toBeChecked();
+            expect(screen.getByText(/cualquiera puede copiarlo/)).toBeInTheDocument();
         });
 
         it('warns that a public number can be copied by third parties (AC-21)', () => {
@@ -262,9 +265,9 @@ describe('ContactSection', () => {
             const controls = whatsapp('');
             renderSection({ whatsapp: controls });
 
-            fireEvent.click(screen.getByLabelText('Público'));
+            fireEvent.click(screen.getByLabelText('Solo usuarios logueados'));
 
-            expect(controls.onVisibilityChange).toHaveBeenCalledWith('PUBLIC');
+            expect(controls.onVisibilityChange).toHaveBeenCalledWith('LOGGED_IN_ONLY');
         });
     });
 });

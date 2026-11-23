@@ -230,9 +230,11 @@ describe('HOS-817 wiring — the page feeds description through the sanitizing p
     it('the page still gates rich HTML on richDescription presence only, with no entitlement logic', () => {
         // SPEC-187 FR-4: the API decides entitlement, the page never does.
         expect(PAGE_CODE).toMatch(/accommodation\.richDescription\s*\?/);
-        expect(PAGE_CODE).not.toMatch(/import\s*\{[^}]*EntitlementKey/);
+        // HOS-2554: EntitlementKeyEnum may only feed the catalog plan-name lookup.
+        const withoutPlanNameLookup = PAGE_CODE.replace(/getGatePlanNames\(\{[^}]*\}\)/g, '');
+        expect(PAGE_CODE).not.toMatch(/import\s*\{[^}]*\bEntitlementKey\b/);
         expect(PAGE_CODE).not.toContain('hasEntitlement(');
-        expect(PAGE_CODE).not.toContain('EntitlementKey.');
+        expect(withoutPlanNameLookup).not.toMatch(/EntitlementKey(Enum)?\./);
     });
 });
 

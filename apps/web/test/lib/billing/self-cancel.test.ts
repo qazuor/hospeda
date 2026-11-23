@@ -33,7 +33,9 @@ describe('self-cancel helpers', () => {
             GRACE_PERIOD: true,
             SUSPENDED: true,
             CANCEL_SCHEDULED: false,
-            PAUSED: false
+            PAUSED: false,
+            PENDING_AUTHORIZATION: false,
+            CHARGE_DECLINED: false
         });
         expect(END_LINE_KEY).toEqual({
             ACTIVE: 'account.subscription.cancel.activeEnds',
@@ -74,5 +76,14 @@ describe('self-cancel helpers', () => {
         expect(formatSelfCancelDate({ iso: '2026-04-02T02:00:00.000Z', locale: 'es' })).toContain(
             '1 de abril de 2026'
         );
+    });
+});
+
+describe('HOS-2553 unsettled subscription states offer no action', () => {
+    it.each([
+        'PENDING_AUTHORIZATION',
+        'CHARGE_DECLINED'
+    ] as const)('offers no cancellation for %s', (status) => {
+        expect(CANCELLATION_OFFERED[status]).toBe(false);
     });
 });

@@ -63,6 +63,18 @@ const statGracePeriodStatus = t('account.pages.dashboard.stats.gracePeriodStatus
 const statSuspendedStatus = t('account.pages.dashboard.stats.suspendedStatus', 'Suspendida');
 const statCancelScheduledStatus = t('account.pages.dashboard.stats.cancelScheduledStatus', 'Baja programada');
 const statPausedStatus = t('account.pages.dashboard.stats.pausedStatus', 'Pausada');
+// HOS-2553: the two unsettled states and the line that says what to do about each.
+const statChargeDeclinedStatus = t('account.pages.dashboard.stats.chargeDeclinedStatus', 'Cobro rechazado');
+const statPendingAuthorizationStatus = t('account.pages.dashboard.stats.pendingAuthorizationStatus', 'Esperando autorización');
+const statChargeDeclinedAction = t(
+    'account.pages.dashboard.stats.chargeDeclinedAction',
+    'Mercado Pago no aprobó el pago y no se cobró nada. Podés volver a intentarlo con otro medio de pago desde Mi suscripción.'
+);
+const statPendingAuthorizationAction = t(
+    'account.pages.dashboard.stats.pendingAuthorizationAction',
+    'Falta que autorices el pago en Mercado Pago para activar tu plan.'
+);
+const viewAllSubscriptionsLinkLabel = t('account.pages.dashboard.stats.viewAllSubscriptions', 'Ver todas');
 const planNames = Object.fromEntries(
     DASHBOARD_PLAN_SLUGS.map((slug) => [slug, getPlanName({ plan: { slug, name: slug, description: '' }, t })])
 );
@@ -238,13 +250,31 @@ const statListingsHiddenOther = t(
             data-label-suspended={statSuspendedStatus}
             data-label-cancel-scheduled={statCancelScheduledStatus}
             data-label-paused={statPausedStatus}
+            data-label-charge-declined={statChargeDeclinedStatus}
+            data-label-pending-authorization={statPendingAuthorizationStatus}
             data-label-free={statFreeStatus}
             data-label-trial-ends-on={statTrialEndsOn}
             aria-live="polite"
         >
             {statSubscriptionStatus}
         </p>
-        <a href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })} class="account__stat-link">
+        <!-- HOS-2553: one row per live subscription (max 3) when there are 2+; filled client-side. -->
+        <ul id="stat-subscription-list" class="account__stat-subs" hidden></ul>
+        <p
+            id="stat-subscription-action"
+            class="account__stat-desc"
+            data-label-charge-declined={statChargeDeclinedAction}
+            data-label-pending-authorization={statPendingAuthorizationAction}
+            hidden
+        >
+        </p>
+        <a
+            id="stat-subscription-link"
+            href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
+            class="account__stat-link"
+            data-label-default={viewSubscriptionLinkLabel}
+            data-label-view-all={viewAllSubscriptionsLinkLabel}
+        >
             {viewSubscriptionLinkLabel}
         </a>
     </article>
@@ -319,6 +349,32 @@ const statListingsHiddenOther = t(
         border-radius: var(--radius-pill);
         background-color: var(--brand-primary-a10);
         color: var(--brand-primary);
+    }
+
+    /* Built by the page script, so the scoped attribute is not on the rows. */
+    .account__stat-subs {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin: 0 0 var(--space-2);
+        padding: 0;
+        list-style: none;
+    }
+
+    .account__stat-subs :global(li) {
+        display: flex;
+        flex-direction: column;
+        font-family: var(--font-sans);
+    }
+
+    .account__stat-subs :global(.account__stat-sub-plan) {
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    .account__stat-subs :global(.account__stat-sub-status) {
+        font-size: var(--app-meta-size);
+        color: var(--core-muted-foreground);
     }
 
     .account__stat-value {

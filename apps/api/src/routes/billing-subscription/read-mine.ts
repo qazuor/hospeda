@@ -20,21 +20,29 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
         // HOS-2328: the shared plan-state reader (also behind `get_my_plan`). Its
         // `planVersionId` is for the assistant; this response does not carry it.
         const [{ subscriptions, deferredCourtesies }, declined] = await Promise.all([
-            readOwnPlanState({ userId, now: getClock().clock.now() }),
+            // HOS-2553: this page also tells about a declined charge and a checkout
+            // waiting for authorization; `get_my_plan` keeps reading the settled ones only.
+            readOwnPlanState({ userId, now: getClock().clock.now(), includeUnsettled: true }),
             readOwnDeclinedSignups(userId)
         ]);
         return {
-            subscriptions: subscriptions.map(({ planVersionId: _planVersionId, ...row }) => ({
-                ...row,
-                serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
-                graceEndsAt: row.graceEndsAt?.toISOString() ?? null,
-                createdAt: row.createdAt.toISOString(),
-                plan: row.plan,
-                nextCharge: row.nextCharge
-                    ? { ...row.nextCharge, at: row.nextCharge.at.toISOString() }
-                    : null,
-                paidAfterCancellation: row.paidAfterCancellation
-            })),
+            // HOS-2553: a declined signup is told ONCE, by `declinedSignups`. That notice
+            // follows the same rule the reader applies to `CHARGE_DECLINED` rows and carries
+            // the retry (plan, billing option, declared email); a row here would repeat it
+            // with no action. The list keeps the checkout waiting for authorization.
+            subscriptions: subscriptions
+                .filter((row) => row.status !== 'CHARGE_DECLINED')
+                .map(({ planVersionId: _planVersionId, ...row }) => ({
+                    ...row,
+                    serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
+                    graceEndsAt: row.graceEndsAt?.toISOString() ?? null,
+                    createdAt: row.createdAt.toISOString(),
+                    plan: row.plan,
+                    nextCharge: row.nextCharge
+                        ? { ...row.nextCharge, at: row.nextCharge.at.toISOString() }
+                        : null,
+                    paidAfterCancellation: row.paidAfterCancellation
+                })),
             deferredCourtesies,
             declinedSignups: declined.map((notice) => ({
                 ...notice,

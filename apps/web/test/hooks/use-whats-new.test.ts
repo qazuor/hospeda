@@ -176,4 +176,37 @@ describe('useWhatsNew', () => {
 
         expect(result.current.unseenCount).toBe(2);
     });
+    it('renders the server-shaped first frame even when the module cache is warm (HOS-2452)', async () => {
+        // Arrange: a first island fills the shared cache.
+        const items = [
+            {
+                id: 'e1',
+                title: 'First',
+                body: 'Hello',
+                publishedAt: '2026-01-01T00:00:00Z',
+                highlight: false,
+                seen: true
+            }
+        ];
+        vi.mocked(fetch).mockResolvedValue(jsonResponse({ data: { items, unseenCount: 0 } }));
+        const first = renderHook(() => useWhatsNew());
+        await act(async () => {
+            await new Promise((r) => setTimeout(r, 10));
+        });
+        expect(first.result.current.items).toHaveLength(1);
+
+        // Act: a second island hydrates; record every render it produces.
+        const frames: Array<{ count: number; loading: boolean }> = [];
+        const second = renderHook(() => {
+            const value = useWhatsNew();
+            frames.push({ count: value.items.length, loading: value.isLoading });
+            return value;
+        });
+
+        // Assert: the first frame matches the SSR HTML (no cache on the server),
+        // otherwise React throws hydration error #418. It then adopts the cache.
+        expect(frames[0]).toEqual({ count: 0, loading: true });
+        expect(second.result.current.items).toHaveLength(1);
+        expect(second.result.current.isLoading).toBe(false);
+    });
 });

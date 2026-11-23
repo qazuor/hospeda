@@ -93,7 +93,9 @@ describe('resolveMySubscriptionSummary — TEST:1755:7', () => {
             GRACE_PERIOD: true,
             SUSPENDED: false,
             CANCEL_SCHEDULED: false,
-            PAUSED: false
+            PAUSED: false,
+            PENDING_AUTHORIZATION: false,
+            CHARGE_DECLINED: false
         });
         const expected = `account.subscription.mine.price ${JSON.stringify({
             amount: formatPrice({
