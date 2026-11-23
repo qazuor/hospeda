@@ -32,11 +32,11 @@
         },
         {
             "file": "packages/notifications/src/services/outbox/listing-archived-renderers.tsx",
-            "sha256": "1ae4db9e8466e2922768df6a5523d6f6e3dcd0500af1d009a36d20e1a6f2c17e"
+            "sha256": "cfec9cbfadb4f33ff2f3c37ff27e2fe0bea0640aa5b8b500949bc9f04905f381"
         },
         {
             "file": "packages/notifications/src/templates/listing/listing-archived.tsx",
-            "sha256": "7d4525c1b3902a838f8ed73934a359c3a7116e76831c8196b87255c7b7dc2eeb"
+            "sha256": "15a25b51cea8d155e455af9c6e9e0e734ac3cbfbc8c0b5a3db962d4b8a3ae212"
         }
     ]
 }
