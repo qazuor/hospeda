@@ -1,5 +1,6 @@
 import { Section, Text } from '@react-email/components';
 import { EmailLayout } from '@repo/email';
+import { formatCalendarDate, formatCalendarDateRange } from '@repo/utils';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 
@@ -19,6 +20,47 @@ export interface MessageExcerpt {
 }
 
 /**
+ * Booking context the guest attached to the inquiry (HOS-2534). Every field is
+ * optional; the template renders the block only when at least one is present.
+ */
+export interface ConversationInquiryDetails {
+    /** Check-in calendar date (`YYYY-MM-DD`) */
+    checkIn?: string | null;
+    /** Check-out calendar date (`YYYY-MM-DD`) */
+    checkOut?: string | null;
+    /** Number of guests */
+    guests?: number | null;
+}
+
+/**
+ * Builds the one-line inquiry summary (`12–15 dic · 2 huéspedes`). The email
+ * copy is Spanish-only, like the rest of this template.
+ *
+ * @param inquiry - The optional booking fields
+ * @returns The summary, or `null` when there is nothing to show
+ */
+export function formatInquiryDetails(inquiry: ConversationInquiryDetails | undefined) {
+    if (!inquiry) return null;
+    const { checkIn, checkOut, guests } = inquiry;
+    const parts: string[] = [];
+    if (checkIn && checkOut) {
+        const range = formatCalendarDateRange({ from: checkIn, to: checkOut, locale: 'es' });
+        if (range) parts.push(range);
+    } else if (checkIn || checkOut) {
+        const date = formatCalendarDate({
+            value: (checkIn ?? checkOut) as string,
+            locale: 'es',
+            options: { day: 'numeric', month: 'short' }
+        });
+        if (date) parts.push(`${checkIn ? 'Desde el' : 'Hasta el'} ${date}`);
+    }
+    if (typeof guests === 'number' && guests > 0) {
+        parts.push(guests === 1 ? '1 huésped' : `${guests} huéspedes`);
+    }
+    return parts.length > 0 ? parts.join(' \u00b7 ') : null;
+}
+
+/**
  * Props for ConversationNewMessage email template.
  * Subject key: conversations.email.newMessage.subject
  */
@@ -34,6 +76,8 @@ export interface ConversationNewMessageProps {
     messages: MessageExcerpt[];
     /** URL for the primary CTA button (conversation thread) */
     ctaUrl: string;
+    /** Dates and guests the guest asked about; omitted when the inquiry carried none */
+    inquiry?: ConversationInquiryDetails;
     /** Email locale — does not alter copy but included for caller parity */
     locale: 'es' | 'en' | 'pt';
 }
@@ -50,8 +94,10 @@ export function ConversationNewMessage({
     accommodationName,
     guestIdentity,
     messages,
-    ctaUrl
+    ctaUrl,
+    inquiry
 }: ConversationNewMessageProps) {
+    const inquirySummary = formatInquiryDetails(inquiry);
     const visibleMessages = messages.slice(0, MAX_EXCERPTS).map((m) => ({
         ...m,
         excerpt:
@@ -68,6 +114,12 @@ export function ConversationNewMessage({
                 <strong>{guestIdentity}</strong> te escribió sobre{' '}
                 <strong>{accommodationName}</strong>.
             </Text>
+
+            {inquirySummary && (
+                <Text style={styles.inquiry}>
+                    <strong>Consulta:</strong> {inquirySummary}
+                </Text>
+            )}
 
             {visibleMessages.map((msg) => (
                 <Section
@@ -95,6 +147,12 @@ const styles = {
         color: '#475569',
         fontSize: '16px',
         lineHeight: '24px',
+        margin: '0 0 16px'
+    },
+    inquiry: {
+        color: '#334155',
+        fontSize: '15px',
+        lineHeight: '22px',
         margin: '0 0 16px'
     },
     excerptBox: {
