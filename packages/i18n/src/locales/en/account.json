@@ -1721,6 +1721,25 @@
                     "startDateRequired": "The event needs a start date."
                 }
             }
+        },
+        "contentList": {
+            "editNamed": "Edit “{{title}}”",
+            "events": {
+                "create": "New event",
+                "sectionTitle": "Your events",
+                "locked": {
+                    "feature": "Managing events is an editor feature",
+                    "description": "Your account can't manage events yet. If you'd like to publish events on Hospeda, fill in the application to join as an editor."
+                }
+            },
+            "posts": {
+                "create": "New post",
+                "sectionTitle": "Your posts",
+                "locked": {
+                    "feature": "Writing posts is an editor feature",
+                    "description": "Your account can't manage posts yet. If you'd like to write on Hospeda, fill in the application to join as an editor."
+                }
+            }
         }
     },
     "alliances": {
@@ -2158,6 +2177,9 @@
         },
         "entityCard": {
             "noImage": "No image"
+        },
+        "contentCard": {
+            "statuses": "Statuses"
         }
     },
     "ownerDashboard": {

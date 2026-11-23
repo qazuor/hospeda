@@ -1721,6 +1721,25 @@
                     "startDateRequired": "O evento precisa de uma data de início."
                 }
             }
+        },
+        "contentList": {
+            "editNamed": "Editar “{{title}}”",
+            "events": {
+                "create": "Novo evento",
+                "sectionTitle": "Seus eventos",
+                "locked": {
+                    "feature": "Gerenciar eventos é uma função dos editores",
+                    "description": "Sua conta ainda não tem permissão para gerenciar eventos. Se quiser publicar eventos na Hospeda, preencha a solicitação para se tornar editor."
+                }
+            },
+            "posts": {
+                "create": "Nova publicação",
+                "sectionTitle": "Suas publicações",
+                "locked": {
+                    "feature": "Escrever publicações é uma função dos editores",
+                    "description": "Sua conta ainda não tem permissão para gerenciar publicações. Se quiser escrever na Hospeda, preencha a solicitação para se tornar editor."
+                }
+            }
         }
     },
     "alliances": {
@@ -2158,6 +2177,9 @@
         },
         "entityCard": {
             "noImage": "Sem imagem"
+        },
+        "contentCard": {
+            "statuses": "Status"
         }
     },
     "ownerDashboard": {
