@@ -216,7 +216,6 @@
                     "legend": "Quem vê o botão do WhatsApp",
                     "loggedInOnly": "Apenas usuários logados",
                     "public": "Visível para todos",
-                    "undecided": "Até você escolher uma opção, o botão do WhatsApp não aparece na sua ficha.",
                     "publicWarning": "Seu número ficará visível na página e qualquer pessoa pode copiá-lo, inclusive programas automáticos.",
                     "loggedInHint": "O número não aparece na página: só quem fez login consegue vê-lo."
                 }

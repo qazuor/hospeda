@@ -6,6 +6,7 @@ import { ServiceError } from '../../../../types';
 import { confirmOneTimePagePayment } from '../../addon/addon-instance-a2-one-time-page';
 import { chargeNamedByMark } from '../../addon/one-time-page-charge-marks';
 import type { CanChargeDeadlines } from '../../coverage/can-charge';
+import type { BillingFactSink } from '../../facts/billing-fact-sink';
 import type { CoverageNotices } from '../../payment/payment-ports';
 import type { ComplementPolicyPorts } from '../../subscription/complement-ports';
 import { reconciliationWindowSince } from './payment-window';
@@ -26,6 +27,8 @@ export interface PagePaymentsCheckPorts {
     /** The anchored addon policy and listing readers A2 runs with. */
     readonly complements: ComplementPolicyPorts;
     readonly coverageNotices?: CoverageNotices;
+    /** HOS-1883: the add-on facts of the activations this pass confirms. */
+    readonly billingFacts?: BillingFactSink;
 }
 
 /** One instance the check could not decide on; `addonInstanceId` is null when the pass never started. */
@@ -185,7 +188,8 @@ async function checkPurchase(
                 listing: ports.complements.listing,
                 ...(ports.coverageNotices === undefined
                     ? {}
-                    : { coverageNotices: ports.coverageNotices })
+                    : { coverageNotices: ports.coverageNotices }),
+                billingFacts: ports.billingFacts
             }
         );
         if (result.outcome === 'DUPLICATE_PAYMENT') input.tally.duplicateMarked++;

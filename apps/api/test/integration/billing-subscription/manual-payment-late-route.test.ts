@@ -115,7 +115,16 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
                     periodStart: PERIOD_START.toISOString(),
                     reimputedPeriodStart: null,
                     nextChargeAt: '2026-10-03T12:00:00.000Z',
-                    effect: 'S7'
+                    effect: 'S7',
+                    periodCase: 'WITHIN_PERIOD',
+                    nextChargeOverdue: false,
+                    vertical: 'partner',
+                    presence: { kind: 'PARTNER', partner: null, outcome: 'NO_PARTNER' },
+                    s7Effects: {
+                        complements: { resumed: [], skipped: [] },
+                        touristVip: { cancels: false, subscriptionIds: [] },
+                        scheduledChange: null
+                    }
                 });
                 expect(await snapshot(seeded.subscription.id)).toEqual(before);
             } else {
@@ -263,4 +272,52 @@ describe('TEST:B5:10 AC:B5:18, AC:B5:19 MP4 and MP6 admin routes', () => {
             });
         }
     }
+});
+
+describe('HOS-1640 MP4 preview: error contract order', () => {
+    it('returns 401 without a session', async () => {
+        // Arrange
+        const seeded = await seedManualRoute({
+            status: 'SUSPENDED',
+            installmentStatus: 'DECLARED_UNPAID'
+        });
+
+        // Act
+        const response = await app.request(
+            `/api/v1/admin/billing-subscription/${seeded.subscription.id}/manual-payments/${seeded.installment.id}/register-late`,
+            { method: 'GET', headers: { 'user-agent': 'vitest' } }
+        );
+
+        // Assert
+        expect(response.status).toBe(401);
+    });
+
+    it('returns 400 for a malformed installment id, after the permission check', async () => {
+        // Arrange
+        const seeded = await seedManualRoute({
+            status: 'SUSPENDED',
+            installmentStatus: 'DECLARED_UNPAID'
+        });
+
+        // Act
+        const response = await request({
+            method: 'GET',
+            action: 'register-late',
+            subscriptionId: seeded.subscription.id,
+            manualPaymentId: 'not-a-uuid',
+            actorId: seeded.admin.id
+        });
+        const forbidden = await request({
+            method: 'GET',
+            action: 'register-late',
+            subscriptionId: seeded.subscription.id,
+            manualPaymentId: 'not-a-uuid',
+            actorId: seeded.admin.id,
+            permissions: []
+        });
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(forbidden.status).toBe(403);
+    });
 });

@@ -59,6 +59,7 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         sendPath: 'outbox',
         name: 'Aviso de renovación',
         domain: 'billing',
+        audience: 'user',
         wired: true,
         scenarios: [
             { id: 'monthly', label: 'Mensual' },
@@ -71,6 +72,7 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         sendPath: 'auth',
         name: 'Restablecer contraseña',
         domain: 'auth',
+        audience: 'user',
         wired: true,
         scenarios: [{ id: 'with-name', label: 'Con nombre' }]
     },
@@ -80,6 +82,7 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         sendPath: 'newsletter',
         name: 'Confirmación de suscripción',
         domain: 'newsletter',
+        audience: 'staff',
         wired: false,
         scenarios: [{ id: 'default', label: 'Por defecto' }]
     }
@@ -251,6 +254,69 @@ describe('/platform/emails (HOS-2519)', () => {
         expect(catalogList().getByText('Restablecer contraseña')).toBeInTheDocument();
         expect(screen.getByTestId('email-catalog-count').textContent).toContain(
             '{"shown":2,"total":3}'
+        );
+    });
+
+    it('AC-1.4: the audience control filters users and staff, with the count and the badge', async () => {
+        renderPage();
+        await screen.findByRole('button', { name: /Aviso de renovación/ });
+        const control = screen.getByRole('group', {
+            name: 'admin-pages.emailPreviews.audienceFilterLabel'
+        });
+        const count = () => screen.getByTestId('email-catalog-count').textContent;
+
+        expect(
+            within(
+                catalogList().getByRole('button', { name: /Confirmación de suscripción/ })
+            ).getByText('admin-pages.emailPreviews.staffBadge')
+        ).toBeInTheDocument();
+
+        fireEvent.click(
+            within(control).getByRole('button', {
+                name: 'admin-pages.emailPreviews.audiences.staff'
+            })
+        );
+        expect(catalogList().getByText('Confirmación de suscripción')).toBeInTheDocument();
+        expect(catalogList().queryByText('Aviso de renovación')).not.toBeInTheDocument();
+        expect(count()).toContain('{"shown":1,"total":3}');
+
+        fireEvent.click(
+            within(control).getByRole('button', {
+                name: 'admin-pages.emailPreviews.audiences.user'
+            })
+        );
+        expect(catalogList().queryByText('Confirmación de suscripción')).not.toBeInTheDocument();
+        expect(count()).toContain('{"shown":2,"total":3}');
+
+        fireEvent.click(
+            within(control).getByRole('button', { name: 'admin-pages.emailPreviews.audiences.all' })
+        );
+        expect(count()).toContain('{"shown":3,"total":3}');
+    });
+
+    it('AC-1.5: "Limpiar filtros" resets the audience, the search and the domains', async () => {
+        renderPage();
+        const search = await screen.findByRole('searchbox');
+        const control = screen.getByRole('group', {
+            name: 'admin-pages.emailPreviews.audienceFilterLabel'
+        });
+
+        fireEvent.click(
+            within(control).getByRole('button', {
+                name: 'admin-pages.emailPreviews.audiences.staff'
+            })
+        );
+        fireEvent.change(search, { target: { value: 'zzz' } });
+        fireEvent.click(
+            screen.getByRole('button', { name: 'admin-pages.emailPreviews.clearFilters' })
+        );
+
+        expect(search).toHaveValue('');
+        expect(
+            within(control).getByRole('button', { name: 'admin-pages.emailPreviews.audiences.all' })
+        ).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getByTestId('email-catalog-count').textContent).toContain(
+            '{"shown":3,"total":3}'
         );
     });
 

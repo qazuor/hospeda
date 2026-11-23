@@ -6,7 +6,7 @@
  * @module AiChatFab
  */
 
-import { ChatIcon } from '@repo/icons';
+import { ChatIcon, SparkleIcon } from '@repo/icons';
 import type { AiChatEntityType } from '@repo/schemas';
 import { forwardRef } from 'react';
 import { resolveAiChatCopy } from '@/lib/ai-chat-copy';
@@ -47,11 +47,24 @@ export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function 
             aria-label={resolveAiChatCopy({ t, entityType, suffix: 'fabLabel' })}
             data-dock-item
         >
-            <ChatIcon
-                size={24}
-                weight="regular"
-                aria-hidden="true"
-            />
+            <span className={styles.icon}>
+                <ChatIcon
+                    size={24}
+                    weight="regular"
+                    aria-hidden="true"
+                />
+                <span
+                    className={styles.badge}
+                    data-testid="ai-chat-fab-badge"
+                >
+                    <SparkleIcon
+                        size={10}
+                        weight="fill"
+                        aria-hidden="true"
+                        data-testid="ai-chat-fab-sparkle"
+                    />
+                </span>
+            </span>
         </button>
     );
 });

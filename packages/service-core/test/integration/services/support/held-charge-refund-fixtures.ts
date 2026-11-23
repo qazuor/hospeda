@@ -91,11 +91,14 @@ export async function heldChargeFor(reason: HeldChargeCase) {
         chargeId = second.chargeId;
         await confirmOneTimePagePayment({ instanceId: instance.id, chargeId }, s.ports);
     } else {
-        await abandonOneTimeAddon({
-            instanceId: instance.id,
-            expectedProviderOrderId: null,
-            now: s.f.ports.clock.now()
-        });
+        await abandonOneTimeAddon(
+            {
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            },
+            { billingFacts: undefined }
+        );
         await confirmOneTimePagePayment({ instanceId: instance.id, chargeId }, s.ports);
     }
     const held = await heldPagePayments(instance.id);
@@ -111,11 +114,14 @@ export async function paidWithoutLiveInstance() {
     const s = await pageSetup();
     const { instance, paymentPageId } = await boughtPage(s);
     const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-    await abandonOneTimeAddon({
-        instanceId: instance.id,
-        expectedProviderOrderId: null,
-        now: s.f.ports.clock.now()
-    });
+    await abandonOneTimeAddon(
+        {
+            instanceId: instance.id,
+            expectedProviderOrderId: null,
+            now: s.f.ports.clock.now()
+        },
+        { billingFacts: undefined }
+    );
     s.f.advanceTo(new Date(purchaseNow.getTime() + DAY_MS));
     return { s, instance, paid };
 }

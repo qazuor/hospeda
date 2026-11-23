@@ -1,6 +1,9 @@
 /**
- * GUARD:G20: lexically checks that each AnalyticsEvents key has a production mention and a docs row.
- * It does not prove calls are reachable, executed after commits, or carry valid properties; dead code counts.
+ * GUARD:G20: lexically checks that each AnalyticsEvents key has a production mention and a docs row,
+ * and (HOS-1883) that each fact kind declared in the fact files has a production producer mention
+ * outside the declaring files and the adapter. It does not prove calls are reachable, executed after
+ * commits, or carry valid properties; dead code counts, and a kind mentioned only in a comment-free
+ * string elsewhere (a log label, a test-like fixture under src) also counts as produced.
  */
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -23,6 +26,32 @@ const MIN_SCANNED_FILES = 1000;
 const MIN_CATALOG_KEYS = 40;
 const CATALOG = 'packages/analytics/src/catalog.ts';
 const DOC = 'docs/analytics/event-catalog.md';
+/** Fact files whose `kind: '<X>'` literals must each have a producer (HOS-1883 §5.4). */
+const FACT_FILES = [
+    'packages/service-core/src/services/billing/facts/billing-fact-sink.ts',
+    'packages/service-core/src/services/billing/facts/addon-fact.ts'
+];
+/** Families whose catalog events need a docs row, and whose docs rows need a catalog event. */
+const DOC_FAMILIES = /^(billing|trial|addon)_/;
+/**
+ * The spans of `Extract<...>` type arguments in masked code (HOS-1883). A kind named only there
+ * is a type-level mention, not a producer, so the producer predicate ignores literals inside.
+ */
+function extractTypeSpans(code: string): { readonly start: number; readonly end: number }[] {
+    const spans: { start: number; end: number }[] = [];
+    for (const match of code.matchAll(/\bExtract\s*</g)) {
+        const open = (match.index ?? 0) + match[0].length;
+        let depth = 1;
+        let k = open;
+        for (; k < code.length && depth > 0; k += 1) {
+            if (code[k] === '<') depth += 1;
+            else if (code[k] === '>' && code[k - 1] !== '=') depth -= 1;
+        }
+        spans.push({ start: open, end: k });
+    }
+    return spans;
+}
+
 export function run(
     args: { root?: string; minScannedFiles?: number; minCatalogKeys?: number } = {}
 ): { exitCode: 0 | 1; output: string } {
@@ -91,13 +120,40 @@ export function run(
         if (docs.includes(old)) violations.push(`retired event ${old} remains in ${DOC}`);
     }
     for (const event of catalogValues)
-        if (/^(billing|trial)_/.test(event) && !docs.includes(`| \`${event}\` |`))
+        if (DOC_FAMILIES.test(event) && !docs.includes(`| \`${event}\` |`))
             violations.push(`missing docs row for ${event}`);
-    const rows = [...docs.matchAll(/^\| `((?:billing|trial|subscription)_[a-z_]+)` \|/gm)].map(
-        (m) => String(m[1])
-    );
+    const rows = [
+        ...docs.matchAll(/^\| `((?:billing|trial|subscription|addon)_[a-z_]+)` \|/gm)
+    ].map((m) => String(m[1]));
     for (const event of rows)
         if (!catalogValues.has(event)) violations.push(`docs row has uncatalogued event ${event}`);
+    const factKinds = new Set<string>();
+    for (const factFile of FACT_FILES) {
+        let source: string;
+        try {
+            source = readFileSync(join(root, factFile), 'utf8');
+        } catch {
+            violations.push(`fact file ${factFile} is missing`);
+            continue;
+        }
+        for (const match of source.matchAll(/\bkind: '([A-Z][A-Z0-9_]*)'/g))
+            factKinds.add(String(match[1]));
+    }
+    const producerFiles = decoded.filter(
+        ({ file }) =>
+            !FACT_FILES.includes(file) &&
+            !/\/utils\/analytics\/analytics-facts[^/]*\.ts$/.test(file)
+    );
+    const producerLiterals = producerFiles.map(({ code, strings }) => {
+        const typeSpans = extractTypeSpans(code);
+        return strings.filter(
+            (literal) =>
+                !typeSpans.some((span) => literal.start >= span.start && literal.start < span.end)
+        );
+    });
+    for (const kind of factKinds)
+        if (!producerLiterals.some((strings) => strings.some((literal) => literal.value === kind)))
+            violations.push(`fact kind ${kind} has no production producer`);
     if (violations.length)
         return {
             exitCode: 1,
@@ -105,7 +161,7 @@ export function run(
         };
     return {
         exitCode: 0,
-        output: `${lines.join('\n')}\nOK: ${files.length} files, ${entries.length} catalog keys, each has a production mention and docs row.`
+        output: `${lines.join('\n')}\nOK: ${files.length} files, ${entries.length} catalog keys, ${factKinds.size} fact kinds, each has a production mention and docs row.`
     };
 }
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {

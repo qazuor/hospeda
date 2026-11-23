@@ -10,7 +10,7 @@ import {
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
@@ -151,7 +151,7 @@ describe('HOS-1731 pending first charge rejection', () => {
         ['authorized', true] as const
     ])('TEST:1731:2 leaves a %s authorization untouched', async (_label, authorize) => {
         const own = await setup({ cancel: false, authorize });
-        const facts: BillingFact[] = [];
+        const facts: SinkFact[] = [];
         const cancel = vi.spyOn(own.fake, 'cancel');
         const result = await recordChargeFact(
             { chargeId: own.chargeId },

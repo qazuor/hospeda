@@ -106,6 +106,19 @@ describe('admin email preview endpoints (HOS-2519)', () => {
             );
             expect(parsed.entries.some((entry) => !entry.wired)).toBe(true);
         });
+
+        it('AC-1.3: carries the audience on every entry, 13 of them staff', async () => {
+            // Act
+            const res = await app.request(LIST, { headers: PREVIEWER });
+            const body = (await res.json()) as { data: unknown };
+
+            // Assert
+            const parsed = EmailPreviewListResponseSchema.parse(body.data);
+            expect(
+                parsed.entries.every((entry) => ['user', 'staff'].includes(entry.audience))
+            ).toBe(true);
+            expect(parsed.entries.filter((entry) => entry.audience === 'staff')).toHaveLength(13);
+        });
     });
 
     describe('AC-5.1 render', () => {

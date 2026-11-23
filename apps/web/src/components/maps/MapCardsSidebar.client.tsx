@@ -97,6 +97,11 @@ interface MapCardsSidebarProps {
      */
     readonly locale?: SupportedLocale;
     /**
+     * HOS-2554: catalog names of the plans that carry comparison, read by the SSR page (the
+     * catalog reader is server-only). Empty when it could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
+    /**
      * A1 (SPEC-228): true while `useViewportSearch` is fetching new results for
      * the current viewport. Shows a loading overlay over the (stale) card list.
      */
@@ -187,6 +192,7 @@ export function MapCardsSidebar({
     onCardHover,
     onCardSelect,
     locale = 'es',
+    gatePlanNames = [],
     isFetching = false,
     i18n
 }: MapCardsSidebarProps) {
@@ -463,6 +469,7 @@ export function MapCardsSidebar({
                                         accommodationThumbnailUrl={item.thumbnailUrl}
                                         variant="contextual"
                                         locale={locale}
+                                        gatePlanNames={gatePlanNames}
                                     />
 
                                     {/* Price + CTA */}

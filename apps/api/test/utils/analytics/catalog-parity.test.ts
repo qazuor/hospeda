@@ -43,11 +43,29 @@ describe('billing analytics catalog parity (TEST:1878:16)', () => {
             ...LISTING_TRAFFIC_STATS_ENTITY_TYPES
         ]);
     });
+    it('keeps the addon_* closed enums in parity with the persisted values (HOS-1883 AC-14)', () => {
+        for (const name of [
+            'addon_checkout_started',
+            'addon_checkout_abandoned',
+            'addon_activated',
+            'addon_charge_succeeded',
+            'addon_charge_declined',
+            'addon_cancelled',
+            'addon_granted_free'
+        ] as const) {
+            expect(AnalyticsEventSchemas[name].shape.vertical.unwrap().options).toEqual(
+                Object.values(VerticalEnum)
+            );
+        }
+        expect(AnalyticsEventSchemas.addon_activated.shape.cycle.unwrap().options).toEqual([
+            ...BILLING_CYCLES
+        ]);
+    });
     it('rejects forbidden analytics property names', () => {
         const forbidden =
             /(^|_)(email|phone|tel|message|password|token|secret|address|full_name|guest_name|guest_email|guest_phone|card)(_|$)/i;
         for (const schema of Object.entries(AnalyticsEventSchemas)
-            .filter(([name]) => name.startsWith('billing_') || name.startsWith('trial_'))
+            .filter(([name]) => /^(billing|trial|addon)_/.test(name))
             .map(([, schema]) => schema)) {
             expect(Object.keys(schema.shape).some((key) => forbidden.test(key))).toBe(false);
         }

@@ -634,6 +634,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 planPolicy: currentFloorPolicy,
                 clock,
                 provider: namespaceFake(fake),
+                billingFacts: { emit: () => undefined },
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                 coverageNotices: { emitCoverageChanged: async () => undefined },
                 orphanhood: {
@@ -957,6 +958,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 planPolicy: currentFloorPolicy,
                 clock,
                 provider,
+                billingFacts: { emit: () => undefined },
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                 coverageNotices: { emitCoverageChanged: async () => undefined },
                 orphanhood: {
@@ -1040,6 +1042,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     provider: namespaceFake(
                         new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock })
                     ),
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {
@@ -1114,6 +1117,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planPolicy: currentFloorPolicy,
                     clock,
                     provider: namespaceFake(fake),
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {
@@ -1202,6 +1206,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planPolicy: currentFloorPolicy,
                     clock,
                     provider: namespaceFake(fake),
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {

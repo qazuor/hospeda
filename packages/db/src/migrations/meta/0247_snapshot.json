@@ -1,5 +1,5 @@
 {
-  "id": "74855fdc-2486-44a2-b66a-0e34df2b718c",
+  "id": "667df3fe-d2bd-49bb-8a51-faa9273a1eb1",
   "prevId": "5fa0c704-5318-4630-8118-d85c3e9297b8",
   "version": "7",
   "dialect": "postgresql",
@@ -5504,12 +5504,6 @@
         "anonymous_phone": {
           "name": "anonymous_phone",
           "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pending_message": {
-          "name": "pending_message",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -31487,6 +31481,12 @@
         "provider_status_detail": {
           "name": "provider_status_detail",
           "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rejection_observed_at": {
+          "name": "rejection_observed_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },

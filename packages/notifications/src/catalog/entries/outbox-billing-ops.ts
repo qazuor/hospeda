@@ -31,6 +31,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.reconciliation-summary',
         name: 'Resumen de conciliación de cobros',
         domain: 'billing',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'populated',
@@ -113,6 +114,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.duplicate-charge-detected',
         name: 'Cobro duplicado detectado',
         domain: 'billing',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'subscription',
@@ -148,6 +150,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.mark-escalated',
         name: 'Marca de conciliación escalada',
         domain: 'billing',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'default',
@@ -170,6 +173,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.revocation-refund-failed',
         name: 'Falló el reembolso por revocación',
         domain: 'billing',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'revocation-payment',
@@ -211,6 +215,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.manual-installment-unpaid',
         name: 'Cuota de pago manual sin pago',
         domain: 'billing',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'first-installment',
@@ -246,6 +251,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.manual-installment-opened',
         name: 'Cuota de pago manual abierta',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'es-first',
@@ -304,6 +310,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.late-payment-refunded',
         name: 'Pago tardío reembolsado',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'es',
@@ -343,6 +350,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.one-time-addon-activated',
         name: 'Complemento único activado',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'es-with-listing',
@@ -395,6 +403,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.addon-listing-purged-cancel',
         name: 'Aviso de ficha borrada con complemento',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -407,6 +416,7 @@ export const OUTBOX_BILLING_OPS_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'billing.chargeback-suspension',
         name: 'Suspensión por contracargo',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'basic',

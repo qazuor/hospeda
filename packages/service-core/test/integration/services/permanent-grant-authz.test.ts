@@ -101,6 +101,7 @@ function ports() {
             planPolicy: currentFloorPolicy,
             clock: { now: () => now },
             provider,
+            billingFacts: { emit: () => undefined },
             beforeCancelNotice: { beforeCancel },
             coverageNotices: { emitCoverageChanged },
             orphanhood: {

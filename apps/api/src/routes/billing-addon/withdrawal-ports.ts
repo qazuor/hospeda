@@ -17,6 +17,7 @@ export function buildAddonWithdrawalPorts() {
         clock: getClock().clock,
         coverageNotices: getCoverageNotices(),
         beforeCancelNotice,
-        cancellationSeen: providerLinkCancellationSeen
+        cancellationSeen: providerLinkCancellationSeen,
+        billingFacts: purchase.billingFacts
     };
 }

@@ -28,7 +28,9 @@
         },
         "upsell": {
             "title": "Accommodation comparison",
-            "message": "Comparing accommodations is available on the Plus and VIP plans.",
+            "message_one": "Accommodation comparison is available on the {{plans}} plan.",
+            "message_other": "Accommodation comparison is available on the {{plans}} plans.",
+            "messageNoPlans": "Accommodation comparison is not included in your current plan.",
             "cta": "View plans"
         },
         "limit": {
@@ -481,7 +483,9 @@
             "cta": "Contact via WhatsApp",
             "messageTemplate": "Hi, I'm interested in more information about {{name}}",
             "numberLabel": "Host's WhatsApp",
-            "upsellText": "Subscribe to Plus to see the host's WhatsApp.",
+            "upsellText_one": "Subscribe to the {{plans}} plan to see the host's WhatsApp.",
+            "upsellText_other": "Subscribe to one of the {{plans}} plans to see the host's WhatsApp.",
+            "upsellTextNoPlans": "Your current plan does not include seeing the host's WhatsApp.",
             "upsellCta": "View plans"
         },
         "contact": {
@@ -491,7 +495,9 @@
             "emailAriaLabel": "Email the accommodation",
             "websiteAriaLabel": "Visit the accommodation's website",
             "facebookAriaLabel": "Accommodation's Facebook",
-            "instagramAriaLabel": "Accommodation's Instagram"
+            "instagramAriaLabel": "Accommodation's Instagram",
+            "fallbackNotice": "Sending an inquiry from here needs JavaScript. In the meantime, contact the accommodation directly:",
+            "fallbackNoChannels": "Sending an inquiry from here needs JavaScript. Reload the page to try again."
         },
         "share": "Share",
         "checkIn": "Check-in",
@@ -1050,6 +1056,14 @@
         "pets": "Pet-friendly"
     },
     "aiChat": {
+        "guestIntro": "Ask the AI anything you want to know about this accommodation.",
+        "guestExample1": "Are pets allowed?",
+        "guestExample2": "Is there a pool and parking?",
+        "guestExample3": "How does check-in work?",
+        "guestExamplesLead": "For example:",
+        "guestFree": "It is free with your account.",
+        "guestSignUp": "Create a free account",
+        "guestSignIn": "Sign in",
         "fabLabel": "Ask AI about this accommodation",
         "panelLabel": "AI Chat — Accommodation Questions",
         "headerDisclaimer": "Responses are AI-generated and may contain errors. Always verify information with the accommodation.",

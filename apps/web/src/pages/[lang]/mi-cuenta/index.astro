@@ -440,7 +440,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     import {
         parsePlanNames,
         resolveDashboardFreeCard,
-        resolveDashboardPlanStat
+        resolveDashboardPlanStat,
+        getActionStatusKey
     } from '@/lib/billing/dashboard-plan-stat';
     import {
         markStatsUnavailable,
@@ -537,6 +538,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 const planStat = resolveDashboardPlanStat({
                     plan: responseData?.plan ?? null,
                     activeSubscriptionsCount: responseData?.activeSubscriptionsCount ?? 0,
+                    subscriptions: responseData?.subscriptions ?? [],
                     planNames: parsePlanNames(subEl?.getAttribute('data-plan-names') ?? null)
                 });
                 const statusAttributeByKey = {
@@ -544,11 +546,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     'grace-period': 'data-label-grace-period',
                     suspended: 'data-label-suspended',
                     'cancel-scheduled': 'data-label-cancel-scheduled',
-                    paused: 'data-label-paused'
+                    paused: 'data-label-paused',
+                    'charge-declined': 'data-label-charge-declined',
+                    'pending-authorization': 'data-label-pending-authorization'
                 } as const;
                 let subscriptionValue: string;
                 let statusAttribute: string | null = null;
                 let statusText: string | null = null;
+                let actionKey: 'charge-declined' | 'pending-authorization' | null = null;
                 switch (planStat.kind) {
                     case 'free': {
                         // The trial is Hospeda's own: `plan: null` here does NOT mean "free"
@@ -583,9 +588,45 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                             .replace('{count}', String(planStat.count));
                         break;
                     }
+                    case 'list': {
+                        // HOS-2553: every live subscription with its exact status (max 3).
+                        subscriptionValue = '';
+                        const listEl = document.getElementById('stat-subscription-list');
+                        if (listEl) {
+                            listEl.replaceChildren(
+                                ...planStat.rows.map((row) => {
+                                    const item = document.createElement('li');
+                                    const plan = document.createElement('span');
+                                    plan.className = 'account__stat-sub-plan';
+                                    plan.textContent = row.label;
+                                    const rowStatus = document.createElement('span');
+                                    rowStatus.className = 'account__stat-sub-status';
+                                    rowStatus.textContent =
+                                        statusEl?.getAttribute(statusAttributeByKey[row.statusKey]) ?? '';
+                                    item.append(plan, rowStatus);
+                                    return item;
+                                })
+                            );
+                            listEl.hidden = false;
+                        }
+                        if (planStat.hasMore) {
+                            const linkEl = document.getElementById('stat-subscription-link');
+                            const viewAll = linkEl?.getAttribute('data-label-view-all');
+                            if (linkEl && viewAll) linkEl.textContent = viewAll;
+                        }
+                        for (const row of planStat.rows) {
+                            const rowAction = getActionStatusKey({ statusKey: row.statusKey });
+                            if (rowAction) {
+                                actionKey = rowAction;
+                                break;
+                            }
+                        }
+                        break;
+                    }
                     case 'single':
                         subscriptionValue = planStat.label;
                         statusAttribute = statusAttributeByKey[planStat.statusKey];
+                        actionKey = getActionStatusKey({ statusKey: planStat.statusKey });
                         break;
                     default: {
                         const exhaustive: never = planStat;
@@ -595,6 +636,16 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 if (subEl) {
                     subEl.textContent = subscriptionValue;
                     subEl.classList.remove('stat-value--loading');
+                    // The list replaces the single value; an empty value would leave a gap.
+                    subEl.hidden = planStat.kind === 'list';
+                }
+
+                // HOS-2553: what to do about a declined charge or an unauthorized checkout.
+                const actionEl = document.getElementById('stat-subscription-action');
+                if (actionEl) {
+                    const actionText = actionKey ? actionEl.getAttribute(`data-label-${actionKey}`) : null;
+                    actionEl.textContent = actionText ?? '';
+                    actionEl.hidden = !actionText;
                 }
 
                 if (statusEl) {

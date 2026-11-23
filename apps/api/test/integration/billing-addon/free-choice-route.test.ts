@@ -75,6 +75,7 @@ async function grant(
         }),
         clock: { now: () => new Date() },
         provider: fake,
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: async () => undefined },
         orphanhood: {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { AddonFact } from '../facts/addon-fact';
 
 /** Validated A1 purchase intention. */
 export const PurchaseAddonInputSchema = z.strictObject({
@@ -44,5 +45,11 @@ export type PurchaseAddonResult =
           readonly instanceId: string;
           readonly chargeKind: 'UNA_VEZ' | 'PERIODICO';
           readonly checkoutUrl?: string;
+          /**
+           * HOS-1883: present only on `CREATED`. Built from the product row and policy this
+           * purchase held, so the route emits it without re-reading a price that could differ
+           * from the one authorized. The route never puts it in its answer.
+           */
+          readonly startedFact?: Extract<AddonFact, { readonly kind: 'ADDON_CHECKOUT_STARTED' }>;
       }
     | { readonly outcome: 'REFUSED'; readonly reason: PurchaseAddonRefusalReason };

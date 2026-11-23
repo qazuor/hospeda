@@ -2864,6 +2864,79 @@
             "planChange": "Alterar plano",
             "courtesy": "Cortesia temporária",
             "noPermissions": "Você não tem permissão para operar esta assinatura."
+        },
+        "lateManualPayment": {
+            "title": "Parcelas declaradas não pagas",
+            "description": "Registre aqui uma transferência que chegou depois de a parcela ser declarada não paga (MP4). Antes de confirmar você vai ver o que ela paga, o que a reabertura devolve e o que não.",
+            "loading": "Lendo as parcelas…",
+            "error": "Não foi possível ler as parcelas.",
+            "empty": "Não há parcelas declaradas não pagas.",
+            "installment": "Parcela do período que começa em {date}",
+            "review": "Conferir",
+            "previewLoading": "Calculando o que acontece ao registrar…",
+            "proofRef": "Referência do comprovante (opcional)",
+            "confirm": "Registrar o pagamento",
+            "back": "Voltar",
+            "resultS7": "Pagamento registrado: a assinatura voltou a ficar ativa. Próxima parcela: {nextChargeAt}.",
+            "resultS19": "Pagamento registrado e retido pela sucessão em andamento: não reativa a assinatura. Próxima parcela: {nextChargeAt}.",
+            "periodTitle": "O que esta transferência paga",
+            "periodCases": {
+                "WITHIN_PERIOD": "Paga o período próprio da parcela, que começou em {periodStart} e ainda não terminou. A próxima parcela é a de {nextChargeAt}, o dia em que ele termina.",
+                "REIMPUTED": "O período próprio da parcela (desde {periodStart}) já tinha terminado: o pagamento é reimputado ao período que começa hoje ({reimputedStart}) e a próxima parcela abre daqui a um ciclo, em {nextChargeAt}.",
+                "C5_FALLBACK": "O período próprio da parcela já tinha terminado, mas o que começa hoje já está coberto: o pagamento volta ao período original (desde {periodStart}). A próxima parcela é a de {nextChargeAt}.",
+                "ORIGINAL_PERIOD": "Cobre o período original da parcela, de {periodStart} a {nextChargeAt}: com a sucessão em andamento não há instante de reativação, então não é reimputado. A próxima parcela fica registrada para {nextChargeAt}."
+            },
+            "nextChargeOverdue": "Atenção: essa próxima parcela já está vencida.",
+            "s19Title": "Esta assinatura é a predecessora de uma sucessão em andamento",
+            "s19Body": "O pagamento NÃO a reativa: fica pendente e o fechamento da sucessão resolve. Paga o período original da parcela e deixa registrada a próxima parcela; o resto decide o fechamento.",
+            "returnsTitle": "O que volta e o que não",
+            "serviceReturns": "O serviço volta: a assinatura passa a ficar ativa.",
+            "noPresence": "Esta vertical não tem presença pública: volta só o serviço.",
+            "limit": "Cota de publicação do plano com que volta: {limit}. Se a conta tiver cota extra por outra via, mais podem voltar.",
+            "noLimit": "O plano não declara cota de publicação, então esta prévia não pode prometer que algum anúncio volte. Se a conta tiver cota por outra via (uma cortesia ou um complemento), algum ainda pode voltar.",
+            "noListings": "A conta não tem anúncios nesta vertical.",
+            "listingOutcomes": {
+                "RETURNS": "volta publicado",
+                "NO_SLOT": "não volta: a cota do plano não é suficiente",
+                "LOCATION_CONFLICT": "não volta: outro anúncio seu está publicado (ou volta antes) no mesmo endereço, e não pode haver dois; a vaga passa para o seguinte",
+                "INCOMPLETE": "não volta: faltam dados para publicá-lo",
+                "ARCHIVED_DRAFT": "não volta sozinho: foi arquivado como rascunho",
+                "PURGED": "não volta: o conteúdo já foi apagado, de forma definitiva",
+                "MODERATED": "não volta: um admin o tirou do ar e só um admin pode liberá-lo",
+                "ALREADY_PUBLISHED": "já está publicado",
+                "LOWERED_BY_SURPLUS": "é despublicado: excede a cota do plano com que volta",
+                "DRAFT": "continua como rascunho"
+            },
+            "partnerOutcomes": {
+                "GOLD_PAGE_RETURNS": "A página gold de {name} volta.",
+                "CAROUSEL_RETURNS": "A presença de {name} no carrossel volta; o plano não inclui página própria.",
+                "REVOKED": "{name} está revogado: a página continua respondendo 410 e o pagamento não muda isso.",
+                "NO_PARTNER": "A conta não tem um parceiro associado: nenhuma página volta.",
+                "NO_PRESENCE": "O plano não inclui presença de parceiro."
+            },
+            "effectsTitle": "Além disso, ao reativar",
+            "effects": {
+                "complementsResumed": "Os complementos recorrentes pausados são retomados ({count}).",
+                "complementsSkipped": "Complementos pausados sem cartão vinculado que não são retomados sozinhos: {count}.",
+                "noComplements": "Não há complementos recorrentes pausados para retomar.",
+                "touristVipCancels": "O Turista VIP pago é cancelado, sem reembolso, porque a conta vai tê-lo incluído. Pode acontecer depois de confirmar, quando o aviso for enviado.",
+                "noTouristVip": "Não há Turista VIP herdado para cancelar.",
+                "scheduledChange": "É aplicada a mudança de plano programada que venceu em {date}. O que volta acima já está calculado com o plano novo.",
+                "noScheduledChange": "Não há mudança de plano programada vencida."
+            },
+            "rejections": {
+                "SUBSCRIPTION_NOT_FOUND": "Não encontramos a assinatura.",
+                "MANUAL_PAYMENT_NOT_FOUND": "Não encontramos essa parcela nesta assinatura.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "Você não pode registrar este pagamento.",
+                "MANUAL_PAYMENT_NOT_MANUAL": "Esta assinatura não é cobrada manualmente.",
+                "MANUAL_PAYMENT_NOT_DECLARED_UNPAID": "A parcela não está mais declarada não paga.",
+                "MANUAL_PAYMENT_NOT_SUSPENDED": "A assinatura não está mais suspensa.",
+                "MANUAL_PAYMENT_CONDITION_FAILED": "O pagamento não cumpre as condições para reabrir a assinatura.",
+                "MANUAL_PAYMENT_COVERAGE_CONFLICT": "O período que ele pagaria já está coberto.",
+                "RETAINED_PAYMENT": "Já existe um pagamento retido para esta assinatura.",
+                "LOST_RACE": "A assinatura mudou enquanto você confirmava. Revise de novo.",
+                "generic": "Não foi possível concluir a ação."
+            }
         }
     }
 }

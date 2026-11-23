@@ -7,7 +7,7 @@
 import { coverageLosses, domainEventModel, eq, subscriptions } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service.js';
 import { ServiceError } from '../../../src/types/index.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -115,7 +115,7 @@ describe('TEST:B5:11 AC:B5:20 a rejected RF1 rolls back the whole act', () => {
             // Arrange: the RF1 of the last step fails after the state was already written.
             const f = await revocationFixture({ origin: 'ACTIVE' });
             f.at(f.day(5));
-            const facts: BillingFact[] = [];
+            const facts: SinkFact[] = [];
             failing.on = true;
 
             // Act

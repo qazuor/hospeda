@@ -14,7 +14,9 @@ describe('AC:B9b:12 HOS-1591 TEST:B9b:12 (support) — promo redemption display'
             GRACE_PERIOD: { CARD: false, MANUAL: false },
             SUSPENDED: { CARD: false, MANUAL: false },
             CANCEL_SCHEDULED: { CARD: false, MANUAL: false },
-            PAUSED: { CARD: false, MANUAL: false }
+            PAUSED: { CARD: false, MANUAL: false },
+            PENDING_AUTHORIZATION: { CARD: false, MANUAL: false },
+            CHARGE_DECLINED: { CARD: false, MANUAL: false }
         });
     });
 

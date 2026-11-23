@@ -26,6 +26,7 @@ describe('defineEmailCatalogEntry', () => {
             id: 'sample',
             name: 'Ejemplo',
             domain: 'auth',
+            audience: 'user',
             scenarios: [{ id: 'one', label: 'Uno', input: { word: 'hola' } }],
             render: ({ scenario }) => ({
                 subject: scenario.word,
@@ -47,6 +48,7 @@ describe('defineEmailCatalogEntry', () => {
                 id: 'dup',
                 name: 'Duplicado',
                 domain: 'auth',
+                audience: 'user',
                 scenarios: [
                     { id: 'same', label: 'A', input: null },
                     { id: 'same', label: 'B', input: null }
@@ -66,6 +68,7 @@ describe('defineEmailCatalogEntry', () => {
             id: 'one',
             name: 'Uno',
             domain: 'auth',
+            audience: 'user',
             scenarios: [{ id: 'a', label: 'A', input: null }],
             render: () => ({ subject: 'x', react: createElement(Text, null, 'x'), warnings: [] })
         });
@@ -86,6 +89,7 @@ describe('defineOutboxEntry', () => {
             template: 'billing.sample',
             name: 'Ejemplo',
             domain: 'billing',
+            audience: 'user',
             scenarios: [
                 {
                     id: 'a',
@@ -143,6 +147,7 @@ describe('defineNotificationEntry', () => {
             type: NotificationType.PARTNER_REVOKED,
             name: 'Aliado dado de baja',
             domain: 'partner',
+            audience: 'user',
             scenarios: [{ id: 'a', label: 'A', input: scenario(NotificationType.PARTNER_REVOKED) }]
         });
         expect(entry.key).toBe('notification.partner_revoked');
@@ -155,6 +160,7 @@ describe('defineNotificationEntry', () => {
                 type: NotificationType.HOST_TRADE_REVOKED,
                 name: 'Ficha dada de baja',
                 domain: 'host-trade',
+                audience: 'user',
                 scenarios: [
                     {
                         id: 'copied',

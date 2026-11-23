@@ -163,3 +163,92 @@ export const BillingAnalyticsEventSchemas = {
         had_paid_intent: z.boolean().optional()
     })
 } as const;
+
+const addonScopeType = z.enum(['LISTING', 'VERTICAL_SUBSCRIPTION', 'USER', 'GLOBAL']);
+const addonCommon = {
+    addon_instance_id: id,
+    addon_id: id,
+    addon_version_id: id,
+    addon_product_id: id,
+    charge_kind: z.enum(['UNA_VEZ', 'PERIODICO']),
+    scope_type: addonScopeType,
+    actor_kind: actorKind,
+    vertical: vertical.optional(),
+    subscription_id: id.optional()
+};
+/**
+ * Add-on numbers are bounded below Umami's numeric(19,4) ceiling (1e15, AC-14): a larger value
+ * would make Umami answer 400 and lose the whole event.
+ */
+const UMAMI_MAX_NUMBER = 999_999_999_999_999;
+const addonMoney = z.number().int().nonnegative().max(UMAMI_MAX_NUMBER);
+const boundedCount = z.number().int().nonnegative().max(UMAMI_MAX_NUMBER);
+
+/**
+ * Zod schemas for the add-on analytics events (HOS-1883, O-1: a dedicated `addon_*` family).
+ *
+ * Closed enums, but plain `z.object` and never `.strict()` (P-11): HOS-2355 will add an optional
+ * `reason` to `addon_cancelled` without breaking any consumer. `billing_*` stays PRINCIPAL-only.
+ */
+export const AddonAnalyticsEventSchemas = {
+    addon_checkout_started: z.object({
+        ...addonCommon,
+        amount_minor: addonMoney,
+        currency,
+        cycle: cycle.optional()
+    }),
+    addon_checkout_abandoned: z.object({
+        ...addonCommon,
+        reason: z.enum(['WINDOW_EXPIRED', 'OWNER_WITHDREW', 'CLOSED_BY_SYSTEM']),
+        seconds_in_pending: boundedCount.optional()
+    }),
+    addon_activated: z.object({
+        ...addonCommon,
+        amount_minor: addonMoney,
+        currency,
+        cycle: cycle.optional(),
+        seconds_in_pending: boundedCount.optional()
+    }),
+    addon_charge_succeeded: z.object({
+        ...addonCommon,
+        payment_id: id,
+        amount_minor: addonMoney,
+        currency,
+        is_first_charge: z.boolean().optional(),
+        cycle: cycle.optional(),
+        promo_applied: z.boolean().optional()
+    }),
+    addon_charge_declined: z.object({
+        ...addonCommon,
+        payment_id: id,
+        amount_minor: addonMoney,
+        currency,
+        is_first_charge: z.boolean(),
+        has_retry_window: z.boolean().optional()
+    }),
+    addon_cancelled: z.object({
+        ...addonCommon,
+        /**
+         * `GRANT_REVOKED` stays in the enum (owner decision, HOS-1883) but no flow emits it today:
+         * a grant revocation only ends free (grant-titled) instances, and a free instance owes no
+         * `addon_cancelled` (AC-7). It is kept so a future paid case needs no schema change.
+         */
+        path: z.enum([
+            'OWNER_WITHDREW',
+            'SERVICE_END',
+            'ORPHANED',
+            'GRANT_REVOKED',
+            'LISTING_PURGED',
+            'PROVIDER_CANCELLED'
+        ]),
+        was_scheduled: z.boolean(),
+        lifetime_days: boundedCount.optional()
+    }),
+    addon_granted_free: z.object({
+        ...addonCommon,
+        source: z.enum(['S20_CONVERSION', 'FREE_CHOICE']),
+        previous_amount_minor: addonMoney.optional(),
+        previous_cycle: cycle.optional(),
+        previous_subscription_id: id.optional()
+    })
+} as const;

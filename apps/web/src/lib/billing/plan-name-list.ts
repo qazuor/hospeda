@@ -75,3 +75,32 @@ export function resolvePromotionAudienceHint({
         plans: formatPlanNameList({ locale, names: planNames })
     });
 }
+
+/**
+ * Message of a tourist plan gate that names the catalog plans carrying the gated feature.
+ * Reads `<keyBase>_one` / `<keyBase>_other` (with a `{{plans}}` placeholder) or, when the
+ * catalog could not be read, `<keyBase>NoPlans` — which names no plan at all.
+ */
+export function resolvePlanGateMessage({
+    keyBase,
+    locale,
+    noPlansFallback,
+    planNames,
+    t
+}: {
+    /** i18n key prefix, e.g. `account.exclusiveDeals.upgrade.message`. */
+    readonly keyBase: string;
+    readonly locale: SupportedLocale;
+    /** Spanish plan-free sentence used when the key is missing. */
+    readonly noPlansFallback: string;
+    readonly planNames: readonly string[];
+    /** The caller's own translation function, so the helper imports no i18n runtime. */
+    readonly t: TranslationFn;
+}): string {
+    if (planNames.length === 0) {
+        return t(`${keyBase}NoPlans`, noPlansFallback);
+    }
+    return t(`${keyBase}${pluralSuffix(planNames.length)}`, undefined, {
+        plans: formatPlanNameList({ locale, names: planNames })
+    });
+}

@@ -24,6 +24,44 @@
         box-shadow 0.2s ease;
 }
 
+/*
+ * Wrapper that fills the whole button and is the badge's containing block. The
+ * dock FAB must stay `position: static` (mobile-floating-dock guard), so the
+ * badge anchors to this inner box instead of the button.
+ */
+.icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/*
+ * AI badge: a small filled accent circle with a white sparkle and a ring in the
+ * surface color so it separates from the blue button. It sits on the FAB's
+ * top-right corner, overlapping by about a third. Absolutely positioned, so the
+ * button keeps its own 44px/56px hit area; no ancestor clips it (the dock row and
+ * the FAB set no overflow).
+ */
+.badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    border: 2px solid var(--core-background, #ffffff);
+    border-radius: 50%;
+    background-color: var(--brand-accent, #f97316);
+    color: var(--accent-foreground, #ffffff);
+    pointer-events: none;
+}
+
 @media (max-width: 767px) {
     .fab {
         display: none;

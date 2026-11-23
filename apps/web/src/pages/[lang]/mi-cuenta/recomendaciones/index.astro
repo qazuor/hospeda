@@ -20,6 +20,8 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
@@ -40,6 +42,12 @@ const description = t(
     'Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda'
 );
 const apiUrl = getApiUrl();
+// HOS-2554: the plan gate names the catalog plans that carry recommendations. The catalog
+// reader is server-only, so the names are read here and handed to the island.
+const gatePlanNames = planNamesWithEntitlement({
+    result: await fetchPublicPlans({ vertical: 'tourist' }),
+    entitlement: EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS
+});
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="recomendaciones">
@@ -50,6 +58,7 @@ const apiUrl = getApiUrl();
             client:visible
             locale={locale}
             apiUrl={apiUrl}
+            gatePlanNames={gatePlanNames}
         />
     </AccountSectionCard>
 </AccountLayout>

@@ -34,6 +34,7 @@ import {
     abandonRefusedComplement,
     isCreationRefusedBeforeExisting
 } from './purchase-addon-rejection';
+import { checkoutStartedFact } from './purchase-addon-started-fact';
 import {
     PURCHASE_IDENTITY_BUSY_REASON,
     type PurchaseAddonInput,
@@ -383,7 +384,16 @@ async function purchaseAddonOnce(
             return {
                 outcome: 'CREATED',
                 instanceId: instance.id,
-                chargeKind: chargeKindOf(product)
+                chargeKind: chargeKindOf(product),
+                startedFact: checkoutStartedFact({
+                    product,
+                    policy,
+                    instanceId: instance.id,
+                    ownerId: request.ownerId,
+                    titleVertical: title.vertical,
+                    complementId: created?.complementId,
+                    now
+                })
             };
         });
         if (pagePurchase) return withPaymentPage(result, { request, ports, deadlines });

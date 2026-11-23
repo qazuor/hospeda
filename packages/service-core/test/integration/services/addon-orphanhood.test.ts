@@ -57,6 +57,12 @@ describe.skipIf(!isServiceTestDbAvailable())(
                             subscriptionId: seeded.complementId,
                             userId,
                             authorizationId: seeded.complement.authorizationId
+                        },
+                        ending: {
+                            origin: 'ACTIVE',
+                            paid: true,
+                            complement: { outcome: 'CANCELLED', from: 'ACTIVE' },
+                            endedAt: now
                         }
                     }
                 ]);

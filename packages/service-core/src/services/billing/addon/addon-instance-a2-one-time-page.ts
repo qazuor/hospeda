@@ -3,6 +3,7 @@ import { addonInstances, addonProducts, and, eq, getDb, idempotencyKeys, payment
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { activateOneTimeInstance } from './addon-instance-a2-one-time-activation';
 import type { A5Ports } from './addon-instance-a5';
@@ -31,6 +32,8 @@ export type ConfirmOneTimePagePaymentPorts = A5Ports & {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly coverageNotices?: CoverageNotices;
+    /** HOS-1883: where `addon_activated`, `addon_charge_succeeded` and abandonment facts go. */
+    readonly billingFacts?: BillingFactSink;
 };
 
 /**

@@ -9,6 +9,7 @@ import { renderNotificationEmail } from '../services/notification-render.js';
 import type { NotificationPayload, NotificationType } from '../types/notification.types.js';
 import { buildPreviewOutboxRow } from './preview-outbox-row.js';
 import {
+    type EmailAudience,
     type EmailCatalogDomain,
     type EmailCatalogEntry,
     type EmailCatalogRenderDeps,
@@ -42,6 +43,8 @@ export interface DefineEmailCatalogEntryInput<TInput> {
     readonly name: string;
     /** Admin grouping. */
     readonly domain: EmailCatalogDomain;
+    /** Who reads the email. */
+    readonly audience: EmailAudience;
     /** Defaults to `true`. `false`: the template exists but nothing sends it. */
     readonly wired?: boolean;
     /** Sample inputs, at least one. */
@@ -80,6 +83,7 @@ export function defineEmailCatalogEntry<TInput>(
         sendPath: input.sendPath,
         name: input.name,
         domain: input.domain,
+        audience: input.audience,
         wired: input.wired ?? true,
         scenarios: scenarios.map(({ id, label }) => ({ id, label })),
         renderScenario: async ({ scenarioId, deps }) => {
@@ -100,6 +104,8 @@ export interface DefineNotificationEntryInput<TPayload extends NotificationPaylo
     readonly name: string;
     /** Admin grouping. */
     readonly domain: EmailCatalogDomain;
+    /** Who reads the email. */
+    readonly audience: EmailAudience;
     /** Sample payloads, at least one. */
     readonly scenarios: EmailScenarioList<TPayload>;
 }
@@ -131,6 +137,7 @@ export function defineNotificationEntry<TPayload extends NotificationPayload>(
         id: input.type,
         name: input.name,
         domain: input.domain,
+        audience: input.audience,
         scenarios: input.scenarios,
         render: ({ scenario, deps }) => {
             const { subject, react, unresolvedPlaceholders } = renderNotificationEmail({
@@ -162,6 +169,8 @@ export interface DefineOutboxEntryInput {
     readonly name: string;
     /** Admin grouping. */
     readonly domain: EmailCatalogDomain;
+    /** Who reads the email. */
+    readonly audience: EmailAudience;
     /** Sample payloads, at least one. */
     readonly scenarios: EmailScenarioList<OutboxScenarioInput>;
 }
@@ -180,6 +189,7 @@ export function defineOutboxEntry(input: DefineOutboxEntryInput): EmailCatalogEn
         id: input.template,
         name: input.name,
         domain: input.domain,
+        audience: input.audience,
         scenarios: input.scenarios,
         render: async ({ scenario, deps }) => {
             const row = buildPreviewOutboxRow({
