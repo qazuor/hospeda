@@ -663,8 +663,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
             price={contactPrice}
             minNights={accommodation.policies?.minNights}
             maxNights={accommodation.policies?.maxNights}
-            owner={accommodation.owner}
-            ownerJoinedAt={result.data.owner?.createdAt ?? null}
             hasWhatsapp={accommodation.hasWhatsapp}
         />
         {hasDescriptionSection && (
