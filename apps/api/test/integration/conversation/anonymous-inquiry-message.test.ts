@@ -61,6 +61,9 @@ async function initiate(args: {
     readonly email: string;
     readonly message: string;
     readonly guestName?: string;
+    readonly checkIn?: string;
+    readonly checkOut?: string;
+    readonly guests?: number;
 }): Promise<{ status: number; conversationId: string; result: string }> {
     const response = await app.request('/api/v1/public/conversations/initiate', {
         method: 'POST',
@@ -69,7 +72,10 @@ async function initiate(args: {
             accommodationId: args.listingId,
             guestName: args.guestName ?? GUEST_NAME,
             guestEmail: args.email,
-            message: args.message
+            message: args.message,
+            checkIn: args.checkIn,
+            checkOut: args.checkOut,
+            guests: args.guests
         })
     });
     const body = (await response.json()) as {
@@ -91,6 +97,9 @@ async function mintToken(args: {
     readonly conversationId: string;
     readonly message?: string;
     readonly guestName?: string;
+    readonly checkIn?: string;
+    readonly checkOut?: string;
+    readonly guests?: number;
     readonly payloadHash?: string | null;
     readonly expiresIn?: string | number;
 }): Promise<string> {
@@ -99,7 +108,13 @@ async function mintToken(args: {
         hash = args.payloadHash;
     } else if (args.message !== undefined) {
         hash = computeInquiryPayloadHash({
-            payload: { message: args.message, guestName: args.guestName ?? GUEST_NAME }
+            payload: {
+                message: args.message,
+                guestName: args.guestName ?? GUEST_NAME,
+                checkIn: args.checkIn,
+                checkOut: args.checkOut,
+                guests: args.guests
+            }
         }).hash;
     }
     return new SignJWT({
@@ -311,6 +326,59 @@ describe('HOS-2568 anonymous inquiry message', () => {
         );
         expect(redirectTarget(newLink)).not.toContain('verify-expired');
         expect(await readMessages(first.conversationId)).toHaveLength(1);
+    });
+
+    it('binds dates and guests too: the link only delivers the booking fields it was issued for', async () => {
+        const { listingId } = await createFixture();
+        const email = `guest-${randomUUID()}@example.test`;
+        const first = await initiate({
+            listingId,
+            email,
+            message: 'Mismo texto',
+            checkIn: '2027-01-09',
+            checkOut: '2027-01-11',
+            guests: 2
+        });
+        await initiate({
+            listingId,
+            email,
+            message: 'Mismo texto',
+            checkIn: '2027-02-01',
+            checkOut: '2027-02-05',
+            guests: 5
+        });
+        const id = first.conversationId;
+
+        const stale = await verify(
+            await mintToken({
+                conversationId: id,
+                message: 'Mismo texto',
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 2
+            })
+        );
+        expect(redirectTarget(stale)).toContain('verify-expired');
+        expect(await readMessages(id)).toHaveLength(0);
+
+        const good = await verify(
+            await mintToken({
+                conversationId: id,
+                message: 'Mismo texto',
+                checkIn: '2027-02-01',
+                checkOut: '2027-02-05',
+                guests: 5
+            })
+        );
+        expect(redirectTarget(good)).not.toContain('verify-expired');
+        const row = await getDb().execute(
+            sql`SELECT check_in::text AS check_in, check_out::text AS check_out, guests FROM conversations WHERE id = ${id}::uuid`
+        );
+        expect(row.rows[0]).toEqual({
+            check_in: '2027-02-01',
+            check_out: '2027-02-05',
+            guests: 5
+        });
     });
 
     it('rejects a token with a tampered hash or with no hash claim while a message is held', async () => {

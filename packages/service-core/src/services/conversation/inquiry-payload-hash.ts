@@ -21,6 +21,12 @@ export interface InquiryPayload {
     readonly guestName: string;
     /** Optional phone typed by the guest. */
     readonly guestPhone?: string | null;
+    /** Declared check-in date (`YYYY-MM-DD`). */
+    readonly checkIn?: string | null;
+    /** Declared check-out date (`YYYY-MM-DD`). */
+    readonly checkOut?: string | null;
+    /** Declared guest count. */
+    readonly guests?: number | null;
 }
 
 /**
@@ -44,7 +50,10 @@ export function computeInquiryPayloadHash({ payload }: { readonly payload: Inqui
     const canonical = JSON.stringify([
         payload.message,
         payload.guestName,
-        payload.guestPhone ?? null
+        payload.guestPhone ?? null,
+        payload.checkIn ?? null,
+        payload.checkOut ?? null,
+        payload.guests ?? null
     ]);
     return { hash: createHash('sha256').update(canonical, 'utf8').digest('hex') };
 }

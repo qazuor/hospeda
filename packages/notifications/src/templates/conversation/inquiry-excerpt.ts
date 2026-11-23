@@ -88,3 +88,32 @@ export function maskPhone({ phone }: { readonly phone: string }): { readonly mas
     }
     return { masked: `*** ${digits.slice(-3)}` };
 }
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function toDisplayDate(value: string | null | undefined): string {
+    const match = value ? ISO_DATE.exec(value) : null;
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
+/**
+ * Formats the declared stay dates for the verification email.
+ *
+ * Only well-formed `YYYY-MM-DD` values are rendered (as `DD/MM/YYYY`); anything else is
+ * dropped, so a date field can never carry free text into the email.
+ *
+ * @param input - `{ checkIn, checkOut }` declared dates.
+ * @returns the label (`'12/12/2026 al 15/12/2026'`, or a single date), or `''` for none.
+ */
+export function formatInquiryDates({
+    checkIn,
+    checkOut
+}: {
+    readonly checkIn?: string | null;
+    readonly checkOut?: string | null;
+}): string {
+    const from = toDisplayDate(checkIn);
+    const to = toDisplayDate(checkOut);
+    if (from && to) return `${from} al ${to}`;
+    return from || to;
+}

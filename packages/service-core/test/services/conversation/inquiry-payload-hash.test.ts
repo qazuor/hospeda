@@ -28,6 +28,9 @@ describe('computeInquiryPayloadHash (HOS-2568)', () => {
         ['message', { ...base, message: 'Hola!' }],
         ['name', { ...base, guestName: 'Ana B' }],
         ['phone', { ...base, guestPhone: '123' }],
+        ['check-in', { ...base, checkIn: '2026-12-12' }],
+        ['check-out', { ...base, checkOut: '2026-12-15' }],
+        ['guests', { ...base, guests: 3 }],
         ['field boundary', { message: 'HolaAna', guestName: '', guestPhone: null }]
     ])('changes when the %s changes', (_label, other) => {
         expect(computeInquiryPayloadHash({ payload: other }).hash).not.toBe(

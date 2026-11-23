@@ -2,7 +2,7 @@ import { Section, Text } from '@react-email/components';
 import { EmailLayout } from '@repo/email';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
-import { buildInquiryExcerpt, maskPhone } from './inquiry-excerpt.js';
+import { buildInquiryExcerpt, formatInquiryDates, maskPhone } from './inquiry-excerpt.js';
 
 /**
  * Props for ConversationVerify email template.
@@ -25,6 +25,12 @@ export interface ConversationVerifyProps {
     message?: string;
     /** Phone the guest declared. Rendered masked, last three digits only. */
     guestPhone?: string | null;
+    /** Declared check-in date (`YYYY-MM-DD`). */
+    checkIn?: string | null;
+    /** Declared check-out date (`YYYY-MM-DD`). */
+    checkOut?: string | null;
+    /** Declared guest count. */
+    guests?: number | null;
 }
 
 /**
@@ -40,11 +46,15 @@ export function ConversationVerify({
     verificationUrl,
     guestName,
     message,
-    guestPhone
+    guestPhone,
+    checkIn,
+    checkOut,
+    guests
 }: ConversationVerifyProps) {
     const { excerpt } = buildInquiryExcerpt({ message: message ?? '' });
     const { masked: maskedPhone } = maskPhone({ phone: guestPhone ?? '' });
     // The name is typed by an unverified guest too: same neutralization as the excerpt.
+    const datesLabel = formatInquiryDates({ checkIn, checkOut });
     const safeName = buildInquiryExcerpt({ message: guestName }).excerpt;
 
     return (
@@ -66,6 +76,10 @@ export function ConversationVerify({
                     {maskedPhone ? (
                         <Text style={styles.messageText}>Teléfono: {maskedPhone}</Text>
                     ) : null}
+                    {datesLabel ? (
+                        <Text style={styles.messageText}>Fechas: {datesLabel}</Text>
+                    ) : null}
+                    {guests ? <Text style={styles.messageText}>Huéspedes: {guests}</Text> : null}
                     <Text style={styles.messageText}>Mensaje: {excerpt}</Text>
                 </Section>
             ) : null}

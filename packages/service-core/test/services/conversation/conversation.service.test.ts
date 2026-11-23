@@ -199,6 +199,9 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
         blockedAt: null,
         guestMessageCount: 0,
         ownerMessageCount: 0,
+        checkIn: null,
+        checkOut: null,
+        guests: null,
         createdAt: now,
         updatedAt: now,
         createdById: null,
@@ -447,6 +450,147 @@ describe('ConversationService', () => {
             );
             expect(SERVICE_DEPS.mailer?.sendVerificationEmail).toHaveBeenCalledWith(
                 expect.objectContaining({ message: 'Texto de la víctima' })
+            );
+        });
+
+        it('persists the inquiry check-in, check-out and guests on the new row (HOS-2534)', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([]);
+            const insertChain = makeInsertChainMock([
+                makeConversation({ id: CONVERSATION_ID, status: 'PENDING_VERIFICATION' })
+            ]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                checkIn: '2026-12-12',
+                checkOut: '2026-12-15',
+                guests: 2
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    checkIn: '2026-12-12',
+                    checkOut: '2026-12-15',
+                    guests: 2
+                })
+            );
+        });
+
+        it('leaves the booking columns unset when the inquiry carries none (HOS-2534)', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([]);
+            const insertChain = makeInsertChainMock([
+                makeConversation({ id: CONVERSATION_ID, status: 'PENDING_VERIFICATION' })
+            ]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola'
+            });
+
+            // Assert
+            expectSuccess(result);
+            const inserted = insertChain.values.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(inserted.checkIn).toBeUndefined();
+            expect(inserted.checkOut).toBeUndefined();
+            expect(inserted.guests).toBeUndefined();
+        });
+
+        it('rejects a check-out that is not after the check-in without writing (HOS-2534)', async () => {
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                checkIn: '2026-12-15',
+                checkOut: '2026-12-12'
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockGetDb).not.toHaveBeenCalled();
+        });
+
+        it('HOS-2568: a resent replaces the dates and guests and binds the link to them', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const selectChain = makeSelectChainMock([
+                makeConversation({ pendingMessage: 'Hola', checkIn: '2026-12-01', guests: 9 })
+            ]);
+            const updateChain = makeUpdateChainMock([]);
+            mockGetDb.mockReturnValue({
+                select: selectChain.select,
+                insert: makeInsertChainMock([]).insert,
+                update: updateChain.update
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                checkIn: '2027-01-09',
+                checkOut: '2027-01-11',
+                guests: 3
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(updateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    checkIn: '2027-01-09',
+                    checkOut: '2027-01-11',
+                    guests: 3
+                })
+            );
+            const expectedHash = computeInquiryPayloadHash({
+                payload: {
+                    message: 'Hola',
+                    guestName: 'Ana García',
+                    checkIn: '2027-01-09',
+                    checkOut: '2027-01-11',
+                    guests: 3
+                }
+            }).hash;
+            expect(jose.SignJWT).toHaveBeenCalledWith(
+                expect.objectContaining({ payloadHash: expectedHash })
+            );
+            expect(SERVICE_DEPS.mailer?.sendVerificationEmail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    checkIn: '2027-01-09',
+                    checkOut: '2027-01-11',
+                    guests: 3
+                })
             );
         });
 

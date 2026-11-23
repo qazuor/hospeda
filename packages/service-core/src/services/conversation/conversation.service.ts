@@ -43,13 +43,16 @@ import {
 import type { HostConversationResponseRate } from '@repo/schemas';
 import {
     ConversationStatusEnum,
+    InquiryBookingFieldsShape,
     MessageSenderTypeEnum,
     NotificationRecipientSideEnum,
     PermissionEnum,
+    refineInquiryDates,
     ServiceErrorCode
 } from '@repo/schemas';
 import { getLocalDayWindow } from '@repo/utils';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
+import type { AnyColumn, GetColumnData } from 'drizzle-orm';
 import { inArray } from 'drizzle-orm';
 import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
@@ -119,25 +122,42 @@ const ALLOWED_TRANSITIONS: Readonly<
     [ConversationStatusEnum.BLOCKED]: []
 };
 
+/**
+ * Equality that treats an absent value as `IS NULL` (HOS-2568: the claim that delivers an
+ * inquiry compares nullable columns against the payload the link was hashed from).
+ */
+function nullableEq<TColumn extends AnyColumn>(
+    column: TColumn,
+    value: GetColumnData<TColumn, 'raw'> | null | undefined
+) {
+    return value === null || value === undefined ? isNull(column) : eq(column, value);
+}
+
 // ---------------------------------------------------------------------------
 // Input schemas (Zod — internal only)
 // ---------------------------------------------------------------------------
 
-const InitiateAnonymousInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    guestName: z.string().min(1).max(100),
-    guestEmail: z.string().email().max(255),
-    guestPhone: z.string().max(50).optional(),
-    message: z.string().min(1).max(5000),
-    locale: z.string().max(10).optional()
-});
+const InitiateAnonymousInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        guestName: z.string().min(1).max(100),
+        guestEmail: z.string().email().max(255),
+        guestPhone: z.string().max(50).optional(),
+        message: z.string().min(1).max(5000),
+        locale: z.string().max(10).optional(),
+        ...InquiryBookingFieldsShape
+    })
+    .refine(refineInquiryDates, { message: 'checkOut must be after checkIn', path: ['checkOut'] });
 
-const InitiateAuthenticatedInputSchema = z.object({
-    accommodationId: z.string().uuid(),
-    message: z.string().min(1).max(5000),
-    locale: z.string().max(10).optional(),
-    urlLang: z.string().max(10).optional()
-});
+const InitiateAuthenticatedInputSchema = z
+    .object({
+        accommodationId: z.string().uuid(),
+        message: z.string().min(1).max(5000),
+        locale: z.string().max(10).optional(),
+        urlLang: z.string().max(10).optional(),
+        ...InquiryBookingFieldsShape
+    })
+    .refine(refineInquiryDates, { message: 'checkOut must be after checkIn', path: ['checkOut'] });
 
 const GetThreadInputSchema = z.object({
     conversationId: z.string().uuid(),
@@ -273,6 +293,10 @@ export interface VerificationEmailPayload {
     readonly message?: string;
     /** Phone the guest declared; the mailer renders it masked. */
     readonly guestPhone?: string | null;
+    /** Declared dates and guests, shown in the email so the person sees what they confirm. */
+    readonly checkIn?: string | null;
+    readonly checkOut?: string | null;
+    readonly guests?: number | null;
 }
 
 /**
@@ -464,6 +488,9 @@ export class ConversationService extends BaseService {
             guestPhone?: string;
             message: string;
             locale?: string;
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<InitiateAnonymousResult>> {
@@ -528,17 +555,21 @@ export class ConversationService extends BaseService {
                     .limit(1);
 
                 if (pendingRow) {
-                    // HOS-2568: last submission wins. Each submit replaces the held payload
+                    // HOS-2568 (supersedes the HOS-2534 first-wins rule): last submission wins. Each submit replaces the held payload
                     // and sends a link bound to THAT payload (hash in the JWT), so a link
                     // can only ever deliver the payload it was issued for. First-wins would
                     // let a stranger park text under someone else's email and have it
-                    // delivered when the real owner of the email verifies.
+                    // delivered when the real owner of the email verifies. The booking
+                    // fields (dates, guests) ride in the same payload and the same hash.
                     await db
                         .update(conversations)
                         .set({
                             pendingMessage: validated.message,
                             anonymousName: validated.guestName,
                             anonymousPhone: validated.guestPhone ?? null,
+                            checkIn: validated.checkIn ?? null,
+                            checkOut: validated.checkOut ?? null,
+                            guests: validated.guests ?? null,
                             updatedAt: new Date()
                         })
                         .where(
@@ -555,7 +586,10 @@ export class ConversationService extends BaseService {
                         locale as 'es' | 'en' | 'pt',
                         {
                             message: validated.message,
-                            guestPhone: validated.guestPhone
+                            guestPhone: validated.guestPhone,
+                            checkIn: validated.checkIn,
+                            checkOut: validated.checkOut,
+                            guests: validated.guests
                         }
                     );
                     return { status: 'resent', conversationId: pendingRow.id };
@@ -574,7 +608,10 @@ export class ConversationService extends BaseService {
                         // the `resent` path (last submission wins, link bound by hash).
                         pendingMessage: validated.message,
                         status: 'PENDING_VERIFICATION' as const,
-                        locale
+                        locale,
+                        checkIn: validated.checkIn,
+                        checkOut: validated.checkOut,
+                        guests: validated.guests
                     } satisfies InsertConversation)
                     .returning();
 
@@ -591,7 +628,13 @@ export class ConversationService extends BaseService {
                     validated.guestName,
                     accommodation.name,
                     locale as 'es' | 'en' | 'pt',
-                    { message: validated.message, guestPhone: validated.guestPhone }
+                    {
+                        message: validated.message,
+                        guestPhone: validated.guestPhone,
+                        checkIn: validated.checkIn,
+                        checkOut: validated.checkOut,
+                        guests: validated.guests
+                    }
                 );
 
                 return {
@@ -630,6 +673,9 @@ export class ConversationService extends BaseService {
             message: string;
             locale?: string;
             urlLang?: string;
+            checkIn?: string;
+            checkOut?: string;
+            guests?: number;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<InitiateAuthenticatedResult>> {
@@ -700,6 +746,9 @@ export class ConversationService extends BaseService {
                                 userId: validatedActor.id,
                                 status: 'PENDING_OWNER' as const,
                                 locale,
+                                checkIn: validated.checkIn,
+                                checkOut: validated.checkOut,
+                                guests: validated.guests,
                                 createdById: validatedActor.id,
                                 updatedById: validatedActor.id
                             } satisfies InsertConversation)
@@ -1666,7 +1715,13 @@ export class ConversationService extends BaseService {
         guestName: string,
         accommodationName: string,
         locale: 'es' | 'en' | 'pt' = 'es',
-        inquiry?: { readonly message: string; readonly guestPhone?: string | null }
+        inquiry?: {
+            readonly message: string;
+            readonly guestPhone?: string | null;
+            readonly checkIn?: string | null;
+            readonly checkOut?: string | null;
+            readonly guests?: number | null;
+        }
     ): Promise<void> {
         const secret = this._getJwtSecret();
         // HOS-2568: bind the link to the payload it confirms.
@@ -1675,7 +1730,10 @@ export class ConversationService extends BaseService {
                   payload: {
                       message: inquiry.message,
                       guestName,
-                      guestPhone: inquiry.guestPhone
+                      guestPhone: inquiry.guestPhone,
+                      checkIn: inquiry.checkIn,
+                      checkOut: inquiry.checkOut,
+                      guests: inquiry.guests
                   }
               }).hash
             : undefined;
@@ -1706,7 +1764,15 @@ export class ConversationService extends BaseService {
                 guestName,
                 accommodationName,
                 locale,
-                ...(inquiry ? { message: inquiry.message, guestPhone: inquiry.guestPhone } : {})
+                ...(inquiry
+                    ? {
+                          message: inquiry.message,
+                          guestPhone: inquiry.guestPhone,
+                          checkIn: inquiry.checkIn,
+                          checkOut: inquiry.checkOut,
+                          guests: inquiry.guests
+                      }
+                    : {})
             });
         } catch (error) {
             this.logger.error(
@@ -1822,7 +1888,10 @@ export class ConversationService extends BaseService {
                         payload: {
                             message: heldMessage,
                             guestName: conversation.anonymousName ?? '',
-                            guestPhone: conversation.anonymousPhone
+                            guestPhone: conversation.anonymousPhone,
+                            checkIn: conversation.checkIn,
+                            checkOut: conversation.checkOut,
+                            guests: conversation.guests
                         }
                     });
                     if (
@@ -1869,12 +1938,13 @@ export class ConversationService extends BaseService {
                                               conversations.anonymousName,
                                               conversation.anonymousName ?? ''
                                           ),
-                                          conversation.anonymousPhone
-                                              ? eq(
-                                                    conversations.anonymousPhone,
-                                                    conversation.anonymousPhone
-                                                )
-                                              : isNull(conversations.anonymousPhone)
+                                          nullableEq(
+                                              conversations.anonymousPhone,
+                                              conversation.anonymousPhone
+                                          ),
+                                          nullableEq(conversations.checkIn, conversation.checkIn),
+                                          nullableEq(conversations.checkOut, conversation.checkOut),
+                                          nullableEq(conversations.guests, conversation.guests)
                                       )
                                     : isNull(conversations.pendingMessage)
                             )

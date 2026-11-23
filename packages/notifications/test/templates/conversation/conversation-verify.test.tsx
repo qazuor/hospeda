@@ -137,6 +137,21 @@ describe('ConversationVerify inquiry summary (HOS-2568)', () => {
         expect(html).not.toContain('evil.test');
     });
 
+    it('shows the declared dates and guests', () => {
+        const html = renderToStaticMarkup(
+            ConversationVerify({
+                ...baseProps,
+                message: 'Hola',
+                checkIn: '2026-12-12',
+                checkOut: '2026-12-15',
+                guests: 4
+            })
+        );
+
+        expect(html).toContain('12/12/2026 al 15/12/2026');
+        expect(html).toContain('Huéspedes: 4');
+    });
+
     it('omits the summary when there is no message', () => {
         const html = renderToStaticMarkup(ConversationVerify(baseProps));
 

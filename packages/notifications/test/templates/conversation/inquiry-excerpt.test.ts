@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildInquiryExcerpt,
+    formatInquiryDates,
     INQUIRY_EXCERPT_MAX_LENGTH,
     maskPhone
 } from '../../../src/templates/conversation/inquiry-excerpt';
@@ -75,5 +76,21 @@ describe('maskPhone (HOS-2568)', () => {
 
     it('returns empty when there are no digits', () => {
         expect(maskPhone({ phone: 'n/a' }).masked).toBe('');
+    });
+});
+
+describe('formatInquiryDates (HOS-2568)', () => {
+    it('formats both dates', () => {
+        expect(formatInquiryDates({ checkIn: '2026-12-12', checkOut: '2026-12-15' })).toBe(
+            '12/12/2026 al 15/12/2026'
+        );
+    });
+
+    it('renders a lone date', () => {
+        expect(formatInquiryDates({ checkIn: '2026-12-12' })).toBe('12/12/2026');
+    });
+
+    it('drops anything that is not a plain date', () => {
+        expect(formatInquiryDates({ checkIn: 'http://evil.test', checkOut: null })).toBe('');
     });
 });

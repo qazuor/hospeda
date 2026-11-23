@@ -89,7 +89,10 @@ export function createConversationMailer(): ConversationMailer | undefined {
                     guestName: payload.guestName,
                     locale: payload.locale,
                     message: payload.message,
-                    guestPhone: payload.guestPhone
+                    guestPhone: payload.guestPhone,
+                    checkIn: payload.checkIn,
+                    checkOut: payload.checkOut,
+                    guests: payload.guests
                 })
             });
 

@@ -178,3 +178,55 @@ export function formatCalendarDate({
 
     return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(utcMidnight);
 }
+
+/** Input for {@link formatCalendarDateRange}. */
+export interface FormatCalendarDateRangeInput {
+    /** First day of the range: a bare `YYYY-MM-DD`, an ISO instant, or a `Date`. */
+    readonly from: string | Date | null | undefined;
+    /** Last day of the range, same accepted shapes as `from`. */
+    readonly to: string | Date | null | undefined;
+    /**
+     * BCP-47 tag. Prefer the bare language (`'es'`, not `'es-AR'`): ICU's `es-AR`
+     * range pattern is broken for abbreviated months (`'12 – 15 de 12'`), while
+     * `'es'` yields `'12–15 dic'`.
+     */
+    readonly locale: string | readonly string[];
+    /** Passed through to `Intl.DateTimeFormat`; `timeZone` is ignored (see {@link formatCalendarDate}). */
+    readonly options?: Intl.DateTimeFormatOptions;
+}
+
+/**
+ * Renders two calendar dates as one compact range (`'12–15 dic'`), collapsing
+ * the shared month the way `Intl.DateTimeFormat#formatRange` does for the locale.
+ * The timezone is pinned to UTC for the same reason as {@link formatCalendarDate}.
+ *
+ * @param input - {@link FormatCalendarDateRangeInput}.
+ * @returns The formatted range, or null when either end names no real day.
+ *
+ * @example
+ * ```ts
+ * formatCalendarDateRange({ from: '2026-12-12', to: '2026-12-15', locale: 'es' });
+ * // '12–15 dic'
+ * ```
+ */
+export function formatCalendarDateRange({
+    from,
+    to,
+    locale,
+    options
+}: FormatCalendarDateRangeInput): string | null {
+    const start = getCalendarDateParts({ value: from });
+    const end = getCalendarDateParts({ value: to });
+    if (!start || !end) return null;
+
+    const formatter = new Intl.DateTimeFormat(locale, {
+        day: 'numeric',
+        month: 'short',
+        ...options,
+        timeZone: 'UTC'
+    });
+    return formatter.formatRange(
+        new Date(Date.UTC(start.year, start.month - 1, start.day)),
+        new Date(Date.UTC(end.year, end.month - 1, end.day))
+    );
+}
