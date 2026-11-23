@@ -31,7 +31,10 @@ vi.mock('../../../src/components/listing/ListingTranslationPanel.module.css', ()
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    // The kit pieces the panel renders (Field, Alert, Tabs) read the real
+    // module's other exports, so only `createTranslations` is replaced.
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     // Mirrors the real resolver on the one point that matters here: when a key
     // EXISTS in the catalog its value wins and the fallback is discarded, so an
     // interpolation baked into the fallback never reaches the screen. A plain
@@ -41,7 +44,9 @@ vi.mock('../../../src/lib/i18n', () => ({
             const raw =
                 key === 'listing.owner.editor.translationPanel.localePlaceholder'
                     ? 'Ingresá el texto en {{locale}}...'
-                    : (fallback ?? key);
+                    : key === 'listing.owner.editor.translationPanel.missingNotice'
+                      ? 'Faltan traducciones en {{locales}}.'
+                      : (fallback ?? key);
             if (!params) return raw;
             return Object.keys(params).reduce(
                 (acc, name) => acc.replaceAll(`{{${name}}}`, String(params[name])),
@@ -341,5 +346,66 @@ describe('parseListingI18nValues', () => {
             expect(result.descriptionI18n.es).toBe('');
             expect(result.richDescriptionI18n.es).toBe('');
         });
+    });
+});
+
+describe('ListingTranslationPanel — shared kit look (HOS-2492)', () => {
+    it('counts the empty fields on each locale tab', () => {
+        // Arrange
+        const partial: ListingI18nValues = {
+            ...FILLED_I18N,
+            nameI18n: { es: 'Nombre ES', en: '', pt: 'Nome PT' },
+            summaryI18n: { es: 'Resumen ES', en: '', pt: 'Resumo PT' }
+        };
+
+        // Act
+        renderPanel(partial);
+
+        // Assert
+        const enTab = screen.getByRole('tab', { name: /EN/ });
+        expect(enTab.textContent).toContain('2');
+        expect(screen.getByRole('tab', { name: /PT/ }).textContent).not.toMatch(/\d/);
+    });
+
+    it('names the locales with missing translations in one notice', () => {
+        // Arrange
+        const partial: ListingI18nValues = {
+            ...FILLED_I18N,
+            descriptionI18n: { es: 'Desc ES', en: 'Desc EN', pt: '' }
+        };
+
+        // Act
+        renderPanel(partial);
+
+        // Assert
+        expect(screen.getByRole('status').textContent).toContain('Faltan traducciones en PT.');
+    });
+
+    it('shows no notice when every locale is filled', () => {
+        // Arrange + Act
+        renderPanel(FILLED_I18N);
+
+        // Assert
+        expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('marks each field with a status pill for the visible locale', () => {
+        // Arrange
+        const partial: ListingI18nValues = {
+            ...FILLED_I18N,
+            nameI18n: { es: 'Nombre ES', en: '', pt: 'Nome PT' }
+        };
+        renderPanel(partial);
+
+        // Act
+        fireEvent.click(screen.getByRole('tab', { name: /EN/ }));
+
+        // Assert
+        expect(
+            screen.getAllByText('listing.owner.editor.translationPanel.statusEmpty')
+        ).toHaveLength(1);
+        expect(
+            screen.getAllByText('listing.owner.editor.translationPanel.statusFilled')
+        ).toHaveLength(3);
     });
 });
