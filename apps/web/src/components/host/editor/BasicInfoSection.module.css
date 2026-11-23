@@ -1,148 +1,82 @@
-/* BasicInfoSection.module.css — SPEC-208 */
+/* BasicInfoSection.module.css — SPEC-208, kit fields in HOS-2488.
+   The kit `Section` is a query container, so the grid follows the width of
+   its own card and never the viewport. Labels, controls, hints and errors come
+   from the kit `Field`; only layout and the two notices live here. */
 
-.section {
-    border: none;
-    padding: 0;
-    margin: 0 0 var(--space-5, 2rem);
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
 }
 
-.sectionTitle {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1.125rem;
-    color: var(--core-foreground);
-    margin-bottom: var(--space-4, 1.5rem);
-    padding-bottom: var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border);
+@container (min-width: 40rem) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
-.field {
-    margin-bottom: var(--space-4, 1.5rem);
+@container (min-width: 60rem) {
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
-.fieldLabel {
-    display: block;
-    font-family: var(--font-sans);
-    font-weight: 500;
-    font-size: 0.875rem;
-    color: var(--core-foreground);
-    margin-bottom: var(--space-1, 0.25rem);
+/* A field that needs the whole row (long text, notices). */
+.full {
+    grid-column: 1 / -1;
+    min-inline-size: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
 }
 
-.fieldInput {
-    display: block;
-    width: 100%;
-    padding: 0.625rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--core-card);
-    color: var(--core-foreground);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    transition: border-color 150ms ease-out;
-    box-sizing: border-box;
-}
-
-.fieldInput:focus {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 1px;
-    border-color: var(--brand-primary);
-}
-
-.fieldInput[aria-invalid="true"] {
-    border-color: oklch(0.55 0.22 25);
-}
-
-.fieldHint {
-    display: block;
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
+.hint {
+    margin: 0;
+    font: var(--app-ui);
     color: var(--core-muted-foreground);
-    margin-top: var(--space-1, 0.25rem);
-}
-
-.fieldHint a {
-    color: var(--brand-primary);
-    text-decoration: underline;
 }
 
 /*
  * HOS-800: the plan notice that replaces the rich editor's formatting toolbar.
- * It used to render as a plain `.fieldHint` — the same muted grey as every
- * ordinary form hint — directly above the AI-improve trigger, so a restriction
- * and an available action were typographically indistinguishable. The boxed
- * treatment (and the lock) is what makes "this is locked" readable at a glance,
- * separately from the copy. Mirrors `.slugNotice`, the section's existing
- * notice surface.
+ * The boxed treatment (and the lock) is what makes "this is locked" readable at
+ * a glance, separately from the copy; it sits above the textarea, in the slot
+ * the toolbar occupies, so it is not read as gating the AI-improve button.
  */
 .formatUpsell {
     display: flex;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-2);
     align-items: flex-start;
-    margin-bottom: var(--space-2, 0.5rem);
-    padding: var(--space-3, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    background: var(--surface-warm);
+    padding: var(--space-3);
+    border: 1px solid var(--status-info-border);
+    border-radius: var(--radius-surface);
+    background: var(--status-info-bg);
+    color: var(--status-info-fg);
 }
 
 .formatUpsellIcon {
-    width: 1rem;
-    height: 1rem;
+    inline-size: 1rem;
+    block-size: 1rem;
     flex-shrink: 0;
-    /* Optical alignment with the first line of the adjacent 0.8125rem text. */
-    margin-top: 0.125rem;
-    color: var(--core-muted-foreground);
+    margin-block-start: var(--space-1);
 }
 
 .formatUpsellText {
     margin: 0;
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    color: var(--core-foreground);
+    font: var(--app-ui);
 }
 
 .formatUpsellText a {
-    color: var(--brand-primary);
+    color: inherit;
     text-decoration: underline;
-    white-space: nowrap;
 }
 
-.slugNotice {
-    margin-top: var(--space-2, 0.5rem);
-    padding: var(--space-3, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    background: var(--surface-warm);
-}
-
-.slugCheckbox {
+/* The published-slug opt-in: a notice with its own checkbox. */
+.notice {
     display: flex;
-    gap: var(--space-2, 0.5rem);
-    align-items: flex-start;
-    margin-top: var(--space-2, 0.5rem);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-foreground);
-}
-
-.slugCheckbox input {
-    margin-top: 0.125rem;
-}
-
-select.fieldInput {
-    appearance: auto;
-}
-
-/*
- * HOS-373: the shared `FieldError` ships `margin: 0` and expects its container
- * to own the spacing. These sections previously relied on the error element's
- * own `margin-top`, so without this the message sits flush against the input.
- * The selector is doubled to raise specificity above `.error` deterministically
- * — with equal specificity the winner would depend on stylesheet order.
- */
-.fieldErrorSpacing.fieldErrorSpacing {
-    margin-top: var(--space-1, 0.25rem);
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    background: var(--core-card);
 }

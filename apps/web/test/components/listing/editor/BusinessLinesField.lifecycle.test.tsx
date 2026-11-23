@@ -92,8 +92,8 @@ describe('BusinessLinesField — TEST:5.7:2 type changes (AC:5:4)', () => {
     it('shows the reason and blocks the selection instead of dropping a line', () => {
         renderField({ type: 'BOLICHE', selected: ['food', 'nightlife'] });
 
-        expect(screen.getByRole('alert')).toHaveTextContent(
-            'Este tipo de comercio no admite ese rubro'
+        expect(screen.getByRole('group', { name: 'Rubros' })).toHaveAccessibleDescription(
+            expect.stringContaining('Este tipo de comercio no admite ese rubro')
         );
         // `food` is not an option for a BOLICHE; nothing was removed silently.
         expect(screen.queryByRole('checkbox', { name: /Gastronomía/ })).toBeNull();

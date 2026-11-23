@@ -31,14 +31,19 @@
 
 import { ExperiencePriceUnitEnum, LISTING_SECTIONS, PriceRangeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
-import { TextField } from '@/components/ui/TextField';
+import { Checkbox } from '@/components/account/ui/Checkbox';
+import { Field } from '@/components/account/ui/Field';
+import { InputGroup } from '@/components/account/ui/InputGroup';
+import { Section } from '@/components/account/ui/Section';
+import { Select } from '@/components/account/ui/Select';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
-import styles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
+import styles from './listing-section.module.css';
 
 /** Experience price unit options. */
 const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
@@ -91,102 +96,113 @@ export function PriceSection({
     const showsTier = priceFields.includes('priceRange');
     const showsExperiencePricing = priceFields.includes('isPriceOnRequest');
 
+    const idOf = (name: string) => ({ prefix: LISTING_FIELD_PREFIX, name });
+
     return (
-        <section
-            className={styles.section}
+        <Section
             id="editor-price"
+            title={t('listing.owner.editor.groups.price', 'Cuánto cuesta')}
+            helpId={sectionHelpId({ vertical, slug: 'precio' })}
         >
-            {showsTier ? (
-                <TextField
-                    as="select"
-                    prefix={LISTING_FIELD_PREFIX}
-                    name="priceRange"
-                    label={t('listing.owner.editor.sections.priceRange', 'Rango de precios')}
-                    labelClassName={styles.label}
-                    className={styles.input}
-                    value={data.priceRange}
-                    onChange={(event) => {
-                        onFieldChange('priceRange', event.target.value);
-                    }}
-                >
-                    <option value="">—</option>
-                    {Object.values(PriceRangeEnum).map((tier) => (
-                        <option
-                            key={tier}
-                            value={tier}
-                        >
-                            {t(`listing.owner.editor.priceRangeOption.${tier}`, tier)}
-                        </option>
-                    ))}
-                </TextField>
-            ) : null}
-
-            {showsExperiencePricing ? (
-                <>
-                    {/* isPriceOnRequest toggle */}
-                    <label className={styles.checkbox}>
-                        <input
-                            type="checkbox"
-                            checked={data.isPriceOnRequest}
-                            onChange={(event) => {
-                                onFieldChange('isPriceOnRequest', event.target.checked);
-                            }}
-                        />
-                        {t('listing.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
-                    </label>
-
-                    {/* T-021: priceFrom — disabled when isPriceOnRequest */}
-                    {/* HOS-809: the owner types PESOS; the field value is centavos. */}
-                    <TextField
-                        prefix={LISTING_FIELD_PREFIX}
-                        name="priceFrom"
-                        label={t(
-                            'listing.owner.editor.sections.priceFromWithCurrency',
-                            'Precio desde (ARS)'
-                        )}
-                        labelClassName={styles.label}
-                        className={styles.input}
-                        error={errors.priceFrom}
-                        type="number"
-                        min={0}
-                        step={1}
-                        disabled={data.isPriceOnRequest}
-                        value={centsToPesosInputValue({ cents: data.priceFrom })}
-                        onChange={(event) => {
-                            onFieldChange(
-                                'priceFrom',
-                                parsePesosInputToCents({ raw: event.target.value })
-                            );
-                        }}
-                    />
-
-                    {/* T-021: priceUnit select — disabled when isPriceOnRequest */}
-                    <TextField
-                        as="select"
-                        prefix={LISTING_FIELD_PREFIX}
-                        name="priceUnit"
-                        label={t('listing.owner.editor.sections.priceUnit', 'Unidad de precio')}
-                        labelClassName={styles.label}
-                        className={styles.input}
-                        error={errors.priceUnit}
-                        value={data.priceUnit}
-                        disabled={data.isPriceOnRequest}
-                        onChange={(event) => {
-                            onFieldChange('priceUnit', event.target.value);
-                        }}
+            <div className={styles.grid}>
+                {showsTier ? (
+                    <Field
+                        locale={locale}
+                        idParts={idOf('priceRange')}
+                        label={t('listing.owner.editor.sections.priceRange', 'Rango de precios')}
                     >
-                        <option value="">—</option>
-                        {PRICE_UNIT_OPTIONS.map((unit) => (
-                            <option
-                                key={unit}
-                                value={unit}
+                        <Select
+                            value={data.priceRange}
+                            onChange={(event) => {
+                                onFieldChange('priceRange', event.target.value);
+                            }}
+                        >
+                            <option value="">—</option>
+                            {Object.values(PriceRangeEnum).map((tier) => (
+                                <option
+                                    key={tier}
+                                    value={tier}
+                                >
+                                    {t(`listing.owner.editor.priceRangeOption.${tier}`, tier)}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                ) : null}
+
+                {showsExperiencePricing ? (
+                    <>
+                        {/* isPriceOnRequest toggle */}
+                        <div className={styles.full}>
+                            <Checkbox
+                                checked={data.isPriceOnRequest}
+                                onChange={(event) => {
+                                    onFieldChange('isPriceOnRequest', event.target.checked);
+                                }}
+                                label={t(
+                                    'listing.owner.editor.sections.isPriceOnRequest',
+                                    'Precio a consultar'
+                                )}
+                            />
+                        </div>
+
+                        {/* T-021: priceFrom, disabled when isPriceOnRequest.
+                            HOS-809: the owner types PESOS; the field value is centavos.
+                            The «ARS» addon is aria-hidden, so the label says it too. */}
+                        <Field
+                            locale={locale}
+                            idParts={idOf('priceFrom')}
+                            label={t(
+                                'listing.owner.editor.sections.priceFromWithCurrency',
+                                'Precio desde (ARS)'
+                            )}
+                            error={errors.priceFrom}
+                        >
+                            <InputGroup
+                                suffix="ARS"
+                                type="number"
+                                inputMode="decimal"
+                                min={0}
+                                step={1}
+                                disabled={data.isPriceOnRequest}
+                                value={centsToPesosInputValue({ cents: data.priceFrom })}
+                                onChange={(event) => {
+                                    onFieldChange(
+                                        'priceFrom',
+                                        parsePesosInputToCents({ raw: event.target.value })
+                                    );
+                                }}
+                            />
+                        </Field>
+
+                        {/* T-021: priceUnit select, disabled when isPriceOnRequest */}
+                        <Field
+                            locale={locale}
+                            idParts={idOf('priceUnit')}
+                            label={t('listing.owner.editor.sections.priceUnit', 'Unidad de precio')}
+                            error={errors.priceUnit}
+                        >
+                            <Select
+                                value={data.priceUnit}
+                                disabled={data.isPriceOnRequest}
+                                onChange={(event) => {
+                                    onFieldChange('priceUnit', event.target.value);
+                                }}
                             >
-                                {t(`listing.owner.editor.priceUnitOption.${unit}`, unit)}
-                            </option>
-                        ))}
-                    </TextField>
-                </>
-            ) : null}
-        </section>
+                                <option value="">—</option>
+                                {PRICE_UNIT_OPTIONS.map((unit) => (
+                                    <option
+                                        key={unit}
+                                        value={unit}
+                                    >
+                                        {t(`listing.owner.editor.priceUnitOption.${unit}`, unit)}
+                                    </option>
+                                ))}
+                            </Select>
+                        </Field>
+                    </>
+                ) : null}
+            </div>
+        </Section>
     );
 }

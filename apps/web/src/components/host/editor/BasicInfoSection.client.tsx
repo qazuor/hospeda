@@ -5,11 +5,16 @@
  */
 
 import { LockIcon } from '@repo/icons';
+import { Checkbox } from '@/components/account/ui/Checkbox';
+import { Field } from '@/components/account/ui/Field';
+import { Section } from '@/components/account/ui/Section';
+import { Select } from '@/components/account/ui/Select';
+import { Textarea } from '@/components/account/ui/Textarea';
+import { TextInput } from '@/components/account/ui/TextInput';
 import { CharacterCounter } from '@/components/ui/CharacterCounter';
-import { FieldError } from '@/components/ui/FieldError';
-import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import { buildFieldId } from '@/lib/forms/build-field-id';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
@@ -46,24 +51,24 @@ const DESCRIPTION_COUNTER_ID = `${DESCRIPTION_ID}-counter`;
 const DESCRIPTION_FORMAT_UPSELL_ID = `${DESCRIPTION_ID}-format-upsell`;
 
 /**
- * Accommodation type options in display order. Labels resolve through
- * `host.miniForm.types.<VALUE>` in `@repo/i18n` (HOS-2436); the Spanish
- * fallback only covers a missing key.
+ * Accommodation type values in display order. Labels resolve through
+ * `host.miniForm.types.<VALUE>` in `@repo/i18n` (es, en, pt; HOS-2436, HOS-2488),
+ * so the section carries no Spanish copy of its own.
  */
-const ACCOMMODATION_TYPE_OPTIONS = [
-    { value: 'HOTEL', fallback: 'Hotel' },
-    { value: 'APARTMENT', fallback: 'Apartamento' },
-    { value: 'HOSTEL', fallback: 'Hostel' },
-    { value: 'HOUSE', fallback: 'Casa' },
-    { value: 'CABIN', fallback: 'Cabaña' },
-    { value: 'COUNTRY_HOUSE', fallback: 'Casa de campo' },
-    { value: 'CAMPING', fallback: 'Camping' },
-    { value: 'ROOM', fallback: 'Habitación' },
-    { value: 'MOTEL', fallback: 'Motel' },
-    { value: 'RESORT', fallback: 'Resort' },
-    { value: 'APART_HOTEL', fallback: 'Aparthotel' },
-    { value: 'ESTANCIA', fallback: 'Estancia' },
-    { value: 'BED_AND_BREAKFAST', fallback: 'Bed & Breakfast' }
+const ACCOMMODATION_TYPE_VALUES = [
+    'HOTEL',
+    'APARTMENT',
+    'HOSTEL',
+    'HOUSE',
+    'CABIN',
+    'COUNTRY_HOUSE',
+    'CAMPING',
+    'ROOM',
+    'MOTEL',
+    'RESORT',
+    'APART_HOTEL',
+    'ESTANCIA',
+    'BED_AND_BREAKFAST'
 ] as const;
 
 /**
@@ -71,12 +76,22 @@ const ACCOMMODATION_TYPE_OPTIONS = [
  * numbers must match it — a host who fills `name` in one screen and edits it in
  * the other cannot be told two different maximums.
  */
+const SUMMARY_COUNTER_ID = `${buildFieldId({ prefix: ACCOMMODATION_FIELD_PREFIX, name: 'summary' })}-counter`;
 const NAME_MIN_LENGTH = 3;
 const NAME_MAX_LENGTH = 100;
 const SUMMARY_MIN_LENGTH = 10;
 const SUMMARY_MAX_LENGTH = 300;
 const DESCRIPTION_MIN_LENGTH = 30;
 const DESCRIPTION_MAX_LENGTH = 2000;
+
+/**
+ * Caps a value at the field's maximum, as the native `maxLength` it replaces
+ * did: the kit `Textarea` takes no `maxLength` unless it also draws its own
+ * counter, and this section keeps the `CharacterCounter` that shows the minimum.
+ */
+function capLength(value: string, max: number): string {
+    return value.length > max ? value.slice(0, max) : value;
+}
 
 /** Props for BasicInfoSection. */
 export interface BasicInfoSectionProps {
@@ -142,36 +157,28 @@ function SlugRefreshNotice({
     });
 
     return (
-        <div className={styles.slugNotice}>
-            <p className={styles.fieldHint}>
+        <div className={styles.notice}>
+            <p className={styles.hint}>
                 {t(
                     'host.properties.editor.slugRefresh.notice',
                     'Tu ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre o el tipo.'
                 )}
             </p>
-            <p className={styles.fieldHint}>
+            <p className={styles.hint}>
                 {t(
                     'host.properties.editor.slugRefresh.warning',
                     'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
                 )}
             </p>
-            <label
-                htmlFor={checkboxId}
-                className={styles.slugCheckbox}
-            >
-                <input
-                    id={checkboxId}
-                    type="checkbox"
-                    checked={refreshSlugFromName}
-                    onChange={(event) => onRefreshSlugFromNameChange?.(event.target.checked)}
-                />
-                <span>
-                    {t(
-                        'host.properties.editor.slugRefresh.checkbox',
-                        'Cambiar igual la dirección web para que siga estos cambios'
-                    )}
-                </span>
-            </label>
+            <Checkbox
+                id={checkboxId}
+                checked={refreshSlugFromName}
+                onChange={(event) => onRefreshSlugFromNameChange?.(event.target.checked)}
+                label={t(
+                    'host.properties.editor.slugRefresh.checkbox',
+                    'Cambiar igual la dirección web para que siga estos cambios'
+                )}
+            />
         </div>
     );
 }
@@ -192,268 +199,264 @@ export function BasicInfoSection({
     onRefreshSlugFromNameChange
 }: BasicInfoSectionProps) {
     const { t } = createTranslations(locale);
+    const idOf = (name: string) => ({ prefix: ACCOMMODATION_FIELD_PREFIX, name });
 
     return (
-        <fieldset className={styles.section}>
-            <legend className={styles.sectionTitle}>
-                {t('host.properties.editor.section.basicInfo', 'Información básica')}
-            </legend>
-
-            <div className={styles.field}>
-                <TextField
-                    prefix={ACCOMMODATION_FIELD_PREFIX}
-                    name="name"
-                    label={`${t('host.properties.editor.field.name', 'Nombre')} *`}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
+        <Section
+            title={t('host.properties.editor.groups.basicInfo', 'Cómo se presenta tu alojamiento')}
+            helpId={sectionHelpId({ vertical: 'accommodation', slug: 'datos' })}
+        >
+            <div className={styles.grid}>
+                <Field
+                    locale={locale}
+                    idParts={idOf('name')}
+                    label={t('host.properties.editor.field.name', 'Nombre')}
                     error={errors.name}
-                    type="text"
-                    value={data.name}
-                    onChange={(e) => onFieldChange('name', e.target.value)}
                     required
-                    maxLength={NAME_MAX_LENGTH}
-                    counter={{ locale, min: NAME_MIN_LENGTH, testId: 'name-char-counter' }}
-                />
-                {shouldOfferSlugRefreshNearName ? (
-                    <SlugRefreshNotice
-                        position="name"
-                        t={t}
-                        refreshSlugFromName={refreshSlugFromName}
-                        onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
-                    />
-                ) : null}
-            </div>
-
-            <div className={styles.field}>
-                <TextField
-                    as="textarea"
-                    prefix={ACCOMMODATION_FIELD_PREFIX}
-                    name="summary"
-                    label={`${t('host.properties.editor.field.summary', 'Descripción corta')} *`}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
-                    error={errors.summary}
-                    value={data.summary}
-                    onChange={(e) => onFieldChange('summary', e.target.value)}
-                    required
-                    maxLength={SUMMARY_MAX_LENGTH}
-                    rows={3}
-                    counter={{ locale, min: SUMMARY_MIN_LENGTH, testId: 'summary-char-counter' }}
-                />
-                <PlanEntitlementGate
-                    entitlementKey="ai_text_improve"
-                    locale={locale}
-                    fallback={null}
                 >
-                    <AiTextImprovePanel
-                        fieldType="summary"
-                        fieldValue={data.summary}
+                    <TextInput
+                        value={data.name}
+                        onChange={(e) => onFieldChange('name', e.target.value)}
+                        maxLength={NAME_MAX_LENGTH}
+                        aria-describedby={`${buildFieldId(idOf('name'))}-counter`}
+                    />
+                    <CharacterCounter
+                        id={`${buildFieldId(idOf('name'))}-counter`}
                         locale={locale}
-                        onAccept={(suggestion) => onFieldChange('summary', suggestion)}
-                        triggerDisabled={!data.summary}
+                        current={data.name.length}
+                        min={NAME_MIN_LENGTH}
+                        max={NAME_MAX_LENGTH}
+                        testId="name-char-counter"
                     />
-                </PlanEntitlementGate>
-            </div>
+                </Field>
 
-            <div className={styles.field}>
-                <label
-                    htmlFor={DESCRIPTION_ID}
-                    className={styles.fieldLabel}
-                >
-                    {t('host.properties.editor.field.description', 'Descripción')}
-                </label>
-                {/*
-                 * The entitlement gates RICH text (formatting), NOT the ability
-                 * to write a description. Without `can_use_rich_description` the
-                 * host still edits a plain-text description; the entitlement only
-                 * unlocks the formatted editor. The fallback keeps the field fully
-                 * editable plus a non-blocking nudge to upgrade for rich text.
-                 */}
-                <PlanEntitlementGate
-                    entitlementKey="can_use_rich_description"
+                <Field
                     locale={locale}
-                    fallback={
-                        <>
-                            {/*
-                             * Sits ABOVE the textarea, in the slot the rich
-                             * editor's formatting toolbar occupies (HOS-800).
-                             * Below it, the notice ended up one element away
-                             * from the AI-improve trigger and was read as
-                             * gating that button — the product owner concluded
-                             * the AI feature was plan-restricted while using
-                             * it. Placement, the boxed treatment and copy that
-                             * leads with the capability instead of the upgrade
-                             * verb all serve the same end: this announces a
-                             * missing toolbar, not a locked button.
-                             */}
-                            <div className={styles.formatUpsell}>
-                                <LockIcon
-                                    className={styles.formatUpsellIcon}
-                                    aria-hidden="true"
-                                />
-                                <p
-                                    id={DESCRIPTION_FORMAT_UPSELL_ID}
-                                    className={styles.formatUpsellText}
-                                >
-                                    {t(
-                                        'host.properties.editor.entitlement.richDescriptionHint',
-                                        'Texto con formato: negritas, listas y más. Disponible en planes superiores.'
-                                    )}{' '}
-                                    <a
-                                        href={buildUrl({
-                                            locale,
-                                            path: PRICING_PAGE_PATH_BY_AUDIENCE.owner
-                                        })}
-                                    >
-                                        {t(
-                                            'host.properties.editor.entitlement.upgradeLink',
-                                            'Mejorar plan'
+                    idParts={idOf('type')}
+                    label={t('host.properties.editor.field.type', 'Tipo')}
+                    error={errors.type}
+                >
+                    <Select
+                        value={data.type}
+                        onChange={(e) => onFieldChange('type', e.target.value)}
+                    >
+                        {ACCOMMODATION_TYPE_VALUES.map((value) => (
+                            <option
+                                key={value}
+                                value={value}
+                            >
+                                {t(`host.miniForm.types.${value}`, value)}
+                            </option>
+                        ))}
+                    </Select>
+                </Field>
+
+                {/*
+                 * The id `acc-destination` became `acc-destinationId`: the old
+                 * slug dropped the `Id` the Zod key carries, which is the drift
+                 * `buildFieldId` removes. Ids are internal, so the rename is safe.
+                 */}
+                <Field
+                    locale={locale}
+                    idParts={idOf('destinationId')}
+                    label={t('host.properties.editor.field.destination', 'Destino')}
+                    error={errors.destinationId}
+                    required
+                >
+                    <Select
+                        value={data.destinationId}
+                        onChange={(e) => onFieldChange('destinationId', e.target.value)}
+                    >
+                        <option value="">
+                            {t(
+                                'host.properties.editor.field.destinationPlaceholder',
+                                'Seleccionar destino...'
+                            )}
+                        </option>
+                        {destinations.map((dest) => (
+                            <option
+                                key={dest.id}
+                                value={dest.id}
+                            >
+                                {dest.name}
+                            </option>
+                        ))}
+                    </Select>
+                </Field>
+
+                {shouldOfferSlugRefreshNearName ? (
+                    <div className={styles.full}>
+                        <SlugRefreshNotice
+                            position="name"
+                            t={t}
+                            refreshSlugFromName={refreshSlugFromName}
+                            onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+                        />
+                    </div>
+                ) : null}
+                {shouldOfferSlugRefreshNearType ? (
+                    <div className={styles.full}>
+                        <SlugRefreshNotice
+                            position="type"
+                            t={t}
+                            refreshSlugFromName={refreshSlugFromName}
+                            onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
+                        />
+                    </div>
+                ) : null}
+
+                <div className={styles.full}>
+                    <Field
+                        locale={locale}
+                        idParts={idOf('summary')}
+                        label={t('host.properties.editor.field.summary', 'Descripción corta')}
+                        error={errors.summary}
+                        required
+                    >
+                        <Textarea
+                            value={data.summary}
+                            onChange={(e) =>
+                                onFieldChange(
+                                    'summary',
+                                    capLength(e.target.value, SUMMARY_MAX_LENGTH)
+                                )
+                            }
+                            rows={3}
+                            aria-describedby={SUMMARY_COUNTER_ID}
+                        />
+                        <CharacterCounter
+                            id={SUMMARY_COUNTER_ID}
+                            locale={locale}
+                            current={data.summary.length}
+                            min={SUMMARY_MIN_LENGTH}
+                            max={SUMMARY_MAX_LENGTH}
+                            testId="summary-char-counter"
+                        />
+                    </Field>
+                    <PlanEntitlementGate
+                        entitlementKey="ai_text_improve"
+                        locale={locale}
+                        fallback={null}
+                    >
+                        <AiTextImprovePanel
+                            fieldType="summary"
+                            fieldValue={data.summary}
+                            locale={locale}
+                            onAccept={(suggestion) => onFieldChange('summary', suggestion)}
+                            triggerDisabled={!data.summary}
+                        />
+                    </PlanEntitlementGate>
+                </div>
+
+                <div className={styles.full}>
+                    <Field
+                        locale={locale}
+                        id={DESCRIPTION_ID}
+                        label={t('host.properties.editor.field.description', 'Descripción')}
+                        error={errors.description}
+                    >
+                        {/*
+                         * The entitlement gates RICH text (formatting), NOT the
+                         * ability to write a description. Without
+                         * `can_use_rich_description` the host still edits a plain
+                         * description; the gate only unlocks the formatted editor.
+                         */}
+                        <PlanEntitlementGate
+                            entitlementKey="can_use_rich_description"
+                            locale={locale}
+                            fallback={
+                                <>
+                                    {/*
+                                     * Sits ABOVE the textarea, in the slot the rich
+                                     * editor's toolbar occupies (HOS-800), and names
+                                     * the field it is about (HOS-2488), so it reads as
+                                     * a missing toolbar and never as a locked button.
+                                     */}
+                                    <div className={styles.formatUpsell}>
+                                        <LockIcon
+                                            className={styles.formatUpsellIcon}
+                                            aria-hidden="true"
+                                        />
+                                        <p
+                                            id={DESCRIPTION_FORMAT_UPSELL_ID}
+                                            className={styles.formatUpsellText}
+                                        >
+                                            {t(
+                                                'host.properties.editor.entitlement.richDescriptionHint',
+                                                'Texto con formato en la descripción: negritas, listas y más. Disponible en planes superiores.'
+                                            )}{' '}
+                                            <a
+                                                href={buildUrl({
+                                                    locale,
+                                                    path: PRICING_PAGE_PATH_BY_AUDIENCE.owner
+                                                })}
+                                            >
+                                                {t(
+                                                    'host.properties.editor.entitlement.upgradeLink',
+                                                    'Mejorar plan'
+                                                )}
+                                            </a>
+                                        </p>
+                                    </div>
+                                    <Textarea
+                                        value={data.description}
+                                        onChange={(e) =>
+                                            onFieldChange(
+                                                'description',
+                                                capLength(e.target.value, DESCRIPTION_MAX_LENGTH)
+                                            )
+                                        }
+                                        rows={6}
+                                        placeholder={t(
+                                            'host.properties.editor.richText.placeholder',
+                                            'Describí tu propiedad con detalle...'
                                         )}
-                                    </a>
-                                </p>
-                            </div>
-                            <textarea
+                                        aria-describedby={`${DESCRIPTION_COUNTER_ID} ${DESCRIPTION_FORMAT_UPSELL_ID}`}
+                                    />
+                                </>
+                            }
+                        >
+                            <RichTextEditor
                                 id={DESCRIPTION_ID}
-                                className={styles.fieldInput}
+                                locale={locale}
                                 value={data.description}
-                                onChange={(e) => onFieldChange('description', e.target.value)}
-                                rows={6}
-                                maxLength={DESCRIPTION_MAX_LENGTH}
+                                onChange={(value) => onFieldChange('description', value)}
                                 placeholder={t(
                                     'host.properties.editor.richText.placeholder',
                                     'Describí tu propiedad con detalle...'
                                 )}
-                                aria-invalid={Boolean(errors.description)}
-                                aria-describedby={[
-                                    errors.description
-                                        ? buildFieldErrorId(DESCRIPTION_FIELD)
-                                        : null,
-                                    DESCRIPTION_COUNTER_ID,
-                                    DESCRIPTION_FORMAT_UPSELL_ID
-                                ]
-                                    .filter(Boolean)
-                                    .join(' ')}
+                                hasError={Boolean(errors.description)}
                             />
-                        </>
-                    }
-                >
-                    <RichTextEditor
-                        id={DESCRIPTION_ID}
+                        </PlanEntitlementGate>
+                        <CharacterCounter
+                            id={DESCRIPTION_COUNTER_ID}
+                            locale={locale}
+                            current={data.description.length}
+                            min={DESCRIPTION_MIN_LENGTH}
+                            max={DESCRIPTION_MAX_LENGTH}
+                            testId="description-char-counter"
+                        />
+                    </Field>
+                    {/*
+                     * Independent entitlement from `can_use_rich_description`: an
+                     * owner can have AI-improve without rich text and vice versa.
+                     * Both branches share the same `data.description` contract.
+                     */}
+                    <PlanEntitlementGate
+                        entitlementKey="ai_text_improve"
                         locale={locale}
-                        value={data.description}
-                        onChange={(value) => onFieldChange('description', value)}
-                        placeholder={t(
-                            'host.properties.editor.richText.placeholder',
-                            'Describí tu propiedad con detalle...'
-                        )}
-                        hasError={Boolean(errors.description)}
-                        errorMessage={errors.description}
-                    />
-                </PlanEntitlementGate>
-                <CharacterCounter
-                    id={DESCRIPTION_COUNTER_ID}
-                    locale={locale}
-                    current={data.description.length}
-                    min={DESCRIPTION_MIN_LENGTH}
-                    max={DESCRIPTION_MAX_LENGTH}
-                    testId="description-char-counter"
-                />
-                <FieldError
-                    id={buildFieldErrorId(DESCRIPTION_FIELD)}
-                    message={errors.description}
-                    className={styles.fieldErrorSpacing}
-                />
-                {/*
-                 * Independent entitlement from `can_use_rich_description` above:
-                 * an owner can have AI-improve without rich text, rich text
-                 * without AI-improve, both, or neither. Sits alongside the
-                 * field regardless of which branch (RichTextEditor or plain
-                 * textarea) the rich-description gate rendered, since both
-                 * paths flow through the same `data.description` +
-                 * `onFieldChange('description', ...)` controlled-value contract.
-                 */}
-                <PlanEntitlementGate
-                    entitlementKey="ai_text_improve"
-                    locale={locale}
-                    fallback={null}
-                >
-                    <AiTextImprovePanel
-                        fieldType="description"
-                        fieldValue={data.description}
-                        locale={locale}
-                        onAccept={(suggestion) => onFieldChange('description', suggestion)}
-                        triggerDisabled={!data.description}
-                    />
-                </PlanEntitlementGate>
+                        fallback={null}
+                    >
+                        <AiTextImprovePanel
+                            fieldType="description"
+                            fieldValue={data.description}
+                            locale={locale}
+                            onAccept={(suggestion) => onFieldChange('description', suggestion)}
+                            triggerDisabled={!data.description}
+                        />
+                    </PlanEntitlementGate>
+                </div>
             </div>
-
-            <div className={styles.field}>
-                <TextField
-                    as="select"
-                    prefix={ACCOMMODATION_FIELD_PREFIX}
-                    name="type"
-                    label={t('host.properties.editor.field.type', 'Tipo')}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
-                    error={errors.type}
-                    value={data.type}
-                    onChange={(e) => onFieldChange('type', e.target.value)}
-                >
-                    {ACCOMMODATION_TYPE_OPTIONS.map(({ value, fallback }) => (
-                        <option
-                            key={value}
-                            value={value}
-                        >
-                            {t(`host.miniForm.types.${value}`, fallback)}
-                        </option>
-                    ))}
-                </TextField>
-                {shouldOfferSlugRefreshNearType ? (
-                    <SlugRefreshNotice
-                        position="type"
-                        t={t}
-                        refreshSlugFromName={refreshSlugFromName}
-                        onRefreshSlugFromNameChange={onRefreshSlugFromNameChange}
-                    />
-                ) : null}
-            </div>
-
-            <div className={styles.field}>
-                {/*
-                 * The one id this migration renames: `acc-destination` →
-                 * `acc-destinationId`. The old slug dropped the `Id` the Zod key
-                 * carries, which is precisely the drift `buildFieldId` removes.
-                 * Ids here are internal (no deep links, no external consumers),
-                 * so the rename is safe at runtime.
-                 */}
-                <TextField
-                    as="select"
-                    prefix={ACCOMMODATION_FIELD_PREFIX}
-                    name="destinationId"
-                    label={`${t('host.properties.editor.field.destination', 'Destino')} *`}
-                    labelClassName={styles.fieldLabel}
-                    className={styles.fieldInput}
-                    error={errors.destinationId}
-                    value={data.destinationId}
-                    onChange={(e) => onFieldChange('destinationId', e.target.value)}
-                    required
-                >
-                    <option value="">
-                        {t(
-                            'host.properties.editor.field.destinationPlaceholder',
-                            'Seleccionar destino...'
-                        )}
-                    </option>
-                    {destinations.map((dest) => (
-                        <option
-                            key={dest.id}
-                            value={dest.id}
-                        >
-                            {dest.name}
-                        </option>
-                    ))}
-                </TextField>
-            </div>
-        </fieldset>
+        </Section>
     );
 }

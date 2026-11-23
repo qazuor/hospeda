@@ -40,7 +40,8 @@ import {
     validateBusinessLines
 } from '@repo/schemas';
 import { type JSX, useEffect, useState } from 'react';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { Button } from '@/components/account/ui/Button';
+import { Checkbox, CheckboxGroup } from '@/components/account/ui/Checkbox';
 import type { TranslationFn } from '@/lib/api-errors';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -142,7 +143,6 @@ export function BusinessLinesField({
 
     const selectedCount = options.filter((option) => option.selected).length;
     const fieldId = buildFieldId({ prefix: LISTING_FIELD_PREFIX, name: FIELD_NAME });
-    const errorId = fieldErrorId(FIELD_NAME);
     const selectionError = resolveBusinessLinesFieldError({ vertical, type, selected, t });
     const error = errors.businessLines ?? selectionError;
     const suggested = resolveBusinessLineDefaults({ vertical, type }).preselect;
@@ -160,69 +160,56 @@ export function BusinessLinesField({
     };
 
     return (
-        <div className={styles.field}>
-            <fieldset
-                id={fieldId}
-                className={styles.fieldset}
-                aria-invalid={error ? 'true' : 'false'}
-                aria-describedby={error ? errorId : undefined}
+        <div
+            id={fieldId}
+            className={styles.field}
+        >
+            <CheckboxGroup
+                locale={locale}
+                legend={t('venue.owner.businessLines.legend', 'Rubros')}
+                error={error}
             >
-                <legend className={styles.legend}>
-                    {t('venue.owner.businessLines.legend', 'Rubros')}
-                </legend>
-                <div className={styles.options}>
-                    {options.map((option, index) => {
-                        if (option.reason === 'NOT_ALLOWED_FOR_TYPE') return null;
+                {options.map((option, index) => {
+                    if (option.reason === 'NOT_ALLOWED_FOR_TYPE') return null;
 
-                        const lastSelected = option.selected && selectedCount === 1;
-                        const disabled =
-                            !option.selectable ||
-                            lastSelected ||
-                            (option.selected && !option.removable);
-                        const hint = option.reason
-                            ? t(`venue.owner.businessLines.reason.${option.reason}`)
-                            : lastSelected
-                              ? t(
-                                    'venue.owner.businessLines.keepOne',
-                                    'Dejá al menos un rubro seleccionado.'
-                                )
-                              : option.selected && !option.removable && option.removeReason
-                                ? resolveValidationMessage({
-                                      key: `zodError.venue.businessLines.${option.removeReason}`,
-                                      t: (key, params) => t(key, undefined, params)
-                                  })
-                                : null;
+                    const lastSelected = option.selected && selectedCount === 1;
+                    const disabled =
+                        !option.selectable ||
+                        lastSelected ||
+                        (option.selected && !option.removable);
+                    const hint = option.reason
+                        ? t(`venue.owner.businessLines.reason.${option.reason}`)
+                        : lastSelected
+                          ? t(
+                                'venue.owner.businessLines.keepOne',
+                                'Dejá al menos un rubro seleccionado.'
+                            )
+                          : option.selected && !option.removable && option.removeReason
+                            ? resolveValidationMessage({
+                                  key: `zodError.venue.businessLines.${option.removeReason}`,
+                                  t: (key, params) => t(key, undefined, params)
+                              })
+                            : null;
 
-                        return (
-                            <label
-                                key={option.value}
-                                className={styles.option}
-                            >
-                                <input
-                                    type="checkbox"
-                                    data-testid={`business-line-${option.value}`}
-                                    checked={option.selected}
-                                    disabled={disabled}
-                                    onChange={(event) => toggle(index, event.target.checked)}
-                                />
-                                <span className={styles.optionText}>
-                                    <span className={styles.optionLabel}>
-                                        {t(
-                                            `venue.owner.businessLines.${option.value}.label`,
-                                            option.value
-                                        )}
-                                    </span>
-                                    {hint ? <span className={styles.hint}>{hint}</span> : null}
-                                </span>
-                            </label>
-                        );
-                    })}
-                </div>
-            </fieldset>
+                    return (
+                        <Checkbox
+                            key={option.value}
+                            data-testid={`business-line-${option.value}`}
+                            checked={option.selected}
+                            disabled={disabled}
+                            onChange={(event) => toggle(index, event.target.checked)}
+                            label={t(
+                                `venue.owner.businessLines.${option.value}.label`,
+                                option.value
+                            )}
+                            description={hint ?? undefined}
+                        />
+                    );
+                })}
+            </CheckboxGroup>
             {selectionError && suggested.length > 0 ? (
-                <button
-                    type="button"
-                    className={styles.suggested}
+                <Button
+                    variant="secondary"
                     onClick={() => {
                         setPendingRemoval(null);
                         onChange([...suggested]);
@@ -232,7 +219,7 @@ export function BusinessLinesField({
                         'venue.owner.businessLines.useSuggested',
                         'Usar los rubros sugeridos para este tipo'
                     )}
-                </button>
+                </Button>
             ) : null}
             {pendingRemoval && listingId ? (
                 <BusinessLineRemovalNotice
@@ -242,10 +229,6 @@ export function BusinessLinesField({
                     nextSelection={pendingRemoval.next}
                 />
             ) : null}
-            <FieldError
-                id={errorId}
-                message={error}
-            />
         </div>
     );
 }

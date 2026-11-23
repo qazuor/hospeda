@@ -268,6 +268,10 @@
             "recurringWithdrawLink": "Cancelar estes destaques"
         },
         "editor": {
+            "groups": {
+                "basicInfo": "Como sua acomodação é apresentada",
+                "amenities": "O que sua acomodação oferece"
+            },
             "section": {
                 "basicInfo": "Informações básicas",
                 "location": "Localização",
@@ -508,7 +512,7 @@
                 "premiumFeature": "Recurso premium",
                 "richDescriptionNudge": "Faça upgrade no seu plano para usar descrições enriquecidas com formatação.",
                 "calendarNudge": "Faça upgrade no seu plano para usar o calendário de disponibilidade.",
-                "richDescriptionHint": "Texto com formatação: negrito, listas e mais. Disponível em planos superiores.",
+                "richDescriptionHint": "Texto formatado na descrição: negrito, listas e mais. Disponível em planos superiores.",
                 "videoNudge": "Faça upgrade no seu plano para incorporar vídeos na sua propriedade.",
                 "genericNudge": "Este recurso está disponível em um plano superior.",
                 "upgradeLink": "Melhorar plano"

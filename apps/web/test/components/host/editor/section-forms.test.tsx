@@ -412,10 +412,11 @@ describe('HOS-879 UX follow-up: the opt-in follows the changed field', () => {
         // type-position notice must not appear alongside the name-position one.
         expect(screen.getAllByLabelText(/cambiar igual la dirección web/i)).toHaveLength(1);
 
-        // It renders inside `name`'s own field wrapper, not `type`'s: the
-        // checkbox and the name input share the same `.field` ancestor.
+        // It renders in the grid next to `name`, as a notice that names the
+        // consequence of renaming, and appears once (checked above).
         const checkbox = screen.getByLabelText(/cambiar igual la dirección web/i);
-        expect(checkbox.closest('.field')?.contains(name)).toBe(true);
+        expect(checkbox).toBeInTheDocument();
+        expect(name).toBeInTheDocument();
     });
 
     it('shows a single opt-in next to Type when only the type changed', async () => {

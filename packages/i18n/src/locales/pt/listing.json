@@ -135,6 +135,12 @@
                 "nightInfo": "Info para sair",
                 "aiQuestions": "Perguntas à IA"
             },
+            "groups": {
+                "basicInfo": "Identidade e descrição",
+                "practicalInfo": "O prático do passeio",
+                "price": "Quanto custa",
+                "amenities": "O que seu negócio oferece"
+            },
             "sections": {
                 "type": "Categoria",
                 "summary": "Resumo",

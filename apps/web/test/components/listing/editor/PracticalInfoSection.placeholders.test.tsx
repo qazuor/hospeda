@@ -16,7 +16,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { PracticalInfoSection } from '../../../../src/components/listing/editor/PracticalInfoSection.client';
 import { buildEditData } from './edit-data-fixture';
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`
     })

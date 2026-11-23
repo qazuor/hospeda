@@ -13,7 +13,8 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PoliciesPanel } from '@/components/listing/editor/PoliciesPanel.client';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key
     })
@@ -40,8 +41,9 @@ describe('PoliciesPanel check-in/check-out layout (HOS-2060)', () => {
         ] as HTMLInputElement[];
         expect(inputs).toHaveLength(4);
         for (const input of inputs) {
+            // Kit `Field` root: the label and its input share one cell of the
+            // `pair` grid.
             const cell = input.parentElement as HTMLElement;
-            expect(cell.className).toContain('timeField');
             expect(cell.parentElement?.className).toContain('pair');
             const label = cell.querySelector(`label[for="${input.id}"]`);
             expect(label).not.toBeNull();
