@@ -20,6 +20,8 @@ import {
 const chargeAt = new Date('2026-10-12T15:00:00.000Z');
 const cutoff = new Date('2026-10-12T04:00:00.000Z');
 const clockAt = (instant: string) => ({ now: () => new Date(instant) });
+/** HOS-2174: the cycle-deadline read stamps the renewal clock from the injected clock. */
+const stampClock = clockAt('2026-10-08T00:00:00.000Z');
 /** HOS-2223: the charge date cuts the window only once the predecessor's cycle is paid. */
 const creditPredecessor = (subscriptionId: string) =>
     seedCoveredPayment({ subscriptionId, amountMinor: 250000 });
@@ -190,7 +192,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
         const nextChargeAt = new Date('2026-10-11T04:00:00.000Z');
         const seeded = await seedPlanChange({ paymentMethod: 'MANUAL', nextChargeAt });
         const deadlines = await getServiceTestDb().transaction((tx) =>
-            readCycleDeadlines({ tx, subscriptionId: seeded.predecessor.id })
+            readCycleDeadlines({
+                tx,
+                subscriptionId: seeded.predecessor.id,
+                clock: stampClock
+            })
         );
         expect(
             resolveSuccessorWindow({
@@ -214,7 +220,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
     it('reads the stamped cycle version after a new immutable version is published', async () => {
         const seeded = await seedPlanChange({ nextChargeAt: chargeAt });
         await withServiceTestTransaction(async (tx) => {
-            const first = await readCycleDeadlines({ tx, subscriptionId: seeded.predecessor.id });
+            const first = await readCycleDeadlines({
+                tx,
+                subscriptionId: seeded.predecessor.id,
+                clock: stampClock
+            });
             expect(first.stamped).toBe(true);
             expect(first.values['15'].hoursRemaining).toBe(24);
             const [current] = await tx
@@ -230,7 +240,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
                 previousValue: current.values['15'],
                 newValue: { hoursRemaining: 12 }
             });
-            const frozen = await readCycleDeadlines({ tx, subscriptionId: seeded.predecessor.id });
+            const frozen = await readCycleDeadlines({
+                tx,
+                subscriptionId: seeded.predecessor.id,
+                clock: stampClock
+            });
             expect(frozen).toMatchObject({
                 version: first.version,
                 stamped: false,
@@ -253,7 +267,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
                 .update(subscriptions)
                 .set({ renewalNoticeDeadlineVersion: null, renewalNoticeChargeAt: null })
                 .where(eq(subscriptions.id, seeded.predecessor.id));
-            const fresh = await readCycleDeadlines({ tx, subscriptionId: seeded.predecessor.id });
+            const fresh = await readCycleDeadlines({
+                tx,
+                subscriptionId: seeded.predecessor.id,
+                clock: stampClock
+            });
             expect(fresh).toMatchObject({
                 version: current.version + 1,
                 stamped: true,
@@ -277,7 +295,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
             reportSecondPid = resolve;
         });
         const first = getServiceTestDb().transaction(async (tx) => {
-            const result = await readCycleDeadlines({ tx, subscriptionId: seeded.predecessor.id });
+            const result = await readCycleDeadlines({
+                tx,
+                subscriptionId: seeded.predecessor.id,
+                clock: stampClock
+            });
             firstEntered();
             await holdFirst;
             return result;
@@ -290,7 +312,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
                 .where(eq(subscriptions.id, seeded.predecessor.id));
             if (!session) throw new Error('Second transaction has no backend');
             reportSecondPid(session.pid);
-            return readCycleDeadlines({ tx, subscriptionId: seeded.predecessor.id });
+            return readCycleDeadlines({
+                tx,
+                subscriptionId: seeded.predecessor.id,
+                clock: stampClock
+            });
         });
         try {
             const pid = await secondPid;
