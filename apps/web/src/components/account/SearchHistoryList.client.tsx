@@ -140,7 +140,7 @@ export function SearchHistoryList({
     const [entitlementRequired, setEntitlementRequired] = useState(false);
     // HOS-2479: read-only here; the switch lives in Preferences.
     const isHistoryEnabled = initialHistoryEnabled;
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: askConfirmation, confirmDialog } = useConfirm({ locale });
 
     const isMountedRef = useRef(true);
 
@@ -232,7 +232,7 @@ export function SearchHistoryList({
      */
     const requestDelete = useCallback(
         async (entry: SearchHistoryApiItem) => {
-            await confirm({
+            await askConfirmation({
                 title: t('account.searchHistory.deleteConfirmTitle'),
                 description: t('account.searchHistory.deleteConfirmBody', undefined, {
                     query: entry.queryText ?? t('account.searchHistory.noQuery')
@@ -257,14 +257,14 @@ export function SearchHistoryList({
                 }
             });
         },
-        [base, confirm, deleteErrorMsg, deleteSuccessMsg, t]
+        [base, askConfirmation, deleteErrorMsg, deleteSuccessMsg, t]
     );
 
     // ── Clear all ─────────────────────────────────────────────────────────────
 
     /** Hard-delete all history entries for this user, after the kit ConfirmDialog. */
     const requestClearAll = useCallback(async () => {
-        await confirm({
+        await askConfirmation({
             title: t('account.searchHistory.clearConfirmTitle'),
             description: t('account.searchHistory.clearConfirmBody'),
             confirmLabel: t('account.searchHistory.clearAllInline'),
@@ -286,7 +286,7 @@ export function SearchHistoryList({
                 }
             }
         });
-    }, [base, clearErrorMsg, clearSuccessMsg, confirm, t]);
+    }, [base, clearErrorMsg, clearSuccessMsg, askConfirmation, t]);
 
     // ── Render ────────────────────────────────────────────────────────────────
 

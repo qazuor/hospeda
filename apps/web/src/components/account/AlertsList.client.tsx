@@ -128,7 +128,7 @@ export function AlertsList({
     // ── State ─────────────────────────────────────────────────────────────────
     const [status, setStatus] = useState<ListStatus>({ kind: 'loading' });
     const [alerts, setAlerts] = useState<PriceAlertListItem[]>([]);
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: askConfirmation, confirmDialog } = useConfirm({ locale });
 
     const isMountedRef = useRef(true);
 
@@ -215,7 +215,7 @@ export function AlertsList({
      */
     const requestDelete = useCallback(
         async (alert: PriceAlertListItem) => {
-            await confirm({
+            await askConfirmation({
                 title: t('account.alerts.deleteConfirmTitle'),
                 description: t('account.alerts.deleteConfirmBody', undefined, {
                     name: alert.accommodationName
@@ -250,7 +250,7 @@ export function AlertsList({
                 }
             });
         },
-        [base, confirm, t, deleteErrorMsg, deleteSuccessMsg]
+        [base, askConfirmation, t, deleteErrorMsg, deleteSuccessMsg]
     );
 
     // ── Render helpers ────────────────────────────────────────────────────────
