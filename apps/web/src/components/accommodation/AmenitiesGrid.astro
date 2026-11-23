@@ -7,6 +7,13 @@
  * Pills 7-8 are in the DOM but hidden below 768px by CSS, so the split between the
  * two breakpoints costs no JavaScript.
  *
+ * SEO / no-JS: the sheet island renders nothing while closed, so its children never
+ * reach the HTML. Every amenity past the visible pills therefore also renders here, in
+ * SSR, as a visually-hidden list (`data-amenities-rest`): crawlers and screen readers
+ * get the whole catalog and, read in order, it simply continues the visible pills.
+ * Without JavaScript (`<noscript>`) the list becomes visible and the dead sheet button
+ * is hidden.
+ *
  * HOS-2058: an amenity whose relation DECLARES scope and/or availability shows
  * a badge per declared value (`resolveAmenityAttributeBadges`); an undeclared
  * one shows nothing.
@@ -60,6 +67,7 @@ const entries = amenities.map((amenity) => ({
 }));
 
 const hasOverflow = entries.length > MOBILE_COUNT;
+const restEntries = entries.slice(DESKTOP_COUNT);
 const viewAllLabel = tPlural('accommodations.detail.amenitiesDetail.viewAll', entries.length);
 const title = t('accommodations.detail.amenitiesDetail.title');
 ---
@@ -74,6 +82,12 @@ const title = t('accommodations.detail.amenitiesDetail.title');
       </div>
     ))}
   </div>
+
+  {restEntries.length > 0 && (
+    <div class="amenities-list amenities-list--rest" data-amenities-rest>
+      {restEntries.map((entry) => <ListingPill {...entry} />)}
+    </div>
+  )}
 
   {hasOverflow && (
     <div class:list={['amenities-section__more', { 'amenities-section__more--mobile-only': entries.length <= DESKTOP_COUNT }]}>
@@ -91,9 +105,17 @@ const title = t('accommodations.detail.amenitiesDetail.title');
     </div>
   )}
 </section>
+<noscript>
+  <style is:inline>
+    [data-amenities-rest] { position: static !important; inline-size: auto !important; block-size: auto !important; clip-path: none !important; overflow: visible !important; white-space: normal !important; }
+    .amenities-section__more { display: none !important; }
+    .amenities-list__item--desktop-only { display: contents !important; }
+  </style>
+</noscript>
 
 <style>
   .amenities-section {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--space-4, 16px);
@@ -116,6 +138,15 @@ const title = t('accommodations.detail.amenitiesDetail.title');
   /* Pills 7 and 8 are desktop-only. */
   .amenities-list__item--desktop-only {
     display: none;
+  }
+  /* Visually hidden, still in the DOM and in the accessibility tree (see @file). */
+  .amenities-list--rest {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   @media (min-width: 768px) {
     .amenities-list__item--desktop-only {
