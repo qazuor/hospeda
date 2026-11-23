@@ -121,7 +121,7 @@ export function Repeater<T>({
 }: RepeaterProps<T>) {
     const t = createT(locale);
     const baseId = useId();
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
 
     const askAndRemove = async (item: T, index: number): Promise<void> => {
         if (!onRemove) return;
@@ -131,7 +131,7 @@ export function Repeater<T>({
             description: t('account.ui.repeater.confirmDescription'),
             confirmLabel: t('account.ui.repeater.confirmLabel')
         };
-        if (await confirm(copy)) {
+        if (await askConfirm(copy)) {
             await onRemove(index);
         }
     };
