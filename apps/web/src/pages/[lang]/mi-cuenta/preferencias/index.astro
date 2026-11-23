@@ -8,6 +8,8 @@
 
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
 import { PageHeader } from '@/components/account/ui';
 import { PreferenceToggles } from '@/components/account/PreferenceToggles.client';
 import { RestartTour } from '@/components/account/RestartTour.client';
@@ -40,7 +42,9 @@ const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="preferencias">
-	<PageHeader title={title} locale={locale} />
+	<PageHeader title={title} locale={locale}>
+		<HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+	</PageHeader>
 
 	<PreferenceToggles
 		client:load

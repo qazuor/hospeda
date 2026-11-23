@@ -34,11 +34,12 @@ const ACCOUNT_HEADER = read('layouts/AccountHeader.astro');
 
 /**
  * What gives a page the «?» of ITS OWN article (HOS-2546): the title row of
- * `AccountPageHeader`, directly or through an editor layout. Since
- * `PageHelpRow` is gone, the account layout alone is not enough.
+ * `AccountPageHeader`, directly or through an editor layout, or a `HelpLink`
+ * in the `help` slot of the kit `PageHeader`. Since `PageHelpRow` is gone, the
+ * account layout alone is not enough.
  */
 const PAGE_HELP_PATH =
-    /<AccountPageHeader\b|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
+    /<AccountPageHeader\b|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b|<HelpLink slot="help"/;
 
 /** What gives a page at least the general «?»: a page «?», or the account header's. */
 const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b`);
