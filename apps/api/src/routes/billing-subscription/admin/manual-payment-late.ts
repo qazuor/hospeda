@@ -11,6 +11,7 @@ import {
     UnallocatedManualPaymentResponseSchema
 } from '@repo/schemas';
 import {
+    type LateManualPaymentRegistrationPreview,
     previewLateManualPaymentRegistration,
     previewUnallocatedManualPayment,
     REGISTER_LATE_MANUAL_PAYMENT_REJECTIONS,
@@ -21,6 +22,7 @@ import {
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
+import { readIncompleteListingIds } from '../../../services/listing-publication/listing-publish-completeness';
 import { getActorFromContext } from '../../../utils/actor';
 import { getAnalyticsFactSink } from '../../../utils/analytics/analytics-facts';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
@@ -94,12 +96,32 @@ async function auditSubjectOf(subscriptionId: string): Promise<string | null> {
     }
 }
 
-/** Read-only confirmation of administrative action 3 through MP4. */
+/** Serializes the MP4 confirmation's dates for the HTTP response. */
+function serializeLatePreview(preview: LateManualPaymentRegistrationPreview) {
+    const effects = preview.s7Effects;
+    return {
+        ...preview,
+        periodStart: preview.periodStart.toISOString(),
+        reimputedPeriodStart: preview.reimputedPeriodStart?.toISOString() ?? null,
+        nextChargeAt: preview.nextChargeAt.toISOString(),
+        s7Effects: effects
+            ? {
+                  ...effects,
+                  scheduledChange: effects.scheduledChange
+                      ? { effectiveAt: effects.scheduledChange.effectiveAt.toISOString() }
+                      : null
+              }
+            : null
+    };
+}
+
+/** Read-only confirmation of administrative action 3 through MP4 (fila 10-bis, HOS-1640). */
 export const adminLateManualPaymentPreviewRoute = createAdminRoute({
     method: 'get',
     path: '/{subscriptionId}/manual-payments/{manualPaymentId}/register-late',
     summary: 'Preview late manual payment registration',
-    description: 'Confirm the MP4 effect and possible period reimputation.',
+    description:
+        'Confirm the MP4 effect, the period it pays, what the S7 return brings back per vertical and its other three effects.',
     tags: ['Billing subscriptions', 'Admin'],
     requiredPermissions: [PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT],
     requestParams: ManualPaymentParamsSchema.shape,
@@ -113,7 +135,14 @@ export const adminLateManualPaymentPreviewRoute = createAdminRoute({
                     subscriptionId: params.subscriptionId as string,
                     manualPaymentId: params.manualPaymentId as string
                 },
-                { clock: getClock().clock }
+                {
+                    clock: getClock().clock,
+                    returnPorts: {
+                        readIncompleteListingIds,
+                        complements: buildComplementPolicyPorts(),
+                        touristVipInheritance
+                    }
+                }
             );
             auditLog({
                 auditEvent: AuditEventType.BILLING_READ,
@@ -122,12 +151,7 @@ export const adminLateManualPaymentPreviewRoute = createAdminRoute({
                 resourceId: preview.subscriptionId,
                 metadata: { subjectId: await auditSubjectOf(preview.subscriptionId) }
             });
-            return {
-                ...preview,
-                periodStart: preview.periodStart.toISOString(),
-                reimputedPeriodStart: preview.reimputedPeriodStart?.toISOString() ?? null,
-                nextChargeAt: preview.nextChargeAt.toISOString()
-            };
+            return serializeLatePreview(preview);
         } catch (error) {
             return answerRejection({ error, ctx });
         }

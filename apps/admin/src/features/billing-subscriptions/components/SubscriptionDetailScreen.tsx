@@ -8,6 +8,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { ApiError } from '@/lib/errors';
 import { formatDateWithTime } from '@/lib/format-helpers';
 import { useAdminSubscriptionDetail } from '../hooks/useAdminSubscriptionDetail';
+import { LateManualPaymentSection } from './LateManualPaymentSection';
 import { SubscriptionActionLinks } from './SubscriptionActionLinks';
 
 type Detail = AdminSubscriptionDetailHttp;
@@ -17,8 +18,8 @@ const isNotFound = (error: unknown): boolean =>
 
 /**
  * Administrative subscription detail. Shows the owner, plan and version, next
- * charge, open pause and current courtesy, and the action links the current
- * user may open.
+ * charge, open pause and current courtesy, the manual installments declared
+ * unpaid (MP4, HOS-1640) and the action links the current user may open.
  */
 export function SubscriptionDetailScreen({ subscriptionId }: { readonly subscriptionId: string }) {
     return (
@@ -109,6 +110,10 @@ function DetailBody({ subscriptionId }: { readonly subscriptionId: string }) {
                     ) : null}
                 </section>
             ) : null}
+            <LateManualPaymentSection
+                subscriptionId={subscriptionId}
+                paymentMethod={detail.paymentMethod}
+            />
             <SubscriptionActionLinks subscriptionId={subscriptionId} />
         </div>
     );

@@ -2,7 +2,11 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import { buildRestitutionPayload } from './publication-notices';
-import { orderRestorationCandidates, selectSurplusToLower } from './publication-order';
+import {
+    isRestorableArchiveOrigin,
+    orderRestorationCandidates,
+    selectSurplusToLower
+} from './publication-order';
 import type {
     PostCommitWarning,
     PublicationAfterCommit,
@@ -131,13 +135,9 @@ export async function recalculateCoverage(args: {
                 vertical: args.vertical,
                 listingIds: archived.map((row) => row.id)
             });
-            const archivedCandidates = archived.filter((row) => {
-                const origin = origins.get(row.id);
-                return (
-                    origin === PublicationStatusEnum.PUBLISHED ||
-                    origin === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
-                );
-            });
+            const archivedCandidates = archived.filter((row) =>
+                isRestorableArchiveOrigin({ origin: origins.get(row.id) })
+            );
             const candidatesAtStart = applicable.filter(
                 (row) => row.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             );
@@ -214,6 +214,10 @@ export async function recalculateCoverage(args: {
                 const eligibleReturning = returning.filter(
                     (candidate) => !incomplete.has(candidate.id)
                 );
+                // The candidate order is shared with the MP4 preview (HOS-1640); this
+                // effectful loop is not. A write that answers "not changed" inside the
+                // lock (the HOS-1810 one-address rule, a deleted row) leaves its slot to
+                // the next candidate: the slot is only spent on a real change.
                 const ordered = orderRestorationCandidates({
                     entries: eligibleReturning.map(entry)
                 });
