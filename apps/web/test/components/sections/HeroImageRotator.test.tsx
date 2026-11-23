@@ -325,3 +325,38 @@ describe('HeroImageRotator.client.tsx', () => {
         });
     });
 });
+
+describe('HeroImageRotator first paint (HOS-2572)', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    it('server-renders the first image fully opaque with no transition attached', () => {
+        // Arrange
+        const { container } = render(<HeroImageRotator images={IMAGES} />);
+
+        // Act
+        const [first, second] = [...container.querySelectorAll('img')];
+
+        // Assert
+        expect(first?.style.opacity).toBe('1');
+        expect(first?.style.transition).toBe('none');
+        expect(second?.style.opacity).toBe('0');
+        expect(second?.style.transition).toBe('none');
+    });
+
+    it('attaches the crossfade transition only after the rotation has started', () => {
+        // Arrange
+        const { container } = render(<HeroImageRotator images={IMAGES} />);
+
+        // Act
+        act(() => {
+            window.dispatchEvent(new Event('pointerdown'));
+        });
+
+        // Assert
+        for (const img of container.querySelectorAll('img')) {
+            expect(img.style.transition).toContain('opacity 1.5s');
+        }
+    });
+});
