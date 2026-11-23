@@ -18,7 +18,7 @@ Every funnel step and goal is validated against `AnalyticsEventSchemas`; a name 
 
 ## Boards
 
-Six `website` boards, one per former PostHog dashboard. Board names are the natural keys used by the setup script.
+Seven `website` boards: one per former PostHog dashboard, plus `Attribution` (HOS-2359). Board names are the natural keys used by the setup script.
 
 Component legend:
 
@@ -38,6 +38,7 @@ Component legend:
 | `03 Owners` | Onboarding to publication | Events metrics bar; events chart; events table (top 20); Goal: Alojamientos publicados; Funnel: Owner adquisición → publicación |
 | `04 Suscripciones` | Checkout, activation, charges, trials | Events metrics bar; events chart; events table (top 20); Goals: Suscripciones activadas, Pagos exitosos, Trials convertidos a pago; Funnel: Suscripción |
 | `05 Calidad` | Failures affecting conversion | Events chart (includes `*_failed` and `billing_charge_declined`); events table (top 20); Funnels: Owner adquisición → publicación, Contacto (3 pasos) |
+| `Attribution` | Where visits come from (HOS-2359) | Tables: UTM source, UTM medium, UTM campaign, UTM content; Goals: Registros completados, Contactos completados |
 
 The events table (`MetricsTable`, `type: event`) is the replacement for per-event trend tiles: it lists every event with its count. It is not filtered per board, so a board's title names the events it is meant for.
 
@@ -69,6 +70,17 @@ Six goals on a single catalog event. **A goal is the share of visitors that fire
 | `Goal · Suscripciones activadas` | `billing_subscription_activated` |
 | `Goal · Pagos exitosos` | `billing_charge_succeeded` |
 | `Goal · Trials convertidos a pago` | `trial_converted` |
+
+## Attribution reports (HOS-2359)
+
+Two saved `attribution` reports, first click, on a conversion event. Umami 3.5.0 has no board component for attribution (HOS-2359 M-3), so they are **not on the `Attribution` board**: open them from **Umami → Reports** on the WEB website. Source: `scripts/umami/attribution-definitions.ts`.
+
+| Report (name) | Parameters |
+| --- | --- |
+| `Atribución · Registros completados` | `{ model: 'first-click', type: 'event', step: 'sign_up_completed' }` |
+| `Atribución · Contactos completados` | `{ model: 'first-click', type: 'event', step: 'contact_owner_completed' }` |
+
+The UTM values these boards and reports read come from one closed vocabulary (`withUtm()` in `@repo/analytics`, HOS-2359 OD-4): `utm_source` is the channel (`email`, `whatsapp`, `facebook`, `x`, `telegram`, `share`, `copy`, `qr`, ...), `utm_medium` the kind (`transactional`, `campaign`, `share`, `print`, `direct-outreach`, `profile`) and `utm_campaign` the template, entity type or presentation.
 
 ## Segments and cohorts
 
