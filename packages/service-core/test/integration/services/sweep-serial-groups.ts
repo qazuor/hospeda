@@ -127,6 +127,17 @@ export const SERIAL_GROUPS: readonly SerialGroup[] = [
         key: 1_999_004,
         drives: /\blistProposedRefunds\(/,
         shares: /held-charge-refund-fixtures|\bMARK_PROPOSAL\b/
+    },
+    {
+        // HOS-1640 CI: `openDueManualInstallments` opens an installment on EVERY active manual
+        // row whose next charge is due on the caller's clock, and calls the S38 applier for it.
+        // A MP4 file reactivated a manual row (S7) whose next charge was already behind the
+        // HOS-2130 file's clock, so that file's sweep opened it and its spy applier moved the
+        // row onto the HOS-2130 plan; the HOS-2130 cleanup then could not delete its billing
+        // option. Drivers run alone; files that reactivate manual rows through MP4 share.
+        key: 1_999_005,
+        drives: /\bopenDueManualInstallments\b/,
+        shares: /\bregisterLateManualPayment\b/
     }
 ];
 

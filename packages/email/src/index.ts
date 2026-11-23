@@ -13,7 +13,7 @@ export type { CreateEmailClientInput, EmailClient } from './client.js';
 // Client
 export { createEmailClient } from './client.js';
 export type { ConfigureEmailAssetsInput } from './email-assets.js';
-export { configureEmailAssets, resetEmailAssets, resolveEmailLogoUrl } from './email-assets.js';
+export { configureEmailAssets, resetEmailAssets, resolveEmailIsotipoUrl } from './email-assets.js';
 export type { RenderEmailBodiesInput, RenderedEmailBodies } from './render.js';
 // Rendering
 export { renderEmailBodies } from './render.js';
@@ -25,9 +25,9 @@ export { RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT } from './subjects.j
 export type { EmailFooterLink, EmailLayoutProps } from './templates/email-layout.js';
 // Email templates
 export {
-    EMAIL_LOGO_HEIGHT,
-    EMAIL_LOGO_URL,
-    EMAIL_LOGO_WIDTH,
+    EMAIL_ISOTIPO_HEIGHT,
+    EMAIL_ISOTIPO_URL,
+    EMAIL_ISOTIPO_WIDTH,
     EMAIL_PREFERENCES_URL,
     EMAIL_PUBLIC_SITE_URL,
     EmailLayout

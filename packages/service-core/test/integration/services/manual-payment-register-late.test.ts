@@ -3,6 +3,7 @@ import {
     coveredPeriods,
     type DrizzleClient,
     eq,
+    inArray,
     manualPayments,
     payments,
     plans,
@@ -14,7 +15,7 @@ import {
     users
 } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import {
     previewLateManualPaymentRegistration,
     registerLateManualPayment
@@ -24,6 +25,63 @@ import { closeServiceTestPool, getServiceTestDb } from './helpers';
 const now = new Date('2026-09-04T12:00:00.000Z');
 const runningPeriod = new Date('2026-09-03T12:00:00.000Z');
 const clock = { now: () => now };
+const seededPayerIds: string[] = [];
+
+/**
+ * Deletes the rows each case committed. A reactivated MANUAL row left behind is due for
+ * any later run of the manual installment opener, a global sweep: the HOS-2130 file's sweep
+ * opened one and its spy applier moved it onto that file's plan, which then blocked the
+ * HOS-2130 cleanup (HOS-1640 CI). Every row of each case's payer goes, successors too.
+ */
+afterEach(async () => {
+    const payerIds = seededPayerIds.splice(0);
+    if (payerIds.length === 0) return;
+    const db = getServiceTestDb();
+    const owned = await db
+        .select({ id: subscriptions.id, succeedsId: subscriptions.succeedsId })
+        .from(subscriptions)
+        .where(inArray(subscriptions.userId, payerIds));
+    const ids = owned.map((row) => row.id);
+    if (ids.length === 0) return;
+    await db
+        .delete(subscriptionScheduledChanges)
+        .where(inArray(subscriptionScheduledChanges.subscriptionId, ids));
+    await db
+        .delete(successionRetainedPayments)
+        .where(inArray(successionRetainedPayments.subscriptionId, ids));
+    const installmentIds = (
+        await db
+            .select({ id: manualPayments.id })
+            .from(manualPayments)
+            .where(inArray(manualPayments.subscriptionId, ids))
+    ).map((row) => row.id);
+    const paymentIds = (
+        await db
+            .select({ id: payments.id })
+            .from(payments)
+            .where(inArray(payments.subscriptionId, ids))
+    ).map((row) => row.id);
+    if (installmentIds.length > 0)
+        await db.delete(receipts).where(inArray(receipts.manualPaymentId, installmentIds));
+    if (paymentIds.length > 0)
+        await db.delete(receipts).where(inArray(receipts.paymentId, paymentIds));
+    await db.delete(coveredPeriods).where(inArray(coveredPeriods.subscriptionId, ids));
+    await db.delete(manualPayments).where(inArray(manualPayments.subscriptionId, ids));
+    await db.delete(payments).where(inArray(payments.subscriptionId, ids));
+    await db
+        .update(subscriptions)
+        .set({ succeededById: null })
+        .where(inArray(subscriptions.id, ids));
+    // Successors first: a predecessor goes once nothing left succeeds it.
+    let remaining = owned;
+    while (remaining.length > 0) {
+        const predecessors = new Set(remaining.map((row) => row.succeedsId).filter(Boolean));
+        const leaves = remaining.filter((row) => !predecessors.has(row.id)).map((row) => row.id);
+        if (leaves.length === 0) throw new Error('Succession cycle in MP4 fixtures');
+        await db.delete(subscriptions).where(inArray(subscriptions.id, leaves));
+        remaining = remaining.filter((row) => !leaves.includes(row.id));
+    }
+});
 afterAll(closeServiceTestPool);
 
 async function seed(
@@ -54,6 +112,7 @@ async function seed(
         })
         .returning();
     if (!payer || !admin) throw new Error('User fixture failed');
+    seededPayerIds.push(payer.id);
     const [plan] = await db
         .insert(plans)
         .values({
@@ -189,7 +248,16 @@ describe('MP4 preview', () => {
                 periodStart: runningPeriod,
                 reimputedPeriodStart: null,
                 nextChargeAt: new Date('2026-10-03T12:00:00.000Z'),
-                effect: 'S7'
+                effect: 'S7',
+                periodCase: 'WITHIN_PERIOD',
+                nextChargeOverdue: false,
+                vertical: fixture.subscription.vertical,
+                presence: expect.objectContaining({ kind: 'PARTNER' }),
+                s7Effects: {
+                    complements: { resumed: [], skipped: [] },
+                    touristVip: { cancels: false, subscriptionIds: [] },
+                    scheduledChange: null
+                }
             });
         } finally {
             vi.useRealTimers();
@@ -249,7 +317,12 @@ describe('MP4 preview', () => {
             periodStart: expiredPeriod,
             reimputedPeriodStart: null,
             nextChargeAt: new Date('2026-08-03T12:00:00.000Z'),
-            effect: 'S19'
+            effect: 'S19',
+            periodCase: 'ORIGINAL_PERIOD',
+            nextChargeOverdue: true,
+            vertical: fixture.subscription.vertical,
+            presence: null,
+            s7Effects: null
         });
         const rows = await state(fixture);
         expect(rows.installment?.status).toBe('DECLARED_UNPAID');
@@ -266,12 +339,69 @@ describe('MP4 preview', () => {
             periodStart: fixture.installment.periodStart,
             reimputedPeriodStart: now,
             nextChargeAt: new Date('2026-10-04T12:00:00.000Z'),
-            effect: 'S7'
+            effect: 'S7',
+            periodCase: 'REIMPUTED',
+            nextChargeOverdue: false,
+            vertical: fixture.subscription.vertical,
+            presence: expect.objectContaining({ kind: 'PARTNER' }),
+            s7Effects: {
+                complements: { resumed: [], skipped: [] },
+                touristVip: { cancels: false, subscriptionIds: [] },
+                scheduledChange: null
+            }
         });
         const rows = await state(fixture);
         expect(rows.installment?.status).toBe('DECLARED_UNPAID');
         expect(rows.coverage).toHaveLength(0);
         expect(rows.receipt).toHaveLength(0);
+    });
+});
+
+describe('HOS-1640 MP4 C5 fallback, preview and registration agree', () => {
+    it('C5_FALLBACK: the reimputed period is covered, so it goes back to the original and the next charge is overdue', async () => {
+        // Arrange
+        const expiredPeriod = new Date('2026-07-03T12:00:00.000Z');
+        const fixture = await seed({ periodStart: expiredPeriod });
+        const db = getServiceTestDb();
+        const [payment] = await db
+            .insert(payments)
+            .values({
+                subscriptionId: fixture.subscription.id,
+                amount: 3000000,
+                currency: 'ARS',
+                status: 'SUCCEEDED',
+                provider: 'test',
+                providerFactId: crypto.randomUUID(),
+                factAt: now
+            })
+            .returning();
+        if (!payment) throw new Error('Payment fixture failed');
+        await db.insert(coveredPeriods).values({
+            subscriptionId: fixture.subscription.id,
+            paymentId: payment.id,
+            periodStart: now,
+            creditedAt: now
+        });
+
+        // Act
+        const preview = await previewLateManualPaymentRegistration(fixture.request, { clock });
+        const result = await registerLateManualPayment(fixture.request, { clock });
+
+        // Assert
+        expect(preview).toMatchObject({
+            effect: 'S7',
+            periodCase: 'C5_FALLBACK',
+            periodStart: expiredPeriod,
+            reimputedPeriodStart: null,
+            nextChargeAt: new Date('2026-08-03T12:00:00.000Z'),
+            nextChargeOverdue: true
+        });
+        expect(result).toMatchObject({
+            effect: 'S7',
+            periodStart: expiredPeriod,
+            reimputedFrom: null,
+            nextChargeAt: preview.nextChargeAt
+        });
     });
 });
 

@@ -26,7 +26,7 @@ export const emailPalette = {
     surface: '#ffffff',
     /** Brand accent bar and primary brand color. Source: `river[500]`. */
     brand: '#3885f9',
-    /** Strong brand color for the text wordmark fallback. Source: `river[700]`. */
+    /** Strong brand color for the header wordmark text. Source: `river[700]`. */
     brandStrong: '#003987',
     /** Primary text. Source: `neutral[900]`. */
     text: '#030303',

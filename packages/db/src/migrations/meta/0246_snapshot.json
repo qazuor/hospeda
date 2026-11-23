@@ -1,5 +1,5 @@
 {
-  "id": "20e1a401-2dc7-44db-add9-5667d5786482",
+  "id": "5fa0c704-5318-4630-8118-d85c3e9297b8",
   "prevId": "26de82d1-3753-4495-b027-b3d597955842",
   "version": "7",
   "dialect": "postgresql",
@@ -5504,6 +5504,24 @@
         "anonymous_phone": {
           "name": "anonymous_phone",
           "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "check_in": {
+          "name": "check_in",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "check_out": {
+          "name": "check_out",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "guests": {
+          "name": "guests",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -31463,12 +31481,6 @@
         "provider_status_detail": {
           "name": "provider_status_detail",
           "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rejection_observed_at": {
-          "name": "rejection_observed_at",
-          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },

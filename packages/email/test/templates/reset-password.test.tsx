@@ -92,7 +92,8 @@ describe('ResetPasswordTemplate', () => {
 
         // Assert
         expect(html.match(/<html[^>]*lang="es"/g)).toHaveLength(1);
-        expect(html).toContain('alt="Hospeda"');
+        expect(html).toContain('aria-label="Hospeda"');
+        expect(html).toContain('>hospeda</span>');
         expect(html).toContain('Hospeda - Turismo en el Litoral');
         expect(html).not.toContain('Administrar preferencias de notificaciones');
     });
