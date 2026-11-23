@@ -4,7 +4,8 @@
  * The title is the page's ONLY `h1`. Optional parts: breadcrumbs
  * (`<nav aria-label>`, `aria-current="page"` on the last item), a `back` link
  * (a real link with a translated label, NEVER `history.back()`), a `status`
- * (StatusPill), `actions` and `tabs`. Put at most ONE primary action in
+ * (StatusPill), a `help` slot (the page's «?», see `PageHelpLink.astro`),
+ * `actions` and `tabs`. Put at most ONE primary action in
  * `actions`; below 30rem of container width the actions stack and go full
  * width.
  *
@@ -40,6 +41,11 @@ export interface PageHeaderProps {
     readonly back?: { readonly label: string; readonly href: string };
     /** A StatusPill next to the title. */
     readonly status?: ReactNode;
+    /**
+     * The page's own «?» (HOS-2546), rendered at the end of the title row.
+     * From Astro, pass `<PageHelpLink slot="help" locale={locale} />`.
+     */
+    readonly help?: ReactNode;
     /** Actions on the right. At most one primary. */
     readonly actions?: ReactNode;
     /** A Tabs or NavTabs under the header. */
@@ -63,6 +69,7 @@ export function PageHeader({
     breadcrumbs,
     back,
     status,
+    help,
     actions,
     tabs,
     className,
@@ -122,6 +129,7 @@ export function PageHeader({
                     <div className={styles.titleRow}>
                         <h1 className={styles.title}>{title}</h1>
                         {status}
+                        {help}
                     </div>
                     {description ? <p className={styles.description}>{description}</p> : null}
                 </div>

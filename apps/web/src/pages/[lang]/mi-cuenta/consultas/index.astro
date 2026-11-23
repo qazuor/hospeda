@@ -16,6 +16,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ConversationInbox } from '@/components/account/conversations/ConversationInbox.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -45,7 +46,9 @@ const title = t('conversations.inbox.guestInboxTitle');
     description={t('conversations.empty.guestInbox')}
     activeSection="messages"
 >
-    <PageHeader title={title} locale={locale} />
+    <PageHeader title={title} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
     <ConversationInbox client:load locale={locale} viewer="guest" page={page} />
 </AccountLayout>

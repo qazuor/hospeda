@@ -43,6 +43,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { Alert, PageHeader, Section, StatusPill, type StatusTone } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
 import { PartnerStatsGrid } from '@/components/account/dashboard/PartnerStatsGrid.client';
 import styles from '@/components/account/dashboard/Dashboard.module.css';
@@ -150,6 +151,7 @@ try {
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner" template="dashboard">
   <div class={styles.page}>
     <PageHeader locale={locale} title={title} description={subtitle} helpId="section:partner.dashboard">
+        <PageHelpLink slot="help" locale={locale} />
         {partner !== null && (
             <StatusPill slot="status" tone={STATE_TONE[listingState]}>{t(`account.partner.statusPill.${listingState}`)}</StatusPill>
         )}

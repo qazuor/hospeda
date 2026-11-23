@@ -18,6 +18,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ConversationPanel } from '@/components/account/conversations/ConversationPanel.client';
 import { ConversationLoadError } from '@/components/account/conversations/ConversationLoadError.client';
 import { OwnerInboxLocked } from '@/components/account/conversations/OwnerInboxLocked';
@@ -110,7 +111,9 @@ if (thread) {
 ---
 
 <AccountLayout locale={locale} title={pageTitle} description={subtitle ?? pageTitle} activeSection="owner-messages">
-    <PageHeader title={pageTitle} description={headerDescription} locale={locale} back={back} />
+    <PageHeader title={pageTitle} description={headerDescription} locale={locale} back={back}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
     {gate.action === 'locked' ? (
         <OwnerInboxLocked locale={locale} />

@@ -19,6 +19,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ConversationInbox } from '@/components/account/conversations/ConversationInbox.client';
 import { OwnerInboxLocked } from '@/components/account/conversations/OwnerInboxLocked';
 import { createTranslations } from '@/lib/i18n';
@@ -48,7 +49,9 @@ const title = t('conversations.inbox.ownerInboxTitle');
 ---
 
 <AccountLayout locale={locale} title={title} description={title} activeSection="owner-messages">
-    <PageHeader title={title} locale={locale} />
+    <PageHeader title={title} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
     {gate.action === 'locked' ? (
         <OwnerInboxLocked locale={locale} />

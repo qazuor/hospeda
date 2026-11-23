@@ -33,6 +33,7 @@
  */
 
 import { EmptyState, LinkButton, PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { DirectoryReviewsList } from '@/components/host/host-trades/DirectoryReviewsList.client';
 import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
 import { ProviderDetail } from '@/components/host/host-trades/ProviderDetail.client';
@@ -165,7 +166,9 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
         locale={locale}
         back={{ label: backToDirectory, href: directoryHref }}
         helpId="section:hosttrade.detalle"
-    />
+    >
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
     {outcome === 'ok' && provider ? (
         <div class="provider-detail__stack">

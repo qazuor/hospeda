@@ -29,6 +29,25 @@ describe('PageHeader', () => {
         expect(screen.getByText('Publicado')).toBeInTheDocument();
     });
 
+    it('renders the help slot in the title row, next to the h1 (HOS-2546)', () => {
+        render(
+            <PageHeader
+                title="Mis propiedades"
+                locale="es"
+                help={
+                    <a
+                        href="/es/mi-cuenta/ayuda/x/"
+                        aria-label="Ayuda"
+                    >
+                        ?
+                    </a>
+                }
+            />
+        );
+        const help = screen.getByRole('link', { name: 'Ayuda' });
+        expect(help.parentElement).toBe(screen.getByRole('heading', { level: 1 }).parentElement);
+    });
+
     it('the back link is a real link with a translated accessible name', () => {
         render(
             <PageHeader
