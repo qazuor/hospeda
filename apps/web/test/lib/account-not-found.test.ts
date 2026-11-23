@@ -57,7 +57,7 @@ describe('mi-cuenta/no-encontrado.astro', () => {
     });
 
     it('offers a way back and uses i18n for every text', () => {
-        expect(source).toContain('ctaHref={buildUrl');
+        expect(source).toContain('href={buildUrl({ locale, path: target.path })}');
         expect(source).toContain("t('account.notFound.title'");
         expect(source).toContain('t(target.labelKey)');
     });

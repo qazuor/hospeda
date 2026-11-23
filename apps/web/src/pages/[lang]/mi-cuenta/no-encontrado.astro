@@ -8,6 +8,7 @@
  *
  * HOS-2504: kit `PageHeader` (the page's one h1) and kit `EmptyState` with a
  * `LinkButton` back to the section the visitor came from, inside the shell.
+ * Named Astro slots (`icon`, `action`) reach the React kit pieces as props.
  * @route /{lang}/mi-cuenta/no-encontrado/
  * @rendering SSR (on-demand, auth-protected)
  */
@@ -42,13 +43,10 @@ const description = t(
 
 <AccountLayout locale={locale} title={title} description={description}>
     <PageHeader title={title} locale={locale} />
-    <EmptyState
-        title={description}
-        icon={<AlertCircleIcon size="lg" aria-hidden="true" />}
-        action={
-            <LinkButton href={buildUrl({ locale, path: target.path })} variant="secondary">
-                {t(target.labelKey)}
-            </LinkButton>
-        }
-    />
+    <EmptyState title={description}>
+        <AlertCircleIcon slot="icon" size="md" aria-hidden="true" />
+        <LinkButton slot="action" href={buildUrl({ locale, path: target.path })} variant="secondary">
+            {t(target.labelKey)}
+        </LinkButton>
+    </EmptyState>
 </AccountLayout>
