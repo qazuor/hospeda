@@ -16,6 +16,12 @@
     list-style: none;
 }
 
+/* Cards an Astro page passes in arrive inside <astro-static-slot>; keep the
+   wrapper out of the grid so each card is a grid item. */
+.grid > :global(astro-static-slot) {
+    display: contents;
+}
+
 @container (width >= 40rem) {
     .grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -65,8 +65,11 @@ export interface ListingCardProps {
     readonly footer?: ReactNode;
     /** Heading level of the title. @default 3 */
     readonly headingLevel?: 2 | 3;
-    /** Root element: `li` inside a {@link ListingCardGrid}, `article` alone. @default 'li' */
-    readonly as?: 'li' | 'article';
+    /**
+     * Root element: a `role="listitem"` block inside a {@link ListingCardGrid},
+     * an `article` when the card stands alone. @default 'listitem'
+     */
+    readonly as?: 'listitem' | 'article';
     /** Extra class from the caller (layout only). */
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
@@ -77,7 +80,7 @@ export interface ListingCardProps {
  * The kit listing card.
  *
  * @param props - See {@link ListingCardProps}.
- * @returns An `<li>` (default) or `<article>` card.
+ * @returns A `role="listitem"` block (default) or an `<article>` card.
  */
 export function ListingCard({
     title,
@@ -91,17 +94,17 @@ export function ListingCard({
     menu,
     footer,
     headingLevel = 3,
-    as = 'li',
+    as = 'listitem',
     className,
     helpId
 }: ListingCardProps) {
-    const Root = as;
     const Heading = headingLevel === 2 ? 'h2' : 'h3';
     const Icon = VERTICAL_ICON[vertical];
     const hasActions = primaryAction !== undefined || menu !== undefined;
 
     return (
-        <Root
+        <CardRoot
+            as={as}
             {...helpAttr({ helpId })}
             data-vertical={vertical}
             className={cx(styles.card, image ? undefined : styles.withTile, className)}
@@ -157,7 +160,31 @@ export function ListingCard({
                 </div>
             ) : null}
             {footer === undefined ? null : <div className={styles.footer}>{footer}</div>}
-        </Root>
+        </CardRoot>
+    );
+}
+
+/** Props of {@link CardRoot}. */
+interface CardRootProps {
+    readonly as: 'listitem' | 'article';
+    readonly className: string;
+    readonly children: ReactNode;
+    readonly 'data-vertical': ListingCardVertical;
+    readonly 'data-help'?: HelpAnchor;
+}
+
+/** The card's root: an ARIA list item, or an `article`. */
+function CardRoot({ as, children, ...rest }: CardRootProps) {
+    return as === 'article' ? (
+        <article {...rest}>{children}</article>
+    ) : (
+        // biome-ignore lint/a11y/useSemanticElements: an <li> needs a <ul>/<ol> parent, and the grid cannot be one (see ListingCardGrid).
+        <div
+            role="listitem"
+            {...rest}
+        >
+            {children}
+        </div>
     );
 }
 
@@ -177,19 +204,25 @@ export interface ListingCardGridProps {
  * A responsive grid of {@link ListingCard}s: one column, two from 40rem of its
  * own width, three from 64rem.
  *
+ * It is an ARIA list of `div`s, not a `<ul>`: an Astro page that passes the
+ * cards as children has them wrapped in `<astro-static-slot>`, which is not
+ * valid inside a `<ul>` but is fine (and `display: contents`) inside a `div`.
+ *
  * @param props - See {@link ListingCardGridProps}.
- * @returns A labelled `<ul>`.
+ * @returns A labelled `role="list"` block.
  */
 export function ListingCardGrid({ label, children, className, helpId }: ListingCardGridProps) {
     return (
         <div className={styles.gridWrap}>
-            <ul
+            {/* biome-ignore lint/a11y/useSemanticElements: Astro wraps slotted cards in <astro-static-slot>, which a <ul> may not contain. */}
+            <div
+                role="list"
                 {...helpAttr({ helpId })}
                 aria-label={label}
                 className={cx(styles.grid, className)}
             >
                 {children}
-            </ul>
+            </div>
         </div>
     );
 }

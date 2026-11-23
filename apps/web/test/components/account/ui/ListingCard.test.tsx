@@ -3,6 +3,7 @@
  */
 
 import { render, screen, within } from '@testing-library/react';
+import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import {
     Button,
@@ -37,6 +38,37 @@ describe('ListingCard (kit)', () => {
         expect(within(item).getByText('Publicada')).toBeInTheDocument();
         expect(within(item).getByText('Colón')).toBeInTheDocument();
         expect(item).toHaveAttribute('data-vertical', 'accommodation');
+    });
+
+    it('stays a valid list when Astro wraps the cards in <astro-static-slot>', () => {
+        // Arrange & Act: an .astro page passing the cards as children has them
+        // wrapped in <astro-static-slot>, which a <ul> may not contain.
+        const { container } = render(
+            <ListingCardGrid label="Mis comercios">
+                {createElement(
+                    'astro-static-slot',
+                    null,
+                    <ListingCard
+                        vertical="venue"
+                        title="Bar"
+                    />,
+                    <ListingCard
+                        vertical="venue"
+                        title="Café"
+                    />
+                )}
+            </ListingCardGrid>
+        );
+
+        // Assert: no <ul> at the grid root, and both cards are its list items.
+        const list = screen.getByRole('list', { name: 'Mis comercios' });
+        expect(list.tagName).toBe('DIV');
+        expect(container.querySelector('ul > astro-static-slot')).toBeNull();
+        const cards = within(list)
+            .getAllByRole('listitem')
+            .filter((item) => item.hasAttribute('data-vertical'));
+        expect(cards).toHaveLength(2);
+        for (const card of cards) expect(card.tagName).toBe('DIV');
     });
 
     it('shows the photo with its alt text, or a decorative tile without one', () => {
