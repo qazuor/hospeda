@@ -66,6 +66,7 @@ Las publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mi
 ## Qué esperar
 
 - Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.
+- Podés despublicar o pausar aunque no tengas un plan vigente. Volver a publicar sí lo pide.
 - Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.
 - Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.
 
