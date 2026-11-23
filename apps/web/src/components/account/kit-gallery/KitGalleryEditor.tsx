@@ -7,7 +7,15 @@
  * @module components/account/kit-gallery/KitGalleryEditor
  */
 
-import { CompletenessMeter, EditorSectionNav, EditorSwitcher } from '@/components/account/ui';
+import { useState } from 'react';
+import {
+    CompletenessMeter,
+    EditorSectionNav,
+    EditorSwitcher,
+    HOURS_WEEKDAYS,
+    HoursEditor,
+    type HoursWeek
+} from '@/components/account/ui';
 import type { EditorNavGroup } from '@/lib/editor/editor-route-nav-model';
 import { buildEditorSwitcherModel } from '@/lib/editor/editor-switcher-model';
 import styles from './KitGallery.module.css';
@@ -100,7 +108,38 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
                         locale={locale}
                     />
                 </Visual>
+                <Visual name="HoursEditor/week">
+                    <GalleryHours locale={locale} />
+                </Visual>
             </div>
         </section>
+    );
+}
+
+/** A week with two open days, one of them split, for the HoursEditor entry. */
+const GALLERY_WEEK: HoursWeek = {
+    ...(Object.fromEntries(
+        HOURS_WEEKDAYS.map((day) => [day, { closed: true, slots: [] }])
+    ) as HoursWeek),
+    mon: { closed: false, slots: [{ open: '09:00', close: '18:00' }] },
+    sat: {
+        closed: false,
+        slots: [
+            { open: '10:00', close: '13:00' },
+            { open: '17:00', close: '21:00' }
+        ]
+    }
+};
+
+/** Live HoursEditor so the gallery shows its interactions too. */
+function GalleryHours({ locale }: GalleryGroupProps) {
+    const [week, setWeek] = useState<HoursWeek>(GALLERY_WEEK);
+    return (
+        <HoursEditor
+            locale={locale}
+            idBase="kit-hours"
+            value={week}
+            onChange={setWeek}
+        />
     );
 }
