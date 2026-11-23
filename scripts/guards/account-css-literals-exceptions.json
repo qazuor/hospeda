@@ -40,10 +40,6 @@
         "radius": 3,
         "shadow": 1
     },
-    "apps/web/src/components/account/DiscoveryDoorHub.astro": {
-        "font-size": 5,
-        "shadow": 1
-    },
     "apps/web/src/components/account/EditableContentCard.astro": {
         "color": 10,
         "font-size": 3,
