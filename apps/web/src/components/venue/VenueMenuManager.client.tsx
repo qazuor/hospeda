@@ -14,9 +14,9 @@
  * The external link is the third part of the same section (DEC-FAC-062): it is
  * edited here, by `VenueMenuLinkField`, and saved with its own one-key PATCH of
  * the listing — by the section's save bar since owner decision 14, which
- * supersedes DEC-FAC-062's separate «Guardar enlace» button. Nothing here is mandatory and nothing here excludes anything
- * else: an owner may publish with a photo alone, and is never made to type
- * forty dishes.
+ * supersedes DEC-FAC-062's separate «Guardar enlace» button. Nothing here is
+ * mandatory and nothing here excludes anything else: an owner may publish with
+ * a photo alone, and is never made to type forty dishes.
  *
  * ## Why this manager persists on its own, like `ListingFaqManager`
  *
