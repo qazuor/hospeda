@@ -9,12 +9,13 @@
 
 import { PublicationStatusEnum } from '@repo/schemas';
 import { useCallback } from 'react';
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildListingPoliciesPatch, setListingPolicy } from '@/lib/listing/listing-policies';
-import { ActionBar } from '../ActionBar.client';
 import { AccommodationCapacityPricingSchema } from '../accommodation-edit-form.schema';
 import { CapacitySection } from '../CapacitySection.client';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { PricingSection } from '../PricingSection.client';
 import { PublishReadyDialog } from '../PublishReadyDialog.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
@@ -181,10 +182,13 @@ export function CapacityPricingForm({
                 </div>
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={form.isSaving}
-                onCancel={form.handleCancel}
+                isDirty={form.isDirty}
+                onSave={form.save}
+                onDiscard={form.discard}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
             />
 
             <PublishReadyDialog

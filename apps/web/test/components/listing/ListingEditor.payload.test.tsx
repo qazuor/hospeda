@@ -158,7 +158,9 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     )
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw =
@@ -279,7 +281,7 @@ function renderEditor(
     );
 }
 
-const saveButton = () => screen.getByRole('button', { name: 'Guardar' });
+const saveButton = () => screen.getByRole('button', { name: 'Guardar cambios' });
 
 /**
  * Resolve once the editor has resynced its baseline to the values a save just

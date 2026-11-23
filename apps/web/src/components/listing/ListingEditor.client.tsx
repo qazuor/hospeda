@@ -11,8 +11,8 @@
  * Until HOS-1080 this component rendered every field group at once on a single
  * route, with an in-page scrollspy nav — the long form HOS-892 reported. It now
  * takes a `sectionId` and renders exactly that section, one per route, matching
- * the accommodation editor the two surfaces already shared their `ActionBar`
- * and section styling with.
+ * the accommodation editor the two surfaces already shared their save bar
+ * (`EditorSaveBar` since HOS-2487) and section styling with.
  *
  * What deliberately did NOT change is `buildPatchPayload`. Its per-field
  * contracts (`priceFrom` omits, `priceUnit` nulls, `contactInfo` ships
@@ -50,16 +50,14 @@ import {
 } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ZodTypeAny } from 'zod';
-import { ActionBar } from '@/components/host/editor/ActionBar.client';
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
+import type { SaveOutcome } from '@/components/account/ui/use-save-bar';
 import { buildAmenityAttributesPayload } from '@/components/host/editor/amenity-attributes-payload';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { resolveBusinessLinesFieldError } from '@/components/listing/editor/BusinessLinesField.client';
 import { extractAmenityAttributes } from '@/lib/api/amenity-attributes';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityAttributeValue, AmenityData } from '@/lib/api/types';
-import { buildEditorHubUrl } from '@/lib/editor/editor-registry';
-import { createListingEditorRegistry } from '@/lib/editor/listing-editor-sections';
-import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -674,7 +672,7 @@ export function ListingEditor({
     // (mobilePhone/workEmail), social networks, opening hours, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
     const schema = EDITOR_SCHEMAS[vertical];
-    const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
+    const { fieldErrors, formError, validate, handleApiError, setFormError, reset } = useZodForm({
         schema,
         t,
         // HOS-373: a failed submit focuses the first invalid field on the page.
@@ -952,140 +950,137 @@ export function ListingEditor({
         }
     }, [formData.refreshSlugFromName, shouldOfferSlugRefresh]);
 
-    const handleSubmit = useCallback(
-        async (event: React.FormEvent<HTMLFormElement>) => {
-            event.preventDefault();
-            // HOS-816: retire the previous attempt's banner as this one STARTS.
-            // Nothing else ever cleared it: `handleApiError` only ever sets a
-            // message, and the success branch below left whatever was on screen
-            // untouched — so a save that failed and then succeeded showed the
-            // green toast and the red banner at the same time, and the banner
-            // is the one a person believes. It has to run before the no-changes
-            // early return too, or the stale banner outlives that path as well.
-            // Every other consumer of `useZodForm` (PostEditor, EventEditor,
-            // ProfileEditForm, PartnerEditForm, HostTradeEditForm,
-            // use-accommodation-section-form) already opens its submit this way;
-            // this editor and `ListingCreateForm` were the two that did not.
-            setFormError(null);
-            setRefusedTarget(null);
-            if (Object.keys(patchPayload).length === 0) {
-                // Never save silently (HOS-190): "Guardar" always visibly does
-                // something. This used to be a bare `return`, which was
-                // invisible but harmless while the button was disabled with
-                // nothing to save. The shared `ActionBar` keeps Save enabled, so
-                // without this the owner would press a live button and get no
-                // response at all.
-                addToast({
-                    type: 'info',
-                    message: t('listing.owner.editor.noChanges', 'No hay cambios para guardar')
-                });
-                return;
-            }
-
-            // A selection the new type does not admit blocks the save before it
-            // reaches the API. The field already renders the same reason; this
-            // keeps the form from sending a write the server would reject and
-            // whose section effects the owner has not seen.
-            if (businessLinesError) {
-                setFormError(businessLinesError);
-                return;
-            }
-
-            const payload = patchPayload;
-            // Snapshot the values this request persists, so the baseline resync
-            // below records exactly what was saved even if the owner keeps
-            // typing while the request is in flight.
-            const persisted = formData;
-
-            // Full payload validation against the real per-vertical owner-update
-            // schema (see `schema` above) — replaces the two ad hoc
-            // summary/priceFrom checks this editor previously ran by hand.
-            const parsed = validate(payload);
-            if (!parsed.success) {
-                return;
-            }
-
-            setStatus({ kind: 'saving' });
-
-            const result = await apiClient.patch<unknown>({
-                path: patchPath(listingId),
-                body: payload
+    const save = useCallback(async (): Promise<SaveOutcome> => {
+        // HOS-816: retire the previous attempt's banner as this one STARTS.
+        // Nothing else ever cleared it: `handleApiError` only ever sets a
+        // message, and the success branch below left whatever was on screen
+        // untouched — so a save that failed and then succeeded showed the
+        // green toast and the red banner at the same time, and the banner
+        // is the one a person believes. It has to run before the no-changes
+        // early return too, or the stale banner outlives that path as well.
+        // Every other consumer of `useZodForm` (PostEditor, EventEditor,
+        // ProfileEditForm, PartnerEditForm, HostTradeEditForm,
+        // use-accommodation-section-form) already opens its submit this way;
+        // this editor and `ListingCreateForm` were the two that did not.
+        setFormError(null);
+        setRefusedTarget(null);
+        if (Object.keys(patchPayload).length === 0) {
+            // Never save silently (HOS-190): "Guardar" always visibly does
+            // something. This used to be a bare `return`, which was
+            // invisible but harmless while the button was disabled with
+            // nothing to save. Enter in a field can still submit, so
+            // without this the owner would press a live button and get no
+            // response at all.
+            addToast({
+                type: 'info',
+                message: t('listing.owner.editor.noChanges', 'No hay cambios para guardar')
             });
+            return { ok: true };
+        }
 
-            if (result.ok) {
-                setBaseline({ ...persisted, refreshSlugFromName: false });
-                setFormData((prev) => ({ ...prev, refreshSlugFromName: false }));
-                setStatus({ kind: 'idle' });
-                addToast({
-                    type: 'success',
-                    message: t('listing.owner.editor.success', 'Cambios guardados.')
-                });
-            } else {
-                // A section the listing's business lines no longer own (409
-                // SECTION_ABSENT) has its own copy: "no longer applies to your
-                // venue's business lines" names the cause, while the generic
-                // save-failed banner would hide it.
-                if (result.error?.status === 409 && result.error.reason === 'SECTION_ABSENT') {
-                    setFormError(
-                        t(
-                            'listing.owner.editor.errors.sectionAbsent',
-                            'Esa sección ya no aplica a los rubros de tu local.'
-                        )
-                    );
-                    setStatus({ kind: 'error' });
-                    return;
-                }
-                // HOS-1810: moving a published listing onto an address its owner
-                // already publishes (409 DUPLICATE_LOCATION). Nothing was saved.
-                if (
-                    result.error?.status === 409 &&
-                    result.error.reason === DUPLICATE_LOCATION_REASON
-                ) {
-                    // HOS-2192 (D-23): keep the address the owner tried to save so the
-                    // exception request carries it (a venue only; an experience has no address).
-                    setRefusedTarget(
-                        exceptionVertical
-                            ? buildLocationExceptionTarget({
-                                  street: persisted.location.street,
-                                  number: persisted.location.number,
-                                  floor: persisted.location.floor,
-                                  apartment: persisted.location.apartment
-                              })
-                            : null
-                    );
-                    setFormError(
-                        t(
-                            'listing.owner.locationDuplicate.blocked',
-                            'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
-                        )
-                    );
-                    setStatus({ kind: 'error' });
-                    return;
-                }
-                // Previously discarded `result.error` entirely and always showed
-                // a fixed banner string. `handleApiError` maps per-field details
-                // when the API sent them, falling back to a real (translated)
-                // banner message otherwise — see `field-errors.ts` module doc.
-                handleApiError(
-                    result.error,
-                    t('listing.owner.editor.error', 'No se pudieron guardar los cambios.')
-                );
-                setStatus({ kind: 'error' });
-            }
-        },
-        [
-            patchPayload,
-            formData,
-            patchPath,
-            listingId,
-            exceptionVertical,
-            businessLinesError,
-            validate,
-            handleApiError,
-            setFormError,
-            t
-        ]
-    );
+        // A selection the new type does not admit blocks the save before it
+        // reaches the API. The field already renders the same reason; this
+        // keeps the form from sending a write the server would reject and
+        // whose section effects the owner has not seen.
+        if (businessLinesError) {
+            setFormError(businessLinesError);
+            return { ok: false, invalidFields: ['businessLines'] };
+        }
+
+        const payload = patchPayload;
+        // Snapshot the values this request persists, so the baseline resync
+        // below records exactly what was saved even if the owner keeps
+        // typing while the request is in flight.
+        const persisted = formData;
+
+        // Full payload validation against the real per-vertical owner-update
+        // schema (see `schema` above) — replaces the two ad hoc
+        // summary/priceFrom checks this editor previously ran by hand.
+        const parsed = validate(payload);
+        if (!parsed.success) {
+            return {
+                ok: false,
+                invalidFields: parsed.error.issues.map((issue) => String(issue.path[0] ?? ''))
+            };
+        }
+
+        setStatus({ kind: 'saving' });
+
+        const result = await apiClient.patch<unknown>({
+            path: patchPath(listingId),
+            body: payload
+        });
+
+        if (result.ok) {
+            setBaseline({ ...persisted, refreshSlugFromName: false });
+            setFormData((prev) => ({ ...prev, refreshSlugFromName: false }));
+            setStatus({ kind: 'idle' });
+            addToast({
+                type: 'success',
+                message: t('listing.owner.editor.success', 'Cambios guardados.')
+            });
+            return { ok: true };
+        }
+        // A section the listing's business lines no longer own (409
+        // SECTION_ABSENT) has its own copy: "no longer applies to your
+        // venue's business lines" names the cause, while the generic
+        // save-failed banner would hide it.
+        if (result.error?.status === 409 && result.error.reason === 'SECTION_ABSENT') {
+            setFormError(
+                t(
+                    'listing.owner.editor.errors.sectionAbsent',
+                    'Esa sección ya no aplica a los rubros de tu local.'
+                )
+            );
+            setStatus({ kind: 'error' });
+            return { ok: false };
+        }
+        // HOS-1810: moving a published listing onto an address its owner
+        // already publishes (409 DUPLICATE_LOCATION). Nothing was saved.
+        if (result.error?.status === 409 && result.error.reason === DUPLICATE_LOCATION_REASON) {
+            // HOS-2192 (D-23): keep the address the owner tried to save so the
+            // exception request carries it (a venue only; an experience has no address).
+            setRefusedTarget(
+                exceptionVertical
+                    ? buildLocationExceptionTarget({
+                          street: persisted.location.street,
+                          number: persisted.location.number,
+                          floor: persisted.location.floor,
+                          apartment: persisted.location.apartment
+                      })
+                    : null
+            );
+            setFormError(
+                t(
+                    'listing.owner.locationDuplicate.blocked',
+                    'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
+                )
+            );
+            setStatus({ kind: 'error' });
+            return { ok: false };
+        }
+        // Previously discarded `result.error` entirely and always showed
+        // a fixed banner string. `handleApiError` maps per-field details
+        // when the API sent them, falling back to a real (translated)
+        // banner message otherwise — see `field-errors.ts` module doc.
+        handleApiError(
+            result.error,
+            t('listing.owner.editor.error', 'No se pudieron guardar los cambios.')
+        );
+        setStatus({ kind: 'error' });
+        return { ok: false };
+    }, [
+        patchPayload,
+        formData,
+        patchPath,
+        listingId,
+        exceptionVertical,
+        businessLinesError,
+        validate,
+        handleApiError,
+        setFormError,
+        t
+    ]);
 
     const isSaving = status.kind === 'saving';
 
@@ -1116,40 +1111,25 @@ export function ListingEditor({
         formRef.current?.setAttribute('data-hydrated', 'true');
     }, []);
 
-    /**
-     * Leaves the section for the editor hub.
-     *
-     * HOS-1080 changed the destination, not the mechanism: with one page per
-     * section, "Cancelar" means "leave this section", and the hub is the page
-     * every section was reached from. Dropping the owner all the way back to
-     * `mi-cuenta/comercio` from a section page would discard their place in the
-     * editor as well as their edits.
-     *
-     * `ActionBar` renders Cancel as a `<button>`, so this navigates in JS. The
-     * bespoke bar this replaced used an `<a href>`, which middle-click and
-     * "open in new tab" understood and this does not — accepted deliberately in
-     * exchange for the three content editors sharing one action bar.
-     */
-    const handleCancel = useCallback(() => {
-        window.location.href = buildEditorHubUrl({
-            locale,
-            registry: createListingEditorRegistry({ vertical, sections: [] }),
-            entityId: listingId
-        });
-    }, [locale, vertical, listingId]);
+    /** Form `onSubmit` (Enter in a field): runs {@link save}. */
+    const handleSubmit = useCallback(
+        async (event: React.FormEvent<HTMLFormElement>) => {
+            event.preventDefault();
+            await save();
+        },
+        [save]
+    );
 
-    // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
-    // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
-    useUnsavedChangesGuard({
-        isDirty: Object.keys(patchPayload).length > 0,
-        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
-        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
-        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
-        message: t(
-            'listing.owner.editor.unsavedChanges',
-            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
-        )
-    });
+    /** Puts every field back to the last saved snapshot (the bar's «Descartar»). */
+    const discard = useCallback(() => {
+        setFormData(baseline);
+        reset();
+        setRefusedTarget(null);
+        setStatus({ kind: 'idle' });
+    }, [baseline, reset]);
+
+    // HOS-373 / HOS-2487: the leave warning lives in the `EditorSaveBar` below
+    // (`useSaveBar` → the shared guard), fed by the same diff as the save.
 
     return (
         <form
@@ -1203,10 +1183,13 @@ export function ListingEditor({
                 />
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={isSaving}
-                onCancel={handleCancel}
+                isDirty={Object.keys(patchPayload).length > 0}
+                onSave={save}
+                onDiscard={discard}
+                idPrefix={LISTING_FIELD_PREFIX}
+                suffixes={LISTING_FIELD_ID_SUFFIXES}
             />
         </form>
     );

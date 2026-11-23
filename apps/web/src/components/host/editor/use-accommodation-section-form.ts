@@ -22,8 +22,7 @@
 import { DUPLICATE_LOCATION_REASON } from '@repo/schemas';
 import { useCallback, useMemo, useState } from 'react';
 import type { ZodTypeAny } from 'zod';
-import { buildEditorHubUrl } from '@/lib/editor/accommodation-editor-sections';
-import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
+import type { SaveOutcome } from '@/components/account/ui/use-save-bar';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -52,8 +51,15 @@ export interface AccommodationSectionForm<TValues> {
      * the address they were trying to save.
      */
     readonly refusedLocation: TValues | null;
+    /**
+     * Persists the page's own changed fields. The `EditorSaveBar` calls it;
+     * it resolves the outcome the bar shows (HOS-2487).
+     */
+    readonly save: () => Promise<SaveOutcome>;
+    /** Puts every field back to the last saved value. */
+    readonly discard: () => void;
+    /** Form `onSubmit` (Enter in a field): runs {@link save}. */
     readonly handleSubmit: (event: React.FormEvent) => Promise<void>;
-    readonly handleCancel: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +126,7 @@ export function useAccommodationSectionForm<TValues extends object>({
     /** HOS-2192: the values of the save refused with 409 `DUPLICATE_LOCATION` (null otherwise). */
     const [refusedLocation, setRefusedLocation] = useState<TValues | null>(null);
 
-    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
+    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError, reset } =
         useZodForm({
             schema,
             t,
@@ -160,109 +166,102 @@ export function useAccommodationSectionForm<TValues extends object>({
 
     const isDirty = Object.keys(payload).length > 0;
 
-    useUnsavedChangesGuard({
+    // No leave warning here: the page's `EditorSaveBar` registers the one
+    // guard through `useSaveBar` (HOS-2487). Two would ask twice.
+
+    const save = useCallback(async (): Promise<SaveOutcome> => {
+        setFormError(null);
+        setRefusedLocation(null);
+
+        if (!isDirty) {
+            // Never save silently (HOS-190): "Save" must always visibly do
+            // something, even when there is nothing to do.
+            addToast({
+                type: 'info',
+                message: t('host.properties.editor.toast.noChanges', 'No hay cambios para guardar')
+            });
+            return { ok: true };
+        }
+
+        const parsed = validate(payload);
+        if (!parsed.success) {
+            return {
+                ok: false,
+                invalidFields: parsed.error.issues.map((issue) => String(issue.path[0] ?? ''))
+            };
+        }
+
+        setIsSaving(true);
+        try {
+            const { accommodationEditApi } = await import('@/lib/api/endpoints-protected');
+            const result = await accommodationEditApi.update({
+                id: accommodationId,
+                data: payload
+            });
+
+            if (result.ok) {
+                setFormError(null);
+                // Before the resync below, which is what destroys `before`.
+                onSaved?.({ before: baseline, after: values });
+                setBaseline(values);
+                addToast({
+                    type: 'success',
+                    message: t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')
+                });
+                return { ok: true };
+            }
+            if (result.error?.status === 409 && result.error.reason === DUPLICATE_LOCATION_REASON) {
+                // HOS-1810: moving a published listing onto an address its owner
+                // already publishes. Nothing was saved. HOS-2192: the submitted
+                // values are kept so the owner can ask for an exception.
+                setRefusedLocation(values);
+                setFormError(
+                    t(
+                        'listing.owner.locationDuplicate.blocked',
+                        'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
+                    )
+                );
+                return { ok: false };
+            }
+            handleApiError(
+                result.error,
+                t('host.properties.editor.error.saveFailed', 'Error al guardar')
+            );
+            // `handleApiError` already maps the API's per-field details onto
+            // the fields; the bar only needs to know the save failed.
+            return { ok: false };
+        } catch {
+            setFormError(t('host.properties.editor.error.network', 'Error de conexión'));
+            return { ok: false };
+        } finally {
+            setIsSaving(false);
+        }
+    }, [
+        accommodationId,
+        baseline,
+        handleApiError,
         isDirty,
-        title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
-        confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
-        cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
-        message: t(
-            'host.properties.editor.unsavedChanges',
-            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
-        )
-    });
+        onSaved,
+        payload,
+        setFormError,
+        t,
+        validate,
+        values
+    ]);
+
+    const discard = useCallback(() => {
+        setValues(baseline);
+        reset();
+        setRefusedLocation(null);
+    }, [baseline, reset]);
 
     const handleSubmit = useCallback(
         async (event: React.FormEvent) => {
             event.preventDefault();
-            setFormError(null);
-            setRefusedLocation(null);
-
-            if (!isDirty) {
-                // Never save silently (HOS-190): "Save" must always visibly do
-                // something, even when there is nothing to do.
-                addToast({
-                    type: 'info',
-                    message: t(
-                        'host.properties.editor.toast.noChanges',
-                        'No hay cambios para guardar'
-                    )
-                });
-                return;
-            }
-
-            if (!validate(payload).success) return;
-
-            setIsSaving(true);
-            try {
-                const { accommodationEditApi } = await import('@/lib/api/endpoints-protected');
-                const result = await accommodationEditApi.update({
-                    id: accommodationId,
-                    data: payload
-                });
-
-                if (result.ok) {
-                    setFormError(null);
-                    // Before the resync below, which is what destroys `before`.
-                    onSaved?.({ before: baseline, after: values });
-                    setBaseline(values);
-                    addToast({
-                        type: 'success',
-                        message: t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')
-                    });
-                } else if (
-                    result.error?.status === 409 &&
-                    result.error.reason === DUPLICATE_LOCATION_REASON
-                ) {
-                    // HOS-1810: moving a published listing onto an address its owner
-                    // already publishes. Nothing was saved. HOS-2192: the submitted
-                    // values are kept so the owner can ask for an exception.
-                    setRefusedLocation(values);
-                    setFormError(
-                        t(
-                            'listing.owner.locationDuplicate.blocked',
-                            'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
-                        )
-                    );
-                } else {
-                    handleApiError(
-                        result.error,
-                        t('host.properties.editor.error.saveFailed', 'Error al guardar')
-                    );
-                }
-            } catch {
-                setFormError(t('host.properties.editor.error.network', 'Error de conexión'));
-            } finally {
-                setIsSaving(false);
-            }
+            await save();
         },
-        [
-            accommodationId,
-            baseline,
-            handleApiError,
-            isDirty,
-            onSaved,
-            payload,
-            setFormError,
-            t,
-            validate,
-            values
-        ]
+        [save]
     );
-
-    /**
-     * Leaves the section for the editor hub.
-     *
-     * HOS-1014: was `window.history.back()`, which lands wherever the user
-     * happened to arrive from (a bookmark, a direct link, another section) —
-     * not necessarily this accommodation's hub. The hub is the page every
-     * section is reached from, so it's always the right destination, matching
-     * the pattern the listing editor already uses
-     * (`ListingEditor.client.tsx`'s `handleCancel`).
-     */
-    const handleCancel = useCallback(() => {
-        if (typeof window === 'undefined') return;
-        window.location.href = buildEditorHubUrl({ locale, accommodationId });
-    }, [locale, accommodationId]);
 
     return {
         values,
@@ -273,8 +272,9 @@ export function useAccommodationSectionForm<TValues extends object>({
         isSaving,
         isDirty,
         refusedLocation,
-        handleSubmit,
-        handleCancel
+        save,
+        discard,
+        handleSubmit
     };
 }
 

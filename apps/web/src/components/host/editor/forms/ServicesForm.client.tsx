@@ -25,13 +25,14 @@
  * sends `policies` at all.
  */
 
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { AccommodationEditData, AmenityAttributeValue, AmenityData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ActionBar } from '../ActionBar.client';
 import { AccommodationServicesSchema } from '../accommodation-edit-form.schema';
 import { buildAmenityAttributesPayload } from '../amenity-attributes-payload';
 import { AmenityCatalogBrowser } from '../amenity-catalog/AmenityCatalogBrowser.client';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
 import pickerSectionStyles from './ServicesForm.module.css';
@@ -138,10 +139,13 @@ export function ServicesForm({
                 </div>
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={form.isSaving}
-                onCancel={form.handleCancel}
+                isDirty={form.isDirty}
+                onSave={form.save}
+                onDiscard={form.discard}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
             />
         </form>
     );

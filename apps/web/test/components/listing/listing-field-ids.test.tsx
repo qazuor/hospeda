@@ -48,7 +48,9 @@ import type { ListingDetail } from '@/lib/listing/owner-listings';
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
@@ -336,7 +338,7 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
         fireEvent.change(document.getElementById(idFor('summary')) as HTMLElement, {
             target: { value: 'corto' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         expect(document.activeElement?.id).toBe(idFor('summary'));
     });

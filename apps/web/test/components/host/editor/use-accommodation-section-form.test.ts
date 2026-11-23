@@ -1,22 +1,20 @@
 /**
  * @file use-accommodation-section-form.test.ts
  * @description Guards the shared section-form payload builder (HOS-318 T-019)
- * and, since HOS-1014, `handleCancel`'s navigation target.
+ * and, since HOS-2487, the `save`/`discard` pair the editor save bar drives.
  *
  * The `buildPartialPayload` suites test it directly rather than through the
  * hook. It is the part that can silently corrupt a save — sending a field the
  * page does not own, or dropping half a coordinate pair — and it is pure, so
  * it can be tested for real instead of through a render.
  *
- * The `handleCancel` suite below renders the real hook (no mocked
- * dependencies — `useZodForm`/`useUnsavedChangesGuard`/`createTranslations`
- * all run for real, following the pattern already proven in
- * `use-zod-form.test.ts`) because the thing under test is what it does to
- * `window.location.href`, not its own internals.
+ * The `save`/`discard` suite below renders the real hook (no mocked
+ * dependencies — `useZodForm`/`createTranslations` run for real, following
+ * the pattern already proven in `use-zod-form.test.ts`).
  */
 
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
     buildPartialPayload,
@@ -207,59 +205,55 @@ describe('buildPartialPayload — coordinates travel together', () => {
     });
 });
 
-describe('useAccommodationSectionForm — handleCancel', () => {
-    // HOS-1014: `handleCancel` must always land on THIS accommodation's editor
-    // hub, never on `window.history.back()` — the previous behaviour landed
-    // wherever the user happened to arrive from (a bookmark, a direct link,
-    // another section), not necessarily this accommodation's hub.
-    const schema = z.object({});
+describe('useAccommodationSectionForm — save and discard (HOS-2487)', () => {
+    // The page's `EditorSaveBar` drives these two. The way back to the hub is
+    // the shell's header link now, so the hook no longer navigates (HOS-1014's
+    // `handleCancel` left with the old ActionBar).
+    const schema = z.object({ name: z.string().min(1) });
 
-    // jsdom refuses to perform a real path navigation ("Not implemented:
-    // navigation (except hash changes)") and, unmocked, leaves `href`
-    // unchanged — the same stand-in `window.location` used by
-    // `ListingCreateForm.test.tsx` for the identical `window.location.href =
-    // buildUrl(...)` pattern.
-    beforeEach(() => {
-        Object.defineProperty(window, 'location', {
-            value: { href: '' },
-            writable: true,
-            configurable: true
-        });
-    });
-
-    it('navigates to the accommodation editor hub with the given id, not history.back()', () => {
+    it('discard puts every field back to the last saved value', () => {
         const { result } = renderHook(() =>
             useAccommodationSectionForm({
                 locale: 'es',
                 accommodationId: 'acc-123',
-                initialValues: {},
-                ownFields: [],
+                initialValues: { name: 'Casa' },
+                ownFields: ['name'],
                 schema
             })
         );
 
         act(() => {
-            result.current.handleCancel();
+            result.current.setValue('name', 'Casa nueva');
+        });
+        expect(result.current.isDirty).toBe(true);
+
+        act(() => {
+            result.current.discard();
         });
 
-        expect(window.location.href).toContain('/es/mi-cuenta/propiedades/acc-123/editar/');
+        expect(result.current.values).toEqual({ name: 'Casa' });
+        expect(result.current.isDirty).toBe(false);
     });
 
-    it('builds the hub URL for the locale it was given, not a hardcoded one', () => {
+    it('save resolves a failure naming the invalid field, without a request', async () => {
         const { result } = renderHook(() =>
             useAccommodationSectionForm({
-                locale: 'en',
-                accommodationId: 'acc-456',
-                initialValues: {},
-                ownFields: [],
+                locale: 'es',
+                accommodationId: 'acc-123',
+                initialValues: { name: 'Casa' },
+                ownFields: ['name'],
                 schema
             })
         );
-
         act(() => {
-            result.current.handleCancel();
+            result.current.setValue('name', '');
         });
 
-        expect(window.location.href).toContain('/en/mi-cuenta/propiedades/acc-456/editar/');
+        let outcome: Awaited<ReturnType<typeof result.current.save>> = { ok: true };
+        await act(async () => {
+            outcome = await result.current.save();
+        });
+
+        expect(outcome).toEqual({ ok: false, invalidFields: ['name'] });
     });
 });

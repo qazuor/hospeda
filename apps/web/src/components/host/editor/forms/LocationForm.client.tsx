@@ -10,12 +10,13 @@
  * which this page must not work around.
  */
 
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import { LocationExceptionRequestTrigger } from '@/components/listing/LocationExceptionRequestTrigger.client';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildLocationExceptionTarget } from '@/lib/listing/location-exception';
-import { ActionBar } from '../ActionBar.client';
 import { AccommodationLocationSchema } from '../accommodation-edit-form.schema';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { LocationPicker } from '../LocationPicker.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
@@ -91,10 +92,13 @@ export function LocationForm({ locale, accommodationId, initialData }: LocationF
                 />
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={form.isSaving}
-                onCancel={form.handleCancel}
+                isDirty={form.isDirty}
+                onSave={form.save}
+                onDiscard={form.discard}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
             />
         </form>
     );

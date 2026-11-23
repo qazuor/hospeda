@@ -8,10 +8,11 @@
  * listing's own content or how to reach the host.
  */
 
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
-import { ActionBar } from '../ActionBar.client';
 import { AccommodationSeoSchema } from '../accommodation-edit-form.schema';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { SeoSection } from '../SeoSection.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
@@ -63,10 +64,13 @@ export function SeoForm({ locale, accommodationId, initialData }: SeoFormProps) 
                 </div>
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={form.isSaving}
-                onCancel={form.handleCancel}
+                isDirty={form.isDirty}
+                onSave={form.save}
+                onDiscard={form.discard}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
             />
         </form>
     );

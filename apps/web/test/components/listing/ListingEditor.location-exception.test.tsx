@@ -72,7 +72,7 @@ async function saveRefused() {
             target: { value: 'Av. San Martin' }
         }
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 }
 
 describe('ListingEditor: location exception on a refused save (HOS-2192)', () => {
@@ -120,7 +120,7 @@ describe('ListingEditor: location exception on a refused save (HOS-2192)', () =>
                 target: { value: 'Otra' }
             }
         );
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
         await screen.findAllByRole('alert');
         expect(screen.queryByRole('button', { name: 'Pedir una excepción' })).toBeNull();
     });
