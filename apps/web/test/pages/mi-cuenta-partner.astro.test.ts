@@ -199,7 +199,7 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
         expect(source).toContain(
             '<PartnerEditForm locale={locale} partner={partner} client:load />'
         );
-        expect(source).toContain('{!isRevoked && (');
+        expect(source).toContain('{!isRevoked && <PartnerEditForm');
     });
 
     it('wraps content in AccountLayout with the partner active section', () => {
@@ -225,11 +225,10 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
             );
         });
 
-        it('puts the edit form inside a Section', () => {
+        it('mounts the edit form without wrapping it in another Section', () => {
             const form = source.indexOf('<PartnerEditForm');
-            const section = source.lastIndexOf('<Section', form);
-            expect(section).toBeGreaterThan(-1);
-            expect(source.slice(section, form)).toContain('section:partner.edit-form');
+            const preceding = source.slice(source.lastIndexOf('{!isRevoked', form), form);
+            expect(preceding).not.toContain('<Section');
         });
 
         it('every pill state has a label in every locale', () => {
