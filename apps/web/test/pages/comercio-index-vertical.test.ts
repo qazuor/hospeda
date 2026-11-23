@@ -31,9 +31,9 @@ describe('comercio index — one list per vertical (HOS-2559)', () => {
         );
     });
 
-    it('filters the fetched listings to the list vertical before anything reads them', () => {
+    it('reads ONLY the list vertical (one request, HOS-2484) and filters before anything reads them', () => {
         expect(frontmatter).toMatch(
-            /listings = filterOwnerListingsByVertical\(\{\s*listings: await fetchOwnerListingsWithState\(\{ cookieHeader \}\),\s*vertical: listVertical\s*\}\);/
+            /listings = filterOwnerListingsByVertical\(\{\s*listings: await fetchOwnerListingsWithState\(\{ vertical: listVertical, cookieHeader \}\),\s*vertical: listVertical\s*\}\);/
         );
     });
 

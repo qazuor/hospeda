@@ -206,8 +206,9 @@ describe('editor pages follow the /mi-cuenta conventions', () => {
         expect(codeOf(LAYOUT).length).toBeLessThan(LAYOUT.length);
     });
 
-    it('should use the canonical account page header for its single h1', () => {
-        expect(LAYOUT).toContain('AccountPageHeader');
+    it('should use the kit page header for its single h1 (HOS-2493)', () => {
+        expect(codeOf(LAYOUT)).toContain("from '@/components/account/ui'");
+        expect(codeOf(LAYOUT)).toMatch(/<PageHeader\b/);
     });
 
     it('should render no bespoke h1 on any route', () => {
@@ -218,8 +219,9 @@ describe('editor pages follow the /mi-cuenta conventions', () => {
         }
     });
 
-    it('should use the shared breadcrumbs component, not a bespoke one', () => {
-        expect(LAYOUT).toContain("from '@/components/shared/navigation/Breadcrumbs.astro'");
+    it('should give the way back as the header back link, not a breadcrumb trail (HOS-2493)', () => {
+        expect(codeOf(LAYOUT)).toContain('back={back}');
+        expect(codeOf(LAYOUT)).not.toContain('Breadcrumbs');
     });
 });
 
@@ -257,7 +259,7 @@ describe('editor routes — navigation feel (T-025)', () => {
             'utf8'
         );
 
-        expect(shell).toContain('.editor-shell__nav');
+        expect(shell).toContain('.editor-shell__column');
         expect(shell).toContain('align-self: stretch;');
     });
 });

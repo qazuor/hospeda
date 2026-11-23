@@ -1,0 +1,99 @@
+/* EditorSectionNav.module.css — the editor section column (HOS-2486).
+   Sticky in its grid track; the shell decides when it shows (container query). */
+
+.root {
+    position: sticky;
+    inset-block-start: var(--editor-nav-top, var(--space-6));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    inline-size: var(--editor-nav-w);
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.heading {
+    margin: 0;
+    padding-inline: var(--space-3);
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.link {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+    box-sizing: border-box;
+    min-block-size: var(--control-h-lg);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-control);
+    color: var(--core-foreground);
+    font: var(--app-control);
+    text-decoration: none;
+}
+
+.link:hover {
+    background-color: var(--muted);
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.link[aria-current="page"] {
+    background-color: var(--nav-active-bg);
+    color: var(--nav-active-fg);
+}
+
+.label {
+    min-inline-size: 0;
+}
+
+/* ── Status mark (shared with EditorSwitcher) ────────────────────────── */
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font: var(--app-caption);
+    color: var(--mark-fg);
+    white-space: nowrap;
+}
+
+.dot {
+    inline-size: var(--space-2);
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background-color: var(--mark-solid);
+}
+
+.complete {
+    --mark-fg: var(--status-success-fg);
+    --mark-solid: var(--status-success-solid);
+}
+
+.incomplete {
+    --mark-fg: var(--status-warning-fg);
+    --mark-solid: var(--status-warning-solid);
+}
+
+.locked {
+    --mark-fg: var(--upsell-fg);
+    --mark-solid: var(--upsell-fg);
+}

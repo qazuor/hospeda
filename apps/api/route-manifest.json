@@ -3538,6 +3538,10 @@
             "path": "/api/v1/protected/partners/mine"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/partners/mine/logo"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/partners/mine/mentions"
         },

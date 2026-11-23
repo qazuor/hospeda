@@ -18,12 +18,18 @@
  * roles: the "trusted editor" is two per-user grants layered on the plain
  * `EDITOR` role (OQ-1), so the role set cannot answer the question.
  *
+ * HOS-2505: the account-kit editor template — kit `PageHeader` with the back
+ * link and the page «?», the slug note in an `Alert`, then the editor island
+ * (kit Sections + StickySaveBar). Without the role it is a `LockedState`
+ * (`reason.kind='permission'`) instead of the old redirect to `/mi-cuenta` (D9).
+ *
  * @route     /[lang]/mi-cuenta/publicaciones/[id]/editar/
  * @rendering SSR (prerender = false — authenticated, author-scoped data)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { Alert, LockedState, PageHeader } from '@/components/account/ui';
 import { PostEditor } from '@/components/post/editor/PostEditor.client';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { postEditApi } from '@/lib/api/endpoints-protected';
@@ -35,7 +41,6 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasPostsNavAccess } from '@/lib/nav-gating';
 import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
 import { buildUrl } from '@/lib/urls';
-import btn from '@/components/account/AccountButton.module.css';
 
 export const prerender = false;
 
@@ -49,37 +54,38 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-if (!hasPostsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
-}
+const canManagePosts = hasPostsNavAccess({ roles: user.roles });
 
-// HOS-2556: a missing id, an unknown id and another author's id all answer the
-// same in-layout 404 (see resolveAuthoredEditorItem).
-const loaded = await resolveAuthoredEditorItem({
-    astro: Astro,
-    back: 'posts',
-    fetchById: postEditApi.getById,
-    logTag: '[mi-cuenta/publicaciones/editar]'
-});
-if (loaded.notFound) {
-    return loaded.notFound;
-}
-
-const post = transformPostEditDetail({ item: loaded.item });
-
-// Optional catalog for the related-destination select. A failed fetch hides the
-// field rather than failing the page — the field is optional, so its absence
-// costs the author nothing (see `DetailsSection`).
+let post: ReturnType<typeof transformPostEditDetail> | null = null;
 let destinations: readonly PostDestinationOption[] = [];
-const destinationsResult = await destinationsApi.list({
-    destinationType: 'CITY',
-    pageSize: 100
-});
-if (destinationsResult.ok) {
-    destinations = destinationsResult.data.items.map((item) => ({
-        id: item.id,
-        name: item.name
-    }));
+
+if (canManagePosts) {
+    // HOS-2556: a missing id, an unknown id and another author's id all answer the
+    // same in-layout 404 (see resolveAuthoredEditorItem).
+    const loaded = await resolveAuthoredEditorItem({
+        astro: Astro,
+        back: 'posts',
+        fetchById: postEditApi.getById,
+        logTag: '[mi-cuenta/publicaciones/editar]'
+    });
+    if (loaded.notFound) {
+        return loaded.notFound;
+    }
+
+    post = transformPostEditDetail({ item: loaded.item });
+
+    // Optional catalog for the related-destination select. A failed fetch hides
+    // the field rather than failing the page (see `DetailsSection`).
+    const destinationsResult = await destinationsApi.list({
+        destinationType: 'CITY',
+        pageSize: 100
+    });
+    if (destinationsResult.ok) {
+        destinations = destinationsResult.data.items.map((item) => ({
+            id: item.id,
+            name: item.name
+        }));
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -103,55 +109,57 @@ const canDelete = permissions.includes('post.delete.own') || permissions.include
  * the PATCH regardless. Its job is to say so BEFORE the author writes a full
  * revision they cannot save.
  */
-const isEditLocked = post.moderationState === 'APPROVED' && !canPublish && !canUpdateAny;
+const isEditLocked = post ? post.moderationState === 'APPROVED' && !canPublish && !canUpdateAny : false;
 
 const title = t('account.myContent.posts.editor.pageTitle', 'Editar publicación');
 ---
 
-<AccountLayout locale={locale} title={`${title}: ${post.title}`} activeSection="publicaciones">
-    <AccountPageHeader title={title} description={post.title} />
+{post ? (
+    <AccountLayout locale={locale} title={`${title}: ${post.title}`} activeSection="publicaciones">
+        <PageHeader
+            title={title}
+            description={post.title}
+            locale={locale}
+            back={{ label: t('account.myContent.posts.editor.backToList', 'Volver a mis publicaciones'), href: listUrl }}
+        >
+            <PageHelpLink slot="help" locale={locale} />
+        </PageHeader>
 
-    <p class="post-edit-page__slug">
-        <code>/{post.slug}</code>
-        <span class="post-edit-page__slug-note">
-            {t(
+        <Alert
+            tone="info"
+            locale={locale}
+            title={t(
                 'account.myContent.posts.editor.slugImmutableNotice',
                 'La URL pública se genera al crear la nota y no se puede cambiar.'
             )}
-        </span>
-    </p>
+        >
+            <code>/{post.slug}</code>
+        </Alert>
 
-    <a class:list={['post-edit-page__back', btn.secondary]} href={listUrl}>
-        {t('account.myContent.posts.editor.backToList', 'Volver a mis publicaciones')}
-    </a>
+        <PostEditor
+            client:load
+            locale={locale}
+            initialData={post}
+            destinations={destinations}
+            canPublish={canPublish}
+            canDelete={canDelete}
+            isEditLocked={isEditLocked}
+        />
+    </AccountLayout>
+) : (
+    <AccountLayout locale={locale} title={title} activeSection="publicaciones">
+        <PageHeader title={title} locale={locale}>
+            <PageHelpLink slot="help" locale={locale} />
+        </PageHeader>
 
-    <PostEditor
-        client:load
-        locale={locale}
-        initialData={post}
-        destinations={destinations}
-        canPublish={canPublish}
-        canDelete={canDelete}
-        isEditLocked={isEditLocked}
-    />
-</AccountLayout>
-
-<style>
-    .post-edit-page__slug {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-2, 0.5rem);
-        margin: 0 0 var(--space-3, 0.75rem);
-        font-size: var(--text-caption, 0.75rem);
-        color: var(--core-muted-foreground);
-    }
-
-    .post-edit-page__slug-note {
-        font-family: var(--font-sans);
-    }
-
-    .post-edit-page__back {
-        text-decoration: none;
-    }
-</style>
+        <LockedState
+            locale={locale}
+            reason={{
+                kind: 'permission',
+                feature: t('account.myContent.contentList.posts.locked.feature'),
+                description: t('account.myContent.contentList.posts.locked.description'),
+                helpHref: buildUrl({ locale, path: 'colaborar/editores' })
+            }}
+        />
+    </AccountLayout>
+)}

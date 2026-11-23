@@ -18,7 +18,9 @@ import { buildEditData } from './edit-data-fixture';
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key
     })
@@ -136,7 +138,7 @@ describe('NightInfoSection', () => {
         fireEvent.change(document.getElementById('ce-entryNoteI18n') as HTMLElement, {
             target: { value: 'a'.repeat(201) }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
         expect(apiClient.patch).not.toHaveBeenCalled();
@@ -257,7 +259,7 @@ describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
             target: { value: 'from_time' }
         });
         fireEvent.change(screen.getByLabelText('Rige desde las'), { target: { value: '00:00' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert
         await waitFor(() => expect(apiClient.patch).toHaveBeenCalledTimes(1));
@@ -284,7 +286,7 @@ describe('NightInfoSection — minimum-age scope (HOS-2098)', () => {
         fireEvent.change(screen.getByLabelText('Alcance de la edad mínima'), {
             target: { value: 'from_time' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
         expect(apiClient.patch).not.toHaveBeenCalled();

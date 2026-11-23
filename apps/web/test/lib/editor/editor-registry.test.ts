@@ -26,7 +26,8 @@ const ALWAYS: EditorSection = {
     id: 'always',
     slug: 'siempre',
     group: 'property',
-    labelKey: 'fixture.always'
+    labelKey: 'fixture.always',
+    saveModel: 'bar'
 };
 
 const CONDITIONAL: EditorSection = {
@@ -34,6 +35,7 @@ const CONDITIONAL: EditorSection = {
     slug: 'condicional',
     group: 'content',
     labelKey: 'fixture.conditional',
+    saveModel: 'auto',
     visibilityKey: 'hasThing'
 };
 

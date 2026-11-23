@@ -110,10 +110,13 @@ describe('hardcoded aria-labels are gone (HOS-2436)', () => {
         expect(source).toContain('aria-label={ariaLabel}');
     });
 
-    it('LocationPicker passes the translated map label and loading text', () => {
-        const source = read('src/components/host/editor/LocationPicker.client.tsx');
-        expect(source).toContain('host.properties.editor.location.mapAriaLabel');
-        expect(source).toContain('host.properties.editor.location.mapLoading');
-        expect(source).not.toContain('Loading map...\n');
+    it('LocationForm passes the translated map label; the shared pin translates its loading text', () => {
+        // HOS-2496: the retired LocationPicker's map now renders through the
+        // shared location section, whose pin owns the loading text.
+        const form = read('src/components/host/editor/forms/LocationForm.client.tsx');
+        expect(form).toContain('host.properties.editor.location.mapAriaLabel');
+        const pin = read('src/components/account/editor-fields/EditorMapPin.tsx');
+        expect(pin).toContain('account.editorFields.location.mapLoading');
+        expect(pin).not.toContain('Loading map...\n');
     });
 });

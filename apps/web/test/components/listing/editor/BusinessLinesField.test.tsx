@@ -11,7 +11,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BusinessLinesField } from '@/components/listing/editor/BusinessLinesField.client';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key
     })
@@ -81,8 +82,11 @@ describe('BusinessLinesField — TEST:5.6:2 (AC:5:1)', () => {
     it('shows the field error the selector receives', () => {
         renderField({ errors: { businessLines: 'Este tipo de local no ofrece este rubro.' } });
 
-        expect(screen.getByRole('alert')).toHaveTextContent(
-            'Este tipo de local no ofrece este rubro.'
+        // The kit group describes itself by its error paragraph.
+        const group = screen.getByRole('group', { name: 'Rubros' });
+        expect(group).toHaveAttribute('aria-invalid', 'true');
+        expect(group).toHaveAccessibleDescription(
+            expect.stringContaining('Este tipo de local no ofrece este rubro.')
         );
     });
 });

@@ -16,6 +16,7 @@
  * instead of approximate, and with no JS at all (HOS-318 D-9).
  */
 
+import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
 import {
     buildEditorSectionUrl,
     type EditorRegistry,
@@ -37,6 +38,34 @@ export interface EditorNavLink {
     readonly labelKey: string;
     /** True for the section currently being edited. At most one link is active. */
     readonly isActive: boolean;
+    /** What the section's status says, when the page knows it (the hub does). */
+    readonly status?: EditorNavStatus;
+}
+
+/**
+ * A section's state as the nav and the switcher show it (spec HOS-2415 §6.1).
+ * `hidden` sections are not listed at all (`visibilityKey`), so they need no
+ * value here.
+ */
+export type EditorNavStatus = 'complete' | 'incomplete' | 'locked';
+
+/**
+ * Reduces a hub status line to the nav state: a warning or a publish blocker is
+ * `incomplete`, a plan-withheld section is `locked`, a neutral fact
+ * («8 huéspedes») is `complete`. No line means unknown, and shows nothing.
+ *
+ * @param params - The hub status of one section, if any.
+ * @returns The nav state, or `undefined` when unknown.
+ */
+export function toEditorNavStatus({
+    status
+}: {
+    readonly status: EditorSectionStatus | undefined;
+}): EditorNavStatus | undefined {
+    if (status === undefined) return undefined;
+    if (status.tone === 'locked') return 'locked';
+    if (status.tone === 'neutral') return 'complete';
+    return 'incomplete';
 }
 
 /** One rendered nav group: a heading plus its links. */
@@ -66,7 +95,8 @@ export function buildEditorNavModel({
     registry,
     entityId,
     currentSectionId,
-    visibility = {}
+    visibility = {},
+    statuses = {}
 }: {
     readonly locale: SupportedLocale;
     readonly registry: EditorRegistry;
@@ -74,6 +104,8 @@ export function buildEditorNavModel({
     /** `null` on the hub, where no section is active. */
     readonly currentSectionId: string | null;
     readonly visibility?: EditorSectionVisibility;
+    /** Hub status lines by section id; a page without them shows no state. */
+    readonly statuses?: Readonly<Record<string, EditorSectionStatus>>;
 }): readonly EditorNavGroup[] {
     const visible = getVisibleEditorSections({ registry, visibility });
 
@@ -83,12 +115,16 @@ export function buildEditorNavModel({
             headingKey: registry.groupLabelKeys[group],
             links: visible
                 .filter((section) => section.group === group)
-                .map((section) => ({
-                    sectionId: section.id,
-                    href: buildEditorSectionUrl({ locale, registry, entityId, section }),
-                    labelKey: section.labelKey,
-                    isActive: section.id === currentSectionId
-                }))
+                .map((section): EditorNavLink => {
+                    const status = toEditorNavStatus({ status: statuses[section.id] });
+                    return {
+                        sectionId: section.id,
+                        href: buildEditorSectionUrl({ locale, registry, entityId, section }),
+                        labelKey: section.labelKey,
+                        isActive: section.id === currentSectionId,
+                        ...(status === undefined ? {} : { status })
+                    };
+                })
         }))
         .filter((navGroup) => navGroup.links.length > 0);
 }

@@ -50,7 +50,7 @@ function codeOf(path: string): string {
  * key in a different file.
  */
 function emittedKeys(): readonly string[] {
-    const editor = codeOf(resolve(SRC, 'components/listing/ListingEditor.client.tsx'));
+    const editor = codeOf(resolve(SRC, 'components/listing/editor/listing-patch-payload.ts'));
     const slugRefresh = codeOf(resolve(SRC, 'lib/listing-slug-refresh.ts'));
 
     const direct = [...editor.matchAll(/\bpayload\.([A-Za-z0-9_]+)\s*=/g)].map((match) => match[1]);

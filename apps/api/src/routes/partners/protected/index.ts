@@ -6,6 +6,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { protectedGetMyPartnerRoute, protectedUpdateMyPartnerRoute } from './mine';
+import { protectedUploadMyPartnerLogoRoute } from './mine-logo';
 import { protectedGetMyMentionsRoute } from './mine-mentions';
 import { protectedGetMyStatsRoute } from './mine-stats';
 
@@ -14,6 +15,8 @@ const protectedRouter = createRouter();
 // GET|PATCH /mine - The caller's OWN partner listing.
 protectedRouter.route('/', protectedGetMyPartnerRoute);
 protectedRouter.route('/', protectedUpdateMyPartnerRoute);
+// POST /mine/logo - Upload the caller's OWN partner logo (HOS-2506).
+protectedRouter.route('/', protectedUploadMyPartnerLogoRoute);
 // GET /mine/mentions - The caller's OWN mentions log (HOS-377).
 protectedRouter.route('/', protectedGetMyMentionsRoute);
 // GET /mine/stats - The caller's OWN in-platform statistics (HOS-1063).

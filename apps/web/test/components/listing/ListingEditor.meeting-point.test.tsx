@@ -43,6 +43,10 @@ const { I18N_INITIAL } = vi.hoisted(() => {
     };
 });
 
+// Leaflet is out of scope here (LocationPickerMap.test.tsx covers it).
+vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
+    LocationPickerMap: () => null
+}));
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
 vi.mock('../../../src/components/listing/ListingEditor.module.css', () => ({
@@ -74,7 +78,9 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     )
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw =
@@ -151,7 +157,7 @@ function renderEditor(
     );
 }
 
-const saveButton = () => screen.getByRole('button', { name: 'Guardar' });
+const saveButton = () => screen.getByRole('button', { name: 'Guardar cambios' });
 
 /** The PATCH body as it goes over the wire — `undefined` keys dropped. */
 async function wireBody(): Promise<Record<string, unknown>> {
@@ -174,9 +180,9 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
 
             // Assert
             expect(container.querySelector('#editor-meetingPoint')).not.toBeNull();
-            expect(screen.getByLabelText('Punto de encuentro')).toBeInTheDocument();
-            expect(screen.getByLabelText('Latitud (opcional)')).toBeInTheDocument();
-            expect(screen.getByLabelText('Longitud (opcional)')).toBeInTheDocument();
+            expect(screen.getByLabelText('Dónde arranca la experiencia')).toBeInTheDocument();
+            expect(screen.getByLabelText(/^Latitud/)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^Longitud/)).toBeInTheDocument();
         });
 
         it('renders nothing of the kind for a venue listing', () => {
@@ -186,7 +192,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             const { container } = renderEditor('venue');
 
             expect(container.querySelector('#editor-meetingPoint')).toBeNull();
-            expect(screen.queryByLabelText('Punto de encuentro')).toBeNull();
+            expect(screen.queryByLabelText('Dónde arranca la experiencia')).toBeNull();
         });
 
         it('exists in the experience registry, and not in the venue one', () => {
@@ -228,9 +234,11 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
                 })
             );
 
-            expect(screen.getByLabelText('Punto de encuentro')).toHaveValue(MEETING_POINT);
-            expect(screen.getByLabelText('Latitud (opcional)')).toHaveValue(-32.4825);
-            expect(screen.getByLabelText('Longitud (opcional)')).toHaveValue(-58.2333);
+            expect(screen.getByLabelText('Dónde arranca la experiencia')).toHaveValue(
+                MEETING_POINT
+            );
+            expect(screen.getByLabelText(/^Latitud/)).toHaveValue('-32.4825');
+            expect(screen.getByLabelText(/^Longitud/)).toHaveValue('-58.2333');
         });
 
         it('opens with an empty coordinate when the row has none', () => {
@@ -238,13 +246,13 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
 
             // Empty, NOT `0`: an unpinned meeting point must not read as a
             // listing off the coast of Africa.
-            expect(screen.getByLabelText('Latitud (opcional)')).toHaveValue(null);
+            expect(screen.getByLabelText(/^Latitud/)).toHaveValue('');
         });
 
         it('keeps a stored coordinate of 0 rather than showing an empty box', () => {
             renderEditor('experience', buildListing({ meetingPointLat: 0 }));
 
-            expect(screen.getByLabelText('Latitud (opcional)')).toHaveValue(0);
+            expect(screen.getByLabelText(/^Latitud/)).toHaveValue('0');
         });
     });
 
@@ -254,7 +262,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             renderEditor('experience');
 
             // Act
-            fireEvent.change(screen.getByLabelText('Punto de encuentro'), {
+            fireEvent.change(screen.getByLabelText('Dónde arranca la experiencia'), {
                 target: { value: MEETING_POINT }
             });
             fireEvent.click(saveButton());
@@ -270,7 +278,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             // key means "no change" and the stale value would survive the save.
             renderEditor('experience', buildListing({ meetingPoint: MEETING_POINT }));
 
-            fireEvent.change(screen.getByLabelText('Punto de encuentro'), {
+            fireEvent.change(screen.getByLabelText('Dónde arranca la experiencia'), {
                 target: { value: '' }
             });
             fireEvent.click(saveButton());
@@ -282,10 +290,10 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
         it('sends the coordinates as numbers, not strings', async () => {
             renderEditor('experience');
 
-            fireEvent.change(screen.getByLabelText('Latitud (opcional)'), {
+            fireEvent.change(screen.getByLabelText(/^Latitud/), {
                 target: { value: '-32.4825' }
             });
-            fireEvent.change(screen.getByLabelText('Longitud (opcional)'), {
+            fireEvent.change(screen.getByLabelText(/^Longitud/), {
                 target: { value: '-58.2333' }
             });
             fireEvent.click(saveButton());
@@ -298,7 +306,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
         it('sends an explicit null when a coordinate is cleared', async () => {
             renderEditor('experience', buildListing({ meetingPointLat: -32.4825 }));
 
-            fireEvent.change(screen.getByLabelText('Latitud (opcional)'), {
+            fireEvent.change(screen.getByLabelText(/^Latitud/), {
                 target: { value: '' }
             });
             fireEvent.click(saveButton());
@@ -314,7 +322,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             // lives on another page now, so the neighbour is a sibling field.)
             renderEditor('experience', buildListing({ meetingPoint: MEETING_POINT }));
 
-            fireEvent.change(screen.getByLabelText('Latitud (opcional)'), {
+            fireEvent.change(screen.getByLabelText(/^Latitud/), {
                 target: { value: '-32.4825' }
             });
             fireEvent.click(saveButton());

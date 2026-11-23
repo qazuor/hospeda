@@ -74,7 +74,8 @@ describe('BenefitUsagesCountPill — what it shows', () => {
     it('states the number in words for assistive technology, not just as a glyph', async () => {
         renderPill();
 
-        const pill = await screen.findByRole('status');
+        // HOS-2502: the kit CountPill is one image named by its full label
+        const pill = await screen.findByRole('img');
         expect(pill).toHaveAttribute('aria-label', expect.stringContaining('3'));
         expect(pill.getAttribute('aria-label')?.length).toBeGreaterThan(1);
     });
@@ -87,14 +88,16 @@ describe('BenefitUsagesCountPill — what it shows', () => {
         mockCountPending.mockResolvedValue({ ok: true, data: { count: 1 } });
         renderPill();
 
-        const pill = await screen.findByRole('status');
+        // HOS-2502: the kit CountPill is one image named by its full label
+        const pill = await screen.findByRole('img');
         expect(pill).toHaveAttribute('aria-label', '1 uso espera tu confirmación');
     });
 
     it('reads as plural for more than one', async () => {
         renderPill();
 
-        const pill = await screen.findByRole('status');
+        // HOS-2502: the kit CountPill is one image named by its full label
+        const pill = await screen.findByRole('img');
         expect(pill).toHaveAttribute('aria-label', '3 usos esperan tu confirmación');
     });
 
@@ -103,7 +106,7 @@ describe('BenefitUsagesCountPill — what it shows', () => {
         renderPill();
 
         expect(await screen.findByText('99+')).toBeInTheDocument();
-        expect(screen.getByRole('status')).toHaveAttribute(
+        expect(screen.getByRole('img')).toHaveAttribute(
             'aria-label',
             expect.stringContaining('128')
         );
@@ -119,7 +122,7 @@ describe('BenefitUsagesCountPill — it clears on RESOLVE, not on view', () => {
         mockCountPending.mockResolvedValue({ ok: true, data: { count: 0 } });
         window.dispatchEvent(new CustomEvent(BENEFIT_USAGES_UPDATED_EVENT));
 
-        await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+        await waitFor(() => expect(screen.queryByRole('img')).toBeNull());
     });
 
     it('marks nothing as seen — mounting is not resolving', async () => {

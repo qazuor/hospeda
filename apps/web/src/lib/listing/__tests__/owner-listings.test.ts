@@ -10,6 +10,7 @@ import { apiClient } from '../../api/client';
 import {
     fetchOwnerListingDetail,
     fetchOwnerListings,
+    fetchOwnerListingsWithState,
     OwnerListingsUnavailableError
 } from '../owner-listings';
 
@@ -131,5 +132,68 @@ describe('fetchOwnerListingDetail', () => {
         const result = await fetchOwnerListingDetail({ vertical: 'venue', id: 'abc' });
 
         expect(result).toBeNull();
+    });
+});
+
+describe('fetchOwnerListingsWithState (HOS-2484)', () => {
+    const draft = {
+        ...exp,
+        id: '33333333-3333-4333-8333-333333333333',
+        publicationStatus: 'DRAFT',
+        missingRequirements: ['name', 'media.featuredImage']
+    };
+    const ready = { ...draft, id: '44444444-4444-4444-8444-444444444444', missingRequirements: [] };
+    const unread = {
+        ...draft,
+        id: '55555555-5555-4555-8555-555555555555',
+        missingRequirements: undefined
+    };
+
+    it('reads ONLY the requested vertical, in one request, never a listing detail', async () => {
+        // Arrange
+        mockGetProtected.mockResolvedValueOnce({ ok: true, data: { listings: [draft] } });
+
+        // Act
+        await fetchOwnerListingsWithState({ vertical: 'experience', cookieHeader: 'session=x' });
+
+        // Assert
+        expect(mockGetProtected).toHaveBeenCalledTimes(1);
+        expect(mockGetProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/experiences/mine',
+            cookieHeader: 'session=x'
+        });
+    });
+
+    it('maps missingRequirements to the completeness preview, absent to unknown', async () => {
+        // Arrange
+        mockGetProtected.mockResolvedValueOnce({
+            ok: true,
+            data: { listings: [gastro, draft, ready, unread] }
+        });
+
+        // Act
+        const result = await fetchOwnerListingsWithState({ vertical: 'venue' });
+
+        // Assert
+        expect(mockGetProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/venues/mine',
+            cookieHeader: undefined
+        });
+        expect(result.map((listing) => listing.completeness)).toEqual([
+            null,
+            { complete: false, missing: ['name', 'media.featuredImage'] },
+            { complete: true, missing: [] },
+            null
+        ]);
+    });
+
+    it('throws OwnerListingsUnavailableError when the list read fails (never a false empty)', async () => {
+        // Arrange
+        mockGetProtected.mockResolvedValueOnce({ ok: false, error: { status: 503, message: 'x' } });
+
+        // Act + Assert
+        await expect(fetchOwnerListingsWithState({ vertical: 'venue' })).rejects.toBeInstanceOf(
+            OwnerListingsUnavailableError
+        );
     });
 });

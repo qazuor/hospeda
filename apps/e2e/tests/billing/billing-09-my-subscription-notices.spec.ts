@@ -112,15 +112,18 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const subscription = page.locator(
-            `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+            `[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
         );
         await expect(subscription).toContainText('Básico');
         await expect(subscription).toContainText('Alojamiento');
         await expect(subscription.getByTestId('my-subscription-price')).toContainText('por mes');
         await expect(subscription.getByRole('button', { name: /cambiar de plan/i })).toBeVisible();
+        // The kit PlanSummary shows the status as a StatusPill beside the plan
+        // name, not as a body line; the paragraph lines must still be exactly
+        // the original ones, with no extra notice.
+        await expect(subscription).toContainText('Activa');
         await expect(subscription.locator('p')).toHaveText([
             'Alojamiento',
-            'Activa',
             /por mes/,
             /Próximo cobro:/
         ]);
@@ -166,9 +169,9 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
         courtesyGrantIds.push(courtesyGrantId);
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
-        const section = page.locator('section[aria-label="Tus suscripciones"]');
+        const section = page.getByRole('region', { name: 'Tus suscripciones', exact: true });
         const courtesy = section.locator(
-            `article[data-testid="my-subscription-deferred-courtesy"][data-courtesy-grant-id="${courtesyGrantId}"]`
+            `[data-testid="my-subscription-deferred-courtesy"][data-courtesy-grant-id="${courtesyGrantId}"]`
         );
         await expect(courtesy).toBeVisible();
         await expect(courtesy).toContainText('Alojamiento');

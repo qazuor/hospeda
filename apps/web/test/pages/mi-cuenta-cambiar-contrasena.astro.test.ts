@@ -20,16 +20,21 @@ const source = readFileSync(
     'utf8'
 );
 
+/** The page renders in `FocusShell` (HOS-2416), which owns BaseLayout and SEOHead. */
+const shell = readFileSync(resolve(__dirname, '../../src/layouts/FocusShell.astro'), 'utf8');
+
 describe('mi-cuenta/cambiar-contrasena/index.astro (BETA-143 title fix)', () => {
     it('does not manually suffix the title with "| Hospeda" (SEOHead already does)', () => {
         expect(source).not.toMatch(/\$\{title\}\s*\|\s*Hospeda/);
     });
 
-    it('passes the raw title to BaseLayout', () => {
-        expect(source).toMatch(/<BaseLayout[\s\S]*?title=\{title\}/);
+    it('passes the raw title to FocusShell, which passes it to BaseLayout', () => {
+        expect(source).toMatch(/<FocusShell[\s\S]*?title=\{title\}/);
+        expect(shell).toMatch(/<BaseLayout[\s\S]*?title=\{title\}/);
+        expect(shell).not.toMatch(/\$\{title\}\s*\|\s*Hospeda/);
     });
 
-    it('passes the raw title to SEOHead', () => {
-        expect(source).toMatch(/<SEOHead[\s\S]*?title=\{title\}/);
+    it('passes the raw title to SEOHead (through FocusShell)', () => {
+        expect(shell).toMatch(/<SEOHead[\s\S]*?title=\{title\}/);
     });
 });

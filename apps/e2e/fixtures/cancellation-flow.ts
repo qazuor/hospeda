@@ -265,7 +265,7 @@ export function subscriptionArticle(args: {
     readonly subscriptionId: string;
 }) {
     return args.page.locator(
-        `article[data-testid="my-subscription"][data-subscription-id="${args.subscriptionId}"]`
+        `[data-testid="my-subscription"][data-subscription-id="${args.subscriptionId}"]`
     );
 }
 

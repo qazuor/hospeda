@@ -9,9 +9,10 @@
  * MUST be registered BEFORE the `/{id}` route so Hono does not treat the literal
  * `mine` path segment as an `:id` param.
  */
-import { OwnerListingListSchema, ProductDomainEnum, PublicationStatusEnum } from '@repo/schemas';
+import { OwnerListingListSchema, VerticalEnum } from '@repo/schemas';
 import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
+import { buildOwnerListingSummaries } from '../../../services/listing-publication/owner-listing-summaries';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -38,24 +39,12 @@ export const protectedListMyVenueRoute = createProtectedRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        const ownListings = result.data?.listings ?? [];
-
-        const listings = ownListings.map((listing) => ({
-            id: listing.id,
-            vertical: ProductDomainEnum.VENUE,
-            name: listing.name,
-            slug: listing.slug,
-            type: listing.type,
-            // V6.9b (HOS-1641): both flags read the single publication state.
-            // Only a PUBLISHED listing is public and has a public page; every
-            // protected route that prints something for a listing answers 404
-            // for any other state, so a card must not offer those downloads.
-            isPublic: listing.publicationStatus === PublicationStatusEnum.PUBLISHED,
-            hasPublicPage: listing.publicationStatus === PublicationStatusEnum.PUBLISHED,
-            publicationStatus: listing.publicationStatus
-            // subscriptionStatus was removed with the legacy billing system
-            // (HOS-1416).
-        }));
+        // HOS-2484: the summaries carry each unpublished listing's unmet
+        // publish requirements, read in one batch (no per-listing request).
+        const listings = await buildOwnerListingSummaries({
+            vertical: VerticalEnum.VENUE,
+            listings: result.data?.listings ?? []
+        });
 
         return { listings };
     }

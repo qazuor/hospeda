@@ -122,7 +122,7 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         await expect(
             page.locator(
-                `article[data-testid="my-subscription"][data-subscription-id="${seeded.subscriptionId}"]`
+                `[data-testid="my-subscription"][data-subscription-id="${seeded.subscriptionId}"]`
             )
         ).toContainText('Alojamiento');
         await page.goto(`${WEB_URL}/es/planes/turistas/precios/`);
@@ -154,7 +154,7 @@ test.describe('TEST:B13a:10 TEST:B13a:11 pricing per vertical @p0 @billing', () 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         await expect(
             page.locator(
-                `article[data-testid="my-subscription"][data-subscription-id="${seeded.subscriptionId}"]`
+                `[data-testid="my-subscription"][data-subscription-id="${seeded.subscriptionId}"]`
             )
         ).toContainText('Alojamiento');
     });

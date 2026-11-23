@@ -92,7 +92,9 @@ export const ACCOMMODATION_AI_QUESTIONS_SECTION: EditorSection = {
     id: 'aiQuestions',
     slug: 'preguntas-ia',
     group: 'content',
-    labelKey: 'host.properties.editor.section.aiQuestions'
+    labelKey: 'host.properties.editor.section.aiQuestions',
+    // It creates FAQs one action at a time.
+    saveModel: 'auto'
 };
 
 /**
@@ -113,7 +115,8 @@ export const ACCOMMODATION_POLICIES_SECTION: EditorSection = {
     id: 'policies',
     slug: 'politicas',
     group: 'property',
-    labelKey: 'host.properties.editor.section.policies'
+    labelKey: 'host.properties.editor.section.policies',
+    saveModel: 'bar'
 };
 
 /**

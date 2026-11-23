@@ -111,7 +111,8 @@
                 "title": "Não conseguimos carregar seus comércios",
                 "body": "Houve um problema ao ler suas fichas. Elas continuam aí: tente novamente em instantes.",
                 "retry": "Tentar novamente"
-            }
+            },
+            "moreActions": "Mais ações para {{name}}"
         },
         "editor": {
             "sectionNav": {
@@ -134,6 +135,12 @@
                 "venuePromotions": "Promoções",
                 "nightInfo": "Info para sair",
                 "aiQuestions": "Perguntas à IA"
+            },
+            "groups": {
+                "basicInfo": "Identidade e descrição",
+                "practicalInfo": "O prático do passeio",
+                "price": "Quanto custa",
+                "amenities": "O que seu negócio oferece"
             },
             "sections": {
                 "type": "Categoria",

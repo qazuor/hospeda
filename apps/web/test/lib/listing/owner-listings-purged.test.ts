@@ -37,39 +37,30 @@ describe('fetchOwnerListingsWithState — PURGED (HOS-1641)', () => {
         getProtected.mockReset();
     });
 
-    it('does not fetch the detail of a PURGED listing and leaves its completeness null', async () => {
-        // Arrange
-        getProtected.mockImplementation(async ({ path }: { path: string }) => {
-            if (path.endsWith('/venues/mine')) {
-                return {
-                    ok: true,
-                    data: {
-                        listings: [
-                            summary('purged', PublicationStatusEnum.PURGED),
-                            summary('draft', PublicationStatusEnum.DRAFT)
-                        ]
+    it('gives a PURGED listing no completeness preview, from ONE list request (HOS-2484)', async () => {
+        getProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                listings: [
+                    { ...summary('purged', PublicationStatusEnum.PURGED), missingRequirements: [] },
+                    {
+                        ...summary('draft', PublicationStatusEnum.DRAFT),
+                        missingRequirements: ['name']
                     }
-                };
+                ]
             }
-            if (path.endsWith('/experiences/mine')) {
-                return { ok: true, data: { listings: [] } };
-            }
-            return { ok: true, data: { id: 'draft', name: 'Listing draft' } };
         });
 
-        // Act
-        const listings = await fetchOwnerListingsWithState({});
+        const listings = await fetchOwnerListingsWithState({ vertical: 'venue' });
 
-        // Assert
-        const detailPaths = getProtected.mock.calls
-            .map(([args]) => (args as { path: string }).path)
-            .filter((path) => !path.endsWith('/mine'));
-        expect(detailPaths).toEqual(['/api/v1/protected/venues/draft']);
-
+        expect(getProtected).toHaveBeenCalledTimes(1);
         const purged = listings.find((listing) => listing.id === 'purged');
         expect(purged?.publicationStatus).toBe(PublicationStatusEnum.PURGED);
         expect(purged?.completeness).toBeNull();
-        expect(listings.find((listing) => listing.id === 'draft')?.completeness).not.toBeNull();
+        expect(listings.find((listing) => listing.id === 'draft')?.completeness).toEqual({
+            complete: false,
+            missing: ['name']
+        });
     });
 });
 
@@ -83,9 +74,13 @@ describe('mi-cuenta/comercio/index.astro — PURGED offers no action (HOS-1641)'
         expect(source).toContain('listing.publicationStatus === PublicationStatusEnum.PURGED');
     });
 
-    it('renders the edit link only for a listing that is not purged', () => {
-        expect(source).toMatch(/\{!isPurged\(listing\) && \(\s*<a\s+class="mc-list__edit"/);
-        expect(source.split('class="mc-list__edit"').length - 1).toBe(1);
+    it('links a purged listing nowhere and gives it no action (HOS-2484 card)', () => {
+        expect(source).toContain('href={isPurged(listing) ? undefined : editUrl(listing)}');
+        // The primary action resolver answers 'none' for PURGED, so neither the
+        // edit button nor the menu renders (unit-tested in
+        // owner-listing-primary-action.test.ts).
+        expect(source).toContain("primary === 'edit' && (");
+        expect(source).toContain("primary === 'publish' && (");
     });
 
     it('keeps a purged listing out of the menu QR widget', () => {

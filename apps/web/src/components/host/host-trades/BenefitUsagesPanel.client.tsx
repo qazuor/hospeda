@@ -18,11 +18,21 @@
  * works: only the account that rejected may reverse it (see `canUndoRejection`).
  */
 
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useState } from 'react';
+import {
+    Alert,
+    CountPill,
+    DataList,
+    EmptyState,
+    ErrorState,
+    FilterChips,
+    Pagination,
+    Section,
+    Skeleton
+} from '@/components/account/ui';
 import type { BenefitUsage, BenefitUsageStatus } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
-import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { BenefitUsageCard } from './BenefitUsageCard';
@@ -46,6 +56,10 @@ const FILTER_FALLBACK: Readonly<Record<HistoryFilter, string>> = {
     REJECTED: 'Rechazados',
     EXPIRED: 'Vencidos'
 };
+
+/** Help anchors of the two sections. */
+const INBOX_HELP_ID = 'section:hosttrades.usages-inbox' as const;
+const HISTORY_HELP_ID = 'section:hosttrades.usages-history' as const;
 
 interface BenefitUsagesPanelProps {
     readonly locale: SupportedLocale;
@@ -74,22 +88,17 @@ export function BenefitUsagesPanel({
 }: BenefitUsagesPanelProps) {
     const { t } = createTranslations(locale);
 
-    const noteFieldId = useId();
-
     const [pending, setPending] = useState<readonly BenefitUsage[]>(initialPending);
     const [history, setHistory] = useState<readonly BenefitUsage[]>(initialHistory);
     const [historyTotal, setHistoryTotal] = useState(initialHistoryTotal);
     const [filter, setFilter] = useState<HistoryFilter>('ALL');
     const [historyLoading, setHistoryLoading] = useState(false);
     const [busyId, setBusyId] = useState<string | null>(null);
-    const [errorMessage, setErrorMessage] = useState<string | null>(
-        loadFailed
-            ? t(
-                  'host-trades.usages.errors.load',
-                  'No pudimos cargar tus usos del beneficio. Probá recargar la página.'
-              )
-            : null
-    );
+    // A failed READ of the lists is an error state with a retry: showing the
+    // empty copy («no tenés usos pendientes») to a host whose lists did not load
+    // would be the false answer. A failed ACTION is an alert above the lists.
+    const [readFailed, setReadFailed] = useState(loadFailed);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const [rejectTarget, setRejectTarget] = useState<BenefitUsage | null>(null);
     const [reviewTarget, setReviewTarget] = useState<BenefitUsage | null>(null);
@@ -111,13 +120,15 @@ export function BenefitUsagesPanel({
     );
 
     /**
-     * Re-reads BOTH lists after a transition.
+     * Re-reads BOTH lists after a transition (or a retry).
      *
      * Confirming moves a row out of the inbox and into the history under a new
      * state, and rejecting can trip the provider's suspension threshold — so
      * patching the two lists locally would drift from what the server now holds.
+     *
+     * @returns True when both reads worked.
      */
-    const refreshAll = useCallback(async () => {
+    const refreshAll = useCallback(async (): Promise<boolean> => {
         const [pendingResult, historyResult] = await Promise.all([
             hostTradesApi.listPendingUsages({ page: 1, pageSize: PAGE_SIZE }),
             fetchHistory(filter, 1)
@@ -128,7 +139,14 @@ export function BenefitUsagesPanel({
             setHistory(historyResult.data.items);
             setHistoryTotal(historyResult.data.pagination.total);
         }
+        return pendingResult.ok && historyResult.ok;
     }, [fetchHistory, filter]);
+
+    /** Retry of a failed read: re-reads both lists and leaves the error state on success. */
+    const retryRead = useCallback(async () => {
+        const ok = await refreshAll();
+        setReadFailed(!ok);
+    }, [refreshAll]);
 
     /** Runs one transition, then re-reads. Shared by all three actions. */
     const runTransition = useCallback(
@@ -218,53 +236,78 @@ export function BenefitUsagesPanel({
         [fetchHistory, filter, genericError, t]
     );
 
+    /** Appends the next page; a failure rejects so the paginator says so and offers a retry. */
     const loadMore = useCallback(async () => {
-        setHistoryLoading(true);
-
         const nextPage = Math.floor(history.length / PAGE_SIZE) + 1;
         const result = await fetchHistory(filter, nextPage);
 
-        if (result.ok) {
-            setHistory((current) => [...current, ...result.data.items]);
-            setHistoryTotal(result.data.pagination.total);
-        } else {
-            setErrorMessage(translateApiError({ error: result.error, t, fallback: genericError }));
-        }
+        if (!result.ok) throw new Error(result.error.code ?? 'LOAD_MORE_FAILED');
 
-        setHistoryLoading(false);
-    }, [fetchHistory, filter, genericError, history.length, t]);
+        setHistory((current) => [...current, ...result.data.items]);
+        setHistoryTotal(result.data.pagination.total);
+        return { addedCount: result.data.items.length };
+    }, [fetchHistory, filter, history.length]);
+
+    const filterItems = FILTERS.map((value) => ({
+        value,
+        label: t(`host-trades.usages.filters.${value}`, FILTER_FALLBACK[value]),
+        exclusive: value === 'ALL'
+    }));
+
+    if (readFailed) {
+        return (
+            <div className={styles.panel}>
+                <ErrorState
+                    variant="inline"
+                    locale={locale}
+                    onRetry={retryRead}
+                    description={t(
+                        'host-trades.usages.errors.load',
+                        'No pudimos cargar tus usos del beneficio. Probá recargar la página.'
+                    )}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className={styles.panel}>
             {errorMessage ? (
-                <p
-                    className={styles.error}
-                    role="alert"
+                <Alert
+                    tone="danger"
+                    locale={locale}
                 >
                     {errorMessage}
-                </p>
+                </Alert>
             ) : null}
 
-            <section
-                aria-labelledby={`${noteFieldId}-inbox`}
-                className={styles.section}
+            <Section
+                title={t('host-trades.usages.pending.title', 'Esperan tu confirmación')}
+                helpId={INBOX_HELP_ID}
+                actions={
+                    pending.length > 0 ? (
+                        <CountPill
+                            count={pending.length}
+                            variant="solid"
+                            label={t('host-trades.usages.pending.countLabel', undefined, {
+                                count: String(pending.length)
+                            })}
+                        />
+                    ) : undefined
+                }
             >
-                <h2
-                    className={styles.sectionTitle}
-                    id={`${noteFieldId}-inbox`}
-                >
-                    {t('host-trades.usages.pending.title', 'Esperan tu confirmación')}
-                </h2>
-
                 {pending.length === 0 ? (
-                    <p className={styles.empty}>
-                        {t(
+                    <EmptyState
+                        variant="compact"
+                        title={t(
                             'host-trades.usages.pending.empty',
                             'No tenés usos pendientes de confirmar.'
                         )}
-                    </p>
+                    />
                 ) : (
-                    <ul className={styles.list}>
+                    <DataList
+                        label={t('host-trades.usages.pending.title', 'Esperan tu confirmación')}
+                    >
                         {pending.map((usage) => (
                             <BenefitUsageCard
                                 answerable
@@ -276,59 +319,37 @@ export function BenefitUsagesPanel({
                                 usage={usage}
                             />
                         ))}
-                    </ul>
+                    </DataList>
                 )}
-            </section>
+            </Section>
 
-            <section
-                aria-labelledby={`${noteFieldId}-history`}
-                className={styles.section}
+            <Section
+                title={t('host-trades.usages.history.title', 'Historial')}
+                helpId={HISTORY_HELP_ID}
             >
-                <h2
-                    className={styles.sectionTitle}
-                    id={`${noteFieldId}-history`}
-                >
-                    {t('host-trades.usages.history.title', 'Historial')}
-                </h2>
-
-                {/* A real <fieldset>, not a div with role="group": the filter
-                    chips are one control group, and the legend gives assistive
-                    technology the label without occupying the layout. */}
-                <fieldset className={styles.filters}>
-                    <legend className={styles.visuallyHidden}>
-                        {t('host-trades.usages.history.filterLabel', 'Filtrar por estado')}
-                    </legend>
-                    {FILTERS.map((value) => (
-                        <button
-                            aria-pressed={filter === value}
-                            className={cn(styles.filter, filter === value && styles.filterActive)}
-                            key={value}
-                            onClick={() => changeFilter(value)}
-                            type="button"
-                        >
-                            {t(`host-trades.usages.filters.${value}`, FILTER_FALLBACK[value])}
-                        </button>
-                    ))}
-                </fieldset>
+                <FilterChips
+                    label={t('host-trades.usages.history.filterLabel', 'Filtrar por estado')}
+                    items={filterItems}
+                    value={filter}
+                    onChange={(next) => void changeFilter((next ?? 'ALL') as HistoryFilter)}
+                    className={styles.filters}
+                />
 
                 {historyLoading ? (
-                    <ul
-                        aria-hidden="true"
-                        className={styles.list}
-                    >
-                        {[0, 1, 2].map((row) => (
-                            <li
-                                className={styles.skeleton}
-                                key={row}
-                            />
-                        ))}
-                    </ul>
+                    <Skeleton
+                        locale={locale}
+                        lines={3}
+                    />
                 ) : history.length === 0 ? (
-                    <p className={styles.empty}>
-                        {t('host-trades.usages.history.empty', 'Todavía no hay usos registrados.')}
-                    </p>
+                    <EmptyState
+                        variant="compact"
+                        title={t(
+                            'host-trades.usages.history.empty',
+                            'Todavía no hay usos registrados.'
+                        )}
+                    />
                 ) : (
-                    <ul className={styles.list}>
+                    <DataList label={t('host-trades.usages.history.title', 'Historial')}>
                         {history.map((usage) => (
                             <BenefitUsageCard
                                 busy={busyId === usage.id}
@@ -339,19 +360,17 @@ export function BenefitUsagesPanel({
                                 usage={usage}
                             />
                         ))}
-                    </ul>
+                    </DataList>
                 )}
 
                 {!historyLoading && history.length < historyTotal ? (
-                    <button
-                        className={styles.loadMore}
-                        onClick={loadMore}
-                        type="button"
-                    >
-                        {t('host-trades.usages.history.loadMore', 'Ver más')}
-                    </button>
+                    <Pagination
+                        variant="loadMore"
+                        locale={locale}
+                        onLoadMore={loadMore}
+                    />
                 ) : null}
-            </section>
+            </Section>
 
             {rejectTarget ? (
                 <RejectUsageDialog

@@ -15,8 +15,10 @@ describe('comercio index usage — TEST:1757:5-6', () => {
         expect(source).not.toContain('getEntitlementsCached');
         expect(source).not.toContain('style=');
         expect(source).not.toContain('console.');
-        expect(source).toContain('role="status"');
-        expect(source).toContain('mc-usage--');
+        // HOS-2484: the kit Alert (role="status" for the info/warning tones it
+        // gets) with the shared, never-danger tone mapping.
+        expect(source).toContain('<Alert');
+        expect(source).toContain('tone={resolveUsageAlertTone({ threshold: usage.threshold })}');
     });
 
     it('TEST:1757:6 shows atLimit and gates the upgrade link below the badge threshold check', () => {

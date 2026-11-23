@@ -24,7 +24,10 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     },
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
-vi.mock('@/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
+vi.mock('@/lib/env', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/env')>()),
+    getApiUrl: () => 'http://api.test'
+}));
 vi.mock('@/components/listing/editor/BusinessLinesField.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
@@ -72,7 +75,7 @@ async function saveRefused() {
             target: { value: 'Av. San Martin' }
         }
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 }
 
 describe('ListingEditor: location exception on a refused save (HOS-2192)', () => {
@@ -120,7 +123,7 @@ describe('ListingEditor: location exception on a refused save (HOS-2192)', () =>
                 target: { value: 'Otra' }
             }
         );
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
         await screen.findAllByRole('alert');
         expect(screen.queryByRole('button', { name: 'Pedir una excepción' })).toBeNull();
     });

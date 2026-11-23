@@ -28,28 +28,27 @@ const items = [
 ];
 
 vi.mock('@/hooks/use-whats-new', () => ({
-    useWhatsNew: () => ({ items, isLoading: false, markSeen: vi.fn() })
+    useWhatsNew: () => ({ items, isLoading: false, error: null, markSeen: vi.fn() })
 }));
 
 import { WhatsNewPageList } from '../../../src/components/account/WhatsNewPageList.client';
 
-describe('WhatsNewPageList card classes (HOS-2417)', () => {
-    it('gives a seen card both the base and the --seen class as separate tokens', () => {
+describe('WhatsNewPageList seen state (HOS-2417)', () => {
+    it('marks a seen entry so it can be styled as read', () => {
         const { container } = render(<WhatsNewPageList locale="es" />);
 
         const cards = container.querySelectorAll('article');
         const seen = cards[0] as HTMLElement;
 
-        expect(seen.classList.contains('whats-new-card')).toBe(true);
-        expect(seen.classList.contains('whats-new-card--seen')).toBe(true);
+        // Kit styling: the seen state is a data attribute the CSS module keys on.
+        expect(seen).toHaveAttribute('data-seen', 'true');
     });
 
-    it('gives an unseen card only the base class', () => {
+    it('leaves an unseen entry unmarked', () => {
         const { container } = render(<WhatsNewPageList locale="es" />);
 
         const unseen = container.querySelectorAll('article')[1] as HTMLElement;
 
-        expect(unseen.classList.contains('whats-new-card')).toBe(true);
-        expect(unseen.classList.contains('whats-new-card--seen')).toBe(false);
+        expect(unseen).not.toHaveAttribute('data-seen');
     });
 });

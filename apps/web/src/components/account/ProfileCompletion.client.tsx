@@ -19,6 +19,9 @@
  * On success, redirects to the set-password screen if `requiresSetPassword === true`,
  * otherwise to `/[lang]/mi-cuenta/`.
  *
+ * Layout (HOS-2501): a kit `PageHeader`, a `Stepper` that follows the form's own
+ * progress, and one flat kit `Section` per group, inside `FocusShell`.
+ *
  * Hydration: caller MUST use `client:load`.
  */
 
@@ -33,6 +36,7 @@ import { applyThemeChoice, DEFAULT_THEME_CHOICE, readStoredThemeChoice } from '@
 import {
     computeDisplayName,
     computeInitialDisplayNameOverride,
+    ddmmyyyyToIso,
     type SocialPlatform,
     type SupportedTheme
 } from './ProfileCompletion.helpers';
@@ -41,6 +45,7 @@ import { ProfileCompletionBasicFields } from './ProfileCompletionBasicFields';
 import { ProfileCompletionConsentFields } from './ProfileCompletionConsentFields';
 import { ProfileCompletionContactFields } from './ProfileCompletionContactFields';
 import { ProfileCompletionMoreDetails } from './ProfileCompletionMoreDetails';
+import { Alert, Button, PageHeader, Section, Stepper } from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,17 +83,6 @@ export interface ProfileCompletionProps {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-
-/**
- * Converts a dd/mm/yyyy string into ISO YYYY-MM-DD. Returns null when the
- * input doesn't match the expected shape so the caller can skip the field.
- */
-function ddmmyyyyToIso(value: string): string | null {
-    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!match) return null;
-    const [, dd, mm, yyyy] = match;
-    return `${yyyy}-${mm}-${dd}`;
-}
 
 /**
  * Profile completion form island.
@@ -336,127 +330,161 @@ export function ProfileCompletion({
         ? { ...fieldErrors, terms: fieldErrors.acceptedTerms }
         : fieldErrors;
 
+    // ── Progress ──────────────────────────────────────────────────────────────
+    //
+    // The stepper follows the form's own progress, not navigation: «Tus datos»
+    // is done once both names are filled, «Preferencias» is fully optional so it
+    // counts as done as soon as the names are, and «Confirmar» is done when the
+    // terms are accepted. The current step is the first one still open.
+    const basicsDone = firstName.trim() !== '' && lastName.trim() !== '';
+    const doneFlags = [basicsDone, basicsDone, basicsDone && acceptedTerms];
+    const stepIds = ['basics', 'preferences', 'confirm'] as const;
+    const firstOpen = doneFlags.indexOf(false);
+    const currentStep = firstOpen === -1 ? stepIds.length : firstOpen;
+    const steps = stepIds.map((id) => ({
+        id,
+        label: t(`account.profileCompletion.steps.${id}`)
+    }));
+
     return (
-        <div className={styles.wrapper}>
-            <div className={styles.header}>
-                <h1 className={styles.heading}>
-                    {t('account.profileCompletion.heading', '¡Bienvenido a Hospeda!')}
-                </h1>
-                <p className={styles.subheading}>
-                    {t(
-                        'account.profileCompletion.subheading',
-                        'Antes de continuar, completá tu perfil para que podamos personalizar tu experiencia.'
-                    )}
-                </p>
-            </div>
+        <div className={styles.page}>
+            <PageHeader
+                title={t('account.profileCompletion.heading', '¡Bienvenido a Hospeda!')}
+                description={t(
+                    'account.profileCompletion.subheading',
+                    'Antes de continuar, completá tu perfil para que podamos personalizar tu experiencia.'
+                )}
+                locale={locale}
+            />
 
-            <div className={styles.card}>
-                <form
-                    className={styles.form}
-                    onSubmit={handleSubmit}
-                    noValidate
-                >
-                    <ProfileCompletionBasicFields
-                        locale={locale}
-                        apiUrl={apiUrl}
-                        firstName={firstName}
-                        lastName={lastName}
-                        displayNameValue={
-                            displayNameTouched ? displayNameOverride : derivedDisplayName
-                        }
-                        birthDate={birthDate}
-                        imageUrl={imageUrl}
-                        initialAvatarUrl={initialAvatarUrl}
-                        errors={fieldErrors}
-                        submitting={submitting}
-                        t={t}
-                        onFirstNameChange={handleFirstNameChange}
-                        onLastNameChange={handleLastNameChange}
-                        onDisplayNameChange={handleDisplayNameChange}
-                        onBirthDateChange={setBirthDate}
-                        onImageUrlChange={setImageUrl}
-                        derivedDisplayName={derivedDisplayName}
-                    />
+            <Stepper
+                steps={steps}
+                current={currentStep}
+                locale={locale}
+                label={t('account.profileCompletion.stepsLabel')}
+            />
 
-                    <ProfileCompletionContactFields
-                        phoneCode={phoneCode}
-                        phoneNumber={phoneNumber}
-                        selectedLocale={selectedLocale}
-                        selectedTheme={selectedTheme}
-                        errors={fieldErrors}
-                        submitting={submitting}
-                        t={t}
-                        onPhoneCodeChange={setPhoneCode}
-                        onPhoneNumberChange={setPhoneNumber}
-                        onLocaleChange={setSelectedLocale}
-                        onThemeChange={setSelectedTheme}
-                    />
+            <form
+                onSubmit={handleSubmit}
+                noValidate
+            >
+                <div className={styles.stack}>
+                    <Section
+                        title={t('account.profileCompletion.sections.basics')}
+                        helpId="section:profile.completion-basics"
+                    >
+                        <ProfileCompletionBasicFields
+                            locale={locale}
+                            apiUrl={apiUrl}
+                            firstName={firstName}
+                            lastName={lastName}
+                            displayNameValue={
+                                displayNameTouched ? displayNameOverride : derivedDisplayName
+                            }
+                            birthDate={birthDate}
+                            imageUrl={imageUrl}
+                            initialAvatarUrl={initialAvatarUrl}
+                            errors={fieldErrors}
+                            submitting={submitting}
+                            t={t}
+                            onFirstNameChange={handleFirstNameChange}
+                            onLastNameChange={handleLastNameChange}
+                            onDisplayNameChange={handleDisplayNameChange}
+                            onBirthDateChange={setBirthDate}
+                            onImageUrlChange={setImageUrl}
+                            derivedDisplayName={derivedDisplayName}
+                        />
+                    </Section>
 
-                    <ProfileCompletionMoreDetails
-                        detailsOpen={detailsOpen}
-                        bio={bio}
-                        website={website}
-                        occupation={occupation}
-                        socialNetworks={socialNetworks}
-                        locationCountry={locationCountry}
-                        locationRegion={locationRegion}
-                        locationCity={locationCity}
-                        errors={fieldErrors}
-                        submitting={submitting}
-                        t={t}
-                        onDetailsToggle={() => setDetailsOpen((v) => !v)}
-                        onBioChange={setBio}
-                        onWebsiteChange={setWebsite}
-                        onOccupationChange={setOccupation}
-                        onSocialNetworkChange={handleSocialNetworkChange}
-                        onLocationCountryChange={setLocationCountry}
-                        onLocationRegionChange={setLocationRegion}
-                        onLocationCityChange={setLocationCity}
-                    />
+                    <Section
+                        title={t('account.profileCompletion.sections.preferences')}
+                        helpId="section:profile.completion-preferences"
+                    >
+                        <ProfileCompletionContactFields
+                            locale={locale}
+                            phoneCode={phoneCode}
+                            phoneNumber={phoneNumber}
+                            selectedLocale={selectedLocale}
+                            selectedTheme={selectedTheme}
+                            errors={fieldErrors}
+                            submitting={submitting}
+                            t={t}
+                            onPhoneCodeChange={setPhoneCode}
+                            onPhoneNumberChange={setPhoneNumber}
+                            onLocaleChange={setSelectedLocale}
+                            onThemeChange={setSelectedTheme}
+                        />
+                    </Section>
 
-                    <ProfileCompletionConsentFields
-                        locale={locale}
-                        newsletter={newsletter}
-                        acceptedTerms={acceptedTerms}
-                        errors={consentFieldErrors}
-                        submitting={submitting}
-                        t={t}
-                        onNewsletterChange={setNewsletter}
-                        onAcceptedTermsChange={setAcceptedTerms}
-                    />
+                    <Section
+                        title={t('account.profileCompletion.sections.more')}
+                        helpId="section:profile.completion-more"
+                    >
+                        <ProfileCompletionMoreDetails
+                            locale={locale}
+                            detailsOpen={detailsOpen}
+                            bio={bio}
+                            website={website}
+                            occupation={occupation}
+                            socialNetworks={socialNetworks}
+                            locationCountry={locationCountry}
+                            locationRegion={locationRegion}
+                            locationCity={locationCity}
+                            errors={fieldErrors}
+                            submitting={submitting}
+                            t={t}
+                            onDetailsToggle={() => setDetailsOpen((v) => !v)}
+                            onBioChange={setBio}
+                            onWebsiteChange={setWebsite}
+                            onOccupationChange={setOccupation}
+                            onSocialNetworkChange={handleSocialNetworkChange}
+                            onLocationCountryChange={setLocationCountry}
+                            onLocationRegionChange={setLocationRegion}
+                            onLocationCityChange={setLocationCity}
+                        />
+                    </Section>
+
+                    <Section
+                        title={t('account.profileCompletion.sections.consent')}
+                        helpId="section:profile.completion-consent"
+                    >
+                        <ProfileCompletionConsentFields
+                            locale={locale}
+                            newsletter={newsletter}
+                            acceptedTerms={acceptedTerms}
+                            errors={consentFieldErrors}
+                            submitting={submitting}
+                            t={t}
+                            onNewsletterChange={setNewsletter}
+                            onAcceptedTermsChange={setAcceptedTerms}
+                        />
+                    </Section>
 
                     {/* ── Form-level error banner ──────────────────────────── */}
-                    {formError && (
-                        <div
-                            className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
-                            role="alert"
+                    {formError ? (
+                        <Alert
+                            tone="danger"
+                            locale={locale}
                         >
                             {formError}
-                        </div>
-                    )}
+                        </Alert>
+                    ) : null}
 
                     {/* ── Submit ─────────────────────────────────────────── */}
                     <div className={styles.submitRow}>
-                        <button
+                        <Button
                             type="submit"
-                            className={styles.submitBtn}
+                            size="lg"
+                            loading={submitting}
                             disabled={submitting}
                         >
-                            {submitting ? (
-                                <>
-                                    <span
-                                        className={styles.spinner}
-                                        aria-hidden="true"
-                                    />
-                                    {t('account.profileCompletion.submitting', 'Guardando...')}
-                                </>
-                            ) : (
-                                t('account.profileCompletion.submit', 'Completar perfil')
-                            )}
-                        </button>
+                            {submitting
+                                ? t('account.profileCompletion.submitting', 'Guardando...')
+                                : t('account.profileCompletion.submit', 'Completar perfil')}
+                        </Button>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     );
 }

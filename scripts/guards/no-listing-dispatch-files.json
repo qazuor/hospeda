@@ -74,6 +74,10 @@
             "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
         },
         {
+            "file": "apps/web/src/components/listing/editor/listing-patch-payload.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
             "file": "apps/web/src/components/listing/editor/PriceSection.client.tsx",
             "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
         },

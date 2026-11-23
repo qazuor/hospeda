@@ -117,8 +117,18 @@ describe('mi-cuenta/publicaciones/[id]/editar.astro — what it renders', () => 
     });
 
     it('always offers a way back to the listing, including under the edit lock', () => {
-        // The editor drops its whole ActionBar (Save AND Cancel) when locked,
-        // so this link is the only exit left on that path.
-        expect(template).toContain('href={listUrl}');
+        // The editor drops its save bar when locked, so this link is the only
+        // exit left on that path.
+        // HOS-2505: the kit PageHeader's back link, outside the editor island.
+        expect(template).toMatch(/back=\{\{[^}]*href: listUrl \}\}/);
+    });
+
+    it('HOS-2505: shows a permission LockedState instead of redirecting to mi-cuenta (D9)', () => {
+        expect(pageSource).toContain('<LockedState');
+        expect(pageSource).toContain("kind: 'permission'");
+        expect(pageSource).not.toMatch(
+            /Astro\.redirect\(buildUrl\(\{ locale, path: 'mi-cuenta' \}\)\)/
+        );
+        expect(pageSource).toMatch(/if \(canManagePosts\) \{[\s\S]*resolveAuthoredEditorItem\(/);
     });
 });

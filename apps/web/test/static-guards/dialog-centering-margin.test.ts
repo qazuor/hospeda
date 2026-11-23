@@ -53,8 +53,10 @@ const WEB_SRC = path.resolve(__dirname, '../../src');
  * Lower bound on modules discovered. A mis-resolved `WEB_SRC` (or a rename that
  * moves every dialog out of the scan) would otherwise report an empty set and
  * pass while checking nothing — the failure mode that reads as "no findings".
+ * Recounted to 4 when HOS-2416 moved the benefit-usage reject dialog onto the
+ * kit `Dialog` (its own module no longer styles a `.dialog`).
  */
-const MIN_DIALOG_MODULES = 5;
+const MIN_DIALOG_MODULES = 4;
 
 /** Matches a `.dialog` class selector at the start of a rule. */
 const DIALOG_SELECTOR = /^\s*\.dialog\b[^{]*\{/m;

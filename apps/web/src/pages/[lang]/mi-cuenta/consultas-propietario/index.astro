@@ -18,9 +18,8 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import HelpLink from '@/components/account/help/HelpLink.astro';
-import { pageHelpAnchor } from '@/lib/help/help-entry';
 import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { ConversationInbox } from '@/components/account/conversations/ConversationInbox.client';
 import { OwnerInboxLocked } from '@/components/account/conversations/OwnerInboxLocked';
 import { createTranslations } from '@/lib/i18n';
@@ -51,7 +50,7 @@ const title = t('conversations.inbox.ownerInboxTitle');
 
 <AccountLayout locale={locale} title={title} description={title} activeSection="owner-messages">
     <PageHeader title={title} locale={locale}>
-        <HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+        <PageHelpLink slot="help" locale={locale} />
     </PageHeader>
 
     {gate.action === 'locked' ? (

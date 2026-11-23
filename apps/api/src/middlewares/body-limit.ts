@@ -64,6 +64,7 @@ const MERCADO_PAGO_WEBHOOK_BODY_LIMIT_MB = 64 / 1024;
 /** Upload route that carries an entity photo, capped by the media limit. */
 const ENTITY_UPLOAD_PATHS = new Set([
     '/api/v1/protected/media/upload-entity',
+    '/api/v1/protected/partners/mine/logo',
     '/api/v1/admin/media/upload'
 ]);
 

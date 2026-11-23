@@ -95,7 +95,20 @@ export const OwnerListingSummarySchema = z.object({
      * Optional AND nullable (not just nullable) so existing callers/fixtures
      * that predate this field keep parsing unchanged.
      */
-    subscriptionStatus: SubscriptionStatusEnumSchema.nullable().optional()
+    subscriptionStatus: SubscriptionStatusEnumSchema.nullable().optional(),
+
+    /**
+     * The publish requirements this listing does not meet yet (HOS-2484), in
+     * the shared completeness vocabulary (`'name'`, `'media.featuredImage'`,
+     * …), read in one batch per vertical by the list endpoint so the owner
+     * index needs no per-listing request.
+     *
+     * Present (empty when complete) on every listing that is neither
+     * `PUBLISHED` nor `PURGED`. ABSENT on those two states and whenever the
+     * evaluation failed: a consumer MUST read absent as «unknown», never as
+     * complete.
+     */
+    missingRequirements: z.array(z.string()).optional()
 });
 
 /** Inferred type for a single owner listing summary row. */

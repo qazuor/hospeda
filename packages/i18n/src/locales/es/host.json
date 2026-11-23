@@ -265,9 +265,14 @@
             "unpublishTrialNote": "La prueba gratis sigue corriendo: despublicar no detiene el reloj del trial.",
             "unpublishRecurringNote_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando aunque no esté publicada, hasta que lo des de baja.",
             "unpublishRecurringNote_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando aunque no esté publicada, hasta que los des de baja.",
-            "recurringWithdrawLink": "Dar de baja estos destaques"
+            "recurringWithdrawLink": "Dar de baja estos destaques",
+            "moreActions": "Más acciones para {{name}}"
         },
         "editor": {
+            "groups": {
+                "basicInfo": "Cómo se presenta tu alojamiento",
+                "amenities": "Lo que ofrece tu alojamiento"
+            },
             "section": {
                 "basicInfo": "Información básica",
                 "location": "Ubicación",
@@ -508,7 +513,7 @@
                 "premiumFeature": "Función premium",
                 "richDescriptionNudge": "Actualizá tu plan para usar descripciones enriquecidas con formato.",
                 "calendarNudge": "Actualizá tu plan para usar el calendario de disponibilidad.",
-                "richDescriptionHint": "Texto con formato: negritas, listas y más. Disponible en planes superiores.",
+                "richDescriptionHint": "Texto con formato en la descripción: negritas, listas y más. Disponible en planes superiores.",
                 "videoNudge": "Actualizá tu plan para incrustar videos en tu propiedad.",
                 "genericNudge": "Esta función está disponible en un plan superior.",
                 "upgradeLink": "Mejorar plan"
@@ -797,7 +802,8 @@
             "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
         },
         "error": {
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "body": "Tus propiedades siguen ahí: probá de nuevo en un momento."
         }
     },
     "landing": {
@@ -938,6 +944,20 @@
         "specialOffer": {
             "label": "Describí el beneficio",
             "help": "Contá el beneficio en pocas palabras, por ejemplo 2x1 en tragos."
+        },
+        "kit": {
+            "sectionTitle": "Tus promociones",
+            "statusLabel": "Estado",
+            "validityLabel": "Vigencia",
+            "validRange": "Del {{from}} al {{until}}",
+            "validOpen": "Desde el {{from}}, sin vencimiento",
+            "editNamed": "Editar «{{title}}»",
+            "deleteNamed": "Eliminar «{{title}}»",
+            "deleteTitle": "¿Eliminar «{{title}}»?",
+            "benefitSection": "La promoción",
+            "conditionsSection": "Condiciones",
+            "loadFailedHint": "Volvé a la lista e intentá de nuevo.",
+            "backToList": "Volver a mis promociones"
         }
     },
     "dashboard": {

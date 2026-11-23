@@ -22,6 +22,7 @@ import {
 	buildAccommodationEditorVisibility,
 } from '@/lib/editor/accommodation-editor-sections';
 import { applyLockedSectionStatuses } from '@/lib/editor/accommodation-section-locks';
+import { resolveAccommodationCompleteness } from '@/lib/editor/editor-completeness';
 import { resolveEditorSectionStatuses } from '@/lib/editor/editor-hub-status-model';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
@@ -70,6 +71,18 @@ const [supportEdits, listingNotices, sectionStatesResult] = await Promise.all([
 const hasListingNotices =
 	listingNotices.item !== undefined && listingNotices.item.notices.length > 0;
 
+// What the publish gate checks: feeds both the rows and the meter, so the two
+// can never disagree (HOS-2499).
+const publishReadiness = {
+	description: accommodation.description,
+	capacity: accommodation.maxGuests,
+	minNights: accommodation.policies.minNights ?? null,
+	bedrooms: accommodation.bedrooms,
+	bathrooms: accommodation.bathrooms,
+	hasMainImage: Boolean(data.featuredImage),
+};
+const completeness = resolveAccommodationCompleteness({ input: publishReadiness });
+
 const baseStatuses = resolveEditorSectionStatuses({
 	input: {
 		hasDescription: Boolean(accommodation.description),
@@ -87,14 +100,7 @@ const baseStatuses = resolveEditorSectionStatuses({
 		// requirement list the server rejects from — so the hub can no longer
 		// warn about what does not block while staying silent about what does
 		// (H-101).
-		publishReadiness: {
-			description: accommodation.description,
-			capacity: accommodation.maxGuests,
-			minNights: accommodation.policies.minNights ?? null,
-			bedrooms: accommodation.bedrooms,
-			bathrooms: accommodation.bathrooms,
-			hasMainImage: Boolean(data.featuredImage),
-		},
+		publishReadiness,
 	},
 });
 const statuses = applyLockedSectionStatuses({
@@ -133,6 +139,7 @@ const statuses = applyLockedSectionStatuses({
 		entityId={accommodationId}
 		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
+		completeness={completeness}
 	/>
 </EditorSectionLayout>
 

@@ -75,7 +75,6 @@ describe('the three list pages page instead of capping at 50', () => {
         readFileSync(resolve(__dirname, '../../src/pages/[lang]/mi-cuenta', rel), 'utf8');
 
     it.each([
-        'propiedades/index.astro',
         'eventos/index.astro',
         'publicaciones/index.astro'
     ])('%s requests the page from the URL and renders the pager', (rel) => {
@@ -83,7 +82,18 @@ describe('the three list pages page instead of capping at 50', () => {
         expect(source).not.toMatch(/pageSize(=|:\s*)50/);
         expect(source).toContain('parsePageParam');
         expect(source).toContain('ACCOUNT_LIST_PAGE_SIZE');
-        expect(source).toContain('<AccountPagination');
+        // The legacy pager, or the kit list template fed the page count (HOS-2505).
+        expect(source).toMatch(/<AccountPagination|pageCount=\{pageState\.totalPages\}/);
+        expect(source).toContain('pageState.isPastEnd');
+    });
+
+    it('propiedades/index.astro (kit, HOS-2483) requests the page and renders the kit Pagination', () => {
+        const source = read('propiedades/index.astro');
+        expect(source).not.toMatch(/pageSize(=|:\s*)50/);
+        expect(source).toContain('parsePageParam');
+        expect(source).toContain('ACCOUNT_LIST_PAGE_SIZE');
+        expect(source).toMatch(/pageState\.totalPages > 1 && \(\s*<Pagination/);
+        expect(source).toContain('pageCount={pageState.totalPages}');
         expect(source).toContain('pageState.isPastEnd');
     });
 

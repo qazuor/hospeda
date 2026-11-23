@@ -55,7 +55,6 @@ describe('HostTradesAccessDenied.astro', () => {
         expect(SOURCE).toContain('locale: SupportedLocale');
         expect(SOURCE).toMatch(/t\(\s*'host-trades\.accessDenied\.title'/);
         expect(SOURCE).toMatch(/t\(\s*'host-trades\.accessDenied\.message'/);
-        expect(SOURCE).toMatch(/t\(\s*'host-trades\.accessDenied\.cta'/);
     });
 
     it('builds the CTA href with buildUrl to the "publicá en Hospeda" hub, never to pricing', () => {
@@ -65,16 +64,19 @@ describe('HostTradesAccessDenied.astro', () => {
         expect(SOURCE).not.toMatch(/href=\{`\/\$\{locale\}/);
     });
 
-    it('renders as an alert region with the lock icon', () => {
-        expect(SOURCE).toContain('role="alert"');
-        expect(SOURCE).toContain('LockIcon');
+    it('renders the kit LockedState with the role reason, never a local card (HOS-2502)', () => {
+        expect(SOURCE).toContain("import { LockedState } from '@/components/account/ui'");
+        expect(SOURCE).toContain("kind: 'role'");
+        expect(SOURCE).toContain('joinHref');
+        expect(SOURCE).not.toContain('<style>');
+        // The lock never lists plans: the directory is free for every host.
+        expect(SOURCE).not.toContain("kind: 'plan'");
     });
 
     it('keeps the inline i18n fallbacks in sync with the es locale file', () => {
         const es = readAccessDeniedCopy('es');
         expect(SOURCE).toContain(es.title);
         expect(SOURCE).toContain(es.message);
-        expect(SOURCE).toContain(es.cta);
     });
 
     describe.each(LOCALES)('locale: %s', (locale) => {

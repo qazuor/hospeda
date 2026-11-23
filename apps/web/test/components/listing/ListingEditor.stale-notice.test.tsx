@@ -41,7 +41,9 @@ vi.mock('../../../src/components/listing/ListingTranslationPanel.client', () => 
     })
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw =
@@ -145,7 +147,11 @@ function renderEditor() {
  * @returns The banner's text, or `null` when no banner is on screen.
  */
 function bannerText(container: HTMLElement): string | null {
-    const banners = container.querySelectorAll('p[role="alert"]:not([id])');
+    // The save bar's own failure line (HOS-2487) is a separate signal, not the
+    // form banner this guard is about.
+    const banners = Array.from(container.querySelectorAll('p[role="alert"]:not([id])')).filter(
+        (el) => !el.closest('[data-editor-save-signal]')
+    );
     expect(banners.length).toBeLessThanOrEqual(1);
     return banners[0]?.textContent ?? null;
 }
@@ -153,7 +159,7 @@ function bannerText(container: HTMLElement): string | null {
 /** Dirties the form and presses Save. */
 function saveWith(value: string): void {
     fireEvent.change(screen.getByLabelText('Descripción ampliada'), { target: { value } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 }
 
 describe('ListingEditor — a notice does not outlive its operation (HOS-816)', () => {
@@ -220,13 +226,14 @@ describe('ListingEditor — a notice does not outlive its operation (HOS-816)', 
         saveWith('primer intento');
         await waitFor(() => expect(bannerText(container)).toBeTruthy());
 
-        // Restore the original value: the form is clean again, so Save answers
-        // with the "nothing to save" toast and sends no request. The stale
-        // banner must not survive that branch either.
+        // Restore the original value: the form is clean again (the save bar
+        // hides), so a submit (Enter in a field) answers with the "nothing to
+        // save" toast and sends no request. The stale banner must not survive
+        // that branch either.
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'old text' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
         await waitFor(() =>
             expect(addToast).toHaveBeenCalledWith(

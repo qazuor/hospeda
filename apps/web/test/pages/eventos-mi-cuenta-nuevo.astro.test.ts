@@ -36,7 +36,8 @@ describe('mi-cuenta/eventos/nuevo.astro', () => {
     it('TEST:1767:20 — shows a no-access state instead of redirecting to mi-cuenta', () => {
         expect(pageSource).toContain("from '@/lib/nav-gating'");
         expect(pageSource).toContain('hasEventsNavAccess(');
-        expect(pageSource).toContain('AccountEmptyState');
+        expect(pageSource).toContain('<LockedState');
+        expect(pageSource).toContain("kind: 'permission'");
         expect(pageSource).toContain('colaborar/editores');
         expect(pageSource).toContain('account.myContent.events.create.noAccess.title');
         expect(pageSource).not.toMatch(

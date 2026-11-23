@@ -83,7 +83,7 @@ describe('PartnerTrafficSection (HOS-2119)', () => {
         });
 
         it('mounts it beneath PartnerStatsSection', () => {
-            const stats = PAGE_SOURCE.indexOf('<PartnerStatsSection ');
+            const stats = PAGE_SOURCE.indexOf('<PartnerStatsSection');
             const traffic = PAGE_SOURCE.indexOf('<PartnerTrafficSection ');
             const mentions = PAGE_SOURCE.indexOf('<PartnerMentionsSection');
             expect(stats).toBeGreaterThan(-1);

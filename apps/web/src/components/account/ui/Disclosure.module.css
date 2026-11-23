@@ -1,0 +1,43 @@
+/* Disclosure.module.css — a collapsed secondary block (HOS-2506). No box. */
+
+.root {
+    min-inline-size: 0;
+}
+
+.summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-block-size: var(--control-h-lg);
+    cursor: pointer;
+    font: var(--app-control);
+    color: var(--core-foreground);
+    list-style: none;
+}
+
+.summary::-webkit-details-marker {
+    display: none;
+}
+
+.summary:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.chevron {
+    transition: transform 150ms ease;
+}
+
+.root[open] > .summary .chevron {
+    transform: rotate(180deg);
+}
+
+.body {
+    padding-block-start: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chevron {
+        transition: none;
+    }
+}

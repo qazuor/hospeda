@@ -32,6 +32,13 @@ type TargetLocale = (typeof TARGET_LOCALES)[number];
  */
 const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = {
     Email: ['en', 'pt'],
+    // Spelled the same in English / Brazilian Portuguese (HOS-2485 subscription tabs
+    // and the add-on purchase steps).
+    Plan: ['en'],
+    Complementos: ['pt'],
+    Complemento: ['pt'],
+    Destino: ['pt'],
+    Confirmar: ['pt'],
     WhatsApp: ['en', 'pt'],
     // Correct in both Spanish and Brazilian Portuguese (HOS-2521 contact copy).
     '/hora': ['pt'],
@@ -45,6 +52,10 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Facebook: ['en', 'pt'],
     Instagram: ['en', 'pt'],
     YouTube: ['en', 'pt'],
+    // Brand names of the editor social links (HOS-2497).
+    TikTok: ['en', 'pt'],
+    LinkedIn: ['en', 'pt'],
+    'X (Twitter)': ['en', 'pt'],
     Hospeda: ['en', 'pt'],
     Hotel: ['en', 'pt'],
     Motel: ['en', 'pt'],
@@ -77,6 +88,12 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Lista: ['pt'],
     'Lista numerada': ['pt'],
     Sáb: ['pt'],
+    // Same adjectives in Brazilian Portuguese (HOS-2415 editor nav status).
+    Completa: ['pt'],
+    // Same words in Brazilian Portuguese (HOS-2496 editor location fields).
+    Coordenadas: ['pt'],
+    Número: ['pt'],
+    Incompleta: ['pt'],
     Dom: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
     '{{count}} de {{max}} caracteres': ['pt'],

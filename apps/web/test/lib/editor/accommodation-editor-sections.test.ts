@@ -285,7 +285,8 @@ describe('HOS-2101 — the AI questions section', () => {
             id: 'aiQuestions',
             slug: 'preguntas-ia',
             group: 'content',
-            labelKey: 'host.properties.editor.section.aiQuestions'
+            labelKey: 'host.properties.editor.section.aiQuestions',
+            saveModel: 'auto'
         });
         expect(findEditorSectionBySlug({ slug: 'preguntas-ia' })?.id).toBe('aiQuestions');
     });
@@ -306,7 +307,8 @@ describe('HOS-2123 — the policies section', () => {
             id: 'policies',
             slug: 'politicas',
             group: 'property',
-            labelKey: 'host.properties.editor.section.policies'
+            labelKey: 'host.properties.editor.section.policies',
+            saveModel: 'bar'
         });
         expect(findEditorSectionBySlug({ slug: 'politicas' })?.id).toBe('policies');
         expect(getVisibleEditorSections({ hasTranslations: false }).map((s) => s.id)).toContain(

@@ -116,11 +116,15 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
                 );
                 carded += 1;
             }
+            // The kit `Section` (HOS-2415) IS the card: it owns its own box.
+            carded += (code.match(/<Section\b/g) ?? []).length;
         }
 
         // Non-vacuity: the guard must actually have inspected the real form.
         expect(EDITOR_COMPONENTS.length).toBeGreaterThanOrEqual(8);
-        expect(carded).toBeGreaterThan(10);
+        // Contact moved to `account/editor-fields` (HOS-2497), so fewer cards
+        // live here than before; the floor still proves the sweep saw the form.
+        expect(carded).toBeGreaterThanOrEqual(8);
     });
 
     it('makes every section component own at least one card', () => {
@@ -136,8 +140,9 @@ describe('ListingEditor — per-section cards (HOS-371)', () => {
         for (const file of SECTION_FILES) {
             const code = stripComments(read(resolve(EDITOR_DIR, file)));
 
+            // A kit `<Section>` (HOS-2415) counts: it renders the card itself.
             expect(code, `${file}: renders no card at all`).toMatch(
-                /<(section|fieldset)\b[^>]*(styles|fieldStyles)\.section/
+                /<(section|fieldset)\b[^>]*(styles|fieldStyles)\.section|<Section\b/
             );
         }
 

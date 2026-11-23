@@ -35,35 +35,44 @@ describe('mi-cuenta/publicaciones/index.astro', () => {
         expect(pageSource).not.toContain('authorId');
     });
 
-    it('gates on hasPostsNavAccess and redirects to mi-cuenta otherwise', () => {
+    it('HOS-2505 — shows a LockedState instead of redirecting to mi-cuenta (D9)', () => {
         expect(pageSource).toContain("from '@/lib/nav-gating'");
         expect(pageSource).toContain('hasPostsNavAccess(');
-        expect(pageSource).toContain("path: 'mi-cuenta'");
+        expect(pageSource).not.toMatch(
+            /Astro\.redirect\(\s*buildUrl\(\s*\{\s*locale,\s*path:\s*'mi-cuenta'\s*\}\s*\)\s*\)/
+        );
+        expect(pageSource).toContain("? 'locked'");
+        // Without permission the list is not even requested.
+        expect(pageSource).toMatch(/canManagePosts\s*\?\s*await\s+postEditApi\.listOwn\(/);
+        expect(pageSource.indexOf('buildLoginRedirect(')).toBeLessThan(
+            pageSource.indexOf('hasPostsNavAccess(')
+        );
     });
 
     it('redirects unauthenticated visitors to the login page', () => {
         expect(pageSource).toContain('buildLoginRedirect(');
     });
 
-    it('renders the EditableContentCard with all three orthogonal state props', () => {
-        expect(pageSource).toContain('<EditableContentCard');
-        expect(pageSource).toContain('moderationState={post.moderationState}');
-        expect(pageSource).toContain('visibility={post.visibility}');
-        expect(pageSource).toContain('lifecycleState={post.lifecycleState}');
+    it('renders the kit list template with all three orthogonal state axes (HOS-2505)', () => {
+        expect(pageSource).toContain('<OwnContentListView');
+        expect(pageSource).not.toContain('EditableContentCard');
+        expect(pageSource).toContain('moderationState: post.moderationState');
+        expect(pageSource).toContain('visibility: post.visibility');
+        expect(pageSource).toContain('lifecycleState: post.lifecycleState');
+    });
+
+    it('wires the page help link and the retry island into the template', () => {
+        expect(pageSource).toMatch(/<PageHelpLink slot="help"/);
+        expect(pageSource).toMatch(/<ContentListReloadError slot="errorRegion"/);
     });
 
     it('transforms the raw response through transformPostEditCardList', () => {
         expect(pageSource).toContain('transformPostEditCardList(');
     });
 
-    it('renders a create CTA linking to the create page (HOS-374 §5.2.2)', () => {
-        expect(pageSource).toContain("path: 'mi-cuenta/publicaciones/nuevo'");
-        expect(pageSource).toContain('createUrl');
-        expect(pageSource).toMatch(/href=\{createUrl\}/);
-    });
-
-    it('passes the create URL to EmptyState as its action', () => {
-        expect(pageSource).toContain('actionUrl={createUrl}');
-        expect(pageSource).toContain('actionLabel={emptyCtaLabel}');
+    it('paginates through ?page= instead of a silent cap (HOS-2440)', () => {
+        expect(pageSource).toContain('ACCOUNT_LIST_PAGE_SIZE');
+        expect(pageSource).toContain('parsePageParam(');
+        expect(pageSource).toContain('pageCount={pageState.totalPages}');
     });
 });

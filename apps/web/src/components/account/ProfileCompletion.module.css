@@ -1,540 +1,174 @@
-/* ProfileCompletion.module.css */
-/* Scoped styles for the ProfileCompletion React island (SPEC-113 T-113-04). */
-/* ALL values use CSS custom properties from global.css. */
+/* ProfileCompletion.module.css — layout of the profile-completion focus page (HOS-2501).
+   Surfaces, controls and buttons are kit pieces; this file only spaces them and
+   styles the three bespoke parts: the avatar block, the birth-date popover and
+   the phone row. Only the closed breakpoints, and the content answers to its
+   own container. */
 
-/* ── Page wrapper ────────────────────────────────────────────────────────── */
-
-.wrapper {
-    max-width: 640px;
-    margin-inline: auto;
-    padding: var(--space-8, 2rem) var(--space-4, 1rem);
-    /* Extra breathing room above the footer so the card doesn't visually
-     * collide with it on short viewports. */
-    padding-block-end: var(--space-section-sm);
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
-
-.header {
-    position: relative;
-    margin-bottom: var(--space-8, 2rem);
-    text-align: center;
-    padding-top: var(--space-4);
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
 }
 
-/* Small floating brand mark above the heading. */
-.header::before {
-    content: "✦";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2.5rem;
-    height: 2.5rem;
+/* Two columns once the container is wide enough; one column below that. */
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+.full {
+    grid-column: 1 / -1;
+}
+
+@container (width >= 30rem) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ── Avatar ──────────────────────────────────────────────────────────────── */
+
+.avatarSection {
     display: flex;
     align-items: center;
+    gap: var(--space-4);
+}
+
+.avatarPreview {
+    display: flex;
+    flex: none;
+    align-items: center;
     justify-content: center;
-    border-radius: var(--radius-pill);
-    background: linear-gradient(135deg, var(--brand-primary-a20), var(--brand-accent-a20));
-    color: var(--brand-primary);
-    font-size: 1.125rem;
-    font-weight: 700;
-    box-shadow: 0 4px 12px var(--brand-primary-a20);
-}
-
-.heading {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: clamp(1.75rem, 3.5vw, 2.25rem);
-    color: var(--core-foreground);
-    margin: var(--space-6, 24px) 0 var(--space-3, 12px);
-    line-height: 1.15;
-}
-
-.subheading {
-    font-family: var(--font-sans);
-    font-size: 1rem;
-    color: var(--core-muted-foreground);
-    margin: 0 auto;
-    line-height: 1.6;
-    max-width: 48ch;
-}
-
-/* ── Form card ───────────────────────────────────────────────────────────── */
-
-.card {
-    position: relative;
-    background-color: var(--core-card);
-    border: 1px solid var(--core-foreground-a08);
-    border-radius: var(--radius-card);
-    padding: var(--space-6, 24px);
-    box-shadow: var(--shadow-card);
+    inline-size: calc(var(--space-8) * 2);
+    block-size: calc(var(--space-8) * 2);
     overflow: hidden;
-    isolation: isolate;
-}
-
-/* Brand gradient accent at the top of the card. */
-.card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
-    z-index: 0;
-}
-
-/* ── Form ────────────────────────────────────────────────────────────────── */
-
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5, 20px);
-}
-
-/* ── Field ───────────────────────────────────────────────────────────────── */
-
-.field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 4px);
-}
-
-.label {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--core-foreground);
-}
-
-.required {
-    color: var(--destructive, oklch(0.6 0.2 25));
-    margin-left: 2px;
-}
-
-.input,
-.select {
-    width: 100%;
-    padding: var(--space-2, 8px) var(--space-3, 12px);
-    background-color: var(--core-background);
-    color: var(--core-foreground);
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    transition:
-        border-color var(--duration-normal, 0.4s) ease,
-        box-shadow var(--duration-normal, 0.4s) ease;
-    box-sizing: border-box;
+    border-radius: var(--radius-pill);
+    background-color: var(--muted);
 }
 
-.input:focus-visible,
-.select:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px var(--brand-primary-a15);
+.avatarImg {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
 }
 
-.inputError {
-    border-color: var(--destructive, oklch(0.6 0.2 25));
+.avatarInitials {
+    color: var(--core-muted-foreground);
+    font: var(--app-card-title);
 }
 
-.inputError:focus-visible {
-    box-shadow: 0 0 0 3px var(--destructive-a15);
+.avatarActions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
 }
 
-/* ── Birth date input + popover ──────────────────────────────────────────
- * Text input on the left, calendar trigger on the right, DayPicker
- * popover floats below the row when open. The wrapper provides the
- * relative anchor for the popover's `position: absolute`. */
+.avatarHint {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+}
+
+.hiddenInput {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+.pickerError {
+    margin: 0;
+    color: var(--status-danger-fg);
+    font: var(--app-ui);
+}
+
+/* ── Birth date ──────────────────────────────────────────────────────────── */
 
 .birthDateWrapper {
     position: relative;
     display: flex;
-    align-items: stretch;
-    gap: var(--space-2, 8px);
-}
-
-.birthDateWrapper .input {
-    flex: 1 1 auto;
-}
-
-.birthDatePickerButton {
-    flex: 0 0 auto;
-    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    padding: 0;
-    background-color: var(--core-background);
-    color: var(--core-muted-foreground);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
-    transition:
-        border-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
-}
-
-.birthDatePickerButton:hover:not(:disabled),
-.birthDatePickerButton[aria-expanded="true"] {
-    border-color: var(--brand-primary);
-    color: var(--brand-primary);
-}
-
-.birthDatePickerButton:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    gap: var(--space-2);
 }
 
 .birthDatePopover {
     position: absolute;
-    top: calc(100% + var(--space-2, 8px));
-    right: 0;
+    inset-block-start: calc(100% + var(--space-2));
+    inset-inline-end: 0;
     z-index: 30;
-    background-color: var(--core-card);
+    padding: var(--space-3);
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    box-shadow: var(--shadow-card-hover, 0 8px 20px oklch(0 0 0 / 0.12));
-    padding: var(--space-3, 12px);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+    box-shadow: var(--shadow-overlay);
 }
 
 /* ── Phone row ───────────────────────────────────────────────────────────── */
 
 .phoneRow {
-    display: flex;
-    gap: var(--space-2, 8px);
-}
-
-.phoneCode {
-    flex: 0 0 7rem;
-}
-
-.phoneNumber {
-    flex: 1;
-}
-
-/* ── Error + hint ────────────────────────────────────────────────────────── */
-
-.errorMsg {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--destructive, oklch(0.6 0.2 25));
-    margin: 0;
-}
-
-.hint {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground);
-    margin: 0;
-}
-
-/* ── Checkbox row ────────────────────────────────────────────────────────── */
-
-.checkboxRow {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-2, 8px);
-    cursor: pointer;
-}
-
-.checkbox {
-    margin-top: 2px;
-    flex-shrink: 0;
-    width: 1rem;
-    height: 1rem;
-    accent-color: var(--brand-primary);
-    cursor: pointer;
-}
-
-.checkboxLabel {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-foreground);
-    line-height: 1.5;
-}
-
-.checkboxLink {
-    color: var(--brand-primary);
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-/* ── Feedback banner ─────────────────────────────────────────────────────── */
-
-.feedbackBanner {
-    padding: var(--space-3, 12px) var(--space-4, 16px);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
-}
-
-.feedbackBannerError {
-    background-color: var(--destructive-a10);
-    color: var(--destructive, oklch(0.6 0.2 25));
-    border: 1px solid var(--destructive-a25);
-}
-
-/* ── Submit row ──────────────────────────────────────────────────────────── */
-
-.submitRow {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: var(--space-2, 8px);
-}
-
-.submitBtn {
-    composes: primary from "./AccountButton.module.css";
-}
-
-/* ── Field row (side-by-side) ────────────────────────────────────────────── */
-
-.fieldRow {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-3, 12px);
+    grid-template-columns: minmax(0, 8rem) minmax(0, 1fr);
+    gap: var(--space-2);
 }
 
-@media (max-width: 480px) {
-    .fieldRow {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* ── Avatar section ──────────────────────────────────────────────────────── */
-
-.avatarSection {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4, 16px);
-    padding-bottom: var(--space-3, 12px);
-    border-bottom: 1px solid var(--border);
-}
-
-.avatarPreview {
-    flex-shrink: 0;
-    width: 5rem;
-    height: 5rem;
-    border-radius: 50%;
-    overflow: hidden;
-    background-color: var(--brand-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.avatarImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.avatarInitials {
-    font-family: var(--font-heading);
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--primary-foreground);
-    line-height: 1;
-    user-select: none;
-}
-
-.avatarHint {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground);
-    margin: 0 0 var(--space-1, 4px);
-}
-
-.avatarChangeBtn {
-    display: inline-flex;
-    align-items: center;
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--brand-primary);
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 0;
-}
-
-.avatarChangeBtn:hover {
-    opacity: 0.8;
-}
-
-/* Screen-reader only utility */
-.srOnly {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-/* ── Collapsible details section ─────────────────────────────────────────── */
-
-.detailsSection {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-card);
-    overflow: hidden;
-}
+/* ── More details ────────────────────────────────────────────────────────── */
 
 .detailsToggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: var(--space-4, 16px);
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--core-foreground);
-    text-align: left;
-    transition: background-color var(--duration-normal, 0.4s) ease;
-}
-
-.detailsToggle:hover {
-    background-color: var(--surface-warm);
+    align-self: flex-start;
 }
 
 .detailsOptional {
-    font-weight: 400;
     color: var(--core-muted-foreground);
-    font-size: 0.875rem;
 }
 
-.detailsChevron {
-    font-size: 0.75rem;
-    color: var(--core-muted-foreground);
-    flex-shrink: 0;
-}
-
-.detailsPanel {
-    padding: var(--space-4, 16px);
-    border-top: 1px solid var(--border);
+.fieldset {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5, 20px);
-}
-
-/* ── Textarea ────────────────────────────────────────────────────────────── */
-
-.textarea {
-    width: 100%;
-    padding: var(--space-2, 8px) var(--space-3, 12px);
-    background-color: var(--core-background);
-    color: var(--core-foreground);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    transition:
-        border-color var(--duration-normal, 0.4s) ease,
-        box-shadow var(--duration-normal, 0.4s) ease;
-    box-sizing: border-box;
-    resize: vertical;
-    min-height: 5rem;
-}
-
-.textarea:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px var(--brand-primary-a15);
-}
-
-.textarea.inputError {
-    border-color: var(--destructive, oklch(0.6 0.2 25));
-}
-
-/* ── Bio footer (error + char count) ────────────────────────────────────── */
-
-.bioFooter {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2, 8px);
-    min-height: 1.25rem;
-}
-
-.charCount {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: var(--core-muted-foreground);
-    white-space: nowrap;
-    margin-left: auto;
-}
-
-/* ── Social networks fieldset ────────────────────────────────────────────── */
-
-.socialFieldset {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    padding: var(--space-4, 16px);
+    gap: var(--space-3);
+    min-inline-size: 0;
     margin: 0;
+    padding: 0;
+    border: 0;
 }
 
-.socialLegend {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 600;
+.legend {
+    padding: 0;
     color: var(--core-foreground);
-    padding: 0 var(--space-2, 8px);
+    font: var(--app-card-title);
 }
 
-.socialGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-3, 12px);
-    margin-top: var(--space-3, 12px);
+/* ── Consent ─────────────────────────────────────────────────────────────── */
+
+.consent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
 }
 
-@media (max-width: 520px) {
-    .socialGrid {
-        grid-template-columns: 1fr;
-    }
+/* ── Submit ──────────────────────────────────────────────────────────────── */
+
+.submitRow {
+    display: flex;
+    flex-direction: column;
 }
 
-/* ── Location grid ───────────────────────────────────────────────────────── */
-
-.locationGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: var(--space-3, 12px);
-    margin-top: var(--space-3, 12px);
-}
-
-@media (max-width: 600px) {
-    .locationGrid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* ── Spinner ─────────────────────────────────────────────────────────────── */
-
-.spinner {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    border: 2px solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
+@container (width >= 30rem) {
+    .submitRow {
+        flex-direction: row;
+        justify-content: flex-end;
     }
 }

@@ -17,7 +17,10 @@ import { refreshBetterAuthSession } from '../../src/lib/auth-client';
 
 vi.mock('../../src/lib/i18n', async () => {
     const { tFromCatalog } = await import('../helpers/i18n-catalog');
-    return { createTranslations: (_locale: string) => ({ t: tFromCatalog }) };
+    return {
+        createTranslations: (_locale: string) => ({ t: tFromCatalog }),
+        createT: (_locale: string) => tFromCatalog
+    };
 });
 
 vi.mock('../../src/components/auth/ChangePasswordForm.module.css', () => ({

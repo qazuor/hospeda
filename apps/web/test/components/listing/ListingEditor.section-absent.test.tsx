@@ -13,7 +13,9 @@ import type { ListingDetail } from '@/lib/listing/owner-listings';
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    // The kit save bar (HOS-2487) reads its copy through the real `createT`.
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key
     })
@@ -33,7 +35,10 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
 
-vi.mock('@/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
+vi.mock('@/lib/env', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/env')>()),
+    getApiUrl: () => 'http://api.test'
+}));
 
 vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     RichTextEditor: ({
@@ -103,7 +108,7 @@ describe('ListingEditor — TEST:5.6:4', () => {
         fireEvent.change(document.getElementById('ce-name') as HTMLElement, {
             target: { value: 'Nombre nuevo' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => {
             const messages = screen

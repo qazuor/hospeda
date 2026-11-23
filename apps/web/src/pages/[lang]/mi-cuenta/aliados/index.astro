@@ -31,7 +31,8 @@ import PartnerStatsSection from '@/components/account/PartnerStatsSection.astro'
 import { PartnerTrafficSection } from '@/components/account/PartnerTrafficSection.client';
 import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolvePartnerTrafficId } from '@/lib/partner-stats-cards';
@@ -128,6 +129,17 @@ const myStats7 = myStats7Result.ok ? myStats7Result.data : null;
 // with no page of its own gets nothing, never an empty or zeroed card. The
 // partner id comes from the session-resolved stats payload, so no id is read
 // from the URL.
+// HOS-2502: each Section tells a failed read from an empty one. The leads read
+// is the caller's own, so any failure is shown; the partner-owned reads (stats,
+// mentions) only count as failed when the caller owns a partner listing, because
+// for everyone else those endpoints have nothing to answer and the Section
+// stays absent.
+// Reloading the page re-runs every read; the claim token was already spent.
+const retryHref = Astro.url.pathname;
+const leadsFailed = !myLeadsResult.ok;
+const statsFailed = myPartner !== null && !myStats30Result.ok;
+const mentionsFailed = myPartner !== null && !myMentionsResult.ok;
+
 const trafficPartnerId = resolvePartnerTrafficId({ stats: myStats30, locale });
 
 // Both force-acquired options are built here rather than inline in the
@@ -150,9 +162,16 @@ const hasPendingClaim =
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="aliados">
-    <AccountPageHeader title={title} />
+    <PageHeader title={title} description={description} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
     {hasPendingClaim && <AllianceClaimBanner client:load locale={locale} />}
-    <AllianceApplicationsSection locale={locale} leads={myLeads} />
+    <AllianceApplicationsSection
+        locale={locale}
+        leads={myLeads}
+        loadFailed={leadsFailed}
+        retryHref={retryHref}
+    />
     {/*
       HOS-377 AC-10. Gated on OWNERSHIP (`myPartner !== null`), exactly like the
       `partner` door option's acquired state above — never on a permission. The
@@ -172,7 +191,13 @@ const hasPendingClaim =
       session, rather than on `myPartner` — one ownership signal, not two that
       can disagree on a page that fetches both.
     */}
-    <PartnerStatsSection locale={locale} stats30={myStats30} stats7={myStats7} />
+    <PartnerStatsSection
+        locale={locale}
+        stats30={myStats30}
+        stats7={myStats7}
+        loadFailed={statsFailed}
+        retryHref={retryHref}
+    />
     {trafficPartnerId !== null && (
         <PartnerTrafficSection client:visible locale={locale} partnerId={trafficPartnerId} />
     )}
@@ -180,6 +205,8 @@ const hasPendingClaim =
         locale={locale}
         batches={myMentionBatches}
         visible={myPartner !== null}
+        loadFailed={mentionsFailed}
+        retryHref={retryHref}
     />
     <DiscoveryDoorHub
         locale={locale}

@@ -9,15 +9,20 @@
  * The form names the social fields `<network>Url` while the API expects the bare
  * platform name. That translation happens in exactly two places, both wired
  * here: `SOCIAL_KEY_MAP` renames them on the way out, and the same map tells the
- * hook which error key to clear on edit. `SocialNetworksSection` reads its
+ * hook which error key to clear on edit. The contact channels render through
+ * the shared `ListingContactSection` (HOS-2497). `SocialNetworksSection` reads its
  * errors under the form-local names, so they are mapped back for it.
  */
 
+import {
+    type ContactChannel,
+    ListingContactSection
+} from '@/components/account/editor-fields/ListingContactSection';
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
-import { ActionBar } from '../ActionBar.client';
 import { AccommodationContactSchema } from '../accommodation-edit-form.schema';
-import { ContactInfoSection } from '../ContactInfoSection.client';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
 import { SocialNetworksSection } from '../SocialNetworksSection.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import { nullifyClearedSocials } from './contact-payload';
@@ -84,29 +89,41 @@ export function ContactForm({ locale, accommodationId, initialData }: ContactFor
         youtubeUrl: form.fieldErrors.youtube
     };
 
+    /** One contact channel of the shared section, bound to this form. */
+    const contactChannel = (
+        name: 'phone' | 'landlinePhone' | 'whatsapp' | 'email' | 'website'
+    ): ContactChannel => ({
+        name,
+        value: form.values[name],
+        onChange: (value) => form.setValue(name, value),
+        error: form.fieldErrors[name]
+    });
+
     return (
         <form
             className={styles.form}
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
-                <ContactInfoSection
-                    locale={locale}
-                    data={form.values}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                />
-            </div>
+            {/* HOS-2497: the one contact section both editors render. */}
+            <ListingContactSection
+                locale={locale}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
+                helpId="section:accommodation.contacto"
+                phone={contactChannel('phone')}
+                landline={contactChannel('landlinePhone')}
+                whatsapp={contactChannel('whatsapp')}
+                email={contactChannel('email')}
+                website={contactChannel('website')}
+            />
 
-            <div className={styles.card}>
-                <SocialNetworksSection
-                    locale={locale}
-                    data={form.values}
-                    errors={socialErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                />
-            </div>
+            <SocialNetworksSection
+                locale={locale}
+                data={form.values}
+                errors={socialErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+            />
 
             {form.formError && (
                 <div
@@ -117,10 +134,13 @@ export function ContactForm({ locale, accommodationId, initialData }: ContactFor
                 </div>
             )}
 
-            <ActionBar
+            <EditorSaveBar
                 locale={locale}
-                isSaving={form.isSaving}
-                onCancel={form.handleCancel}
+                isDirty={form.isDirty}
+                onSave={form.save}
+                onDiscard={form.discard}
+                idPrefix={ACCOMMODATION_FIELD_PREFIX}
+                suffixes={ACCOMMODATION_FIELD_ID_SUFFIXES}
             />
         </form>
     );

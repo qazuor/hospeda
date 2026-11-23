@@ -84,7 +84,7 @@ describe('PageHeader', () => {
         expect(screen.getByTestId('tabs')).toBeInTheDocument();
     });
 
-    it('renders the help slot right after the title, inside the title row', () => {
+    it('renders the help slot once, right after the title, inside the title row (HOS-2546)', () => {
         render(
             <PageHeader
                 title="Consultas"
@@ -100,6 +100,7 @@ describe('PageHeader', () => {
             />
         );
         const heading = screen.getByRole('heading', { level: 1 });
+        expect(screen.getAllByTestId('help')).toHaveLength(1);
         expect(heading.nextElementSibling).toBe(screen.getByTestId('help'));
     });
 });

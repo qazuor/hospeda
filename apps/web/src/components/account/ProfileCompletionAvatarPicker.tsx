@@ -24,6 +24,7 @@ import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import styles from './ProfileCompletion.module.css';
+import { Button } from './ui';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -191,25 +192,25 @@ export function ProfileCompletionAvatarPicker({
 
     return (
         <>
-            <button
-                type="button"
-                className={styles.avatarChangeBtn}
+            <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleButtonClick}
                 disabled={disabled || isBusy}
-                aria-busy={isBusy}
+                loading={isBusy}
             >
                 {isCompressing
                     ? t('account.profileCompletion.avatar.processing', 'Optimizando…')
                     : isUploading
                       ? t('account.profileCompletion.avatar.uploading')
                       : t('account.profileCompletion.avatar.change', 'Cambiar foto')}
-            </button>
+            </Button>
             <input
                 ref={fileInputRef}
                 id="pc-avatar-upload"
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/heic"
-                className={styles.srOnly}
+                className={styles.hiddenInput}
                 onChange={handleFileChange}
                 aria-hidden="true"
                 tabIndex={-1}
@@ -217,7 +218,7 @@ export function ProfileCompletionAvatarPicker({
             />
             {pickerError && (
                 <p
-                    className={styles.errorMsg}
+                    className={styles.pickerError}
                     role="alert"
                 >
                     {pickerError}

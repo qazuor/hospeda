@@ -1,0 +1,70 @@
+/**
+ * Layout shared by the listing editor sections migrated to the field kit
+ * (HOS-2488). The kit `Section` is a query container, so the grid adapts to the
+ * width of its own card and never to the viewport.
+ */
+
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+@container (min-width: 40rem) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (min-width: 60rem) {
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* A field that needs the whole row (long text, groups of choices). */
+.full {
+    grid-column: 1 / -1;
+    min-inline-size: 0;
+}
+
+.notice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.hint {
+    margin: 0;
+    font: var(--app-ui);
+    color: var(--core-muted-foreground);
+}
+
+.groupLegend {
+    padding: 0;
+    font: var(--app-ui);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.group {
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+}
+
+@container (min-width: 30rem) {
+    .pair {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

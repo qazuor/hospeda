@@ -1,1262 +1,233 @@
 /**
  * @file ExternalReputationSection.test.tsx
- * @description RTL tests for the ExternalReputationSection React component (SPEC-237 T-013).
+ * @description Rendering and loading behaviour of the external reputation
+ * section (SPEC-237 T-013, rebuilt on the Mi Cuenta kit by HOS-2515): the kit
+ * surface, the metadata of HOS-290, the connected sources and the layout
+ * contract (URLs wrapped whole, no second chip).
  *
- * Covers:
- * - Explainer always present (even when loading)
- * - Empty state when no listings returned
- * - Renders existing listing rows with toggles and remove button
- * - Add listing: calls POST on submit
- * - Toggle (showLink / showReviews): calls PATCH per listing
- * - Remove: asks for confirmation first (HOS-794), then calls DELETE per
- *   listing; cancelling sends nothing and a failed DELETE keeps the row and
- *   explains itself
- * - Refresh: calls POST /refresh
- * - Rate-limit (429): shows rate-limit message with computed minutes
+ * The persisting actions live in `external-reputation/actions.test.tsx` and the
+ * add form in `external-reputation/add-listing.test.tsx`.
  */
 
-import type { AccommodationExternalListingsResponse } from '@repo/schemas';
-import { AccommodationExternalListingsResponseSchema } from '@repo/schemas';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExternalReputationSection } from '@/components/host/ExternalReputationSection.client';
+import { __resetEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import { getApiUrl } from '@/lib/env';
+import {
+    callsTo,
+    LISTING_BOOKING,
+    LISTING_GOOGLE,
+    listingsResponse,
+    META_OFF,
+    META_ON,
+    renderSection,
+    reply,
+    routeFetch
+} from './external-reputation/fixtures';
 
-// ─── Module mocks ──────────────────────────────────────────────────────────
+const MASTER = 'Mostrar sección de reputación externa';
+const EXPLAINER = /El texto de las reseñas solo está disponible para Google/i;
 
-// Records every key the component asks for, so a test can tell whether the
-// busy and idle states of one control resolve to DIFFERENT keys (HOS-2438).
-const { requestedKeys } = vi.hoisted(() => ({ requestedKeys: [] as string[] }));
-
-vi.mock('@/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        // Mirrors the real signature: `(key, fallback?, params?)`. Placeholders
-        // are interpolated from `params` so assertions can name the platform a
-        // message is about (`{{platform}}`) instead of matching the raw key.
-        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
-            requestedKeys.push(_key);
-            const template = fallback ?? _key;
-            if (!params) {
-                return template;
-            }
-            return template.replace(/\{\{(\w+)\}\}/g, (match, name: string) => {
-                const value = params[name];
-                return value === undefined ? match : String(value);
-            });
-        },
-        tPlural: (key: string, count: number, params?: Record<string, unknown>) =>
-            key === 'external-reputation.ownerConfig.rateLimitHit'
-                ? `Podés actualizar nuevamente en ${(params?.minutes as number) ?? count} minutos`
-                : `${key} ${count}`
-    })
-}));
-
-vi.mock('@/components/host/ExternalReputationSection.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
-vi.mock('@/components/shared/feedback/Spinner.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
-vi.mock('@/components/shared/ui/ConfirmDeleteDialog.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
-// The shared `Dialog` primitive owns portals, scroll locking and a history
-// entry — none of which this section's behaviour depends on. Stubbing it keeps
-// the assertions on WHAT the dialog asks, not on how it mounts.
-vi.mock('@/components/shared/ui/Dialog.client', () => ({
-    Dialog: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
-        isOpen ? <div role="presentation">{children}</div> : null,
-    DialogHeader: ({ children, titleId }: { children: React.ReactNode; titleId: string }) => (
-        <div id={titleId}>{children}</div>
-    ),
-    DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-}));
-
-// ─── Fixtures ──────────────────────────────────────────────────────────────
-
-const ACC_ID = '11111111-1111-4111-8111-111111111111';
-
-/**
- * Audit + lifecycle fields every listing row carries. The old fixtures omitted
- * them and nothing noticed, because the payload was hand-built rather than
- * validated (HOS-290) — the server has always returned the full row.
- */
-const LISTING_BASE = {
-    accommodationId: ACC_ID,
-    externalId: null,
-    lifecycleState: 'ACTIVE' as const,
-    createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    createdById: '22222222-2222-4222-8222-222222222222',
-    updatedById: '22222222-2222-4222-8222-222222222222',
-    deletedAt: null,
-    deletedById: null
-};
-
-const LISTING_GOOGLE = {
-    ...LISTING_BASE,
-    id: '44444444-4444-4444-8444-444444444444',
-    platform: 'GOOGLE' as const,
-    url: 'https://maps.google.com/?cid=123',
-    showLink: true,
-    showReviews: true,
-    verified: true
-};
-
-const LISTING_BOOKING = {
-    ...LISTING_BASE,
-    id: '55555555-5555-4555-8555-555555555555',
-    platform: 'BOOKING' as const,
-    url: 'https://booking.com/hotel/example',
-    showLink: false,
-    showReviews: false,
-    verified: false
-};
-
-const LISTING_AIRBNB = {
-    ...LISTING_BASE,
-    id: '66666666-6666-4666-8666-666666666666',
-    platform: 'AIRBNB' as const,
-    url: 'https://airbnb.com/rooms/example',
-    showLink: true,
-    showReviews: false,
-    verified: false
-};
-
-const LISTING_OTHER = {
-    ...LISTING_BASE,
-    id: '77777777-7777-4777-8777-777777777777',
-    platform: 'OTHER' as const,
-    url: 'https://example.com/my-listing',
-    showLink: true,
-    showReviews: false,
-    verified: false
-};
-
-const REPUTATION_META = {
-    showExternalReputation: true,
-    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
-    autoEnabledAt: null,
-    toggleDecidedAt: null
-};
-
-const EMPTY_REPUTATION_META = {
-    showExternalReputation: false,
-    aggregateFetchedAt: null,
-    autoEnabledAt: null,
-    toggleDecidedAt: null
-};
-
-/**
- * Reputation metadata for the auto-enabled-untouched case: the automation set
- * the toggle and both audit timestamps are identical (no manual decision since).
- */
-const AUTO_ENABLED_REPUTATION_META = {
-    showExternalReputation: true,
-    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
-    autoEnabledAt: '2026-06-01T12:00:00.000Z',
-    toggleDecidedAt: '2026-06-01T12:00:00.000Z'
-};
-
-/**
- * Factory: returns a mock successful Response for GET /external-listings.
- *
- * HOS-290: this used to hand-build `{data: {listings, reputation}}` — a shape
- * the server NEVER sent (it returned a bare array). That is why every test here
- * stayed green while the section was 100% broken in production. The payload is
- * now built THROUGH the shared response schema, so a fixture that does not
- * match the real contract fails here instead of shipping.
- */
-/** Wire-shaped reputation metadata (dates arrive as ISO strings over HTTP). */
-interface ReputationMetaFixture {
-    showExternalReputation: boolean;
-    aggregateFetchedAt: string | null;
-    autoEnabledAt: string | null;
-    toggleDecidedAt: string | null;
-}
-
-function makeListingsOkResponse(
-    listings: AccommodationExternalListingsResponse['listings'] = [LISTING_GOOGLE],
-    reputation: ReputationMetaFixture = REPUTATION_META
-): Response {
-    const data = AccommodationExternalListingsResponseSchema.parse({ listings, reputation });
-    return {
-        ok: true,
-        status: 200,
-        // Round-trips through JSON exactly like a real response would, so the
-        // Date the schema coerces reaches the component as the ISO string it
-        // would actually receive over the wire.
-        json: async () => JSON.parse(JSON.stringify({ data })),
-        headers: new Headers()
-    } as unknown as Response;
-}
-
-/** Factory: returns a generic ok 200 response with no data (for POST/PATCH/DELETE). */
-function makeOkResponse(): Response {
-    return {
-        ok: true,
-        status: 200,
-        json: async () => ({})
-    } as unknown as Response;
-}
-
-// ─── Helper ────────────────────────────────────────────────────────────────
-
-function renderSection() {
-    return render(
-        <ExternalReputationSection
-            locale="es"
-            accommodationId={ACC_ID}
-        />
-    );
-}
-
-// ─── Tests ─────────────────────────────────────────────────────────────────
+beforeEach(() => {
+    __resetEditorAutoSave();
+    vi.stubGlobal('fetch', vi.fn());
+});
 
 describe('ExternalReputationSection', () => {
-    beforeEach(() => {
-        vi.stubGlobal('fetch', vi.fn());
-    });
+    describe('kit surface', () => {
+        it('renders ONE flat kit Section carrying the page help anchor', async () => {
+            routeFetch();
+            const { container } = renderSection();
+            await screen.findByRole('switch', { name: MASTER });
 
-    // ── 1. Explainer always present ─────────────────────────────────────────
+            const sections = container.querySelectorAll('[data-kit-section]');
+            expect(sections).toHaveLength(1);
+            expect(sections[0]?.getAttribute('data-help')).toBe('section:accommodation.reputacion');
+        });
 
-    describe('Google-only explainer', () => {
-        it('renders the explainer note immediately on mount (before data loads)', () => {
+        it('renders the Google-only explainer before the data loads', () => {
             vi.mocked(global.fetch).mockReturnValue(new Promise(() => {}));
             renderSection();
+            expect(screen.getByText(EXPLAINER)).toBeInTheDocument();
+        });
 
+        it('keeps the explainer after the data loads', async () => {
+            routeFetch();
+            renderSection();
+            await screen.findByRole('switch', { name: MASTER });
+            expect(screen.getByText(EXPLAINER)).toBeInTheDocument();
+        });
+
+        it('renders no auto-save chip of its own (the shell owns it)', async () => {
+            routeFetch();
+            renderSection();
+            await screen.findByRole('switch', { name: MASTER });
+            expect(screen.queryByText(/Guardado|Guardando|No se guardó/)).not.toBeInTheDocument();
+        });
+    });
+
+    describe('loading and empty states', () => {
+        it('shows a spinner while loading and none after', async () => {
+            routeFetch({ listings: [] });
+            renderSection();
+            expect(screen.getByRole('status')).toBeInTheDocument();
+            await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+        });
+
+        it('shows the empty state and no rows when there are no listings', async () => {
+            routeFetch({ listings: [], meta: META_OFF });
+            renderSection();
+            expect(await screen.findByTestId('ext-rep-empty')).toBeInTheDocument();
+            expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
+        });
+
+        it('calls GET /external-listings exactly once on mount (stable effect)', async () => {
+            routeFetch({ listings: [] });
+            renderSection();
+            await screen.findByTestId('ext-rep-empty');
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            const gets = vi
+                .mocked(global.fetch)
+                .mock.calls.filter(
+                    ([url, init]) =>
+                        String(url).endsWith('/external-listings') &&
+                        !(init as RequestInit | undefined)?.method
+                );
+            expect(gets).toHaveLength(1);
+        });
+
+        it('shows the load error when the server sends the OLD bare-array shape (HOS-290)', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(reply(200, { data: [LISTING_GOOGLE] }));
+            renderSection();
             expect(
-                screen.getByText(/El texto de las reseñas solo está disponible para Google/i)
+                await screen.findByText(/No se pudieron cargar las reseñas externas/)
             ).toBeInTheDocument();
         });
-
-        it('explainer is still present after data loads', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse());
-            renderSection();
-
-            await waitFor(() => {
-                expect(
-                    screen.getByText(/El texto de las reseñas solo está disponible para Google/i)
-                ).toBeInTheDocument();
-            });
-        });
     });
 
-    // ── 2. Empty state ──────────────────────────────────────────────────────
-
-    describe('Empty state', () => {
-        it('shows empty-state message when listings array is empty', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([], EMPTY_REPUTATION_META)
-            );
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-        });
-
-        it('does not show listing rows when listings is empty', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([], EMPTY_REPUTATION_META)
-            );
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
-            });
-        });
-    });
-
-    // ── 2b. The two values HOS-290 was actually about ───────────────────────
-
-    describe('Reputation metadata (HOS-290)', () => {
+    describe('reputation metadata (HOS-290)', () => {
         it('reflects the master toggle from the response', async () => {
-            // The whole user-visible symptom was that `showExternalReputation`
-            // and `aggregateFetchedAt` never reached the UI. Without these two
-            // assertions, deleting the `setMasterToggle`/`setAggregateFetchedAt`
-            // calls from `loadListings` leaves the suite green.
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], {
-                    showExternalReputation: true,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
-                    autoEnabledAt: null,
-                    toggleDecidedAt: null
-                })
-            );
+            routeFetch({ meta: META_ON });
             renderSection();
-
-            await waitFor(() => {
-                expect(document.querySelector('#ext-rep-master-toggle')).toBeChecked();
-            });
+            await waitFor(() =>
+                expect(screen.getByRole('switch', { name: MASTER })).toHaveAttribute(
+                    'aria-checked',
+                    'true'
+                )
+            );
         });
 
         it('leaves the master toggle off when the response says so', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], EMPTY_REPUTATION_META)
-            );
+            routeFetch({ meta: META_OFF });
             renderSection();
-
-            await waitFor(() => {
-                expect(document.querySelector('#ext-rep-master-toggle')).not.toBeChecked();
-            });
+            const toggle = await screen.findByRole('switch', { name: MASTER });
+            await waitFor(() => expect(toggle).not.toBeDisabled());
+            expect(toggle).toHaveAttribute('aria-checked', 'false');
         });
 
-        it('calls the API on an ABSOLUTE url, not a relative path (HOS-290)', async () => {
-            // The single defect that made this section unusable in production:
-            // a relative `/api/v1/...` goes to the Astro server, which serves no
-            // such route. Substring assertions on the path cannot catch a
-            // revert — this one can.
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], EMPTY_REPUTATION_META)
-            );
+        it('calls the API on an ABSOLUTE url, not a relative path', async () => {
+            routeFetch();
             renderSection();
-
-            await waitFor(() => {
-                const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
-                expect(url.startsWith(getApiUrl())).toBe(true);
-            });
-        });
-
-        it('PATCHes the master toggle with the body the route declares', async () => {
-            // `MasterToggleBodySchema` is `{ value: boolean }`. The client used
-            // to send `{ showExternalReputation }`, so every toggle 400'd — the
-            // third client/server contract mismatch in this one component, and
-            // invisible because the handler only checks `res.ok`.
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], EMPTY_REPUTATION_META)
+            await screen.findByRole('switch', { name: MASTER });
+            expect(String(vi.mocked(global.fetch).mock.calls[0]?.[0]).startsWith(getApiUrl())).toBe(
+                true
             );
-            renderSection();
-
-            const toggle = await waitFor(() => {
-                const el = document.querySelector('#ext-rep-master-toggle');
-                expect(el).not.toBeNull();
-                return el as HTMLInputElement;
-            });
-
-            vi.mocked(global.fetch).mockClear();
-            vi.mocked(global.fetch).mockResolvedValue(makeOkResponse());
-            fireEvent.click(toggle);
-
-            await waitFor(() => {
-                const call = vi.mocked(global.fetch).mock.calls[0];
-                expect(String(call?.[0])).toContain('/external-reputation/master-toggle');
-                expect(JSON.parse(String((call?.[1] as RequestInit).body))).toEqual({
-                    value: true
-                });
-            });
         });
 
         it('renders the last-updated line from aggregateFetchedAt', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], {
-                    showExternalReputation: true,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
-                    autoEnabledAt: null,
-                    toggleDecidedAt: null
-                })
-            );
+            routeFetch();
             renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByText(/Última actualización/)).toBeInTheDocument();
-            });
-        });
-
-        it('shows the error banner when the server sends the OLD bare-array shape', async () => {
-            // This IS the regression: the route used to return `data` as a bare
-            // array while the client read `data.reputation` off it. Reproduced
-            // here so a revert on either side fails on the client too.
-            vi.mocked(global.fetch).mockResolvedValue({
-                ok: true,
-                status: 200,
-                json: async () => ({ data: [LISTING_GOOGLE] }),
-                headers: new Headers()
-            } as unknown as Response);
-            renderSection();
-
-            await waitFor(() => {
-                expect(
-                    screen.getByText(/No se pudieron cargar las reseñas externas/)
-                ).toBeInTheDocument();
-            });
+            expect(await screen.findByText(/Última actualización/)).toBeInTheDocument();
         });
     });
 
-    // ── 2c. One-time automatic-enable notice ────────────────────────────────
-
-    describe('Auto-enabled notice', () => {
+    describe('auto-enabled notice', () => {
         const NOTICE = /Activamos esta sección automáticamente/;
-
-        it('shows the notice when the automation enabled it and the owner has not decided since', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], AUTO_ENABLED_REPUTATION_META)
-            );
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByText(NOTICE)).toBeInTheDocument();
-            });
-        });
-
-        it('hides the notice when the owner decided after the automatic enable', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], {
-                    showExternalReputation: true,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
-                    autoEnabledAt: '2026-06-01T12:00:00.000Z',
-                    toggleDecidedAt: '2026-06-02T09:00:00.000Z'
-                })
-            );
-            renderSection();
-
-            await waitFor(() => {
-                expect(document.querySelector('#ext-rep-master-toggle')).toBeChecked();
-            });
-            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
-        });
-
-        it('hides the notice when the toggle is off', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], {
-                    showExternalReputation: false,
-                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z',
-                    autoEnabledAt: '2026-06-01T12:00:00.000Z',
-                    toggleDecidedAt: '2026-06-01T12:00:00.000Z'
-                })
-            );
-            renderSection();
-
-            await waitFor(() => {
-                expect(document.querySelector('#ext-rep-master-toggle')).not.toBeChecked();
-            });
-            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
-        });
-
-        it('hides the notice after the owner clicks the toggle', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE], AUTO_ENABLED_REPUTATION_META)
-            );
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByText(NOTICE)).toBeInTheDocument();
-            });
-
-            const toggle = document.querySelector('#ext-rep-master-toggle');
-            if (!toggle) throw new Error('toggle not rendered');
-            fireEvent.click(toggle);
-
-            await waitFor(() => {
-                expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
-            });
-        });
-    });
-
-    // ── 3. Renders existing listings ────────────────────────────────────────
-
-    describe('Existing listings', () => {
-        it('renders one row per listing', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE, LISTING_BOOKING])
-            );
-            renderSection();
-
-            await waitFor(() => {
-                const items = screen.getAllByRole('listitem');
-                expect(items).toHaveLength(2);
-            });
-        });
-
-        it('renders the platform label for Google listing', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([LISTING_GOOGLE]));
-            renderSection();
-
-            await waitFor(() => {
-                // platformLabel fallback for GOOGLE is "Google"
-                expect(screen.getByText('Google')).toBeInTheDocument();
-            });
-        });
-
-        it('renders showLink and showReviews checkboxes per listing', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([LISTING_GOOGLE]));
-            renderSection();
-
-            await waitFor(() => {
-                const linkCheckbox = screen.getByLabelText(/Google.*Mostrar enlace/i);
-                const reviewsCheckbox = screen.getByLabelText(/Google.*Mostrar reseñas/i);
-                expect(linkCheckbox).toBeInTheDocument();
-                expect(reviewsCheckbox).toBeInTheDocument();
-            });
-        });
-
-        it('renders a remove button per listing', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([LISTING_GOOGLE]));
-            renderSection();
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Eliminar Google/i })
-                ).toBeInTheDocument();
-            });
-        });
-    });
-
-    // ── 4. Add listing ──────────────────────────────────────────────────────
-
-    describe('Add listing', () => {
-        it('calls POST /external-listings with the filled form data', async () => {
-            // Initial GET (may be called multiple times by React Strict Mode)
-            vi.mocked(global.fetch).mockImplementation((url, opts) => {
-                const _urlStr = typeof url === 'string' ? url : url.toString();
-                if ((opts as RequestInit)?.method === 'POST') {
-                    return Promise.resolve(makeOkResponse());
-                }
-                return Promise.resolve(makeListingsOkResponse([]));
-            });
-
-            renderSection();
-
-            // Wait for initial load to finish (empty state)
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
-            fireEvent.change(urlInput, {
-                target: { value: 'https://maps.google.com/?cid=999' }
-            });
-
-            const addButton = screen.getByRole('button', { name: /Agregar/i });
-            fireEvent.click(addButton);
-
-            await waitFor(() => {
-                const fetchCalls = vi.mocked(global.fetch).mock.calls;
-                const postCall = fetchCalls.find(
-                    ([_url, opts]) =>
-                        (opts as RequestInit)?.method === 'POST' &&
-                        typeof _url === 'string' &&
-                        (_url as string).includes('/external-listings')
-                );
-                expect(postCall).toBeDefined();
-                const body = JSON.parse((postCall?.[1] as RequestInit).body as string) as Record<
-                    string,
-                    unknown
-                >;
-                expect(body.url).toBe('https://maps.google.com/?cid=999');
-                expect(body.platform).toBe('GOOGLE');
-            });
-        });
-
-        it('uses a distinct i18n key for the busy state of the add button (HOS-2438)', async () => {
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'POST') {
-                    return new Promise<Response>(() => {
-                        // never resolves: the button stays in its busy state
-                    });
-                }
-                return Promise.resolve(makeListingsOkResponse([]));
-            });
-            renderSection();
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-            fireEvent.change(screen.getByPlaceholderText('https://...'), {
-                target: { value: 'https://maps.google.com/?cid=999' }
-            });
-            requestedKeys.length = 0;
-
-            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
-
-            const busyButton = await screen.findByRole('button', { name: /Agregando/i });
-            expect(busyButton).toBeDisabled();
-            expect(requestedKeys).toContain('external-reputation.ownerConfig.addingListing');
-        });
-
-        it('disables the add button when URL is empty', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const addButton = screen.getByRole('button', { name: /Agregar/i });
-            expect(addButton).toBeDisabled();
-        });
-
-        it('rejects an invalid URL client-side without POSTing (HOS-190 gap)', async () => {
-            // Regression guard: this sub-section had its own Save with only a
-            // non-empty check, so "csdcsdcsd" round-tripped to a server 400 the
-            // client then mis-read into a generic banner. It now validates the
-            // URL client-side (AccommodationExternalListingSchema.shape.url) and
-            // never fires the POST for a malformed value.
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'POST') {
-                    return Promise.resolve(makeOkResponse());
-                }
-                return Promise.resolve(makeListingsOkResponse([]));
-            });
-
-            renderSection();
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
-            fireEvent.change(urlInput, { target: { value: 'csdcsdcsd' } });
-            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
-
-            // A field-level error is shown and the URL input is marked invalid.
-            expect(await screen.findByRole('alert')).toBeInTheDocument();
-            expect(urlInput).toHaveAttribute('aria-invalid', 'true');
-
-            // No POST was ever issued.
-            const postCall = vi
-                .mocked(global.fetch)
-                .mock.calls.find(([, opts]) => (opts as RequestInit)?.method === 'POST');
-            expect(postCall).toBeUndefined();
-        });
-
-        it('maps a DUPLICATE_PLATFORM ServiceError to the friendly duplicate message (HOS-190)', async () => {
-            // Regression guard for the ORIGINAL bug AND the leak that followed:
-            // a handler-thrown ServiceError 400 serializes as
-            // { error: { code, message, details } }. `message` is internal
-            // server text and must never be rendered; the user gets the
-            // platform-specific duplicate copy instead.
-            const duplicateMessage = 'A listing for platform GOOGLE already exists';
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'POST') {
-                    return Promise.resolve({
-                        ok: false,
-                        status: 400,
-                        json: async () => ({
-                            error: { code: 'DUPLICATE_PLATFORM', message: duplicateMessage }
-                        })
-                    } as unknown as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([]));
-            });
-
-            renderSection();
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
-            fireEvent.change(urlInput, { target: { value: 'https://maps.google.com/?cid=1' } });
-            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
-
-            expect(
-                await screen.findByText(
-                    'Ya tenés un enlace de Google cargado. Para cambiarlo, eliminá el actual y agregá el nuevo.'
-                )
-            ).toBeInTheDocument();
-            expect(screen.queryByText(duplicateMessage)).not.toBeInTheDocument();
-        });
-    });
-
-    // ── 4b. Only platforms without a listing are offered ───────────────────
-
-    describe('Available platforms', () => {
-        it('offers only the platforms that have no listing yet', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([LISTING_GOOGLE, LISTING_BOOKING])
-            );
-            renderSection();
-
-            await waitFor(() => {
-                const options = Array.from(
-                    (screen.getByLabelText('Plataforma') as HTMLSelectElement).options
-                ).map((option) => option.value);
-                expect(options).toEqual(['AIRBNB', 'OTHER']);
-            });
-        });
-
-        it('hides the add form and explains when every platform is already added', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(
-                makeListingsOkResponse([
-                    LISTING_GOOGLE,
-                    LISTING_BOOKING,
-                    LISTING_AIRBNB,
-                    LISTING_OTHER
-                ])
-            );
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-all-platforms')).toHaveTextContent(
-                    'Ya agregaste todas las plataformas disponibles.'
-                );
-            });
-            expect(screen.queryByPlaceholderText('https://...')).not.toBeInTheDocument();
-        });
-
-        it('maps details.reason DUPLICATE_PLATFORM to the friendly message, not the raw server message', async () => {
-            const rawMessage = 'duplicate key value violates unique constraint';
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'POST') {
-                    return Promise.resolve({
-                        ok: false,
-                        status: 400,
-                        json: async () => ({
-                            error: {
-                                code: 'VALIDATION_ERROR',
-                                message: rawMessage,
-                                details: { reason: 'DUPLICATE_PLATFORM' }
-                            }
-                        })
-                    } as unknown as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([]));
-            });
-
-            renderSection();
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
-            fireEvent.change(urlInput, { target: { value: 'https://maps.google.com/?cid=1' } });
-            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
-
-            expect(
-                await screen.findByText(
-                    'Ya tenés un enlace de Google cargado. Para cambiarlo, eliminá el actual y agregá el nuevo.'
-                )
-            ).toBeInTheDocument();
-            expect(screen.queryByText(rawMessage)).not.toBeInTheDocument();
-        });
-
-        it('shows the generic add-failure message and never leaks a raw 500 message', async () => {
-            const rawMessage = 'Failed query: insert into "x" ... params: ...';
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'POST') {
-                    return Promise.resolve({
-                        ok: false,
-                        status: 500,
-                        json: async () => ({
-                            error: { code: 'INTERNAL_ERROR', message: rawMessage }
-                        })
-                    } as unknown as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([]));
-            });
-
-            renderSection();
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const urlInput = screen.getByPlaceholderText('https://...') as HTMLInputElement;
-            fireEvent.change(urlInput, { target: { value: 'https://maps.google.com/?cid=1' } });
-            fireEvent.click(screen.getByRole('button', { name: /Agregar/i }));
-
-            expect(
-                await screen.findByText(
-                    'No pudimos guardar el enlace. Probá de nuevo en unos minutos; si sigue fallando, escribinos.'
-                )
-            ).toBeInTheDocument();
-            expect(screen.queryByText(/Failed query/)).not.toBeInTheDocument();
-        });
-    });
-
-    // ── 5. Toggle showLink / showReviews ────────────────────────────────────
-
-    describe('Per-listing toggles', () => {
-        it('calls PATCH /external-listings/:id with showLink:false when unchecking showLink', async () => {
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'PATCH') {
-                    return Promise.resolve(makeOkResponse());
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByText('Google')).toBeInTheDocument();
-            });
-
-            const linkCheckbox = screen.getByLabelText(
-                /Google.*Mostrar enlace/i
-            ) as HTMLInputElement;
-            expect(linkCheckbox.checked).toBe(true);
-            fireEvent.click(linkCheckbox);
-
-            await waitFor(() => {
-                const fetchCalls = vi.mocked(global.fetch).mock.calls;
-                const patchCall = fetchCalls.find(
-                    ([url, opts]) =>
-                        typeof url === 'string' &&
-                        (url as string).includes(`/external-listings/${LISTING_GOOGLE.id}`) &&
-                        (opts as RequestInit)?.method === 'PATCH'
-                );
-                expect(patchCall).toBeDefined();
-                const body = JSON.parse((patchCall?.[1] as RequestInit).body as string) as Record<
-                    string,
-                    unknown
-                >;
-                expect(body.showLink).toBe(false);
-            });
-        });
-
-        it('calls PATCH with showReviews:false when unchecking showReviews', async () => {
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'PATCH') {
-                    return Promise.resolve(makeOkResponse());
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByText('Google')).toBeInTheDocument();
-            });
-
-            const reviewsCheckbox = screen.getByLabelText(
-                /Google.*Mostrar reseñas/i
-            ) as HTMLInputElement;
-            fireEvent.click(reviewsCheckbox);
-
-            await waitFor(() => {
-                const fetchCalls = vi.mocked(global.fetch).mock.calls;
-                const patchCall = fetchCalls.find(
-                    ([url, opts]) =>
-                        typeof url === 'string' &&
-                        (url as string).includes(`/external-listings/${LISTING_GOOGLE.id}`) &&
-                        (opts as RequestInit)?.method === 'PATCH'
-                );
-                expect(patchCall).toBeDefined();
-                const body = JSON.parse((patchCall?.[1] as RequestInit).body as string) as Record<
-                    string,
-                    unknown
-                >;
-                expect(body.showReviews).toBe(false);
-            });
-        });
-    });
-
-    // ── 6. Remove listing ───────────────────────────────────────────────────
-
-    describe('Remove listing', () => {
-        /** Opens the delete confirmation for the Google listing. */
-        const openRemoveDialog = async () => {
-            renderSection();
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Eliminar Google/i })
-                ).toBeInTheDocument();
-            });
-            fireEvent.click(screen.getByRole('button', { name: /Eliminar Google/i }));
+        const AUTO = {
+            ...META_ON,
+            autoEnabledAt: '2026-06-01T12:00:00.000Z',
+            toggleDecidedAt: '2026-06-01T12:00:00.000Z'
         };
 
-        /** Finds the DELETE call for the Google listing, if any. */
-        const findDeleteCall = () =>
-            vi
-                .mocked(global.fetch)
-                .mock.calls.find(
-                    ([url, opts]) =>
-                        typeof url === 'string' &&
-                        (url as string).includes(`/external-listings/${LISTING_GOOGLE.id}`) &&
-                        (opts as RequestInit)?.method === 'DELETE'
-                );
+        it('shows it when the automation enabled the section and nobody decided since', async () => {
+            routeFetch({ meta: AUTO });
+            renderSection();
+            expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+        });
 
-        it('asks for confirmation before deleting anything (HOS-794)', async () => {
-            vi.mocked(global.fetch).mockImplementation(() =>
-                Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]))
-            );
-
-            await openRemoveDialog();
-
-            // The dialog is up and names the platform; nothing was sent yet.
-            expect(
-                screen.getByText(
-                    '¿Eliminás esta plataforma? Se dejan de mostrar sus reseñas en tu ficha.'
+        it('hides it when the owner decided after the automatic enable', async () => {
+            routeFetch({ meta: { ...AUTO, toggleDecidedAt: '2026-06-02T09:00:00.000Z' } });
+            renderSection();
+            await waitFor(() =>
+                expect(screen.getByRole('switch', { name: MASTER })).toHaveAttribute(
+                    'aria-checked',
+                    'true'
                 )
-            ).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: 'Eliminar plataforma' })).toBeInTheDocument();
-            expect(findDeleteCall()).toBeUndefined();
-        });
-
-        it('does NOT use the browser-native window.confirm (HOS-794)', async () => {
-            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-            vi.mocked(global.fetch).mockImplementation(() =>
-                Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]))
             );
-
-            await openRemoveDialog();
-
-            expect(confirmSpy).not.toHaveBeenCalled();
-            confirmSpy.mockRestore();
+            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
         });
 
-        it('sends nothing when the confirmation is cancelled', async () => {
-            vi.mocked(global.fetch).mockImplementation(() =>
-                Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]))
-            );
-
-            await openRemoveDialog();
-            fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-
-            expect(findDeleteCall()).toBeUndefined();
-            // The row survives.
-            expect(screen.getByRole('button', { name: /Eliminar Google/i })).toBeInTheDocument();
+        it('hides it when the toggle is off', async () => {
+            routeFetch({ meta: { ...AUTO, showExternalReputation: false } });
+            renderSection();
+            await screen.findByRole('switch', { name: MASTER });
+            expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
         });
 
-        it('calls DELETE /external-listings/:id once the deletion is confirmed', async () => {
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'DELETE') {
-                    return Promise.resolve({ ok: true, status: 200 } as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
-            await openRemoveDialog();
-            fireEvent.click(screen.getByRole('button', { name: 'Eliminar plataforma' }));
-
-            await waitFor(() => {
-                expect(findDeleteCall()).toBeDefined();
-            });
-        });
-
-        it('removes the listing from the DOM after a successful DELETE', async () => {
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'DELETE') {
-                    return Promise.resolve({ ok: true, status: 200 } as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
-            await openRemoveDialog();
-            fireEvent.click(screen.getByRole('button', { name: 'Eliminar plataforma' }));
-
-            await waitFor(() => {
-                // The remove button is gone when the listing is removed from state
-                expect(
-                    screen.queryByRole('button', { name: /Eliminar Google/i })
-                ).not.toBeInTheDocument();
-            });
-        });
-
-        it('keeps the row and explains itself when the DELETE fails (HOS-794)', async () => {
-            vi.mocked(global.fetch).mockImplementation((_url, opts) => {
-                if ((opts as RequestInit)?.method === 'DELETE') {
-                    return Promise.resolve({ ok: false, status: 500 } as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
-            await openRemoveDialog();
-            fireEvent.click(screen.getByRole('button', { name: 'Eliminar plataforma' }));
-
-            // Used to fail silently: the click looked like a dead button.
-            await waitFor(() => {
-                expect(screen.getByText('No se pudo eliminar la plataforma.')).toBeInTheDocument();
-            });
-            expect(screen.getByRole('button', { name: /Eliminar Google/i })).toBeInTheDocument();
+        it('hides it after the owner flips the toggle', async () => {
+            routeFetch({ meta: AUTO });
+            renderSection();
+            await screen.findByText(NOTICE);
+            const toggle = screen.getByRole('switch', { name: MASTER });
+            await waitFor(() => expect(toggle).not.toBeDisabled());
+            fireEvent.click(toggle);
+            await waitFor(() => expect(screen.queryByText(NOTICE)).not.toBeInTheDocument());
         });
     });
 
-    // ── 7. Refresh ──────────────────────────────────────────────────────────
+    describe('connected sources', () => {
+        it('renders one row per listing inside a named list', async () => {
+            routeFetch({ listings: [LISTING_GOOGLE, LISTING_BOOKING] });
+            renderSection();
+            const list = await screen.findByRole('list', { name: 'Plataformas conectadas' });
+            expect(list.querySelectorAll(':scope > li')).toHaveLength(2);
+        });
 
-    describe('Refresh reputation', () => {
-        it('calls POST /external-reputation/refresh when refresh button clicked', async () => {
-            vi.mocked(global.fetch).mockImplementation((url, opts) => {
-                const urlStr = typeof url === 'string' ? url : url.toString();
-                if ((opts as RequestInit)?.method === 'POST' && urlStr.includes('/refresh')) {
-                    return Promise.resolve({ ok: true, status: 200 } as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
+        it('renders the platform name, two visibility switches and a remove button per row', async () => {
+            routeFetch({ listings: [LISTING_GOOGLE] });
+            renderSection();
+            const group = await screen.findByRole('group', { name: 'Google' });
+            expect(group.querySelectorAll('[role="switch"]')).toHaveLength(2);
+            expect(screen.getByRole('button', { name: 'Eliminar Google' })).toBeInTheDocument();
+        });
+
+        it('reflects each flag in its switch', async () => {
+            routeFetch({ listings: [LISTING_GOOGLE] });
+            renderSection();
+            const link = await screen.findByRole('switch', {
+                name: 'Mostrar enlace a la plataforma'
             });
+            const reviews = screen.getByRole('switch', { name: 'Mostrar reseñas de texto' });
+            expect(link).toHaveAttribute('aria-checked', 'true');
+            expect(reviews).toHaveAttribute('aria-checked', 'false');
+        });
 
+        it('renders a LONG url whole and wrappable, never truncated', async () => {
+            const longUrl = `https://www.google.com/maps/place/${'Hostería+Los+Árboles+del+Río+'.repeat(8)}/@-32.4825,-58.2372,17z`;
+            routeFetch({ listings: [{ ...LISTING_GOOGLE, url: longUrl }] });
             renderSection();
 
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Actualizar reseñas/i })
-                ).toBeInTheDocument();
-            });
-
-            fireEvent.click(screen.getByRole('button', { name: /Actualizar reseñas/i }));
-
-            await waitFor(() => {
-                const fetchCalls = vi.mocked(global.fetch).mock.calls;
-                const refreshCall = fetchCalls.find(
-                    ([url, opts]) =>
-                        typeof url === 'string' &&
-                        (url as string).includes('/external-reputation/refresh') &&
-                        (opts as RequestInit)?.method === 'POST'
-                );
-                expect(refreshCall).toBeDefined();
-            });
+            const node = await screen.findByText(longUrl);
+            expect(node.textContent).toBe(longUrl);
+            expect(node.textContent).not.toContain('...');
+            expect(callsTo({ part: '/external-listings', method: 'POST' })).toHaveLength(0);
         });
     });
 
-    // ── 7b. Refresh with nothing to refresh (HOS-1944) ──────────────────────
-
-    describe('Refresh with no platforms (HOS-1944)', () => {
-        function mockRefreshReply(refreshBody: unknown, listings = [LISTING_GOOGLE]) {
-            vi.mocked(global.fetch).mockImplementation((url, opts) => {
-                const urlStr = typeof url === 'string' ? url : url.toString();
-                if ((opts as RequestInit)?.method === 'POST' && urlStr.includes('/refresh')) {
-                    return Promise.resolve({
-                        ok: true,
-                        status: 200,
-                        json: async () => ({ success: true, data: refreshBody }),
-                        headers: new Headers()
-                    } as unknown as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse(listings, EMPTY_REPUTATION_META));
-            });
-        }
-
-        it('disables the refresh button and says a platform link is needed when none is loaded', async () => {
-            mockRefreshReply({}, []);
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('refresh-needs-platform')).toBeInTheDocument();
-            });
-            expect(screen.getByTestId('refresh-button')).toBeDisabled();
-        });
-
-        it('does not claim the button needs a platform while listings are still loading', () => {
-            vi.mocked(global.fetch).mockReturnValue(new Promise(() => {}));
-            renderSection();
-
-            expect(screen.queryByTestId('refresh-needs-platform')).not.toBeInTheDocument();
-        });
-
-        it('never shows "Actualizado" when the server answered 200 with three empty lists', async () => {
-            mockRefreshReply({ inlineSucceeded: [], enqueuedAsync: [], inlineFailed: [] });
-            renderSection();
-            await waitFor(() => expect(screen.getByTestId('refresh-button')).not.toBeDisabled());
-
-            fireEvent.click(screen.getByTestId('refresh-button'));
-
-            await waitFor(() => {
-                expect(screen.getByTestId('refresh-no-platforms')).toBeInTheDocument();
-            });
-            expect(screen.queryByText('Actualizado')).not.toBeInTheDocument();
-        });
-
-        it('still shows "Actualizado" when a platform was refreshed inline', async () => {
-            mockRefreshReply({ inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] });
-            renderSection();
-            await waitFor(() => expect(screen.getByTestId('refresh-button')).not.toBeDisabled());
-
-            fireEvent.click(screen.getByTestId('refresh-button'));
-
-            await waitFor(() => {
-                expect(screen.getByText('Actualizado')).toBeInTheDocument();
-            });
-            expect(screen.queryByTestId('refresh-no-platforms')).not.toBeInTheDocument();
-        });
-    });
-
-    // ── SPEC-228 T-022: loading state uses Spinner, not '...' ───────────────
-
-    describe('Loading state (SPEC-228 T-022)', () => {
-        it('shows Spinner while loading (no raw "..." text)', () => {
-            // Never resolve — keeps loading state active
-            vi.mocked(global.fetch).mockReturnValue(new Promise(() => {}));
-            renderSection();
-
-            // The ellipsis literal must not appear in the DOM
-            expect(document.body.textContent).not.toContain('...');
-
-            // The Spinner (role="status") should be present
-            const spinner = screen.getByRole('status');
-            expect(spinner).toBeInTheDocument();
-        });
-
-        it('Spinner is removed once data loads', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.queryByRole('status')).not.toBeInTheDocument();
-            });
-        });
-    });
-
-    // ── 8. Rate-limit message on 429 ────────────────────────────────────────
-
-    describe('Rate-limit (429)', () => {
-        it('reads retryAfter from the 429 BODY, not the header (HOS-290)', async () => {
-            // `Retry-After` is not CORS-safelisted and the API does not expose
-            // it, so a browser can never read it on this now cross-origin
-            // request. The route always puts the same value in the JSON body.
-            vi.mocked(global.fetch).mockImplementation((url, opts) => {
-                const urlStr = typeof url === 'string' ? url : url.toString();
-                if ((opts as RequestInit)?.method === 'POST' && urlStr.includes('/refresh')) {
-                    return Promise.resolve({
-                        ok: false,
-                        status: 429,
-                        json: async () => ({
-                            success: false,
-                            error: { details: { retryAfter: 300 } } // 5 minutes
-                        }),
-                        // Deliberately absent, mirroring what the browser sees.
-                        headers: new Headers()
-                    } as unknown as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
-            renderSection();
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Actualizar reseñas/i })
-                ).toBeInTheDocument();
-            });
-
-            fireEvent.click(screen.getByRole('button', { name: /Actualizar reseñas/i }));
-
-            await waitFor(() => {
-                const msg = screen.getByTestId('rate-limit-msg');
-                expect(msg).toBeInTheDocument();
-                expect(msg.textContent).toMatch(/5\s*minutos/i);
-            });
-        });
-
-        it('computes minutes correctly from a 120-second retryAfter', async () => {
-            vi.mocked(global.fetch).mockImplementation((url, opts) => {
-                const urlStr = typeof url === 'string' ? url : url.toString();
-                if ((opts as RequestInit)?.method === 'POST' && urlStr.includes('/refresh')) {
-                    return Promise.resolve({
-                        ok: false,
-                        status: 429,
-                        json: async () => ({
-                            success: false,
-                            error: { details: { retryAfter: 120 } } // exactly 2 minutes
-                        }),
-                        headers: new Headers()
-                    } as unknown as Response);
-                }
-                return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
-            });
-
-            renderSection();
-
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /Actualizar reseñas/i })
-                ).toBeInTheDocument();
-            });
-
-            fireEvent.click(screen.getByRole('button', { name: /Actualizar reseñas/i }));
-
-            await waitFor(() => {
-                const msg = screen.getByTestId('rate-limit-msg');
-                expect(msg.textContent).toMatch(/2\s*minutos/i);
-            });
-        });
-    });
-
-    // ── Dynamic per-platform URL hint (BETA-136) ────────────────────────────
-
-    describe('Dynamic URL hint', () => {
-        it('shows the Google hint by default (GOOGLE is the initial addPlatform)', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(/Google Maps/i);
-            });
-        });
-
-        it('updates the hint text when the selected platform changes to BOOKING', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const platformSelect = screen.getByLabelText('Plataforma') as HTMLSelectElement;
-            fireEvent.change(platformSelect, { target: { value: 'BOOKING' } });
-
-            expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(
-                /extranet de Booking/i
-            );
-        });
-
-        it('updates the hint text when the selected platform changes to AIRBNB', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const platformSelect = screen.getByLabelText('Plataforma') as HTMLSelectElement;
-            fireEvent.change(platformSelect, { target: { value: 'AIRBNB' } });
-
-            expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(
-                /anfitrión de Airbnb/i
-            );
-        });
-
-        it('updates the hint text when the selected platform changes to OTHER', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const platformSelect = screen.getByLabelText('Plataforma') as HTMLSelectElement;
-            fireEvent.change(platformSelect, { target: { value: 'OTHER' } });
-
-            expect(screen.getByTestId('ext-rep-url-hint').textContent).toMatch(
-                /enlace público directo/i
-            );
-        });
-    });
-
-    // ── Regression: unmemoized `t` used to recreate `loadListings` on every
-    // render, re-triggering its mount effect in an infinite fetch loop ──────
-
-    describe('Regression: stable loadListings effect (infinite fetch loop bug)', () => {
-        it('calls GET /external-listings exactly once on mount, even after settling', async () => {
-            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
-
-            renderSection();
-
-            await waitFor(() => {
-                expect(screen.getByTestId('ext-rep-empty')).toBeInTheDocument();
-            });
-
-            const countGetListings = () =>
-                vi.mocked(global.fetch).mock.calls.filter(([url, opts]) => {
-                    const urlStr = typeof url === 'string' ? url : url.toString();
-                    return (
-                        urlStr.includes('/external-listings') &&
-                        !(opts as RequestInit | undefined)?.method
-                    );
-                }).length;
-
-            const initialCount = countGetListings();
-            expect(initialCount).toBe(1);
-
-            // Give a runaway render->fetch->setState loop a chance to fire more requests.
-            await new Promise((resolve) => setTimeout(resolve, 50));
-
-            expect(countGetListings()).toBe(initialCount);
+    describe('listing contract', () => {
+        it('parses the payload through the shared schema (a fixture must match it)', () => {
+            expect(() => listingsResponse([LISTING_GOOGLE, LISTING_BOOKING])).not.toThrow();
         });
     });
 });

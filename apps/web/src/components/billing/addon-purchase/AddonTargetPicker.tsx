@@ -1,4 +1,6 @@
 import type { ListingNoticesItem } from '@repo/schemas';
+import { OptionCard, OptionCardGrid } from '@/components/account/ui/OptionCard';
+import { StatusPill } from '@/components/account/ui/StatusPill';
 import type { createTranslations } from '@/lib/i18n';
 import styles from './AddonPurchase.module.css';
 
@@ -20,29 +22,26 @@ export function AddonTargetPicker(input: {
         >
             <h2>{input.t('billing.addonPurchase.chooseTarget')}</h2>
             {input.items.length === 0 && <p>{input.t('billing.addonPurchase.noTargets')}</p>}
-            <div className={styles.grid}>
+            <OptionCardGrid>
                 {input.items.map((item) => (
-                    <button
+                    <OptionCard
                         key={item.listingId}
-                        type="button"
-                        className={styles.card}
                         data-testid={`addon-target-${item.listingId}`}
                         data-publication-status={item.publicationStatus}
                         disabled={input.isActive?.(item) === true}
                         onClick={() => input.onSelect(item)}
-                    >
-                        <span>{item.name}</span>
-                        <span>
-                            {input.t(`billing.addonPurchase.status.${item.publicationStatus}`)}
-                        </span>
-                        {input.isActive?.(item) && (
-                            <span className={styles.activeBadge}>
-                                {input.t('billing.addonPurchase.active')}
-                            </span>
-                        )}
-                    </button>
+                        title={item.name}
+                        meta={input.t(`billing.addonPurchase.status.${item.publicationStatus}`)}
+                        badge={
+                            input.isActive?.(item) ? (
+                                <StatusPill tone="success">
+                                    {input.t('billing.addonPurchase.active')}
+                                </StatusPill>
+                            ) : undefined
+                        }
+                    />
                 ))}
-            </div>
+            </OptionCardGrid>
         </section>
     );
 }

@@ -70,6 +70,7 @@ export function buildCatalogEditorSections({
                     slug: presentation.slug,
                     group: definition.group,
                     labelKey: presentation.labelKey,
+                    saveModel: presentation.saveModel,
                     ...(presentation.visibilityKey
                         ? { visibilityKey: presentation.visibilityKey }
                         : {})
@@ -111,7 +112,9 @@ export const LISTING_AI_QUESTIONS_SECTION: EditorSection = {
     id: 'aiQuestions',
     slug: 'preguntas-ia',
     group: 'content',
-    labelKey: 'listing.owner.editor.sectionNav.aiQuestions'
+    labelKey: 'listing.owner.editor.sectionNav.aiQuestions',
+    // It creates FAQs one action at a time.
+    saveModel: 'auto'
 };
 
 /**

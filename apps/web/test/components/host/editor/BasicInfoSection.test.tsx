@@ -32,7 +32,8 @@ import { BasicInfoSection } from '@/components/host/editor/BasicInfoSection.clie
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         // Interpolates `{{token}}` when params are supplied. Without this the
         // character counters below would read back the raw template and every

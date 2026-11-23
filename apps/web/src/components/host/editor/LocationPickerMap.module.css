@@ -1,0 +1,10 @@
+/* LocationPickerMap.module.css — the Leaflet container of the editors' map pin
+   (moved out of the retired LocationPicker styles by HOS-2496). Tokens only. */
+
+.mapContainer {
+    inline-size: 100%;
+    block-size: 20rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    overflow: hidden;
+}

@@ -54,7 +54,7 @@ describe('getNavForSurface (selector)', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         // cuenta -> dashboard + subscription; turista -> favorites. hostDashboard
         // and venue/experience come from BUSINESS_SHORTCUTS (HOS-2551), NOT
-        // surface membership, so anfitrion/comercio contribute nothing here.
+        // surface membership, so the business groups contribute nothing here.
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
         const cuenta = findGroup(groups, 'cuenta');
         const turista = findGroup(groups, 'turista');
@@ -62,11 +62,12 @@ describe('getNavForSurface (selector)', () => {
         expect(turista?.items.map((item) => item.id)).toEqual(['favorites']);
     });
 
-    it('does not surface hostDashboard/comercio-listings on the avatar surface (business shortcut is priority-picked, not surface-membership-based)', () => {
+    it('does not surface hostDashboard or the listing entries on the avatar surface (business shortcut is priority-picked, not surface-membership-based)', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
         expect(allIds).not.toContain('hostDashboard');
-        expect(allIds).not.toContain('comercio-listings');
+        expect(allIds).not.toContain('venue-listings');
+        expect(allIds).not.toContain('experience-listings');
     });
 
     it('drops a group entirely once all of its items are filtered out by visibility', () => {
@@ -103,7 +104,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         ]);
     });
 
-    it('adds only «Comer y salir» when the user has VENUE_EDIT_OWN (HOS-2559)', () => {
+    it('adds only «Comer y salir» (dashboard + list) when the user has VENUE_EDIT_OWN (HOS-2559)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
@@ -113,7 +114,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         expect(venues?.items.map((item) => item.id)).toEqual(['venueDashboard', 'venue-listings']);
     });
 
-    it('adds only «Experiencias» with only the experience permission (HOS-2559)', () => {
+    it('adds only «Experiencias» (dashboard + list) with only the experience permission (HOS-2559)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.EXPERIENCE_EDIT_OWN])
@@ -122,6 +123,11 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             'cuenta',
             'comercio-experience',
             'turista'
+        ]);
+        const experiences = findGroup(groups, 'comercio-experience');
+        expect(experiences?.items.map((item) => item.id)).toEqual([
+            'experienceDashboard',
+            'experience-listings'
         ]);
     });
 
@@ -200,6 +206,23 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'comercio-venue', 'turista']);
         const venues = findGroup(groups, 'comercio-venue');
         expect(venues?.items.map((item) => item.id)).toEqual(['venueDashboard', 'venue-listings']);
+    });
+
+    it('adds only «Experiencias» for an EXPERIENCE_OWNER role (HOS-2559)', () => {
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.EXPERIENCE_OWNER])
+        });
+        expect(groups.map((group) => group.id)).toEqual([
+            'cuenta',
+            'comercio-experience',
+            'turista'
+        ]);
+        const experiences = findGroup(groups, 'comercio-experience');
+        expect(experiences?.items.map((item) => item.id)).toEqual([
+            'experienceDashboard',
+            'experience-listings'
+        ]);
     });
 
     it('adds anfitrion, both listing areas and editorial for platform staff (ADMIN)', () => {

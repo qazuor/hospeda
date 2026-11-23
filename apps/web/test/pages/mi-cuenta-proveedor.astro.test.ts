@@ -46,7 +46,10 @@ describe('mi-cuenta/proveedor/index.astro (HOS-278 §8 provider self-service)', 
 
     it('empty-state CTA points at the public /sumate/proveedor landing, not at its own section (HOS-2450)', () => {
         const emptyState = source.slice(source.indexOf('trade === null'));
-        const ctaHref = emptyState.match(/<a href=\{buildUrl\(\{ locale, path: '([^']+)' \}\)\}>/);
+        // HOS-2505: the CTA is a kit LinkButton inside the EmptyState.
+        const ctaHref = emptyState.match(
+            /<LinkButton href=\{buildUrl\(\{ locale, path: '([^']+)' \}\)\}>/
+        );
         expect(ctaHref?.[1]).toBe('sumate/proveedor');
         expect(
             existsSync(resolve(__dirname, '../../src/pages/[lang]/sumate/proveedor/index.astro'))
@@ -91,5 +94,13 @@ describe('mi-cuenta/proveedor/index.astro (HOS-278 §8 provider self-service)', 
 
     it('resolves locale from Astro.locals, not Astro.params.lang', () => {
         expect(source).toContain('Astro.locals.locale as SupportedLocale');
+    });
+
+    it('HOS-2505: renders the tabs as kit NavTabs with count pills', () => {
+        expect(source).toContain('<NavTabs');
+        expect(source).toContain('current: tab === activeTab');
+        expect(source).toContain('tabCounts.usos = { count, countLabel:');
+        expect(source).toContain('tabCounts.valoraciones = { count, countLabel:');
+        expect(source).not.toContain('provider-tabs__link');
     });
 });

@@ -114,8 +114,9 @@ describe('ProfileCompletionContactFields (SPEC-113 polish)', () => {
     });
 
     it('still renders phone and locale inputs', () => {
-        expect(contactFields).toContain('id="pc-phone"');
-        expect(contactFields).toContain('id="pc-locale"');
+        // Kit fields: the DOM id is `pc-<name>` (see ProfileCompletionFields).
+        expect(contactFields).toContain("idParts={{ prefix: 'pc', name: 'phone' }}");
+        expect(contactFields).toContain('name="locale"');
     });
 });
 

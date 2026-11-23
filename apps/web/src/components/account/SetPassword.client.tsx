@@ -5,7 +5,7 @@
  * Shown to users who signed up via Google or Facebook and have no credential account.
  * Two CTAs:
  *   - Primary: "Establecer contraseña" → POST /api/v1/protected/profile/set-password
- *   - Secondary: "Saltar por ahora" → confirmation modal → POST /api/v1/protected/profile/skip-set-password
+ *   - Secondary: "Saltar por ahora" (ghost button AFTER the primary) → ConfirmDialog → POST /api/v1/protected/profile/skip-set-password
  *
  * On success (either path): redirects to /{locale}/mi-cuenta/.
  *
@@ -14,12 +14,6 @@
 
 import { StrongPasswordSchema } from '@repo/schemas';
 import { useState } from 'react';
-import {
-    Dialog,
-    DialogBody,
-    DialogFooter,
-    DialogHeader
-} from '@/components/shared/ui/Dialog.client';
 import { visibleApiMessage } from '@/lib/api-errors';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -28,6 +22,7 @@ import { queueToastForNextPage } from '@/store/toast-store';
 import type { PasswordFieldI18n } from '../ui/PasswordField.client';
 import { PasswordField } from '../ui/PasswordField.client';
 import styles from './SetPassword.module.css';
+import { Alert, Button, ConfirmDialog, PageHeader, Section } from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -222,6 +217,10 @@ export function SetPassword({
         setShowSkipModal(true);
     }
 
+    function handleSkipCancel(): void {
+        if (!skipping) setShowSkipModal(false);
+    }
+
     async function handleSkipConfirm(): Promise<void> {
         setSkipping(true);
         setGlobalError(null);
@@ -267,164 +266,123 @@ export function SetPassword({
 
     // ── Render ────────────────────────────────────────────────────────────────
 
+    const busy = submitting || skipping;
+
     return (
-        <div className={styles.wrapper}>
-            <div className={styles.header}>
-                <h1 className={styles.heading}>
-                    {t('account.setPassword.heading', 'Agregá una contraseña')}
-                </h1>
-                <p className={styles.context}>{getContextMessage()}</p>
-            </div>
+        <div className={styles.page}>
+            <PageHeader
+                title={t('account.setPassword.heading', 'Agregá una contraseña')}
+                description={getContextMessage()}
+                locale={locale}
+            />
 
-            <div className={styles.card}>
-                <form
-                    className={styles.form}
-                    onSubmit={handleSubmit}
-                    noValidate
-                >
-                    {/* Password field */}
-                    <PasswordField
-                        id="sp-password"
-                        label={t('account.setPassword.fields.password', 'Contraseña')}
-                        value={password}
-                        onChange={(v) => {
-                            setPassword(v);
-                            if (passwordError) setPasswordError(null);
-                        }}
-                        placeholder={t(
-                            'account.setPassword.fields.passwordPlaceholder',
-                            'Mínimo 8 caracteres'
-                        )}
-                        autoComplete="new-password"
-                        required
-                        disabled={submitting || skipping}
-                        showStrength
-                        showRuleChecklist
-                        error={passwordError ?? undefined}
-                        hint={t('account.setPassword.fields.passwordHint', 'Mínimo 8 caracteres.')}
-                        i18n={passwordI18n}
-                    />
-
-                    {/* Confirm password field */}
-                    <PasswordField
-                        id="sp-confirm-password"
-                        label={t(
-                            'account.setPassword.fields.confirmPassword',
-                            'Confirmar contraseña'
-                        )}
-                        value={confirmPassword}
-                        onChange={(v) => {
-                            setConfirmPassword(v);
-                            if (confirmError) setConfirmError(null);
-                        }}
-                        placeholder={t(
-                            'account.setPassword.fields.confirmPasswordPlaceholder',
-                            'Repetí tu contraseña'
-                        )}
-                        autoComplete="new-password"
-                        required
-                        disabled={submitting || skipping}
-                        showStrength={false}
-                        error={confirmError ?? undefined}
-                        i18n={passwordI18n}
-                    />
-
-                    {/* Global error banner */}
-                    {globalError && (
-                        <div
-                            className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
-                            role="alert"
-                        >
-                            {globalError}
-                        </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className={styles.actionRow}>
-                        <button
-                            type="button"
-                            className={styles.skipBtn}
-                            onClick={handleSkipClick}
-                            disabled={submitting || skipping}
-                        >
-                            {t('account.setPassword.skip', 'Saltar por ahora')}
-                        </button>
-
-                        <button
-                            type="submit"
-                            className={styles.submitBtn}
-                            disabled={submitting || skipping}
-                        >
-                            {submitting ? (
-                                <>
-                                    <span
-                                        className={styles.spinner}
-                                        aria-hidden="true"
-                                    />
-                                    {t('account.setPassword.submitting', 'Guardando...')}
-                                </>
-                            ) : (
-                                t('account.setPassword.submit', 'Establecer contraseña')
-                            )}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            {/* Skip confirmation modal — uses the shared Dialog primitive (portal,
-                backdrop, focus trap, Esc + overlay close). A raw `<dialog>` element
-                inherits user-agent width/margin/border that break the overlay layout. */}
-            <Dialog
-                isOpen={showSkipModal}
-                onClose={() => setShowSkipModal(false)}
-                size="sm"
-                ariaLabelledBy="skip-modal-title"
-                closeOnEscape={!skipping}
-                closeOnOverlayClick={!skipping}
+            <form
+                onSubmit={handleSubmit}
+                noValidate
             >
-                <DialogHeader titleId="skip-modal-title">
-                    {t('account.setPassword.skipModalTitle', '¿Saltar por ahora?')}
-                </DialogHeader>
-                <DialogBody>
-                    <p
-                        id="skip-modal-body"
-                        className={styles.modalBody}
-                    >
-                        {t(
-                            'account.setPassword.skipModalBody',
-                            'Vas a poder establecerla más tarde desde tu perfil. ¿Continuar?'
-                        )}
-                    </p>
-                </DialogBody>
-                <DialogFooter>
-                    <button
-                        type="button"
-                        className={styles.modalCancelBtn}
-                        onClick={() => setShowSkipModal(false)}
-                        disabled={skipping}
-                    >
-                        {t('account.setPassword.skipModalCancel', 'Cancelar')}
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.modalConfirmBtn}
-                        onClick={handleSkipConfirm}
-                        disabled={skipping}
-                    >
-                        {skipping ? (
-                            <>
-                                <span
-                                    className={styles.spinner}
-                                    aria-hidden="true"
-                                />
-                                {t('account.setPassword.submitting', 'Guardando...')}
-                            </>
-                        ) : (
-                            t('account.setPassword.skipModalConfirm', 'Sí, saltar')
-                        )}
-                    </button>
-                </DialogFooter>
-            </Dialog>
+                <Section
+                    title={t('account.setPassword.sectionTitle')}
+                    helpId="section:account.set-password"
+                >
+                    <div className={styles.fields}>
+                        {/* Password field */}
+                        <PasswordField
+                            id="sp-password"
+                            label={t('account.setPassword.fields.password', 'Contraseña')}
+                            value={password}
+                            onChange={(v) => {
+                                setPassword(v);
+                                if (passwordError) setPasswordError(null);
+                            }}
+                            placeholder={t(
+                                'account.setPassword.fields.passwordPlaceholder',
+                                'Mínimo 8 caracteres'
+                            )}
+                            autoComplete="new-password"
+                            required
+                            disabled={busy}
+                            showStrength
+                            showRuleChecklist
+                            error={passwordError ?? undefined}
+                            hint={t(
+                                'account.setPassword.fields.passwordHint',
+                                'Mínimo 8 caracteres.'
+                            )}
+                            i18n={passwordI18n}
+                        />
+
+                        {/* Confirm password field */}
+                        <PasswordField
+                            id="sp-confirm-password"
+                            label={t(
+                                'account.setPassword.fields.confirmPassword',
+                                'Confirmar contraseña'
+                            )}
+                            value={confirmPassword}
+                            onChange={(v) => {
+                                setConfirmPassword(v);
+                                if (confirmError) setConfirmError(null);
+                            }}
+                            placeholder={t(
+                                'account.setPassword.fields.confirmPasswordPlaceholder',
+                                'Repetí tu contraseña'
+                            )}
+                            autoComplete="new-password"
+                            required
+                            disabled={busy}
+                            showStrength={false}
+                            error={confirmError ?? undefined}
+                            i18n={passwordI18n}
+                        />
+
+                        {/* Global error banner */}
+                        {globalError ? (
+                            <Alert
+                                tone="danger"
+                                locale={locale}
+                            >
+                                {globalError}
+                            </Alert>
+                        ) : null}
+
+                        {/* Actions: the primary first, «Saltar» as a ghost button after it. */}
+                        <div className={styles.actions}>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                loading={submitting}
+                                disabled={busy}
+                            >
+                                {submitting
+                                    ? t('account.setPassword.submitting', 'Guardando...')
+                                    : t('account.setPassword.submit', 'Establecer contraseña')}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={handleSkipClick}
+                                disabled={busy}
+                            >
+                                {t('account.setPassword.skip', 'Saltar por ahora')}
+                            </Button>
+                        </div>
+                    </div>
+                </Section>
+            </form>
+
+            <ConfirmDialog
+                open={showSkipModal}
+                title={t('account.setPassword.skipModalTitle', '¿Saltar por ahora?')}
+                description={t(
+                    'account.setPassword.skipModalBody',
+                    'Vas a poder establecerla más tarde desde tu perfil. ¿Continuar?'
+                )}
+                confirmLabel={t('account.setPassword.skipModalConfirm', 'Sí, saltar')}
+                cancelLabel={t('account.setPassword.skipModalCancel', 'Cancelar')}
+                locale={locale}
+                tone="neutral"
+                onConfirm={handleSkipConfirm}
+                onCancel={handleSkipCancel}
+            />
         </div>
     );
 }

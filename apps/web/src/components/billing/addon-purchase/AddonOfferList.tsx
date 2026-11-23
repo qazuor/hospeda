@@ -1,4 +1,6 @@
 import type { AddonOffersResponse } from '@repo/schemas';
+import { OptionCard, OptionCardGrid } from '@/components/account/ui/OptionCard';
+import { StatusPill } from '@/components/account/ui/StatusPill';
 import { getAddonDescription, getAddonName } from '@/lib/billing/addon-purchase';
 import type { createTranslations } from '@/lib/i18n';
 import styles from './AddonPurchase.module.css';
@@ -20,30 +22,29 @@ export function AddonOfferList(input: {
         >
             <h2>{input.t('billing.addonPurchase.chooseOffer')}</h2>
             {input.offers.length === 0 && <p>{input.t('billing.addonPurchase.noOffers')}</p>}
-            <div className={styles.grid}>
+            <OptionCardGrid>
                 {input.offers.map((offer) => {
                     const description = getAddonDescription({ offer, t: input.t });
                     const active = input.isActive?.(offer) === true;
                     return (
-                        <button
+                        <OptionCard
                             key={offer.productId}
-                            type="button"
-                            className={styles.card}
                             data-testid={`addon-offer-${offer.productId}`}
                             disabled={active}
                             onClick={() => input.onSelect(offer)}
-                        >
-                            <strong>{getAddonName({ offer, t: input.t })}</strong>
-                            {description && <span>{description}</span>}
-                            {active && (
-                                <span className={styles.activeBadge}>
-                                    {input.t('billing.addonPurchase.active')}
-                                </span>
-                            )}
-                        </button>
+                            title={getAddonName({ offer, t: input.t })}
+                            description={description || undefined}
+                            badge={
+                                active ? (
+                                    <StatusPill tone="success">
+                                        {input.t('billing.addonPurchase.active')}
+                                    </StatusPill>
+                                ) : undefined
+                            }
+                        />
                     );
                 })}
-            </div>
+            </OptionCardGrid>
         </section>
     );
 }

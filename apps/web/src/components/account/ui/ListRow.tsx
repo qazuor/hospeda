@@ -40,6 +40,8 @@ export interface ListRowProps {
     readonly leading?: ReactNode;
     /** Secondary line under the title (e.g. the listing). */
     readonly meta?: ReactNode;
+    /** Block content under the description that is not text (a list of badges). */
+    readonly extra?: ReactNode;
     /** Longer text, clamped to one line (e.g. the last message). */
     readonly description?: ReactNode;
     /** Piece at the end (a date, a `CountPill`). */
@@ -48,6 +50,8 @@ export interface ListRowProps {
     readonly actions?: ListRowActions;
     /** Marks the row as needing attention (visual only). */
     readonly emphasis?: boolean;
+    /** Lets the description wrap onto several lines instead of clamping to one (a review body). */
+    readonly wrapDescription?: boolean;
     /** Stable id rendered as `data-row`, for tests and analytics. */
     readonly rowId?: string;
     /** Extra class from the caller (layout only). */
@@ -68,9 +72,11 @@ export function ListRow({
     leading,
     meta,
     description,
+    extra,
     trailing,
     actions = [],
     emphasis = false,
+    wrapDescription = false,
     rowId,
     className,
     helpId
@@ -97,7 +103,17 @@ export function ListRow({
                     )}
                 </p>
                 {meta !== undefined && <p className={styles.meta}>{meta}</p>}
-                {description !== undefined && <p className={styles.description}>{description}</p>}
+                {description !== undefined && (
+                    <p
+                        className={cx(
+                            styles.description,
+                            wrapDescription && styles.descriptionWrap
+                        )}
+                    >
+                        {description}
+                    </p>
+                )}
+                {extra !== undefined && <div className={styles.extra}>{extra}</div>}
             </div>
             {trailing !== undefined && <div className={styles.trailing}>{trailing}</div>}
             {actions.length > 0 && (

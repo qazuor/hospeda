@@ -1,0 +1,83 @@
+/* Stepper.module.css — progress through a short flow (HOS-2485).
+   Labels under the markers below 30rem of container width, beside them from there. */
+
+.root {
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.progress {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.list {
+    display: flex;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.step {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    padding-block-start: var(--space-2);
+    border-block-start: 3px solid var(--border);
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+@container (width >= 30rem) {
+    .step {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-2);
+    }
+}
+
+.marker {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--space-6);
+    block-size: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background-color: var(--core-card);
+}
+
+.label {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+}
+
+.current {
+    border-block-start-color: var(--focus-ring);
+    color: var(--core-foreground);
+    font-weight: var(--app-card-title-weight);
+}
+
+.current .marker {
+    border-color: var(--focus-ring);
+    color: var(--core-foreground);
+}
+
+.done {
+    border-block-start-color: var(--status-success-solid);
+    color: var(--core-foreground);
+}
+
+.done .marker {
+    border-color: var(--status-success-solid);
+    background-color: var(--status-success-bg);
+    color: var(--status-success-fg);
+}
