@@ -127,23 +127,27 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
                     </div>
                 </Visual>
                 <Visual name="Repeater/rows">
-                    <GalleryRepeater locale={locale} />
+                    <div className={styles.stack}>
+                        <GalleryRepeater locale={locale} />
+                    </div>
                 </Visual>
                 <Visual name="Repeater/empty">
-                    <Repeater
-                        locale={locale}
-                        label="Platos"
-                        items={[]}
-                        getKey={(_item: string, index) => `empty-${index}`}
-                        getItemLabel={(item) => item}
-                        renderItem={(item) => item}
-                        onAdd={() => undefined}
-                        addLabel="Agregar plato"
-                        empty={{
-                            title: 'Todavía no hay platos',
-                            description: 'Agregá el primero para armar la carta.'
-                        }}
-                    />
+                    <div className={styles.stack}>
+                        <Repeater
+                            locale={locale}
+                            label="Platos"
+                            items={[]}
+                            getKey={(_item: string, index) => `empty-${index}`}
+                            getItemLabel={(item) => item}
+                            renderItem={(item) => item}
+                            onAdd={() => undefined}
+                            addLabel="Agregar plato"
+                            empty={{
+                                title: 'Todavía no hay platos',
+                                description: 'Agregá el primero para armar la carta.'
+                            }}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="MediaDropzone/slot">
                     <div className={styles.stack}>
