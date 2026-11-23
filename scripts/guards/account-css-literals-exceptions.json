@@ -416,11 +416,6 @@
         "radius": 3,
         "shadow": 1
     },
-    "apps/web/src/components/newsletter/NewsletterPreferences.module.css": {
-        "font-size": 4,
-        "radius": 2,
-        "shadow": 1
-    },
     "apps/web/src/components/post/editor/PostCreateForm.module.css": {
         "color": 1,
         "font-size": 5,

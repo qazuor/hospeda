@@ -1228,7 +1228,8 @@
             "guidesDesc": "Guías editoriales e itinerarios curados.",
             "productNews": "Novedades del producto",
             "productNewsDesc": "Nuevas funcionalidades y novedades de la plataforma."
-        }
+        },
+        "sectionStatus": "Tu suscripción"
     },
     "profileCompletion": {
         "pageTitle": "Completá tu perfil",

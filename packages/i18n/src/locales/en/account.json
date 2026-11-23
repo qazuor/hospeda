@@ -1228,7 +1228,8 @@
             "guidesDesc": "Editorial guides and curated itineraries.",
             "productNews": "Product news",
             "productNewsDesc": "New features and platform updates."
-        }
+        },
+        "sectionStatus": "Your subscription"
     },
     "profileCompletion": {
         "pageTitle": "Complete your profile",
