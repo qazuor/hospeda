@@ -572,10 +572,13 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_UMAMI_WEBSITE_ID_ADMIN: blankAsUndefined(z.string().uuid()),
     /** Umami API key of a view-only user (`umami_...`), used only to read stats (secret). */
     HOSPEDA_UMAMI_API_KEY: blankAsUndefined(z.string().min(1)),
+    /** `user`-role Umami key that creates one pixel per newsletter campaign (HOS-2359). Optional: fail-open. */
+    HOSPEDA_UMAMI_PIXEL_API_KEY: blankAsUndefined(z.string().min(1)),
     /**
      * Postgres URL of the Umami database for the restricted retention role
      * (SELECT and DELETE on `session_replay` and `heatmap_event` only; secret, HOS-2347).
-     * Unset disables the recording purge. The single allowed Umami write path of the api.
+     * Unset disables the recording purge. The only Umami DATABASE write path of the api
+     * (its only Umami API write credential is HOSPEDA_UMAMI_PIXEL_API_KEY, HOS-2359).
      */
     HOSPEDA_UMAMI_DATABASE_URL: blankAsUndefined(z.string().min(1)),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
