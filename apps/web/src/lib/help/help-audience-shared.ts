@@ -17,6 +17,37 @@ export const HELP_SELECT_AUDIENCE_EVENT = 'hospeda:help-select-audience';
 /** Name of the DOM event the audience tabs fire after the selection changed. */
 export const HELP_AUDIENCE_CHANGED_EVENT = 'hospeda:help-audience-changed';
 
+/**
+ * Name of the DOM event the preselection fires when the signed-in reader has
+ * NO business audience (a pure tourist). The search uses it so «Solo para mi
+ * tipo de cuenta» never treats such a reader as the default `host` tab.
+ */
+export const HELP_READER_WITHOUT_AUDIENCE_EVENT = 'hospeda:help-reader-without-audience';
+
+/** `<html>` data attribute that records the same fact for late hydrators. */
+const READER_WITHOUT_AUDIENCE_ATTRIBUTE = 'data-help-reader-without-audience';
+
+/**
+ * Records that the reader has no business audience and tells the islands,
+ * so it works whichever hydrates first.
+ */
+export function announceReaderWithoutAudience(): void {
+    document.documentElement.setAttribute(READER_WITHOUT_AUDIENCE_ATTRIBUTE, '');
+    window.dispatchEvent(new CustomEvent(HELP_READER_WITHOUT_AUDIENCE_EVENT));
+}
+
+/**
+ * Whether the preselection already found the reader has no business audience.
+ *
+ * @returns `true` once {@link announceReaderWithoutAudience} ran on this page
+ */
+export function isReaderWithoutAudience(): boolean {
+    return (
+        typeof document !== 'undefined' &&
+        document.documentElement.hasAttribute(READER_WITHOUT_AUDIENCE_ATTRIBUTE)
+    );
+}
+
 /** Payload of both help audience events. */
 export interface HelpAudienceEventDetail {
     readonly audience: HelpAudience;

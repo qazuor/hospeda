@@ -6,6 +6,7 @@
  *
  * What this spec validates:
  *   1. A brand-new owner with a single BOLICHE opens `/es/mi-cuenta/comercio/`
+ *      (HOS-2559: redirected to `?vertical=venue`, the only list a venue owner has)
  *      and the venue welcome tour starts by itself.
  *   2. The tour runs to the last step and never shows
  *      `account.welcomeTour.venueQr.title` ("QR de tu carta o barra", HOS-2093).

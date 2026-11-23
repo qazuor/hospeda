@@ -14,13 +14,6 @@ import { buildAccountNavModel } from '../../../../src/lib/account-nav-model';
 
 vi.mock('astro:transitions/client', () => ({ navigate: () => Promise.resolve() }));
 
-const aiState = vi.hoisted(() => ({ visible: false }));
-vi.mock('../../../../src/hooks/use-ai-assistants-entry', () => ({
-    useAiAssistantsEntry: () => aiState.visible
-}));
-vi.mock('../../../../src/components/shared/whats-new/WhatsNewCountPill.client', () => ({
-    WhatsNewCountPill: () => <span data-testid="whats-new-pill">2</span>
-}));
 vi.mock('../../../../src/components/host/host-trades/BenefitUsagesCountPill.client', () => ({
     BenefitUsagesCountPill: () => <span data-testid="benefit-pill">1</span>
 }));
@@ -163,7 +156,7 @@ describe('AccountBar', () => {
         expect(dialog.querySelector(`#${target}`)).not.toBeNull();
     });
 
-    it('gives the drawer copy the icons and the count pills of the desktop sidebar', async () => {
+    it('gives the drawer copy the icons and the count pill of the desktop sidebar', async () => {
         const user = userEvent.setup();
         const { unmount } = render(
             <AccountBar
@@ -178,6 +171,8 @@ describe('AccountBar', () => {
         expect(screen.getByTestId('benefit-pill').closest('a')).not.toBeNull();
         unmount();
 
+        // HOS-2550: «Qué hay de nuevo» and «Ayuda» are header icons now, so
+        // the personal drawer lists neither (the header keeps them on mobile).
         render(
             <AccountBar
                 view={view}
@@ -185,33 +180,42 @@ describe('AccountBar', () => {
             />
         );
         await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-        await screen.findByRole('dialog');
-        expect(screen.getByTestId('whats-new-pill').closest('a')).not.toBeNull();
+        const personal = await screen.findByRole('dialog');
+        const hrefs = [...personal.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+        expect(hrefs.some((href) => href?.includes('/mi-cuenta/novedades'))).toBe(false);
+        expect(hrefs.some((href) => href?.includes('/mi-cuenta/ayuda'))).toBe(false);
     });
 
-    it('reveals the AI-assistants entry in the drawer only when the user qualifies', async () => {
+    it('lists the AI-assistants entry in the drawer for a client, and none for a tourist (HOS-2562)', async () => {
         const user = userEvent.setup();
-        const open = async () => {
+        const drawerHrefs = async () => {
             await user.click(screen.getByRole('button', { name: /Mi cuenta/ }));
-            const dialog = await screen.findByRole('dialog');
-            return dialog.querySelector('[data-ai-assistants-entry]') as HTMLElement;
+            return hrefsIn(await screen.findByRole('dialog'));
         };
-        aiState.visible = false;
-        const first = render(
+        const viewFor = (input: { readonly roles: string[]; readonly permissions: string[] }) =>
+            buildSidebarView({
+                model: buildAccountNavModel({
+                    ...input,
+                    ownsHostTradeListing: false,
+                    mcpEnabled: true,
+                    activeSection: 'editar'
+                }),
+                locale: 'es'
+            });
+        const client = render(
             <AccountBar
-                view={view}
+                view={viewFor({ roles: ['HOST'], permissions: ['accommodation.create'] })}
                 locale="es"
             />
         );
-        expect(await open()).toHaveAttribute('hidden');
-        first.unmount();
-        aiState.visible = true;
+        expect(await drawerHrefs()).toContain('/es/mi-cuenta/asistentes-ia/');
+        client.unmount();
         render(
             <AccountBar
-                view={view}
+                view={viewFor({ roles: ['USER'], permissions: [] })}
                 locale="es"
             />
         );
-        expect(await open()).not.toHaveAttribute('hidden');
+        expect(await drawerHrefs()).not.toContain('/es/mi-cuenta/asistentes-ia/');
     });
 });

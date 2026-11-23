@@ -230,10 +230,17 @@ export default defineConfig({
      *
      * `use.baseURL` above stays at the web URL as the default for any future
      * relative navigation.
+     *
+     * `tests/visual/` is ignored here (HOS-2471): the visual-regression specs
+     * must render in the pinned Playwright Docker image or their baselines
+     * never match, so they only run through `playwright.visual.config.ts`
+     * (`e2e:test:visual`). Without the ignore, `e2e:test` would shoot them
+     * with the host browser and fail on font rendering alone.
      */
     projects: [
         {
             name: 'chromium',
+            testIgnore: '**/visual/**',
             use: { ...devices['Desktop Chrome'], baseURL: WEB_BASE_URL }
         }
     ]

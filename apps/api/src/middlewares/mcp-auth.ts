@@ -29,6 +29,11 @@
  *    `mustChangePassword` → `403 PASSWORD_CHANGE_REQUIRED`. Email verification
  *    depends on the operation (`resolvePersonStateStep`), so it is not a
  *    request gate; it rides on `actor.emailVerified` for per-tool checks.
+ * 6. **Real client (403, HOS-2562).** AI assistants are only for a person with
+ *    a business vertical (`isActorRealClient`, the shared `isRealClient`
+ *    rule). Anybody else → `403 FORBIDDEN`. This is what makes a connection a
+ *    tourist made before the rule, or a token issued before it, useless at
+ *    once, without revoking anything.
  *
  * Then the actor is built with the same function the session middleware uses
  * (`buildActorForUser`), and the grant (client id/name, scopes) is set on the
@@ -44,19 +49,20 @@
  */
 
 import { oauthProviderResourceClient } from '@better-auth/oauth-provider/resource-client';
-import { eq, getDb, users } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
 import { z } from 'zod';
 import { getAuth } from '../lib/auth';
 import { readBearerToken } from '../lib/mcp/bearer-token';
+import { isActorRealClient } from '../lib/mcp-real-client';
 import { MCP_PROTECTED_RESOURCE_ALIAS_PATH } from '../lib/mcp-well-known';
 import { setRequestContextActor } from '../lib/request-context';
 import type { AppBindings, McpAuthContext } from '../types';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { type ActorSourceUser, buildActorForUser } from './actor';
+import { findActiveMcpGrant, findMcpUser } from './mcp-auth-lookups';
 import {
     isPasswordChangeRequired,
     PASSWORD_CHANGE_REQUIRED_RESPONSE
@@ -127,6 +133,8 @@ export interface McpAuthDeps {
     readonly findUser: (input: { readonly userId: string }) => Promise<ActorSourceUser | null>;
     /** Builds the actor for the user (`buildActorForUser`). */
     readonly buildActor: (input: { readonly user: ActorSourceUser }) => Promise<Actor>;
+    /** Whether the actor is a real client (HOS-2562, `isActorRealClient`). */
+    readonly isRealClient: (input: { readonly actor: Actor }) => Promise<boolean>;
 }
 
 /**
@@ -286,90 +294,15 @@ export function createDefaultMcpAccessTokenVerifier(): McpAuthDeps['verifyAccess
     });
 }
 
-/** Client row fields read for the grant check. */
-interface OAuthClientRow {
-    readonly name?: string | null;
-    readonly disabled?: boolean | null;
-}
-
-/**
- * Default grant check, through the Better Auth adapter (the OAuth tables are
- * mapped there, not in `@repo/db` models).
- *
- * A grant is live when the client row exists and is not `disabled`, and an
- * `oauthConsent` row exists for `(clientId, userId)`. Every MCP client goes
- * through the consent screen (CIMD and DCR clients cannot set `skip_consent`),
- * so a missing consent means it was revoked.
- */
-export const findActiveMcpGrant: McpAuthDeps['findActiveGrant'] = async ({ clientId, userId }) => {
-    const { adapter } = await getAuth().$context;
-    const client = await adapter.findOne<OAuthClientRow>({
-        model: 'oauthClient',
-        where: [{ field: 'clientId', value: clientId }]
-    });
-    if (!client || client.disabled === true) {
-        return null;
-    }
-    const consent = await adapter.findOne<{ readonly id: string }>({
-        model: 'oauthConsent',
-        where: [
-            { field: 'clientId', value: clientId },
-            { field: 'userId', value: userId }
-        ]
-    });
-    if (!consent) {
-        return null;
-    }
-    return { clientName: typeof client.name === 'string' ? client.name : null };
-};
-
-/**
- * Default user lookup. One primary-key read of the columns the actor needs plus
- * the account-state columns. Refuses a missing, soft-deleted (H-163) or banned
- * account: a bearer token never creates a session, so neither the deletion gate
- * nor the admin plugin's ban gate on session creation would run for it.
- */
-export const findMcpUser: McpAuthDeps['findUser'] = async ({ userId }) => {
-    const rows = await getDb()
-        .select({
-            id: users.id,
-            name: users.displayName,
-            email: users.email,
-            image: users.image,
-            emailVerified: users.emailVerified,
-            mustChangePassword: users.mustChangePassword,
-            deletedAt: users.deletedAt,
-            banned: users.banned,
-            banExpires: users.banExpires
-        })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-    const row = rows[0];
-    if (!row || row.deletedAt) {
-        return null;
-    }
-    const banActive = row.banned === true && (!row.banExpires || row.banExpires > new Date());
-    if (banActive) {
-        return null;
-    }
-    return {
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        image: row.image,
-        emailVerified: row.emailVerified,
-        mustChangePassword: row.mustChangePassword
-    };
-};
+export { findActiveMcpGrant, findMcpUser } from './mcp-auth-lookups';
 
 /** Production dependencies. */
 const DEFAULT_DEPS: McpAuthDeps = {
     verifyAccessToken: createDefaultMcpAccessTokenVerifier(),
     findActiveGrant: findActiveMcpGrant,
     findUser: findMcpUser,
-    buildActor: ({ user }) => buildActorForUser({ user })
+    buildActor: ({ user }) => buildActorForUser({ user }),
+    isRealClient: ({ actor }) => isActorRealClient({ actor })
 };
 
 /** Reads the configuration from the validated env. */
@@ -484,6 +417,19 @@ export function createMcpAuthMiddleware({
         }
 
         const actor = await resolved.buildActor({ user });
+        if (!(await resolved.isRealClient({ actor }))) {
+            apiLogger.debug('MCP request refused: not_a_real_client');
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: ServiceErrorCode.FORBIDDEN,
+                        message: 'AI assistants are only available to business accounts'
+                    }
+                },
+                403
+            );
+        }
         const mcpAuth: McpAuthContext = {
             userId,
             clientId,

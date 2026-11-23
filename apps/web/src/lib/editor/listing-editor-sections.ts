@@ -25,6 +25,7 @@
  */
 
 import type { EditorRegistry, EditorSection } from '@/lib/editor/editor-registry';
+import { OWNER_LIST_LABEL_KEYS, ownerListPath } from '@/lib/listing/owner-list-vertical';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
 /** Group order for rendering. */
@@ -89,8 +90,10 @@ export function createListingEditorRegistry({
         sections,
         groups: LISTING_EDITOR_SECTION_GROUPS,
         groupLabelKeys: LISTING_EDITOR_GROUP_LABEL_KEYS,
-        indexPath: 'mi-cuenta/comercio',
-        indexLabelKey: 'listing.owner.editor.breadcrumb.listings',
+        // HOS-2559: the way back is the list of this vertical, and its label
+        // is that list's own name («Mis locales» / «Mis experiencias»).
+        indexPath: ownerListPath({ vertical }),
+        indexLabelKey: OWNER_LIST_LABEL_KEYS[vertical],
         buildHubPath: ({ entityId }) => `mi-cuenta/comercio/${vertical}/${entityId}/editar`
     };
 }
