@@ -136,6 +136,29 @@ selector `[data-umami-block]`. The privacy rules around it are in
   `/platform/critical`; while it is off, the web never loads `recorder.js`.
 - Umami has no retention setting for recordings and never deletes them. See the privacy doc.
 
+## Email open pixels
+
+`pnpm umami:setup` also creates one Umami pixel per email catalog template (HOS-2359).
+The list is `packages/notifications/generated/email-pixel-manifest.json`, generated from
+`EMAIL_CATALOG` by `pnpm --filter @repo/notifications email:pixel-manifest` and guarded
+against drift in CI. Each entry gives the pixel slug (`email-<sendPath>-<id>`) and its name
+(`Email · <template name>`). Every real send embeds `<HOSPEDA_UMAMI_URL>/p/<slug>`, so a
+template whose pixel does not exist yet records nothing until the script runs.
+
+- Pixels are matched by `slug`, which Umami keeps unique instance-wide. A drifted name is
+  renamed in place (same id). A pixel the manifest no longer lists (`email-*`) shows up as
+  unmanaged and is never deleted.
+- Newsletter pixels (`newsletter-*`) are created by the api at dispatch with
+  `HOSPEDA_UMAMI_PIXEL_API_KEY` (a dedicated `user`-role account) and the script ignores
+  them. That key lists only its own pixels, so they never show up here.
+- Pixel stats live under `GET /api/websites/<pixelId>/stats` (the pixel id is a website
+  id for the stats API; `/api/pixels/:id/stats` does not exist).
+- **Limitation (measured on Umami 3.5.0):** Umami drops pixel hits whose user agent it
+  classifies as a bot. That includes Gmail's image proxy (`GoogleImageProxy`) and plain
+  `curl`. Opens fetched through Gmail's proxy are therefore not counted: the pixel figure
+  is a lower bound, mostly of non-Gmail clients. Do not work around it. Clicks (UTMs on
+  links) are the reliable signal.
+
 ## Re-running the script
 
 `pnpm umami:setup` is safe to run as often as you like.
@@ -151,7 +174,7 @@ selector `[data-umami-block]`. The privacy rules around it are in
 ## Creating and updating them
 
 ```bash
-pnpm umami:setup            # create or update funnels, goals, boards, segments, cohorts and the recorder config
+pnpm umami:setup            # create or update funnels, goals, boards, segments, cohorts, the recorder config and email pixels
 pnpm umami:setup --dry-run  # print what would change, write nothing
 ```
 
@@ -161,7 +184,8 @@ Behavior:
 - Order matters: reports first, boards second. `Funnel` and `Goal` components store the saved report id, so `buildBoardDefinitions` receives the `name -> id` map and throws `UNRESOLVED_REPORT` on a missing name.
 - Run it against staging first, then production, with the Umami credentials of that environment (login token or an `umami_...` API key, sent as a bearer credential).
 - Segments and cohorts run after boards (boards do not reference them). They are matched by `websiteId` + `type` + `name`.
-- The recorder config runs last, after segments. It reads the WEB website and posts only on a difference.
+- The recorder config runs after segments. It reads the WEB website and posts only on a difference.
+- Email pixels run last (see "Email open pixels"). They do not depend on the website id.
 - Renaming a board, report, segment or cohort creates a new one; the old one has to be deleted by hand (see "Re-running the script").
 
 ## PostHog → Umami gap list
