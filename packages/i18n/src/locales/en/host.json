@@ -777,7 +777,10 @@
                 "aiDraftLoading": "Generating a suggestion…",
                 "aiDraftDisclaimer": "This is an editable draft. Check it against your listing before saving.",
                 "aiDraftError": "We could not generate a suggestion. Please try again.",
-                "aiDraftNotEligible": "The assistant has already answered this question."
+                "aiDraftNotEligible": "The assistant has already answered this question.",
+                "unansweredCountLabel": "{{count}} unanswered",
+                "dismissedCountLabel": "{{count}} dismissed",
+                "dismissedToggle": "Show dismissed questions"
             },
             "catalog": {
                 "searchLabel": "Search the whole catalog",

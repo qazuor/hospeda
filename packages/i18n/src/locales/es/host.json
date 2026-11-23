@@ -777,7 +777,10 @@
                 "aiDraftLoading": "Generando una sugerencia…",
                 "aiDraftDisclaimer": "Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.",
                 "aiDraftError": "No se pudo generar la sugerencia. Intentá de nuevo.",
-                "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente."
+                "aiDraftNotEligible": "Esta pregunta ya tiene una respuesta del asistente.",
+                "unansweredCountLabel": "{{count}} sin responder",
+                "dismissedCountLabel": "{{count}} descartadas",
+                "dismissedToggle": "Ver las descartadas"
             },
             "catalog": {
                 "searchLabel": "Buscar en todo el catálogo",

@@ -777,7 +777,10 @@
                 "aiDraftLoading": "Gerando uma sugestão…",
                 "aiDraftDisclaimer": "Este é um rascunho editável. Confira as informações do anúncio antes de salvar.",
                 "aiDraftError": "Não foi possível gerar a sugestão. Tente novamente.",
-                "aiDraftNotEligible": "O assistente já respondeu a esta pergunta."
+                "aiDraftNotEligible": "O assistente já respondeu a esta pergunta.",
+                "unansweredCountLabel": "{{count}} sem resposta",
+                "dismissedCountLabel": "{{count}} descartadas",
+                "dismissedToggle": "Ver as descartadas"
             },
             "catalog": {
                 "searchLabel": "Buscar em todo o catálogo",

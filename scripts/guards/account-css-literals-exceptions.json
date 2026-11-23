@@ -319,11 +319,6 @@
         "font-size": 2,
         "radius": 2
     },
-    "apps/web/src/components/listing/ai-questions/AiQuestionsPanel.module.css": {
-        "color": 3,
-        "font-size": 9,
-        "radius": 3
-    },
     "apps/web/src/components/listing/editor/BusinessLineRemovalNotice.module.css": {
         "color": 3,
         "font-size": 1,
