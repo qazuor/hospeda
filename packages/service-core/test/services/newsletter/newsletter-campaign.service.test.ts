@@ -283,6 +283,7 @@ function makeService(
         deliveryService?: INewsletterDeliveryService;
         subscriberService?: ReturnType<typeof makeSubscriberService>;
         notifyCampaignClosedWithFailuresFn?: Mock;
+        campaignPixelProvisioner?: Mock;
     } = {}
 ) {
     return new NewsletterCampaignService(
@@ -292,7 +293,8 @@ function makeService(
             softCapDays: 7,
             deliveryService: opts.deliveryService,
             subscriberService: opts.subscriberService as unknown as NewsletterSubscriberService,
-            notifyCampaignClosedWithFailuresFn: opts.notifyCampaignClosedWithFailuresFn
+            notifyCampaignClosedWithFailuresFn: opts.notifyCampaignClosedWithFailuresFn,
+            campaignPixelProvisioner: opts.campaignPixelProvisioner
         }
     );
 }
@@ -502,6 +504,105 @@ describe('NewsletterCampaignService.send', () => {
             deliveryIds: [DELIVERY_ID_1, DELIVERY_ID_2],
             batchSize: 2
         });
+    });
+
+    /** Arranges a 2-recipient dispatch and returns the `set()` spy of the campaign UPDATE. */
+    function arrangeDispatch() {
+        enqueueQueryResponse([makeCampaignRow({ title: 'Novedades de Otoño' })]);
+        const returningMock = Promise.resolve([{ id: DELIVERY_ID_1 }, { id: DELIVERY_ID_2 }]);
+        const valuesMock = {
+            onConflictDoNothing: vi.fn(() => ({ returning: vi.fn(() => returningMock) }))
+        };
+        txState.insert.mockReturnValue({ values: vi.fn(() => valuesMock) });
+        const set = vi.fn(() => ({ where: vi.fn(() => Promise.resolve([])) }));
+        txState.update.mockReturnValue({ set });
+        return set;
+    }
+
+    const ATTRIBUTION_SLUG = 'novedades-de-otono-aaaaaaaa';
+
+    it('provisions the campaign pixel and stores both slugs with SENDING (HOS-2359, AC-10)', async () => {
+        // Arrange
+        const set = arrangeDispatch();
+        const campaignPixelProvisioner = vi.fn(async ({ slug }: { slug: string }) => ({ slug }));
+        const svc = makeService({
+            deliveryService: makeDeliveryService(),
+            subscriberService: makeSubscriberService({
+                eligibleIds: [SUBSCRIBER_ID_1, SUBSCRIBER_ID_2],
+                softCappedCount: 0,
+                totalCandidates: 2
+            }),
+            campaignPixelProvisioner
+        });
+
+        // Act
+        const result = await svc.send(makeAdminActor(), { id: CAMPAIGN_ID });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(campaignPixelProvisioner).toHaveBeenCalledWith({
+            slug: `newsletter-${ATTRIBUTION_SLUG}`,
+            name: 'Newsletter · Novedades de Otoño'
+        });
+        expect(set).toHaveBeenCalledWith(
+            expect.objectContaining({
+                status: 'sending',
+                attributionSlug: ATTRIBUTION_SLUG,
+                umamiPixelSlug: `newsletter-${ATTRIBUTION_SLUG}`
+            })
+        );
+    });
+
+    it.each([
+        ['answers null', async () => null],
+        [
+            'rejects',
+            async () => {
+                throw new Error('umami down');
+            }
+        ]
+    ])('still sends with a NULL pixel when the provisioner %s (HOS-2359, AC-11)', async (_label, impl) => {
+        // Arrange
+        const set = arrangeDispatch();
+        const deliverySvc = makeDeliveryService();
+        const svc = makeService({
+            deliveryService: deliverySvc,
+            subscriberService: makeSubscriberService({
+                eligibleIds: [SUBSCRIBER_ID_1, SUBSCRIBER_ID_2],
+                softCappedCount: 0,
+                totalCandidates: 2
+            }),
+            campaignPixelProvisioner: vi.fn(impl)
+        });
+
+        // Act
+        const result = await svc.send(makeAdminActor(), { id: CAMPAIGN_ID });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(result.data?.enqueued).toBe(2);
+        expect(set).toHaveBeenCalledWith(
+            expect.objectContaining({ attributionSlug: ATTRIBUTION_SLUG, umamiPixelSlug: null })
+        );
+        expect(deliverySvc.enqueueBatches).toHaveBeenCalled();
+    });
+
+    it('does not provision a pixel when nobody is eligible', async () => {
+        enqueueQueryResponse([makeCampaignRow()]);
+        const campaignPixelProvisioner = vi.fn();
+        const svc = makeService({
+            deliveryService: makeDeliveryService(),
+            subscriberService: makeSubscriberService({
+                eligibleIds: [],
+                softCappedCount: 0,
+                totalCandidates: 0
+            }),
+            campaignPixelProvisioner
+        });
+
+        await svc.send(makeAdminActor(), { id: CAMPAIGN_ID });
+
+        expect(campaignPixelProvisioner).not.toHaveBeenCalled();
     });
 
     it('rejects send when campaign status is not "draft"', async () => {

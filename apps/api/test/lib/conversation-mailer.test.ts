@@ -172,6 +172,14 @@ describe('createConversationMailer', () => {
             };
             expect(callArg.to).toBe('guest@example.com');
             expect(callArg.subject).toContain('Verificá');
+            // HOS-2359: attributed to its email catalog key
+            expect(mockSendEmail.mock.calls[0]?.[0]).toMatchObject({
+                attribution: {
+                    medium: 'transactional',
+                    templateKey: 'conversation.verify',
+                    includePixel: true
+                }
+            });
         });
 
         it('should invoke ConversationVerify with correct props', async () => {
@@ -239,6 +247,39 @@ describe('createConversationMailer', () => {
 
             // Assert
             expect(mockLoggerError).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('sendAccessLinkEmail', () => {
+        it('attributes the access-link email to its own catalog key (HOS-2359)', async () => {
+            // Arrange
+            mockEnv.HOSPEDA_EMAIL_API_KEY = 'test-resend-key-123';
+            vi.resetModules();
+            const { createConversationMailer: factory } = await import(
+                '../../src/lib/conversation-mailer'
+            );
+            const mailer = factory();
+            if (!mailer) throw new Error('Expected mailer to be defined');
+            mockSendEmail.mockResolvedValue({ success: true, messageId: 'msg_access' });
+
+            // Act
+            await mailer.sendAccessLinkEmail({
+                conversationId: SAMPLE_PAYLOAD.conversationId,
+                recipientEmail: SAMPLE_PAYLOAD.recipientEmail,
+                accessUrl: 'https://hospeda.com.ar/guest/messages/tok',
+                guestName: SAMPLE_PAYLOAD.guestName,
+                accommodationName: SAMPLE_PAYLOAD.accommodationName,
+                locale: 'es'
+            });
+
+            // Assert
+            expect(mockSendEmail.mock.calls.at(-1)?.[0]).toMatchObject({
+                attribution: {
+                    medium: 'transactional',
+                    templateKey: 'conversation.access-link',
+                    includePixel: true
+                }
+            });
         });
     });
 });

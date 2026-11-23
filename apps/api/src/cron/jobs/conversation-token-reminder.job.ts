@@ -87,6 +87,10 @@ import {
 } from '@repo/notifications';
 import { PermissionEnum } from '@repo/schemas';
 import { AccessTokenService, createSystemActor } from '@repo/service-core';
+import {
+    buildTransactionalAttribution,
+    TOKEN_REMINDER_TEMPLATE_KEYS
+} from '../../utils/email-attribution';
 import { sendAppEmail } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -180,7 +184,10 @@ async function dispatchTokenReminder(input: DispatchTokenReminderInput): Promise
         client: emailClient,
         to: recipientEmail,
         subject,
-        react: emailTemplate
+        react: emailTemplate,
+        attribution: buildTransactionalAttribution({
+            templateKey: TOKEN_REMINDER_TEMPLATE_KEYS[reminderType]
+        })
     });
 
     if (!emailResult.success) {

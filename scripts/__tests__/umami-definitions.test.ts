@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AnalyticsEventSchemas } from '../../packages/analytics/src/catalog.js';
+import { HOSPEDA_ATTRIBUTION_REPORTS } from '../umami/attribution-definitions.js';
 import {
     assertCatalogEvent,
     buildBoardDefinition,
@@ -168,11 +169,12 @@ describe('buildReportDefinitions', () => {
         expect(JSON.stringify(first)).toBe(JSON.stringify(second));
     });
 
-    it('should list funnels before goals with unique names', () => {
+    it('should list funnels, then goals, then attribution reports, with unique names', () => {
         const reports = buildReportDefinitions();
         expect(reports.map((report) => report.type)).toEqual([
             ...HOSPEDA_FUNNELS.map(() => 'funnel'),
-            ...HOSPEDA_GOALS.map(() => 'goal')
+            ...HOSPEDA_GOALS.map(() => 'goal'),
+            ...HOSPEDA_ATTRIBUTION_REPORTS.map(() => 'attribution')
         ]);
         const names = reports.map((report) => report.name);
         expect(new Set(names).size).toBe(names.length);
@@ -182,12 +184,31 @@ describe('buildReportDefinitions', () => {
         const catalog = new Set(Object.keys(AnalyticsEventSchemas));
         const referenced = buildReportDefinitions().flatMap((report) => {
             if (report.type === 'goal') return [String(report.parameters['value'])];
+            if (report.type === 'attribution') return [String(report.parameters['step'])];
             const steps = report.parameters['steps'] as readonly { type: string; value: string }[];
             return steps.filter((step) => step.type === 'event').map((step) => step.value);
         });
         expect(referenced.length).toBeGreaterThan(0);
         for (const eventName of referenced) {
             expect(catalog.has(eventName)).toBe(true);
+        }
+    });
+});
+
+describe('HOSPEDA_ATTRIBUTION_REPORTS (HOS-2359 OD-10)', () => {
+    it('should build first-click event attribution for sign-up and contact', () => {
+        // Act
+        const attribution = buildReportDefinitions().filter(
+            (report) => report.type === 'attribution'
+        );
+
+        // Assert: the shape measured in HOS-2119 T-038.
+        expect(attribution.map((report) => report.parameters)).toEqual([
+            { model: 'first-click', type: 'event', step: 'sign_up_completed' },
+            { model: 'first-click', type: 'event', step: 'contact_owner_completed' }
+        ]);
+        for (const report of attribution) {
+            expect(report.name.startsWith('Atribución · ')).toBe(true);
         }
     });
 });

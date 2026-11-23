@@ -234,7 +234,8 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
             );
             expect(firstText).toContain('Ver mi cuota');
             expect(firstText).not.toContain(INTRO_RENEWAL);
-            expect(firstMail.html).toContain('/es/mi-cuenta/partner/"');
+            // HOS-2359 appends attribution params to the CTA; the path itself must stay exact.
+            expect(firstMail.html).toMatch(/\/es\/mi-cuenta\/partner\/(\?[^"]*)?"/);
 
             const outboxRows = await execSQL<{ payload: unknown }>(
                 `SELECT payload FROM email_outbox

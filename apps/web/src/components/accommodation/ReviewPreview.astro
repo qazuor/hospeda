@@ -1,15 +1,17 @@
 ---
 /**
  * @file ReviewPreview.astro
- * @description Review summary: average score + per-category breakdown + a
- * single CTA that opens the modal with the full reviews list. Individual
- * reviews are NOT rendered inline — they would take up too much vertical
- * space on the detail page; the modal owns that view.
+ * @description Review summary: average score + per-category breakdown, a
+ * swipeable strip of up to 6 featured reviews (HOS-2530) and a CTA that opens
+ * the modal with the full list. The strip is a scroll-snap track so it costs no
+ * JavaScript. With no reviews the empty state stays; no placeholder is ever shown.
  */
 import type { AccommodationDetailData } from '@/data/types';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import type { ReviewStripItem } from '@/lib/review-strip';
+import { getInitialsFromName } from '@/lib/avatar-utils';
 import RatingBreakdown from './RatingBreakdown.astro';
 
 interface Props {
@@ -22,12 +24,27 @@ interface Props {
    * renders the per-category bars below the overall score.
    */
   readonly ratingBreakdown?: Readonly<Record<string, number>>;
+  /** Up to 6 reviews for the featured strip (see `toReviewStripItems`). */
+  readonly reviews?: readonly ReviewStripItem[];
 }
 
-const { accommodation, lang, ratingBreakdown } = Astro.props;
+const { accommodation, lang, ratingBreakdown, reviews = [] } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 const hasReviews = accommodation.reviewsCount > 0;
+const dateLocale = lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR';
+const anonymousLabel = t('accommodations.detail.reviewsDetail.anonymous');
+const strip = reviews.map((review) => {
+  const name = review.name ?? anonymousLabel;
+  return {
+    ...review,
+    name,
+    initials: getInitialsFromName(name),
+    dateLabel: review.createdAt
+      ? new Date(review.createdAt).toLocaleDateString(dateLocale, { year: 'numeric', month: 'short' })
+      : ''
+  };
+});
 ---
 
 <section class="review-preview">
@@ -43,6 +60,44 @@ const hasReviews = accommodation.reviewsCount > 0;
         ratingBreakdown={ratingBreakdown}
         lang={lang}
       />
+
+      {strip.length > 0 && (
+        <ul
+          class="review-preview__strip"
+          data-review-strip
+          aria-label={t('accommodations.detail.reviewsDetail.stripLabel')}
+        >
+          {strip.map((review) => (
+            <li class="review-preview__card" data-review-card>
+              <div class="review-preview__card-header">
+                <span class="review-preview__avatar">
+                  <span class="review-preview__avatar-fallback" aria-hidden="true">{review.initials}</span>
+                  {review.image && (
+                    <img
+                      src={review.image}
+                      alt=""
+                      class="review-preview__avatar-img"
+                      width="36"
+                      height="36"
+                      loading="lazy"
+                      decoding="async"
+                      data-hide-on-error
+                    />
+                  )}
+                </span>
+                <span class="review-preview__meta">
+                  <span class="review-preview__name">{review.name}</span>
+                  {review.dateLabel && <time class="review-preview__date" datetime={review.createdAt ?? undefined}>{review.dateLabel}</time>}
+                </span>
+                {review.rating != null && (
+                  <span class="review-preview__rating"><span aria-hidden="true">&#9733;</span> {review.rating.toFixed(1)}</span>
+                )}
+              </div>
+              <p class="review-preview__text">{review.content}</p>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <GradientButton
         as="button"
@@ -85,6 +140,95 @@ const hasReviews = accommodation.reviewsCount > 0;
     color: var(--core-muted-foreground);
     font-style: italic;
     margin: 0;
+  }
+  .review-preview__strip {
+    display: flex;
+    gap: var(--space-3, 12px);
+    margin: 0;
+    padding: 0 0 var(--space-2, 8px);
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .review-preview__card {
+    flex: 0 0 min(80%, 320px);
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    padding: var(--space-4, 16px);
+    border-radius: var(--radius-card, 24px);
+    background-color: var(--core-card);
+    box-shadow: var(--shadow-card);
+  }
+  .review-preview__card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+  }
+  .review-preview__avatar {
+    position: relative;
+    inline-size: 36px;
+    block-size: 36px;
+    flex-shrink: 0;
+  }
+  .review-preview__avatar-fallback,
+  .review-preview__avatar-img {
+    position: absolute;
+    inset: 0;
+    inline-size: 36px;
+    block-size: 36px;
+    border-radius: 50%;
+  }
+  .review-preview__avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+  .review-preview__avatar-img {
+    object-fit: cover;
+  }
+  .review-preview__meta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-inline-size: 0;
+  }
+  .review-preview__name {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--core-foreground);
+  }
+  .review-preview__date {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    color: var(--core-muted-foreground);
+  }
+  .review-preview__rating {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--core-foreground);
+  }
+  .review-preview__text {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--core-foreground);
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .review-preview__view-all {
     align-self: flex-start;

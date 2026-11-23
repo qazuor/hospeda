@@ -606,7 +606,13 @@ describe('Conversation Notification Cron Job', () => {
 
             expect(mockSendEmail).toHaveBeenCalledTimes(1);
             expect(mockSendEmail.mock.calls[0]?.[0]).toMatchObject({
-                to: 'owner-b@example.com'
+                to: 'owner-b@example.com',
+                // HOS-2359: a registered recipient gets the `new-message` key
+                attribution: {
+                    medium: 'transactional',
+                    templateKey: 'conversation.new-message',
+                    includePixel: true
+                }
             });
             expect(result.processed).toBe(1);
             expect(result.errors).toBe(0);

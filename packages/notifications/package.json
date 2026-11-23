@@ -19,10 +19,12 @@
         "clean": "rm -rf node_modules && rm -rf dist",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest --passWithNoTests",
-        "test:coverage": "vitest run --coverage --passWithNoTests"
+        "test:coverage": "vitest run --coverage --passWithNoTests",
+        "email:pixel-manifest": "tsx scripts/generate-email-pixel-manifest.ts"
     },
     "dependencies": {
         "@react-email/components": "^1.0.12",
+        "@repo/analytics": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/email": "workspace:*",

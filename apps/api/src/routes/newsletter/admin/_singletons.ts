@@ -11,6 +11,7 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import { NewsletterCampaignService, ServiceError } from '@repo/service-core';
 import type { INewsletterDeliveryService } from '@repo/service-core/services/newsletter/newsletter-campaign.service';
+import { ensureUmamiPixel } from '../../../lib/umami-pixel-client';
 import { getNewsletterDeliveryService } from '../../../services/newsletter/delivery-factory';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -123,7 +124,9 @@ export async function getDefaultCampaignService(): Promise<NewsletterCampaignSer
             // Cast: getDefaultNewsletterService() returns NewsletterSubscriberService
             // which is exactly the type expected by the campaign service options.
             // biome-ignore lint/suspicious/noExplicitAny: subscriber service singleton shares the concrete class
-            subscriberService: subscriberService as any
+            subscriberService: subscriberService as any,
+            // HOS-2359: one Umami pixel per campaign at dispatch, fail-open (OD-3).
+            campaignPixelProvisioner: ensureUmamiPixel
         }
     );
     return cachedCampaignService;

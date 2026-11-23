@@ -431,6 +431,19 @@
         "clearFilters": "Clear filters"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Read more",
+            "less": "Read less"
+        },
+        "sectionTabs": {
+            "label": "Listing sections",
+            "photos": "Photos",
+            "details": "Details",
+            "amenities": "Amenities",
+            "location": "Location",
+            "reviews": "Reviews",
+            "host": "Host"
+        },
         "listingContact": {
             "bar": {
                 "inquire": "Inquire",
@@ -443,7 +456,13 @@
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Call", "email": "Email" },
                 "trust": "Your inquiry goes directly to the host. No commission."
             },
+            "channels": {
+                "title": "Contact",
+                "website": "Website",
+                "social": "Social media"
+            },
             "fields": { "checkIn": "Check-in", "checkOut": "Check-out", "guests": "Guests" },
+            "card": { "direct": "Or contact directly" },
             "errors": {
                 "checkOutAfterCheckIn": "Check-out must be after check-in",
                 "invalidDate": "Enter a valid date.",
@@ -527,6 +546,8 @@
         "gallery": {
             "viewAll": "View all photos",
             "moreOverlay": "+{{count}} more",
+            "viewAllCount_one": "See the photo",
+            "viewAllCount_other": "See all {{count}} photos",
             "viewFullscreen": "View photo {n} fullscreen",
             "backToAccommodation": "← Back to accommodation",
             "photosSubpage": "Photos"
@@ -581,6 +602,8 @@
             }
         },
         "reviewsDetail": {
+            "anonymous": "Anonymous",
+            "stripLabel": "Featured reviews",
             "noReviews": "No reviews yet",
             "viewAll_one": "View the {{count}} review",
             "viewAll_other": "View all {{count}} reviews",
@@ -603,6 +626,11 @@
                 "loading": "Loading reviews…"
             }
         },
+        "host": {
+            "title": "Your host",
+            "since": "Host since {date}",
+            "languages": "Speaks {languages}"
+        },
         "owner": {
             "memberSince": "Member since {date}",
             "contactUnavailable": "Contact information not available",
@@ -617,10 +645,14 @@
             "viewAll_one": "View the {{count}} amenity",
             "viewAll_other": "View all {{count}} amenities",
             "collapse": "View less",
+            "close": "Close",
             "additionalCost": "(additional cost)"
         },
         "features": {
-            "title": "Features"
+            "title": "Features",
+            "viewAll_one": "View the {{count}} feature",
+            "viewAll_other": "View all {{count}} features",
+            "close": "Close"
         },
         "faqsDetail": {
             "title": "Frequently asked questions",

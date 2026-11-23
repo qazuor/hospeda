@@ -78,6 +78,17 @@ const shouldProxyOwnerAvatar = ownerAvatarUrl ? isCloudinaryDeliveryUrl(ownerAva
   </div>
 </div>
 
+<!-- HOS-2537: without JS the dock bar and panel (islands) cannot open, and the
+     ContactHostShell fallback with the public channels lives inside this card,
+     so the mobile hide below must not apply. With JS the card stays hidden. -->
+<noscript>
+  <style is:inline>
+    @media (max-width: 767px) {
+      .owner-card { display: block !important; }
+    }
+  </style>
+</noscript>
+
 <style>
   .owner-card {
     position: relative;
@@ -138,6 +149,14 @@ const shouldProxyOwnerAvatar = ownerAvatarUrl ? isCloudinaryDeliveryUrl(ownerAva
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 1.2rem;
+  }
+  /* HOS-2531: below 768px the stacked sidebar would show the host a second
+   * time (HostSection already sits in the main content) and the contact lives
+   * in the dock + sheet, so the card is desktop/tablet only. */
+  @media (max-width: 767px) {
+    .owner-card {
+      display: none;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .owner-card,

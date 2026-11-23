@@ -82,6 +82,10 @@ const SRC_ROOT = join(__dirname, '../../src');
  * instead.
  */
 const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
+    'components/listing/contact/ListingChannelsPanel.client.tsx#{channel.href}':
+        'built only by `buildExperienceChannels`/`buildVenueChannels` (`lib/listing-contact/listing-channels.ts`), which pass every website and social URL through `resolveSafeExternalUrl` and compose tel:/mailto: themselves',
+    'components/listing/contact/ListingContactActions.tsx#{primaryLink.href}':
+        'the venue menu link, produced by `resolveVenueContactMode`, which passes `menuUrl` through `resolveSafeExternalUrl` and yields no link when it returns undefined',
     'components/ImageGallery.client.tsx#{credit.url}':
         '`PhotoCreditParts.url`, produced by `formatPhotoCredit`, which calls the sanitizer itself',
     'components/shared/ImageAttribution.astro#{credit.url}':
@@ -91,7 +95,9 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
     'components/venue/VenueAddress.astro#{mapUrl}':
         '`buildVenueMapUrl` composes `https://www.openstreetmap.org/` from two `Number()`-parsed coordinates; non-finite values yield null, so the scheme and host are our literal',
     'components/ShareButtons.client.tsx#{link.href}':
-        'share intents composed in this file from literal provider bases (wa.me, facebook.com/sharer, t.me)',
+        'share intents composed by lib/share-intents.ts from literal provider bases (wa.me, facebook.com/sharer, twitter.com/intent, t.me)',
+    'components/presentacion/PresentationShareRow.client.tsx#{buildShareIntentUrl({ network: action.network, url: shortUrl(action.network), title: presentation.headline })}':
+        'HOS-2359: the same lib/share-intents.ts builder (literal provider bases), sharing a /go/ short link this app composed on its own site origin',
     'components/accommodation/ExternalReviews.client.tsx#{GOOGLE_ATTRIBUTION_HREF}':
         "module constant 'https://www.google.com/maps', required by the Google Places display policy",
     'components/accommodation/ExternalReputationSummaryRow.astro#{deepLinkHref}':

@@ -33,7 +33,9 @@ describe('ContactHostShell.astro (source-based)', () => {
         expect(src).not.toContain('href={contactInfo.website}');
     });
 
-    it('is wrapped around the sidebar ContactHost island on the page', () => {
-        expect(page).toMatch(/<ContactHostShell[^>]*>\s*<ContactHost\s+client:idle/);
+    it('is wrapped around the sidebar contact card island (it hosts ContactHost) on the page', () => {
+        expect(page).toMatch(
+            /<ContactHostShell[^>]*>\s*<ListingContactCard\s+client:media="\(min-width: 768px\)"/
+        );
     });
 });

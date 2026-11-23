@@ -25,6 +25,7 @@ import {
 } from '@repo/notifications';
 import { NotificationRecipientSideEnum } from '@repo/schemas';
 import { and, desc, eq, isNull } from 'drizzle-orm';
+import { CONVERSATION_EMAIL_KEYS } from '../../utils/email-attribution';
 import { env } from '../../utils/env.js';
 import type { CronJobContext } from '../types.js';
 
@@ -47,6 +48,10 @@ export interface ResolvedNotification {
     readonly recipientEmail: string;
     readonly subject: string;
     readonly emailTemplate: EmailTemplate;
+    /** Email catalog key of the template, for attribution (HOS-2359). */
+    readonly templateKey:
+        | typeof CONVERSATION_EMAIL_KEYS.newMessage
+        | typeof CONVERSATION_EMAIL_KEYS.newMessageAnon;
 }
 
 /** Dependencies for `resolveNotification`, grouped RO-RO style. */
@@ -203,6 +208,9 @@ export async function resolveNotification(
         recipientSide: schedule.recipientSide,
         recipientEmail,
         subject: buildConversationNewMessageSubject({ accommodationName }),
-        emailTemplate
+        emailTemplate,
+        templateKey: isAnonymous
+            ? CONVERSATION_EMAIL_KEYS.newMessageAnon
+            : CONVERSATION_EMAIL_KEYS.newMessage
     };
 }

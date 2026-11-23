@@ -121,7 +121,13 @@ describe('AmenitiesGrid extra-charge badge wiring (HOS-2084)', () => {
         );
     });
 
-    it('renders each resolved badge in an amenity-item__badge element', () => {
-        expect(grid).toContain('class="amenity-item__badge"');
+    it('hands each resolved badge to ListingPill, which renders it in a listing-pill__badge element (HOS-2528)', () => {
+        const pill = readFileSync(
+            resolve(__dirname, '../../src/components/listing/ListingPill.astro'),
+            'utf8'
+        );
+        expect(grid).toMatch(/badges:\s*resolveAmenityAttributeBadges/);
+        expect(grid).toContain('<ListingPill {...entry} />');
+        expect(pill).toContain('class="listing-pill__badge"');
     });
 });

@@ -32,15 +32,17 @@ import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import LocationSection from '@/components/accommodation/LocationSection.astro';
 import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.astro';
+import WaveDivider from '@/components/shared/ui/WaveDivider.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import ContactHostShell from '@/components/accommodation/ContactHostShell.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
-import { ContactHost } from '@/components/accommodation/ContactHost.client';
+import HostSection from '@/components/accommodation/HostSection.astro';
+import { toReviewStripItems } from '@/lib/review-strip';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
-import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
 import { ListingContactPanel } from '@/components/listing/contact/ListingContactPanel.client';
+import { ListingContactCard } from '@/components/listing/contact/ListingContactCard.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
@@ -58,7 +60,10 @@ import type { NearbyPoi } from '@repo/schemas';
 import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
+import ClampedText from '@/components/listing/ClampedText.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
+import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
+import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translateAmenityName } from '@/lib/catalog-names';
 import {
@@ -314,6 +319,7 @@ const ratingBreakdown = (() => {
 // Posts and events: pass raw items for lightweight cards
 const postItems = extractItems(postsResult);
 const eventItems = extractItems(eventsResult).slice(0, 6);
+const hasRelatedContent = similarCards.length + ownerCards.length + postItems.length + eventItems.length > 0;
 
 // Active promotions for this accommodation — graceful degradation via extractItems.
 const activePromos = extractItems(promotionsResult) as unknown as OwnerPromotionPublicItem[];
@@ -535,6 +541,23 @@ const breadcrumbItems = [
     { name: accommodation.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
 
+// --- Sticky section tabs (HOS-2527) ---
+// A tab exists only when its section does.
+const hasDescriptionSection = Boolean(
+    accommodation.summary || accommodation.description || accommodation.richDescription
+);
+const hasAmenitiesSection = accommodation.features.length > 0 || accommodation.amenities.length > 0;
+const sectionTabs = buildListingSectionTabs({
+    present: {
+        photos: true,
+        details: hasDescriptionSection,
+        amenities: hasAmenitiesSection,
+        location: true,
+        reviews: true,
+        host: true
+    }
+});
+
 // --- FAQPage JSON-LD when FAQs exist (REQ-096-37 / T-067) ---
 const faqSections = accommodation.faqs.map((faq) => ({
     heading: faq.question,
@@ -605,6 +628,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
     <!-- Main content -->
     <div class="acc-detail">
+        <div id={LISTING_SECTION_IDS.photos} class="acc-anchor">
         <ImageGallery
             images={galleryImages}
             variant="detail"
@@ -612,10 +636,22 @@ const faqSections = accommodation.faqs.map((faq) => ({
             viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
             mobile={{
                 backHref: buildUrl({ locale, path: 'alojamientos' }),
-                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name },
+                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name, campaign: 'accommodation' },
                 favorite: { entityId: accommodation.id, entityType: 'ACCOMMODATION', variant: 'standalone' }
             }}
             client:load
+        />
+        </div>
+        <ListingSectionTabs
+            client:load
+            tabs={sectionTabs}
+            locale={locale}
+            vertical="accommodation"
+            listingId={accommodation.id}
+            price={contactPrice}
+            panelId={panelId}
+            primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
+            galleryId={LISTING_SECTION_IDS.photos}
         />
         <QuickFacts extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
         <MobileBookingSummary
@@ -629,6 +665,8 @@ const faqSections = accommodation.faqs.map((faq) => ({
             ownerJoinedAt={result.data.owner?.createdAt ?? null}
             hasWhatsapp={accommodation.hasWhatsapp}
         />
+        {hasDescriptionSection && (
+        <div id={LISTING_SECTION_IDS.details} class="acc-anchor">
         {accommodation.richDescription ? (
             <section class="description-rich">
                 {accommodation.summary && (
@@ -636,10 +674,14 @@ const faqSections = accommodation.faqs.map((faq) => ({
                         <p>{accommodation.summary}</p>
                     </div>
                 )}
-                <div class="description-rich__body" set:html={safeRichDescriptionHtml} />
+                <ClampedText lang={locale}>
+                    <div class="description-rich__body" set:html={safeRichDescriptionHtml} />
+                </ClampedText>
             </section>
         ) : (
-            <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
+            <Description lang={locale} summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
+        )}
+        </div>
         )}
 
         <!-- Videos (HOS-1022): its own section, deliberately separate from the
@@ -659,13 +701,18 @@ const faqSections = accommodation.faqs.map((faq) => ({
             locale={locale}
         />
 
-        <FeaturesGrid features={accommodation.features} lang={locale} />
-        <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
+        {hasAmenitiesSection && (
+            <div id={LISTING_SECTION_IDS.amenities} class="acc-anchor acc-anchor--stack">
+                <FeaturesGrid features={accommodation.features} lang={locale} />
+                <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
+            </div>
+        )}
         <ListingHouseRules policies={accommodation.policies} locale={locale} />
 
         <PromotionBanner promos={activePromos} locale={locale} />
 
-        <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} lang={locale}>
+        <div id={LISTING_SECTION_IDS.reviews} class="acc-anchor">
+        <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} reviews={toReviewStripItems({ items: reviewItems })} lang={locale}>
             <ReviewsModal
                 client:idle
                 accommodationId={accommodation.id}
@@ -673,6 +720,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                 locale={locale}
             />
         </ReviewPreview>
+        </div>
 
         {/* AC-4.4: external reputation block is isolated — does NOT touch
             averageRating / reviewsCount from internal reviews */}
@@ -684,6 +732,10 @@ const faqSections = accommodation.faqs.map((faq) => ({
         )}
 
         <FaqAccordion faqs={accommodation.faqs} lang={locale} />
+        <div id={LISTING_SECTION_IDS.host} class="acc-anchor">
+        <HostSection owner={accommodation.owner} accommodationId={accommodation.id} panelId={panelId} spokenLanguages={accommodation.policies.spokenLanguages} lang={locale} />
+        </div>
+        <div id={LISTING_SECTION_IDS.location} class="acc-anchor acc-anchor--stack">
         <LocationSection
             destination={accommodation.destination}
             approximateLocation={accommodation.approximateLocation}
@@ -691,10 +743,12 @@ const faqSections = accommodation.faqs.map((faq) => ({
             lang={locale}
         />
         <WhatsNearbySection pointsOfInterest={nearbyPois} locale={locale} />
+        </div>
     </div>
 
     <Fragment slot="after-content">
     <!-- Full-width related content after the main article and host sidebar. -->
+    {hasRelatedContent && <WaveDivider />}
     {similarCards.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.similar')} ariaLabel={t('accommodations.detail.related.similar')} lang={locale} count={similarCards.length}>
             {similarCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
@@ -818,24 +872,19 @@ const faqSections = accommodation.faqs.map((faq) => ({
             </PriceAlertButton>
             <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} lang={locale}>
                 <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
-                    <ContactHost
-                        client:idle
+                    <ListingContactCard
+                        client:media="(min-width: 768px)"
                         accommodation={contactAccommodation}
-                        locale={locale}
+                        accommodationName={accommodation.name}
+                        hasWhatsapp={accommodation.hasWhatsapp}
+                        whatsappPlansHref={whatsappPlansHref}
+                        gatePlanNames={whatsappGatePlanNames}
+                        phone={accommodation.contactInfo?.phone}
+                        capacity={accommodation.extraInfo?.capacity}
                         initialMessage={prefilledMessage}
-                        origin="sidebar"
+                        locale={locale}
                     />
                 </ContactHostShell>
-                {accommodation.hasWhatsapp && (
-                    <WhatsAppContact
-                        client:idle
-                        accommodationId={accommodation.id}
-                        accommodationName={accommodation.name}
-                        plansHref={whatsappPlansHref}
-                        gatePlanNames={whatsappGatePlanNames}
-                        locale={locale}
-                    />
-                )}
             </OwnerCard>
             <!-- client:idle, NOT client:visible (which it used to be). The
                  island now SSRs the anonymous sign-in CTA and swaps itself in
@@ -888,6 +937,18 @@ const faqSections = accommodation.faqs.map((faq) => ({
         }
     }
     .acc-detail {
+        /* Height of the sticky section tabs; also offsets anchored sections. */
+        --listing-tabs-height: 48px;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8, 32px);
+    }
+    /* Section anchors land below navbar + wave band (global scroll-padding)
+       plus the sticky tabs. */
+    .acc-anchor {
+        scroll-margin-top: calc(var(--listing-tabs-height) + 8px);
+    }
+    .acc-anchor--stack {
         display: flex;
         flex-direction: column;
         gap: var(--space-8, 32px);

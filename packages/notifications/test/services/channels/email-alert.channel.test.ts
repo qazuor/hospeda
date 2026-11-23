@@ -12,6 +12,7 @@
 
 import type { ILogger } from '@repo/logger';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { findEmailCatalogEntry } from '../../../src/catalog/catalog';
 import { EmailAlertChannel } from '../../../src/services/channels/email-alert.channel.js';
 import { MockEmailTransport } from '../../../src/transports/email/mock-transport.js';
 import type { AlertDigestPayload, PriceDropMatch } from '../../../src/types/alert.types.js';
@@ -73,6 +74,13 @@ describe('EmailAlertChannel', () => {
             // Assert
             expect(transport.sentEmails).toHaveLength(1);
             expect(transport.sentEmails[0]?.to).toBe('user@example.com');
+            // HOS-2359: attributed to its catalog key, which exists.
+            expect(transport.sentEmails[0]?.attribution).toEqual({
+                medium: 'transactional',
+                templateKey: 'alert-digest.alerts-digest',
+                includePixel: true
+            });
+            expect(findEmailCatalogEntry({ key: 'alert-digest.alerts-digest' })).toBeDefined();
         });
 
         it('should send an email when promoOffers has at least one item', async () => {

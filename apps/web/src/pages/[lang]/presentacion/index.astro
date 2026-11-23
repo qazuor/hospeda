@@ -21,73 +21,20 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 
 import '@/styles/presentacion.css';
 import PresentationThemeToggle from '@/components/presentacion/PresentationThemeToggle.astro';
-import HospedinFigure, { type HospedinPose } from '@/components/presentacion/HospedinFigure.astro';
+import HospedinFigure from '@/components/presentacion/HospedinFigure.astro';
+import { PresentationShareRow } from '@/components/presentacion/PresentationShareRow.client';
 import PresentationBrandBar from '@/components/presentacion/PresentationBrandBar.astro';
 import PresentationFooter from '@/components/presentacion/PresentationFooter.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getSiteUrl } from '@/lib/env';
 import { buildUrl } from '@/lib/urls';
+// HOS-2359: the list lives next to the `/go/` short links derived from it.
+import { PRESENTATIONS } from '@/lib/attribution/presentation-links';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
-/** One presentation listed on this index. */
-interface PresentationEntry {
-	readonly slug: string;
-	readonly name: string;
-	readonly audience: string;
-	readonly headline: string;
-	/** The Hospedín pose that page's masthead uses, so the card previews it. */
-	readonly pose: HospedinPose;
-}
-
 const locale = Astro.locals.locale as SupportedLocale;
-
-/** Every `/presentacion/<slug>/` page, in the order they are listed. */
-const PRESENTATIONS: readonly PresentationEntry[] = [
-	{
-		slug: 'alojamientos',
-		name: 'Alojamientos',
-		audience: 'Cabañas, casas, departamentos, hoteles y complejos',
-		headline: 'Publicá tu alojamiento en Hospeda',
-		pose: 'telefono'
-	},
-	{
-		slug: 'comer-y-salir',
-		name: 'Comer y salir',
-		audience: 'Restaurantes, bares, cafés, cervecerías y boliches',
-		headline: 'Tu local donde se planea el viaje',
-		pose: 'senalando'
-	},
-	{
-		slug: 'experiencias',
-		name: 'Experiencias',
-		audience: 'Excursiones, paseos, alquileres, clases y actividades',
-		headline: 'Publicá lo que le ofertás al turista',
-		pose: 'vamos'
-	},
-	{
-		slug: 'proveedores',
-		name: 'Proveedores',
-		audience: 'Oficios y servicios para los anfitriones',
-		headline: 'Sumate como proveedor de servicios',
-		pose: 'lamparita'
-	},
-	{
-		slug: 'aliados',
-		name: 'Aliados',
-		audience: 'Comercios, municipios, instituciones y organizaciones',
-		headline: 'Acompañá al turismo del Litoral',
-		pose: 'te-explico'
-	},
-	{
-		slug: 'editores',
-		name: 'Editores',
-		audience: 'Quienes escriben notas y cargan la agenda',
-		headline: 'Contá el Litoral que conocés',
-		pose: 'camara'
-	}
-] as const;
 
 // --- Edge cacheability (HOS-369 W2-2) ---
 // No session and no API call: hardcoded copy, same class and tag as the presentations.
@@ -99,7 +46,8 @@ applyCacheHeaders({
 	tags: [CACHE_TAG_SITE_CONFIG]
 });
 
-const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/`;
+const siteUrl = getSiteUrl();
+const canonical = `${siteUrl.replace(/\/$/, '')}/${locale}/presentacion/`;
 ---
 
 <StandaloneLayout locale={locale}>
@@ -127,7 +75,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/`;
     <div class="rule"></div>
     <p class="masthead__lede">
       Una presentación para cada tipo de negocio o colaborador. Elegí la que corresponde y
-      compartí su enlace.
+      compartila con el botón de la red por la que la mandás: cada uno da su propio enlace
+      corto, así sabemos por dónde llegó cada visita.
     </p>
     </div>
     <HospedinFigure pose="saludando" placement="hero" say="¡Hola! Elegí la tuya" />
@@ -149,6 +98,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/`;
                 <span class="deck__url">hospeda.com.ar/presentacion/<wbr />{entry.slug}</span>
               </span>
             </a>
+            {/* HOS-2359: the links to SEND. Each hands out this presentation's
+                /go/ short link for its channel; the card link above stays canonical. */}
+            <PresentationShareRow presentation={entry} siteUrl={siteUrl} locale={locale} client:visible />
           </li>
         );
       })}

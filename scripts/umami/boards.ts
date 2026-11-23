@@ -3,7 +3,8 @@ import { buildBoardDefinition, HOSPEDA_FUNNELS, HOSPEDA_GOALS } from './definiti
 
 /**
  * The six Umami boards that replace the PostHog dashboards `00 Resumen` ...
- * `05 Calidad` (HOS-2119, T-039 and T-040). Pure data plus one pure builder:
+ * `05 Calidad` (HOS-2119, T-039 and T-040), plus the `Attribution` board
+ * (HOS-2359, OD-10). Pure data plus one pure builder:
  * no I/O, no clock, so the output is deterministic (AC-6, idempotent setup).
  *
  * ORDER OF OPERATIONS: Funnel and Goal components store `props.reportId`, the id
@@ -51,7 +52,7 @@ const G_SUBSCRIPTION = goalName(3);
 const G_CHARGE = goalName(4);
 const G_TRIAL = goalName(5);
 
-/** The six boards, in dashboard order. */
+/** The seven boards, in dashboard order (`Attribution` last). */
 export const BOARD_SPECS: readonly BoardSpec[] = [
     {
         name: '00 Resumen',
@@ -221,6 +222,42 @@ export const BOARD_SPECS: readonly BoardSpec[] = [
                     title: 'Contacto de alojamiento (3 pasos)',
                     reportName: F_CONTACT_3
                 }
+            ]
+        ]
+    },
+    {
+        // HOS-2359 (OD-10). Named literally as the owner wrote it, unlike the
+        // numbered boards above. Built from `MetricsTable` because the 3.5.0
+        // registry has no attribution or pixel component (M-3); first-click
+        // attribution lives in the saved reports of `attribution-definitions.ts`,
+        // and email opens are read per pixel in Umami → Pixels.
+        name: 'Attribution',
+        description:
+            'De dónde vienen las visitas: UTM de emails, botones de compartir, QR y presentaciones, y sus conversiones.',
+        rows: [
+            [
+                {
+                    kind: 'metricsTable',
+                    title: 'Visitantes por UTM source',
+                    dimension: 'utmSource'
+                },
+                { kind: 'metricsTable', title: 'Visitantes por UTM medium', dimension: 'utmMedium' }
+            ],
+            [
+                {
+                    kind: 'metricsTable',
+                    title: 'Visitantes por UTM campaign',
+                    dimension: 'utmCampaign'
+                },
+                {
+                    kind: 'metricsTable',
+                    title: 'Visitantes por UTM content',
+                    dimension: 'utmContent'
+                }
+            ],
+            [
+                { kind: 'goal', title: 'Registros completados', reportName: G_SIGNUP },
+                { kind: 'goal', title: 'Contactos completados', reportName: G_CONTACT }
             ]
         ]
     }

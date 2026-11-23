@@ -18,6 +18,19 @@ vi.mock('@react-email/render', () => ({
     )
 }));
 
+const attributionWarn = vi.hoisted(() => vi.fn());
+vi.mock('@repo/logger', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/logger')>();
+    return {
+        ...actual,
+        createLogger: (category: string) =>
+            category === 'email-attribution'
+                ? { ...actual.createLogger(category), warn: attributionWarn }
+                : actual.createLogger(category)
+    };
+});
+
+import { configureEmailAssets, resetEmailAssets } from '@repo/email';
 import type { EmailClient } from '../../src/config/resend.config';
 import { NOTIFICATION_CONSTANTS } from '../../src/constants/notification.constants';
 import type { SendEmailInput } from '../../src/transports/email/email-transport.interface';
@@ -41,6 +54,11 @@ function createTestInput(overrides?: Partial<SendEmailInput>): SendEmailInput {
         to: 'recipient@example.com',
         subject: 'Test Subject',
         react: {} as ReactElement,
+        attribution: {
+            medium: 'transactional',
+            templateKey: 'notification.payment_success',
+            includePixel: true
+        },
         ...overrides
     };
 }
@@ -106,6 +124,50 @@ describe('BrevoEmailTransport', () => {
             const body = JSON.parse((init as RequestInit).body as string);
             expect(body.htmlContent).toBe('<html><body>rendered</body></html>');
             expect(body.textContent).toBe('rendered as plain text');
+        });
+
+        it('forwards the attribution to the renderer (HOS-2359)', async () => {
+            // Arrange
+            configureEmailAssets({
+                siteUrl: 'https://hospeda.com.ar',
+                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
+            });
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput());
+            resetEmailAssets();
+
+            // Assert
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.htmlContent).toContain(
+                '<img src="https://pulso.hospeda.com.ar/p/email-notification-payment-success"'
+            );
+            expect(attributionWarn).not.toHaveBeenCalled();
+        });
+
+        it('warns once per process for a template key that is not in the catalog', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockImplementation(async () => jsonResponse({ messageId: '<msg@brevo>' }));
+            const input = createTestInput({
+                attribution: {
+                    medium: 'transactional',
+                    templateKey: 'notification.not-a-real-template',
+                    includePixel: true
+                }
+            });
+
+            // Act
+            await transport.send(input);
+            await transport.send(input);
+
+            // Assert
+            expect(attributionWarn).toHaveBeenCalledTimes(1);
+            expect(attributionWarn.mock.calls[0]?.[0]).toEqual({
+                templateKey: 'notification.not-a-real-template'
+            });
         });
 
         it('should default to fromEmail/fromName when no `from` is provided', async () => {

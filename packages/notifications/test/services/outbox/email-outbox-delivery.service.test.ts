@@ -6,6 +6,7 @@
  * `packages/db/test/integration/email-outbox-delivery.integration.test.ts`.
  */
 import { describe, expect, it } from 'vitest';
+import { findEmailCatalogEntry } from '../../../src/catalog/catalog';
 import { EMAIL_OUTBOX_CONSTANTS } from '../../../src/constants/notification.constants';
 import {
     EmailHardBounceError,
@@ -148,6 +149,24 @@ describe('TEST:U2:8 one attempt record, in notification_log only', () => {
         expect(h.send).toHaveBeenCalledWith(
             expect.objectContaining({ to: 'captured@example.com' })
         );
+    });
+
+    it('attributes the mail to its catalog key `outbox.<template>` (HOS-2359)', async () => {
+        // Arrange
+        const r = row({ template: COMMERCIAL });
+        const h = harness([r]);
+
+        // Act
+        await run(h);
+
+        // Assert
+        const [input] = h.send.mock.calls[0] as [{ attribution: unknown }];
+        expect(input.attribution).toEqual({
+            medium: 'transactional',
+            templateKey: `outbox.${COMMERCIAL}`,
+            includePixel: true
+        });
+        expect(findEmailCatalogEntry({ key: `outbox.${COMMERCIAL}` })).toBeDefined();
     });
 
     it('a refused attempt leaves one `failed` record and returns the row to `retry`', async () => {

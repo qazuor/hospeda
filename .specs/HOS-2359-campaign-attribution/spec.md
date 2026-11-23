@@ -461,6 +461,13 @@ Why a new var instead of `HOSPEDA_UMAMI_API_KEY`: that key is view-only by regis
 contract and is used on authenticated owner-panel renders; widening it would give every
 stats read write power. `UMAMI_SETUP_*` are script-only and admin-level.
 
+**HOS-2347 AC-S6 exception (owner decision, 2026-11-23).** HOS-2347 guards that the api
+holds no write-capable Umami credential (`apps/api/test/guards/no-umami-write-credential.guard.test.ts`).
+This key is its second, scoped exception, beside `HOSPEDA_UMAMI_DATABASE_URL`: only
+`env-schema.ts` and `umami-pixel-client.ts` may name it, the client may call no endpoint
+besides `/api/pixels`, and the key's Umami account must NOT own the main website, so it
+cannot write the recorder config HOS-2347 protects.
+
 #### 6.B.2 Pixel client (api)
 
 `apps/api/src/lib/umami-pixel-client.ts`, mirroring `umami-stats-client.ts` (native
@@ -773,9 +780,10 @@ update the guard; if M-2 shows a different path, change `UMAMI_PIXEL_PATH`.
   link whose origin is in `buildOwnWebOrigins` has `utm_source=email`,
   `utm_medium=transactional`, `utm_campaign=<toUtmToken(key)>` and a non-empty
   `utm_content`, and links to other hosts are byte-identical to the unattributed render.
-- **AC-2** Given the same render, then the HTML contains exactly one
-  `<img src="<HOSPEDA_UMAMI_URL>/p/email-<toUtmToken(key)>" width="1" height="1" alt="">`
-  before `</body>`, with no query string, and the text part contains no pixel URL.
+- **AC-2** Given the same render, then the HTML contains exactly one 1x1 `<img>` whose
+  `src` is `<HOSPEDA_UMAMI_URL>/p/email-<toUtmToken(key)>` (no query string), placed
+  before `</body>`, and the text part contains no pixel URL. Other attributes (`alt`,
+  inline `style`, self-closing form) are implementation detail.
 - **AC-3** Given two renders of the same template for two different recipients, then the
   pixel `src` values are identical.
 - **AC-4** Given `HOSPEDA_UMAMI_URL` unset or not `https:`, when any email renders, then
@@ -797,7 +805,7 @@ update the guard; if M-2 shows a different path, change `UMAMI_PIXEL_PATH`.
 - **AC-11** Given Umami times out (> 3000 ms), answers 5xx, or the pixel key is unset,
   when a campaign is sent, then `send()` succeeds within the timeout budget plus normal
   work, `umami_pixel_slug` is `NULL`, the messages have UTMs and no pixel, and one `warn`
-  is logged.
+  per process is logged (a missing key warns once, not per send, to avoid log spam).
 - **AC-12** Given a pixel slug that already exists (retried dispatch), when the
   provisioner runs, then it returns the existing slug and creates nothing.
 - **AC-13** Given a newsletter test send, then the message has campaign UTMs and no pixel.

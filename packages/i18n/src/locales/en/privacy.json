@@ -60,6 +60,10 @@
             "title": "Session recordings and heatmaps",
             "body": "If you accept analytics cookies, Hospeda may record browsing sessions and click and scroll heatmaps using Umami, an analytics tool that we host ourselves. Recordings are pseudonymous: if you are logged in, they may be associated with your account identifier. Recording only happens if you have accepted analytics cookies, and only while this feature is switched on. All text and all form inputs are masked, so what you type is not recorded. Only a sample of sessions is recorded, not all of them. Recordings are kept for a limited period of up to 60 days and are then deleted automatically."
         },
+        "emailAttribution": {
+            "title": "Emails, campaign links and QR codes",
+            "body": "The emails we send you include a tiny, invisible image that tells us, in aggregate, how many times an email of each type was opened. That image does not identify you: everyone who receives the same email gets exactly the same image, with no data about you. Links in our emails, links shared from the site, printed QR codes and the links to our presentations carry campaign parameters (UTM) that tell us which channel a visit came from; we analyse them with Umami, an analytics tool we host ourselves. Brevo, our email delivery provider, also measures opens and clicks of newsletter emails. Image blocking and the privacy features of email apps make the open count approximate. There is no individual option to opt out of this count: if you block images in your email app, the open is not counted."
+        },
         "dataSecurity": {
             "title": "6. Data Security",
             "body": "We implement technical and organizational security measures to protect your personal information against unauthorized access, loss, or destruction. However, no internet transmission system is completely secure.",

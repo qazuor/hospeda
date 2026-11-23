@@ -41,7 +41,9 @@ vi.mock('../../src/lib/i18n', () => ({
                 );
             }
             return fallback ?? _key;
-        }
+        },
+        tPlural: (_key: string, count: number) =>
+            count === 1 ? 'Ver la foto' : `Ver las ${count} fotos`
     })
 }));
 

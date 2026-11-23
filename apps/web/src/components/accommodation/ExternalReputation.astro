@@ -30,6 +30,7 @@ import { ExternalLinkIcon } from '@repo/icons';
 import type { ExternalReputationBlock, ExternalReputationPlatformItem } from '@repo/schemas';
 import { ExternalReviews } from './ExternalReviews.client';
 import ExternalReputationSummaryRow from './ExternalReputationSummaryRow.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
@@ -157,23 +158,24 @@ const linkOnlyItems = selectLinkOnlyReputationItems({ items }).filter(
     {/* ── Google CTA (the one Google link while the reviews are shown) ── */}
     {showGoogleCta && (
         <div class={styles.reviewsFooter}>
-            <a
+            <GradientButton
                 href={googleHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                class={styles.seeAllLink}
-            >
-                <span>
-                    {googleReviewsCount != null
+                variant="outline-primary"
+                size="sm"
+                label={
+                    googleReviewsCount != null
                         ? tPlural('external-reputation.reviews.seeAllOn', googleReviewsCount, {
                               platform: googlePlatformName
                           })
                         : t('external-reputation.link.viewOn', 'Ver en {{platform}}', {
                               platform: googlePlatformName
-                          })}
-                </span>
-                <ExternalLinkIcon size="sm" aria-hidden="true" />
-            </a>
+                          })
+                }
+            >
+                <ExternalLinkIcon slot="trailing" size="sm" aria-hidden="true" />
+            </GradientButton>
         </div>
     )}
 

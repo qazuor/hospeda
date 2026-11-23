@@ -9,11 +9,24 @@
  * @module email
  */
 
+export type {
+    ApplyEmailAttributionInput,
+    ApplyEmailAttributionResult,
+    EmailAttribution
+} from './attribution.js';
+// Attribution (HOS-2359)
+export { applyEmailAttribution, buildEmailPixelUrl, UMAMI_PIXEL_PATH } from './attribution.js';
 export type { CreateEmailClientInput, EmailClient } from './client.js';
 // Client
 export { createEmailClient } from './client.js';
 export type { ConfigureEmailAssetsInput } from './email-assets.js';
-export { configureEmailAssets, resetEmailAssets, resolveEmailIsotipoUrl } from './email-assets.js';
+export {
+    configureEmailAssets,
+    resetEmailAssets,
+    resolveEmailIsotipoUrl,
+    resolveEmailPixelBaseUrl,
+    resolveEmailSiteOrigin
+} from './email-assets.js';
 export type { RenderEmailBodiesInput, RenderedEmailBodies } from './render.js';
 // Rendering
 export { renderEmailBodies } from './render.js';
