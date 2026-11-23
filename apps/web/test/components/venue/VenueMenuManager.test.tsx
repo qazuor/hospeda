@@ -29,7 +29,10 @@ vi.mock('../../../src/components/venue/VenueMenuManager.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+// The kit pieces (Repeater, save bar) read the real `createT`, so the module
+// is spread and only `createTranslations` returns the inline fallbacks.
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string>) =>
             (fallback ?? key).replace(
@@ -91,6 +94,17 @@ const mockGet = vi.mocked(apiClient.getProtected);
 const mockPut = vi.mocked(apiClient.put);
 
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';
+
+/**
+ * Saves the carta through the editor save bar (HOS-2487). The bar only shows
+ * on a dirty draft, so the dish name gets a trailing space first: the payload
+ * trims it, so the body sent is the stored document unchanged.
+ */
+async function saveCarta(): Promise<void> {
+    const name = await screen.findByDisplayValue('Empanadas');
+    fireEvent.change(name, { target: { value: 'Empanadas ' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Guardar cambios' }));
+}
 
 /** A carta with one course and one dish priced at ARS 2.500 (250 000 centavos). */
 const LOADED_MENU = {
@@ -204,7 +218,7 @@ describe('VenueMenuManager (HOS-895)', () => {
             expect(screen.getByDisplayValue('Entradas')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+        await saveCarta();
 
         await waitFor(() => {
             expect(mockPut).toHaveBeenCalledTimes(1);
@@ -340,7 +354,7 @@ describe('VenueMenuManager (HOS-895)', () => {
             expect(screen.getByDisplayValue('Entradas')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+        await saveCarta();
 
         await waitFor(() => {
             expect(screen.getByTestId('venue-menu-plan-notice')).toHaveTextContent(/plan Plan X/);
@@ -349,7 +363,8 @@ describe('VenueMenuManager (HOS-895)', () => {
         // The photo/PDF upload needs the SAME entitlement, so the notice must not
         // offer it as a way out (the old copy did, and that upload 403'd too).
         expect(screen.queryByText(/Mientras tanto/)).toBeNull();
-        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeDisabled();
+        // No further carta edit can be saved, so the carta is read-only.
+        expect(screen.getByRole('button', { name: 'Agregar sección' })).toBeDisabled();
     });
 
     // ── The photo per dish (HOS-1045) ───────────────────────────────────────
@@ -380,7 +395,7 @@ describe('VenueMenuManager (HOS-895)', () => {
             expect(screen.getByDisplayValue('Entradas')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+        await saveCarta();
 
         await waitFor(() => {
             expect(mockPut).toHaveBeenCalledTimes(1);
@@ -446,17 +461,16 @@ describe('VenueMenuManager (HOS-895)', () => {
             expect(screen.getByDisplayValue('Entradas')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+        await saveCarta();
 
-        await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/plan Plan Fotos/);
-        });
+        expect(await screen.findByText(/plan Plan Fotos/)).toBeInTheDocument();
 
         // And Save stays usable. The way out of this refusal is to remove the
         // photos and save the carta without them, which a disabled button would
         // make impossible — the reason this lock is a separate state from the
         // carta lock, which DOES disable Save.
-        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeEnabled();
+        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled();
+        expect(screen.getByRole('button', { name: 'Agregar sección' })).toBeEnabled();
     });
 
     it('shows a genuine failure as a failure, not as an upsell', async () => {
@@ -477,13 +491,11 @@ describe('VenueMenuManager (HOS-895)', () => {
             expect(screen.getByDisplayValue('Entradas')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+        await saveCarta();
 
         // The mirror of the case above: without it, a component that showed the
         // upsell for EVERY failure would pass that test.
-        await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent('No se pudo guardar la carta.');
-        });
+        expect(await screen.findByText('No se pudo guardar la carta.')).toBeInTheDocument();
     });
 });
 
@@ -653,7 +665,8 @@ describe('menu plan gate', () => {
             expect(input).toBeDisabled();
         });
         expect(input).toHaveAttribute('aria-describedby', notice.id);
-        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeDisabled();
+        // The carta fields are read-only, so no save can be offered.
+        expect(screen.getByRole('button', { name: 'Agregar sección' })).toBeDisabled();
     });
 
     it('a PAID owner who never trialed gets the plan reason, never "publish to unlock"', async () => {
@@ -734,11 +747,11 @@ describe('menu plan gate', () => {
         renderPanel();
         await screen.findByDisplayValue('Entradas');
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+        await saveCarta();
 
         expect(await screen.findByText('No se pudo guardar la carta.')).toBeTruthy();
         expect(screen.queryByTestId('venue-menu-plan-notice')).toBeNull();
-        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeEnabled();
+        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeEnabled();
     });
 
     it('«Eliminar» is disabled while the menu is gated', async () => {
@@ -819,7 +832,7 @@ describe('menu plan gate', () => {
         expect(mockFreshEntitlements).not.toHaveBeenCalled();
         expect(screen.queryByTestId('venue-menu-plan-notice')).toBeNull();
         expect(container.querySelector('input[type="file"]')).toBeEnabled();
-        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeEnabled();
+        expect(screen.getByDisplayValue('Empanadas')).toBeEnabled();
         expect(screen.getByRole('button', { name: 'Agregar sección' })).toBeEnabled();
     });
 });

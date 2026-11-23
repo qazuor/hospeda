@@ -17,7 +17,8 @@ import { VenueMenuManager } from '@/components/venue/VenueMenuManager.client';
 import type { EntitlementsData } from '@/lib/entitlements-cache';
 import { getEntitlementsCached } from '@/lib/entitlements-cache';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         tPlural: (key: string) => key

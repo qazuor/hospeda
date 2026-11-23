@@ -2181,6 +2181,16 @@
         "editorShell": {
             "backToHub": "Back to the editor",
             "backToList": "Back to the list"
+        },
+        "repeater": {
+            "add": "Add",
+            "moveUp": "Move {{item}} up",
+            "moveDown": "Move {{item}} down",
+            "remove": "Remove {{item}}",
+            "removeShort": "Remove",
+            "confirmTitle": "Remove “{{item}}”?",
+            "confirmDescription": "The row leaves the list.",
+            "confirmLabel": "Remove"
         }
     },
     "ownerDashboard": {

@@ -95,6 +95,12 @@ export { type LoadMoreResult, Pagination, type PaginationProps } from './Paginat
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
 export { buildPageRange, type PageSlot } from './pagination-range';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
+export {
+    Repeater,
+    type RepeaterMoves,
+    type RepeaterProps,
+    type RepeaterRemoveConfirm
+} from './Repeater';
 export { Section, type SectionProps, type SectionVariant } from './Section';
 export { Select, type SelectProps } from './Select';
 export { Skeleton, type SkeletonProps, type SkeletonShape } from './Skeleton';

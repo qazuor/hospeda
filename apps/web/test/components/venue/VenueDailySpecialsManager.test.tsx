@@ -21,7 +21,7 @@
  *    `venue-pro` capability and this page carries no entitlement
  *    information, so the API is what decides.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueDailySpecialsManager } from '../../../src/components/venue/VenueDailySpecialsManager.client';
 
@@ -29,7 +29,8 @@ vi.mock('../../../src/components/venue/VenueDailySpecialsManager.module.css', ()
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string>) =>
             (fallback ?? key).replace(
@@ -82,6 +83,18 @@ beforeEach(() => {
     // place still turns a suite green through mock leakage.
 });
 
+
+/**
+ * Saves through the editor save bar (HOS-2487). The bar only shows on a dirty
+ * draft, so the title gets a trailing space first: the payload trims it, so
+ * the body sent is the loaded entry unchanged.
+ */
+function dirtyAndSave(): void {
+    const title = screen.getByDisplayValue('Milanesa a la napolitana');
+    fireEvent.change(title, { target: { value: 'Milanesa a la napolitana ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+}
+
 describe('VenueDailySpecialsManager', () => {
     it('loads its own specials rather than waiting to be handed them', async () => {
         // Arrange
@@ -121,7 +134,7 @@ describe('VenueDailySpecialsManager', () => {
         await screen.findByDisplayValue('Milanesa a la napolitana');
 
         // Act
-        fireEvent.click(screen.getByText('Guardar menú del día'));
+        dirtyAndSave();
 
         // Assert — on the BODY. "A PUT happened" would pass with an empty
         // payload, which is exactly the shape that deletes the owner's specials.
@@ -179,7 +192,7 @@ describe('VenueDailySpecialsManager', () => {
 
         // Act
         fireEvent.click(screen.getByText('Agregar plato del día'));
-        fireEvent.click(screen.getByText('Guardar menú del día'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert
         await waitFor(() => expect(mockPut).toHaveBeenCalled());
@@ -203,7 +216,7 @@ describe('VenueDailySpecialsManager', () => {
         await screen.findByDisplayValue('Milanesa a la napolitana');
 
         // Act
-        fireEvent.click(screen.getByText('Guardar menú del día'));
+        dirtyAndSave();
 
         // Assert — no plan name was passed, so the neutral variant must show.
         expect(
@@ -278,7 +291,7 @@ describe('VenueDailySpecialsManager', () => {
         await screen.findByDisplayValue('Milanesa a la napolitana');
 
         // Act
-        fireEvent.click(screen.getByText('Guardar menú del día'));
+        dirtyAndSave();
 
         // Assert
         expect(
@@ -305,9 +318,46 @@ describe('VenueDailySpecialsManager', () => {
         await screen.findByDisplayValue('Milanesa a la napolitana');
 
         // Act
-        fireEvent.click(screen.getByText('Guardar menú del día'));
+        dirtyAndSave();
 
         // Assert
         expect(await screen.findByText('No se pudo guardar el menú del día.')).toBeTruthy();
+    });
+
+    it('saves through the save bar only, and asks before removing an entry (HOS-2487/HOS-2429)', async () => {
+        // Arrange
+        mockGet.mockResolvedValue(LOADED);
+        render(
+            <VenueDailySpecialsManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+        await screen.findByDisplayValue('Milanesa a la napolitana');
+        expect(screen.queryByRole('button', { name: 'Guardar menú del día' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull();
+
+        // Act: cancel the removal
+        fireEvent.click(screen.getByRole('button', { name: 'Quitar Milanesa a la napolitana' }));
+        const dialog = await screen.findByRole('alertdialog');
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+
+        // Assert
+        await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+        expect(screen.getByDisplayValue('Milanesa a la napolitana')).toBeTruthy();
+
+        // Act: confirm, then discard
+        fireEvent.click(screen.getByRole('button', { name: 'Quitar Milanesa a la napolitana' }));
+        fireEvent.click(
+            within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Quitar' })
+        );
+        await waitFor(() =>
+            expect(screen.queryByDisplayValue('Milanesa a la napolitana')).toBeNull()
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+
+        // Assert
+        expect(screen.getByDisplayValue('Milanesa a la napolitana')).toBeTruthy();
+        expect(mockPut).not.toHaveBeenCalled();
     });
 });

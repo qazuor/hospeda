@@ -11,7 +11,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueEventsManager } from '../../../src/components/venue/VenueEventsManager.client';
 import { describeAgendaSaveError } from '../../../src/lib/venue/venue-event-draft';
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         tPlural: (key: string, count: number) => `${key}:${count}`
@@ -64,8 +65,18 @@ function load(events: Array<Record<string, unknown>>) {
     );
 }
 
+/**
+ * Saves through the editor save bar (HOS-2487). The bar only shows on a dirty
+ * draft; an untouched agenda is dirtied with a trailing space on the first live
+ * title, which the payload trims away.
+ */
 async function savedEvents(): Promise<Array<Record<string, unknown>>> {
-    fireEvent.click(await screen.findByText('Guardar agenda'));
+    await screen.findAllByLabelText('Título');
+    if (!screen.queryByRole('button', { name: 'Guardar cambios' })) {
+        const title = screen.getAllByLabelText('Título')[0] as HTMLInputElement;
+        fireEvent.change(title, { target: { value: `${title.value} ` } });
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await waitFor(() => expect(mockPut).toHaveBeenCalledTimes(1));
     return (mockPut.mock.calls[0]?.[0].body as { events: Array<Record<string, unknown>> }).events;
 }
@@ -90,7 +101,7 @@ describe('VenueEventsManager: past events (HOS-2254)', () => {
     it('does not render the group at all when nothing is past', async () => {
         load([row(1, {})]);
 
-        await screen.findByText('Guardar agenda');
+        await screen.findByLabelText('Título');
 
         expect(screen.queryByTestId('venue-events-past')).toBeNull();
     });
@@ -161,9 +172,9 @@ describe('VenueEventsManager: past events (HOS-2254)', () => {
         const live = Array.from({ length: 29 }, (_, i) => row(100 + i, {}));
         load([...live, row(2, { date: '2026-10-01', isPast: true })]);
 
-        const add = (await screen.findByText('Agregar evento')) as HTMLButtonElement;
+        const add = await screen.findByRole('button', { name: 'Agregar evento' });
 
-        expect(add.disabled).toBe(false);
+        expect(add).toBeEnabled();
     });
 });
 
@@ -180,7 +191,7 @@ describe('VenueEventsManager: save errors and date hint (HOS-2254)', () => {
         fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2020-01-01' } });
         fireEvent.change(screen.getByLabelText('Hora de inicio'), { target: { value: '20:00' } });
 
-        fireEvent.click(screen.getByText('Guardar agenda'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         expect(await screen.findByText(/fecha pasada: Brindis/)).toBeTruthy();
         expect(screen.queryByText('No se pudo guardar la agenda.')).toBeNull();

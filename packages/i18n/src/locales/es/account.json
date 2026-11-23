@@ -2181,6 +2181,16 @@
         "editorShell": {
             "backToHub": "Volver al editor",
             "backToList": "Volver a la lista"
+        },
+        "repeater": {
+            "add": "Agregar",
+            "moveUp": "Subir {{item}}",
+            "moveDown": "Bajar {{item}}",
+            "remove": "Quitar {{item}}",
+            "removeShort": "Quitar",
+            "confirmTitle": "¿Quitar «{{item}}»?",
+            "confirmDescription": "La fila sale de la lista.",
+            "confirmLabel": "Quitar"
         }
     },
     "ownerDashboard": {

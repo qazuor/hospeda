@@ -19,9 +19,11 @@
  *
  * The parent editor's PATCH body is a diff of `ListingEditData`, and the
  * specials are a nested document with their own endpoints. Nothing here reaches
- * the parent's dirty tracking (HOS-811). One explicit Save writes the whole
- * document in one `PUT`, for the reason the carta gives: adding today's plate
- * and dropping yesterday's is one thought and should be one transaction.
+ * the parent's dirty tracking (HOS-811). The list is a local draft that the
+ * editor save bar commits in one `PUT` of the whole document (HOS-2487), for
+ * the reason the carta gives: adding today's plate and dropping yesterday's is
+ * one thought and should be one transaction. Leaving with a dirty draft warns.
+ * The rows are the kit `Repeater` (HOS-2490): removing one asks first.
  *
  * ## The 403 is a real state, not an error
  *
@@ -44,12 +46,19 @@
 
 import type { JSX } from 'react';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
+import { Repeater } from '@/components/account/ui/Repeater';
+import type { SaveOutcome } from '@/components/account/ui/use-save-bar';
 import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
+import {
+    type DailySpecialDraft,
+    DailySpecialFields,
+    DailySpecialReadOnly
+} from './VenueDailySpecialRow.client';
 import styles from './VenueDailySpecialsManager.module.css';
 import {
     translateUpsell,
@@ -71,18 +80,6 @@ const DAILY_SPECIALS_UPSELL_COPY = {
     noPlanFallback: 'El menú del día está disponible en un plan pago.'
 } as const;
 
-/** One special, as held in form state. Ids are not carried — see the payload schema. */
-interface DailySpecialDraft {
-    title: string;
-    description: string;
-    /** Price in CENTAVOS, or `null` for "a consultar". */
-    priceCents: number | null;
-    /** Inclusive first day, `YYYY-MM-DD`. */
-    validFrom: string;
-    /** Inclusive last day, `YYYY-MM-DD`. */
-    validUntil: string;
-}
-
 /** Shape of `GET`/`PUT .../daily-specials`. */
 interface DailySpecialsEnvelope {
     readonly specials: ReadonlyArray<{
@@ -94,6 +91,7 @@ interface DailySpecialsEnvelope {
     }>;
 }
 
+/** Props of {@link VenueDailySpecialsManager}. */
 export interface VenueDailySpecialsManagerProps {
     /** UUID of the venue listing. */
     readonly listingId: string;
@@ -116,14 +114,9 @@ type PanelState = 'loading' | 'idle' | 'saving';
  *
  * Built from the local date parts rather than `toISOString()`, which converts
  * to UTC first and therefore reports tomorrow's date for anyone west of
- * Greenwich after 21:00 — the exact off-by-one this repo has hit repeatedly
- * (see `packages/utils/src/calendar-date.ts`).
- *
- * Used ONLY to default a new row's window and to label existing rows. The
- * authoritative "is this published" decision is the server's, in the AR market
- * timezone; an owner in another timezone may see a label disagree by a day, and
- * that is a strictly better failure than a wrong `min` silently rejecting a
- * date they are entitled to pick.
+ * Greenwich after 21:00 (see `packages/utils/src/calendar-date.ts`). Used ONLY
+ * to default a new row's window and to label existing rows; the authoritative
+ * "is this published" decision is the server's.
  *
  * @returns Today, `YYYY-MM-DD`.
  */
@@ -148,6 +141,12 @@ function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
     return next;
 }
 
+/**
+ * The menú del día editor of a venue listing.
+ *
+ * @param props - See {@link VenueDailySpecialsManagerProps}.
+ * @returns The panel.
+ */
 export function VenueDailySpecialsManager({
     listingId,
     locale,
@@ -156,7 +155,8 @@ export function VenueDailySpecialsManager({
 }: VenueDailySpecialsManagerProps): JSX.Element {
     const { t } = createTranslations(locale);
 
-    const [specials, setSpecials] = useState<DailySpecialDraft[]>([]);
+    const [specials, setSpecials] = useState<readonly DailySpecialDraft[]>([]);
+    const [savedSpecials, setSavedSpecials] = useState<readonly DailySpecialDraft[]>([]);
     const [state, setState] = useState<PanelState>('loading');
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
@@ -176,18 +176,12 @@ export function VenueDailySpecialsManager({
     const basePath = `/api/v1/protected/venues/${listingId}/daily-specials`;
 
     // Read once per mount rather than per render: `localToday()` reads the
-    // clock, and calling it inside the map would make the rendered labels
-    // depend on when React happened to re-render.
+    // clock, and the labels must not depend on when React re-renders.
     const today = useMemo(() => localToday(), []);
 
-    // ── Load ────────────────────────────────────────────────────────────────
-    // The panel reads its own state rather than receiving it from the SSR page,
-    // for the reason the carta's editor gives: the specials are not part of the
-    // listing payload, and adding them there would make every editor load pay
-    // for a document most owners will not open.
-    //
-    // Protected read, same reason as `VenueMenuManager` (HOS-1854): without the
-    // session cookie the API answers 401 and a locked section renders empty.
+    // The panel reads its own state (the specials are not part of the listing
+    // payload). Protected read, same reason as `VenueMenuManager` (HOS-1854):
+    // without the session cookie the API answers 401.
     useEffect(() => {
         let cancelled = false;
 
@@ -197,15 +191,15 @@ export function VenueDailySpecialsManager({
                 return;
             }
             if (result.ok) {
-                setSpecials(
-                    result.data.specials.map((special) => ({
-                        title: special.title,
-                        description: special.description ?? '',
-                        priceCents: special.priceCents,
-                        validFrom: special.validFrom,
-                        validUntil: special.validUntil
-                    }))
-                );
+                const loaded = result.data.specials.map((special) => ({
+                    title: special.title,
+                    description: special.description ?? '',
+                    priceCents: special.priceCents,
+                    validFrom: special.validFrom,
+                    validUntil: special.validUntil
+                }));
+                setSpecials(loaded);
+                setSavedSpecials(loaded);
             }
             setState('idle');
         })();
@@ -217,9 +211,7 @@ export function VenueDailySpecialsManager({
 
     const addSpecial = useCallback(() => {
         // Defaults to TODAY ONLY — both bounds the same day. That is what "menú
-        // del día" means, and it makes the safe choice the zero-effort one: an
-        // owner who ignores the dates entirely publishes for today and nothing
-        // is left behind tomorrow.
+        // del día" means, and it makes the safe choice the zero-effort one.
         setSpecials((prev) => [
             ...prev,
             { title: '', description: '', priceCents: null, validFrom: today, validUntil: today }
@@ -240,14 +232,19 @@ export function VenueDailySpecialsManager({
         );
     }, []);
 
-    const save = useCallback(async () => {
+    const isDirty = JSON.stringify(specials) !== JSON.stringify(savedSpecials);
+
+    const discard = useCallback(() => {
+        setSpecials(savedSpecials);
+        setMessage(null);
+    }, [savedSpecials]);
+
+    const save = useCallback(async (): Promise<SaveOutcome> => {
         setState('saving');
         setMessage(null);
 
         // Untitled rows are DROPPED rather than rejected, matching the carta's
-        // editor: an empty row is what an owner leaves behind after clicking
-        // "add" and changing their mind, and failing the whole save over it
-        // would lose the plates they did type.
+        // editor: an abandoned "add" click should not fail the whole save.
         const payload = {
             specials: specials
                 .filter((special) => special.title.trim().length > 0)
@@ -267,25 +264,25 @@ export function VenueDailySpecialsManager({
         setState('idle');
 
         if (result.ok) {
+            setSavedSpecials(specials);
             setMessage(t('venue.owner.editor.dailySpecials.saved', 'Menú del día guardado.'));
-            return;
+            return { ok: true };
         }
 
-        // A refusal here is the plan speaking, not a failure. `status` is the
-        // only thing that separates "your plan does not include this" from a
-        // genuine error, and showing the second for the first is how an upsell
-        // turns into a bug report.
+        // A refusal here is the plan speaking, not a failure: `status` is the
+        // only thing that separates an upsell from a bug report.
         if (result.error.status === 403) {
             setIsLocked(true);
             setMessage(
                 translateUpsell({ t, planName: upsellPlanName, ...DAILY_SPECIALS_UPSELL_COPY })
             );
-            return;
+            return { ok: false };
         }
 
         setMessage(
             t('venue.owner.editor.dailySpecials.saveError', 'No se pudo guardar el menú del día.')
         );
+        return { ok: false };
     }, [basePath, specials, t, upsellPlanName]);
 
     /**
@@ -311,13 +308,13 @@ export function VenueDailySpecialsManager({
         }
 
         setSpecials([]);
+        setSavedSpecials([]);
         setMessage(t('venue.owner.editor.lockedSection.vaciarSuccess', 'Se vació la sección.'));
         return true;
     }, [basePath, t]);
 
     const vaciar = useSectionVaciar({ clear: clearSpecials });
-
-    const busy = state === 'loading' || state === 'saving';
+    const newSpecial = t('venue.owner.editor.dailySpecials.newSpecial', 'Nuevo plato del día');
 
     return (
         <section className={styles.panel}>
@@ -354,250 +351,59 @@ export function VenueDailySpecialsManager({
                             )}
                         </p>
                     ) : (
-                        specials.map((special, index) => {
-                            const isExpired = special.validUntil < today;
-                            const isScheduled = special.validFrom > today;
-
-                            return (
-                                <div
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: stored rows carry no id in this draft shape
-                                    key={`locked-special-${index}`}
-                                    className={styles.specialCard}
-                                >
-                                    <p className={styles.readOnlyName}>{special.title}</p>
-                                    {special.description ? (
-                                        <p className={styles.intro}>{special.description}</p>
-                                    ) : null}
-                                    <p className={styles.intro}>
-                                        {special.priceCents === null
-                                            ? t(
-                                                  'venue.owner.editor.dailySpecials.pricePlaceholder',
-                                                  'Precio'
-                                              )
-                                            : `$${centsToPesosInputValue({
-                                                  cents: special.priceCents
-                                              })}`}
-                                        {' · '}
-                                        {t('venue.owner.editor.dailySpecials.from', 'Desde')}{' '}
-                                        {special.validFrom}{' '}
-                                        {t('venue.owner.editor.dailySpecials.until', 'Hasta')}{' '}
-                                        {special.validUntil}
-                                    </p>
-                                    {isExpired && (
-                                        <p className={styles.expiredNote}>
-                                            {t(
-                                                'venue.owner.editor.dailySpecials.expired',
-                                                'Ya venció — no se está mostrando.'
-                                            )}
-                                        </p>
-                                    )}
-                                    {isScheduled && (
-                                        <p className={styles.scheduledNote}>
-                                            {t(
-                                                'venue.owner.editor.dailySpecials.scheduled',
-                                                'Programado — todavía no se muestra.'
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
-                            );
-                        })
+                        specials.map((special, index) => (
+                            <DailySpecialReadOnly
+                                // biome-ignore lint/suspicious/noArrayIndexKey: stored rows carry no id in this draft shape
+                                key={`locked-special-${index}`}
+                                special={special}
+                                today={today}
+                                t={t}
+                            />
+                        ))
                     )}
                 </VenueSectionLockedPanel>
             ) : (
                 <>
-                    <div className={styles.specialsBlock}>
-                        {specials.map((special, index) => {
-                            const isExpired = special.validUntil < today;
-                            const isScheduled = special.validFrom > today;
+                    <Repeater
+                        locale={locale}
+                        label={t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
+                        items={specials}
+                        getKey={(_special, index) => `special-${index}`}
+                        getItemLabel={(special) => special.title || newSpecial}
+                        disabled={isLocked || state === 'loading'}
+                        onMove={moveSpecial}
+                        onRemove={removeSpecial}
+                        onAdd={addSpecial}
+                        addLabel={t('venue.owner.editor.dailySpecials.add', 'Agregar plato del día')}
+                        renderItem={(special, index) => (
+                            <DailySpecialFields
+                                special={special}
+                                today={today}
+                                locale={locale}
+                                t={t}
+                                readOnly={isLocked}
+                                onPatch={(patch) => patchSpecial(index, patch)}
+                            />
+                        )}
+                    />
 
-                            return (
-                                <fieldset
-                                    // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
-                                    key={`special-${index}`}
-                                    className={styles.specialCard}
-                                >
-                                    <legend className={styles.srOnly}>
-                                        {special.title ||
-                                            t(
-                                                'venue.owner.editor.dailySpecials.newSpecial',
-                                                'Nuevo plato del día'
-                                            )}
-                                    </legend>
-
-                                    <div className={styles.specialRow}>
-                                        <input
-                                            className={styles.input}
-                                            type="text"
-                                            value={special.title}
-                                            maxLength={150}
-                                            placeholder={t(
-                                                'venue.owner.editor.dailySpecials.titlePlaceholder',
-                                                'Milanesa a la napolitana con puré'
-                                            )}
-                                            aria-label={t(
-                                                'venue.owner.editor.dailySpecials.titleLabel',
-                                                'Plato'
-                                            )}
-                                            onChange={(event) =>
-                                                patchSpecial(index, { title: event.target.value })
-                                            }
-                                        />
-                                        <input
-                                            className={styles.priceInput}
-                                            type="number"
-                                            min={0}
-                                            step={1}
-                                            value={centsToPesosInputValue({
-                                                cents: special.priceCents
-                                            })}
-                                            placeholder={t(
-                                                'venue.owner.editor.dailySpecials.pricePlaceholder',
-                                                'Precio'
-                                            )}
-                                            aria-label={t(
-                                                'venue.owner.editor.dailySpecials.priceLabel',
-                                                'Precio en pesos'
-                                            )}
-                                            onChange={(event) =>
-                                                patchSpecial(index, {
-                                                    priceCents: parsePesosInputToCents({
-                                                        raw: event.target.value
-                                                    })
-                                                })
-                                            }
-                                        />
-                                        <button
-                                            type="button"
-                                            className={styles.iconButton}
-                                            disabled={index === 0}
-                                            onClick={() => moveSpecial(index, -1)}
-                                        >
-                                            ↑
-                                            <span className={styles.srOnly}>
-                                                {t(
-                                                    'venue.owner.editor.dailySpecials.moveUp',
-                                                    'Subir'
-                                                )}
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.iconButton}
-                                            disabled={index === specials.length - 1}
-                                            onClick={() => moveSpecial(index, 1)}
-                                        >
-                                            ↓
-                                            <span className={styles.srOnly}>
-                                                {t(
-                                                    'venue.owner.editor.dailySpecials.moveDown',
-                                                    'Bajar'
-                                                )}
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.dangerButton}
-                                            onClick={() => removeSpecial(index)}
-                                        >
-                                            {t('venue.owner.editor.dailySpecials.remove', 'Quitar')}
-                                        </button>
-                                    </div>
-
-                                    <div className={styles.specialRow}>
-                                        <input
-                                            className={styles.input}
-                                            type="text"
-                                            value={special.description}
-                                            maxLength={500}
-                                            placeholder={t(
-                                                'venue.owner.editor.dailySpecials.descriptionPlaceholder',
-                                                'Con guarnición y postre'
-                                            )}
-                                            aria-label={t(
-                                                'venue.owner.editor.dailySpecials.descriptionLabel',
-                                                'Detalle'
-                                            )}
-                                            onChange={(event) =>
-                                                patchSpecial(index, {
-                                                    description: event.target.value
-                                                })
-                                            }
-                                        />
-                                    </div>
-
-                                    <div className={styles.specialRow}>
-                                        <label className={styles.dateLabel}>
-                                            {t('venue.owner.editor.dailySpecials.from', 'Desde')}
-                                            <input
-                                                className={styles.dateInput}
-                                                type="date"
-                                                value={special.validFrom}
-                                                onChange={(event) =>
-                                                    patchSpecial(index, {
-                                                        validFrom: event.target.value
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                        <label className={styles.dateLabel}>
-                                            {t('venue.owner.editor.dailySpecials.until', 'Hasta')}
-                                            <input
-                                                className={styles.dateInput}
-                                                type="date"
-                                                value={special.validUntil}
-                                                onChange={(event) =>
-                                                    patchSpecial(index, {
-                                                        validUntil: event.target.value
-                                                    })
-                                                }
-                                            />
-                                        </label>
-                                    </div>
-
-                                    {isExpired && (
-                                        <p className={styles.expiredNote}>
-                                            {t(
-                                                'venue.owner.editor.dailySpecials.expired',
-                                                'Ya venció — no se está mostrando.'
-                                            )}
-                                        </p>
-                                    )}
-                                    {isScheduled && (
-                                        <p className={styles.scheduledNote}>
-                                            {t(
-                                                'venue.owner.editor.dailySpecials.scheduled',
-                                                'Programado — todavía no se muestra.'
-                                            )}
-                                        </p>
-                                    )}
-                                </fieldset>
-                            );
-                        })}
-
-                        <button
-                            type="button"
-                            className={styles.secondaryButton}
-                            onClick={addSpecial}
-                        >
-                            {t('venue.owner.editor.dailySpecials.add', 'Agregar plato del día')}
-                        </button>
-                    </div>
-
-                    <button
-                        type="button"
-                        className={styles.primaryButton}
-                        disabled={busy || isLocked}
-                        onClick={() => void save()}
-                    >
-                        {state === 'saving'
-                            ? t('venue.owner.editor.dailySpecials.saving', 'Guardando…')
-                            : t('venue.owner.editor.dailySpecials.save', 'Guardar menú del día')}
-                    </button>
+                    <EditorSaveBar
+                        locale={locale}
+                        isDirty={isDirty}
+                        onSave={save}
+                        onDiscard={discard}
+                    />
                 </>
             )}
 
-            {message && <p className={styles.message}>{message}</p>}
+            {message && (
+                <p
+                    className={styles.message}
+                    role="status"
+                >
+                    {message}
+                </p>
+            )}
         </section>
     );
 }

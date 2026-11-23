@@ -11,6 +11,7 @@
  */
 
 import type { JSX } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import type { TranslationFn } from '@/lib/i18n';
 import type { EventDraft } from '@/lib/venue/venue-event-draft';
 import styles from './VenueEventsManager.module.css';
@@ -85,39 +86,42 @@ export function VenueEventsPastGroup({
                             }`}
                         </p>
                         <div className={styles.row}>
-                            <button
-                                type="button"
-                                className={styles.secondaryButton}
+                            <Button
+                                variant="secondary"
+                                size="lg"
                                 disabled={atMax}
                                 onClick={() => {
                                     onDuplicate(index);
                                 }}
                             >
                                 {t('venue.owner.editor.venueEventsManager.duplicate', 'Duplicar')}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.dangerButton}
+                            </Button>
+                            <Button
+                                variant="danger-ghost"
+                                size="lg"
                                 onClick={() => {
                                     onRemove(index);
                                 }}
                             >
                                 {t('venue.owner.editor.venueEventsManager.removeEntry', 'Quitar')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 );
             })}
-            <button
-                type="button"
-                className={styles.dangerButton}
-                onClick={onRemoveAll}
+            <Button
+                variant="danger-ghost"
+                size="lg"
+                className={styles.removeAll}
+                onClick={() => {
+                    void onRemoveAll();
+                }}
             >
                 {t(
                     'venue.owner.editor.venueEventsManager.removeAllPast',
                     'Borrar todos los pasados'
                 )}
-            </button>
+            </Button>
         </details>
     );
 }

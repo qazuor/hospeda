@@ -2181,6 +2181,16 @@
         "editorShell": {
             "backToHub": "Voltar ao editor",
             "backToList": "Voltar à lista"
+        },
+        "repeater": {
+            "add": "Adicionar",
+            "moveUp": "Mover {{item}} para cima",
+            "moveDown": "Mover {{item}} para baixo",
+            "remove": "Remover {{item}}",
+            "removeShort": "Remover",
+            "confirmTitle": "Remover “{{item}}”?",
+            "confirmDescription": "A linha sai da lista.",
+            "confirmLabel": "Remover"
         }
     },
     "ownerDashboard": {

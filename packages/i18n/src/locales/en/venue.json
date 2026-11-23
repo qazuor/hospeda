@@ -363,7 +363,10 @@
                     "title": "Remove dish",
                     "message": "Remove this dish from the menu?",
                     "confirm": "Remove dish"
-                }
+                },
+                "itemPriceHint": "In pesos. Leave it empty for “price on request”.",
+                "newItem": "New dish",
+                "itemsOf": "Dishes in {{section}}"
             },
             "dailySpecials": {
                 "title": "Today's menu",
@@ -435,7 +438,8 @@
                 "saveError": "The schedule could not be saved.",
                 "locked": "Keeping a venue schedule is available starting with the {{plan}} plan.",
                 "lockedNoPlan": "Keeping a venue schedule is available on a paid plan.",
-                "lockedPreTrial": "The venue schedule unlocks when you publish your listing."
+                "lockedPreTrial": "The venue schedule unlocks when you publish your listing.",
+                "recurrence": "When it happens"
             },
             "lockedSection": {
                 "vaciar": "Empty",

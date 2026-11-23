@@ -221,3 +221,48 @@ export function describeAgendaSaveError(input: {
     }
     return null;
 }
+
+/**
+ * The `PUT .../events` body for a draft agenda (moved out of
+ * `VenueEventsManager` by HOS-2490).
+ *
+ * An entry without a title, or without a start time, is DROPPED rather than
+ * rejected — the same treatment the carta gives a nameless dish: an abandoned
+ * "add entry" click should not fail the whole save. A `once` entry with no date
+ * joins them, and that clause is not cosmetic: the server's refinement REFUSES
+ * such an entry, so sending it would fail the WHOLE document. A weekly entry
+ * needs no equivalent clause — `weekday` carries a real default (see
+ * `EMPTY_DRAFT`), so it is never absent.
+ *
+ * @param entries - The draft agenda.
+ * @returns The request body.
+ */
+export function buildAgendaPayload(entries: readonly EventDraft[]): {
+    readonly events: ReadonlyArray<Record<string, unknown>>;
+} {
+    return {
+        events: entries
+            .filter(
+                (entry) =>
+                    entry.title.trim().length > 0 &&
+                    entry.startTime.length > 0 &&
+                    (entry.recurrence !== 'once' || entry.date.length > 0)
+            )
+            .map((entry) => ({
+                // Stored events send their id back so they keep it (HOS-2291).
+                ...(entry.id ? { id: entry.id } : {}),
+                title: entry.title.trim(),
+                description: entry.description.trim() || null,
+                recurrence: entry.recurrence,
+                // Exactly one of date/weekday, matching the recurrence — the
+                // server schema REJECTS a payload carrying both.
+                ...(entry.recurrence === 'once'
+                    ? { date: entry.date || null }
+                    : { weekday: entry.weekday }),
+                startTime: entry.startTime,
+                endTime: entry.endTime || null,
+                ticketUrl: entry.ticketUrl.trim() || null,
+                isActive: entry.isActive
+            }))
+    };
+}
