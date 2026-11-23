@@ -170,9 +170,10 @@ export interface OwnerListingSummaryWithState extends OwnerListingSummary {
  * Before HOS-2484 this fetched both verticals and then every non-public
  * listing's detail to compute its checklist: one request per listing. The
  * `/mine` endpoint now carries each unpublished listing's unmet requirements
- * (`missingRequirements`), computed by the SAME canonical
- * `resolveListingCompleteness` the checkout gate and the reconciler use, so the
- * preview stays one definition with three consumers.
+ * (`missingRequirements`), computed server-side in one batch by
+ * `evaluateListingsPublishCompleteness` (via `buildOwnerListingSummaries`),
+ * which applies the canonical `resolveListingCompleteness` the checkout gate
+ * and the reconciler use: one definition, three consumers.
  *
  * `completeness` is `null` for a public or purged listing (nothing to check)
  * and whenever the summary carries no requirements (the API could not read
