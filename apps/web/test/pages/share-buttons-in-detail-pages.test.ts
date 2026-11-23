@@ -158,9 +158,21 @@ describe('T-050 — ShareButtons in detail pages', () => {
         });
 
         it.each([
+            ['comer-y-salir/[slug].astro', 'venue'],
+            ['experiencias/[slug].astro', 'experience']
+        ])("%s passes campaign: '%s' through the gallery share prop", (page, campaign) => {
+            const mobile = readPage(page)
+                .match(/<ImageGallery\b[\s\S]*?\/>/)?.[0]
+                ?.match(/\bshare:\s*\{[^\n]*/)?.[0];
+            expect(mobile).toMatch(new RegExp(`\\bcampaign:\\s*'${campaign}'`));
+        });
+
+        it.each([
             'eventos/[slug].astro',
             'publicaciones/[slug].astro',
-            'alojamientos/[slug].astro'
+            'alojamientos/[slug].astro',
+            'comer-y-salir/[slug].astro',
+            'experiencias/[slug].astro'
         ])('%s never decorates a URL itself (canonical, OG and JSON-LD stay UTM-free)', (page) => {
             // UTMs are added inside ShareButtons, per action. A page that called
             // withUtm could leak them into SEOHead's canonical or OG tags.

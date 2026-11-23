@@ -39,7 +39,7 @@ export const UTM_MEDIUMS = [
 export type UtmMedium = (typeof UTM_MEDIUMS)[number];
 
 /** Entity types that render share buttons (`utm_campaign` for `medium=share`). */
-export const SHARE_CAMPAIGNS = ['accommodation', 'event', 'post'] as const;
+export const SHARE_CAMPAIGNS = ['accommodation', 'event', 'post', 'venue', 'experience'] as const;
 
 /** A share-button campaign. */
 export type ShareCampaign = (typeof SHARE_CAMPAIGNS)[number];
