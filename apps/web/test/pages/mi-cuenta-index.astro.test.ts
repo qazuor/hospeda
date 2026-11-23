@@ -1,101 +1,137 @@
 /**
  * @file mi-cuenta-index.astro.test.ts
- * @description Source-level assertions for the account dashboard's role-aware
- * navigation (H-151).
+ * @description The general dashboard after its move to the kit (HOS-2473).
  *
- * WHAT THIS GUARDS. The dashboard is not a static page — it already branches on
- * whether the visitor is a host, prepending "Mis propiedades" and "Panel del
- * anfitrión" to the nav grid. The venue/experience owner was the one role the branch had
- * never heard of: a merchant whose listing exists and is sitting in DRAFT saw a
- * page that mentioned their business nowhere, while the sidebar right next to it
- * showed "Mi comercio". The dashboard is the first screen they land on, so it is
- * exactly where "your listing is not public yet" has to be visible.
- *
- * LIMIT, stated plainly: Astro pages cannot be rendered under Vitest, so these
- * are string-level assertions on the .astro source (the same pattern as
- * `mi-cuenta-comercio-nuevo.astro.test.ts`). They prove the branch is DECLARED,
- * not that it RENDERS — that second question was answered by hand against the
- * running server, with a venue/experience-owner session and a tourist session.
+ * The page source is checked for its wiring (Astro pages do not render under
+ * Vitest); the role-aware entry points (H-151, HOS-296) and the subscription
+ * stat (HOS-1066, HOS-1996) are checked as real behaviour on the pure module
+ * the page now delegates to, `lib/account/general-dashboard.ts`.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { TrialStatusEnum, type TrialSummaryResponse } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import {
+    buildGeneralDashboardLinks,
+    resolveSubscriptionStatText
+} from '../../src/lib/account/general-dashboard';
 
-const source = readFileSync(
+const page = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/index.astro'),
     'utf8'
 );
+const lib = readFileSync(resolve(__dirname, '../../src/lib/account/general-dashboard.ts'), 'utf8');
 
-describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
-    it('resolves venue/experience access through the shared gating predicate, not a role literal', () => {
-        expect(source).toContain('hasListingNavAccess');
-        // The repo's rule since HOS-296: gate on the role SET via the shared
-        // predicate, never by comparing against a role string here.
-        expect(source).not.toMatch(/roles.*includes\(\s*['"]VENUE_OWNER['"]\s*\)/);
+/** Identity translator: returns the key, with params appended for assertions. */
+const t = (key: string, _fallback?: string, params?: Record<string, unknown>) =>
+    params ? `${key}:${JSON.stringify(params)}` : key;
+
+const ids = (roles: string[]) => buildGeneralDashboardLinks({ roles }).map((row) => row.id);
+
+describe('mi-cuenta/index.astro — wiring (HOS-2473)', () => {
+    it('renders the kit header, stat island and links section, with the dashboard template', () => {
+        expect(page).toContain('<GeneralDashboardHeader');
+        expect(page).toContain('<GeneralDashboardStats');
+        expect(page).toContain('<DashboardLinksSection');
+        expect(page).toContain('template="dashboard"');
     });
 
-    it('offers the merchant a way into their listing from the dashboard', () => {
-        expect(source).toContain('mi-cuenta/comercio');
-        expect(source).toContain('account.pages.dashboard.nav.myListingDesc');
+    it('keeps the per-user numbers in a client island, not in a DOM script', () => {
+        expect(page).toMatch(/<GeneralDashboardStats[^>]*client:visible/);
+        expect(page).not.toContain('<script>');
+        expect(page).not.toContain('getElementById');
     });
 
-    it('reuses the sidebar label key so the two surfaces cannot drift apart', () => {
-        // The sidebar entry (config/navigation.ts, group `comercio`) already
-        // names this destination. Two independent labels for one link is how a
-        // rename lands in one place and not the other.
-        expect(source).toContain("t('listing.owner.nav'");
+    it('reads plan names from the catalog, never a hand-kept slug list', () => {
+        expect(page).toContain('readDashboardPlanNames');
+        expect(page).not.toContain('DASHBOARD_PLAN_SLUGS');
     });
 
-    it('keeps the listings entry conditional, so a tourist never sees it', () => {
-        expect(source).toMatch(/isOwner\s*\n?\s*\?/);
-    });
-
-    it('still gates the host entries independently of the listings entry', () => {
-        // HOS-296: an account can hold BOTH roles, so the two branches must be
-        // separate conditions rather than one either/or.
-        expect(source).toContain('hasAccommodationsNavAccess');
-        expect(source).toContain('account.pages.dashboard.nav.myProperties');
-    });
-
-    it('does not describe the merchant inbox as conversations with hosts', () => {
-        // The merchant is the one RECEIVING enquiries; the tourist-facing copy
-        // ("Conversaciones con anfitriones") describes the opposite party.
-        expect(source).toContain('account.pages.dashboard.nav.myMessagesListingDesc');
+    it('keeps the What’s New / tour controller', () => {
+        expect(page).toContain('<DashboardController');
     });
 });
 
-describe('TEST:1756:12 mi-cuenta subscription stat source', () => {
-    it('uses the dashboard resolver and removes the untyped plan reads', () => {
-        expect(source).toContain("from '@/lib/billing/dashboard-plan-stat';");
-        expect(source).toContain('resolveDashboardPlanStat');
-        expect(source).not.toContain('planStatus');
-        expect(source).not.toContain('statsData.data?.plan?.name');
+describe('general dashboard entry points (H-151, HOS-296)', () => {
+    it('gates through the shared predicates, never a role literal', () => {
+        expect(lib).toContain('hasAccommodationsNavAccess');
+        expect(lib).toContain('PermissionEnum.VENUE_EDIT_OWN');
+        expect(lib).not.toMatch(/includes\(\s*['"](HOST|VENUE_OWNER|EXPERIENCE_OWNER)['"]\s*\)/);
+    });
+
+    it('offers a tourist only the account entries, and no «Editar perfil» duplicate', () => {
+        expect(ids(['USER'])).toEqual(['messages', 'preferences', 'newsletter']);
+    });
+
+    it('prepends the host entries for a host', () => {
+        expect(ids(['HOST']).slice(0, 2)).toEqual(['hostDashboard', 'properties']);
+    });
+
+    it('offers a venue owner their dashboard and listings, with the merchant inbox copy', () => {
+        const rows = buildGeneralDashboardLinks({ roles: ['VENUE_OWNER'] });
+        expect(rows.map((row) => row.id)).toContain('venueDashboard');
+        expect(rows.map((row) => row.id)).not.toContain('experienceDashboard');
+        const listings = rows.find((row) => row.id === 'listings');
+        expect(listings?.labelKey).toBe('listing.owner.nav');
+        expect(listings?.path).toBe('mi-cuenta/comercio');
+        expect(rows.find((row) => row.id === 'messages')?.descriptionKey).toBe(
+            'account.pages.dashboard.nav.myMessagesListingDesc'
+        );
+    });
+
+    it('keeps both hats for an account that is host AND experience owner', () => {
+        const rowIds = ids(['HOST', 'EXPERIENCE_OWNER']);
+        expect(rowIds).toContain('hostDashboard');
+        expect(rowIds).toContain('experienceDashboard');
     });
 });
 
-describe('mi-cuenta index — the free label asks the trial first (HOS-1996)', () => {
-    it('reads the trial summary before falling back to the free label', () => {
-        const free = source.indexOf("case 'free'");
-        const trialRead = source.indexOf('trialSummariesPromise', free);
-        const freeLabel = source.indexOf("getAttribute('data-label-free')", free);
-        expect(trialRead).toBeGreaterThan(free);
-        expect(trialRead).toBeLessThan(freeLabel);
-        expect(source).toContain('/protected/publish/trial-summary');
-        expect(source).toContain('AbortSignal.timeout');
-        expect(source).toMatch(/dataset\s*\.locale/);
-        expect(source).not.toContain('documentElement.lang');
+describe('subscription StatCard text (HOS-1066, HOS-1996)', () => {
+    const base = { planNames: { 'owner-pro': 'Pro anfitrión' }, t, formatDate: () => '01/12' };
+
+    it('names a single plan from the catalog map with its exact status', () => {
+        const text = resolveSubscriptionStatText({
+            ...base,
+            stats: {
+                plan: { slug: 'owner-pro', name: 'owner-pro', status: 'GRACE_PERIOD' },
+                activeSubscriptionsCount: 1
+            } as never,
+            trialSummaries: []
+        });
+        expect(text).toEqual({
+            value: 'Pro anfitrión',
+            hint: 'account.pages.dashboard.stats.gracePeriodStatus'
+        });
     });
-});
 
-describe('mi-cuenta index — listings card counts published only (HOS-1948)', () => {
-    const page = readFileSync(
-        resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/index.astro'),
-        'utf8'
-    );
+    it('shows the count for two or more live subscriptions', () => {
+        const text = resolveSubscriptionStatText({
+            ...base,
+            stats: { plan: null, activeSubscriptionsCount: 3 },
+            trialSummaries: []
+        });
+        expect(text.value).toBe(
+            'account.pages.dashboard.stats.multipleSubscriptions_other:{"count":3}'
+        );
+    });
 
-    it('derives the listings number from summarizeListingVisibility, never from list length', () => {
-        expect(page).toContain('summarizeListingVisibility({ listings })');
-        expect(page).not.toContain('listings?.length');
+    it('asks the trial before the free label', () => {
+        const trial = {
+            status: TrialStatusEnum.TRIAL_ACTIVE,
+            endsAt: '2026-12-01T00:00:00.000Z'
+        } as unknown as TrialSummaryResponse;
+        const withTrial = resolveSubscriptionStatText({
+            ...base,
+            stats: { plan: null, activeSubscriptionsCount: 0 },
+            trialSummaries: [trial]
+        });
+        expect(withTrial.value).toBe('account.pages.dashboard.stats.trialStatus');
+        const free = resolveSubscriptionStatText({
+            ...base,
+            stats: { plan: null, activeSubscriptionsCount: 0 },
+            trialSummaries: []
+        });
+        expect(free).toEqual({ value: 'account.pages.dashboard.stats.freeStatus', hint: null });
     });
 });

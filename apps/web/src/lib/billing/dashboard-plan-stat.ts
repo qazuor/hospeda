@@ -1,22 +1,5 @@
 import { TrialStatusEnum, type TrialSummaryResponse, type UserStatsResponse } from '@repo/schemas';
 
-/** Plan catalog slugs that have dashboard name translations. */
-export const DASHBOARD_PLAN_SLUGS = [
-    'owner-basico',
-    'owner-pro',
-    'owner-premium',
-    'tourist-free',
-    'tourist-vip',
-    'venue-basico',
-    'venue-pro',
-    'venue-premium',
-    'experience-basico',
-    'experience-pro',
-    'experience-premium',
-    'partner-silver',
-    'partner-gold'
-] as const;
-
 /** Resolve API stats into a renderable free, multiple, or single-plan dashboard state. */
 export function resolveDashboardPlanStat(input: {
     readonly plan: UserStatsResponse['plan'];
@@ -142,73 +125,4 @@ export function resolveDashboardFreeCard(input: {
         value: labels.trial,
         statusText: date ? labels.trialEndsOn.replace('{{date}}', date) : null
     };
-}
-
-/**
- * Label for the host dashboard's subscription badge: one distinct text per exact
- * subscription status (HOS-2543), never collapsed into active/inactive.
- *
- * A scheduled cancellation carries its end date when the API sent one. An API that
- * predates `subscriptionStatus` falls back to the coarse `status`.
- *
- * @param input.info - The dashboard plan (`subscriptionStatus`, `serviceEndsAt`, legacy `status`).
- * @param input.t - Translator returning the fallback when a key is missing.
- * @param input.formatDate - Formats an ISO instant, returning `null` when it cannot.
- * @returns The translated badge text.
- */
-export function resolvePlanStatusLabel(input: {
-    readonly info: {
-        readonly status: string;
-        readonly subscriptionStatus: string | null;
-        readonly serviceEndsAt: string | null;
-    };
-    readonly t: (key: string, fallback: string, params?: Record<string, unknown>) => string;
-    readonly formatDate: (iso: string) => string | null;
-}): string {
-    const { info, t, formatDate } = input;
-    switch (info.subscriptionStatus) {
-        case 'ACTIVE':
-            return t('host.dashboard.plan.active', 'Activo');
-        case 'GRACE_PERIOD':
-            return t('host.dashboard.plan.gracePeriod', 'Pago pendiente');
-        case 'SUSPENDED':
-            return t('host.dashboard.plan.suspended', 'Suspendida');
-        case 'PAUSED':
-            return t('host.dashboard.plan.paused', 'Pausada');
-        case 'CANCEL_SCHEDULED': {
-            const date = info.serviceEndsAt ? formatDate(info.serviceEndsAt) : null;
-            return date
-                ? t('host.dashboard.plan.cancelScheduled', 'Baja programada hasta el {{date}}', {
-                      date
-                  })
-                : t('host.dashboard.plan.cancelScheduledNoDate', 'Baja programada');
-        }
-        default:
-            return info.status === 'active'
-                ? t('host.dashboard.plan.active', 'Activo')
-                : t('host.dashboard.plan.inactive', 'Inactivo');
-    }
-}
-
-/**
- * Whether the host dashboard plan is in good standing (active badge style).
- *
- * Compares the EXACT subscription status (`ACTIVE`) when the API sent it, and the
- * coarse legacy status (`active`, lowercase) only for an API that predates it.
- * The two vocabularies differ in case, so they must never be compared with the
- * same literal (HOS-2543).
- *
- * @param input.info - The dashboard plan (`subscriptionStatus`, legacy `status`).
- * @returns `true` when the plan is active.
- */
-export function isPlanActive(input: {
-    readonly info: {
-        readonly status: string;
-        readonly subscriptionStatus: string | null;
-    };
-}): boolean {
-    const { info } = input;
-    return info.subscriptionStatus === null
-        ? info.status === 'active'
-        : info.subscriptionStatus === 'ACTIVE';
 }

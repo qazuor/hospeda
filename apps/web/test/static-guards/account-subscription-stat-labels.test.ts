@@ -14,9 +14,9 @@
  * is a claim the page keeps making whenever the script is slow, blocked, or
  * broken — and an owner on a comped paid plan reads that they have nothing.
  *
- * The card also needs a status label for `comp`: the script looks up
- * `data-label-${planStatus}` on the element, so a subscription whose status is
- * `comp` finds no attribute and the placeholder survives.
+ * Since HOS-2473 the card is a kit StatCard fed by `resolveSubscriptionStatText`
+ * (`lib/account/general-dashboard.ts`); the last test pins that every live-plan
+ * status has a label there.
  *
  * This guard lives under apps/web rather than packages/i18n on purpose:
  * `packages/i18n/test/setup.ts` mocks `node:fs` for the whole package, so a
@@ -30,7 +30,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const LOCALES_DIR = path.resolve(__dirname, '../../../../packages/i18n/src/locales');
-const STATS_GRID = path.resolve(__dirname, '../../src/components/account/AccountStatsGrid.astro');
+const STAT_RESOLVER = path.resolve(__dirname, '../../src/lib/account/general-dashboard.ts');
 
 /** Locales the account dashboard ships in. */
 const LOCALES = ['es', 'en', 'pt'] as const;
@@ -105,14 +105,20 @@ describe('account subscription stat card — labels (H-70 / H-130)', () => {
         });
     }
 
-    it('the status element declares a data-label-comp attribute', () => {
-        // Arrange — the client script resolves the label via
-        // `getAttribute('data-label-' + planStatus)`; without this attribute a
-        // comp subscription silently keeps the placeholder text.
-        const source = fs.readFileSync(STATS_GRID, 'utf-8');
-        // Act
-        const declaresCompLabel = /\bdata-label-comp=/.test(source);
-        // Assert
-        expect(declaresCompLabel).toBe(true);
+    it('the subscription StatCard resolver names a label for every live-plan status', () => {
+        // Arrange — HOS-2473 replaced the DOM script (and its `data-label-*`
+        // attributes) with a pure resolver; a status without a label key would
+        // render a blank status line under a real plan.
+        const source = fs.readFileSync(STAT_RESOLVER, 'utf-8');
+        // Act & Assert
+        for (const key of [
+            'activeStatus',
+            'gracePeriodStatus',
+            'suspendedStatus',
+            'cancelScheduledStatus',
+            'pausedStatus'
+        ]) {
+            expect(source).toContain(`account.pages.dashboard.stats.${key}`);
+        }
     });
 });

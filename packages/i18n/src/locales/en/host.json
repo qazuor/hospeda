@@ -997,25 +997,12 @@
         "pageDescription": "Overview of your properties and subscription",
         "error": "Error loading the dashboard",
         "retry": "Retry",
-        "plan": {
-            "trial": "Free trial",
-            "active": "Active",
-            "inactive": "Inactive",
-            "noPlan": "No plan",
-            "gracePeriod": "Payment pending",
-            "suspended": "Suspended",
-            "cancelScheduled": "Cancellation scheduled until {{date}}",
-            "cancelScheduledNoDate": "Cancellation scheduled",
-            "paused": "Paused"
-        },
         "widgets": {
             "properties": "Your properties",
             "total": "Total",
             "published": "Published",
             "draft": "Drafts",
             "manage": "Manage",
-            "plan": "Your subscription",
-            "noPlan": "No active subscription",
             "messages": "Messages",
             "unread": {
                 "singular": "unread message",
@@ -1023,13 +1010,25 @@
                 "none": "You have no new messages"
             },
             "viewAll": "View all",
-            "quickActions": "Quick actions"
+            "quickActions": "Quick actions",
+            "propertiesHint": "{{published}} published · {{draft}} drafts"
         },
         "quickActions": {
             "properties": "Properties",
             "promotions": "Promotions",
             "messages": "Messages",
             "subscription": "Subscription"
+        },
+        "summaryTitle": "Your properties at a glance",
+        "locked": {
+            "feature": "Host dashboard",
+            "description": "Your properties' numbers come with these plans."
+        },
+        "onboarding": {
+            "sectionTitle": "Getting started",
+            "title": "You haven't added a property yet",
+            "description": "Add your first property to start receiving inquiries.",
+            "action": "Add a property"
         }
     },
     "pages": {

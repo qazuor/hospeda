@@ -997,25 +997,12 @@
         "pageDescription": "Resumo das suas propriedades e assinatura",
         "error": "Erro ao carregar o painel",
         "retry": "Tentar novamente",
-        "plan": {
-            "trial": "Teste gratuito",
-            "active": "Ativo",
-            "inactive": "Inativo",
-            "noPlan": "Sem plano",
-            "gracePeriod": "Pagamento pendente",
-            "suspended": "Suspensa",
-            "cancelScheduled": "Cancelamento agendado até {{date}}",
-            "cancelScheduledNoDate": "Cancelamento agendado",
-            "paused": "Pausada"
-        },
         "widgets": {
             "properties": "Suas propriedades",
             "total": "Total",
             "published": "Publicadas",
             "draft": "Rascunhos",
             "manage": "Gerenciar",
-            "plan": "Sua assinatura",
-            "noPlan": "Sem assinatura ativa",
             "messages": "Mensagens",
             "unread": {
                 "singular": "mensagem não lida",
@@ -1023,13 +1010,25 @@
                 "none": "Você não tem mensagens novas"
             },
             "viewAll": "Ver todas",
-            "quickActions": "Ações rápidas"
+            "quickActions": "Ações rápidas",
+            "propertiesHint": "{{published}} publicadas · {{draft}} rascunhos"
         },
         "quickActions": {
             "properties": "Propriedades",
             "promotions": "Promoções",
             "messages": "Mensagens",
             "subscription": "Assinatura"
+        },
+        "summaryTitle": "Resumo das suas propriedades",
+        "locked": {
+            "feature": "Painel de anfitrião",
+            "description": "Os números das suas propriedades vêm com estes planos."
+        },
+        "onboarding": {
+            "sectionTitle": "Primeiros passos",
+            "title": "Você ainda não cadastrou nenhuma propriedade",
+            "description": "Cadastre sua primeira propriedade para começar a receber consultas.",
+            "action": "Cadastrar uma propriedade"
         }
     },
     "pages": {
