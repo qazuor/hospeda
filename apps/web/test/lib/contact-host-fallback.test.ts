@@ -44,4 +44,17 @@ describe('revealContactFallbackIfHydrationFailed', () => {
         vi.advanceTimersByTime(50);
         expect(fallback.hidden).toBe(true);
     });
+
+    it('restores the form and hides the fallback when the island hydrates late', async () => {
+        const { form, fallback } = mount({ ssr: true });
+        revealContactFallbackIfHydrationFailed({ root: document, graceMs: 100 });
+        vi.advanceTimersByTime(100);
+        expect(fallback.hidden).toBe(false);
+
+        document.querySelector('astro-island')?.removeAttribute('ssr');
+        await Promise.resolve();
+
+        expect(form.hidden).toBe(false);
+        expect(fallback.hidden).toBe(true);
+    });
 });

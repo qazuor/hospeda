@@ -4,7 +4,8 @@
  *
  * An Astro island keeps its `ssr` attribute until it hydrates. If it is still
  * there well after the page loaded, the form is visible but cannot be sent, so
- * the shell swaps it for the listing's public contact channels.
+ * the shell swaps it for the listing's public contact channels. If the island
+ * hydrates later, the form is restored and the fallback hidden again.
  */
 
 /** How long after `load` an island may take to hydrate before it counts as failed. */
@@ -29,11 +30,20 @@ export function revealContactFallbackIfHydrationFailed({
 }: RevealParams): void {
     const check = (): void => {
         for (const shell of root.querySelectorAll<HTMLElement>('[data-contact-shell]')) {
-            if (!shell.querySelector('astro-island[ssr]')) continue;
             const form = shell.querySelector<HTMLElement>('[data-contact-form]');
             const fallback = shell.querySelector<HTMLElement>('[data-contact-fallback]');
+            const island = shell.querySelector<HTMLElement>('astro-island[ssr]');
+            if (!island) continue;
             if (form) form.hidden = true;
             if (fallback) fallback.hidden = false;
+            // Self-healing: a slow device may hydrate after the grace period.
+            const observer = new MutationObserver(() => {
+                if (island.hasAttribute('ssr')) return;
+                if (form) form.hidden = false;
+                if (fallback) fallback.hidden = true;
+                observer.disconnect();
+            });
+            observer.observe(island, { attributes: true, attributeFilter: ['ssr'] });
         }
     };
     const schedule = (): void => {
