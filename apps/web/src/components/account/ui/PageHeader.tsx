@@ -48,6 +48,13 @@ export interface PageHeaderProps {
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
     readonly helpId?: HelpAnchor;
+    /**
+     * The page «?» (`HelpLink.astro`), rendered right after the title. From an
+     * Astro page pass it as a named slot: `<HelpLink slot="help" … />`. Since
+     * HOS-2546 the account layout renders no «?» row, so a page with its own
+     * article must put its «?» here.
+     */
+    readonly help?: ReactNode;
 }
 
 /**
@@ -66,7 +73,8 @@ export function PageHeader({
     actions,
     tabs,
     className,
-    helpId
+    helpId,
+    help
 }: PageHeaderProps) {
     const t = createT(locale);
     return (
@@ -121,6 +129,7 @@ export function PageHeader({
                 <div className={styles.heading}>
                     <div className={styles.titleRow}>
                         <h1 className={styles.title}>{title}</h1>
+                        {help}
                         {status}
                     </div>
                     {description ? <p className={styles.description}>{description}</p> : null}

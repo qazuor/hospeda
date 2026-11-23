@@ -26,6 +26,8 @@ import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import { HOST_QUICK_ACTIONS } from '@/lib/account/host-dashboard';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { pageHelpAnchor } from '@/lib/help/help-entry';
 import { PageHeader } from '@/components/account/ui';
 import { DashboardLinksSection } from '@/components/account/dashboard/DashboardLinksSection';
 import { HostDashboard } from '@/components/host/HostDashboard.client';
@@ -64,7 +66,9 @@ const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPathForAudien
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="host-dashboard" template="dashboard">
     <div class={styles.page}>
-        <PageHeader locale={locale} title={title} description={description} helpId="section:host.dashboard" />
+        <PageHeader locale={locale} title={title} description={description} helpId="section:host.dashboard">
+            <HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+        </PageHeader>
 
         <HostDashboard client:load locale={locale} planNames={planNames} plansHref={plansHref} />
 
