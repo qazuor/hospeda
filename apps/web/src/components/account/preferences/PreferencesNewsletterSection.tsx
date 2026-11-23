@@ -17,6 +17,7 @@ import {
     AsyncRegion,
     type AsyncResult,
     AutoSaveChip,
+    ConfirmDialog,
     ErrorState,
     Section,
     Skeleton,
@@ -110,6 +111,7 @@ export function PreferencesNewsletterSection({
     const t = createT(locale);
     const [state, setState] = useState<AsyncResult<NewsletterState>>({ status: 'loading' });
     const autoSave = useAutoSave();
+    const [confirmingUnsubscribe, setConfirmingUnsubscribe] = useState(false);
 
     const load = useCallback(
         async (signal?: AbortSignal) => {
@@ -131,26 +133,42 @@ export function PreferencesNewsletterSection({
         return () => controller.abort();
     }, [load]);
 
-    const setSubscribed = (next: boolean) =>
-        autoSave.run({
+    const setSubscribed = (next: boolean) => {
+        // The chip's retry repeats this same closure. Once the mutation has been
+        // accepted it must only re-read the status, never POST/DELETE again.
+        let mutated = false;
+        return autoSave.run({
             save: async () => {
-                await sendMutation({
-                    url: joinApi({
-                        apiUrl,
-                        path: next
-                            ? '/api/v1/protected/newsletter/subscribe'
-                            : '/api/v1/protected/newsletter/unsubscribe'
-                    }),
-                    method: next ? 'POST' : 'DELETE',
-                    body: next ? { locale, source: 'account_preferences' } : undefined,
-                    locale,
-                    fallback: t('newsletter.errorMessage')
-                });
+                if (!mutated) {
+                    await sendMutation({
+                        url: joinApi({
+                            apiUrl,
+                            path: next
+                                ? '/api/v1/protected/newsletter/subscribe'
+                                : '/api/v1/protected/newsletter/unsubscribe'
+                        }),
+                        method: next ? 'POST' : 'DELETE',
+                        body: next ? { locale, source: 'account_preferences' } : undefined,
+                        locale,
+                        fallback: t('newsletter.errorMessage')
+                    });
+                    mutated = true;
+                }
                 // Double opt-in: the status after a subscribe is read back, not guessed.
                 const data = await loadStatus({ apiUrl });
                 setState({ status: 'ready', data });
             }
         });
+    };
+
+    const handleSwitch = (next: boolean) => {
+        if (next) {
+            void setSubscribed(true).catch(() => undefined);
+            return;
+        }
+        // Unsubscribing asks first, as the old page did.
+        setConfirmingUnsubscribe(true);
+    };
 
     const setContentType = ({
         key,
@@ -224,7 +242,7 @@ export function PreferencesNewsletterSection({
                                 locale={locale}
                                 checked={status === 'active' || status === 'pending_verification'}
                                 disabled={terminal}
-                                onChange={setSubscribed}
+                                onChange={handleSwitch}
                                 helpId="section:preferences.newsletter"
                             />
                             {status === 'pending_verification' ? (
@@ -251,6 +269,20 @@ export function PreferencesNewsletterSection({
                                 : null}
                         </>
                     );
+                }}
+            />
+            <ConfirmDialog
+                open={confirmingUnsubscribe}
+                locale={locale}
+                tone="destructive"
+                title={t('footer.newsletter.unsubscribeConfirmTitle')}
+                description={t('footer.newsletter.unsubscribeConfirm')}
+                confirmLabel={t('footer.newsletter.unsubscribeConfirmButton')}
+                onCancel={() => setConfirmingUnsubscribe(false)}
+                onConfirm={async () => {
+                    // A failure is reported by the chip (with its retry), not by the dialog.
+                    await setSubscribed(false).catch(() => undefined);
+                    setConfirmingUnsubscribe(false);
                 }}
             />
         </Section>
