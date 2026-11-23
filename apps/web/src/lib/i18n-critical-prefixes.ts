@@ -92,8 +92,7 @@ export const EARLY_HYDRATION_ISLANDS = [
  * the early islands' import graph; an entry here may be that prefix or a
  * shorter ancestor of it when the ancestor costs about the same bytes
  * (`footer.newsletter` instead of its 24 leaves). Where the ancestor is big the
- * entry stays narrow — `config/navigation.ts` names one `listing.owner.nav.*`
- * key, and `listing.owner` is 34 KB.
+ * entry stays narrow.
  *
  * Every entry must also be covered by `CLIENT_I18N_KEY_PREFIXES`: the critical
  * part is cut FROM the client dictionary, so anything outside it never ships.
@@ -121,7 +120,6 @@ export const CRITICAL_I18N_KEY_PREFIXES = [
     // `CLIENT_I18N_KEY_PREFIXES`). They match no key, so they cost nothing.
     'experience.editOwn',
     'footer.newsletter',
-    'listing.owner.nav',
     'nav.closeMenu',
     'nav.goHome',
     'nav.language',
