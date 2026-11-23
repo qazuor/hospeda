@@ -8,12 +8,21 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+/** Removes every match of `pattern`, repeating until none is left so nested fragments cannot re-form a marker. */
+function stripUntilStable(source: string, pattern: RegExp): string {
+    let current = source;
+    let previous: string;
+    do {
+        previous = current;
+        current = current.replace(pattern, '');
+    } while (current !== previous);
+    return current;
+}
+
 function read(relativePath: string): string {
     const source = readFileSync(resolve(__dirname, '../../../src', relativePath), 'utf8');
-    return source
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/^\s*\/\/.*$/gm, '')
-        .replace(/<!--[\s\S]*?-->/g, '');
+    const withoutCode = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    return stripUntilStable(withoutCode, /<!--[\s\S]*?-->/g);
 }
 
 const AMENITIES = read('components/accommodation/AmenitiesGrid.astro');
