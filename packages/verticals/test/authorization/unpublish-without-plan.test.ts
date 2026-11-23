@@ -11,7 +11,7 @@ const VERTICALS = [
 ] as const;
 
 /** An owner with no live plan: no coverage source and an empty effective set. */
-function noPlanPorts(vertical: VerticalEnum) {
+function noPlanPorts({ vertical }: { readonly vertical: VerticalEnum }) {
     const coverage = vi.fn(async () => ({ covered: false, sources: [] }));
     const effectiveSet = vi.fn(async ({ userId }: { userId: string; vertical: VerticalEnum }) =>
         rehydrateEffectiveSet({
@@ -32,7 +32,7 @@ describe('HOS-2244 taking a listing down does not need a plan', () => {
         VERTICALS
     )('%s: an owner with no plan can UNPUBLISH a published listing', async (vertical) => {
         // Arrange
-        const ports = noPlanPorts(vertical);
+        const ports = noPlanPorts({ vertical: vertical });
 
         // Act
         const result = await resolveListingAccess({
@@ -60,14 +60,14 @@ describe('HOS-2244 taking a listing down does not need a plan', () => {
             vertical,
             operation: 'PUBLISH',
             facts: draft,
-            ...noPlanPorts(vertical)
+            ...noPlanPorts({ vertical: vertical })
         });
         const edit = await resolveListingAccess({
             actorId: 'owner',
             vertical,
             operation: 'EDIT',
             facts,
-            ...noPlanPorts(vertical)
+            ...noPlanPorts({ vertical: vertical })
         });
 
         // Assert
@@ -77,7 +77,7 @@ describe('HOS-2244 taking a listing down does not need a plan', () => {
 
     it('step 4 still applies: a foreign actor cannot UNPUBLISH and learns nothing', async () => {
         // Arrange
-        const ports = noPlanPorts(VerticalEnum.ACCOMMODATION);
+        const ports = noPlanPorts({ vertical: VerticalEnum.ACCOMMODATION });
 
         // Act
         const result = await resolveListingAccess({
@@ -93,7 +93,7 @@ describe('HOS-2244 taking a listing down does not need a plan', () => {
     });
 
     it('step 4 still applies: a missing or purged listing is NOT_FOUND', async () => {
-        const ports = noPlanPorts(VerticalEnum.ACCOMMODATION);
+        const ports = noPlanPorts({ vertical: VerticalEnum.ACCOMMODATION });
         const base = {
             actorId: 'owner',
             vertical: VerticalEnum.ACCOMMODATION,
@@ -112,13 +112,28 @@ describe('HOS-2244 taking a listing down does not need a plan', () => {
         ).toEqual({ allowed: false, reason: 'NOT_FOUND' });
     });
 
+    it.each([
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+        PublicationStatusEnum.MODERATED
+    ] as const)('an owner reaches PB6 from %s (409 there, never a 404 here)', async (publicationStatus) => {
+        const result = await resolveListingAccess({
+            actorId: 'owner',
+            vertical: VerticalEnum.ACCOMMODATION,
+            operation: 'UNPUBLISH',
+            facts: { ownerId: 'owner', publicationStatus },
+            ...noPlanPorts({ vertical: VerticalEnum.ACCOMMODATION })
+        });
+        expect(result).toMatchObject({ allowed: true, subjectId: 'owner' });
+    });
+
     it('an archived listing is not an UNPUBLISH target', async () => {
         const result = await resolveListingAccess({
             actorId: 'owner',
             vertical: VerticalEnum.VENUE,
             operation: 'UNPUBLISH',
             facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.ARCHIVED },
-            ...noPlanPorts(VerticalEnum.VENUE)
+            ...noPlanPorts({ vertical: VerticalEnum.VENUE })
         });
         expect(result).toEqual({ allowed: false, reason: 'NOT_FOUND' });
     });
@@ -129,7 +144,7 @@ describe('HOS-2244 taking a listing down does not need a plan', () => {
             vertical: VerticalEnum.VENUE,
             operation: 'UNPUBLISH',
             facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED },
-            ...noPlanPorts(VerticalEnum.VENUE)
+            ...noPlanPorts({ vertical: VerticalEnum.VENUE })
         });
         expect(result).toEqual({ allowed: false, reason: 'UNAUTHENTICATED' });
     });
@@ -141,7 +156,7 @@ describe('HOS-2244 taking a listing down does not need a plan', () => {
             operation: 'UNPUBLISH',
             facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED },
             adminAction: { action: 'ACC_15', permitted: true, isSystemActor: false },
-            ...noPlanPorts(VerticalEnum.ACCOMMODATION)
+            ...noPlanPorts({ vertical: VerticalEnum.ACCOMMODATION })
         });
         expect(result).toMatchObject({ allowed: true, subjectId: 'owner' });
     });
