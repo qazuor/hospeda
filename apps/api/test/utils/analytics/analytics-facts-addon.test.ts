@@ -229,6 +229,32 @@ describe('add-on analytics facts adapter (HOS-1883 AC-13, AC-15)', () => {
         );
     });
 
+    it('maps a provider-side cancellation to addon_cancelled{PROVIDER_CANCELLED} (HOS-1883 I1)', () => {
+        // Arrange + Act
+        const captured = captureOne({
+            kind: 'ADDON_CANCELLED',
+            ...subject,
+            actorKind: 'SYSTEM',
+            occurredAt: at,
+            path: 'PROVIDER_CANCELLED',
+            wasScheduled: false,
+            lifetimeDays: 3
+        });
+
+        // Assert
+        expect(captured?.name).toBe('addon_cancelled');
+        expect(captured?.properties).toEqual({
+            ...common,
+            actor_kind: 'SYSTEM',
+            path: 'PROVIDER_CANCELLED',
+            was_scheduled: false,
+            lifetime_days: 3
+        });
+        expect(AnalyticsEventSchemas.addon_cancelled.parse(captured?.properties)).toEqual(
+            captured?.properties
+        );
+    });
+
     it('omits absent optional properties instead of sending undefined keys', () => {
         // Arrange
         const { vertical: _v, subscriptionId: _s, ...bare } = subject;

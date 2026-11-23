@@ -9,14 +9,16 @@ export type AddonFactCycle = 'monthly' | 'quarterly' | 'semiannual' | 'annual';
 /**
  * The path through which a paid, live add-on ended before its natural end (HOS-1883 §4.2).
  * `GRANT_REVOKED` is never emitted today: a revocation ends only free instances, which owe no
- * fact (AC-7). The owner kept it in the enum on purpose.
+ * fact (AC-7). The owner kept it in the enum on purpose. `PROVIDER_CANCELLED` is a COMPLEMENTO
+ * cancelled at the provider and mirrored by the notice path (payer or provider: it cannot tell).
  */
 export type AddonEndPath =
     | 'OWNER_WITHDREW'
     | 'SERVICE_END'
     | 'ORPHANED'
     | 'GRANT_REVOKED'
-    | 'LISTING_PURGED';
+    | 'LISTING_PURGED'
+    | 'PROVIDER_CANCELLED';
 
 /**
  * Why a pending add-on purchase died (HOS-1883 §4.2). `ORDER_DECLINED` is absent on purpose: the

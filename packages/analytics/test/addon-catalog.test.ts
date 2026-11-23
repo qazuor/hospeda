@@ -81,6 +81,15 @@ describe('addon analytics event schemas (HOS-1883 AC-14, AC-23)', () => {
         ).toBe(false);
     });
 
+    it('accepts path PROVIDER_CANCELLED on addon_cancelled (HOS-1883 I1)', () => {
+        expect(
+            AnalyticsEventSchemas.addon_cancelled.safeParse({
+                ...examples.addon_cancelled,
+                path: 'PROVIDER_CANCELLED'
+            }).success
+        ).toBe(true);
+    });
+
     it('rejects an amount at or above Umami numeric ceiling (1e15)', () => {
         expect(
             AnalyticsEventSchemas.addon_charge_succeeded.safeParse({

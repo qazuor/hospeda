@@ -238,7 +238,8 @@ export const AddonAnalyticsEventSchemas = {
             'SERVICE_END',
             'ORPHANED',
             'GRANT_REVOKED',
-            'LISTING_PURGED'
+            'LISTING_PURGED',
+            'PROVIDER_CANCELLED'
         ]),
         was_scheduled: z.boolean(),
         lifetime_days: boundedCount.optional()
