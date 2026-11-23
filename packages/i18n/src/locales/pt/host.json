@@ -997,25 +997,12 @@
         "pageDescription": "Resumo das suas propriedades e assinatura",
         "error": "Erro ao carregar o painel",
         "retry": "Tentar novamente",
-        "plan": {
-            "trial": "Teste gratuito",
-            "active": "Ativo",
-            "inactive": "Inativo",
-            "noPlan": "Sem plano",
-            "gracePeriod": "Pagamento pendente",
-            "suspended": "Suspensa",
-            "cancelScheduled": "Cancelamento agendado até {{date}}",
-            "cancelScheduledNoDate": "Cancelamento agendado",
-            "paused": "Pausada"
-        },
         "widgets": {
             "properties": "Suas propriedades",
             "total": "Total",
             "published": "Publicadas",
             "draft": "Rascunhos",
             "manage": "Gerenciar",
-            "plan": "Sua assinatura",
-            "noPlan": "Sem assinatura ativa",
             "messages": "Mensagens",
             "unread": {
                 "singular": "mensagem não lida",

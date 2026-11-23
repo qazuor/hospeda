@@ -997,25 +997,12 @@
         "pageDescription": "Resumen de tus propiedades y suscripción",
         "error": "Error al cargar el panel",
         "retry": "Reintentar",
-        "plan": {
-            "trial": "Prueba gratuita",
-            "active": "Activo",
-            "inactive": "Inactivo",
-            "noPlan": "Sin plan",
-            "gracePeriod": "Pago pendiente",
-            "suspended": "Suspendida",
-            "cancelScheduled": "Baja programada hasta el {{date}}",
-            "cancelScheduledNoDate": "Baja programada",
-            "paused": "Pausada"
-        },
         "widgets": {
             "properties": "Tus propiedades",
             "total": "Total",
             "published": "Publicadas",
             "draft": "Borradores",
             "manage": "Gestionar",
-            "plan": "Tu suscripción",
-            "noPlan": "Sin suscripción activa",
             "messages": "Mensajes",
             "unread": {
                 "singular": "mensaje sin leer",

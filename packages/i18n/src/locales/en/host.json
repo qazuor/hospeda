@@ -997,25 +997,12 @@
         "pageDescription": "Overview of your properties and subscription",
         "error": "Error loading the dashboard",
         "retry": "Retry",
-        "plan": {
-            "trial": "Free trial",
-            "active": "Active",
-            "inactive": "Inactive",
-            "noPlan": "No plan",
-            "gracePeriod": "Payment pending",
-            "suspended": "Suspended",
-            "cancelScheduled": "Cancellation scheduled until {{date}}",
-            "cancelScheduledNoDate": "Cancellation scheduled",
-            "paused": "Paused"
-        },
         "widgets": {
             "properties": "Your properties",
             "total": "Total",
             "published": "Published",
             "draft": "Drafts",
             "manage": "Manage",
-            "plan": "Your subscription",
-            "noPlan": "No active subscription",
             "messages": "Messages",
             "unread": {
                 "singular": "unread message",
