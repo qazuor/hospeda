@@ -96,7 +96,6 @@ import { useId } from 'react';
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import type { VenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
 import { useVenueMenu } from './use-venue-menu';
 import { VenueMenuCourses } from './VenueMenuCourses.client';
@@ -154,15 +153,6 @@ export function VenueMenuManager({
     const lockedGate = menu.menuGate === 'open' ? 'plan' : menu.menuGate;
     const busy = menu.state !== 'idle';
 
-    /*
-     * The scheme gate (HOS-592 / F-02). `menu_file_url` reached the column
-     * through more than the upload route before the write schemas were
-     * narrowed, so the value is made safe no matter how it got into the row.
-     * `undefined` means the link is DROPPED, never rendered with the raw value.
-     */
-    const safeFileHref = resolveSafeExternalUrl(menu.file?.url);
-    const safeMenuHref = resolveSafeExternalUrl(menu.currentMenuUrl);
-
     // The three things a carta owns (DEC-FAC-062) decide BOTH the empty state
     // and whether "Vaciar" exists: dishes, the uploaded file, and the link.
     const lockedHasData =
@@ -205,9 +195,7 @@ export function VenueMenuManager({
                         t={t}
                         sections={menu.sections}
                         file={menu.file}
-                        safeFileHref={safeFileHref}
                         menuUrl={menu.currentMenuUrl}
-                        safeMenuHref={safeMenuHref}
                         hasData={lockedHasData}
                     />
                 </VenueSectionLockedPanel>
@@ -234,7 +222,6 @@ export function VenueMenuManager({
                     <VenueMenuFileBlock
                         t={t}
                         file={menu.file}
-                        safeFileHref={safeFileHref}
                         pickedFileName={menu.pickedFileName}
                         busy={busy}
                         gated={isMenuGated}

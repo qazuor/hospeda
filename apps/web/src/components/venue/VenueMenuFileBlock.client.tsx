@@ -10,6 +10,7 @@
 
 import type { JSX } from 'react';
 import type { TranslationFn } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './VenueMenuManager.module.css';
 import { ACCEPTED_MENU_FILE_TYPES, type MenuFile } from './venue-menu-draft';
 
@@ -17,8 +18,6 @@ import { ACCEPTED_MENU_FILE_TYPES, type MenuFile } from './venue-menu-draft';
 export interface VenueMenuFileBlockProps {
     readonly t: TranslationFn;
     readonly file: MenuFile | null;
-    /** Scheme-checked href of the file, or `undefined` when it must not link. */
-    readonly safeFileHref: string | undefined;
     /** Name of the file picked in this session (the input is cleared). */
     readonly pickedFileName: string | null;
     /** A request is in flight. */
@@ -40,7 +39,6 @@ export interface VenueMenuFileBlockProps {
 export function VenueMenuFileBlock({
     t,
     file,
-    safeFileHref,
     pickedFileName,
     busy,
     gated,
@@ -49,6 +47,13 @@ export function VenueMenuFileBlock({
     onDelete
 }: VenueMenuFileBlockProps): JSX.Element {
     const describedBy = gated ? planNoticeId : undefined;
+    /*
+     * The scheme gate (HOS-592 / F-02). `menu_file_url` reached the column
+     * through more than the upload route before the write schemas were
+     * narrowed, so the value is made safe no matter how it got into the row.
+     * `undefined` means the link is DROPPED, never rendered with the raw value.
+     */
+    const safeFileHref = resolveSafeExternalUrl(file?.url);
 
     return (
         <div className={styles.fileBlock}>

@@ -8,6 +8,7 @@
 import type { JSX } from 'react';
 import type { TranslationFn } from '@/lib/i18n';
 import { centsToPesosInputValue } from '@/lib/listing/price-units';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './VenueMenuManager.module.css';
 import type { MenuFile, MenuSectionDraft } from './venue-menu-draft';
 
@@ -16,11 +17,7 @@ export interface VenueMenuLockedViewProps {
     readonly t: TranslationFn;
     readonly sections: readonly MenuSectionDraft[];
     readonly file: MenuFile | null;
-    /** Scheme-checked href of the file, or `undefined` when it must not link. */
-    readonly safeFileHref: string | undefined;
     readonly menuUrl: string | null;
-    /** Scheme-checked href of the external link. */
-    readonly safeMenuHref: string | undefined;
     /** Whether the carta holds anything at all (dishes, file or link). */
     readonly hasData: boolean;
 }
@@ -35,11 +32,18 @@ export function VenueMenuLockedView({
     t,
     sections,
     file,
-    safeFileHref,
     menuUrl,
-    safeMenuHref,
     hasData
 }: VenueMenuLockedViewProps): JSX.Element {
+    /*
+     * The scheme gate (HOS-592 / F-02). `menu_file_url` reached the column
+     * through more than the upload route before the write schemas were
+     * narrowed, so the value is made safe no matter how it got into the row.
+     * `undefined` means the link is DROPPED, never rendered with the raw value.
+     */
+    const safeFileHref = resolveSafeExternalUrl(file?.url);
+    const safeMenuHref = resolveSafeExternalUrl(menuUrl);
+
     return (
         <>
             {file ? (
