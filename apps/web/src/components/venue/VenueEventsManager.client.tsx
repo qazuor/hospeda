@@ -307,22 +307,17 @@ export function VenueEventsManager({
             return { ok: false };
         }
 
-        // A 400 carrying one of our stable keys is explained specifically
-        // (which new event is dated in the past, which ceiling was hit).
+        // A 400 carrying one of our stable keys is explained specifically (an
+        // event dated in the past, a ceiling hit). Only the bar says it (decision 7).
         const specific =
             result.error.status === 400
                 ? describeAgendaSaveError({ message: result.error.message, entries, t })
                 : null;
-        // Told by the save bar alone (owner decision 7), never repeated below.
-        return {
-            ok: false,
-            message:
-                specific ??
-                t(
-                    'venue.owner.editor.venueEventsManager.saveError',
-                    'No se pudo guardar la agenda.'
-                )
-        };
+        const fallback = t(
+            'venue.owner.editor.venueEventsManager.saveError',
+            'No se pudo guardar la agenda.'
+        );
+        return { ok: false, message: specific ?? fallback };
     }, [basePath, entries, t, upsellPlanName]);
 
     /**
