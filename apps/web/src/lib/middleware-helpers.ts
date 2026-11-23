@@ -407,6 +407,9 @@ export function buildLocaleRedirect({
     return `/${DEFAULT_LOCALE}${normalizedPath}${search}`;
 }
 
+/** Redirect statuses Astro's `context.redirect` accepts. */
+export type RedirectStatus = 300 | 301 | 302 | 303 | 304 | 307 | 308;
+
 /** Input of {@link buildRedirectResponse}. */
 export interface BuildRedirectResponseInput {
     /**
@@ -414,12 +417,12 @@ export interface BuildRedirectResponseInput {
      * `context.redirect`, so the method keeps its receiver.
      */
     readonly context: {
-        readonly redirect: (location: string, status?: number) => Response;
+        readonly redirect: (location: string, status?: RedirectStatus) => Response;
     };
     /** Redirect target, query string included when the caller copied one. */
     readonly location: string;
     /** HTTP status of the redirect (301, 302, 308 ...). */
-    readonly status: number;
+    readonly status: RedirectStatus;
 }
 
 /**
