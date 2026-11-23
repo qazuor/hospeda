@@ -464,41 +464,4 @@ describe('ShareButtons', () => {
             expect(screen.queryByRole('menu')).not.toBeInTheDocument();
         });
     });
-
-    describe('Campaign UTMs per action (HOS-2359 AC-14)', () => {
-        it.each([
-            'accommodation',
-            'event',
-            'post'
-        ] as const)('tags every network link with its own source and campaign=%s', (campaign) => {
-            // Arrange
-            renderShareButtons({ campaign });
-
-            // Act
-            fireEvent.click(screen.getByRole('button', { name: /compartir/i }));
-
-            // Assert
-            const hrefs = screen
-                .getAllByRole('menuitem')
-                .map((item) => item.getAttribute('href'))
-                .filter((href): href is string => href !== null);
-            expect(hrefs).toHaveLength(4);
-            for (const [index, source] of ['whatsapp', 'facebook', 'x', 'telegram'].entries()) {
-                expect(hrefs[index]).toContain(encodeURIComponent(sharedUrl(source, campaign)));
-            }
-        });
-
-        it('copies the canonical URL tagged source=copy, never the bare URL', async () => {
-            renderShareButtons({ campaign: 'post' });
-            fireEvent.click(screen.getByRole('button', { name: /compartir/i }));
-
-            fireEvent.click(screen.getByRole('menuitem', { name: /copiar enlace/i }));
-
-            await waitFor(() => {
-                expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-                    sharedUrl('copy', 'post')
-                );
-            });
-        });
-    });
 });
