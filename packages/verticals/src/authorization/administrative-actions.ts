@@ -204,7 +204,7 @@ export const ADMINISTRATIVE_ACTION_LISTING_OPERATIONS: Readonly<
     Record<ListingAdministrativeAction, readonly ListingOperation[]>
 > = {
     // Action 15 edits content, so it may read the content it edits (DEC-FAC-055, AC:3:7).
-    ACC_15: ['EDIT', 'CREATE', 'READ_OWN'],
+    ACC_15: ['EDIT', 'UNPUBLISH', 'CREATE', 'READ_OWN'],
     ACC_23: ['DELETE'],
     // Action 27 rewrites the classification and nothing else (HOS-1875).
     ACC_27: ['EDIT']
