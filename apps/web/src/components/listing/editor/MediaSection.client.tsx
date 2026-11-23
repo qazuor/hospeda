@@ -34,58 +34,35 @@
  * though `media/upload-entity` accepts both. Uploads went in through a door that
  * existed; deletes went out through one that returned 400, so every listing
  * photo removal orphaned its asset regardless of this call.
+ *
+ * HOS-2489: this file is the render layer only, on the kit MediaManager skin
+ * shared with the accommodation editor. State and handlers live in
+ * `use-listing-media.ts` (+ `use-listing-media-upload.ts`), the pure upload
+ * helpers in `listing-media-upload.ts`.
  */
 
+import { DeleteIcon } from '@repo/icons';
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
-import { getGalleryCap, type Image } from '@repo/schemas';
-import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
+import type { Image } from '@repo/schemas';
+import { type JSX, useCallback } from 'react';
+import {
+    Alert,
+    Button,
+    MediaDropzone,
+    PhotoGrid,
+    PhotoTile,
+    useConfirm
+} from '@/components/account/ui';
+import { PhotoAltBadge } from '@/components/host/editor/PhotoAltBadge';
 import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEditor.client';
-import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
-import { type ListingMediaRow, listingMediaApi } from '@/lib/api/endpoints-protected';
-import type { ApiError } from '@/lib/api/types';
-import { visibleApiMessage } from '@/lib/api-errors';
-import { getApiUrl } from '@/lib/env';
-import { confirmPhotoRemoval } from '@/lib/forms/confirm-photo-removal';
-import { useSingleFlight } from '@/lib/forms/use-single-flight';
+import styles from '@/components/host/editor/PhotoSection.module.css';
+import { PhotoUploadStatus } from '@/components/host/editor/PhotoUploadStatus';
+import { photoRemovalConfirmRequest } from '@/lib/forms/confirm-photo-removal';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
-import { webLogger } from '@/lib/logger';
-import type { MediaAttribution } from '@/lib/media';
-import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
-import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
-import { buildUploadEntityError, describeUploadEntityError } from '@/lib/media/upload-entity-error';
-import { addToast } from '@/store/toast-store';
 import fieldStyles from './editor-fields.module.css';
-import styles from './MediaSection.module.css';
-import {
-    buildMediaCompressionUnsupportedTooLargeMessage,
-    type Translate,
-    validateMediaFileSize,
-    validateMediaFileType
-} from './media-section-helpers';
-
-/**
- * Display item used by this component's local state. Extends the DB row's
- * essentials with an `id` — empty (`''`) for SSR-only placeholders that have
- * not been hydrated from the API yet, which is what gates ops availability.
- */
-interface ListingMediaItem {
-    readonly id: string;
-    readonly url: string;
-    readonly publicId?: string;
-    readonly caption: string | undefined;
-    /**
-     * Longer photo description. Added by HOS-1036 alongside `attribution`:
-     * both columns existed on the media tables from HOS-372 and were simply
-     * never read here, because nothing in this section could write them.
-     */
-    readonly description: string | undefined;
-    readonly alt: string | undefined;
-    /** Photo credit, when the owner declared one. */
-    readonly attribution: MediaAttribution | undefined;
-    readonly isFeatured: boolean;
-}
+import { useListingMedia } from './use-listing-media';
 
 export interface MediaSectionProps {
     readonly locale: SupportedLocale;
@@ -107,190 +84,14 @@ export interface MediaSectionProps {
 }
 
 /**
- * Thrown when the upload exceeds its client-side budget.
- *
- * A distinct type because the browser's own abort error carries a
- * vendor-specific English message, and the catch path renders `err.message`
- * directly.
- */
-class UploadTimeoutError extends Error {
-    constructor() {
-        super('upload-timeout');
-        this.name = 'UploadTimeoutError';
-    }
-}
-
-/**
- * Map a `ListingMediaRow` (from the API) to the local display shape.
- */
-function rowToItem(row: ListingMediaRow): ListingMediaItem {
-    return {
-        id: row.id,
-        url: row.url,
-        publicId: row.publicId ?? undefined,
-        caption: row.caption ?? undefined,
-        description: row.description ?? undefined,
-        alt: row.alt ?? undefined,
-        attribution: row.attribution ?? undefined,
-        isFeatured: row.isFeatured
-    };
-}
-
-/**
- * Map a legacy `Image` (no DB id, SSR-only) to a partial display object.
- * Used only for the first-paint placeholder; once `listMedia` resolves,
- * these are replaced by real `ListingMediaItem` values that carry DB ids.
- * The empty id prevents any API call until the real rows load.
- */
-function legacyToDisplay(img: Image, isFeatured: boolean): ListingMediaItem {
-    return {
-        id: '',
-        url: img.url,
-        publicId: img.publicId ?? undefined,
-        caption: img.caption ?? undefined,
-        description: img.description ?? undefined,
-        alt: img.alt ?? undefined,
-        attribution: img.attribution ?? undefined,
-        isFeatured
-    };
-}
-
-/**
- * Upload a single image to the protected entity-upload endpoint. Unchanged
- * by HOS-372 — only what happens AFTER a successful upload changed (see the
- * file header).
- *
- * @returns The uploaded `Image` (Cloudinary url + metadata, moderationState APPROVED).
- */
-async function uploadEntityImage({
-    file,
-    vertical,
-    listingId,
-    role
-}: {
-    readonly file: File;
-    readonly vertical: VenueOrExperience;
-    readonly listingId: string;
-    readonly role: 'featured' | 'gallery';
-}): Promise<Image> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('entityType', vertical);
-    formData.append('entityId', listingId);
-    formData.append('role', role);
-
-    // Bounded like the accommodation editor's XHR helper (BETA-134). Without a
-    // signal this `fetch` waits forever, so a stalled connection leaves the
-    // owner on a spinner with no error and no way out but a reload — a risk
-    // that grew with the raised size cap, since a bigger photo spends longer on
-    // the wire. Uses the same size-scaled budget so both editors behave alike.
-    //
-    // `AbortController` + `setTimeout` rather than `AbortSignal.timeout`: the
-    // latter needs Safari 16, and nothing else this app ships to a browser
-    // requires anything that recent. On an older iOS it would not degrade — the
-    // property access throws before `fetch` runs, breaking listing uploads
-    // outright. This pairing also matches how the rest of the codebase cancels
-    // requests.
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), resolveUploadTimeoutMs(file.size));
-
-    let response: Response;
-    try {
-        response = await fetch(`${getApiUrl()}/api/v1/protected/media/upload-entity`, {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-            signal: controller.signal
-        });
-    } catch (error) {
-        // An abort surfaces as a vendor-specific English DOMException whose
-        // `message` would otherwise be rendered verbatim in a Spanish UI, since
-        // `DOMException` satisfies `instanceof Error`. Re-throw a typed marker
-        // the caller can translate.
-        if (controller.signal.aborted) {
-            throw new UploadTimeoutError();
-        }
-        throw error;
-    } finally {
-        clearTimeout(timer);
-    }
-
-    const json = (await response.json().catch(() => null)) as {
-        readonly success?: boolean;
-        readonly data?: Image;
-        readonly error?: {
-            readonly code?: string;
-            readonly reason?: string;
-            readonly message?: string;
-            readonly details?: unknown;
-        };
-    } | null;
-
-    if (!response.ok || !json?.data) {
-        throw buildUploadEntityError({ body: json, status: response.status });
-    }
-    return json.data;
-}
-
-/**
- * Turn an upload failure into a message worth showing.
- *
- * A timeout gets its own localized sentence: the browser's abort error carries
- * vendor-specific English text ("signal timed out"), and because `DOMException`
- * satisfies `instanceof Error`, a naive `err.message` would render it verbatim
- * in a Spanish UI.
- *
- * @param err - The thrown value
- * @param t - Active translator
- * @returns A user-facing message
- */
-function describeUploadError(err: unknown, t: Translate): string {
-    if (err instanceof UploadTimeoutError) {
-        return t(
-            'listing.owner.editor.media.uploadTimeout',
-            'La subida tardó demasiado. Probá de nuevo.'
-        );
-    }
-    return describeUploadEntityError({
-        err,
-        t,
-        fallback: t('listing.owner.editor.media.uploadFailed', 'Error al subir la imagen')
-    });
-}
-
-/**
- * Whether an `addMedia` failure is the gallery cap rather than any other
- * error, for a multi-file batch upload (HOS-832, mirrors the accommodation
- * editor's `isPlanLimitReached` gate for the same reason — see below).
- *
- * Unlike accommodation, a venue or experience listing has no per-plan photo entitlement: its
- * gallery cap is the single fixed `getGalleryCap(vertical)` constant, already
- * checked against the WHOLE batch before any upload starts (see
- * `handleGallerySelect`). Under normal operation the server can therefore
- * never reject on this path — but a concurrent edit in another tab can still
- * fill the remaining slots between that client-side check and this file's
- * turn in the sequential loop, and the server enforces the same cap with
- * `ServiceErrorCode.QUOTA_EXCEEDED` (`packages/service-core/src/services/venue/venue.media.ts`,
- * `packages/service-core/src/services/experience/experience.media.ts`,
- * mapped to HTTP 429 — `apps/api/src/middlewares/response.ts`). Once that
- * happens every remaining file in the batch would fail identically, so the
- * caller stops instead of firing one toast per file.
- */
-function isGalleryQuotaExceeded(error: ApiError): boolean {
-    return error.status === 429 && error.code === 'QUOTA_EXCEEDED';
-}
-
-/**
  * Featured-image + gallery section for a listing. Hydrates on mount
  * from `listingMediaApi.listMedia`; every user operation (add, remove,
- * set-featured) is persisted immediately via a granular API call. The parent
- * PATCH no longer carries media data.
+ * set-featured) is persisted immediately via a granular API call and reported
+ * to the shell auto-save chip. The parent PATCH no longer carries media data.
  *
  * Errors are shown inline AND via the global toast store (mirrors
- * PhotoSection's BETA-144 behavior): the inline message can be scrolled out
- * of view, so the toast guarantees the failure is visible regardless of
- * scroll position. On any op failure the local state is NOT mutated, keeping
- * the UI consistent with the server.
+ * PhotoSection's BETA-144 behavior). On any op failure the local state is NOT
+ * mutated, keeping the UI consistent with the server.
  */
 export function MediaSection({
     locale,
@@ -299,604 +100,217 @@ export function MediaSection({
     initialFeaturedImage = null,
     initialGallery = []
 }: MediaSectionProps): JSX.Element {
-    const { t, tPlural } = createTranslations(locale);
-    const featuredInputRef = useRef<HTMLInputElement>(null);
-    const galleryInputRef = useRef<HTMLInputElement>(null);
-
-    const [featuredItem, setFeaturedItem] = useState<ListingMediaItem | null>(() =>
-        initialFeaturedImage ? legacyToDisplay(initialFeaturedImage, true) : null
-    );
-    const [galleryItems, setGalleryItems] = useState<readonly ListingMediaItem[]>(() =>
-        initialGallery.map((img) => legacyToDisplay(img, false))
+    const { t } = createTranslations(locale);
+    // HOS-2429 + HOS-2489: deletes are immediate, so the kit dialog asks first.
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
+    const confirmRemoval = useCallback(
+        () => askConfirm(photoRemovalConfirmRequest({ t })),
+        [askConfirm, t]
     );
 
-    const [isHydrated, setIsHydrated] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    /**
-     * Whether a selected file is currently being resized/recompressed
-     * client-side (HOS-332), BEFORE the upload itself starts.
-     */
-    const [isCompressing, setIsCompressing] = useState(false);
-    /** "Uploading photo X of Y" marker for a multi-file gallery batch (HOS-832). */
-    const [uploadBatch, setUploadBatch] = useState<{
-        readonly current: number;
-        readonly total: number;
-    } | null>(null);
-    const [opLoading, setOpLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        featuredInputRef,
+        galleryInputRef,
+        featuredItem,
+        galleryItems,
+        isUploading,
+        isCompressing,
+        uploadBatch,
+        error,
+        galleryCap,
+        isGalleryFull,
+        remainingGallerySlots,
+        anyOpInFlight,
+        opsReady,
+        handleFeaturedSelect,
+        handleFeaturedRemove,
+        handleGallerySelect,
+        handleGalleryRemove,
+        handleUpdateText
+    } = useListingMedia({
+        locale,
+        vertical,
+        listingId,
+        initialFeaturedImage,
+        initialGallery,
+        confirmRemoval
+    });
 
-    const galleryCap = getGalleryCap(vertical);
-    const isGalleryFull = galleryItems.length >= galleryCap;
-    // Selecting exactly one remaining slot with `multiple` on would still let
-    // the OS picker offer more than one file, only to reject the whole batch
-    // instantly — so `multiple` is only declared once there is room for more
-    // than one upload (mirrors the accommodation editor, HOS-122).
-    const remainingGallerySlots = Math.max(galleryCap - galleryItems.length, 0);
-
-    // --- Hydrate from API on mount ---
-
-    useEffect(() => {
-        let cancelled = false;
-
-        listingMediaApi
-            .listMedia({ vertical, id: listingId })
-            .then((result) => {
-                if (cancelled) return;
-                if (!result.ok) {
-                    webLogger.warn('[MediaSection] listMedia failed:', result.error);
-                    // Keep SSR placeholders; flag as hydrated so ops become available
-                    setIsHydrated(true);
-                    return;
-                }
-                const rows = result.data.media;
-                const featured = rows.find((r) => r.isFeatured) ?? null;
-                const gallery = rows.filter((r) => !r.isFeatured);
-                setFeaturedItem(featured ? rowToItem(featured) : null);
-                setGalleryItems(gallery.map(rowToItem));
-                setIsHydrated(true);
-            })
-            .catch((err: unknown) => {
-                if (cancelled) return;
-                webLogger.warn('[MediaSection] listMedia error:', err);
-                setIsHydrated(true);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [vertical, listingId]);
-
-    /**
-     * Report a failure both inline (existing behavior) and via the global
-     * toast store, mirroring PhotoSection's BETA-144 behavior.
-     */
-    const reportError = useCallback((message: string) => {
-        setError(message);
-        addToast({ type: 'error', message });
-    }, []);
-
-    // --- Featured image handlers ---
-
-    /**
-     * Upload a new photo and mark it as the featured image.
-     *
-     * Flow: upload → addFeaturedMedia. The server creates the cover and
-     * replaces the old cover atomically without spending a gallery slot.
-     */
-    const handleFeaturedSelect = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0];
-            if (!file) {
-                return;
-            }
-            const typeError = validateMediaFileType(file, t);
-            if (typeError) {
-                reportError(typeError);
-                return;
-            }
-            setError(null);
-
-            // HOS-332: resize/recompress before the size cap is checked, so a
-            // heavy original that shrinks under the cap is accepted. Any
-            // failure to compress (unsupported format, no canvas support)
-            // falls back to the original file — never blocks the upload.
-            setIsCompressing(true);
-            const compression = await compressImageForUpload({ file });
-            setIsCompressing(false);
-
-            const uploadFile = compression.file;
-            const sizeError = validateMediaFileSize(uploadFile, t);
-            if (sizeError) {
-                reportError(
-                    isCompressionUnavailable(compression)
-                        ? buildMediaCompressionUnsupportedTooLargeMessage(t)
-                        : sizeError
-                );
-                return;
-            }
-
-            setIsUploading(true);
-            try {
-                const uploaded = await uploadEntityImage({
-                    file: uploadFile,
-                    vertical,
-                    listingId,
-                    role: 'featured'
-                });
-
-                const featuredResult = await listingMediaApi.addFeaturedMedia({
-                    vertical,
-                    id: listingId,
-                    body: {
-                        url: uploaded.url,
-                        publicId: uploaded.publicId,
-                        moderationState: 'APPROVED'
-                    }
-                });
-
-                if (!featuredResult.ok) {
-                    reportError(
-                        visibleApiMessage({ error: featuredResult.error }) ??
-                            t('listing.owner.editor.media.persistFailed')
-                    );
-                    return;
-                }
-
-                // The server soft-deletes the replaced cover atomically.
-                setFeaturedItem(rowToItem(featuredResult.data.media));
-            } catch (err) {
-                reportError(describeUploadError(err, t));
-            } finally {
-                setIsUploading(false);
-                if (featuredInputRef.current) {
-                    featuredInputRef.current.value = '';
-                }
-            }
-        },
-        [vertical, listingId, t, reportError]
-    );
-
-    /**
-     * Remove the current featured row. There is no "unfeature" endpoint —
-     * removing is the clear action. `removeMedia` deletes the Cloudinary
-     * binary server-side before dropping the row.
-     */
-    const runSingleFlight = useSingleFlight();
-    const handleFeaturedRemove = useCallback(async () => {
-        if (!featuredItem?.id) {
-            return;
-        }
-        // HOS-2429: the delete is immediate and irreversible, so ask first.
-        if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) {
-            return;
-        }
-        setError(null);
-        setOpLoading(true);
-
-        const result = await listingMediaApi.removeMedia({
-            vertical,
-            id: listingId,
-            mediaId: featuredItem.id
-        });
-
-        if (result.ok) {
-            setFeaturedItem(null);
-        } else {
-            reportError(
-                visibleApiMessage({ error: result.error }) ??
-                    t('listing.owner.editor.media.removeFailed')
-            );
-        }
-        setOpLoading(false);
-    }, [featuredItem, vertical, listingId, t, reportError, runSingleFlight]);
-
-    // --- Gallery handlers ---
-
-    /**
-     * Upload a batch of gallery photos and persist each one immediately.
-     *
-     * Ported from the accommodation editor's `processGalleryFiles`
-     * (`apps/web/src/components/host/editor/use-photo-section.ts`, HOS-122):
-     * the cap is checked ONCE against the whole selected batch (checking it
-     * file-by-file is where the accommodation editor's original bug lived —
-     * the last file silently vanishing over the limit), every file is
-     * validated up front so a bad file rejects the whole batch before any
-     * upload starts, and files upload SEQUENTIALLY — one XHR at a time — so
-     * the in-flight state keeps meaning something instead of resolving in an
-     * arbitrary order. `uploadBatch` surfaces "uploading photo X of Y" while
-     * a batch of more than one file is in flight, for the same reason.
-     *
-     * A single file's failure is reported and the loop continues to the next
-     * file — UNLESS the gallery cap itself was hit (`isGalleryQuotaExceeded`),
-     * in which case every remaining file would fail identically, so the loop
-     * stops after ONE toast instead of firing one per remaining file (mirrors
-     * the accommodation editor's `isPlanLimitReached` guard, HOS-724).
-     *
-     * Flow per file: upload → addMedia (creates a visible, non-featured row)
-     * → append to state.
-     */
-    const handleGallerySelect = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const files = Array.from(event.target.files ?? []);
-            if (files.length === 0) {
-                return;
-            }
-
-            const remainingSlots = galleryCap - galleryItems.length;
-            if (files.length > remainingSlots) {
-                reportError(
-                    tPlural('listing.owner.editor.media.capReached', galleryCap, {
-                        cap: galleryCap
-                    })
-                );
-                if (galleryInputRef.current) {
-                    galleryInputRef.current.value = '';
-                }
-                return;
-            }
-
-            for (const file of files) {
-                const typeError = validateMediaFileType(file, t);
-                if (typeError) {
-                    reportError(typeError);
-                    return;
-                }
-            }
-
-            setError(null);
-
-            // HOS-332: resize/recompress the whole batch BEFORE checking the
-            // size cap, so a heavy original that shrinks under the cap is
-            // accepted — mirrors `handleFeaturedSelect`. Run concurrently
-            // since compression is CPU-bound (decode + canvas draw), not I/O.
-            setIsCompressing(true);
-            const compressions = await Promise.all(
-                files.map((file) => compressImageForUpload({ file }))
-            );
-            setIsCompressing(false);
-
-            for (const compression of compressions) {
-                const sizeError = validateMediaFileSize(compression.file, t);
-                if (sizeError) {
-                    reportError(
-                        isCompressionUnavailable(compression)
-                            ? buildMediaCompressionUnsupportedTooLargeMessage(t)
-                            : sizeError
-                    );
-                    return;
-                }
-            }
-
-            setIsUploading(true);
-
-            for (let index = 0; index < compressions.length; index += 1) {
-                const file = compressions[index]?.file;
-                if (!file) {
-                    continue;
-                }
-                setUploadBatch(
-                    files.length > 1 ? { current: index + 1, total: files.length } : null
-                );
-
-                try {
-                    const uploaded = await uploadEntityImage({
-                        file,
-                        vertical,
-                        listingId,
-                        role: 'gallery'
-                    });
-
-                    const addResult = await listingMediaApi.addMedia({
-                        vertical,
-                        id: listingId,
-                        body: {
-                            url: uploaded.url,
-                            publicId: uploaded.publicId,
-                            moderationState: 'APPROVED'
-                        }
-                    });
-
-                    if (!addResult.ok) {
-                        reportError(
-                            visibleApiMessage({ error: addResult.error }) ??
-                                t('listing.owner.editor.media.persistFailed')
-                        );
-                        // The cap was hit: every remaining file in the batch
-                        // would fail identically, so stop instead of firing
-                        // one more toast per file.
-                        if (isGalleryQuotaExceeded(addResult.error)) {
-                            break;
-                        }
-                        continue;
-                    }
-
-                    setGalleryItems((prev) => [...prev, rowToItem(addResult.data.media)]);
-                } catch (err) {
-                    reportError(describeUploadError(err, t));
-                }
-            }
-
-            setIsUploading(false);
-            setUploadBatch(null);
-            if (galleryInputRef.current) {
-                galleryInputRef.current.value = '';
-            }
-        },
-        [galleryItems.length, vertical, listingId, t, reportError, galleryCap, tPlural]
-    );
-
-    /**
-     * Remove a gallery photo by its DB UUID. On failure, keeps the item in
-     * state (consistent with the server).
-     */
-    const handleGalleryRemove = useCallback(
-        async (item: ListingMediaItem) => {
-            if (!item.id) {
-                return;
-            }
-            // HOS-2429: the delete is immediate and irreversible, so ask first.
-            if (!(await runSingleFlight(() => confirmPhotoRemoval({ t })))) {
-                return;
-            }
-            setError(null);
-            setOpLoading(true);
-
-            const result = await listingMediaApi.removeMedia({
-                vertical,
-                id: listingId,
-                mediaId: item.id
-            });
-
-            if (result.ok) {
-                setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
-            } else {
-                reportError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t('listing.owner.editor.media.removeFailed')
-                );
-            }
-            setOpLoading(false);
-        },
-        [vertical, listingId, t, reportError, runSingleFlight]
-    );
-
-    /**
-     * Persist a photo's text metadata (alt / caption / description / credit).
-     *
-     * Immediate and per-photo like every other op here: `updateMedia` PATCHes
-     * only this row, and the listing editor's Save button never carries photo
-     * data. A blank field arrives as `null` (clear) rather than `''` — see
-     * `buildPhotoMetadataUpdateBody`, which is what the panel builds the body
-     * with.
-     *
-     * On success the row is replaced in local state so re-opening the panel
-     * shows the CURRENT values rather than the ones it mounted with.
-     *
-     * @returns `true` when the PATCH succeeded — the panel shows its saved
-     *   badge only then.
-     */
-    const handleUpdateText = useCallback(
-        async (item: ListingMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
-            // An SSR placeholder carries `id: ''` and has no row to patch yet.
-            if (!item.id) {
-                return false;
-            }
-            setError(null);
-            setOpLoading(true);
-
-            const result = await listingMediaApi.updateMedia({
-                vertical,
-                id: listingId,
-                mediaId: item.id,
-                body
-            });
-
-            setOpLoading(false);
-
-            if (!result.ok) {
-                reportError(
-                    visibleApiMessage({ error: result.error }) ??
-                        t(
-                            'listing.owner.editor.media.metadataSaveFailed',
-                            'No se pudieron guardar los datos de la foto'
-                        )
-                );
-                return false;
-            }
-
-            const updated = rowToItem(result.data.media);
-            if (updated.isFeatured) {
-                setFeaturedItem(updated);
-            } else {
-                setGalleryItems((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
-            }
-            return true;
-        },
-        [vertical, listingId, t, reportError]
-    );
-
-    const anyOpInFlight = isUploading || isCompressing || opLoading;
-    // Ops require hydrated DB ids; SSR placeholders (id='') cannot be operated on
-    const opsReady = isHydrated;
+    const removeLabel = t('listing.owner.editor.media.remove', 'Eliminar');
 
     return (
         <section
             className={fieldStyles.section}
             id="editor-media"
         >
-            <span className={fieldStyles.label}>
+            <h3 className={styles.sectionTitle}>
                 {t('listing.owner.editor.sections.media', 'Fotos')}
-            </span>
-            <div className={styles.media}>
-                <div className={styles.mediaGroup}>
-                    <span className={fieldStyles.label}>
-                        {t('listing.owner.editor.media.featured', 'Imagen principal')}
-                    </span>
-                    {featuredItem ? (
-                        <div className={styles.mediaItem}>
-                            <div className={`${styles.mediaThumb} ${styles.mediaThumbFeatured}`}>
-                                <img
-                                    src={featuredItem.url}
-                                    alt={
-                                        featuredItem.alt ??
-                                        t('listing.owner.editor.media.featured', 'Imagen principal')
-                                    }
-                                    className={styles.mediaImage}
+            </h3>
+
+            <div className={styles.slot}>
+                <span className={styles.slotLabel}>
+                    {t('listing.owner.editor.media.featured', 'Imagen principal')}
+                </span>
+                {featuredItem ? (
+                    <PhotoTile
+                        featured
+                        src={featuredItem.url}
+                        alt={
+                            featuredItem.alt ??
+                            t('listing.owner.editor.media.featured', 'Imagen principal')
+                        }
+                        actions={
+                            <Button
+                                variant="secondary"
+                                size="lg"
+                                iconOnly
+                                aria-label={removeLabel}
+                                disabled={anyOpInFlight || !opsReady || !featuredItem.id}
+                                onClick={handleFeaturedRemove}
+                            >
+                                <DeleteIcon
+                                    size="sm"
+                                    aria-hidden="true"
                                 />
-                                <button
-                                    type="button"
-                                    className={styles.mediaRemove}
-                                    aria-label={t('listing.owner.editor.media.remove', 'Eliminar')}
-                                    disabled={anyOpInFlight || !opsReady || !featuredItem.id}
-                                    onClick={handleFeaturedRemove}
-                                >
-                                    ×
-                                </button>
-                            </div>
-                            <PhotoMetadataEditor
+                            </Button>
+                        }
+                        badge={
+                            <PhotoAltBadge
                                 locale={locale}
                                 item={featuredItem}
+                            />
+                        }
+                    >
+                        <PhotoMetadataEditor
+                            locale={locale}
+                            item={featuredItem}
+                            disabled={anyOpInFlight || !opsReady}
+                            toggleAriaLabel={t(
+                                'host.properties.editor.photo.editFeaturedDetailsAria',
+                                'Editar textos de la portada'
+                            )}
+                            closeAriaLabel={t(
+                                'host.properties.editor.photo.closeFeaturedDetailsAria',
+                                'Cerrar edición de textos de la portada'
+                            )}
+                            onSave={handleUpdateText}
+                        />
+                    </PhotoTile>
+                ) : (
+                    <MediaDropzone
+                        title={t('listing.owner.editor.media.add', 'Agregar foto')}
+                        disabled={isUploading || isCompressing}
+                        onPick={() => featuredInputRef.current?.click()}
+                    />
+                )}
+                <input
+                    ref={featuredInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    aria-label={t('listing.owner.editor.media.featured', 'Imagen principal')}
+                    className={styles.fileInput}
+                    onChange={handleFeaturedSelect}
+                />
+            </div>
+
+            <div className={styles.slot}>
+                <span className={styles.slotLabel}>
+                    {t('listing.owner.editor.media.gallery', 'Galería de fotos')} (
+                    {galleryItems.length}/{galleryCap})
+                </span>
+                <PhotoGrid>
+                    {galleryItems.map((image, index) => (
+                        <PhotoTile
+                            key={image.id || image.url}
+                            src={image.url}
+                            alt={
+                                image.alt ??
+                                t('listing.owner.editor.media.gallery', 'Galería de fotos')
+                            }
+                            actions={
+                                <Button
+                                    variant="secondary"
+                                    size="lg"
+                                    iconOnly
+                                    aria-label={removeLabel}
+                                    disabled={anyOpInFlight || !opsReady || !image.id}
+                                    onClick={() => handleGalleryRemove(image)}
+                                >
+                                    <DeleteIcon
+                                        size="sm"
+                                        aria-hidden="true"
+                                    />
+                                </Button>
+                            }
+                            badge={
+                                <PhotoAltBadge
+                                    locale={locale}
+                                    item={image}
+                                />
+                            }
+                        >
+                            <PhotoMetadataEditor
+                                locale={locale}
+                                item={image}
                                 disabled={anyOpInFlight || !opsReady}
+                                compactLayout={true}
                                 toggleAriaLabel={t(
-                                    'host.properties.editor.photo.editFeaturedDetailsAria',
-                                    'Editar textos de la portada'
+                                    'host.properties.editor.photo.editDetailsAria',
+                                    'Editar textos de la foto {{index}}',
+                                    { index: index + 1 }
                                 )}
                                 closeAriaLabel={t(
-                                    'host.properties.editor.photo.closeFeaturedDetailsAria',
-                                    'Cerrar edición de textos de la portada'
+                                    'host.properties.editor.photo.closeDetailsAria',
+                                    'Cerrar edición de textos de la foto {{index}}',
+                                    { index: index + 1 }
                                 )}
                                 onSave={handleUpdateText}
                             />
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            className={`${styles.mediaAdd} ${styles.mediaAddFeatured}`}
+                        </PhotoTile>
+                    ))}
+                    {!isGalleryFull && (
+                        <MediaDropzone
+                            variant="tile"
+                            title={t('listing.owner.editor.media.add', 'Agregar foto')}
                             disabled={isUploading || isCompressing}
-                            onClick={() => featuredInputRef.current?.click()}
-                        >
-                            {t('listing.owner.editor.media.add', 'Agregar foto')}
-                        </button>
+                            onPick={() => galleryInputRef.current?.click()}
+                        />
                     )}
-                    <input
-                        ref={featuredInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic"
-                        aria-label={t('listing.owner.editor.media.featured', 'Imagen principal')}
-                        className={styles.mediaFileInput}
-                        onChange={handleFeaturedSelect}
-                    />
-                </div>
-
-                <div className={styles.mediaGroup}>
-                    <span className={fieldStyles.label}>
-                        {t('listing.owner.editor.media.gallery', 'Galería de fotos')} (
-                        {galleryItems.length}/{galleryCap})
-                    </span>
-                    <div className={styles.mediaGallery}>
-                        {galleryItems.map((image, index) => (
-                            <div
-                                key={image.id || image.url}
-                                className={styles.mediaItem}
-                            >
-                                <div className={styles.mediaThumb}>
-                                    <img
-                                        src={image.url}
-                                        alt={
-                                            image.alt ??
-                                            t(
-                                                'listing.owner.editor.media.gallery',
-                                                'Galería de fotos'
-                                            )
-                                        }
-                                        className={styles.mediaImage}
-                                    />
-                                    <button
-                                        type="button"
-                                        className={styles.mediaRemove}
-                                        aria-label={t(
-                                            'listing.owner.editor.media.remove',
-                                            'Eliminar'
-                                        )}
-                                        disabled={anyOpInFlight || !opsReady || !image.id}
-                                        onClick={() => handleGalleryRemove(image)}
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                <PhotoMetadataEditor
-                                    locale={locale}
-                                    item={image}
-                                    disabled={anyOpInFlight || !opsReady}
-                                    compactLayout={true}
-                                    toggleAriaLabel={t(
-                                        'host.properties.editor.photo.editDetailsAria',
-                                        'Editar textos de la foto {{index}}',
-                                        { index: index + 1 }
-                                    )}
-                                    closeAriaLabel={t(
-                                        'host.properties.editor.photo.closeDetailsAria',
-                                        'Cerrar edición de textos de la foto {{index}}',
-                                        { index: index + 1 }
-                                    )}
-                                    onSave={handleUpdateText}
-                                />
-                            </div>
-                        ))}
-                        {!isGalleryFull && (
-                            <button
-                                type="button"
-                                className={styles.mediaAdd}
-                                disabled={isUploading || isCompressing}
-                                aria-label={t('listing.owner.editor.media.add', 'Agregar foto')}
-                                onClick={() => galleryInputRef.current?.click()}
-                            >
-                                +
-                            </button>
-                        )}
-                    </div>
-                    <input
-                        ref={galleryInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic"
-                        multiple={remainingGallerySlots > 1}
-                        disabled={isGalleryFull}
-                        aria-label={t('listing.owner.editor.media.gallery', 'Galería de fotos')}
-                        className={styles.mediaFileInput}
-                        onChange={handleGallerySelect}
-                    />
-                    <span className={styles.mediaHint}>
-                        {t(
-                            'listing.owner.editor.media.uploadHint',
-                            'JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB',
-                            { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                        )}
-                    </span>
-                    {isCompressing && (
-                        <p className={styles.mediaUploadBatchStatus}>
-                            {t('listing.owner.editor.media.processingImage', 'Optimizando imagen…')}
-                        </p>
+                </PhotoGrid>
+                <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic"
+                    multiple={remainingGallerySlots > 1}
+                    disabled={isGalleryFull}
+                    aria-label={t('listing.owner.editor.media.gallery', 'Galería de fotos')}
+                    className={styles.fileInput}
+                    onChange={handleGallerySelect}
+                />
+                <span className={styles.sectionDescription}>
+                    {t(
+                        'listing.owner.editor.media.uploadHint',
+                        'JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB',
+                        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                     )}
-                    {isUploading && uploadBatch && uploadBatch.total > 1 && (
-                        <p className={styles.mediaUploadBatchStatus}>
-                            {t(
-                                'listing.owner.editor.media.uploadingBatch',
-                                'Subiendo foto {{current}} de {{total}}…',
-                                { current: uploadBatch.current, total: uploadBatch.total }
-                            )}
-                        </p>
-                    )}
-                </div>
-
-                {error && (
-                    <p
-                        className={fieldStyles.error}
-                        role="alert"
-                    >
-                        {error}
-                    </p>
-                )}
+                </span>
+                <PhotoUploadStatus
+                    locale={locale}
+                    isCompressing={isCompressing}
+                    isUploading={isUploading}
+                    batch={uploadBatch}
+                />
             </div>
+
+            {error && (
+                <Alert
+                    tone="danger"
+                    locale={locale}
+                >
+                    {error}
+                </Alert>
+            )}
+            {confirmDialog}
         </section>
     );
 }
