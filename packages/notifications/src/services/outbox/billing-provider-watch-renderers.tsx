@@ -43,10 +43,15 @@ export const providerWatchAlertPayloadSchema = z
         message: 'A mail with no alerts must report a failed run'
     });
 
-/** Builds the renderer of the provider watch alert mail for the production sender. */
-export function createBillingProviderWatchRenderers(): Readonly<
-    Record<string, OutboxMailRenderer>
-> {
+/**
+ * Builds the renderer of the provider watch alert mail for the production sender.
+ *
+ * @param input.adminUrl - Admin panel base URL. Absent: the mail has no button (HOS-2565 §7.7)
+ */
+export function createBillingProviderWatchRenderers(
+    input: { readonly adminUrl?: string } = {}
+): Readonly<Record<string, OutboxMailRenderer>> {
+    const adminUrl = input.adminUrl?.replace(/\/$/, '');
     return {
         [PROVIDER_WATCH_ALERT_TEMPLATE]: ({ row }: { readonly row: EmailOutboxRow }) => {
             const result = providerWatchAlertPayloadSchema.safeParse(row.payload);
@@ -57,7 +62,12 @@ export function createBillingProviderWatchRenderers(): Readonly<
                     count: result.data.alerts.length,
                     ...(result.data.run === undefined ? {} : { outcome: result.data.run.outcome })
                 }),
-                react: <ProviderWatchAlert {...result.data} />
+                react: (
+                    <ProviderWatchAlert
+                        {...result.data}
+                        {...(adminUrl ? { adminUrl } : {})}
+                    />
+                )
             };
         }
     };

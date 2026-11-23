@@ -68,15 +68,15 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 
     // Soft-cancel confirmation (SPEC-147)
     [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]:
-        'Cancellation confirmed — {planName} access until {accessUntil}',
+        'Confirmamos tu baja: seguís con {planName} hasta el {accessUntil}',
 
     // D3 access-ending reminder (SPEC-147 T-010)
     [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]:
-        'Your {planName} access ends in {daysRemaining} days — act now to keep it',
+        'Tu acceso a {planName} termina en {daysRemaining} días',
 
     // Plan retirement notification (SPEC-148)
     [NotificationType.PLAN_BEING_RETIRED]:
-        'Important: {planName} is being retired — your access continues until {accessUntil}',
+        '{planName} deja de ofrecerse: tu acceso sigue hasta el {accessUntil}',
 
     // Alliance claim invitation (HOS-278 §6.2)
     [NotificationType.ALLIANCE_CLAIM_INVITE]:

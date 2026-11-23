@@ -14,7 +14,8 @@ export {
     defineOutboxEntry,
     EmailCatalogScenarioNotFoundError,
     type EmailScenarioList,
-    type OutboxScenarioInput
+    type OutboxScenarioInput,
+    readInputLocale
 } from './define-entry.js';
 export {
     buildEmailPixelManifest,

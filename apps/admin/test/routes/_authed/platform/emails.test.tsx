@@ -62,8 +62,8 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         audience: 'user',
         wired: true,
         scenarios: [
-            { id: 'monthly', label: 'Mensual' },
-            { id: 'annual', label: 'Anual' }
+            { id: 'monthly', label: 'Mensual', locale: 'es' },
+            { id: 'annual', label: 'Anual', locale: 'es' }
         ]
     },
     {
@@ -74,7 +74,7 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         domain: 'auth',
         audience: 'user',
         wired: true,
-        scenarios: [{ id: 'with-name', label: 'Con nombre' }]
+        scenarios: [{ id: 'with-name', label: 'Con nombre', locale: 'es' }]
     },
     {
         key: 'newsletter.verify',
@@ -84,7 +84,7 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         domain: 'newsletter',
         audience: 'staff',
         wired: false,
-        scenarios: [{ id: 'default', label: 'Por defecto' }]
+        scenarios: [{ id: 'default', label: 'Por defecto', locale: 'es' }]
     }
 ];
 

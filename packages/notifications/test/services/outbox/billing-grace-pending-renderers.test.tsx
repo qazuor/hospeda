@@ -45,8 +45,11 @@ describe('TEST:B8b:25 grace notice plan-change line', () => {
             'Si cambiás la tarjeta con la que pagás en Mercado Pago, el cobro se vuelve a intentar en el momento. No podemos asegurarte que entre.'
         );
         expect(legacy).toContain(
-            'Si el cobro no entra antes del 19 de octubre de 2026, tu suscripción se suspende y vas a tener que volver a suscribirte. Mi Suscripción: https://hospeda.test/es/mi-cuenta/suscripcion/'
+            'Si el cobro no entra antes del 19 de octubre de 2026, tu suscripción se suspende y vas a tener que volver a suscribirte.'
         );
+        expect(legacy).not.toContain('Mi Suscripción: https://');
+        expect(legacy).toContain('href="https://hospeda.test/es/mi-cuenta/suscripcion/"');
+        expect(legacy).toContain('Ir a Mi Suscripción');
         expect(pending).toContain('Tu cambio de plan sigue pendiente.');
         expect(pending).toContain(
             'Si el cobro no entra antes del 19 de octubre de 2026, tu suscripción se suspende y vas a tener que volver a suscribirte.'
@@ -65,8 +68,11 @@ describe('TEST:B8b:25 grace notice plan-change line', () => {
             'Si cambiás la tarjeta en Mercado Pago, el cobro se reintenta en el momento. No podemos garantizar que se apruebe.'
         );
         expect(legacy).toContain(
-            'Si el cobro no entra antes de esa fecha, tu suscripción se suspende y vas a tener que volver a suscribirte. Mi Suscripción: https://hospeda.test/es/mi-cuenta/suscripcion/'
+            'Si el cobro no entra antes de esa fecha, tu suscripción se suspende y vas a tener que volver a suscribirte.'
         );
+        expect(legacy).not.toContain('Mi Suscripción: https://');
+        expect(legacy).toContain('href="https://hospeda.test/es/mi-cuenta/suscripcion/"');
+        expect(legacy).toContain('Ir a Mi Suscripción');
         expect(pending).toContain('Tu cambio de plan sigue pendiente.');
         expect(pending).toContain(
             'Si el cobro no entra antes de esa fecha, tu suscripción se suspende y vas a tener que volver a suscribirte.'

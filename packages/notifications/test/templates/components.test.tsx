@@ -114,5 +114,28 @@ describe('Email Template Components', () => {
             expect(html).toContain('40%');
             expect(html).toContain('60%');
         });
+
+        it('should not tag a regular value as raw', () => {
+            // Arrange & Act
+            const html = renderToStaticMarkup(InfoRow({ label: 'Plan', value: 'Pro' }));
+
+            // Assert
+            expect(html).not.toContain('data-raw-value');
+            expect(html).not.toContain('monospace');
+        });
+
+        it('should tag a raw value for the Spanish-only check and show it monospace (HOS-2565 §7.2)', () => {
+            // Arrange & Act
+            const html = renderToStaticMarkup(
+                InfoRow({ label: 'Obtuvo', value: '{"status":"pending"}', raw: true })
+            );
+
+            // Assert
+            expect(html).toMatch(
+                /data-raw-value="true"[^>]*>\{&quot;status&quot;:&quot;pending&quot;\}</
+            );
+            expect(html).toContain('monospace');
+            expect(html).toContain('font-weight:400');
+        });
     });
 });

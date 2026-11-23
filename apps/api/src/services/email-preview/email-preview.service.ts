@@ -93,7 +93,11 @@ function toSummary(input: { readonly entry: EmailCatalogEntry }): EmailPreviewEn
         domain: entry.domain,
         audience: entry.audience,
         wired: entry.wired,
-        scenarios: entry.scenarios.map((scenario) => ({ id: scenario.id, label: scenario.label }))
+        scenarios: entry.scenarios.map((scenario) => ({
+            id: scenario.id,
+            label: scenario.label,
+            locale: scenario.locale
+        }))
     };
 }
 

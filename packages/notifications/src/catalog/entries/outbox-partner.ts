@@ -48,6 +48,7 @@ export const OUTBOX_PARTNER_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'application-en',
+                locale: 'en',
                 label: 'Postulación aprobada (inglés)',
                 input: {
                     payload: {
@@ -79,6 +80,7 @@ export const OUTBOX_PARTNER_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'pt',
+                locale: 'pt',
                 label: 'Portugués',
                 input: {
                     payload: {

@@ -66,6 +66,18 @@ async function render(input: Parameters<typeof createBillingReconciliationRender
     return { subject: result.subject, html: renderToStaticMarkup(result.react) };
 }
 
+/** The bare item (no enrichment): lead line, then labeled rows, never the old joined line. */
+function expectBareItem(html: string): void {
+    expect(html).not.toContain(bareLine);
+    expect(html).not.toContain(' · ');
+    expect(html).toContain('Marca abierta');
+    expect(html).toContain('Motivo');
+    expect(html).toContain('Suscripción');
+    // The full id, so staff can search for it when the holder lookup failed
+    expect(html).toContain(SUB_ID);
+    expect(html).toContain('2 veces');
+}
+
 describe('HOS-1971 reconciliation summary enrichment', () => {
     it('renders an enriched line with holder, plan, amount, status, reason, link and short id', async () => {
         // Arrange + Act
@@ -77,16 +89,19 @@ describe('HOS-1971 reconciliation summary enrichment', () => {
         // Assert
         expect(subject).toBe(RECONCILIATION_SUMMARY_SUBJECT);
         expect(html).toContain('Ana Pérez &lt;ana@example.com&gt;');
-        expect(html).toContain('fichas: Parrilla El Puerto');
+        expect(html).toContain('Fichas');
+        expect(html).toContain('Parrilla El Puerto');
         expect(html).toContain('Comer y salir Pro mensual $18.500,00');
-        expect(html).toContain('estado: en gracia');
+        expect(html).toContain('Estado');
+        expect(html).toContain('en gracia');
         expect(html).toContain('Pago tardío rechazado');
         expect(html).toContain('Qué hacer:');
-        expect(html).toContain('ref. 2f04c1ad');
+        expect(html).toContain('2f04c1ad');
         expect(html).toContain(
             `https://admin.hospeda.test/billing/reconciliation/${MARK_ID}/events`
         );
         expect(html).not.toContain(bareLine);
+        expect(html).not.toContain(' · ');
     });
 
     it('falls back to the bare line when the subject cannot be resolved', async () => {
@@ -99,8 +114,10 @@ describe('HOS-1971 reconciliation summary enrichment', () => {
         // Act
         const { html } = await render({ siteUrl: 'https://hospeda.test', readSubjects: empty });
         // Assert
-        expect(html).toContain(bareLine);
-        expect(html).not.toContain('Qué hacer');
+        expectBareItem(html);
+        // The next step comes from the reason, so it shows even without the subject's details
+        expect(html).toContain('Qué hacer');
+        expect(html).not.toContain('Titular');
     });
 
     it('still renders when the lookup throws, and reports the failure', async () => {
@@ -116,7 +133,7 @@ describe('HOS-1971 reconciliation summary enrichment', () => {
             onEnrichmentError
         });
         // Assert
-        expect(html).toContain(bareLine);
+        expectBareItem(html);
         expect(onEnrichmentError).toHaveBeenCalledTimes(1);
     });
 
@@ -142,7 +159,7 @@ describe('HOS-1971 reconciliation summary enrichment', () => {
         expect(staging.html).toContain('Ambiente: STAGING');
         expect(prod.html).not.toContain('[STAGING]');
         expect(prod.html).not.toContain('Ambiente:');
-        expect(prod.html).toContain(bareLine);
+        expectBareItem(prod.html);
     });
 
     it('has plain-words copy for every closed reason', () => {
@@ -150,5 +167,36 @@ describe('HOS-1971 reconciliation summary enrichment', () => {
             expect(copy.label.length).toBeGreaterThan(0);
             expect(copy.action.length).toBeGreaterThan(0);
         }
+    });
+
+    it('shows the reason through the injected label port first (HOS-2565 D8)', async () => {
+        // Arrange
+        const resolveReasonLabel = vi.fn(({ reason }: { reason: string }) =>
+            reason === 'PAGO_TARDIO_RECHAZADO' ? 'Etiqueta del panel' : null
+        );
+        // Act
+        const { html } = await render({
+            siteUrl: 'https://hospeda.test',
+            readSubjects: resolved,
+            resolveReasonLabel
+        });
+        // Assert
+        expect(resolveReasonLabel).toHaveBeenCalledWith({ reason: 'PAGO_TARDIO_RECHAZADO' });
+        expect(html).toContain('Etiqueta del panel');
+        expect(html).not.toContain('PAGO_TARDIO_RECHAZADO');
+    });
+
+    it('shows an unknown code raw, and only in the Motivo row, when no label is known', async () => {
+        // Arrange
+        const unknown = { ...payload, marks: [{ ...payload.marks[0], reason: 'ALGO_NUEVO' }] };
+        const renderers = createBillingReconciliationRenderers({ siteUrl: 'https://hospeda.test' });
+        // Act
+        const result = await renderers['billing.reconciliation-summary']!({
+            row: row({ template: 'billing.reconciliation-summary', payload: unknown })
+        });
+        const html = renderToStaticMarkup(result.react);
+        // Assert
+        expect(html.match(/ALGO_NUEVO/g)).toHaveLength(1);
+        expect(html).toMatch(/Motivo[\s\S]{0,400}ALGO_NUEVO/);
     });
 });
