@@ -764,6 +764,15 @@ from the service for the beneficiary or a system actor, then 422
 a soft-deleted listing (legacy data; nothing is revoked). The mapping table above
 is exhaustive.
 
+## Cancelling an addon whose listing is soft-deleted (HOS-2128)
+
+Any act that cancels addons (A5: the owner withdrawal, the orphanhood run by a
+subscription cancellation or revocation, S12) answers 409 `ALREADY_EXISTS` with
+`reason: ADDON_LISTING_SOFT_DELETED` when a LISTING-scoped addon targets a listing
+that no longer resolves (legacy data). Nothing is cancelled: the act's transaction
+rolls back. It is never a 500. In the S12 cron the row is counted as failed and
+logged, the others go on, and it is retried on the next run.
+
 ## Actions 3 and 4 manual payment rejections
 
 `GET` previews and `POST` acts at `/api/v1/admin/billing-subscription/{subscriptionId}/manual-payments/{manualPaymentId}/register` (ACC:3, MP1) and `/declare-unpaid` (ACC:4, MP2) require their own action permissions. A caller without that permission receives 403 from the route factory. Invalid UUIDs and a `proofRef` outside 1–500 characters receive 400. An installment belonging to another subscription is 404. The service rechecks the administrative action inside its transaction.
