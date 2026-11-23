@@ -44,9 +44,6 @@
     "apps/web/src/components/host/editor/CalendarSyncPanel.module.css": {
         "media": 1
     },
-    "apps/web/src/components/host/editor/PhotoSection.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/host/editor/PricingSection.module.css": {
         "media": 1
     },

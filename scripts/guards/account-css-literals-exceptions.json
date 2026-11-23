@@ -223,12 +223,6 @@
         "radius": 3,
         "shadow": 1
     },
-    "apps/web/src/components/host/editor/PhotoSection.module.css": {
-        "color": 63,
-        "font-size": 19,
-        "radius": 16,
-        "shadow": 3
-    },
     "apps/web/src/components/host/editor/PlanEntitlementGate.module.css": {
         "color": 5,
         "font-size": 3,
@@ -252,11 +246,6 @@
         "color": 1,
         "font-size": 6,
         "radius": 1
-    },
-    "apps/web/src/components/host/editor/TranslationPanel.module.css": {
-        "color": 17,
-        "font-size": 13,
-        "radius": 7
     },
     "apps/web/src/components/host/editor/amenity-catalog/AmenityCatalogBrowser.module.css": {
         "font-size": 13,
@@ -364,11 +353,6 @@
     "apps/web/src/components/listing/editor/BusinessLineRemovalNotice.module.css": {
         "color": 3,
         "font-size": 1,
-        "radius": 2
-    },
-    "apps/web/src/components/listing/editor/MediaSection.module.css": {
-        "color": 2,
-        "font-size": 4,
         "radius": 2
     },
     "apps/web/src/components/listing/editor/MinAgeField.module.css": {
