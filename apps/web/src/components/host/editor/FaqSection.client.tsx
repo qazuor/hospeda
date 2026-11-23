@@ -18,50 +18,34 @@
  * endpoint. Saving a FAQ never requires pressing the editor's main "Guardar"
  * button, and never trips the unsaved-changes guard (HOS-373).
  *
- * Accessibility: the reorder/edit/delete buttons are per-item and would
- * otherwise share an identical accessible name across every row (a real bug
- * already hit in `ListingFaqManager` — four action pairs all named "Subir" /
- * "Bajar" / "Editar" / "Eliminar" with nothing to tell rows apart). Every
- * action button's `aria-label` here embeds a truncated snippet of the FAQ's
- * own question so each row's controls stay uniquely named.
+ * Accessibility: the reorder/edit/remove buttons are per-item and would
+ * otherwise share an identical accessible name across every row. The
+ * Repeater names its buttons after the row label (a snippet of the question)
+ * and the edit button embeds the same snippet.
  *
  * HOS-794: submitting an invalid add/edit form marks the offending fields
  * (`faq-validation.ts` against the shared payload schema) instead of
- * returning silently, and deleting a FAQ asks for confirmation through
- * the shared `ConfirmDeleteDialog` instead of the browser's native
- * `window.confirm()`.
+ * returning silently.
+ *
+ * HOS-2490: the list chrome (visible row label, move up/down, remove with its
+ * confirmation, add button, empty state) is the kit `Repeater`. The state and
+ * requests live in `use-faq-section.ts`, the add/edit form in
+ * `FaqEditorFields.client.tsx`.
  */
 
-import {
-    AddIcon,
-    ChevronDownIcon,
-    ChevronUpIcon,
-    DeleteIcon,
-    EditIcon,
-    EyeOffIcon,
-    SparkleIcon
-} from '@repo/icons';
-import { type JSX, useCallback, useState } from 'react';
-import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
-import { useFaqAiDraft } from '@/hooks/use-faq-ai-draft';
-import { useFaqPrefill } from '@/hooks/use-faq-prefill';
-import { apiClient } from '@/lib/api/client';
-import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
-import { translateApiError } from '@/lib/api-errors';
+import { EditIcon, EyeOffIcon, SparkleIcon } from '@repo/icons';
+import type { JSX } from 'react';
+import { Repeater } from '@/components/account/ui/Repeater';
+import type { AccommodationFaqItem } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import { webLogger } from '@/lib/logger';
-import { addToast } from '@/store/toast-store';
+import { FaqEditorFields } from './FaqEditorFields.client';
 import styles from './FaqSection.module.css';
-import { clearFaqFieldError, type FaqFieldErrors, validateFaqEditorValues } from './faq-validation';
+import { hasNonDefaultChannelState, LABEL_SNIPPET_MAX, toLabelSnippet } from './faq-section-model';
 import { PlanEntitlementGate } from './PlanEntitlementGate.client';
+import { useFaqSection } from './use-faq-section';
 
 // Re-export for consumers (the SSR page needs the type for `initialFaqs`).
 export type { AccommodationFaqItem };
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 /** Props for FaqSection. */
 export interface FaqSectionProps {
@@ -72,357 +56,94 @@ export interface FaqSectionProps {
 }
 
 /**
- * Editor state for a single FAQ row: question + answer plus the two
- * channel-visibility flags (HOS-393). Both flags default to `true` so a new
- * FAQ behaves exactly as every FAQ did before the flags existed (G-3).
- */
-interface FaqEditor {
-    readonly question: string;
-    readonly answer: string;
-    readonly isVisibleOnListing: boolean;
-    readonly isUsableByAi: boolean;
-}
-
-const EMPTY_EDITOR: FaqEditor = {
-    question: '',
-    answer: '',
-    isVisibleOnListing: true,
-    isUsableByAi: true
-};
-
-/** Max characters of the question echoed into per-row action `aria-label`s. */
-const LABEL_SNIPPET_MAX = 40;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Sort FAQs by displayOrder ascending (nulls last). */
-function sortFaqs(faqs: readonly AccommodationFaqItem[]): readonly AccommodationFaqItem[] {
-    return [...faqs].sort((a, b) => {
-        if (a.displayOrder === null && b.displayOrder === null) return 0;
-        if (a.displayOrder === null) return 1;
-        if (b.displayOrder === null) return -1;
-        return a.displayOrder - b.displayOrder;
-    });
-}
-
-/**
- * Truncates a FAQ question to a short snippet suitable for embedding inside
- * an `aria-label`, so repeated action buttons (one set per row) get unique
- * accessible names instead of colliding on "Subir" / "Editar" / etc.
- */
-function toLabelSnippet(question: string): string {
-    const trimmed = question.trim();
-    if (trimmed.length <= LABEL_SNIPPET_MAX) {
-        return trimmed;
-    }
-    return `${trimmed.slice(0, LABEL_SNIPPET_MAX).trimEnd()}…`;
-}
-
-/**
- * Whether a FAQ's channel-visibility flags differ from the default
- * (both `true`). Drives the per-row marker (AC-14) — the editor lists every
- * FAQ regardless of its flags, so a non-default state must stay visible at a
- * glance, or a hidden FAQ becomes invisible in the very screen meant to
- * manage it (R-1).
- */
-function hasNonDefaultChannelState(faq: AccommodationFaqItem): boolean {
-    return !faq.isVisibleOnListing || !faq.isUsableByAi;
-}
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
-/**
  * FaqSection
  *
  * Owner FAQ management UI for the accommodation editor — list, add, edit,
  * reorder and delete FAQs. Each action calls the accommodation FAQ endpoint
  * directly; nothing here flows through the parent editor's PATCH payload.
+ *
+ * @param props - See {@link FaqSectionProps}.
+ * @returns The FAQ fieldset.
  */
 export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const s = useFaqSection({ locale, accommodationId, initialFaqs });
+    const { t } = s;
+    // Any request in flight locks every row action: `busyId` is a single slot
+    // shared by add, edit, remove and reorder, so a second action started
+    // mid-flight would be cleared by whichever request settles first.
+    const isAnyBusy = s.busyId !== null;
 
-    const [faqs, setFaqs] = useState<readonly AccommodationFaqItem[]>(() => sortFaqs(initialFaqs));
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editValues, setEditValues] = useState<FaqEditor>(EMPTY_EDITOR);
-    const [editFieldErrors, setEditFieldErrors] = useState<FaqFieldErrors>({});
-    const [isAdding, setIsAdding] = useState(false);
-    const [addValues, setAddValues] = useState<FaqEditor>(EMPTY_EDITOR);
-    const faqAiDraft = useFaqAiDraft({ locale });
-    const [isAiDraftContent, setIsAiDraftContent] = useState(false);
-    const [prefillMessageId, setPrefillMessageId] = useState<string | null>(null);
-    const [addFieldErrors, setAddFieldErrors] = useState<FaqFieldErrors>({});
-    // HOS-2101: «Agregar como pregunta frecuente» from the AI questions tab.
-    useFaqPrefill({
-        onPrefill: useCallback(
-            (prefill: { question: string; answer: string; messageId: string | null }) => {
-                setAddValues((values) => ({
-                    ...values,
-                    question: prefill.question,
-                    answer: prefill.answer
-                }));
-                setPrefillMessageId(prefill.messageId);
-                setIsAdding(true);
-            },
-            []
-        )
-    });
-    const [actionError, setActionError] = useState<string | null>(null);
-    const [busyId, setBusyId] = useState<string | null>(null);
-    const [faqPendingDelete, setFaqPendingDelete] = useState<AccommodationFaqItem | null>(null);
+    const rowLabel = (faq: AccommodationFaqItem, index: number): string =>
+        toLabelSnippet(faq.question) ||
+        t('host.properties.editor.faq.rowFallback', undefined, { n: index + 1 });
 
-    const reportError = useCallback((message: string) => {
-        setActionError(message);
-        addToast({ type: 'error', message });
-    }, []);
-
-    /**
-     * Publishes a failed validation: marks the fields inline, fires the same
-     * "Revisá los campos marcados" toast every other editor form uses
-     * (`useZodForm.validate()`'s contract), and moves focus to the first
-     * invalid field (HOS-373) so the error is never a dead click.
-     *
-     * @returns `true` when errors were found (the caller should abort).
-     */
-    const reportValidationErrors = useCallback(
-        (errors: FaqFieldErrors, mode: 'add' | 'edit', faqId?: string) => {
-            if (errors.question === undefined && errors.answer === undefined) {
-                return false;
-            }
-
-            if (mode === 'add') {
-                setAddFieldErrors(errors);
-            } else {
-                setEditFieldErrors(errors);
-            }
-
-            addToast({
-                type: 'error',
-                message: t('validation.formHasErrors', 'Revisá los campos marcados')
-            });
-
-            const firstInvalidId =
-                errors.question === undefined
-                    ? mode === 'add'
-                        ? 'faq-new-a'
-                        : `faq-a-${faqId}`
-                    : mode === 'add'
-                      ? 'faq-new-q'
-                      : `faq-q-${faqId}`;
-            document.getElementById(firstInvalidId)?.focus();
-
-            return true;
-        },
-        [t]
+    const prefillMessageId = s.prefillMessageId;
+    const aiDraftExtras = (
+        <>
+            {prefillMessageId && (
+                <PlanEntitlementGate
+                    entitlementKey="ai_faq_draft"
+                    locale={locale}
+                    fallback={null}
+                >
+                    <button
+                        className={styles.aiDraftButton}
+                        type="button"
+                        disabled={s.faqAiDraft.isLoading}
+                        onClick={() =>
+                            void s.faqAiDraft.suggest({
+                                messageId: prefillMessageId,
+                                onDraft: (draft) => {
+                                    s.setAddValues((values) => ({ ...values, answer: draft }));
+                                    s.setIsAiDraftContent(true);
+                                }
+                            })
+                        }
+                    >
+                        {s.faqAiDraft.isLoading
+                            ? t(
+                                  'host.properties.editor.aiQuestions.aiDraftLoading',
+                                  'Generando una sugerencia…'
+                              )
+                            : t(
+                                  'host.properties.editor.aiQuestions.suggestAiAnswer',
+                                  'Sugerir respuesta con IA'
+                              )}
+                    </button>
+                    {s.isAiDraftContent && (
+                        <p className={styles.aiDraftDisclaimer}>
+                            {t(
+                                'host.properties.editor.aiQuestions.aiDraftDisclaimer',
+                                'Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.'
+                            )}
+                        </p>
+                    )}
+                    {s.faqAiDraft.feedback && s.faqAiDraft.feedback !== 'noData' && (
+                        <p
+                            className={styles.fieldError}
+                            role="alert"
+                        >
+                            {t(
+                                s.faqAiDraft.feedback === 'notEligible'
+                                    ? 'host.properties.editor.aiQuestions.aiDraftNotEligible'
+                                    : 'host.properties.editor.aiQuestions.aiDraftError',
+                                'No se pudo generar la sugerencia. Intentá de nuevo.'
+                            )}
+                        </p>
+                    )}
+                </PlanEntitlementGate>
+            )}
+            {s.prefillMessageId &&
+                (s.addValues.answer === '' || s.faqAiDraft.feedback === 'noData') && (
+                    <p>
+                        {t(
+                            'host.properties.editor.aiQuestions.faqAnswerHelp',
+                            'There is no confirmed answer. Fill it in using information from your listing.'
+                        )}
+                    </p>
+                )}
+        </>
     );
-
-    // ---------------------------------------------------------------------------
-    // Add
-    // ---------------------------------------------------------------------------
-
-    const handleAddSubmit = useCallback(async () => {
-        if (reportValidationErrors(validateFaqEditorValues(addValues, t), 'add')) {
-            return;
-        }
-
-        setBusyId('add');
-        setActionError(null);
-        setAddFieldErrors({});
-
-        const result = await accommodationFaqApi.add({
-            accommodationId,
-            question: addValues.question.trim(),
-            answer: addValues.answer.trim(),
-            isVisibleOnListing: addValues.isVisibleOnListing,
-            isUsableByAi: addValues.isUsableByAi
-        });
-
-        setBusyId(null);
-        if (result.ok) {
-            setFaqs((prev) => sortFaqs([...prev, result.data.faq]));
-            setAddValues(EMPTY_EDITOR);
-            setAddFieldErrors({});
-            setIsAdding(false);
-            if (prefillMessageId) {
-                void apiClient
-                    .postProtected({
-                        path: `/api/v1/protected/ai/listing-questions/${prefillMessageId}/dismiss`
-                    })
-                    .then((dismissResult) => {
-                        if (!dismissResult.ok)
-                            webLogger.warn('[FaqSection] question dismissal failed');
-                    })
-                    .catch(() => webLogger.warn('[FaqSection] question dismissal failed'));
-                setPrefillMessageId(null);
-            }
-        } else {
-            webLogger.warn('[FaqSection] add failed:', result.error);
-            // HOS-2428: surface the server's reason (plan / coverage / permission)
-            // instead of one generic line that hid why the save was refused.
-            reportError(
-                translateApiError({
-                    error: result.error,
-                    t,
-                    fallback: t(
-                        'host.properties.editor.faq.saveError',
-                        'No se pudo guardar la pregunta.'
-                    )
-                })
-            );
-        }
-    }, [addValues, accommodationId, t, reportError, reportValidationErrors, prefillMessageId]);
-
-    // ---------------------------------------------------------------------------
-    // Edit
-    // ---------------------------------------------------------------------------
-
-    const startEdit = useCallback((faq: AccommodationFaqItem) => {
-        setEditingId(faq.id);
-        setEditValues({
-            question: faq.question,
-            answer: faq.answer,
-            isVisibleOnListing: faq.isVisibleOnListing,
-            isUsableByAi: faq.isUsableByAi
-        });
-        setEditFieldErrors({});
-        setActionError(null);
-    }, []);
-
-    const cancelEdit = useCallback(() => {
-        setEditingId(null);
-        setEditValues(EMPTY_EDITOR);
-        setEditFieldErrors({});
-    }, []);
-
-    const handleEditSubmit = useCallback(
-        async (faqId: string) => {
-            if (reportValidationErrors(validateFaqEditorValues(editValues, t), 'edit', faqId)) {
-                return;
-            }
-
-            setBusyId(faqId);
-            setActionError(null);
-            setEditFieldErrors({});
-
-            const result = await accommodationFaqApi.update({
-                accommodationId,
-                faqId,
-                question: editValues.question.trim(),
-                answer: editValues.answer.trim(),
-                isVisibleOnListing: editValues.isVisibleOnListing,
-                isUsableByAi: editValues.isUsableByAi
-            });
-
-            setBusyId(null);
-            if (result.ok) {
-                setFaqs((prev) =>
-                    sortFaqs(prev.map((f) => (f.id === faqId ? { ...f, ...result.data.faq } : f)))
-                );
-                setEditingId(null);
-                setEditValues(EMPTY_EDITOR);
-                setEditFieldErrors({});
-            } else {
-                webLogger.warn('[FaqSection] update failed:', result.error);
-                // HOS-2428: surface the server's reason (plan / coverage / permission)
-                // instead of one generic line that hid why the save was refused.
-                reportError(
-                    translateApiError({
-                        error: result.error,
-                        t,
-                        fallback: t(
-                            'host.properties.editor.faq.saveError',
-                            'No se pudo guardar la pregunta.'
-                        )
-                    })
-                );
-            }
-        },
-        [editValues, accommodationId, t, reportError, reportValidationErrors]
-    );
-
-    // ---------------------------------------------------------------------------
-    // Delete
-    // ---------------------------------------------------------------------------
-
-    const closeDeleteDialog = useCallback(() => {
-        // Ignore close requests while the DELETE request is in flight — the
-        // dialog is the surface reporting its own outcome.
-        if (busyId !== null && busyId === faqPendingDelete?.id) {
-            return;
-        }
-        setFaqPendingDelete(null);
-    }, [busyId, faqPendingDelete]);
-
-    const handleDelete = useCallback(async () => {
-        if (!faqPendingDelete) {
-            return;
-        }
-        setBusyId(faqPendingDelete.id);
-        setActionError(null);
-
-        const result = await accommodationFaqApi.remove({
-            accommodationId,
-            faqId: faqPendingDelete.id
-        });
-
-        setBusyId(null);
-        if (result.ok) {
-            setFaqs((prev) => prev.filter((f) => f.id !== faqPendingDelete.id));
-            setFaqPendingDelete(null);
-        } else {
-            webLogger.warn('[FaqSection] remove failed:', result.error);
-            reportError(
-                t('host.properties.editor.faq.deleteError', 'No se pudo eliminar la pregunta.')
-            );
-        }
-    }, [accommodationId, faqPendingDelete, t, reportError]);
-
-    // ---------------------------------------------------------------------------
-    // Reorder
-    // ---------------------------------------------------------------------------
-
-    const moveItem = useCallback(
-        async (index: number, direction: 'up' | 'down') => {
-            const arr = [...faqs];
-            const swapIndex = direction === 'up' ? index - 1 : index + 1;
-            if (swapIndex < 0 || swapIndex >= arr.length) return;
-
-            const previous = faqs;
-
-            // Swap in local state optimistically.
-            const temp = arr[index];
-            const other = arr[swapIndex];
-            if (!temp || !other) return;
-            arr[index] = other;
-            arr[swapIndex] = temp;
-
-            const reordered: AccommodationFaqItem[] = arr.map((f, i) => ({
-                ...f,
-                displayOrder: i
-            }));
-            setFaqs(reordered);
-            setActionError(null);
-
-            const result = await accommodationFaqApi.reorder({
-                accommodationId,
-                order: reordered.map((f) => ({ faqId: f.id, displayOrder: f.displayOrder ?? 0 }))
-            });
-
-            if (!result.ok) {
-                webLogger.warn('[FaqSection] reorder failed:', result.error);
-                setFaqs(sortFaqs(previous));
-                reportError(t('host.properties.editor.faq.reorderError', 'No se pudo reordenar.'));
-            }
-        },
-        [faqs, accommodationId, t, reportError]
-    );
-
-    // ---------------------------------------------------------------------------
-    // Render
-    // ---------------------------------------------------------------------------
 
     return (
         <fieldset className={styles.section}>
@@ -463,525 +184,144 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 </p>
             </div>
 
-            {actionError && (
+            {s.actionError && (
                 <p
                     className={styles.error}
                     role="alert"
                 >
-                    {actionError}
+                    {s.actionError}
                 </p>
             )}
 
-            {faqs.length === 0 && !isAdding && (
-                <p className={styles.emptyState}>
-                    {t(
-                        'host.properties.editor.faq.emptyState',
-                        'Todavía no hay preguntas. Agregá la primera.'
-                    )}
-                </p>
-            )}
-
-            <ol className={styles.list}>
-                {faqs.map((faq, index) => {
-                    const isEditing = editingId === faq.id;
-                    // Any request in flight locks every row action, not just
-                    // this row's. `busyId` is a single slot shared by add,
-                    // edit, delete and reorder, so a second action started
-                    // mid-flight overwrites it and whichever request settles
-                    // FIRST clears the flag for the one still running — which
-                    // re-enables the buttons (and the delete dialog's CTAs)
-                    // while its own request is still open.
-                    const isAnyBusy = busyId !== null;
-                    const snippet = toLabelSnippet(faq.question);
-
-                    return (
-                        <li
-                            key={faq.id}
-                            className={styles.item}
-                        >
-                            {isEditing ? (
-                                <div className={styles.editForm}>
-                                    <label
-                                        className={styles.fieldLabel}
-                                        htmlFor={`faq-q-${faq.id}`}
-                                    >
-                                        {t('host.properties.editor.faq.questionLabel', 'Pregunta')}
-                                    </label>
-                                    <textarea
-                                        id={`faq-q-${faq.id}`}
-                                        className={styles.textarea}
-                                        rows={2}
-                                        value={editValues.question}
-                                        aria-invalid={
-                                            editFieldErrors.question !== undefined || undefined
-                                        }
-                                        aria-describedby={
-                                            editFieldErrors.question === undefined
-                                                ? undefined
-                                                : `faq-q-${faq.id}-error`
-                                        }
-                                        placeholder={t(
-                                            'host.properties.editor.faq.questionPlaceholder',
-                                            'Escribí la pregunta...'
-                                        )}
-                                        onChange={(e) => {
-                                            setEditValues((v) => ({
-                                                ...v,
-                                                question: e.target.value
-                                            }));
-                                            setEditFieldErrors((prev) =>
-                                                clearFaqFieldError(prev, 'question')
-                                            );
-                                        }}
-                                    />
-                                    {editFieldErrors.question && (
-                                        <p
-                                            id={`faq-q-${faq.id}-error`}
-                                            className={styles.fieldError}
-                                        >
-                                            {editFieldErrors.question}
-                                        </p>
-                                    )}
-                                    <label
-                                        className={styles.fieldLabel}
-                                        htmlFor={`faq-a-${faq.id}`}
-                                    >
-                                        {t('host.properties.editor.faq.answerLabel', 'Respuesta')}
-                                    </label>
-                                    <textarea
-                                        id={`faq-a-${faq.id}`}
-                                        className={styles.textarea}
-                                        rows={4}
-                                        value={editValues.answer}
-                                        aria-invalid={
-                                            editFieldErrors.answer !== undefined || undefined
-                                        }
-                                        aria-describedby={
-                                            editFieldErrors.answer === undefined
-                                                ? undefined
-                                                : `faq-a-${faq.id}-error`
-                                        }
-                                        placeholder={t(
-                                            'host.properties.editor.faq.answerPlaceholder',
-                                            'Escribí la respuesta...'
-                                        )}
-                                        onChange={(e) => {
-                                            setEditValues((v) => ({
-                                                ...v,
-                                                answer: e.target.value
-                                            }));
-                                            setEditFieldErrors((prev) =>
-                                                clearFaqFieldError(prev, 'answer')
-                                            );
-                                        }}
-                                    />
-                                    {editFieldErrors.answer && (
-                                        <p
-                                            id={`faq-a-${faq.id}-error`}
-                                            className={styles.fieldError}
-                                        >
-                                            {editFieldErrors.answer}
-                                        </p>
-                                    )}
-                                    <div className={styles.channelCheckboxes}>
-                                        <label className={styles.checkboxLabel}>
-                                            <input
-                                                type="checkbox"
-                                                checked={editValues.isVisibleOnListing}
-                                                onChange={(e) =>
-                                                    setEditValues((v) => ({
-                                                        ...v,
-                                                        isVisibleOnListing: e.target.checked
-                                                    }))
-                                                }
-                                            />
-                                            {t(
-                                                'host.properties.editor.faq.visibleOnListingLabel',
-                                                'Visible en la ficha pública'
-                                            )}
-                                        </label>
-                                        <label className={styles.checkboxLabel}>
-                                            <input
-                                                type="checkbox"
-                                                checked={editValues.isUsableByAi}
-                                                onChange={(e) =>
-                                                    setEditValues((v) => ({
-                                                        ...v,
-                                                        isUsableByAi: e.target.checked
-                                                    }))
-                                                }
-                                            />
-                                            {t(
-                                                'host.properties.editor.faq.usableByAiLabel',
-                                                'Usable por la IA'
-                                            )}
-                                        </label>
-                                    </div>
-                                    <div className={styles.editActions}>
-                                        <button
-                                            type="button"
-                                            className={styles.saveBtn}
-                                            disabled={isAnyBusy}
-                                            onClick={() => handleEditSubmit(faq.id)}
-                                        >
-                                            {t('host.properties.editor.faq.saveButton', 'Guardar')}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.cancelBtn}
-                                            onClick={cancelEdit}
-                                        >
-                                            {t(
-                                                'host.properties.editor.faq.cancelButton',
-                                                'Cancelar'
-                                            )}
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className={styles.displayRow}>
-                                    <div className={styles.itemContent}>
-                                        <p className={styles.question}>{faq.question}</p>
-                                        {hasNonDefaultChannelState(faq) && (
-                                            <div className={styles.badgeRow}>
-                                                {!faq.isVisibleOnListing && (
-                                                    <span className={styles.badge}>
-                                                        <EyeOffIcon
-                                                            size="xs"
-                                                            weight="regular"
-                                                            aria-hidden="true"
-                                                        />
-                                                        {t(
-                                                            'host.properties.editor.faq.notVisibleBadge',
-                                                            'No visible en la ficha'
-                                                        )}
-                                                    </span>
-                                                )}
-                                                {!faq.isUsableByAi && (
-                                                    <span className={styles.badge}>
-                                                        <SparkleIcon
-                                                            size="xs"
-                                                            weight="regular"
-                                                            aria-hidden="true"
-                                                        />
-                                                        {t(
-                                                            'host.properties.editor.faq.notAiUsableBadge',
-                                                            'No usable por IA'
-                                                        )}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
-                                        <p className={styles.answer}>{faq.answer}</p>
-                                    </div>
-                                    <div className={styles.itemActions}>
-                                        <button
-                                            type="button"
-                                            className={styles.iconBtn}
-                                            aria-label={t(
-                                                'host.properties.editor.faq.moveUpAria',
-                                                'Subir "{{question}}"',
-                                                { question: snippet }
-                                            )}
-                                            disabled={index === 0 || isAnyBusy}
-                                            onClick={() => moveItem(index, 'up')}
-                                        >
-                                            <ChevronUpIcon
-                                                size="sm"
-                                                weight="bold"
-                                                aria-hidden="true"
-                                            />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.iconBtn}
-                                            aria-label={t(
-                                                'host.properties.editor.faq.moveDownAria',
-                                                'Bajar "{{question}}"',
-                                                { question: snippet }
-                                            )}
-                                            disabled={index === faqs.length - 1 || isAnyBusy}
-                                            onClick={() => moveItem(index, 'down')}
-                                        >
-                                            <ChevronDownIcon
-                                                size="sm"
-                                                weight="bold"
-                                                aria-hidden="true"
-                                            />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.editBtn}
-                                            aria-label={t(
-                                                'host.properties.editor.faq.editAria',
-                                                'Editar "{{question}}"',
-                                                { question: snippet }
-                                            )}
-                                            disabled={isAnyBusy}
-                                            onClick={() => startEdit(faq)}
-                                        >
-                                            <EditIcon
-                                                size="sm"
-                                                weight="regular"
-                                                aria-hidden="true"
-                                            />
-                                            <span>
-                                                {t(
-                                                    'host.properties.editor.faq.editButton',
-                                                    'Editar'
-                                                )}
-                                            </span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className={styles.deleteBtn}
-                                            aria-label={t(
-                                                'host.properties.editor.faq.deleteAria',
-                                                'Eliminar "{{question}}"',
-                                                { question: snippet }
-                                            )}
-                                            disabled={isAnyBusy}
-                                            onClick={() => setFaqPendingDelete(faq)}
-                                        >
-                                            <DeleteIcon
-                                                size="sm"
-                                                weight="regular"
-                                                aria-hidden="true"
-                                            />
-                                            <span>
-                                                {t(
-                                                    'host.properties.editor.faq.deleteButton',
-                                                    'Eliminar'
-                                                )}
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </li>
-                    );
-                })}
-            </ol>
-
-            {isAdding ? (
-                <div className={styles.addForm}>
-                    <label
-                        className={styles.fieldLabel}
-                        htmlFor="faq-new-q"
-                    >
-                        {t('host.properties.editor.faq.questionLabel', 'Pregunta')}
-                    </label>
-                    <textarea
-                        id="faq-new-q"
-                        className={styles.textarea}
-                        rows={2}
-                        value={addValues.question}
-                        aria-invalid={addFieldErrors.question !== undefined || undefined}
-                        aria-describedby={
-                            addFieldErrors.question === undefined ? undefined : 'faq-new-q-error'
-                        }
-                        placeholder={t(
-                            'host.properties.editor.faq.questionPlaceholder',
-                            'Escribí la pregunta...'
-                        )}
-                        onChange={(e) => {
-                            setAddValues((v) => ({ ...v, question: e.target.value }));
-                            setAddFieldErrors((prev) => clearFaqFieldError(prev, 'question'));
-                        }}
-                    />
-                    {addFieldErrors.question && (
-                        <p
-                            id="faq-new-q-error"
-                            className={styles.fieldError}
-                        >
-                            {addFieldErrors.question}
-                        </p>
-                    )}
-                    <label
-                        className={styles.fieldLabel}
-                        htmlFor="faq-new-a"
-                    >
-                        {t('host.properties.editor.faq.answerLabel', 'Respuesta')}
-                    </label>
-                    <textarea
-                        id="faq-new-a"
-                        className={styles.textarea}
-                        rows={4}
-                        value={addValues.answer}
-                        aria-invalid={addFieldErrors.answer !== undefined || undefined}
-                        aria-describedby={
-                            addFieldErrors.answer === undefined ? undefined : 'faq-new-a-error'
-                        }
-                        placeholder={t(
-                            'host.properties.editor.faq.answerPlaceholder',
-                            'Escribí la respuesta...'
-                        )}
-                        onChange={(e) => {
-                            setAddValues((v) => ({ ...v, answer: e.target.value }));
-                            setAddFieldErrors((prev) => clearFaqFieldError(prev, 'answer'));
-                        }}
-                    />
-                    {prefillMessageId && (
-                        <PlanEntitlementGate
-                            entitlementKey="ai_faq_draft"
-                            locale={locale}
-                            fallback={null}
-                        >
-                            <button
-                                className={styles.aiDraftButton}
-                                type="button"
-                                disabled={faqAiDraft.isLoading}
-                                onClick={() =>
-                                    void faqAiDraft.suggest({
-                                        messageId: prefillMessageId,
-                                        onDraft: (draft) => {
-                                            setAddValues((values) => ({
-                                                ...values,
-                                                answer: draft
-                                            }));
-                                            setIsAiDraftContent(true);
-                                        }
-                                    })
-                                }
-                            >
-                                {faqAiDraft.isLoading
-                                    ? t(
-                                          'host.properties.editor.aiQuestions.aiDraftLoading',
-                                          'Generando una sugerencia…'
-                                      )
-                                    : t(
-                                          'host.properties.editor.aiQuestions.suggestAiAnswer',
-                                          'Sugerir respuesta con IA'
-                                      )}
-                            </button>
-                            {isAiDraftContent && (
-                                <p className={styles.aiDraftDisclaimer}>
-                                    {t(
-                                        'host.properties.editor.aiQuestions.aiDraftDisclaimer',
-                                        'Es un borrador editable. Revisá que coincida con la información de tu ficha antes de guardarlo.'
-                                    )}
-                                </p>
-                            )}
-                            {faqAiDraft.feedback && faqAiDraft.feedback !== 'noData' && (
-                                <p
-                                    className={styles.fieldError}
-                                    role="alert"
-                                >
-                                    {t(
-                                        faqAiDraft.feedback === 'notEligible'
-                                            ? 'host.properties.editor.aiQuestions.aiDraftNotEligible'
-                                            : 'host.properties.editor.aiQuestions.aiDraftError',
-                                        'No se pudo generar la sugerencia. Intentá de nuevo.'
-                                    )}
-                                </p>
-                            )}
-                        </PlanEntitlementGate>
-                    )}
-                    {prefillMessageId &&
-                        (addValues.answer === '' || faqAiDraft.feedback === 'noData') && (
-                            <p>
-                                {t(
-                                    'host.properties.editor.aiQuestions.faqAnswerHelp',
-                                    'There is no confirmed answer. Fill it in using information from your listing.'
-                                )}
-                            </p>
-                        )}
-                    {addFieldErrors.answer && (
-                        <p
-                            id="faq-new-a-error"
-                            className={styles.fieldError}
-                        >
-                            {addFieldErrors.answer}
-                        </p>
-                    )}
-                    <div className={styles.channelCheckboxes}>
-                        <label className={styles.checkboxLabel}>
-                            <input
-                                type="checkbox"
-                                checked={addValues.isVisibleOnListing}
-                                onChange={(e) =>
-                                    setAddValues((v) => ({
-                                        ...v,
-                                        isVisibleOnListing: e.target.checked
-                                    }))
-                                }
-                            />
+            <Repeater
+                locale={locale}
+                label={t('host.properties.editor.section.faqs', 'Preguntas frecuentes')}
+                items={s.faqs}
+                getKey={(faq) => faq.id}
+                getItemLabel={rowLabel}
+                disabled={isAnyBusy}
+                canAdd={!s.isAdding}
+                onAdd={s.startAdd}
+                addLabel={t('host.properties.editor.faq.addButton', 'Agregar pregunta')}
+                onMove={(index, delta) => void s.moveItem(index, delta)}
+                onRemove={s.removeAt}
+                getRemoveConfirm={(faq) => ({
+                    title: t('host.properties.editor.faq.deleteDialogTitle', 'Eliminar pregunta'),
+                    description: (
+                        <>
                             {t(
-                                'host.properties.editor.faq.visibleOnListingLabel',
-                                'Visible en la ficha pública'
+                                'host.properties.editor.faq.deleteConfirm',
+                                '¿Eliminás esta pregunta?'
                             )}
-                        </label>
-                        <label className={styles.checkboxLabel}>
-                            <input
-                                type="checkbox"
-                                checked={addValues.isUsableByAi}
-                                onChange={(e) =>
-                                    setAddValues((v) => ({
-                                        ...v,
-                                        isUsableByAi: e.target.checked
-                                    }))
-                                }
-                            />
-                            {t('host.properties.editor.faq.usableByAiLabel', 'Usable por la IA')}
-                        </label>
-                    </div>
-                    <div className={styles.editActions}>
-                        <button
-                            type="button"
-                            className={styles.saveBtn}
-                            disabled={busyId !== null}
-                            onClick={handleAddSubmit}
-                        >
-                            {t('host.properties.editor.faq.saveButton', 'Guardar')}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.cancelBtn}
-                            onClick={() => {
-                                setIsAdding(false);
-                                setAddValues(EMPTY_EDITOR);
-                                setAddFieldErrors({});
-                            }}
-                        >
-                            {t('host.properties.editor.faq.cancelButton', 'Cancelar')}
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <button
-                    type="button"
-                    className={styles.addBtn}
-                    disabled={busyId !== null}
-                    onClick={() => {
-                        setIsAdding(true);
-                        setAddFieldErrors({});
-                    }}
-                >
-                    <AddIcon
-                        size="sm"
-                        weight="bold"
-                        aria-hidden="true"
-                    />
-                    {t('host.properties.editor.faq.addButton', 'Agregar pregunta')}
-                </button>
-            )}
-
-            <ConfirmDeleteDialog
-                isOpen={faqPendingDelete !== null}
-                title={t('host.properties.editor.faq.deleteDialogTitle', 'Eliminar pregunta')}
-                message={t('host.properties.editor.faq.deleteConfirm', '¿Eliminás esta pregunta?')}
-                detail={faqPendingDelete?.question}
-                confirmLabel={t(
-                    'host.properties.editor.faq.deleteConfirmButton',
-                    'Eliminar pregunta'
+                            <br />
+                            <strong>{faq.question}</strong>
+                        </>
+                    ),
+                    confirmLabel: t(
+                        'host.properties.editor.faq.deleteConfirmButton',
+                        'Eliminar pregunta'
+                    )
+                })}
+                empty={
+                    s.isAdding
+                        ? undefined
+                        : {
+                              title: t(
+                                  'host.properties.editor.faq.emptyState',
+                                  'Todavía no hay preguntas. Agregá la primera.'
+                              )
+                          }
+                }
+                renderItemActions={(faq) => (
+                    <button
+                        type="button"
+                        className={styles.editBtn}
+                        aria-label={t(
+                            'host.properties.editor.faq.editAria',
+                            'Editar "{{question}}"',
+                            { question: toLabelSnippet(faq.question) }
+                        )}
+                        disabled={isAnyBusy}
+                        onClick={() => s.startEdit(faq)}
+                    >
+                        <EditIcon
+                            size="sm"
+                            weight="regular"
+                            aria-hidden="true"
+                        />
+                        <span>{t('host.properties.editor.faq.editButton', 'Editar')}</span>
+                    </button>
                 )}
-                busyLabel={t('host.properties.editor.faq.deleting', 'Eliminando...')}
-                cancelLabel={t('host.properties.editor.faq.cancelButton', 'Cancelar')}
-                closeLabel={t('common.close', 'Cerrar')}
-                isBusy={busyId !== null && busyId === faqPendingDelete?.id}
-                onConfirm={handleDelete}
-                onCancel={closeDeleteDialog}
+                renderItem={(faq) =>
+                    s.editingId === faq.id ? (
+                        <FaqEditorFields
+                            questionId={`faq-q-${faq.id}`}
+                            answerId={`faq-a-${faq.id}`}
+                            values={s.editValues}
+                            errors={s.editFieldErrors}
+                            t={t}
+                            onValuesChange={s.setEditValues}
+                            onErrorsChange={s.setEditFieldErrors}
+                            onSubmit={() => void s.handleEditSubmit(faq.id)}
+                            onCancel={s.cancelEdit}
+                            isBusy={isAnyBusy}
+                        />
+                    ) : (
+                        <div className={styles.itemContent}>
+                            {faq.question.trim().length > LABEL_SNIPPET_MAX && (
+                                <p className={styles.question}>{faq.question}</p>
+                            )}
+                            {hasNonDefaultChannelState(faq) && (
+                                <div className={styles.badgeRow}>
+                                    {!faq.isVisibleOnListing && (
+                                        <span className={styles.badge}>
+                                            <EyeOffIcon
+                                                size="xs"
+                                                weight="regular"
+                                                aria-hidden="true"
+                                            />
+                                            {t(
+                                                'host.properties.editor.faq.notVisibleBadge',
+                                                'No visible en la ficha'
+                                            )}
+                                        </span>
+                                    )}
+                                    {!faq.isUsableByAi && (
+                                        <span className={styles.badge}>
+                                            <SparkleIcon
+                                                size="xs"
+                                                weight="regular"
+                                                aria-hidden="true"
+                                            />
+                                            {t(
+                                                'host.properties.editor.faq.notAiUsableBadge',
+                                                'No usable por IA'
+                                            )}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            <p className={styles.answer}>{faq.answer}</p>
+                        </div>
+                    )
+                }
             />
+
+            {s.isAdding && (
+                <FaqEditorFields
+                    questionId="faq-new-q"
+                    answerId="faq-new-a"
+                    values={s.addValues}
+                    errors={s.addFieldErrors}
+                    t={t}
+                    onValuesChange={s.setAddValues}
+                    onErrorsChange={s.setAddFieldErrors}
+                    onSubmit={() => void s.handleAddSubmit()}
+                    onCancel={s.cancelAdd}
+                    isBusy={isAnyBusy}
+                    answerExtras={aiDraftExtras}
+                />
+            )}
         </fieldset>
     );
 }

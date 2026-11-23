@@ -476,7 +476,8 @@
                     "body2": "Destildá \"Visible en la ficha pública\" para información útil pero que no querés publicar: algo temporal (\"la pileta está en refacción hasta noviembre\"), un margen que preferís no prometer por escrito (\"hay flexibilidad de late check-out si no hay reserva siguiente\"), o una recomendación que suena mejor en una conversación que en la vidriera (\"de noche conviene pedir remis\").",
                     "body3": "Destildá \"Usable por la IA\" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee — texto legal o condiciones exactas de cancelación, por ejemplo.",
                     "body4": "Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página."
-                }
+                },
+                "rowFallback": "Pregunta {{n}}"
             },
             "action": {
                 "save": "Guardar",
