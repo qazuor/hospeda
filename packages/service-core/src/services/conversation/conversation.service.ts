@@ -137,13 +137,24 @@ function nullableEq<TColumn extends AnyColumn>(
 // Input schemas (Zod — internal only)
 // ---------------------------------------------------------------------------
 
+/**
+ * Drops NUL characters before validation: Postgres `text` rejects them, which would turn a
+ * hostile or garbled submission into a 500. Applied to every free-text field of the
+ * anonymous inquiry, so the stored text and the hash bound to the link agree.
+ */
+const withoutNul = (schema: z.ZodString) =>
+    z
+        .string()
+        .transform((value) => value.replaceAll('\u0000', ''))
+        .pipe(schema);
+
 const InitiateAnonymousInputSchema = z
     .object({
         accommodationId: z.string().uuid(),
-        guestName: z.string().min(1).max(100),
+        guestName: withoutNul(z.string().min(1).max(100)),
         guestEmail: z.string().email().max(255),
-        guestPhone: z.string().max(50).optional(),
-        message: z.string().min(1).max(5000),
+        guestPhone: withoutNul(z.string().max(50)).optional(),
+        message: withoutNul(z.string().min(1).max(5000)),
         locale: z.string().max(10).optional(),
         ...InquiryBookingFieldsShape
     })

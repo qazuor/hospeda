@@ -410,6 +410,45 @@ describe('ConversationService', () => {
             );
         });
 
+        it('HOS-2568: drops NUL characters from the text before storing it', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            const insertChain = makeInsertChainMock([makeConversation()]);
+            mockGetDb.mockReturnValue({
+                select: makeSelectChainMock([]).select,
+                insert: insertChain.insert
+            });
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'An\u0000a',
+                guestEmail: 'ana@example.com',
+                message: 'ho\u0000la'
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(insertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({ pendingMessage: 'hola', anonymousName: 'Ana' })
+            );
+        });
+
+        it('HOS-2568: a message that is only NUL characters is rejected as empty', async () => {
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana',
+                guestEmail: 'ana@example.com',
+                message: '\u0000\u0000'
+            });
+
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect(mockGetDb).not.toHaveBeenCalled();
+        });
+
         it('HOS-2568: a resent replaces the held payload and mails a link bound to it', async () => {
             // Arrange
             asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
