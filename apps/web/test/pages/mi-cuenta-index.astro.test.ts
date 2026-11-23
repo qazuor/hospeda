@@ -124,7 +124,7 @@ describe('subscription StatCard text (HOS-1066, HOS-1996)', () => {
         expect(text.action).toBe(`account.pages.dashboard.stats.${actionKey}`);
     });
 
-    it('HOS-2553 lists every live subscription (max three) with a neutral count and «Ver todas»', () => {
+    it('HOS-2553 lists every live subscription (max three) with active and pending counts and «Ver todas»', () => {
         const sub = (slug: string, status: string) => ({
             slug,
             name: slug,
@@ -146,7 +146,7 @@ describe('subscription StatCard text (HOS-1066, HOS-1996)', () => {
             trialSummaries: []
         });
         expect(text).toEqual({
-            value: 'account.pages.dashboard.stats.subscriptionsCount_other:{"count":4}',
+            value: 'account.pages.dashboard.stats.subscriptionsSummary:{"active":"account.pages.dashboard.stats.activeSubscriptionsPart_other:{\\"count\\":2}","pending":"account.pages.dashboard.stats.pendingSubscriptionsPart_one:{\\"count\\":1}"}',
             hint: null,
             rows: [
                 { plan: 'Pro anfitrión', status: 'account.pages.dashboard.stats.activeStatus' },
@@ -159,6 +159,43 @@ describe('subscription StatCard text (HOS-1066, HOS-1996)', () => {
             action: 'account.pages.dashboard.stats.chargeDeclinedAction',
             viewAll: true
         });
+    });
+
+    it('heads the list with only the non-zero part (Decision 1)', () => {
+        const sub = (slug: string, status: string) => ({
+            slug,
+            name: slug,
+            status,
+            vertical: 'accommodation'
+        });
+        const head = (statuses: readonly string[]) =>
+            resolveSubscriptionStatText({
+                ...base,
+                stats: {
+                    plan: null,
+                    activeSubscriptionsCount: 0,
+                    subscriptions: statuses.map((status, i) => sub(`plan-${i}`, status))
+                } as never,
+                trialSummaries: []
+            }).value;
+        // Settled statuses other than ACTIVE still count as active.
+        expect(head(['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED'])).toBe(
+            'account.pages.dashboard.stats.activeSubscriptionsPart_other:{"count":3}'
+        );
+        // A declined charge is neither active nor pending.
+        expect(head(['PENDING_AUTHORIZATION', 'CHARGE_DECLINED'])).toBe(
+            'account.pages.dashboard.stats.pendingSubscriptionsPart_one:{"count":1}'
+        );
+        expect(head(['ACTIVE', 'CHARGE_DECLINED'])).toBe(
+            'account.pages.dashboard.stats.activeSubscriptionsPart_one:{"count":1}'
+        );
+        expect(head(['PENDING_AUTHORIZATION', 'PENDING_AUTHORIZATION'])).toBe(
+            'account.pages.dashboard.stats.pendingSubscriptionsPart_other:{"count":2}'
+        );
+        // Neither part: the neutral count stays.
+        expect(head(['CHARGE_DECLINED', 'CHARGE_DECLINED'])).toBe(
+            'account.pages.dashboard.stats.subscriptionsCount_other:{"count":2}'
+        );
     });
 
     it('shows the count for two or more live subscriptions', () => {
