@@ -30,10 +30,15 @@ const { owner, accommodationId, panelId, spokenLanguages = [], lang } = Astro.pr
 const { t } = createTranslations(lang as SupportedLocale);
 
 const initials = getInitialsFromName(owner.name);
-const sinceDate = new Date(owner.createdAt).toLocaleDateString(
-  lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR',
-  { year: 'numeric', month: 'long' }
-);
+const joinedAt = owner.createdAt ? new Date(owner.createdAt) : null;
+// Never show a date the API did not send (AC-2.5): no join date, no «Anfitrión desde».
+const sinceDate =
+  joinedAt && !Number.isNaN(joinedAt.getTime())
+    ? joinedAt.toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR', {
+        year: 'numeric',
+        month: 'long'
+      })
+    : null;
 const avatarUrl = owner.image ? getMediaUrl(owner.image, { preset: 'avatar' }) : null;
 const proxyAvatar = avatarUrl ? isCloudinaryDeliveryUrl(avatarUrl) : false;
 const languagesLabel =
@@ -59,7 +64,7 @@ const languagesLabel =
     </div>
     <div class="host-section__info">
       <span class="host-section__name">{owner.name}</span>
-      <span class="host-section__since">{t('accommodations.detail.host.since', undefined, { date: sinceDate })}</span>
+      {sinceDate && <span class="host-section__since">{t('accommodations.detail.host.since', undefined, { date: sinceDate })}</span>}
       {languagesLabel && <span class="host-section__languages" data-host-languages>{languagesLabel}</span>}
     </div>
     <div class="host-section__cta">

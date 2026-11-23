@@ -20,7 +20,7 @@ export interface ListingContactActionsProps {
     readonly hasWhatsapp: boolean;
     readonly panelId: string;
     readonly primaryLabelKey: string;
-    readonly origin: 'bar' | 'summary';
+    readonly origin: 'bar' | 'summary' | 'tabs';
     /** In-page anchor the primary control falls back to before the panel is ready. */
     readonly fallbackHref?: string;
     /**
@@ -74,7 +74,7 @@ export function ListingContactActions({
         event.currentTarget.focus({ preventScroll: true });
         openListingContactPanel({
             origin,
-            focus: origin === 'bar' && focus === 'form' ? undefined : focus
+            focus: (origin === 'bar' || origin === 'tabs') && focus === 'form' ? undefined : focus
         });
     }
 

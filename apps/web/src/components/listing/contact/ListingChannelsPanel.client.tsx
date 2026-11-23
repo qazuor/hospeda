@@ -1,3 +1,9 @@
+/**
+ * @file ListingChannelsPanel.client.tsx
+ * @description Channel-only contact sheet of the experience and venue detail pages
+ * (HOS-2532): lists the public channels a listing publishes, opened by the shared
+ * listing contact bus, with no inquiry form.
+ */
 import {
     EmailIcon,
     ExternalLinkIcon,
@@ -65,8 +71,10 @@ function iconFor({ channel }: { readonly channel: ListingChannel }): ReactNode {
 
 /**
  * Sheet that lists only the channels a listing publishes, opened by the shared
- * listing contact bus. It has no form and no WhatsApp row by design (HOS-363,
- * HOS-1076). Link clicks are reported by the page's delegated
+ * listing contact bus. It has no form (HOS-363, HOS-1076). Experiences have no
+ * WhatsApp row; venues show it, behind the HOS-2256 plan gate, only when the page
+ * passes `whatsapp` (owner decision HOS-2256, which supersedes spec AC-2.10 for
+ * venues). Link clicks are reported by the page's delegated
  * `[data-contact-channel]` listener, so each anchor only carries attributes.
  */
 export function ListingChannelsPanel({

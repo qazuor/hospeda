@@ -1054,11 +1054,17 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.seo).toBeNull();
         });
 
-        it('should default owner name to Unknown', () => {
+        it('should not invent an owner when the API sends none (AC-2.5)', () => {
             const result = toAccommodationDetailPageProps({ item: {} });
-            expect(result.owner.name).toBe('Unknown');
-            expect(result.owner.id).toBe('');
-            expect(result.owner.image).toBeNull();
+            expect(result.owner).toEqual({ id: '', name: '', image: null, createdAt: null });
+        });
+
+        it('should never fall back to the render date for a missing join date', () => {
+            const result = toAccommodationDetailPageProps({
+                item: { owner: { id: 'o1', name: 'Ana' } }
+            });
+            expect(result.owner.createdAt).toBeNull();
+            expect(result.owner.name).toBe('Ana');
         });
 
         it('should default amenities/features/faqs to empty arrays', () => {

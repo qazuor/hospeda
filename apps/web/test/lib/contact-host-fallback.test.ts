@@ -57,4 +57,35 @@ describe('revealContactFallbackIfHydrationFailed', () => {
         expect(form.hidden).toBe(false);
         expect(fallback.hidden).toBe(true);
     });
+
+    describe('client:media islands', () => {
+        function mountMedia({ query }: { readonly query: string }): HTMLElement {
+            document.body.innerHTML = `
+                <div data-contact-shell>
+                    <div data-contact-form>
+                        <astro-island ssr client="media" opts='${JSON.stringify({ name: 'Card', value: query })}'></astro-island>
+                    </div>
+                    <div data-contact-fallback hidden></div>
+                </div>`;
+            return document.querySelector<HTMLElement>('[data-contact-fallback]') as HTMLElement;
+        }
+
+        afterEach(() => vi.unstubAllGlobals());
+
+        it('does not treat a dormant media island (desktop card on mobile) as a failed hydration', () => {
+            vi.stubGlobal('matchMedia', () => ({ matches: false }));
+            const fallback = mountMedia({ query: '(min-width: 768px)' });
+            revealContactFallbackIfHydrationFailed({ root: document, graceMs: 100 });
+            vi.advanceTimersByTime(100);
+            expect(fallback.hidden).toBe(true);
+        });
+
+        it('still reveals the fallback when the media query matches and the island never hydrated', () => {
+            vi.stubGlobal('matchMedia', () => ({ matches: true }));
+            const fallback = mountMedia({ query: '(min-width: 768px)' });
+            revealContactFallbackIfHydrationFailed({ root: document, graceMs: 100 });
+            vi.advanceTimersByTime(100);
+            expect(fallback.hidden).toBe(false);
+        });
+    });
 });

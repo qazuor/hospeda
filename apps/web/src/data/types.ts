@@ -608,14 +608,15 @@ export interface DetailFaq {
 }
 
 /**
- * Type alias used by OwnerCard.astro.
+ * Type alias used by HostSection.astro.
  * Mirrors the `owner` field of {@link AccommodationDetailData}.
  */
 export interface AccommodationOwnerData {
     readonly id: string;
     readonly name: string;
     readonly image: string | null;
-    readonly createdAt: string;
+    /** `null` when the API sent no join date: the UI then omits «Anfitrión desde». */
+    readonly createdAt: string | null;
 }
 
 /**
@@ -795,12 +796,7 @@ export interface AccommodationDetailData {
      * `socialNetworks`, per owner decision). Absent when neither is set.
      */
     readonly socialNetworks?: AccommodationSocialNetworks;
-    readonly owner: {
-        readonly id: string;
-        readonly name: string;
-        readonly image: string | null;
-        readonly createdAt: string;
-    };
+    readonly owner: AccommodationOwnerData;
     readonly amenities: readonly DetailAmenity[];
     readonly features: readonly DetailFeature[];
     readonly faqs: readonly DetailFaq[];

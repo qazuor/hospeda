@@ -84,8 +84,9 @@ const hasChannels = Boolean(
     </div>
     <noscript>
         <style is:inline>
-            [data-contact-shell] [data-contact-form] { display: none; }
-            [data-contact-shell] [data-contact-fallback] { display: block; }
+            /* !important: the scoped `.contact-host-shell__fallback[hidden]` rule is more specific. */
+            [data-contact-shell] [data-contact-form] { display: none !important; }
+            [data-contact-shell] [data-contact-fallback] { display: block !important; }
         </style>
     </noscript>
 </div>

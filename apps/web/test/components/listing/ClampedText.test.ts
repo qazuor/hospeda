@@ -26,6 +26,15 @@ describe('ClampedText (AC-2.4)', () => {
 
     it('shows the full text without JavaScript', () => {
         expect(source).toContain('<noscript>');
+        // Without `is:inline` Astro hoists the <style> into the bundled CSS, which would
+        // disable the clamp for everyone instead of only for no-JS visitors.
+        expect(source).toMatch(/<noscript>\s*<style is:inline>/);
+    });
+
+    it('the <noscript> override is declared inline so Astro cannot hoist it', () => {
+        const noscript = source.match(/<noscript>[\s\S]*?<\/noscript>/)?.[0] ?? '';
+        expect(noscript).toContain('is:inline');
+        expect(noscript).toContain('line-clamp: unset');
     });
 
     it('is used by both description renderings', () => {

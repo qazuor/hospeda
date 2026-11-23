@@ -5,11 +5,30 @@
  * An Astro island keeps its `ssr` attribute until it hydrates. If it is still
  * there well after the page loaded, the form is visible but cannot be sent, so
  * the shell swaps it for the listing's public contact channels. If the island
- * hydrates later, the form is restored and the fallback hidden again.
+ * hydrates later, the form is restored and the fallback hidden again. A
+ * `client:media` island whose query does not match (the desktop card on mobile) is
+ * dormant by design, not failed.
  */
 
 /** How long after `load` an island may take to hydrate before it counts as failed. */
 export const HYDRATION_GRACE_MS = 10_000;
+
+/**
+ * True when the island is a `client:media` island whose query does not match this
+ * viewport. Such an island never hydrates BY DESIGN (the desktop contact card below
+ * 768px), so its `ssr` attribute must not be read as a hydration failure.
+ */
+function isDormantMediaIsland({ island }: { readonly island: HTMLElement }): boolean {
+    if (island.getAttribute('client') !== 'media') return false;
+    try {
+        const opts = JSON.parse(island.getAttribute('opts') ?? '{}') as {
+            readonly value?: unknown;
+        };
+        return typeof opts.value === 'string' && !window.matchMedia(opts.value).matches;
+    } catch {
+        return false;
+    }
+}
 
 interface RevealParams {
     readonly root: Document;
@@ -33,7 +52,7 @@ export function revealContactFallbackIfHydrationFailed({
             const form = shell.querySelector<HTMLElement>('[data-contact-form]');
             const fallback = shell.querySelector<HTMLElement>('[data-contact-fallback]');
             const island = shell.querySelector<HTMLElement>('astro-island[ssr]');
-            if (!island) continue;
+            if (!island || isDormantMediaIsland({ island })) continue;
             if (form) form.hidden = true;
             if (fallback) fallback.hidden = false;
             // Self-healing: a slow device may hydrate after the grace period.

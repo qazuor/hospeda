@@ -644,7 +644,6 @@
             "title": "Amenities",
             "viewAll_one": "View the {{count}} amenity",
             "viewAll_other": "View all {{count}} amenities",
-            "collapse": "View less",
             "close": "Close",
             "additionalCost": "(additional cost)"
         },
