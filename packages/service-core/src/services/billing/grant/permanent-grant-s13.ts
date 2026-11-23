@@ -357,6 +357,10 @@ export async function cancelS13AtProvider(
  * admin signed the act, so the actor is `ADMIN`. Runs after commit; the sink never interrupts
  * the transition.
  *
+ * A `PENDING_AUTHORIZATION` row is skipped: a subscription that was never activated is not a
+ * cancellation for analytics, mirroring `CANCELLED_WHILE_PENDING` (`provider-notice-delegates.ts`),
+ * which stays unregistered and emits nothing.
+ *
  * @param input.rows - The `S13Result.cancelled` rows of the committed act
  * @param input.now - The instant of the act
  * @param input.billingFacts - The sink that receives one fact per cancelled principal
@@ -367,6 +371,7 @@ export function emitS13CancelledFacts(input: {
     readonly billingFacts: BillingFactSink;
 }): void {
     for (const row of input.rows) {
+        if (row.origin === 'PENDING_AUTHORIZATION') continue;
         const vertical = VerticalEnumSchema.safeParse(row.vertical);
         if (!vertical.success) {
             logger.error(
