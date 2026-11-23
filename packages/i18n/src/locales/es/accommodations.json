@@ -921,8 +921,8 @@
             "anonymous": "Anónimo",
             "stripLabel": "Reseñas destacadas",
             "noReviews": "No hay opiniones todavía",
-            "viewAll_one": "Ver la {{count}} opinión",
-            "viewAll_other": "Ver las {{count}} opiniones",
+            "viewAll_one": "Ver la {{count}} reseña",
+            "viewAll_other": "Ver las {{count}} reseñas",
             "breakdownLabel": "Puntajes desglosados",
             "categories": {
                 "cleanliness": "Limpieza",
