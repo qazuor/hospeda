@@ -21,6 +21,7 @@ import { signUpCardSubscriber } from '../../fixtures/cancellation-flow.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { startE2eFakeProvider } from '../../fixtures/fake-provider-server.ts';
 import { startE2eMailCapture } from '../../fixtures/mail-capture-server.ts';
+import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { createRecurringAddonLive } from '../../fixtures/recurring-addon-live.ts';
 import { attachSession } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -93,17 +94,26 @@ test.describe('TEST:B13b:2 AC:B13b:2 AC:B13b:4 unpublishing a listing with a liv
         if (!world || !owner) throw new Error('Expected case-local owner and fake world.');
         const live = await createRecurringAddonLive({ page, world, owner });
         await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-        const card = page.locator('article.prop-card');
+        // HOS-2483: the card is a list item of «Mis propiedades»; Despublicar
+        // lives in its «Más acciones» menu and confirms in a dialog.
+        const card = page
+            .getByRole('list', { name: 'Mis propiedades' })
+            .getByRole('listitem')
+            .filter({ has: page.getByRole('heading', { level: 3 }) });
         await expect(card).toHaveCount(1);
-        await card.getByRole('button', { name: esHost.properties.card.actions.unpublish }).click();
-        await expect(card.getByTestId('unpublish-recurring-addon')).toHaveText(live.addonName);
-        await expect(card.getByTestId('unpublish-recurring-note')).toHaveText(
+        const confirm = await openPropertyCardConfirm({
+            page,
+            card,
+            action: esHost.properties.card.actions.unpublish
+        });
+        await expect(confirm.getByTestId('unpublish-recurring-addon')).toHaveText(live.addonName);
+        await expect(confirm.getByTestId('unpublish-recurring-note')).toHaveText(
             esHost.properties.card.unpublishRecurringNote_one.replace('{{count}}', '1')
         );
-        await expect(card.getByTestId('unpublish-recurring-withdraw-link')).toHaveText(
+        await expect(confirm.getByTestId('unpublish-recurring-withdraw-link')).toHaveText(
             esHost.properties.card.recurringWithdrawLink
         );
-        await expect(card.getByTestId('unpublish-recurring-withdraw-link')).toHaveAttribute(
+        await expect(confirm.getByTestId('unpublish-recurring-withdraw-link')).toHaveAttribute(
             'href',
             `/es/mi-cuenta/complementos/?listing=${live.listingId}#recurring-addons`
         );
@@ -121,11 +131,20 @@ test.describe('TEST:B13b:2 AC:B13b:2 AC:B13b:4 unpublishing a listing with a liv
             slugPrefix: 'b13b-unpublish-none'
         });
         await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-        const card = page.locator('article.prop-card');
+        // HOS-2483: the card is a list item of «Mis propiedades»; Despublicar
+        // lives in its «Más acciones» menu and confirms in a dialog.
+        const card = page
+            .getByRole('list', { name: 'Mis propiedades' })
+            .getByRole('listitem')
+            .filter({ has: page.getByRole('heading', { level: 3 }) });
         await expect(card).toHaveCount(1);
-        await card.getByRole('button', { name: esHost.properties.card.actions.unpublish }).click();
-        await expect(card.getByTestId('unpublish-recurring-addon')).toHaveCount(0);
-        await expect(card.getByTestId('unpublish-recurring-note')).toHaveCount(0);
-        await expect(card.getByTestId('unpublish-recurring-withdraw-link')).toHaveCount(0);
+        const confirm = await openPropertyCardConfirm({
+            page,
+            card,
+            action: esHost.properties.card.actions.unpublish
+        });
+        await expect(confirm.getByTestId('unpublish-recurring-addon')).toHaveCount(0);
+        await expect(confirm.getByTestId('unpublish-recurring-note')).toHaveCount(0);
+        await expect(confirm.getByTestId('unpublish-recurring-withdraw-link')).toHaveCount(0);
     });
 });
