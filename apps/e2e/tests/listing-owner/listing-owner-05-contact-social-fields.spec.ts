@@ -6,7 +6,8 @@
  *   1. The contact fieldset in ListingEditor DOES NOT contain an input
  *      with aria-label or label text matching 'website' / 'Sitio Web' /
  *      'sitio web'. (website was present in SPEC-239 but removed per AC-4.)
- *   2. The social fieldset DOES contain an input with aria-label 'linkedIn'.
+ *   2. The social fieldset DOES contain a textbox whose accessible name is
+ *      "LinkedIn" (the shared field kit labels it with a visible `<label>`).
  *   3. A value entered in the linkedIn input is saved (PATCH succeeds) and
  *      persists (re-opening the editor shows the pre-filled value).
  *
@@ -44,6 +45,12 @@ import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
+
+/**
+ * Accessible name of the LinkedIn social input. Anchored at the start because
+ * the kit appends an "(opcional)" hint to the label.
+ */
+const LINKEDIN_NAME = /^\s*linkedin\b/i;
 
 // ---------------------------------------------------------------------------
 // Actors
@@ -170,11 +177,15 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         ).toHaveCount(0);
         await expect(page.locator('input[placeholder*="website" i]')).toHaveCount(0);
         await expect(page.locator('label', { hasText: /sitio web/i })).toHaveCount(0);
+        // The field kit names inputs through visible labels, so also assert on
+        // the accessible name — the check that survives any markup change.
+        await expect(page.getByRole('textbox', { name: /sitio web|website/i })).toHaveCount(0);
 
         // ── AC-4 assertion 2: linkedIn input exists in the social fieldset ────
-        // ListingEditor renders each social key as an <input type="url"
-        // aria-label={key}> where key is the SOCIAL_KEYS entry (e.g. 'linkedIn').
-        const linkedInInput = page.locator('input[aria-label="linkedIn"]');
+        // The shared contact component renders each social key as a kit field
+        // with a visible label ("LinkedIn", plus an "(opcional)" hint), so the
+        // input is reached by its accessible name, anchored at the start.
+        const linkedInInput = page.getByRole('textbox', { name: LINKEDIN_NAME });
         await expect(linkedInInput).toBeVisible({ timeout: 10_000 });
         await expect(linkedInInput).toBeEditable({ timeout: 5_000 });
     });
@@ -211,7 +222,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         await waitForListingEditorHydration({ page });
 
         // Fill the linkedIn input using the React 19 helper.
-        const linkedInInput = page.locator('input[aria-label="linkedIn"]');
+        const linkedInInput = page.getByRole('textbox', { name: LINKEDIN_NAME });
         await expect(linkedInInput).toBeVisible({ timeout: 10_000 });
         await expect(linkedInInput).toBeEditable({ timeout: 5_000 });
 
@@ -237,7 +248,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
 
         // No hydration gate needed here: this only READS the persisted value,
         // which the SSR HTML already carries — nothing is typed into the form.
-        const linkedInInputAfter = page.locator('input[aria-label="linkedIn"]');
+        const linkedInInputAfter = page.getByRole('textbox', { name: LINKEDIN_NAME });
         await expect(linkedInInputAfter).toBeVisible({ timeout: 10_000 });
         await expect(linkedInInputAfter).toHaveValue(newLinkedInUrl, { timeout: 10_000 });
     });
