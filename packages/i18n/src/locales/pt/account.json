@@ -1856,7 +1856,13 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             },
-            "sectionTitle": "Dados da sua ficha"
+            "sectionTitle": "Dados da sua ficha",
+            "logo": {
+                "label": "Logotipo",
+                "previewAlt": "Pré-visualização do logotipo",
+                "pasteUrl": "Colar URL",
+                "urlHint": "Se o seu logotipo já está na internet, cole o endereço dele em vez de enviá-lo."
+            }
         },
         "presence": {
             "hidden": "Enquanto isso, sua página aparece como inexistente para o público.",
@@ -2158,6 +2164,20 @@
         },
         "entityCard": {
             "noImage": "Sem imagem"
+        },
+        "imageUploader": {
+            "choose": "Escolher imagem",
+            "replace": "Trocar imagem",
+            "compressing": "Otimizando…",
+            "uploading": "Enviando…",
+            "dropHint": "ou arraste e solte a imagem aqui",
+            "hint": "Formatos: {{types}}. Máximo de {{maxSize}} MB.",
+            "errors": {
+                "invalidType": "Esse formato não é permitido. Use uma imagem {{types}}.",
+                "tooLarge": "A imagem pesa mais de {{maxSize}} MB mesmo depois de otimizada. Escolha uma mais leve.",
+                "tooLargeNoCompression": "Não conseguimos otimizar esta imagem no seu navegador e ela pesa mais de {{maxSize}} MB. Tente outro formato ou uma imagem mais leve.",
+                "uploadFailed": "Não conseguimos enviar a imagem. Tente novamente."
+            }
         }
     },
     "ownerDashboard": {

@@ -1,0 +1,89 @@
+/* ImageUploader.module.css — pick or drop one image, with preview
+   (HOS-2506). Tokens only; the drop zone adapts to its own container. */
+
+.zone {
+    container-type: inline-size;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    box-sizing: border-box;
+    padding: var(--space-4);
+    background-color: var(--control-bg);
+    border: 1px dashed var(--control-border);
+    border-radius: var(--radius-control);
+}
+
+.zone[data-dragging="true"] {
+    border-style: solid;
+    border-color: var(--focus-ring);
+}
+
+.zone[data-invalid="true"] {
+    border-color: var(--status-danger-solid);
+}
+
+.preview {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    inline-size: 6rem;
+    block-size: 6rem;
+    overflow: hidden;
+    background-color: var(--core-muted);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-control);
+    color: var(--core-muted-foreground);
+}
+
+.image {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    min-inline-size: 0;
+}
+
+.dropHint {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.fileInput {
+    display: none;
+}
+
+@container (width < 30rem) {
+    .zone {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .preview {
+        align-self: center;
+    }
+
+    .body {
+        align-items: center;
+    }
+}
+
+.visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
