@@ -3415,6 +3415,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/host-trades/mine/tab-counts"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/host-trades/mine/usages"
         },
         {
