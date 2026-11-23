@@ -1,50 +1,47 @@
 /**
  * @file PromotionForm.client.tsx
- * @description Create / edit owner-promotion form island (SPEC-205 T-304).
+ * @description Create / edit owner-promotion island (SPEC-205 T-304) on the
+ * account kit (HOS-2505, HOS-2451).
  *
- * Supports two modes:
- *  - `create` — builds a new promotion via `ownerPromotionApi.create()`.
- *  - `edit`   — updates an existing promotion via `ownerPromotionApi.update()`.
+ * Three ways in, all kept: create, edit with `initialData`, and edit by id
+ * (reads the record with `getById`, shows a Skeleton meanwhile).
  *
- * Validation: Zod (OwnerPromotionCreateInputSchema / OwnerPromotionUpdateInputSchema)
- * via `safeParse` before any network call. An extra client-side guard caps
- * `discountValue` at 100 when `discountType` is `percentage` (the base schema
- * only enforces `>= 0`).
+ * - **Plan gate before the form (D9).** In create mode the effective set is
+ *   read first; when it answers and `create_promotions` is absent, a
+ *   `LockedState` with the catalog plan names (`lockPlanNames`, read by the
+ *   page) replaces the form. «Tu plan no incluye promociones» is no longer
+ *   something the owner discovers on save. A failed read does not lock: the
+ *   API still decides on save, and its 403 keeps its own banner.
+ * - **Explicit save (D8).** Kit fields in two Sections and a `StickySaveBar`
+ *   driven by `useSaveBar`; «Cancelar» is a kit `LinkButton` of its own, so it
+ *   can never sit on top of the save action (HOS-2451).
+ * - **Feedback.** A 403 `LIMIT_REACHED` / `ENTITLEMENT_REQUIRED` is an `Alert`
+ *   with an upgrade hint and a «Ver planes» `LinkButton`; success queues the
+ *   toast the list page shows (HOS-2451).
  *
- * 403 / LIMIT_REACHED: shown as a distinct inline banner with an upgrade hint
- * instead of the generic error message.
- *
- * accommodationId: rendered as a <select> populated from protectedAccommodationsApi.listOwn().
- * Empty value = promotion applies to all owner's properties. A specific accommodation
- * can be selected from the dropdown. Falls back gracefully to an empty select (all-only) on
- * fetch failure.
- *
- * Redirect on success: `/{locale}/mi-cuenta/promociones/` via
- * `window.location.href` (same pattern as other web islands).
- *
- * Hydration: client:load (form is the primary interactive element on the page).
+ * State and requests live in `usePromotionForm`; the fields in
+ * `PromotionFormFields`; the pure rules in `promotion-form-state`.
  */
 
+import { type JSX, useEffect, useState } from 'react';
 import {
-    ACCOMMODATION_PROMOTION_DISCOUNT_TYPES,
-    OwnerPromotionCreateRequestSchema,
-    OwnerPromotionDiscountTypeEnum,
-    OwnerPromotionUpdateInputSchema
-} from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useEffect, useId, useState } from 'react';
-import { ownerPromotionApi, protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
-import { transformOwnerPromotion } from '@/lib/api/transforms';
+    Alert,
+    ErrorState,
+    LinkButton,
+    LockedState,
+    Skeleton,
+    StickySaveBar,
+    useSaveBar
+} from '@/components/account/ui';
 import type { OwnerPromotionData } from '@/lib/api/types';
-import { resolvePromotionAudienceHint } from '@/lib/billing/plan-name-list';
-import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import { queueToastForNextPage } from '@/store/toast-store';
 import styles from './PromotionForm.module.css';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { PROMOTION_FIELD_PREFIX, PromotionFormFields } from './PromotionFormFields';
+import { usePromotionForm } from './usePromotionForm';
 
 /** Props for the PromotionForm island. */
 export interface PromotionFormProps {
@@ -61,451 +58,141 @@ export interface PromotionFormProps {
      * page (the catalog reader is server-only). Empty when the catalog could not be read.
      */
     readonly audiencePlanNames?: readonly string[];
+    /**
+     * HOS-2505: catalog names of the owner plans that include promotions, for the
+     * LockedState. Empty when the catalog could not be read.
+     */
+    readonly lockPlanNames?: readonly string[];
 }
 
-type FormFields = {
-    title: string;
-    description: string;
-    discountType: string;
-    discountValue: string;
-    validFrom: string;
-    validUntil: string;
-    minNights: string;
-    maxRedemptions: string;
-    accommodationId: string;
-    vipOnly: boolean;
-};
+/** Result of the create-mode plan check. */
+type PlanGate = 'checking' | 'open' | 'locked';
 
-type FieldErrors = Partial<Record<keyof FormFields, string>>;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Convert a JS Date or ISO string to `YYYY-MM-DD` for <input type="date">. */
-function toDateInputValue(value: string | Date | null | undefined): string {
-    if (!value) return '';
-    const d = typeof value === 'string' ? new Date(value) : value;
-    if (Number.isNaN(d.getTime())) return '';
-    return d.toISOString().slice(0, 10);
+/**
+ * Reads the effective set once in create mode.
+ *
+ * @param input - Options object.
+ * @param input.enabled - Whether to check (create mode).
+ * @returns `checking` until the read settles, then `open` or `locked`.
+ */
+function usePromotionPlanGate({ enabled }: { readonly enabled: boolean }): PlanGate {
+    const [gate, setGate] = useState<PlanGate>(enabled ? 'checking' : 'open');
+    useEffect(() => {
+        if (!enabled) return;
+        let cancelled = false;
+        const check = async (): Promise<void> => {
+            const effectiveSet = await getEntitlementsCached({ vertical: 'accommodation' });
+            if (cancelled) return;
+            // A failed read is not «no plan»: the API decides on save.
+            const locked =
+                !effectiveSet.failed && (effectiveSet.entitlements.create_promotions ?? 0) <= 0;
+            setGate(locked ? 'locked' : 'open');
+        };
+        void check();
+        return () => {
+            cancelled = true;
+        };
+    }, [enabled]);
+    return gate;
 }
-
-/** Build initial FormFields from an OwnerPromotionData object. */
-function buildInitialFields(data?: OwnerPromotionData): FormFields {
-    return {
-        title: data?.title ?? '',
-        description: data?.description ?? '',
-        discountType: data?.discountType ?? '',
-        discountValue: data?.discountValue == null ? '' : String(data.discountValue),
-        validFrom: toDateInputValue(data?.validFrom),
-        validUntil: toDateInputValue(data?.validUntil),
-        minNights: data?.minNights == null ? '' : String(data.minNights),
-        maxRedemptions: data?.maxRedemptions == null ? '' : String(data.maxRedemptions),
-        accommodationId: data?.accommodationId ?? '',
-        vipOnly: data?.touristAudience === 'vip'
-    };
-}
-
-// HOS-2270: the accommodation form offers ITS benefit types only; `special_offer` is
-// a venue benefit and must never appear here (AC-21).
-const DISCOUNT_TYPE_VALUES = ACCOMMODATION_PROMOTION_DISCOUNT_TYPES;
-
-// ─── Data-load state (edit mode without initialData) ─────────────────────────
-
-type DataLoadState =
-    | { readonly status: 'idle' }
-    | { readonly status: 'loading' }
-    | { readonly status: 'error'; readonly message: string };
-
-/** Minimal shape extracted from a raw accommodation item returned by listOwn(). */
-type OwnAccommodationOption = {
-    readonly id: string;
-    readonly label: string;
-};
-
-type AccommodationsLoadState =
-    | { readonly status: 'loading' }
-    | { readonly status: 'ready'; readonly items: readonly OwnAccommodationOption[] }
-    | { readonly status: 'error' };
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 /**
  * PromotionForm — create / edit owner-promotion island.
  *
- * Create mode: validates with OwnerPromotionCreateInputSchema, POSTs via
- * ownerPromotionApi.create().
- * Edit mode: validates with OwnerPromotionUpdateInputSchema, PUTs via
- * ownerPromotionApi.update(). When no `initialData` is provided, the island
- * fetches the promotion record via `ownerPromotionApi.getById({ id: promotionId })`
- * on mount and shows a loading indicator until data arrives.
- * Success: redirects to /{locale}/mi-cuenta/promociones/.
+ * @param props - See {@link PromotionFormProps}.
+ * @returns The plan lock, a load state, or the form with its save bar.
  */
 export function PromotionForm({
     locale,
     mode,
     initialData,
     promotionId,
-    audiencePlanNames = []
-}: PromotionFormProps) {
+    audiencePlanNames = [],
+    lockPlanNames = []
+}: PromotionFormProps): JSX.Element {
     const { t } = createTranslations(locale);
-
-    const titleId = useId();
-    const descriptionId = useId();
-    const discountTypeId = useId();
-    const discountValueId = useId();
-    const validFromId = useId();
-    const validUntilId = useId();
-    const minNightsId = useId();
-    const maxRedemptionsId = useId();
-    const accommodationIdId = useId();
-    const vipOnlyId = useId();
-
-    // Whether we need to fetch the promotion record before the form can render.
-    const needsFetch = mode === 'edit' && !initialData && !!promotionId;
-
-    const [dataLoad, setDataLoad] = useState<DataLoadState>(
-        needsFetch ? { status: 'loading' } : { status: 'idle' }
-    );
-    const [fields, setFields] = useState<FormFields>(() => buildInitialFields(initialData));
-    const [errors, setErrors] = useState<FieldErrors>({});
-    const [formError, setFormError] = useState<string | null>(null);
-    const [isLimitReached, setIsLimitReached] = useState(false);
-    const [entitlementRequired, setEntitlementRequired] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [accommodationsLoad, setAccommodationsLoad] = useState<AccommodationsLoadState>({
-        status: 'loading'
+    const form = usePromotionForm({ locale, mode, initialData, promotionId, t });
+    const saveBar = useSaveBar({
+        locale,
+        isDirty: form.isDirty,
+        onSave: form.save,
+        onDiscard: form.discard,
+        idPrefix: PROMOTION_FIELD_PREFIX
     });
-
-    // ── Fetch promotion data in edit mode ─────────────────────────────────
-    // biome-ignore lint/correctness/useExhaustiveDependencies: needsFetch encodes promotionId (stable prop); t is stable per locale; listing them would cause infinite re-fetch loops
-    useEffect(() => {
-        if (!needsFetch) return;
-
-        let cancelled = false;
-
-        async function fetchPromotion(): Promise<void> {
-            const loadFailed = t(
-                'host.promotions.errors.loadFailed',
-                'No se pudo cargar la promoción.'
-            );
-            try {
-                const result = await ownerPromotionApi.getById({
-                    id: promotionId as string
-                });
-                if (cancelled) return;
-
-                if (!result.ok) {
-                    const status = (result.error as { status?: number }).status;
-                    let message: string;
-                    if (status === 404) {
-                        message = t(
-                            'host.promotions.errors.notFound',
-                            'No se encontró la promoción.'
-                        );
-                    } else if (status === 403) {
-                        message = t(
-                            'host.promotions.errors.forbidden',
-                            'No tenés permiso para acceder a esta promoción.'
-                        );
-                    } else {
-                        message = loadFailed;
-                    }
-                    setDataLoad({
-                        status: 'error',
-                        message
-                    });
-                    return;
-                }
-
-                const promotion = transformOwnerPromotion({
-                    item: result.data as Record<string, unknown>
-                });
-                setFields(buildInitialFields(promotion));
-                setDataLoad({ status: 'idle' });
-            } catch {
-                if (cancelled) return;
-                setDataLoad({
-                    status: 'error',
-                    message: loadFailed
-                });
-            }
-        }
-
-        void fetchPromotion();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [needsFetch]);
-
-    // ── Fetch owner's own accommodations for the select ───────────────────
-    // Runs once on mount in both create and edit mode — not blocking the form.
-    useEffect(() => {
-        let cancelled = false;
-
-        async function fetchOwnAccommodations(): Promise<void> {
-            try {
-                const result = await protectedAccommodationsApi.listOwn({ pageSize: 100 });
-                if (cancelled) return;
-
-                if (!result.ok) {
-                    setAccommodationsLoad({ status: 'error' });
-                    return;
-                }
-
-                const rawItems = (result.data.items ?? []) as readonly Record<string, unknown>[];
-                const options: OwnAccommodationOption[] = rawItems.map((item) => ({
-                    id: String(item.id ?? ''),
-                    label: String(item.name ?? item.title ?? item.id ?? '')
-                }));
-                setAccommodationsLoad({ status: 'ready', items: options });
-            } catch {
-                if (cancelled) return;
-                setAccommodationsLoad({ status: 'error' });
-            }
-        }
-
-        void fetchOwnAccommodations();
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    const gate = usePromotionPlanGate({ enabled: mode === 'create' });
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
     const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
-    function handleChange(
-        e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-    ): void {
-        const { name, value } = e.currentTarget;
-        setFields((prev) => ({ ...prev, [name]: value }));
-        if (errors[name as keyof FieldErrors]) {
-            setErrors((prev) => ({ ...prev, [name]: undefined }));
-        }
-        setFormError(null);
-        setIsLimitReached(false);
-        setEntitlementRequired(false);
+    if (gate === 'locked') {
+        return (
+            <LockedState
+                locale={locale}
+                reason={{
+                    kind: 'plan',
+                    feature: t(
+                        'host.promotions.errors.entitlementRequired',
+                        'Tu plan no incluye promociones.'
+                    ),
+                    description: t(
+                        'host.promotions.errors.entitlementRequiredHint',
+                        'Mejorá tu plan para crear promociones.'
+                    ),
+                    plans: lockPlanNames.map((name) => ({ name })),
+                    plansHref: upgradeUrl
+                }}
+            />
+        );
     }
 
-    function handleVipOnlyChange(e: ChangeEvent<HTMLInputElement>): void {
-        const { checked } = e.currentTarget;
-        setFields((prev) => ({ ...prev, vipOnly: checked }));
-    }
-
-    async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
-        e.preventDefault();
-        if (isSubmitting) return;
-
-        setFormError(null);
-        setIsLimitReached(false);
-        setEntitlementRequired(false);
-        setErrors({});
-
-        // Build payload — coerce number fields, null-out empty optionals.
-        const discountValueNum =
-            fields.discountValue === '' ? undefined : Number(fields.discountValue);
-        const minNightsNum = fields.minNights === '' ? undefined : Number(fields.minNights);
-        const maxRedemptionsNum =
-            fields.maxRedemptions === '' ? undefined : Number(fields.maxRedemptions);
-
-        const payload: Record<string, unknown> = {
-            title: fields.title,
-            description: fields.description === '' ? undefined : fields.description,
-            discountType: fields.discountType === '' ? undefined : fields.discountType,
-            discountValue: discountValueNum,
-            validFrom: fields.validFrom === '' ? undefined : fields.validFrom,
-            validUntil: fields.validUntil === '' ? undefined : fields.validUntil,
-            minNights: minNightsNum,
-            maxRedemptions: maxRedemptionsNum,
-            accommodationId: fields.accommodationId === '' ? undefined : fields.accommodationId,
-            touristAudience: fields.vipOnly ? 'vip' : undefined
-        };
-
-        // Required-field validation (explicit, since the Zod schema used below
-        // is fully partial). These are the fields the form marks with *.
-        const requiredErrors: FieldErrors = {};
-        if (!fields.title.trim()) {
-            requiredErrors.title = t(
-                'host.promotions.errors.titleRequired',
-                'El título es requerido.'
-            );
-        }
-        if (!fields.discountType) {
-            requiredErrors.discountType = t(
-                'host.promotions.errors.discountTypeRequired',
-                'El tipo de descuento es requerido.'
-            );
-        }
-        if (fields.discountValue === '') {
-            requiredErrors.discountValue = t(
-                'host.promotions.errors.discountValueRequired',
-                'El valor del descuento es requerido.'
-            );
-        }
-        if (!fields.validFrom) {
-            requiredErrors.validFrom = t(
-                'host.promotions.errors.validFromRequired',
-                'La fecha de inicio es requerida.'
-            );
-        }
-        if (Object.keys(requiredErrors).length > 0) {
-            setErrors(requiredErrors);
-            return;
-        }
-
-        // Client-side guard: percentage cannot exceed 100 (schema only enforces >= 0).
-        if (
-            fields.discountType === OwnerPromotionDiscountTypeEnum.PERCENTAGE &&
-            discountValueNum != null &&
-            discountValueNum > 100
-        ) {
-            setErrors({
-                discountValue: t(
-                    'host.promotions.errors.discountValueMaxPercentage',
-                    'El porcentaje no puede superar 100.'
-                )
-            });
-            return;
-        }
-
-        // Create mode validates against OwnerPromotionCreateRequestSchema (the exact
-        // client-facing schema the POST route enforces — omits ownerId, which the
-        // route injects from the session actor; lifecycleState defaults server-side).
-        // Edit mode validates against OwnerPromotionUpdateInputSchema (`.partial().strict()`
-        // — every field optional, present fields only). Required-field presence for
-        // create (title, discountType, discountValue, validFrom) is enforced by the
-        // explicit `requiredErrors` check above, so both schemas see non-empty values
-        // for those fields by the time we get here.
-        const parsed =
-            mode === 'create'
-                ? OwnerPromotionCreateRequestSchema.safeParse(payload)
-                : OwnerPromotionUpdateInputSchema.safeParse(payload);
-
-        if (!parsed.success) {
-            // Resolve each Zod `zodError.*` key through `t` (via the shared
-            // mapper) so the user sees human Spanish instead of the raw i18n
-            // key that the old hand-rolled extractor surfaced (HOS-190 BETA-190).
-            setErrors(zodIssuesToFieldErrors(parsed.error.issues, t));
-            return;
-        }
-
-        setIsSubmitting(true);
-
-        try {
-            const result =
-                mode === 'create'
-                    ? await ownerPromotionApi.create({
-                          // TYPE-WORKAROUND: Zod-validated data (@repo/schemas) is structurally the web-local create input; the nominal types differ across the schema/web-lib boundary and serialize identically to JSON.
-                          body: parsed.data as unknown as import('@/lib/api/types').OwnerPromotionCreateInput
-                      })
-                    : await ownerPromotionApi.update({
-                          id: promotionId ?? '',
-                          // TYPE-WORKAROUND: Zod-validated data (@repo/schemas) is structurally the web-local update input; the nominal types differ across the schema/web-lib boundary and serialize identically to JSON.
-                          body: parsed.data as unknown as import('@/lib/api/types').OwnerPromotionUpdateInput
-                      });
-
-            if (!result.ok) {
-                // 403 LIMIT_REACHED: entitlement cap hit — show upgrade hint.
-                // ApiError carries `status` and `code` directly.
-                if (
-                    result.error.status === 403 &&
-                    (result.error.code === 'LIMIT_REACHED' ||
-                        result.error.code === 'ENTITLEMENT_LIMIT_REACHED')
-                ) {
-                    setIsLimitReached(true);
-                    setFormError(
-                        t(
-                            'host.promotions.errors.saveFailed',
-                            'No se pudo guardar la promoción. Intentá de nuevo.'
-                        )
-                    );
-                    return;
-                }
-
-                // 403 ENTITLEMENT_REQUIRED: the actor's plan does not include
-                // promotions at all — surface an upgrade prompt instead of a
-                // generic "could not save" message the host would retry forever.
-                if (result.error.status === 403 && result.error.code === 'ENTITLEMENT_REQUIRED') {
-                    setEntitlementRequired(true);
-                    setFormError(
-                        t(
-                            'host.promotions.errors.entitlementRequired',
-                            'Tu plan no incluye promociones.'
-                        )
-                    );
-                    return;
-                }
-
-                setFormError(
-                    t(
-                        'host.promotions.errors.saveFailed',
-                        'No se pudo guardar la promoción. Intentá de nuevo.'
-                    )
-                );
-                return;
-            }
-
-            // HOS-2451: the redirect is a hard navigation, so queue the toast for
-            // the list page instead of leaving the user with no confirmation.
-            queueToastForNextPage({
-                type: 'success',
-                message:
-                    mode === 'create'
-                        ? t('host.promotions.success.created', 'Promoción creada')
-                        : t('host.promotions.success.updated', 'Promoción actualizada')
-            });
-            window.location.href = promotionsListUrl;
-        } catch {
-            setFormError(
-                t(
-                    'host.promotions.errors.saveFailed',
-                    'No se pudo guardar la promoción. Intentá de nuevo.'
-                )
-            );
-        } finally {
-            setIsSubmitting(false);
-        }
-    }
-
-    // ── Render: data loading (edit mode, fetching promotion) ─────────────
-    if (dataLoad.status === 'loading') {
+    if (gate === 'checking' || form.dataLoad.status === 'loading') {
         return (
             <div
-                className={styles.promotionForm}
                 role="status"
-                aria-busy="true"
                 aria-label={t('host.promotions.loading', 'Cargando promoción...')}
             >
                 <p className={styles.loadingText}>
                     {t('host.promotions.loading', 'Cargando promoción...')}
                 </p>
+                <Skeleton
+                    locale={locale}
+                    shape="text"
+                    lines={6}
+                />
             </div>
         );
     }
 
-    // ── Render: data load error ────────────────────────────────────────────
-    if (dataLoad.status === 'error') {
+    if (form.dataLoad.status === 'error') {
         return (
-            <div
-                className={styles.promotionForm}
-                role="alert"
-            >
-                <p className="form-error">{dataLoad.message}</p>
-                <a
+            <div className={styles.promotionForm}>
+                <ErrorState
+                    locale={locale}
+                    title={form.dataLoad.message}
+                    description={t(
+                        'host.promotions.kit.loadFailedHint',
+                        'Volvé a la lista e intentá de nuevo.'
+                    )}
+                    onRetry={() => window.location.reload()}
+                />
+                <LinkButton
                     href={promotionsListUrl}
-                    className={styles.cancelLink}
+                    variant="secondary"
                 >
-                    {t('host.promotions.actions.cancel', 'Cancelar')}
-                </a>
+                    {t('host.promotions.kit.backToList', 'Volver a mis promociones')}
+                </LinkButton>
             </div>
         );
     }
+
+    const { failure } = form;
 
     return (
         <form
-            className={`form form--card ${styles.promotionForm}`}
+            className={styles.promotionForm}
             onSubmit={(e) => {
-                void handleSubmit(e);
+                e.preventDefault();
+                void saveBar.save();
             }}
             noValidate
             aria-label={
@@ -514,457 +201,66 @@ export function PromotionForm({
                     : t('host.promotions.actions.edit', 'Editar')
             }
         >
-            {/* Title */}
-            <div className="form-field">
-                <label
-                    className="form-label"
-                    htmlFor={titleId}
-                >
-                    {t('host.promotions.fields.title', 'Título')}
-                    <span
-                        className="form-required"
-                        aria-hidden="true"
-                    >
-                        *
-                    </span>
-                </label>
-                <input
-                    id={titleId}
-                    className="form-input"
-                    type="text"
-                    name="title"
-                    value={fields.title}
-                    onChange={handleChange}
-                    maxLength={200}
-                    required
-                    aria-invalid={errors.title ? 'true' : 'false'}
-                    aria-describedby={errors.title ? `${titleId}-error` : undefined}
-                />
-                {errors.title && (
-                    <p
-                        id={`${titleId}-error`}
-                        className="form-error"
-                        role="alert"
-                    >
-                        {errors.title}
-                    </p>
-                )}
-            </div>
+            <PromotionFormFields
+                locale={locale}
+                t={t}
+                fields={form.fields}
+                errors={form.errors}
+                accommodationsLoad={form.accommodationsLoad}
+                audiencePlanNames={audiencePlanNames}
+                onFieldChange={form.onFieldChange}
+                onVipOnlyChange={form.onVipOnlyChange}
+            />
 
-            {/* Description */}
-            <div className="form-field">
-                <label
-                    className="form-label"
-                    htmlFor={descriptionId}
-                >
-                    {t('host.promotions.fields.description', 'Descripción')}
-                </label>
-                <textarea
-                    id={descriptionId}
-                    className="form-textarea"
-                    name="description"
-                    value={fields.description}
-                    onChange={handleChange}
-                    rows={3}
-                    maxLength={1000}
-                    aria-invalid={errors.description ? 'true' : 'false'}
-                    aria-describedby={errors.description ? `${descriptionId}-error` : undefined}
-                />
-                {errors.description && (
-                    <p
-                        id={`${descriptionId}-error`}
-                        className="form-error"
-                        role="alert"
-                    >
-                        {errors.description}
-                    </p>
-                )}
-            </div>
-
-            {/* Discount type + value row */}
-            <div className={styles.row}>
-                {/* Discount type */}
-                <div className="form-field">
-                    <label
-                        className="form-label"
-                        htmlFor={discountTypeId}
-                    >
-                        {t('host.promotions.fields.discountType', 'Tipo de descuento')}
-                        <span
-                            className="form-required"
-                            aria-hidden="true"
-                        >
-                            *
-                        </span>
-                    </label>
-                    <select
-                        id={discountTypeId}
-                        className="form-input"
-                        name="discountType"
-                        value={fields.discountType}
-                        onChange={handleChange}
-                        required
-                        aria-invalid={errors.discountType ? 'true' : 'false'}
-                        aria-describedby={
-                            errors.discountType ? `${discountTypeId}-error` : undefined
-                        }
-                    >
-                        <option value="">
-                            {t(
-                                'host.promotions.fields.discountTypePlaceholder',
-                                'Elegí una opción'
-                            )}
-                        </option>
-                        {DISCOUNT_TYPE_VALUES.map((type) => (
-                            <option
-                                key={type}
-                                value={type}
-                            >
-                                {t(`host.promotions.discountTypes.${type}`, type)}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.discountType && (
-                        <p
-                            id={`${discountTypeId}-error`}
-                            className="form-error"
-                            role="alert"
-                        >
-                            {errors.discountType}
-                        </p>
-                    )}
-                </div>
-
-                {/* Discount value */}
-                <div className="form-field">
-                    <label
-                        className="form-label"
-                        htmlFor={discountValueId}
-                    >
-                        {t('host.promotions.fields.discountValue', 'Valor del descuento')}
-                        <span
-                            className="form-required"
-                            aria-hidden="true"
-                        >
-                            *
-                        </span>
-                    </label>
-                    <input
-                        id={discountValueId}
-                        className="form-input"
-                        type="number"
-                        name="discountValue"
-                        value={fields.discountValue}
-                        onChange={handleChange}
-                        min={0}
-                        step={1}
-                        max={
-                            fields.discountType === OwnerPromotionDiscountTypeEnum.PERCENTAGE
-                                ? 100
-                                : undefined
-                        }
-                        required
-                        aria-invalid={errors.discountValue ? 'true' : 'false'}
-                        aria-describedby={
-                            errors.discountValue ? `${discountValueId}-error` : undefined
-                        }
-                    />
-                    {errors.discountValue && (
-                        <p
-                            id={`${discountValueId}-error`}
-                            className="form-error"
-                            role="alert"
-                        >
-                            {errors.discountValue}
-                        </p>
-                    )}
-                </div>
-            </div>
-
-            {/* Valid from / until row */}
-            <div className={styles.row}>
-                {/* Valid from */}
-                <div className="form-field">
-                    <label
-                        className="form-label"
-                        htmlFor={validFromId}
-                    >
-                        {t('host.promotions.fields.validFrom', 'Válido desde')}
-                        <span
-                            className="form-required"
-                            aria-hidden="true"
-                        >
-                            *
-                        </span>
-                    </label>
-                    <input
-                        id={validFromId}
-                        className="form-input"
-                        type="date"
-                        name="validFrom"
-                        value={fields.validFrom}
-                        onChange={handleChange}
-                        required
-                        aria-invalid={errors.validFrom ? 'true' : 'false'}
-                        aria-describedby={errors.validFrom ? `${validFromId}-error` : undefined}
-                    />
-                    {errors.validFrom && (
-                        <p
-                            id={`${validFromId}-error`}
-                            className="form-error"
-                            role="alert"
-                        >
-                            {errors.validFrom}
-                        </p>
-                    )}
-                </div>
-
-                {/* Valid until */}
-                <div className="form-field">
-                    <label
-                        className="form-label"
-                        htmlFor={validUntilId}
-                    >
-                        {t('host.promotions.fields.validUntil', 'Válido hasta')}
-                    </label>
-                    <input
-                        id={validUntilId}
-                        className="form-input"
-                        type="date"
-                        name="validUntil"
-                        value={fields.validUntil}
-                        onChange={handleChange}
-                        aria-invalid={errors.validUntil ? 'true' : 'false'}
-                        aria-describedby={errors.validUntil ? `${validUntilId}-error` : undefined}
-                    />
-                    {errors.validUntil && (
-                        <p
-                            id={`${validUntilId}-error`}
-                            className="form-error"
-                            role="alert"
-                        >
-                            {errors.validUntil}
-                        </p>
-                    )}
-                </div>
-            </div>
-
-            {/* Min nights / max redemptions row */}
-            <div className={styles.row}>
-                {/* Min nights */}
-                <div className="form-field">
-                    <label
-                        className="form-label"
-                        htmlFor={minNightsId}
-                    >
-                        {t('host.promotions.fields.minNights', 'Noches mínimas')}
-                    </label>
-                    <input
-                        id={minNightsId}
-                        className="form-input"
-                        type="number"
-                        name="minNights"
-                        value={fields.minNights}
-                        onChange={handleChange}
-                        min={1}
-                        step={1}
-                        aria-invalid={errors.minNights ? 'true' : 'false'}
-                        aria-describedby={errors.minNights ? `${minNightsId}-error` : undefined}
-                    />
-                    {errors.minNights && (
-                        <p
-                            id={`${minNightsId}-error`}
-                            className="form-error"
-                            role="alert"
-                        >
-                            {errors.minNights}
-                        </p>
-                    )}
-                </div>
-
-                {/* Max redemptions */}
-                <div className="form-field">
-                    <label
-                        className="form-label"
-                        htmlFor={maxRedemptionsId}
-                    >
-                        {t('host.promotions.fields.maxRedemptions', 'Usos máximos')}
-                    </label>
-                    <input
-                        id={maxRedemptionsId}
-                        className="form-input"
-                        type="number"
-                        name="maxRedemptions"
-                        value={fields.maxRedemptions}
-                        onChange={handleChange}
-                        min={1}
-                        step={1}
-                        aria-invalid={errors.maxRedemptions ? 'true' : 'false'}
-                        aria-describedby={
-                            errors.maxRedemptions ? `${maxRedemptionsId}-error` : undefined
-                        }
-                    />
-                    {errors.maxRedemptions && (
-                        <p
-                            id={`${maxRedemptionsId}-error`}
-                            className="form-error"
-                            role="alert"
-                        >
-                            {errors.maxRedemptions}
-                        </p>
-                    )}
-                </div>
-            </div>
-
-            {/* Accommodation select — populated from protectedAccommodationsApi.listOwn() */}
-            <div className="form-field">
-                <label
-                    className="form-label"
-                    htmlFor={accommodationIdId}
-                >
-                    {t('host.promotions.fields.accommodationId', 'Propiedad')}
-                </label>
-                <select
-                    id={accommodationIdId}
-                    className="form-input"
-                    name="accommodationId"
-                    value={fields.accommodationId}
-                    onChange={handleChange}
-                    aria-invalid={errors.accommodationId ? 'true' : 'false'}
-                    aria-describedby={[
-                        `${accommodationIdId}-hint`,
-                        errors.accommodationId ? `${accommodationIdId}-error` : undefined
-                    ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    disabled={accommodationsLoad.status === 'loading'}
-                >
-                    {accommodationsLoad.status === 'loading' ? (
-                        <option value="">
-                            {t(
-                                'host.promotions.fields.accommodationIdLoading',
-                                'Cargando propiedades...'
-                            )}
-                        </option>
-                    ) : (
-                        <>
-                            <option value="">
-                                {t(
-                                    'host.promotions.fields.accommodationIdAll',
-                                    'Todas mis propiedades'
-                                )}
-                            </option>
-                            {accommodationsLoad.status === 'ready' &&
-                                accommodationsLoad.items.map((acc) => (
-                                    <option
-                                        key={acc.id}
-                                        value={acc.id}
-                                    >
-                                        {acc.label}
-                                    </option>
-                                ))}
-                        </>
-                    )}
-                </select>
-                <p
-                    id={`${accommodationIdId}-hint`}
-                    className="form-hint"
-                >
-                    {t(
-                        'host.promotions.fields.accommodationIdHint',
-                        "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas."
-                    )}
-                </p>
-                {errors.accommodationId && (
-                    <p
-                        id={`${accommodationIdId}-error`}
-                        className="form-error"
-                        role="alert"
-                    >
-                        {errors.accommodationId}
-                    </p>
-                )}
-            </div>
-
-            {/* VIP-only toggle (HOS-21 T-013) */}
-            <div className={`form-field ${styles.vipOnlyField}`}>
-                <label
-                    className={styles.vipOnlyLabel}
-                    htmlFor={vipOnlyId}
-                >
-                    <input
-                        id={vipOnlyId}
-                        type="checkbox"
-                        name="vipOnly"
-                        checked={fields.vipOnly}
-                        onChange={handleVipOnlyChange}
-                        aria-describedby={`${vipOnlyId}-hint`}
-                    />
-                    {t('host.promotions.fields.vipOnly', 'Exclusiva para plan VIP')}
-                </label>
-                <p
-                    id={`${vipOnlyId}-hint`}
-                    className="form-hint"
-                >
-                    {resolvePromotionAudienceHint({ locale, planNames: audiencePlanNames, t })}
-                </p>
-            </div>
-
-            {/* Form-level error / LIMIT_REACHED banner */}
-            {formError && (
-                <div
-                    className={`form-error-banner ${
-                        isLimitReached || entitlementRequired ? styles.limitReachedBanner : ''
-                    }`}
-                    role="alert"
-                >
-                    <p>{formError}</p>
-                    {isLimitReached && (
-                        <p className={styles.limitReachedHint}>
-                            {t(
-                                'host.promotions.errors.limitReachedHint',
-                                'Alcanzaste el límite de promociones activas de tu plan. Mejorá tu plan para crear más.'
-                            )}
-                        </p>
-                    )}
-                    {entitlementRequired && (
-                        <p className={styles.limitReachedHint}>
-                            {t(
-                                'host.promotions.errors.entitlementRequiredHint',
-                                'Mejorá tu plan para crear promociones.'
-                            )}{' '}
-                            <a
+            {failure ? (
+                <Alert
+                    tone={failure.kind === 'generic' ? 'danger' : 'warning'}
+                    locale={locale}
+                    title={failure.message}
+                    action={
+                        failure.kind === 'entitlement' ? (
+                            <LinkButton
                                 href={upgradeUrl}
-                                className={styles.upgradeLink}
+                                variant="accent"
+                                size="sm"
                             >
                                 {t('host.promotions.actions.upgradePlan', 'Ver planes')}
-                            </a>
-                        </p>
-                    )}
-                </div>
-            )}
+                            </LinkButton>
+                        ) : undefined
+                    }
+                >
+                    {failure.kind === 'limit'
+                        ? t(
+                              'host.promotions.errors.limitReachedHint',
+                              'Alcanzaste el límite de promociones activas de tu plan. Mejorá tu plan para crear más.'
+                          )
+                        : failure.kind === 'entitlement'
+                          ? t(
+                                'host.promotions.errors.entitlementRequiredHint',
+                                'Mejorá tu plan para crear promociones.'
+                            )
+                          : null}
+                </Alert>
+            ) : null}
 
-            {/* Actions */}
-            <div className="form-actions">
-                <a
+            <div className={styles.footer}>
+                <LinkButton
                     href={promotionsListUrl}
-                    className={styles.cancelLink}
+                    variant="secondary"
                 >
                     {t('host.promotions.actions.cancel', 'Cancelar')}
-                </a>
-                <button
-                    type="submit"
-                    className="btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
-                    disabled={isSubmitting}
-                    aria-busy={isSubmitting}
-                >
-                    <span className="gradient-btn__label">
-                        {isSubmitting
-                            ? t('host.promotions.actions.saving', 'Guardando...')
-                            : t('host.promotions.actions.save', 'Guardar')}
-                    </span>
-                </button>
+                </LinkButton>
             </div>
+
+            <StickySaveBar
+                locale={locale}
+                status={saveBar.status}
+                onSave={() => void saveBar.save()}
+                onDiscard={saveBar.discard}
+                onGoToFirstError={() => {
+                    saveBar.goToFirstError();
+                }}
+            />
         </form>
     );
 }

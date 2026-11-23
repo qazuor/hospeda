@@ -76,16 +76,6 @@
         "font-size": 4,
         "radius": 1
     },
-    "apps/web/src/components/account/editor/content-editor-fields.module.css": {
-        "color": 1,
-        "font-size": 4,
-        "radius": 1
-    },
-    "apps/web/src/components/account/editor/content-editor-layout.module.css": {
-        "color": 5,
-        "font-size": 2,
-        "radius": 2
-    },
     "apps/web/src/components/billing/addon-purchase/AddonPurchase.module.css": {
         "font-size": 1
     },
@@ -98,11 +88,6 @@
         "color": 12,
         "font-size": 20,
         "radius": 10
-    },
-    "apps/web/src/components/host/PromotionList.module.css": {
-        "color": 20,
-        "font-size": 16,
-        "radius": 14
     },
     "apps/web/src/components/host/PropertyCard.astro": {
         "color": 11,
@@ -396,28 +381,7 @@
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
         "color": 12
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/eventos/[id]/editar.astro": {
-        "font-size": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro": {
-        "color": 2,
-        "font-size": 1,
-        "radius": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
         "color": 13
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/proveedor/index.astro": {
-        "color": 1,
-        "font-size": 1,
-        "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/[id]/editar.astro": {
-        "font-size": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/index.astro": {
-        "color": 2,
-        "font-size": 1,
-        "radius": 1
     }
 }

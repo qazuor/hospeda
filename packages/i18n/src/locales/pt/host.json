@@ -938,6 +938,20 @@
         "specialOffer": {
             "label": "Descreva a vantagem",
             "help": "Descreva o benefício em poucas palavras, por exemplo, dois drinks pelo preço de um."
+        },
+        "kit": {
+            "sectionTitle": "Suas promoções",
+            "statusLabel": "Status",
+            "validityLabel": "Validade",
+            "validRange": "De {{from}} a {{until}}",
+            "validOpen": "A partir de {{from}}, sem vencimento",
+            "editNamed": "Editar “{{title}}”",
+            "deleteNamed": "Excluir “{{title}}”",
+            "deleteTitle": "Excluir “{{title}}”?",
+            "benefitSection": "A promoção",
+            "conditionsSection": "Condições",
+            "loadFailedHint": "Volte para a lista e tente de novo.",
+            "backToList": "Voltar para minhas promoções"
         }
     },
     "dashboard": {

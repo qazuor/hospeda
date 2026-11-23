@@ -1,112 +1,44 @@
 /**
- * PromotionForm.module.css
- * Layout-specific styles for the PromotionForm island.
- *
- * Global form utility classes (form-input, form-label, form-required,
- * form-error, form-error-banner, form-actions) come from the global
- * stylesheet and are applied directly on elements without CSS Modules
- * — consistent with the rest of the web app's form pattern.
- *
- * This file handles layout-only concerns: row grid, banner variants.
+ * PromotionForm.module.css — layout of the owner-promotion form (HOS-2505).
+ * The controls are kit pieces; this file only lays them out. Paired fields
+ * sit side by side once their own container is wide enough.
  */
 
-/** Two-column row for paired fields (type/value, dates, min/max). */
-.row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-@media (max-width: 480px) {
-    .row {
-        grid-template-columns: 1fr;
-    }
-}
-
-/** Wrapper class applied to the <form> element itself. */
 .promotionForm {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: var(--space-5);
 }
 
-/**
- * LIMIT_REACHED banner variant — slightly stronger visual treatment to
- * distinguish it from a generic error (e.g. a yellow-tinted background).
- * Falls back gracefully if the CSS variable is absent.
- */
-.limitReachedBanner {
-    background-color: var(--palette-warning-100);
-    border-color: var(--palette-warning-400);
-}
-
-.limitReachedHint {
-    margin-top: 0.25rem;
-    font-size: var(--text-body-sm);
-    color: var(--palette-warning-700);
-}
-
-/** VIP-only toggle field wrapper (HOS-21 T-013). */
-.vipOnlyField {
+.fields {
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
+    gap: var(--space-4);
 }
 
-.vipOnlyLabel {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-family: var(--font-sans);
-    font-size: var(--text-body-md);
-    color: var(--core-foreground);
-    cursor: pointer;
+/** Paired fields (type/value, dates, min/max): one column, two from 30rem. */
+.row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
 }
 
-/** Loading indicator text shown while fetching promotion data in edit mode. */
+@container (width >= 30rem) {
+    .row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/** «Cargando promoción…» above the Skeleton while the record is read. */
 .loadingText {
-    font-family: var(--font-sans);
-    font-size: var(--text-body);
+    margin: 0 0 var(--space-3);
+    font: var(--app-meta);
     color: var(--core-muted-foreground);
-    padding: var(--space-8, 2rem) 0;
-    text-align: center;
 }
 
-/*
- * HOS-2451: "Cancelar" and "Ver planes" were links with class names no
- * stylesheet defines (`btn-secondary`), so they rendered as bare text. They
- * borrow the tokens of the account forms' secondary actions.
- */
-.cancelLink {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button);
-    background: transparent;
-    color: var(--core-foreground);
-    font-family: var(--font-sans);
-    font-size: var(--text-body-sm);
-    font-weight: 500;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color var(--duration-fast, 0.2s) ease;
-}
-
-.cancelLink:hover {
-    background-color: var(--muted);
-}
-
-.cancelLink:focus-visible,
-.upgradeLink:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-}
-
-.upgradeLink {
-    color: var(--brand-primary);
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 3px;
+/** «Cancelar»: its own row, away from the save bar (HOS-2451). */
+.footer {
+    display: flex;
+    justify-content: flex-start;
 }

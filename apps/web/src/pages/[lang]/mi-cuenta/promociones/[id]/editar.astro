@@ -1,19 +1,14 @@
 ---
 /**
  * @file mi-cuenta/promociones/[id]/editar.astro
- * @description Edit owner promotion page — mounts the PromotionForm island in edit
- * mode. The island fetches the promotion record client-side via
- * `ownerPromotionApi.getById({ id: promotionId })` on mount and shows a loading
- * skeleton until data arrives.
+ * @description Edit an owner promotion, on the account kit editor template
+ * (HOS-2505): kit `PageHeader` with a back link, then the `PromotionForm`
+ * island in edit mode (kit field Sections + `StickySaveBar`).
  *
- * Approach: client-load (b). The `PromotionForm` already imports `ownerPromotionApi`
- * and handles loading/error states. Fetching server-side would require forwarding
- * cookies and a full SSR fetch cycle just to pass data the island can fetch itself —
- * unlike `AccommodationEditor`, the promotion form has no additional catalogs
- * (amenities, destinations) that would justify the SSR fetch overhead.
- *
- * Auth protection: middleware redirects unauthenticated users. This page
- * is only reachable by users with an active session.
+ * The island reads the record client-side (`ownerPromotionApi.getById`) and
+ * shows a Skeleton meanwhile: the form needs no other catalog that would
+ * justify an SSR fetch. The page reads only the catalog plan names for the
+ * exclusive-deals audience hint (HOS-2544; the catalog reader is server-only).
  *
  * @route    /[lang]/mi-cuenta/promociones/[id]/editar
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -24,8 +19,8 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageHeader } from '@/components/account/ui';
 import { PromotionForm } from '@/components/host/PromotionForm.client';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
@@ -35,11 +30,11 @@ export const prerender = false;
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
-const title = t('host.promotions.actions.edit', 'Editar promoción');
-const description = t('host.promotions.pageDescription', 'Gestioná tus promociones y descuentos');
+const title = t('host.promotions.actions.edit');
+const description = t('host.promotions.pageDescription');
+const listUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
 
-// HOS-2544: the audience hint names the catalog plans that carry exclusive deals. The
-// catalog reader is server-only, so the names are read here and handed to the island.
+// HOS-2544: the audience hint names the catalog plans that carry exclusive deals.
 const audiencePlanNames = planNamesWithEntitlement({
     result: await fetchPublicPlans({ vertical: 'tourist' }),
     entitlement: EntitlementKeyEnum.EXCLUSIVE_DEALS
@@ -54,14 +49,25 @@ if (!user) {
 // Extract promotion ID from route params.
 const promotionId = Astro.params.id;
 if (!promotionId) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/promociones' }));
+    return Astro.redirect(listUrl);
 }
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
-    <AccountPageHeader title={title} description={description} />
+    <PageHeader
+        title={title}
+        description={description}
+        locale={locale}
+        back={{ label: t('host.promotions.kit.backToList'), href: listUrl }}
+    >
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
-    <AccountSectionCard>
-        <PromotionForm client:load locale={locale} mode="edit" promotionId={promotionId} audiencePlanNames={audiencePlanNames} />
-    </AccountSectionCard>
+    <PromotionForm
+        client:load
+        locale={locale}
+        mode="edit"
+        promotionId={promotionId}
+        audiencePlanNames={audiencePlanNames}
+    />
 </AccountLayout>

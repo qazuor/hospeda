@@ -38,9 +38,9 @@ describe('mi-cuenta/eventos/index.astro', () => {
     it('TEST:1767:24 — shows a no-access state instead of redirecting to mi-cuenta', () => {
         expect(pageSource).toContain("from '@/lib/nav-gating'");
         expect(pageSource).toContain('hasEventsNavAccess(');
-        expect(pageSource).toContain('AccountEmptyState');
-        expect(pageSource).toContain('colaborar/editores');
-        expect(pageSource).toContain('account.myContent.events.noAccess.title');
+        // HOS-2505: the no-access state is the kit LockedState (built by
+        // OwnContentListView with the editor application link).
+        expect(pageSource).toContain("? 'locked'");
         expect(pageSource).not.toMatch(
             /Astro\.redirect\(\s*buildUrl\(\s*\{\s*locale,\s*path:\s*'mi-cuenta'\s*\}\s*\)\s*\)/
         );
@@ -57,25 +57,26 @@ describe('mi-cuenta/eventos/index.astro', () => {
         expect(pageSource).toContain('buildLoginRedirect(');
     });
 
-    it('renders the EditableContentCard with all three orthogonal state props', () => {
-        expect(pageSource).toContain('<EditableContentCard');
-        expect(pageSource).toContain('moderationState={event.moderationState}');
-        expect(pageSource).toContain('visibility={event.visibility}');
-        expect(pageSource).toContain('lifecycleState={event.lifecycleState}');
+    it('renders the kit list template with all three orthogonal state axes (HOS-2505)', () => {
+        expect(pageSource).toContain('<OwnContentListView');
+        expect(pageSource).not.toContain('EditableContentCard');
+        expect(pageSource).toContain('moderationState: event.moderationState');
+        expect(pageSource).toContain('visibility: event.visibility');
+        expect(pageSource).toContain('lifecycleState: event.lifecycleState');
+    });
+
+    it('wires the page help link and the retry island into the template', () => {
+        expect(pageSource).toMatch(/<PageHelpLink slot="help"/);
+        expect(pageSource).toMatch(/<ContentListReloadError slot="errorRegion"/);
     });
 
     it('transforms the raw response through transformEventEditCardList', () => {
         expect(pageSource).toContain('transformEventEditCardList(');
     });
 
-    it('renders a create CTA linking to the create page (HOS-374 §5.2.2)', () => {
-        expect(pageSource).toContain("path: 'mi-cuenta/eventos/nuevo'");
-        expect(pageSource).toContain('createUrl');
-        expect(pageSource).toMatch(/href=\{createUrl\}/);
-    });
-
-    it('passes the create URL to EmptyState as its action', () => {
-        expect(pageSource).toContain('actionUrl={createUrl}');
-        expect(pageSource).toContain('actionLabel={emptyCtaLabel}');
+    it('paginates through ?page= instead of a silent cap (HOS-2440)', () => {
+        expect(pageSource).toContain('ACCOUNT_LIST_PAGE_SIZE');
+        expect(pageSource).toContain('parsePageParam(');
+        expect(pageSource).toContain('pageCount={pageState.totalPages}');
     });
 });

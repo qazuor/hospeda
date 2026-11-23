@@ -21,13 +21,19 @@
  *   would still accept a PATCH — this is a UX choice, not a hard block).
  * - otherwise -> header + the `HostTradeEditForm` edit island.
  *
+ * HOS-2505: on the account kit — `PageHeader` with the page «?», kit states
+ * (`Alert`, `EmptyState`), and the tabs as kit `NavTabs` (still plain links,
+ * so only the active panel's island ships). «Usos» carries the count of
+ * declarations waiting for this provider's answer and «Valoraciones» the
+ * review total, both read with a one-row page so every tab shows them.
+ *
  * @route     /[lang]/mi-cuenta/proveedor/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { Alert, EmptyState, LinkButton, NavTabs, PageHeader, Section } from '@/components/account/ui';
 import { HostTradeEditForm } from '@/components/account/HostTradeEditForm.client';
 import { ProviderQrPanel } from '@/components/host/host-trades/ProviderQrPanel.client';
 import { ProviderReviewsPanel } from '@/components/host/host-trades/ProviderReviewsPanel.client';
@@ -86,10 +92,38 @@ const TAB_FALLBACK: Record<string, string> = {
     qr: 'Mi QR'
 };
 
+// Count pills (HOS-2505): one-row reads on every tab, so the counts do not
+// appear and vanish as the provider moves between tabs. A failed count is
+// simply not shown — it never blocks the page.
+const tabCounts: Partial<Record<string, { count: number; countLabel: string }>> = {};
+if (canShowTabs) {
+    const countCookie = Astro.request.headers.get('cookie') ?? undefined;
+    const [pendingCount, reviewsCount] = await Promise.all([
+        hostTradesApi.listOwnUsages({
+            status: 'PENDING',
+            declaredBy: 'HOST',
+            page: 1,
+            pageSize: 1,
+            cookieHeader: countCookie
+        }),
+        hostTradesApi.listOwnReviews({ page: 1, pageSize: 1, cookieHeader: countCookie })
+    ]);
+    if (pendingCount.ok) {
+        const count = pendingCount.data.pagination.total;
+        tabCounts.usos = { count, countLabel: t('account.provider.kit.pendingCount', undefined, { count }) };
+    }
+    if (reviewsCount.ok) {
+        const count = reviewsCount.data.pagination.total;
+        tabCounts.valoraciones = { count, countLabel: t('account.provider.kit.reviewsCount', undefined, { count }) };
+    }
+}
+
 const tabs = PROVIDER_TABS.map((tab) => ({
     id: tab,
     label: t(`account.provider.tabs.${tab}`, TAB_FALLBACK[tab] ?? tab),
-    href: `${buildUrl({ locale, path: 'mi-cuenta/proveedor' })}${tab === 'ficha' ? '' : `?tab=${tab}`}`
+    href: `${buildUrl({ locale, path: 'mi-cuenta/proveedor' })}${tab === 'ficha' ? '' : `?tab=${tab}`}`,
+    current: tab === activeTab,
+    ...(tabCounts[tab] ?? {})
 }));
 
 // Today in the market's timezone. The Node server runs UTC, so an ISO slice
@@ -200,38 +234,39 @@ const panelError = t(
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="proveedor">
-    <AccountPageHeader title={title} description={subtitle} />
+    <PageHeader title={title} description={subtitle} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
     {
         fetchFailed ? (
-            <AccountSectionCard>
-                <p role="alert">
-                    {t(
-                        'account.provider.errors.fetchFailed',
-                        'No pudimos cargar tu ficha de proveedor. Recargá la página para reintentar.'
-                    )}
-                </p>
-            </AccountSectionCard>
+            <Alert tone="danger" locale={locale}>
+                {t(
+                    'account.provider.errors.fetchFailed',
+                    'No pudimos cargar tu ficha de proveedor. Recargá la página para reintentar.'
+                )}
+            </Alert>
         ) : trade === null ? (
-            <AccountSectionCard>
-                <p>
-                    {t(
-                        'account.provider.empty.text',
-                        'Todavía no tenés una ficha de proveedor. Postulate desde "Sumate como aliado" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.'
-                    )}
-                </p>
-                <a href={buildUrl({ locale, path: 'sumate/proveedor' })}>
-                    {t('account.provider.empty.cta', 'Ir a Sumate como aliado')}
-                </a>
-            </AccountSectionCard>
+            <EmptyState
+                title={t(
+                    'account.provider.empty.text',
+                    'Todavía no tenés una ficha de proveedor. Postulate desde "Sumate como aliado" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.'
+                )}
+                action={
+                    <LinkButton href={buildUrl({ locale, path: 'sumate/proveedor' })}>
+                        {t('account.provider.empty.cta', 'Ir a Sumate como aliado')}
+                    </LinkButton>
+                }
+            />
         ) : isRevoked ? (
-            <AccountSectionCard>
-                <p role="alert">
-                    {t(
-                        'account.provider.revoked.text',
-                        'Tu ficha fue dada de baja del directorio de proveedores.'
-                    )}
-                </p>
+            <Alert
+                tone="danger"
+                locale={locale}
+                title={t(
+                    'account.provider.revoked.text',
+                    'Tu ficha fue dada de baja del directorio de proveedores.'
+                )}
+            >
                 {trade.revokeReason && <p>{trade.revokeReason}</p>}
                 <p>
                     {t(
@@ -239,26 +274,22 @@ const panelError = t(
                         'Si querés más información, escribinos y te contamos los detalles.'
                     )}
                 </p>
-            </AccountSectionCard>
+            </Alert>
         ) : (
             <>
                 {/* Tab navigation: plain links, so only the active panel's
                     island ships and every tab is linkable. */}
-                <nav class="provider-tabs" aria-label={t('account.provider.tabs.label', 'Secciones de tu ficha')}>
-                    {tabs.map((tab) => (
-                        <a
-                            class:list={['provider-tabs__link', tab.id === activeTab && 'provider-tabs__link--active']}
-                            href={tab.href}
-                            aria-current={tab.id === activeTab ? 'page' : undefined}
-                        >
-                            {tab.label}
-                        </a>
-                    ))}
-                </nav>
+                <NavTabs
+                    items={tabs}
+                    ariaLabel={t('account.provider.tabs.label', 'Secciones de tu ficha')}
+                />
 
-                <AccountSectionCard>
+                <Section
+                    title={tabs.find((tab) => tab.current)?.label ?? title}
+                    helpId="section:hosttrade.panel"
+                >
                     {panelFailed ? (
-                        <p role="alert">{panelError}</p>
+                        <Alert tone="danger" locale={locale}>{panelError}</Alert>
                     ) : activeTab === 'usos' ? (
                         <ProviderUsagesPanel
                             client:load
@@ -288,44 +319,8 @@ const panelError = t(
                     ) : (
                         <HostTradeEditForm locale={locale} trade={trade} client:load />
                     )}
-                </AccountSectionCard>
+                </Section>
             </>
         )
     }
 </AccountLayout>
-
-<style>
-    .provider-tabs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-2, 0.5rem);
-        margin-bottom: var(--space-4, 1rem);
-    }
-
-    .provider-tabs__link {
-        display: inline-flex;
-        align-items: center;
-        /* 44px keeps the tap target within the AA touch guideline. */
-        min-height: 44px;
-        padding: 0.5rem 1rem;
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.9375rem;
-        color: var(--core-muted-foreground);
-        text-decoration: none;
-        background-color: transparent;
-        border: 1px solid var(--core-foreground-a08);
-        border-radius: var(--radius-pill, 9999px);
-    }
-
-    .provider-tabs__link--active {
-        color: var(--primary-foreground, #ffffff);
-        background-color: var(--brand-primary);
-        border-color: var(--brand-primary);
-    }
-
-    .provider-tabs__link:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
-    }
-</style>

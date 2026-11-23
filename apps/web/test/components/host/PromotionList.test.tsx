@@ -334,4 +334,53 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
         expect(createLinks.length).toBe(1);
         expect(screen.queryByText(/tu plan no incluye promociones/i)).not.toBeInTheDocument();
     });
+
+    // ---------------------------------------------------------------------------
+    // HOS-2440 / HOS-2505: the list used to ask for one default page and drop
+    // the rest. It now asks for an explicit page and links every page.
+    // ---------------------------------------------------------------------------
+
+    it('HOS-2440: requests explicit pages and paginates when there are more than 50 promotions', async () => {
+        const user = userEvent.setup();
+        mockOwnerPromotionList.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [mockPromo1],
+                pagination: {
+                    page: 1,
+                    pageSize: 20,
+                    total: 55,
+                    totalPages: 3,
+                    hasNextPage: true,
+                    hasPreviousPage: false
+                }
+            }
+        });
+
+        render(<PromotionList locale="es" />);
+
+        await screen.findByText('Descuento de verano');
+        expect(mockOwnerPromotionList).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
+        const pageThree = screen.getByRole('button', { name: 'Página 3' });
+        await user.click(pageThree);
+        await waitFor(() =>
+            expect(mockOwnerPromotionList).toHaveBeenLastCalledWith({ page: 3, pageSize: 20 })
+        );
+    });
+
+    it('HOS-2505: without the plan and with no promotions, shows a LockedState naming the catalog plans', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+
+        render(
+            <PromotionList
+                locale="es"
+                lockPlanNames={['Plan Catálogo']}
+            />
+        );
+
+        expect(await screen.findByText('Plan Catálogo')).toBeInTheDocument();
+        expect(document.querySelector('[data-reason="plan"]')).not.toBeNull();
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
+    });
 });

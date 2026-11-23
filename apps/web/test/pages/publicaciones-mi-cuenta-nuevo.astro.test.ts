@@ -24,10 +24,12 @@ describe('mi-cuenta/publicaciones/nuevo.astro', () => {
         expect(pageSource).toContain('buildLoginRedirect(');
     });
 
-    it('gates on hasPostsNavAccess (POST_CREATE) and redirects to mi-cuenta otherwise', () => {
+    it('HOS-2505: gates on hasPostsNavAccess (POST_CREATE) and shows a permission LockedState otherwise (D9)', () => {
         expect(pageSource).toContain("from '@/lib/nav-gating'");
         expect(pageSource).toContain('hasPostsNavAccess(');
-        expect(pageSource).toContain("path: 'mi-cuenta'");
+        expect(pageSource).toContain('<LockedState');
+        expect(pageSource).toContain("kind: 'permission'");
+        expect(pageSource).not.toContain("path: 'mi-cuenta' })");
     });
 
     it('mounts PostCreateForm hydrated with client:load', () => {

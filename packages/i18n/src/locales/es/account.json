@@ -1764,6 +1764,25 @@
                     "startDateRequired": "El evento necesita una fecha de comienzo."
                 }
             }
+        },
+        "contentList": {
+            "editNamed": "Editar «{{title}}»",
+            "events": {
+                "create": "Nuevo evento",
+                "sectionTitle": "Tus eventos",
+                "locked": {
+                    "feature": "Gestionar eventos es una función de los editores",
+                    "description": "Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor."
+                }
+            },
+            "posts": {
+                "create": "Nueva publicación",
+                "sectionTitle": "Tus publicaciones",
+                "locked": {
+                    "feature": "Escribir publicaciones es una función de los editores",
+                    "description": "Tu cuenta todavía no tiene permiso para gestionar publicaciones. Si querés escribir en Hospeda, completá la solicitud para sumarte como editor."
+                }
+            }
         }
     },
     "alliances": {
@@ -1842,6 +1861,10 @@
         },
         "suspended": {
             "noReason": "Suspendimos temporalmente el registro de usos desde tu ficha."
+        },
+        "kit": {
+            "pendingCount": "Usos esperando tu respuesta: {{count}}",
+            "reviewsCount": "Valoraciones recibidas: {{count}}"
         }
     },
     "partner": {
@@ -2236,6 +2259,9 @@
                 "tooLargeNoCompression": "No pudimos optimizar esta imagen en tu navegador y pesa más de {{maxSize}} MB. Probá con otro formato o una imagen más liviana.",
                 "uploadFailed": "No pudimos subir la imagen. Probá de nuevo."
             }
+        },
+        "contentCard": {
+            "statuses": "Estados"
         }
     },
     "ownerDashboard": {
