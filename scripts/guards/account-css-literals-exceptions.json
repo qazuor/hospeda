@@ -214,9 +214,9 @@
         "font-size": 1
     },
     "apps/web/src/components/host/editor/FaqSection.module.css": {
-        "color": 7,
-        "font-size": 18,
-        "radius": 11
+        "color": 5,
+        "font-size": 16,
+        "radius": 8
     },
     "apps/web/src/components/host/editor/LinkUrlDialog.module.css": {
         "font-size": 5,
@@ -330,9 +330,9 @@
         "radius": 1
     },
     "apps/web/src/components/listing/ListingFaqManager.module.css": {
-        "color": 14,
-        "font-size": 20,
-        "radius": 12
+        "color": 7,
+        "font-size": 12,
+        "radius": 4
     },
     "apps/web/src/components/listing/ListingNotices.module.css": {
         "font-size": 2,
