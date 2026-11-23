@@ -22,7 +22,7 @@ import {
 } from '@/components/shared/ui/Dialog.client';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { useSwipe } from '@/hooks/useSwipe';
-import type { SupportedLocale } from '@/lib/i18n';
+import type { PluralTranslationFn, SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { PhotoCreditParts } from '@/lib/photo-credit.types';
 import { GalleryHeroPreload } from './gallery/GalleryHeroPreload';
@@ -499,6 +499,7 @@ interface DetailVariantProps {
     readonly mobile?: MobileGalleryOptions;
     readonly onOpen: (index: number) => void;
     readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+    readonly tPlural: PluralTranslationFn;
     /**
      * When provided AND total images exceed the visible inline count (count >= 5),
      * a "Ver todas las fotos" link is rendered below the mosaic grid.
@@ -506,7 +507,15 @@ interface DetailVariantProps {
     readonly viewAllHref?: string;
 }
 
-function DetailVariant({ images, onOpen, t, viewAllHref, locale, mobile }: DetailVariantProps) {
+function DetailVariant({
+    images,
+    onOpen,
+    t,
+    tPlural,
+    viewAllHref,
+    locale,
+    mobile
+}: DetailVariantProps) {
     const [featured, ...rest] = images;
     const count = images.length;
     const visibleThumbCount = getVisibleThumbCount(count);
@@ -676,11 +685,7 @@ function DetailVariant({ images, onOpen, t, viewAllHref, locale, mobile }: Detai
                             as="button"
                             variant="outline-primary"
                             size="sm"
-                            label={t(
-                                'accommodations.detail.gallery.viewAllCount',
-                                `Ver las ${count} fotos`,
-                                { count }
-                            )}
+                            label={tPlural('accommodations.detail.gallery.viewAllCount', count)}
                             leadingIcon={
                                 <FullscreenIcon
                                     size={16}
@@ -911,7 +916,7 @@ export function ImageGallery({
     viewAllHref,
     mobile
 }: ImageGalleryProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
     const openLightbox = useCallback((index: number): void => {
@@ -931,6 +936,7 @@ export function ImageGallery({
                     images={images}
                     onOpen={openLightbox}
                     t={t}
+                    tPlural={tPlural}
                     viewAllHref={viewAllHref}
                     locale={locale}
                     mobile={mobile}

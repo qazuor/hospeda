@@ -540,7 +540,8 @@
         "gallery": {
             "viewAll": "View all photos",
             "moreOverlay": "+{{count}} more",
-            "viewAllCount": "See all {{count}} photos",
+            "viewAllCount_one": "See the photo",
+            "viewAllCount_other": "See all {{count}} photos",
             "viewFullscreen": "View photo {n} fullscreen",
             "backToAccommodation": "← Back to accommodation",
             "photosSubpage": "Photos"
