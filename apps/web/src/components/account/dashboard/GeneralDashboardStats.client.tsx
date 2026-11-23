@@ -24,6 +24,7 @@ import { publishApi, userApi } from '@/lib/api/endpoints-protected';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { formatNoticeInstant } from '@/lib/listing/listing-notices';
 import { buildUrl } from '@/lib/urls';
+import styles from './Dashboard.module.css';
 
 /** Props of {@link GeneralDashboardStats}. */
 export interface GeneralDashboardStatsProps {
@@ -78,6 +79,7 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
     const [statsState, setStatsState] = useState<AsyncResult<UserStatsResponse>>(LOADING);
     const [reviewsState, setReviewsState] = useState<AsyncResult<number>>(LOADING);
     const [planState, setPlanState] = useState<AsyncResult<StatValue>>(LOADING);
+    const [planViewAll, setPlanViewAll] = useState(false);
 
     const loadStats = useCallback(async () => {
         setStatsState(LOADING);
@@ -89,7 +91,10 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
             setPlanState({ status: 'error', retry });
             return;
         }
-        const needsTrial = stats.data.plan === null && stats.data.activeSubscriptionsCount < 2;
+        const needsTrial =
+            stats.data.plan === null &&
+            stats.data.activeSubscriptionsCount < 2 &&
+            (stats.data.subscriptions?.length ?? 0) < 2;
         const trialSummaries = needsTrial ? await readTrialSummaries() : [];
         const text = resolveSubscriptionStatText({
             stats: stats.data,
@@ -98,9 +103,38 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
             t,
             formatDate: (iso) => formatNoticeInstant({ iso, locale })
         });
+        // HOS-2553: the subscription rows and the what-to-do line ride in the hint.
+        const hasDetail = text.rows.length > 0 || text.action !== null;
+        setPlanViewAll(text.viewAll);
         setPlanState({
             status: 'ready',
-            data: { value: text.value, hint: text.hint ?? undefined }
+            data: {
+                value: text.value,
+                hint: hasDetail ? (
+                    <>
+                        {text.hint ? <span className={styles.subRow}>{text.hint}</span> : null}
+                        {text.rows.map((row) => (
+                            <span
+                                key={`${row.plan}:${row.status}`}
+                                className={styles.subRow}
+                                data-testid="subscription-row"
+                            >
+                                <span className={styles.subPlan}>{row.plan}</span> · {row.status}
+                            </span>
+                        ))}
+                        {text.action ? (
+                            <span
+                                className={styles.subAction}
+                                data-testid="subscription-action"
+                            >
+                                {text.action}
+                            </span>
+                        ) : null}
+                    </>
+                ) : (
+                    (text.hint ?? undefined)
+                )
+            }
         });
     }, [planNames, locale, t]);
 
@@ -161,7 +195,11 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
                 icon={<CreditCardIcon size={20} />}
                 link={{
                     href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }),
-                    label: t('account.pages.dashboard.stats.viewSubscription')
+                    label: t(
+                        planViewAll
+                            ? 'account.pages.dashboard.stats.viewAllSubscriptions'
+                            : 'account.pages.dashboard.stats.viewSubscription'
+                    )
                 }}
             />
         </StatGrid>

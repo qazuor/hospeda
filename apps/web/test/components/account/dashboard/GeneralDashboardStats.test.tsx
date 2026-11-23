@@ -92,4 +92,89 @@ describe('GeneralDashboardStats (HOS-2473)', () => {
         await within(card(container, 'reviews')).findByRole('alert');
         expect(card(container, 'favorites')).toHaveAttribute('data-state', 'ready');
     });
+
+    it('HOS-2553 a declined single plan shows its exact status and what to do', async () => {
+        // Arrange
+        getStats.mockResolvedValue({
+            ok: true,
+            data: { ...STATS, plan: { ...STATS.plan, status: 'CHARGE_DECLINED' } }
+        });
+        getReviews.mockResolvedValue({ ok: true, data: { totals: { total: 0 } } });
+        // Act
+        const { container } = render(
+            <GeneralDashboardStats
+                locale="es"
+                planNames={{ 'owner-pro': 'Pro anfitrión' }}
+            />
+        );
+        await screen.findByText('Pro anfitrión');
+        // Assert
+        const sub = card(container, 'subscription');
+        expect(within(sub).getByText('Cobro rechazado')).toBeInTheDocument();
+        expect(within(sub).getByTestId('subscription-action').textContent).toMatch(
+            /Mercado Pago no aprobó el pago/
+        );
+    });
+
+    it('HOS-2553 two or more subscriptions are listed with their status, max three, and «Ver todas»', async () => {
+        // Arrange
+        const row = (slug: string, status: string) => ({
+            slug,
+            name: slug.toUpperCase(),
+            status,
+            vertical: 'accommodation'
+        });
+        getStats.mockResolvedValue({
+            ok: true,
+            data: {
+                ...STATS,
+                plan: null,
+                activeSubscriptionsCount: 2,
+                subscriptions: [
+                    row('owner-pro', 'ACTIVE'),
+                    row('venue-pro', 'PENDING_AUTHORIZATION'),
+                    row('experience-pro', 'CHARGE_DECLINED'),
+                    row('partner-gold', 'ACTIVE')
+                ]
+            }
+        });
+        getReviews.mockResolvedValue({ ok: true, data: { totals: { total: 0 } } });
+        // Act
+        const { container } = render(
+            <GeneralDashboardStats
+                locale="es"
+                planNames={{ 'owner-pro': 'Pro anfitrión' }}
+            />
+        );
+        await screen.findByText('Pro anfitrión');
+        // Assert
+        const sub = card(container, 'subscription');
+        const rows = within(sub).getAllByTestId('subscription-row');
+        expect(rows.map((el) => el.textContent)).toEqual([
+            'Pro anfitrión · Activo',
+            'VENUE-PRO · Esperando autorización',
+            'EXPERIENCE-PRO · Cobro rechazado'
+        ]);
+        // The first row that needs action decides the line.
+        expect(within(sub).getByTestId('subscription-action').textContent).toMatch(
+            /autorices el pago/
+        );
+        expect(within(sub).getByRole('link', { name: 'Ver todas' })).toBeInTheDocument();
+        expect(trialSummary).not.toHaveBeenCalled();
+    });
+
+    it('HOS-2553 an active single plan has no action line and keeps «Ver mi suscripción»', async () => {
+        getStats.mockResolvedValue({ ok: true, data: STATS });
+        getReviews.mockResolvedValue({ ok: true, data: { totals: { total: 0 } } });
+        const { container } = render(
+            <GeneralDashboardStats
+                locale="es"
+                planNames={{ 'owner-pro': 'Pro anfitrión' }}
+            />
+        );
+        await screen.findByText('Pro anfitrión');
+        const sub = card(container, 'subscription');
+        expect(within(sub).queryByTestId('subscription-action')).toBeNull();
+        expect(within(sub).getByRole('link', { name: 'Ver mi suscripción' })).toBeInTheDocument();
+    });
 });

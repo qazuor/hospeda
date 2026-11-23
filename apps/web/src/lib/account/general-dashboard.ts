@@ -13,6 +13,9 @@
 import { PermissionEnum, type TrialSummaryResponse, type UserStatsResponse } from '@repo/schemas';
 import type { DashboardRow } from '@/lib/account/dashboard-rows';
 import {
+    type DashboardActionStatusKey,
+    type DashboardStatusKey,
+    getActionStatusKey,
     resolveDashboardFreeCard,
     resolveDashboardPlanStat
 } from '@/lib/billing/dashboard-plan-stat';
@@ -133,14 +136,30 @@ export function buildGeneralDashboardLinks({
     ];
 }
 
-/** Status line key per exact subscription status of a single plan. */
+/** Status line key per exact subscription status (one entry per `DashboardStatusKey`). */
 const STATUS_LABEL_KEY = {
     active: 'account.pages.dashboard.stats.activeStatus',
     'grace-period': 'account.pages.dashboard.stats.gracePeriodStatus',
     suspended: 'account.pages.dashboard.stats.suspendedStatus',
     'cancel-scheduled': 'account.pages.dashboard.stats.cancelScheduledStatus',
-    paused: 'account.pages.dashboard.stats.pausedStatus'
-} as const;
+    paused: 'account.pages.dashboard.stats.pausedStatus',
+    'charge-declined': 'account.pages.dashboard.stats.chargeDeclinedStatus',
+    'pending-authorization': 'account.pages.dashboard.stats.pendingAuthorizationStatus'
+} as const satisfies Record<DashboardStatusKey, string>;
+
+/** What-to-do line key per status that needs the owner to act (HOS-2553). */
+const ACTION_LABEL_KEY = {
+    'charge-declined': 'account.pages.dashboard.stats.chargeDeclinedAction',
+    'pending-authorization': 'account.pages.dashboard.stats.pendingAuthorizationAction'
+} as const satisfies Record<DashboardActionStatusKey, string>;
+
+/** One subscription row of the card when the user holds two or more (HOS-2553). */
+export interface SubscriptionStatRow {
+    /** Catalog plan name. */
+    readonly plan: string;
+    /** Translated exact status. */
+    readonly status: string;
+}
 
 /** Text the subscription StatCard shows once the reads answered. */
 export interface SubscriptionStatText {
@@ -148,21 +167,30 @@ export interface SubscriptionStatText {
     readonly value: string;
     /** Status line, or `null`. */
     readonly hint: string | null;
+    /** One row per live subscription (max 3) when there are two or more; else empty. */
+    readonly rows: readonly SubscriptionStatRow[];
+    /** What to do about a declined charge or an unauthorized checkout, or `null`. */
+    readonly action: string | null;
+    /** `true` when more subscriptions exist than rows shown: the link reads «Ver todas». */
+    readonly viewAll: boolean;
 }
 
 /**
  * What the subscription StatCard says.
  *
- * A single live plan shows its catalog name and its exact status; two or more
- * show the count (HOS-1066); none asks the trial first (HOS-1996) and only
- * then falls back to the free label.
+ * Two or more live subscriptions list each one with its exact status, at most
+ * three (HOS-2553); a single live plan shows its catalog name and its exact
+ * status; an API that predates `subscriptions` falls back to the count
+ * (HOS-1066); none asks the trial first (HOS-1996) and only then falls back to
+ * the free label. A declined charge or a checkout waiting for authorization
+ * adds a line saying what to do (HOS-2553).
  *
  * @param input.stats - `GET /protected/users/me/stats`.
  * @param input.planNames - Translated names by catalog slug (read on the server).
  * @param input.trialSummaries - Trial reads that answered; failed reads left out.
  * @param input.t - Translator for the fixed copy.
  * @param input.formatDate - Formats an ISO instant, `null` when it cannot.
- * @returns The value and the optional status line.
+ * @returns The value, the optional status line, the rows and the action line.
  */
 export function resolveSubscriptionStatText({
     stats,
@@ -171,7 +199,8 @@ export function resolveSubscriptionStatText({
     t,
     formatDate
 }: {
-    readonly stats: Pick<UserStatsResponse, 'plan' | 'activeSubscriptionsCount'>;
+    readonly stats: Pick<UserStatsResponse, 'plan' | 'activeSubscriptionsCount'> &
+        Partial<Pick<UserStatsResponse, 'subscriptions'>>;
     readonly planNames: Readonly<Record<string, string>>;
     readonly trialSummaries: readonly TrialSummaryResponse[];
     readonly t: TranslationFn;
@@ -180,21 +209,62 @@ export function resolveSubscriptionStatText({
     const planStat = resolveDashboardPlanStat({
         plan: stats.plan,
         activeSubscriptionsCount: stats.activeSubscriptionsCount,
+        subscriptions: stats.subscriptions,
         planNames
     });
+    const actionFor = (statusKey: DashboardStatusKey): string | null => {
+        const actionKey = getActionStatusKey({ statusKey });
+        return actionKey ? t(ACTION_LABEL_KEY[actionKey]) : null;
+    };
+    const countText = (count: number): string =>
+        t(
+            count === 1
+                ? 'account.pages.dashboard.stats.multipleSubscriptions_one'
+                : 'account.pages.dashboard.stats.multipleSubscriptions_other',
+            undefined,
+            { count }
+        );
+    // The listed rows may include unsettled ones (declined, awaiting authorization),
+    // so their total is not "active": a neutral count heads the list.
+    const listCountText = (count: number): string =>
+        t(
+            count === 1
+                ? 'account.pages.dashboard.stats.subscriptionsCount_one'
+                : 'account.pages.dashboard.stats.subscriptionsCount_other',
+            undefined,
+            { count }
+        );
     switch (planStat.kind) {
         case 'single':
-            return { value: planStat.label, hint: t(STATUS_LABEL_KEY[planStat.statusKey]) };
+            return {
+                value: planStat.label,
+                hint: t(STATUS_LABEL_KEY[planStat.statusKey]),
+                rows: [],
+                action: actionFor(planStat.statusKey),
+                viewAll: false
+            };
+        case 'list': {
+            const firstAction = planStat.rows
+                .map((row) => actionFor(row.statusKey))
+                .find((text) => text !== null);
+            return {
+                value: listCountText(planStat.total),
+                hint: null,
+                rows: planStat.rows.map((row) => ({
+                    plan: row.label,
+                    status: t(STATUS_LABEL_KEY[row.statusKey])
+                })),
+                action: firstAction ?? null,
+                viewAll: planStat.hasMore
+            };
+        }
         case 'multiple':
             return {
-                value: t(
-                    planStat.count === 1
-                        ? 'account.pages.dashboard.stats.multipleSubscriptions_one'
-                        : 'account.pages.dashboard.stats.multipleSubscriptions_other',
-                    undefined,
-                    { count: planStat.count }
-                ),
-                hint: null
+                value: countText(planStat.count),
+                hint: null,
+                rows: [],
+                action: null,
+                viewAll: false
             };
         case 'free': {
             const card = resolveDashboardFreeCard({
@@ -206,7 +276,13 @@ export function resolveSubscriptionStatText({
                 },
                 formatDate
             });
-            return { value: card.value, hint: card.statusText };
+            return {
+                value: card.value,
+                hint: card.statusText,
+                rows: [],
+                action: null,
+                viewAll: false
+            };
         }
     }
 }

@@ -101,7 +101,63 @@ describe('subscription StatCard text (HOS-1066, HOS-1996)', () => {
         });
         expect(text).toEqual({
             value: 'Pro anfitrión',
-            hint: 'account.pages.dashboard.stats.gracePeriodStatus'
+            hint: 'account.pages.dashboard.stats.gracePeriodStatus',
+            rows: [],
+            action: null,
+            viewAll: false
+        });
+    });
+
+    it.each([
+        ['CHARGE_DECLINED', 'chargeDeclinedStatus', 'chargeDeclinedAction'],
+        ['PENDING_AUTHORIZATION', 'pendingAuthorizationStatus', 'pendingAuthorizationAction']
+    ])('HOS-2553 gives %s its own status and a what-to-do line', (status, statusKey, actionKey) => {
+        const text = resolveSubscriptionStatText({
+            ...base,
+            stats: {
+                plan: { slug: 'owner-pro', name: 'owner-pro', status },
+                activeSubscriptionsCount: 1
+            } as never,
+            trialSummaries: []
+        });
+        expect(text.hint).toBe(`account.pages.dashboard.stats.${statusKey}`);
+        expect(text.action).toBe(`account.pages.dashboard.stats.${actionKey}`);
+    });
+
+    it('HOS-2553 lists every live subscription (max three) with a neutral count and «Ver todas»', () => {
+        const sub = (slug: string, status: string) => ({
+            slug,
+            name: slug,
+            status,
+            vertical: 'accommodation'
+        });
+        const text = resolveSubscriptionStatText({
+            ...base,
+            stats: {
+                plan: null,
+                activeSubscriptionsCount: 2,
+                subscriptions: [
+                    sub('owner-pro', 'ACTIVE'),
+                    sub('venue-pro', 'CHARGE_DECLINED'),
+                    sub('experience-pro', 'PENDING_AUTHORIZATION'),
+                    sub('partner-gold', 'ACTIVE')
+                ]
+            } as never,
+            trialSummaries: []
+        });
+        expect(text).toEqual({
+            value: 'account.pages.dashboard.stats.subscriptionsCount_other:{"count":4}',
+            hint: null,
+            rows: [
+                { plan: 'Pro anfitrión', status: 'account.pages.dashboard.stats.activeStatus' },
+                { plan: 'venue-pro', status: 'account.pages.dashboard.stats.chargeDeclinedStatus' },
+                {
+                    plan: 'experience-pro',
+                    status: 'account.pages.dashboard.stats.pendingAuthorizationStatus'
+                }
+            ],
+            action: 'account.pages.dashboard.stats.chargeDeclinedAction',
+            viewAll: true
         });
     });
 
@@ -132,6 +188,12 @@ describe('subscription StatCard text (HOS-1066, HOS-1996)', () => {
             stats: { plan: null, activeSubscriptionsCount: 0 },
             trialSummaries: []
         });
-        expect(free).toEqual({ value: 'account.pages.dashboard.stats.freeStatus', hint: null });
+        expect(free).toEqual({
+            value: 'account.pages.dashboard.stats.freeStatus',
+            hint: null,
+            rows: [],
+            action: null,
+            viewAll: false
+        });
     });
 });

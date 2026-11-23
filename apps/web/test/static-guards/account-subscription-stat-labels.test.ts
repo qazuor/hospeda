@@ -116,7 +116,12 @@ describe('account subscription stat card — labels (H-70 / H-130)', () => {
             'gracePeriodStatus',
             'suspendedStatus',
             'cancelScheduledStatus',
-            'pausedStatus'
+            'pausedStatus',
+            // HOS-2553: the two unsettled statuses and what to do about each.
+            'chargeDeclinedStatus',
+            'pendingAuthorizationStatus',
+            'chargeDeclinedAction',
+            'pendingAuthorizationAction'
         ]) {
             expect(source).toContain(`account.pages.dashboard.stats.${key}`);
         }

@@ -28,3 +28,18 @@
     flex-direction: column;
     gap: var(--space-4);
 }
+
+/* Subscription StatCard rows (HOS-2553): one line per live subscription,
+   drawn inside the card's hint paragraph, so they are block-level spans. */
+.subRow {
+    display: block;
+}
+
+.subPlan {
+    font-weight: var(--app-card-title-weight);
+}
+
+.subAction {
+    display: block;
+    margin-block-start: var(--space-2);
+}
