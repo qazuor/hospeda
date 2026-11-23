@@ -1818,6 +1818,10 @@
         },
         "suspended": {
             "noReason": "Suspendemos temporariamente o registro de usos a partir da sua ficha."
+        },
+        "kit": {
+            "pendingCount": "Usos aguardando sua resposta: {{count}}",
+            "reviewsCount": "Avaliações recebidas: {{count}}"
         }
     },
     "partner": {

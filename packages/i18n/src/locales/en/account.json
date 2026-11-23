@@ -1818,6 +1818,10 @@
         },
         "suspended": {
             "noReason": "We have temporarily suspended usage recording from your listing."
+        },
+        "kit": {
+            "pendingCount": "Usages waiting for your answer: {{count}}",
+            "reviewsCount": "Reviews received: {{count}}"
         }
     },
     "partner": {
