@@ -70,7 +70,7 @@ export interface HoursEditorProps {
     readonly firstControlId?: string;
     /** Error of one slot bound, if any. */
     readonly errorFor?: (day: HoursWeekday, index: number, bound: HoursBound) => string | undefined;
-    /** Group-level error, shown under the week. */
+    /** Group-level error, shown under the week; marks Monday's switch `aria-invalid`. */
     readonly error?: string;
     /** Optional help anchor rendered as `data-help`. */
     readonly helpId?: HelpAnchor;
@@ -241,6 +241,7 @@ export function HoursEditor({
                                         aria-describedby={
                                             dayIndex === 0 && error ? groupErrorId : undefined
                                         }
+                                        invalid={dayIndex === 0 && Boolean(error)}
                                         checked={open}
                                         onCheckedChange={(next) =>
                                             onChange(

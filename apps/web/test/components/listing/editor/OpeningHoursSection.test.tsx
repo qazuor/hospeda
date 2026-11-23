@@ -221,6 +221,60 @@ describe('OpeningHoursSection', () => {
     });
 });
 
+describe('OpeningHoursSection — an error no slot can show (HOS-2491 review)', () => {
+    /** Legacy data: Monday open with no slots, the state the schema rejects. */
+    const openWithNoSlots = {
+        timezone: 'America/Argentina/Buenos_Aires',
+        days: { mon: { closed: false, shifts: [] } }
+    } as unknown as OpeningHours;
+
+    it('shows the aggregate message when the error is on a day, not on a slot', () => {
+        renderSection({
+            value: openWithNoSlots,
+            errors: {
+                openingHours: 'Un día abierto necesita al menos una franja.',
+                'openingHours.days.mon.closed': 'Un día abierto necesita al menos una franja.'
+            }
+        });
+
+        expect(screen.getByText('Un día abierto necesita al menos una franja.')).toBeVisible();
+        const first = screen.getByRole('switch', { name: 'Lunes abierto' });
+        expect(first).toHaveAttribute('aria-invalid', 'true');
+        expect(first).toHaveAccessibleDescription('Un día abierto necesita al menos una franja.');
+    });
+
+    it('shows the aggregate message when the failing slot belongs to a closed day', () => {
+        renderSection({
+            value: seeded,
+            errors: {
+                openingHours: 'Revisá los horarios.',
+                'openingHours.days.wed.shifts.0.close': 'Revisá los horarios.'
+            }
+        });
+
+        expect(screen.getByText('Revisá los horarios.')).toBeInTheDocument();
+        expect(screen.getByRole('switch', { name: 'Lunes abierto' })).toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
+    });
+
+    it('leaves Monday’s switch valid when a visible slot carries the message', () => {
+        renderSection({
+            value: seeded,
+            errors: {
+                openingHours: 'El cierre debe ser posterior a la apertura.',
+                'openingHours.days.tue.shifts.0.close':
+                    'El cierre debe ser posterior a la apertura.'
+            }
+        });
+
+        expect(screen.getByRole('switch', { name: 'Lunes abierto' })).not.toHaveAttribute(
+            'aria-invalid'
+        );
+    });
+});
+
 describe('OpeningHoursSection in other locales (HOS-2436, HOS-2491)', () => {
     it.each([
         ['en', 'Opening hours', 'Monday', 'Tuesday, slot 1 closing time', 'Add slot to Tuesday'],

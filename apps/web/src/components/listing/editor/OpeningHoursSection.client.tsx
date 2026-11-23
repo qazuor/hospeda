@@ -88,6 +88,35 @@ function shiftFieldPath(day: HoursWeekday, index: number, bound: 'open' | 'close
     return `openingHours.days.${day}.shifts.${index}.${bound}`;
 }
 
+/**
+ * Whether any slot bound the editor RENDERS carries its own error.
+ *
+ * Only an open day's existing slots are drawn, so an error keyed elsewhere —
+ * `openingHours.days.mon.closed` on legacy data (an open day with no slots), or
+ * a slot of a closed day — has no control to show it on. Counting those would
+ * silence the aggregate message and leave the owner with no message at all.
+ *
+ * @param params - The `week` as shown and the form's `errors`.
+ * @returns `true` when a visible slot shows a message.
+ */
+function hasVisibleSlotError({
+    week,
+    errors
+}: {
+    readonly week: HoursWeek;
+    readonly errors: Readonly<Record<string, string>>;
+}): boolean {
+    return HOURS_WEEKDAYS.some(
+        (day) =>
+            !week[day].closed &&
+            week[day].slots.some((_, index) =>
+                (['open', 'close'] as const).some((bound) =>
+                    Boolean(errors[shiftFieldPath(day, index, bound)])
+                )
+            )
+    );
+}
+
 export interface OpeningHoursSectionProps {
     readonly locale: SupportedLocale;
     readonly value: OpeningHours | null;
@@ -113,7 +142,7 @@ export function OpeningHoursSection({
 }: OpeningHoursSectionProps): JSX.Element {
     const t = createT(locale);
     const week = toHoursWeek(value);
-    const hasShiftError = Object.keys(errors).some((key) => key.startsWith('openingHours.days.'));
+    const hasShiftError = hasVisibleSlotError({ week, errors });
 
     return (
         <Section

@@ -40,6 +40,8 @@ export type SwitchProps = SwitchNameProps & {
     readonly busy?: boolean;
     /** Ids of the nodes that describe the switch. They must exist. */
     readonly 'aria-describedby'?: string;
+    /** Marks the switch `aria-invalid` (it carries a group's error). */
+    readonly invalid?: boolean;
     /** Optional id of the button. */
     readonly id?: string;
     /** Extra class from the caller (layout only). */
@@ -59,6 +61,7 @@ export function Switch({
     onCheckedChange,
     disabled,
     busy,
+    invalid,
     className,
     helpId,
     ...aria
@@ -72,6 +75,7 @@ export function Switch({
             aria-checked={checked}
             aria-busy={busy || undefined}
             aria-disabled={busy || undefined}
+            aria-invalid={invalid || undefined}
             disabled={disabled}
             className={cx(styles.switch, className)}
             onClick={() => {
