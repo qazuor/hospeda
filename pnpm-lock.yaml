@@ -1395,6 +1395,9 @@ importers:
       '@repo/logger':
         specifier: workspace:*
         version: link:../logger
+      zod:
+        specifier: 4.6.6
+        version: 4.6.6
     devDependencies:
       '@repo/biome-config':
         specifier: workspace:*
