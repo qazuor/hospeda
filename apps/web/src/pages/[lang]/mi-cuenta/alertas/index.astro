@@ -23,8 +23,8 @@ import { getApiUrl } from '@/lib/env';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageHeader } from '@/components/account/ui';
 import { AlertsList } from '@/components/account/AlertsList.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -36,11 +36,8 @@ if (!user) {
 }
 
 const { t } = createTranslations(locale);
-const title = t('account.pages.alerts.title', 'Alertas de precio');
-const description = t(
-    'account.pages.alerts.description',
-    'Gestioná tus alertas de bajada de precio en Hospeda'
-);
+const title = t('account.pages.alerts.title');
+const description = t('account.pages.alerts.description');
 const apiUrl = getApiUrl();
 // HOS-2437: the plan gate names the catalog plans that carry price alerts. The catalog
 // reader is server-only, so the names are read here and handed to the island.
@@ -50,16 +47,16 @@ const gatePlanNames = planNamesWithEntitlement({
 });
 ---
 
-<AccountLayout locale={locale} title={title} description={description} activeSection="alertas">
-    <AccountPageHeader title={title} />
+<AccountLayout locale={locale} title={title} description={description} activeSection="alertas" template="list">
+    <PageHeader title={title} description={description} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
-    <AccountSectionCard>
-        <AlertsList
-            client:load
-            locale={locale}
-            apiUrl={apiUrl}
-            userId={user.id}
-            gatePlanNames={gatePlanNames}
-        />
-    </AccountSectionCard>
+    <AlertsList
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+        userId={user.id}
+        gatePlanNames={gatePlanNames}
+    />
 </AccountLayout>

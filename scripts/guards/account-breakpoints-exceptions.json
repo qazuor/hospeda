@@ -1,7 +1,4 @@
 {
-    "apps/web/src/components/account/AlertsList.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/DiscoveryDoorHub.astro": {
         "media": 1
     },

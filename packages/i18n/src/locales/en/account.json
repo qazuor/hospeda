@@ -1455,7 +1455,13 @@
         "closedNotice": "This alert was closed because that listing no longer exists.",
         "activeHeading": "Active alerts",
         "closedHeading": "Closed alerts",
-        "closedListLabel": "Your closed price alerts"
+        "closedListLabel": "Your closed price alerts",
+        "lock": {
+            "description": "Turn on alerts to find out when the price of a place you like drops."
+        },
+        "deleteConfirmTitle": "Delete this alert?",
+        "deleteConfirmBody": "You will stop getting price-drop notices for {{name}}.",
+        "closedStatus": "Closed"
     },
     "exclusiveDeals": {
         "loading": "Loading exclusive deals...",

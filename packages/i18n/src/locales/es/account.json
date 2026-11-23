@@ -1455,7 +1455,13 @@
         "closedNotice": "Esta alerta se cerró porque esa ficha ya no existe.",
         "activeHeading": "Alertas activas",
         "closedHeading": "Alertas cerradas",
-        "closedListLabel": "Tus alertas de precio cerradas"
+        "closedListLabel": "Tus alertas de precio cerradas",
+        "lock": {
+            "description": "Activá alertas para enterarte cuando baje el precio de un alojamiento que te interesa."
+        },
+        "deleteConfirmTitle": "¿Eliminar esta alerta?",
+        "deleteConfirmBody": "Dejás de recibir avisos de baja de precio de {{name}}.",
+        "closedStatus": "Cerrada"
     },
     "exclusiveDeals": {
         "loading": "Cargando ofertas exclusivas...",

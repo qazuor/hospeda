@@ -1455,7 +1455,13 @@
         "closedNotice": "Este alerta foi encerrado porque esse anúncio não existe mais.",
         "activeHeading": "Alertas ativos",
         "closedHeading": "Alertas encerrados",
-        "closedListLabel": "Seus alertas de preço encerrados"
+        "closedListLabel": "Seus alertas de preço encerrados",
+        "lock": {
+            "description": "Ative alertas para saber quando o preço de uma hospedagem que você curte baixar."
+        },
+        "deleteConfirmTitle": "Excluir este alerta?",
+        "deleteConfirmBody": "Você deixa de receber avisos de queda de preço de {{name}}.",
+        "closedStatus": "Encerrado"
     },
     "exclusiveDeals": {
         "loading": "Carregando ofertas exclusivas...",
