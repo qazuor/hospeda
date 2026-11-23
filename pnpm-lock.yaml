@@ -1386,6 +1386,9 @@ importers:
       '@react-email/render':
         specifier: ^2.1.0
         version: 2.1.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@repo/analytics':
+        specifier: workspace:*
+        version: link:../analytics
       '@repo/design-tokens':
         specifier: workspace:*
         version: link:../design-tokens
