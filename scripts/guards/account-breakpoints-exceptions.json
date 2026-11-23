@@ -5,13 +5,7 @@
     "apps/web/src/components/account/DiscoveryDoorHub.astro": {
         "media": 1
     },
-    "apps/web/src/components/account/ExclusiveDealsList.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/HostTradeEditForm.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/PartnerEditForm.module.css": {
         "media": 1
     },
     "apps/web/src/components/account/ProfileCompletion.module.css": {
