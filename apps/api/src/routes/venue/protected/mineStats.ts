@@ -28,6 +28,7 @@ import {
     VerticalEnum
 } from '@repo/schemas';
 import { OwnerListingDashboardService, ServiceError } from '@repo/service-core';
+import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { probeEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
@@ -50,12 +51,14 @@ export const protectedVenueMineStatsRoute = createProtectedRoute({
         'Scoped strictly to the caller. A locked or failed traffic read omits traffic.',
     tags: ['Venue'],
     requestQuery: {
-        window: OwnerDashboardWindowSchema.default('30d')
+        // Free-form on the wire: the OpenAPI generator cannot represent the
+        // schema's `.catch` fallback, so the handler applies it.
+        window: z.string().optional()
     },
     responseSchema: OwnerListingDashboardSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { window } = query as { window: '7d' | '30d' };
+        const window = OwnerDashboardWindowSchema.parse((query as { window?: string }).window);
 
         const result = await dashboardService.getForOwner(actor, {
             vertical: 'venue',
