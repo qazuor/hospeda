@@ -64,6 +64,7 @@
         "general": "Sorry, something went wrong."
     },
     "apiError": {
+        "ADDON_LISTING_SOFT_DELETED": "We can't withdraw this add-on because its listing was deleted. Contact us and we will sort it out.",
         "GENERIC": "Something went wrong. Please try again in a moment.",
         "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a few seconds and try again.",
         "VALIDATION_ERROR": "The data you sent is invalid.",
