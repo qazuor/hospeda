@@ -197,7 +197,7 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
         expect(SHELL).toContain(
             'sectionHelpAnchor({ vertical: registry.id, slug: currentSectionSlug })'
         );
-        expect(SHELL).toContain('anchor={helpAnchor}');
+        expect(SHELL).toContain('helpAnchor={helpAnchor}');
     });
 
     it('HelpLink renders nothing without an entry and puts helpLinkAttributes on its <a>', () => {
