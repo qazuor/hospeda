@@ -194,11 +194,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.cancel',
     'common.close',
     'common.confirmations',
-    'common.deleting',
     'common.enums',
     'common.form',
     'common.loading',
-    'common.noImage',
     'common.optional',
     // HOS-982 — `ListingQrSheet.client.tsx` (the printable QR sheet download,
     // shared by the three verticals) names this subtree. It also carries the

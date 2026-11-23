@@ -18,7 +18,7 @@
 }
 
 .empty {
-    color: var(--border-strong, var(--border));
+    color: var(--control-border);
 }
 
 .fill {

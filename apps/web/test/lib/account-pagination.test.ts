@@ -83,7 +83,8 @@ describe('the three list pages page instead of capping at 50', () => {
         expect(source).not.toMatch(/pageSize(=|:\s*)50/);
         expect(source).toContain('parsePageParam');
         expect(source).toContain('ACCOUNT_LIST_PAGE_SIZE');
-        expect(source).toContain('<AccountPagination');
+        // The legacy pager, or the kit list template fed the page count (HOS-2505).
+        expect(source).toMatch(/<AccountPagination|pageCount=\{pageState\.totalPages\}/);
         expect(source).toContain('pageState.isPastEnd');
     });
 

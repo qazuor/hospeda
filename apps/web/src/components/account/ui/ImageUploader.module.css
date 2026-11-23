@@ -30,7 +30,7 @@
     inline-size: 6rem;
     block-size: 6rem;
     overflow: hidden;
-    background-color: var(--core-muted);
+    background-color: var(--surface-warm);
     border: 1px solid var(--control-border);
     border-radius: var(--radius-control);
     color: var(--core-muted-foreground);
