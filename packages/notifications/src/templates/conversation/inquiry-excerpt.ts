@@ -21,17 +21,51 @@ export const INQUIRY_EMAIL_MARKER = '[email]';
 /** Marker that replaces a phone-like number. */
 export const INQUIRY_PHONE_MARKER = '[teléfono]';
 
-const EMAIL_PATTERN = /[^\s@<>()[\]]+@[^\s@<>()[\]]+\.[^\s@<>()[\]]+/g;
-const SCHEME_URL_PATTERN = /\b(?:[a-z][a-z0-9+.-]*:\/\/|www\.)\S+/gi;
-const BARE_DOMAIN_PATTERN = /\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b(?:[/?#]\S*)?/gi;
-/** Seven or more digits, optionally separated by spaces, dots, dashes or parentheses. */
-const PHONE_PATTERN = /\+?\d(?:[\s().-]?\d){6,}/g;
+// Every repetition below is bounded so a long hostile message cannot make a pattern
+// quadratic: a start position never scans further than a fixed window.
+const EMAIL_PATTERN = /[^\s@<>()[\]]{1,64}@[^\s@<>()[\]]{1,255}\.[^\s@<>()[\]]{1,63}/g;
+const SCHEME_URL_PATTERN = /\b(?:[a-z][a-z0-9+.-]{1,15}:\/\/|www\.)\S{1,2000}/gi;
+const BARE_DOMAIN_PATTERN = /\b(?:[a-z0-9-]{1,63}\.){1,10}[a-z]{2,24}\b(?:[/?#]\S{0,500})?/gi;
+/**
+ * Seven or more digits, with up to three space, dot, dash or bracket characters between
+ * digits. Whitespace is already collapsed to one space when this runs.
+ */
+const PHONE_PATTERN = /\+?\d(?:[\s().-]{0,3}\d){6,}/g;
+
+/** `evil[.]com`, `evil(.)com`, `evil{.}com`, `evil[dot]com` and the ideographic full stop. */
+const OBFUSCATED_DOT_PATTERN = /[[({]\s{0,3}(?:\.|dot)\s{0,3}[\])}]|[。｡]/gi;
+/** `hxxps[:]//`. */
+const OBFUSCATED_COLON_PATTERN = /[[({]\s{0,3}:\s{0,3}[\])}]/g;
+/** `ana[at]evil.com`. */
+const OBFUSCATED_AT_PATTERN = /[[({]\s{0,3}at\s{0,3}[\])}]/gi;
+const OBFUSCATED_SCHEME_PATTERN = /\bhxxp(s?)\b/gi;
+
+/**
+ * Normalizes a guest-typed string before any detection runs: compatibility folding (so
+ * fullwidth digits and punctuation become ASCII), control characters and whitespace
+ * collapsed to single spaces, and the usual link/email obfuscations undone.
+ */
+function normalizeForDetection(text: string): string {
+    return (
+        text
+            .normalize('NFKC')
+            // biome-ignore lint/suspicious/noControlCharactersInRegex: strips control characters on purpose
+            .replace(/[\u0000-\u001f\u007f]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(OBFUSCATED_DOT_PATTERN, '.')
+            .replace(OBFUSCATED_COLON_PATTERN, ':')
+            .replace(OBFUSCATED_AT_PATTERN, '@')
+            .replace(OBFUSCATED_SCHEME_PATTERN, 'http$1')
+            .trim()
+    );
+}
 
 /**
  * Builds the plain-text excerpt of an inquiry message for the verification email.
  *
- * Order matters: emails first (they contain dots that would read as domains), then links,
- * then phone-like sequences. Whitespace is collapsed, and the result is cut to at most
+ * The text is normalized first (NFKC, whitespace and control characters collapsed, link and
+ * email obfuscations undone). Then emails are replaced (they contain dots that would read as
+ * domains), then links, then phone-like sequences. The result is cut to at most
  * {@link INQUIRY_EXCERPT_MAX_LENGTH} characters ending in an ellipsis when shortened. A
  * marker is never cut in half.
  *
@@ -47,14 +81,11 @@ const PHONE_PATTERN = /\+?\d(?:[\s().-]?\d){6,}/g;
 export function buildInquiryExcerpt({ message }: { readonly message: string }): {
     readonly excerpt: string;
 } {
-    const neutralized = message
+    const neutralized = normalizeForDetection(message)
         .replace(EMAIL_PATTERN, INQUIRY_EMAIL_MARKER)
         .replace(SCHEME_URL_PATTERN, INQUIRY_LINK_MARKER)
         .replace(BARE_DOMAIN_PATTERN, INQUIRY_LINK_MARKER)
         .replace(PHONE_PATTERN, INQUIRY_PHONE_MARKER)
-        // biome-ignore lint/suspicious/noControlCharactersInRegex: strips control characters on purpose
-        .replace(/[\u0000-\u001f\u007f]+/g, ' ')
-        .replace(/\s+/g, ' ')
         .trim();
 
     if (neutralized.length <= INQUIRY_EXCERPT_MAX_LENGTH) {

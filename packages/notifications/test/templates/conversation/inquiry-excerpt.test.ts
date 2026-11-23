@@ -27,6 +27,43 @@ describe('buildInquiryExcerpt (HOS-2568)', () => {
         expect(buildInquiryExcerpt({ message }).excerpt).toBe(expected);
     });
 
+    it.each([
+        ['a bracketed international phone', 'llamá +54 (3442) 123-456 hoy', 'llamá [teléfono] hoy'],
+        ['a double-spaced phone', 'llamá 3442  123456 hoy', 'llamá [teléfono] hoy'],
+        ['a fullwidth-digit phone', 'llamá ０３４４２１２３４５６ hoy', 'llamá [teléfono] hoy'],
+        ['a phone split by newlines', 'llamá 3442\n123\n456 hoy', 'llamá [teléfono] hoy'],
+        ['a bracket-obfuscated domain', 'entrá a evil[.]com ya', 'entrá a [enlace] ya'],
+        ['a paren-obfuscated domain', 'entrá a evil(.)com/x ya', 'entrá a [enlace] ya'],
+        ['an ideographic-stop domain', 'entrá a evil。com ya', 'entrá a [enlace] ya'],
+        ['a [dot] domain', 'entrá a evil[dot]com ya', 'entrá a [enlace] ya'],
+        ['a hxxps link', 'entrá a hxxps[:]//evil[.]com/x ya', 'entrá a [enlace] ya'],
+        ['a fullwidth link', 'entrá a ｈｔｔｐ：／／evil.test ya', 'entrá a [enlace] ya'],
+        ['an [at] email', 'escribí a ana[at]evil[.]com ya', 'escribí a [email] ya']
+    ])('neutralizes %s (HOS-2568 review B1)', (_label, message, expected) => {
+        expect(buildInquiryExcerpt({ message }).excerpt).toBe(expected);
+    });
+
+    it('stays linear on long hostile input', () => {
+        const hostile = [
+            'a.'.repeat(2500),
+            `${'x@'.repeat(2500)}y`,
+            '1 '.repeat(2500),
+            `${'a'.repeat(5000)}!`,
+            'http://'.repeat(700)
+        ];
+
+        const started = performance.now();
+        for (const message of hostile) {
+            buildInquiryExcerpt({ message });
+        }
+
+        expect(performance.now() - started).toBeLessThan(500);
+    });
+
+    it('strips NUL characters', () => {
+        expect(buildInquiryExcerpt({ message: 'a\u0000b' }).excerpt).toBe('a b');
+    });
+
     it('leaves short numbers such as guest counts alone', () => {
         expect(buildInquiryExcerpt({ message: 'Somos 4 personas, 3 noches' }).excerpt).toBe(
             'Somos 4 personas, 3 noches'
