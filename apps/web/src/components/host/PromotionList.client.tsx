@@ -1,58 +1,74 @@
 /**
  * @file PromotionList.client.tsx
- * @description React island that lists the authenticated owner's promotions
- * and allows deleting them with an inline confirmation step.
+ * @description The owner's promotions on the account kit (HOS-2505): the
+ * shared `MyContentList` template with one `ContentCard` per promotion,
+ * deletion through the kit `ConfirmDialog`, and `Pagination` over every page
+ * the API reports (the list used to ask for one default page and drop the
+ * rest silently, HOS-2440).
  *
- * Follows the same `loading | ready | error` state machine and hook discipline
- * as `HostDashboard.client.tsx`.
+ * Plan gate: the effective set says whether `create_promotions` is granted.
+ * Without it (or when the read fails) the «Nueva promoción» action is not
+ * offered; an owner with no promotions sees a `LockedState` with the catalog
+ * plan names (`lockPlanNames`, read by the page), and one who still has some
+ * keeps the list with an upgrade notice above it.
  *
  * @example
  * ```astro
- * <PromotionList client:load locale={locale} />
+ * <PromotionList client:load locale={locale} lockPlanNames={names}>
+ *     <PageHelpLink slot="help" locale={locale} />
+ * </PromotionList>
  * ```
  */
 
 import { formatCalendarDate } from '@repo/utils';
-import { type JSX, useCallback, useEffect, useState } from 'react';
+import { type JSX, type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+    Alert,
+    Button,
+    ContentCard,
+    EmptyState,
+    LinkButton,
+    MyContentList,
+    type MyContentListState,
+    StatusPill,
+    type StatusTone,
+    useConfirm
+} from '@/components/account/ui';
+import { ACCOUNT_LIST_PAGE_SIZE } from '@/lib/account-pagination';
 import { ownerPromotionApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotionList } from '@/lib/api/transforms';
-import type { OwnerPromotionData, OwnerPromotionDiscountType } from '@/lib/api/types';
+import type { OwnerPromotionData } from '@/lib/api/types';
 import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
 import { buildUrl } from '@/lib/urls';
-import styles from './PromotionList.module.css';
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 /**
  * Renders a promotion validity boundary — a calendar day, not an instant.
- *
- * `validFrom`/`validUntil` are date-only values stored as UTC-midnight
- * `timestamptz`, so reading them in the viewer's own timezone shifts the day
- * back for anyone west of UTC (an Argentina user at UTC-3 — BETA-88).
- *
- * This file already pinned `timeZone: 'UTC'` by hand and was correct. Its
- * tourist-facing twin, `PromotionBanner.astro`, rendered the SAME field on the
- * SAME entity and did not — right on one screen, wrong on the other, with
- * nothing connecting them. That is what delegating to the shared helper fixes
- * (smoke agosto 2026, H-09/H-63/H-73/H-84).
+ * `validFrom`/`validUntil` are date-only UTC-midnight values: the shared
+ * helper pins UTC so a viewer west of UTC sees the right day (BETA-88).
  */
 function formatValidity(value: string | Date | null | undefined, locale: string): string {
     return formatCalendarDate({ value, locale, options: { dateStyle: 'long' } }) ?? '';
 }
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+/** Lifecycle tone of an owner promotion. */
+const LIFECYCLE_TONES: Readonly<Record<string, StatusTone>> = {
+    ACTIVE: 'success',
+    DRAFT: 'neutral',
+    ARCHIVED: 'neutral'
+};
 
+/** Props of {@link PromotionList}. */
 export interface PromotionListProps {
-    /** Active UI locale for i18n and URL building */
+    /** Active UI locale for i18n and URL building. */
     readonly locale: SupportedLocale;
+    /** Catalog names of the owner plans that include promotions (HOS-2505). */
+    readonly lockPlanNames?: readonly string[];
+    /** The page «?» (from Astro: `<PageHelpLink slot="help" />`). */
+    readonly help?: ReactNode;
 }
 
 type ListState =
@@ -60,358 +76,247 @@ type ListState =
     | {
           readonly status: 'ready';
           readonly items: ReadonlyArray<OwnerPromotionData>;
+          readonly pageCount: number;
       }
-    | { readonly status: 'error'; readonly message: string };
-
-/** Per-row delete state machine */
-type DeleteState =
-    | { readonly status: 'idle' }
-    | { readonly status: 'confirming'; readonly id: string }
-    | { readonly status: 'pending'; readonly id: string };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+    | { readonly status: 'error' };
 
 /**
- * Formats a human-readable discount summary given the type and value.
- * - `percentage`: "20%"
- * - `fixed`: "$ 500" (ARS, locale-formatted)
- * - `free_night`: uses i18n key
+ * Owner promotion list island.
  *
- * @param discountType - The promotion discount type
- * @param discountValue - The numeric discount magnitude
- * @param locale - Active locale for currency formatting
- * @param freeNightLabel - Already-translated label for `free_night`
- * @returns Human-readable discount string
+ * @param props - See {@link PromotionListProps}.
+ * @returns The `MyContentList` template.
  */
-function formatDiscountSummary({
-    discountType,
-    discountValue,
+export function PromotionList({
     locale,
-    freeNightLabel
-}: {
-    readonly discountType: OwnerPromotionDiscountType;
-    readonly discountValue: number;
-    readonly locale: SupportedLocale;
-    readonly freeNightLabel: string;
-}): string {
-    void freeNightLabel;
-    return formatPromotionBenefit({ discountType, discountValue, locale, style: 'summary' });
-}
-
-/**
- * Returns the CSS class suffix for a lifecycle state badge.
- */
-function lifecycleBadgeVariant(state: string): 'active' | 'draft' | 'archived' {
-    if (state === 'ACTIVE') return 'active';
-    if (state === 'ARCHIVED') return 'archived';
-    return 'draft';
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
-/**
- * Owner promotion list island — fetches and displays all promotions for the
- * authenticated owner with per-row inline delete confirmation.
- *
- * @example
- * ```astro
- * <PromotionList client:load locale={locale} />
- * ```
- */
-export function PromotionList({ locale }: PromotionListProps): JSX.Element {
+    lockPlanNames = [],
+    help
+}: PromotionListProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const { confirm, confirmDialog } = useConfirm({ locale });
+    const [page, setPage] = useState(1);
     const [state, setState] = useState<ListState>({ status: 'loading' });
-    const [deleteState, setDeleteState] = useState<DeleteState>({ status: 'idle' });
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [canCreatePromotions, setCanCreatePromotions] = useState(false);
 
-    // ── Fetch promotions ──────────────────────────────────────────────────
-    // biome-ignore lint/correctness/useExhaustiveDependencies: t is stable per locale; including it causes an infinite loop
-    const fetchPromotions = useCallback(async () => {
+    const fetchPromotions = useCallback(async (target: number) => {
         setState({ status: 'loading' });
-        setDeleteError(null);
         try {
-            // The plan gate this list used to read (`create_promotions`, from
-            // the old billing's entitlements) was removed with the old billing
-            // client (HOS-1637, AC:B13a:22). It already failed open; the API
-            // still decides on save.
-            const result = await ownerPromotionApi.list();
+            // The plan gate below is display only; the API decides on save.
+            const result = await ownerPromotionApi.list({
+                page: target,
+                pageSize: ACCOUNT_LIST_PAGE_SIZE
+            });
             if (!result.ok) {
-                setState({
-                    status: 'error',
-                    message: t(
-                        'host.promotions.errors.loadFailed',
-                        'No se pudieron cargar las promociones.'
-                    )
-                });
+                setState({ status: 'error' });
                 return;
             }
             const items = transformOwnerPromotionList({
                 items: result.data.items as ReadonlyArray<Record<string, unknown>>
             });
-            setState({ status: 'ready', items });
+            const pageCount = Math.max(1, result.data.pagination?.totalPages ?? 1);
+            setState({ status: 'ready', items, pageCount });
         } catch {
-            setState({
-                status: 'error',
-                message: t(
-                    'host.promotions.errors.loadFailed',
-                    'No se pudieron cargar las promociones.'
-                )
-            });
+            setState({ status: 'error' });
         }
     }, []);
 
     useEffect(() => {
-        void fetchPromotions();
+        void fetchPromotions(page);
+    }, [fetchPromotions, page]);
+
+    useEffect(() => {
         void getEntitlementsCached({ vertical: 'accommodation' }).then((effectiveSet) => {
             setCanCreatePromotions(
                 !effectiveSet.failed && (effectiveSet.entitlements.create_promotions ?? 0) > 0
             );
         });
-    }, [fetchPromotions]);
-
-    // ── Delete handlers ───────────────────────────────────────────────────
-    const handleDeleteRequest = useCallback((id: string) => {
-        setDeleteState({ status: 'confirming', id });
-        setDeleteError(null);
     }, []);
 
-    const handleDeleteCancel = useCallback(() => {
-        setDeleteState({ status: 'idle' });
-    }, []);
-
-    const handleDeleteConfirm = useCallback(
-        async (id: string) => {
-            setDeleteState({ status: 'pending', id });
+    const handleDelete = useCallback(
+        async (promo: OwnerPromotionData) => {
             setDeleteError(null);
-            try {
-                const result = await ownerPromotionApi.remove({ id });
-                if (!result.ok) {
-                    setDeleteError(
-                        t(
-                            'host.promotions.errors.deleteFailed',
-                            'No se pudo eliminar la promoción.'
-                        )
-                    );
-                    setDeleteState({ status: 'idle' });
-                    return;
+            await confirm({
+                title: t('host.promotions.kit.deleteTitle', undefined, { title: promo.title }),
+                description: t('host.promotions.actions.confirmDelete'),
+                confirmLabel: t('host.promotions.actions.delete'),
+                onConfirm: async () => {
+                    try {
+                        const result = await ownerPromotionApi.remove({ id: promo.id });
+                        if (!result.ok) {
+                            setDeleteError(t('host.promotions.errors.deleteFailed'));
+                            return;
+                        }
+                        void fetchPromotions(page);
+                    } catch {
+                        setDeleteError(t('host.promotions.errors.deleteFailed'));
+                    }
                 }
-                setDeleteState({ status: 'idle' });
-                void fetchPromotions();
-            } catch {
-                setDeleteError(
-                    t('host.promotions.errors.deleteFailed', 'No se pudo eliminar la promoción.')
-                );
-                setDeleteState({ status: 'idle' });
-            }
+            });
         },
-        [fetchPromotions, t]
+        [confirm, fetchPromotions, page, t]
     );
 
-    // ── Render: loading ───────────────────────────────────────────────────
-    if (state.status === 'loading') {
-        return (
-            <div className={styles.container}>
-                <div className={styles.skeletonList}>
-                    {[1, 2, 3].map((i) => (
-                        <div
-                            key={i}
-                            className={styles.skeletonCard}
-                            aria-hidden="true"
-                        />
-                    ))}
-                </div>
-            </div>
-        );
-    }
+    const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
+    const createHref = buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' });
+    const items = state.status === 'ready' ? state.items : [];
 
-    // ── Render: error ─────────────────────────────────────────────────────
-    if (state.status === 'error') {
-        return (
-            <div className={styles.container}>
-                <div
-                    className={styles.errorBox}
-                    role="alert"
+    const listState: MyContentListState =
+        state.status === 'loading'
+            ? { status: 'loading' }
+            : state.status === 'error'
+              ? {
+                    status: 'error',
+                    title: t('host.promotions.errors.loadFailed'),
+                    retry: () => fetchPromotions(page)
+                }
+              : items.length > 0
+                ? { status: 'ready' }
+                : canCreatePromotions
+                  ? { status: 'empty' }
+                  : {
+                        status: 'locked',
+                        reason: {
+                            kind: 'plan',
+                            feature: t('host.promotions.errors.entitlementRequired'),
+                            description: t('host.promotions.errors.entitlementRequiredHint'),
+                            plans: lockPlanNames.map((name) => ({ name })),
+                            plansHref
+                        }
+                    };
+
+    const notice = (
+        <>
+            {state.status === 'ready' && items.length > 0 && !canCreatePromotions ? (
+                <Alert
+                    tone="warning"
+                    locale={locale}
+                    title={t('host.promotions.errors.entitlementRequired')}
+                    action={
+                        <LinkButton
+                            href={plansHref}
+                            variant="accent"
+                            size="sm"
+                        >
+                            {t('host.promotions.actions.upgradePlan')}
+                        </LinkButton>
+                    }
                 >
-                    <p className={styles.errorText}>{state.message}</p>
-                    <button
-                        type="button"
-                        onClick={() => void fetchPromotions()}
-                        className={styles.retryButton}
-                    >
-                        {t('host.dashboard.retry', 'Reintentar')}
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // ── Render: ready ─────────────────────────────────────────────────────
-    const { items } = state;
-    const freeNightLabel = t('host.promotions.discountTypes.free_night', 'Noche gratis');
-
-    return (
-        <div className={styles.container}>
-            {/* ── Header ──
-                The page title lives at the page level (AccountLayout / index.astro),
-                so this island only renders the create-promotion action, right-aligned. */}
-            <div className={styles.header}>
-                {canCreatePromotions ? (
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
-                        className={styles.createButton}
-                    >
-                        {t('host.promotions.createButton', 'Nueva promoción')}
-                    </a>
-                ) : null}
-            </div>
-
-            {!canCreatePromotions && (
-                <aside className={styles.upgradeBanner}>
-                    <div className={styles.upgradeTextGroup}>
-                        <strong className={styles.upgradeTitle}>
-                            {t(
-                                'host.promotions.errors.entitlementRequired',
-                                'Tu plan no incluye promociones'
-                            )}
-                        </strong>
-                        <span className={styles.upgradeHint}>
-                            {t(
-                                'host.promotions.errors.entitlementRequiredHint',
-                                'Mejorá tu plan para crear promociones.'
-                            )}
-                        </span>
-                    </div>
-                    <a
-                        className={styles.upgradeLink}
-                        href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
-                    >
-                        {t('host.promotions.actions.upgradePlan', 'Ver planes')}
-                    </a>
-                </aside>
-            )}
-
-            {/* ── Delete error banner ── */}
-            {deleteError !== null && (
-                <div
-                    className={styles.deleteErrorBanner}
-                    role="alert"
+                    {t('host.promotions.errors.entitlementRequiredHint')}
+                </Alert>
+            ) : null}
+            {deleteError ? (
+                <Alert
+                    tone="danger"
+                    locale={locale}
                 >
                     {deleteError}
-                </div>
-            )}
+                </Alert>
+            ) : null}
+        </>
+    );
 
-            {/* ── Empty state ── */}
-            {items.length === 0 ? (
-                canCreatePromotions ? (
-                    <p className={styles.emptyText}>
-                        {t(
-                            'host.promotions.empty',
-                            'Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!'
-                        )}
-                    </p>
-                ) : null
-            ) : (
-                <ul className={styles.list}>
-                    {items.map((promo) => {
-                        const isConfirming =
-                            deleteState.status === 'confirming' && deleteState.id === promo.id;
-                        const isPending =
-                            deleteState.status === 'pending' && deleteState.id === promo.id;
-                        const badgeVariant = lifecycleBadgeVariant(promo.lifecycleState);
-                        const lifecycleLabel = t(
-                            `host.promotions.lifecycleStates.${promo.lifecycleState.toLowerCase()}`,
-                            promo.lifecycleState
-                        );
-                        const discountSummary = formatDiscountSummary({
-                            discountType: promo.discountType,
-                            discountValue: promo.discountValue,
-                            locale,
-                            freeNightLabel
-                        });
-                        const validityText = promo.validUntil
-                            ? `${formatValidity(promo.validFrom, locale)} → ${formatValidity(promo.validUntil, locale)}`
-                            : `${formatValidity(promo.validFrom, locale)} → ${t('host.promotions.fields.noExpiry', 'Sin vencimiento')}`;
-
-                        return (
-                            <li
-                                key={promo.id}
-                                className={styles.card}
-                            >
-                                {/* ── Card header ── */}
-                                <div className={styles.cardHeader}>
-                                    <h3 className={styles.cardTitle}>{promo.title}</h3>
-                                    <span
-                                        className={`${styles.badge} ${styles[`badge--${badgeVariant}`]}`}
-                                    >
-                                        {lifecycleLabel}
-                                    </span>
-                                </div>
-
-                                {/* ── Discount + validity ── */}
-                                <div className={styles.cardMeta}>
-                                    <span className={styles.discount}>{discountSummary}</span>
-                                    <span className={styles.validity}>{validityText}</span>
-                                </div>
-
-                                {/* ── Inline confirm or action buttons ── */}
-                                {isConfirming ? (
-                                    <div className={styles.confirmRow}>
-                                        <span
-                                            className={styles.confirmText}
-                                            role="alert"
-                                        >
+    return (
+        <>
+            <MyContentList
+                locale={locale}
+                title={t('host.promotions.pageTitle')}
+                description={t('host.promotions.pageDescription')}
+                help={help}
+                createAction={
+                    canCreatePromotions ? (
+                        <LinkButton href={createHref}>
+                            {t('host.promotions.createButton')}
+                        </LinkButton>
+                    ) : undefined
+                }
+                notice={notice}
+                sectionTitle={t('host.promotions.kit.sectionTitle')}
+                helpId="section:promotions.list"
+                listLabel={t('host.promotions.pageTitle')}
+                state={listState}
+                empty={<EmptyState title={t('host.promotions.empty')} />}
+                pagination={{
+                    page,
+                    pageCount: state.status === 'ready' ? state.pageCount : 1,
+                    onPageChange: setPage
+                }}
+            >
+                {items.map((promo) => {
+                    const tone = LIFECYCLE_TONES[promo.lifecycleState];
+                    const validity = promo.validUntil
+                        ? t('host.promotions.kit.validRange', undefined, {
+                              from: formatValidity(promo.validFrom, locale),
+                              until: formatValidity(promo.validUntil, locale)
+                          })
+                        : t('host.promotions.kit.validOpen', undefined, {
+                              from: formatValidity(promo.validFrom, locale)
+                          });
+                    return (
+                        <ContentCard
+                            key={promo.id}
+                            locale={locale}
+                            title={promo.title}
+                            meta={formatPromotionBenefit({
+                                discountType: promo.discountType,
+                                discountValue: promo.discountValue,
+                                locale,
+                                style: 'summary'
+                            })}
+                            statuses={[
+                                {
+                                    key: 'lifecycle',
+                                    label: t('host.promotions.kit.statusLabel'),
+                                    value: (
+                                        <StatusPill tone={tone ?? 'neutral'}>
                                             {t(
-                                                'host.promotions.actions.confirmDelete',
-                                                '¿Eliminar esta promoción? Esta acción no se puede deshacer.'
+                                                `host.promotions.lifecycleStates.${promo.lifecycleState.toLowerCase()}`,
+                                                promo.lifecycleState
                                             )}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => void handleDeleteConfirm(promo.id)}
-                                            className={styles.confirmYesButton}
-                                            disabled={isPending}
-                                        >
-                                            {t('host.promotions.actions.delete', 'Eliminar')}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleDeleteCancel}
-                                            className={styles.confirmNoButton}
-                                        >
-                                            {t('host.promotions.actions.cancel', 'Cancelar')}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className={styles.actions}>
-                                        <a
-                                            href={buildUrl({
-                                                locale,
-                                                path: `mi-cuenta/promociones/${promo.id}/editar`
-                                            })}
-                                            className={styles.editLink}
-                                        >
-                                            {t('host.promotions.actions.edit', 'Editar')}
-                                        </a>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteRequest(promo.id)}
-                                            className={styles.deleteButton}
-                                            disabled={isPending}
-                                        >
-                                            {t('host.promotions.actions.delete', 'Eliminar')}
-                                        </button>
-                                    </div>
-                                )}
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
-        </div>
+                                        </StatusPill>
+                                    )
+                                },
+                                {
+                                    key: 'validity',
+                                    label: t('host.promotions.kit.validityLabel'),
+                                    value: validity
+                                }
+                            ]}
+                            actions={
+                                <>
+                                    <LinkButton
+                                        href={buildUrl({
+                                            locale,
+                                            path: `mi-cuenta/promociones/${promo.id}/editar`
+                                        })}
+                                        variant="secondary"
+                                        size="sm"
+                                        aria-label={t('host.promotions.kit.editNamed', undefined, {
+                                            title: promo.title
+                                        })}
+                                    >
+                                        {t('host.promotions.actions.edit')}
+                                    </LinkButton>
+                                    <Button
+                                        variant="danger-ghost"
+                                        size="sm"
+                                        aria-label={t(
+                                            'host.promotions.kit.deleteNamed',
+                                            undefined,
+                                            {
+                                                title: promo.title
+                                            }
+                                        )}
+                                        onClick={() => void handleDelete(promo)}
+                                    >
+                                        {t('host.promotions.actions.delete')}
+                                    </Button>
+                                </>
+                            }
+                        />
+                    );
+                })}
+            </MyContentList>
+            {confirmDialog}
+        </>
     );
 }

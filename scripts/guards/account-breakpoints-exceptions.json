@@ -32,9 +32,6 @@
     "apps/web/src/components/account/editor/content-editor-layout.module.css": {
         "media": 1
     },
-    "apps/web/src/components/host/PromotionForm.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/host/PropertyCard.astro": {
         "media": 1
     },

@@ -35,7 +35,12 @@ import { Skeleton } from './Skeleton';
 /** What the list body shows. */
 export type MyContentListState =
     | { readonly status: 'loading' }
-    | { readonly status: 'error'; readonly retry?: () => void | Promise<void> }
+    | {
+          readonly status: 'error';
+          readonly retry?: () => void | Promise<void>;
+          /** Overrides the translated error title (rarely needed). */
+          readonly title?: ReactNode;
+      }
     | { readonly status: 'empty' }
     | { readonly status: 'locked'; readonly reason: LockReason }
     | { readonly status: 'ready' };
@@ -118,6 +123,7 @@ function ListBody({
             return (
                 <ErrorState
                     locale={locale}
+                    title={state.title}
                     onRetry={retry ?? (() => window.location.reload())}
                 />
             );
