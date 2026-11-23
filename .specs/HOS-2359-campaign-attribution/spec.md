@@ -461,6 +461,13 @@ Why a new var instead of `HOSPEDA_UMAMI_API_KEY`: that key is view-only by regis
 contract and is used on authenticated owner-panel renders; widening it would give every
 stats read write power. `UMAMI_SETUP_*` are script-only and admin-level.
 
+**HOS-2347 AC-S6 exception (owner decision, 2026-11-23).** HOS-2347 guards that the api
+holds no write-capable Umami credential (`apps/api/test/guards/no-umami-write-credential.guard.test.ts`).
+This key is its second, scoped exception, beside `HOSPEDA_UMAMI_DATABASE_URL`: only
+`env-schema.ts` and `umami-pixel-client.ts` may name it, the client may call no endpoint
+besides `/api/pixels`, and the key's Umami account must NOT own the main website, so it
+cannot write the recorder config HOS-2347 protects.
+
 #### 6.B.2 Pixel client (api)
 
 `apps/api/src/lib/umami-pixel-client.ts`, mirroring `umami-stats-client.ts` (native
