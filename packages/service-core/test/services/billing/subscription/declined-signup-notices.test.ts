@@ -16,7 +16,7 @@ import {
     DECLINED_SIGNUP_NOTICE_DAYS,
     type DeclinedSignupCandidateRow,
     selectDeclinedSignupNotices
-} from '../../../src/routes/billing-subscription/read-own-declined-signups';
+} from '../../../../src/services/billing/subscription/declined-signup-notices';
 
 const NOW = new Date('2026-11-12T12:00:00.000Z');
 const DAY = 86_400_000;

@@ -1141,3 +1141,21 @@ describe('middleware — retired venue URLs preserve query in one redirect', () 
         );
     });
 });
+
+describe('middleware — anonymous protected route keeps the query in returnUrl (HOS-2555)', () => {
+    it.each([
+        ['/es/mi-cuenta/propiedades/?page=2', '/es/mi-cuenta/propiedades/?page=2'],
+        ['/es/mi-cuenta/novedades/?x=1&y=a%20b', '/es/mi-cuenta/novedades/?x=1&y=a%20b'],
+        ['/es/mi-cuenta/favoritos/', '/es/mi-cuenta/favoritos/']
+    ])('%s redirects to signin carrying the full path and query', async (pathname, expected) => {
+        parseSessionUserMock.mockResolvedValueOnce(null);
+        const context = createContext({ pathname });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).toHaveBeenCalledWith(
+            `/es/auth/signin/?returnUrl=${encodeURIComponent(expected)}`
+        );
+    });
+});

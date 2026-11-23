@@ -11,6 +11,13 @@ import {
 import { z } from 'zod';
 import { getApiUrl } from '@/lib/env';
 
+/**
+ * Upper bound for one catalog read. The catalog is read from SSR renders of cards, headers and
+ * listings, so a hanging API must degrade to the copy-without-plan fallback instead of hanging
+ * the page. Shorter than the API client's 10s default on purpose: no page waits on plan names.
+ */
+export const PLAN_CATALOG_TIMEOUT_MS = 4_000;
+
 /** Pricing card data mapped from the public sellable catalog. */
 export interface PublicPlanData {
     readonly id: string;
@@ -136,20 +143,26 @@ function mapFloor(
 /**
  * Read one vertical's current, sellable catalog. Plans without a monthly
  * billing option are omitted because the pricing surface cannot sell them.
- * This reader never throws; transport, envelope, and schema failures degrade
- * to `ok: false`.
+ * This reader never throws; transport, timeout, envelope, and schema failures
+ * degrade to `ok: false`.
  */
 export async function fetchPublicPlans({
     vertical,
-    apiUrl
+    apiUrl,
+    timeoutMs = PLAN_CATALOG_TIMEOUT_MS
 }: {
     readonly vertical: PublicPlanCatalogVertical;
     /** API base URL. Defaults to the server-side env; a browser island passes its own prop. */
     readonly apiUrl?: string;
+    /** Abort the read after this many ms. Defaults to {@link PLAN_CATALOG_TIMEOUT_MS}. */
+    readonly timeoutMs?: number;
 }): Promise<FetchPlansResult> {
     const url = `${apiUrl?.replace(/\/$/, '') ?? getApiUrl()}/api/v1/public/plan-catalog?vertical=${encodeURIComponent(vertical)}`;
     try {
-        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        const response = await fetch(url, {
+            headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(timeoutMs)
+        });
         if (!response.ok) {
             return { ok: false, error: `Public plan catalog returned HTTP ${response.status}` };
         }

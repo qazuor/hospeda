@@ -41,8 +41,9 @@ import type { CoverageSource } from '@repo/billing-verticals-contract';
 import type { Locale } from '@repo/i18n';
 import type { PortalDestination } from '@repo/portal-routes';
 import { buildPortalUrl, type PortalLocale } from '@repo/portal-routes';
-import { OwnSubscriptionsResponseSchema, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
+import { SETTLED_OWN_SUBSCRIPTION_STATUSES, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
 import { readOwnPlanState } from '@repo/service-core';
+import { z } from 'zod';
 import {
     type OwnerAddonHolding,
     readOwnerAddonHoldings
@@ -77,8 +78,7 @@ const DAY_MS = 86_400_000;
  * reader's (registered in the live-term inventory); this only narrows its
  * `varchar` to the statuses the response contract declares.
  */
-const OwnSubscriptionStatusSchema =
-    OwnSubscriptionsResponseSchema.shape.subscriptions.element.shape.status;
+const OwnSubscriptionStatusSchema = z.enum(SETTLED_OWN_SUBSCRIPTION_STATUSES);
 
 /** Verticals with a plans page in the portal. */
 const PLANS_PAGE_VERTICALS = ['accommodation', 'venue', 'experience'] as const;

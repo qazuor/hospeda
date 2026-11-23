@@ -1,0 +1,132 @@
+---
+/**
+ * @file ContactHostShell.astro
+ * @description Wraps the `ContactHost` island with an honest no-JS fallback (HOS-2537).
+ *
+ * The inquiry form is submitted by React (no native `action`, the submit button
+ * starts disabled). Without JavaScript, or when hydration fails, the visitor can
+ * type but never send. Owner decision (22/11/2026): show the listing's public
+ * channels (phone, email, website) with a short notice instead. With JavaScript
+ * nothing changes: the fallback stays hidden.
+ *
+ * Two triggers reveal the fallback and hide the form:
+ *   1. `<noscript>`: JavaScript is off.
+ *   2. A deferred check: an `astro-island[ssr]` still present well after load
+ *      means hydration never completed.
+ *
+ * WhatsApp is deliberately absent: its number is gated per viewer by entitlement
+ * (HOS-19), same rule as `AccommodationContactBlock`.
+ */
+import { EmailIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
+import type { AccommodationContactInfo } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+
+interface Props {
+    readonly contactInfo?: AccommodationContactInfo;
+    readonly locale: SupportedLocale;
+}
+
+const { contactInfo, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+// Host-authored URL: the scheme allow-list, not the schema, keeps `javascript:` out.
+const websiteHref = resolveSafeExternalUrl(contactInfo?.website);
+const hasChannels = Boolean(
+    contactInfo?.phone || contactInfo?.landlinePhone || contactInfo?.email || websiteHref
+);
+---
+
+<div class="contact-host-shell" data-contact-shell>
+    <div data-contact-form>
+        <slot />
+    </div>
+    <div class="contact-host-shell__fallback" data-contact-fallback hidden role="note">
+        <p class="contact-host-shell__notice">
+            {hasChannels
+                ? t('accommodations.detail.contact.fallbackNotice')
+                : t('accommodations.detail.contact.fallbackNoChannels')}
+        </p>
+        {hasChannels && (
+            <div class="contact-host-shell__channels">
+                {contactInfo?.phone && (
+                    <a href={`tel:${contactInfo.phone}`} class="contact-host-shell__link">
+                        <PhoneIcon size={16} aria-hidden="true" />
+                        <span>{contactInfo.phone}</span>
+                    </a>
+                )}
+                {contactInfo?.landlinePhone && (
+                    <a href={`tel:${contactInfo.landlinePhone}`} class="contact-host-shell__link">
+                        <PhoneIcon size={16} aria-hidden="true" />
+                        <span>{contactInfo.landlinePhone}</span>
+                    </a>
+                )}
+                {contactInfo?.email && (
+                    <a href={`mailto:${contactInfo.email}`} class="contact-host-shell__link">
+                        <EmailIcon size={16} aria-hidden="true" />
+                        <span>{contactInfo.email}</span>
+                    </a>
+                )}
+                {websiteHref && (
+                    <a
+                        href={websiteHref}
+                        class="contact-host-shell__link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        <GlobeIcon size={16} aria-hidden="true" />
+                        <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                )}
+            </div>
+        )}
+    </div>
+    <noscript>
+        <style is:inline>
+            [data-contact-shell] [data-contact-form] { display: none; }
+            [data-contact-shell] [data-contact-fallback] { display: block; }
+        </style>
+    </noscript>
+</div>
+
+<style>
+    .contact-host-shell__fallback {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+    .contact-host-shell__fallback[hidden] {
+        display: none;
+    }
+    .contact-host-shell__notice {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-foreground);
+    }
+    .contact-host-shell__channels {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+    .contact-host-shell__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--brand-primary);
+        text-decoration: none;
+        overflow-wrap: anywhere;
+    }
+    .contact-host-shell__link:hover {
+        color: var(--brand-accent);
+    }
+</style>
+
+<script>
+    import { revealContactFallbackIfHydrationFailed } from '@/lib/contact-host-fallback';
+
+    revealContactFallbackIfHydrationFailed({ root: document });
+</script>

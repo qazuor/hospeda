@@ -1,7 +1,7 @@
 /** TEST:1621:4 — the web maps only the current sellable vertical catalog. */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
-import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
+import { fetchPublicPlans, PLAN_CATALOG_TIMEOUT_MS } from '@/lib/billing/fetch-plans';
 
 vi.mock('@/lib/env', () => ({ getApiUrl: vi.fn(() => 'http://api.test') }));
 
@@ -75,7 +75,7 @@ describe('TEST:1621:4 fetchPublicPlans', () => {
         const plans = await fetchAudiencePlans({ audience: 'tourist' });
         expect(global.fetch).toHaveBeenCalledWith(
             'http://api.test/api/v1/public/plan-catalog?vertical=tourist',
-            { headers: { Accept: 'application/json' } }
+            { headers: { Accept: 'application/json' }, signal: expect.any(AbortSignal) }
         );
         expect(plans.map((plan) => plan.slug)).toEqual(['tourist-vip']);
         expect(plans[0]?.inheritsTouristVip).toBe(false);
@@ -99,7 +99,7 @@ describe('TEST:1621:4 fetchPublicPlans', () => {
         await fetchPublicPlans({ vertical: 'tourist' });
         expect(global.fetch).toHaveBeenCalledWith(
             'http://api.test/api/v1/public/plan-catalog?vertical=tourist',
-            { headers: { Accept: 'application/json' } }
+            { headers: { Accept: 'application/json' }, signal: expect.any(AbortSignal) }
         );
     });
 
@@ -232,5 +232,41 @@ describe('TEST:1621:4 fetchPublicPlans', () => {
     it('HOS-1967 rejects a malformed trialOffer instead of guessing', async () => {
         mockCatalog('venue', [catalogPlan()], null, { trialDays: 0 });
         expect((await fetchPublicPlans({ vertical: 'venue' })).ok).toBe(false);
+    });
+});
+
+describe('fetchPublicPlans timeout', () => {
+    /** A fetch that never answers on its own and rejects only when its signal aborts. */
+    function mockHangingApi(): void {
+        global.fetch = vi.fn(
+            (_url: string, init?: RequestInit) =>
+                new Promise<Response>((_resolve, reject) => {
+                    init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+                })
+        ) as unknown as typeof fetch;
+    }
+
+    it('degrades a hanging API to ok:false instead of hanging the render', async () => {
+        // Arrange
+        mockHangingApi();
+
+        // Act
+        const result = await fetchPublicPlans({ vertical: 'tourist', timeoutMs: 20 });
+
+        // Assert
+        expect(result.ok).toBe(false);
+    });
+
+    it('bounds every read by default, below the API client 10s timeout', async () => {
+        // Arrange
+        const timeout = vi.spyOn(AbortSignal, 'timeout');
+        mockCatalog('tourist', [], null);
+
+        // Act
+        await fetchPublicPlans({ vertical: 'tourist' });
+
+        // Assert
+        expect(timeout).toHaveBeenCalledWith(PLAN_CATALOG_TIMEOUT_MS);
+        expect(PLAN_CATALOG_TIMEOUT_MS).toBeLessThan(10_000);
     });
 });

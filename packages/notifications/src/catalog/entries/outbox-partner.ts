@@ -20,6 +20,7 @@ export const OUTBOX_PARTNER_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.partner-claim-notice',
         name: 'Aviso para reclamar la ficha de aliado',
         domain: 'partner',
+        audience: 'user',
         scenarios: [
             {
                 id: 'application-es',
@@ -63,6 +64,7 @@ export const OUTBOX_PARTNER_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.partner-application-rejected',
         name: 'Postulación de aliado rechazada',
         domain: 'partner',
+        audience: 'user',
         scenarios: [
             {
                 id: 'es',

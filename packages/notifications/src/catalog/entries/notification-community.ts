@@ -34,6 +34,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.ALLIANCE_CLAIM_INVITE,
         name: 'Invitación a confirmar postulación de aliado',
         domain: 'alliance',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -53,6 +54,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.ALLIANCE_LEAD_DECISION,
         name: 'Decisión sobre postulación de aliado',
         domain: 'alliance',
+        audience: 'user',
         scenarios: [
             {
                 id: 'approved',
@@ -82,6 +84,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REQUEST,
         name: 'Pedido de confirmación de uso del beneficio',
         domain: 'host-trade',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -101,6 +104,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER,
         name: 'Recordatorio de confirmación de uso del beneficio',
         domain: 'host-trade',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -119,6 +123,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.HOST_TRADE_USAGE_CONFIRMED,
         name: 'Uso del beneficio confirmado',
         domain: 'host-trade',
+        audience: 'user',
         scenarios: [
             {
                 id: 'can-review',
@@ -147,6 +152,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.HOST_TRADE_USAGE_REJECTED,
         name: 'Uso del beneficio rechazado',
         domain: 'host-trade',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-note',
@@ -173,6 +179,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.HOST_TRADE_REVIEW_RECEIVED,
         name: 'Valoración recibida',
         domain: 'host-trade',
+        audience: 'user',
         scenarios: [
             {
                 id: 'benefit-respected',
@@ -204,6 +211,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.HOST_TRADE_REPLY_MODERATED,
         name: 'Respuesta moderada',
         domain: 'host-trade',
+        audience: 'user',
         scenarios: [
             {
                 id: 'approved',
@@ -232,6 +240,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.HOST_TRADE_REVOKED,
         name: 'Ficha del directorio dada de baja',
         domain: 'host-trade',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -249,6 +258,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PARTNER_REVOKED,
         name: 'Aliado dado de baja',
         domain: 'partner',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -266,6 +276,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.PARTNER_MENTIONS_LOGGED,
         name: 'Difusión del aliado registrada',
         domain: 'partner',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-links',
@@ -304,6 +315,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.LISTING_LOCATION_EXCEPTION_APPROVED,
         name: 'Excepción de ubicación aprobada',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'es',
@@ -335,6 +347,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED,
         name: 'Excepción de ubicación rechazada',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'es-with-reason',
@@ -368,6 +381,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
         type: NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN,
         name: 'Calendario externo desconectado',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',

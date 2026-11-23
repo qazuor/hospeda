@@ -92,6 +92,7 @@ export async function seedSelfState(
         | 'ACTIVE'
         | 'CANCELLED'
         | 'PENDING_AUTHORIZATION'
+        | 'CHARGE_DECLINED'
 ) {
     const ownerId = await seedUser(`self-${status.toLowerCase()}`);
     const subscriptionId = await seedPrincipal({ ownerId, status });

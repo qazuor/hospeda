@@ -20,7 +20,9 @@ export const PROMO_REDEEM_OFFERED: Record<
     GRACE_PERIOD: { CARD: false, MANUAL: false },
     SUSPENDED: { CARD: false, MANUAL: false },
     CANCEL_SCHEDULED: { CARD: false, MANUAL: false },
-    PAUSED: { CARD: false, MANUAL: false }
+    PAUSED: { CARD: false, MANUAL: false },
+    PENDING_AUTHORIZATION: { CARD: false, MANUAL: false },
+    CHARGE_DECLINED: { CARD: false, MANUAL: false }
 };
 
 const PROMO_REDEMPTION_REASONS = [

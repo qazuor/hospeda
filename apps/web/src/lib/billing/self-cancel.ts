@@ -12,13 +12,18 @@ export type OwnSubscriptionStatus =
     | 'GRACE_PERIOD'
     | 'SUSPENDED'
     | 'CANCEL_SCHEDULED'
-    | 'PAUSED';
+    | 'PAUSED'
+    | 'PENDING_AUTHORIZATION'
+    | 'CHARGE_DECLINED';
 export const CANCELLATION_OFFERED: Record<OwnSubscriptionStatus, boolean> = {
     ACTIVE: true,
     GRACE_PERIOD: true,
     SUSPENDED: true,
     CANCEL_SCHEDULED: false,
-    PAUSED: false
+    PAUSED: false,
+    // HOS-2553: no self-service action exists for these two states.
+    PENDING_AUTHORIZATION: false,
+    CHARGE_DECLINED: false
 };
 export const END_LINE_KEY: Record<'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED', string> = {
     ACTIVE: 'account.subscription.cancel.activeEnds',

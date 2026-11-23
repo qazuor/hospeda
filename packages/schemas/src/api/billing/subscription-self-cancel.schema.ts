@@ -26,6 +26,24 @@ export const OwnSubscriptionNextChargeSchema = z
     })
     .nullable();
 
+/** Principal statuses with a self-service surface (cancel, pause, change plan). */
+export const SETTLED_OWN_SUBSCRIPTION_STATUSES = [
+    'ACTIVE',
+    'GRACE_PERIOD',
+    'SUSPENDED',
+    'CANCEL_SCHEDULED',
+    'PAUSED'
+] as const;
+
+/**
+ * The two statuses Mi suscripcion shows but offers no action on (HOS-2553): a checkout
+ * waiting for authorization and a declined charge.
+ */
+export const UNSETTLED_OWN_SUBSCRIPTION_STATUSES = [
+    'PENDING_AUTHORIZATION',
+    'CHARGE_DECLINED'
+] as const;
+
 /** A principal subscription shown on the owner's billing page. */
 export const OwnSubscriptionsResponseSchema = z.object({
     subscriptions: z.array(
@@ -34,7 +52,10 @@ export const OwnSubscriptionsResponseSchema = z.object({
             /** Successor link for identifying a subscription replaced by an active successor. */
             predecessorId: z.string().uuid().nullable().optional(),
             vertical: z.string(),
-            status: z.enum(['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED', 'PAUSED']),
+            status: z.enum([
+                ...SETTLED_OWN_SUBSCRIPTION_STATUSES,
+                ...UNSETTLED_OWN_SUBSCRIPTION_STATUSES
+            ]),
             paymentMethod: z.enum(['CARD', 'MANUAL']),
             serviceEndsAt: z.string().datetime().nullable(),
             graceEndsAt: z.string().datetime().nullable(),

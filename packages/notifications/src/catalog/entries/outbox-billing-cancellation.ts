@@ -18,6 +18,7 @@ const simple = (template: string, name: string, label: string): EmailCatalogEntr
         template,
         name,
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             { id: 'default', label, input: { payload: { subscriptionId: SUBSCRIPTION_ID } } }
         ]
@@ -90,6 +91,7 @@ export const OUTBOX_BILLING_CANCELLATION_ENTRIES: readonly EmailCatalogEntry[] =
         template: 'billing.scheduled-cancellation',
         name: 'Aviso de cancelación del cobro automático',
         domain: 'billing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-end-date',

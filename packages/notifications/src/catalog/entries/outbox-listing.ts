@@ -28,6 +28,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-business-lines-changed',
         name: 'Cambio de rubros de una ficha',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'added-and-removed',
@@ -64,6 +65,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-content-edited-by-support',
         name: 'Contenido editado por soporte',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'several-parts',
@@ -95,6 +97,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.price-alert-closed',
         name: 'Alerta de precio cerrada',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -107,6 +110,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-purged',
         name: 'Ficha borrada',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'by-owner',
@@ -133,6 +137,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-moderated',
         name: 'Ficha moderada',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -159,6 +164,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-fix-requested',
         name: 'Pedido de arreglo en una ficha',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'with-date',
@@ -190,6 +196,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-fix-reported',
         name: 'Arreglo informado por el titular (aviso al equipo)',
         domain: 'listing',
+        audience: 'staff',
         scenarios: [
             {
                 id: 'with-date',
@@ -229,6 +236,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-moderation-level-changed',
         name: 'Cambio de nivel de moderación',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'still-moderated',
@@ -276,6 +284,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-moderation-lifted',
         name: 'Moderación levantada',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'published',
@@ -309,6 +318,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-restitution',
         name: 'Fichas restituidas',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'all-restored',
@@ -340,6 +350,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-archived',
         name: 'Ficha archivada por inactividad',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'published-pb4',
@@ -373,6 +384,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-retention-before-archive',
         name: 'Aviso previo al archivado',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'published-pb4',
@@ -404,6 +416,7 @@ export const OUTBOX_LISTING_ENTRIES: readonly EmailCatalogEntry[] = [
         template: 'verticals.listing-retention-before-deletion',
         name: 'Aviso previo al borrado del contenido',
         domain: 'listing',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
