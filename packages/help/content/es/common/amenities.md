@@ -46,7 +46,7 @@ covers:
   - "tool:list_amenities_and_features"
 entryFor:
   - "section:accommodation.servicios"
-reviewedAt: "2026-11-20"
+reviewedAt: "2026-11-23"
 ---
 
 ## Qué podés hacer
@@ -55,11 +55,11 @@ Tildar los servicios que ofrecés en {{link:section:accommodation:servicios|Serv
 
 ## Cómo se hace
 
-1. Abrí el editor de la publicación con «Editar» en su tarjeta.
+1. Abrí el editor de la publicación con «Editar» en su tarjeta. Si todavía no está publicada, «Editar» está en el menú «Más acciones».
 2. Entrá a «Servicios y comodidades» (en comercios y experiencias, «Servicios»).
 3. Tildá los que ofrecés y destildá los que no. En alojamientos el catálogo está agrupado por categorías.
 4. En alojamientos podés abrir el detalle de cada comodidad para indicar si es de uso privado o compartido y si está disponible todo el año.
-5. Tocá «Guardar».
+5. Tocá «Guardar cambios» en la barra que aparece abajo cuando hay cambios. Con «Descartar» volvés a lo que estaba guardado.
 6. También podés pedirle a este asistente que agregue o quite servicios de una categoría.
 
 ## Qué esperar
