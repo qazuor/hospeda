@@ -560,7 +560,13 @@
                 "UNEXPECTED": "Ocurrió un error inesperado.",
                 "USER_DECLINED": "No lo confirmaste.",
                 "USER_CANCELLED": "Cancelaste la confirmación."
-            }
+            },
+            "sectionTitle": "Acciones registradas"
+        },
+        "tabs": {
+            "label": "Secciones de asistentes de IA",
+            "assistants": "Asistentes",
+            "history": "Historial"
         }
     },
     "subscription": {

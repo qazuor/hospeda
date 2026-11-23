@@ -7,8 +7,8 @@
  * @rendering SSR
  *
  * The per-user list is fetched by the `AiAssistantsPanel` island in the
- * browser. A static link leads to the assistant history (`historial/`,
- * HOS-2348). The only server-side input is the MCP URL, which is the same for
+ * browser. The `AiAssistantsTabs` nav links to the assistant history
+ * (`historial/`, HOS-2348). The only server-side input is the MCP URL, which is the same for
  * everyone (`null` while the feature is off).
  *
  * HOS-2562: only a real client (a person with a business vertical) may open
@@ -17,13 +17,14 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { AiAssistantsTabs } from '@/components/account/AiAssistantsTabs';
 import { AiAssistantsPanel } from '@/components/account/AiAssistantsPanel.client';
 import { getApiUrl } from '@/lib/env';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
 import { canUseAiAssistants } from '@/lib/ai-assistants-access';
@@ -46,26 +47,14 @@ const description = t(
 	'Conectá asistentes de IA a tu cuenta de Hospeda y administrá los que ya conectaste.',
 );
 const mcpUrl = await getConfiguredMcpUrl();
-const historyUrl = buildUrl({ locale, path: 'mi-cuenta/asistentes-ia/historial' });
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="asistentes-ia">
-	<AccountPageHeader title={title} description={description} />
+	<PageHeader title={title} description={description} locale={locale}>
+		<PageHelpLink slot="help" locale={locale} />
+	</PageHeader>
 
-	<a class="ai-assistants__history-link" href={historyUrl}>
-		{t('account.aiAssistants.activity.historyLink', 'Ver lo que hicieron tus asistentes')}
-	</a>
+	<AiAssistantsTabs locale={locale} current="assistants" />
 
 	<AiAssistantsPanel client:load locale={locale} apiUrl={getApiUrl()} mcpUrl={mcpUrl} />
 </AccountLayout>
-
-<style>
-	.ai-assistants__history-link {
-		display: inline-block;
-		margin-bottom: var(--space-6, 24px);
-		font-family: var(--font-sans);
-		font-size: 0.9375rem;
-		color: var(--brand-primary);
-		text-decoration: underline;
-	}
-</style>

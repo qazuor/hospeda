@@ -560,7 +560,13 @@
                 "UNEXPECTED": "An unexpected error happened.",
                 "USER_DECLINED": "You didn’t confirm it.",
                 "USER_CANCELLED": "You cancelled the confirmation."
-            }
+            },
+            "sectionTitle": "Recorded actions"
+        },
+        "tabs": {
+            "label": "AI assistants sections",
+            "assistants": "Assistants",
+            "history": "History"
         }
     },
     "subscription": {

@@ -11,16 +11,15 @@
  * adds the action and the date: a screen-reader links list can tell them apart.
  */
 
+import { ListRow, StatusPill, type StatusTone } from '@/components/account/ui';
 import {
     type AiActivityItem as AiActivityItemData,
     normalizeAiActivityStep,
     resolveAiActivityResult,
     resolveAiActivityTarget
 } from '@/lib/ai-activity';
-import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
-import styles from './AiActivityHistory.module.css';
 
 /** Props of {@link AiActivityItem}. */
 export interface AiActivityItemProps {
@@ -34,14 +33,14 @@ export interface AiActivityItemProps {
 
 const KEY = 'account.aiAssistants.activity';
 
-/** CSS class of each result badge. */
-const RESULT_CLASS = {
-    done: styles.resultDone,
-    deniedByHospeda: styles.resultDenied,
-    declinedByYou: styles.resultDeclined,
-    error: styles.resultError,
-    unknown: styles.resultUnknown
-} as const;
+/** Tone of each result pill. */
+const RESULT_TONE: Readonly<Record<keyof typeof RESULT_FALLBACK, StatusTone>> = {
+    done: 'success',
+    deniedByHospeda: 'warning',
+    declinedByYou: 'neutral',
+    error: 'danger',
+    unknown: 'neutral'
+};
 
 /** Spanish fallbacks of the result labels (the locale files are the source). */
 const RESULT_FALLBACK = {
@@ -77,74 +76,76 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
         options: { dateStyle: 'medium', timeStyle: 'short' }
     });
 
-    return (
-        <li className={styles.item}>
-            <div className={styles.itemHead}>
-                <p className={styles.action}>{action}</p>
-                <span className={cn(styles.result, RESULT_CLASS[result])}>
-                    {t(`${KEY}.result.${result}`, RESULT_FALLBACK[result])}
-                </span>
-            </div>
-
-            {target?.kind === 'listing' &&
-                (target.url ? (
-                    <a
-                        className={styles.targetLink}
-                        href={target.url}
-                    >
-                        {target.label}
-                    </a>
-                ) : (
-                    <p className={styles.target}>{target.label}</p>
-                ))}
-            {target?.kind === 'listingUnavailable' && (
-                <p className={styles.targetMuted}>
-                    {t(`${KEY}.target.unavailable`, 'Publicación que ya no está disponible')}
-                </p>
-            )}
-            {target?.kind === 'conversation' &&
-                (target.url ? (
-                    <a
-                        className={styles.targetLink}
-                        href={target.url}
-                        aria-label={t(
-                            `${KEY}.target.conversationAria`,
-                            'Abrir la consulta de huésped de «{{action}}», del {{date}}',
-                            { action, date: when }
-                        )}
-                    >
-                        {t(`${KEY}.target.conversation`, 'Consulta de huésped')}
-                    </a>
-                ) : (
-                    <p className={styles.target}>
-                        {t(`${KEY}.target.conversation`, 'Consulta de huésped')}
-                    </p>
-                ))}
-
-            <p className={styles.meta}>
-                <time dateTime={item.loggedAt.toISOString()}>{when}</time>
-                <span aria-hidden="true">·</span>
-                <span>{assistant}</span>
-                {step && (
-                    <>
-                        <span aria-hidden="true">·</span>
-                        <span className={styles.step}>
-                            {step === 'preview'
-                                ? t(`${KEY}.steps.preview`, 'Vista previa')
-                                : t(`${KEY}.steps.commit`, 'Confirmado')}
-                        </span>
-                    </>
-                )}
-            </p>
-
-            {showReason && item.errorCode !== undefined && (
-                <p className={styles.reason}>
-                    {t(
-                        `${KEY}.errorCodes.${item.errorCode}`,
-                        t(`${KEY}.errorCodes.UNEXPECTED`, 'Ocurrió un error inesperado.')
+    const targetNode =
+        target?.kind === 'listing' ? (
+            target.url ? (
+                <a href={target.url}>{target.label}</a>
+            ) : (
+                <span>{target.label}</span>
+            )
+        ) : target?.kind === 'listingUnavailable' ? (
+            <span>{t(`${KEY}.target.unavailable`, 'Publicación que ya no está disponible')}</span>
+        ) : target?.kind === 'conversation' ? (
+            target.url ? (
+                <a
+                    href={target.url}
+                    aria-label={t(
+                        `${KEY}.target.conversationAria`,
+                        'Abrir la consulta de huésped de «{{action}}», del {{date}}',
+                        { action, date: when }
                     )}
-                </p>
-            )}
-        </li>
+                >
+                    {t(`${KEY}.target.conversation`, 'Consulta de huésped')}
+                </a>
+            ) : (
+                <span>{t(`${KEY}.target.conversation`, 'Consulta de huésped')}</span>
+            )
+        ) : null;
+
+    const reason =
+        showReason && item.errorCode !== undefined
+            ? t(
+                  `${KEY}.errorCodes.${item.errorCode}`,
+                  t(`${KEY}.errorCodes.UNEXPECTED`, 'Ocurrió un error inesperado.')
+              )
+            : null;
+
+    return (
+        <ListRow
+            rowId={String(item.id)}
+            title={action}
+            meta={
+                <>
+                    <time dateTime={item.loggedAt.toISOString()}>{when}</time>
+                    <span aria-hidden="true"> · </span>
+                    <span>{assistant}</span>
+                    {step && (
+                        <>
+                            <span aria-hidden="true"> · </span>
+                            <span>
+                                {step === 'preview'
+                                    ? t(`${KEY}.steps.preview`, 'Vista previa')
+                                    : t(`${KEY}.steps.commit`, 'Confirmado')}
+                            </span>
+                        </>
+                    )}
+                </>
+            }
+            description={
+                targetNode || reason ? (
+                    <>
+                        {targetNode}
+                        {targetNode && reason ? ' ' : null}
+                        {reason ? <span>{reason}</span> : null}
+                    </>
+                ) : undefined
+            }
+            wrapDescription
+            trailing={
+                <StatusPill tone={RESULT_TONE[result]}>
+                    {t(`${KEY}.result.${result}`, RESULT_FALLBACK[result])}
+                </StatusPill>
+            }
+        />
     );
 }

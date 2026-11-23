@@ -24,7 +24,9 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { Alert, PageHeader } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { AiAssistantsTabs } from '@/components/account/AiAssistantsTabs';
 import { AiActivityHistory } from '@/components/account/AiActivityHistory.client';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { getApiUrl } from '@/lib/env';
@@ -61,17 +63,18 @@ const signinUrl = buildLoginRedirect({
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="asistentes-ia">
-	<AccountPageHeader title={title} description={description} />
+	<PageHeader title={title} description={description} locale={locale}>
+		<PageHelpLink slot="help" locale={locale} />
+	</PageHeader>
 
-	<p class="ai-history__intro">
+	<AiAssistantsTabs locale={locale} current="history" />
+
+	<Alert tone="info" locale={locale}>
 		{t(
 			'account.aiAssistants.activity.intro',
 			'Guardamos lo que hicieron tus asistentes durante los últimos 12 meses. Nunca guardamos el texto de tus mensajes ni de tus respuestas.',
 		)}
-	</p>
-	<a class="ai-history__back" href={assistantsUrl}>
-		{t('account.aiAssistants.activity.backLink', 'Volver a mis asistentes')}
-	</a>
+	</Alert>
 
 	<AiActivityHistory
 		client:load
@@ -81,21 +84,3 @@ const signinUrl = buildLoginRedirect({
 		signinUrl={signinUrl}
 	/>
 </AccountLayout>
-
-<style>
-	.ai-history__intro {
-		margin: 0 0 var(--space-3, 12px);
-		font-family: var(--font-sans);
-		font-size: 0.9375rem;
-		color: var(--core-muted-foreground);
-	}
-
-	.ai-history__back {
-		display: inline-block;
-		margin-bottom: var(--space-6, 24px);
-		font-family: var(--font-sans);
-		font-size: 0.9375rem;
-		color: var(--brand-primary);
-		text-decoration: underline;
-	}
-</style>
