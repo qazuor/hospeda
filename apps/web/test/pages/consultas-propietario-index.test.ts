@@ -1,8 +1,9 @@
 /**
  * @file consultas-propietario-index.test.ts
  * @description Source-level tests for the owner conversations inbox page
- * (SPEC-206 PR2). Verifies correct layout, API call, i18n keys, and
- * navigation patterns.
+ * (SPEC-206, migrated to the account kit by HOS-2482). The list itself is the
+ * shared `ConversationInbox` island, tested with `viewer="owner"` in
+ * `test/components/account/conversations/ConversationInbox.test.tsx`.
  *
  * Astro pages cannot be rendered via Vitest, so we lean on string-level
  * assertions on the .astro source.
@@ -16,8 +17,9 @@ const source = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/consultas-propietario/index.astro'),
     'utf8'
 );
+const markup = source.slice(source.lastIndexOf('---') + 3);
 
-describe('consultas-propietario/index.astro (SPEC-206 owner inbox)', () => {
+describe('consultas-propietario/index.astro (owner inbox on the kit)', () => {
     it('is an SSR page (prerender = false)', () => {
         expect(source).toContain('prerender = false');
     });
@@ -27,54 +29,30 @@ describe('consultas-propietario/index.astro (SPEC-206 owner inbox)', () => {
         expect(source).toContain('activeSection="owner-messages"');
     });
 
-    it('fetches from ownerConversationsApi.list()', () => {
-        expect(source).toContain('ownerConversationsApi');
-        expect(source).toContain('.list(');
+    it('renders ONE PageHeader with the translated owner inbox title', () => {
+        expect(markup.match(/<PageHeader\b/g)).toHaveLength(1);
+        expect(source).toContain("t('conversations.inbox.ownerInboxTitle')");
+        expect(markup).not.toMatch(/<h1[\s>]/);
     });
 
-    it('forwards the session cookie for SSR authentication', () => {
-        expect(source).toMatch(/Astro\.request\.headers\.get\(\s*['"]cookie['"]\s*\)/);
+    it('shares the guest inbox island, with viewer="owner"', () => {
+        expect(markup).toMatch(/<ConversationInbox client:load locale=\{locale\} viewer="owner"/);
     });
 
-    it('uses i18n key for owner inbox title', () => {
-        expect(source).toContain('conversations.inbox.ownerInboxTitle');
+    it('reads no conversation on the server (session-blind beyond the gate)', () => {
+        expect(source).not.toContain('ownerConversationsApi');
+        expect(source).not.toContain("headers.get('cookie')");
     });
 
-    it('uses i18n key for empty owner inbox', () => {
-        expect(source).toContain('conversations.empty.ownerInbox');
+    it('redirects unauthenticated users to sign-in with the return URL', () => {
+        expect(source).toContain(
+            'buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search })'
+        );
     });
 
-    it('links each conversation to the owner thread page', () => {
-        expect(source).toContain('consultas-propietario/');
-    });
-
-    it('renders unread count badges', () => {
-        expect(source).toContain('unreadCount');
-    });
-
-    it('fetches owner conversations with correct API endpoint', () => {
-        expect(source).toContain('ownerConversationsApi');
-        expect(source).toContain('.list(');
-    });
-
-    it('renders guest name for each conversation', () => {
-        expect(source).toContain('guestName');
-    });
-
-    it('renders accommodation name for each conversation', () => {
-        expect(source).toContain('accommodationName');
-    });
-
-    it('redirects unauthenticated users to sign-in', () => {
-        expect(source).toContain('buildLoginRedirect');
-    });
-
-    it('uses buildUrl for internal navigation', () => {
-        expect(source).toContain('buildUrl');
-    });
-
-    it('import ownerConversationsApi from endpoints-protected', () => {
-        expect(source).toContain("from '@/lib/api/endpoints-protected'");
-        expect(source).toContain('ownerConversationsApi');
+    it('retires the legacy primitives and the <style> block', () => {
+        expect(source).not.toMatch(/AccountPageHeader|AccountSectionCard|AccountEmptyState/);
+        expect(source).not.toContain('<style');
+        expect(source).not.toContain('aria-label="Pagination"');
     });
 });

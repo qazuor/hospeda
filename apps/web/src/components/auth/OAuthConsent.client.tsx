@@ -17,6 +17,10 @@
  *    answers `{ redirect: true, url }` and the browser follows it back to the
  *    client (with the authorization code, or with `access_denied`).
  *
+ * HOS-2562: AI assistants are only for real clients (a business vertical).
+ * The server refuses anybody else; this screen shows that refusal
+ * (`notAClient`) instead of an Allow button or a link to «Asistentes de IA».
+ *
  * Client metadata is registered by third parties (CIMD documents and dynamic
  * registration), so it is untrusted: names render as React text only, and the
  * website and logo are used only when they are `https:` URLs.
@@ -24,6 +28,7 @@
 
 import { ExternalLinkIcon, ShieldAlertIcon, ShieldIcon } from '@repo/icons';
 import { useEffect, useState } from 'react';
+import { fetchCanUseAiAssistants } from '@/lib/ai-assistants-access';
 import { clearCachedAuthMe } from '@/lib/auth-cache';
 import { authClient } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -31,6 +36,8 @@ import { createTranslations } from '@/lib/i18n';
 import { maskEmail } from '@/lib/mask-email';
 import {
     buildConsentSigninUrl,
+    CONSENT_ERROR_FALLBACKS,
+    type ConsentErrorKind,
     type ConsentRequest,
     isFollowableRedirectUrl,
     parseConsentRequest,
@@ -55,9 +62,6 @@ interface ConsentRedirect {
     readonly url?: unknown;
 }
 
-/** Why the screen cannot be used. */
-type ErrorKind = 'invalidRequest' | 'clientNotFound' | 'loadFailed' | 'submitFailed';
-
 /** What the user is doing. `intent` is the decision being submitted. */
 type ViewState =
     | { readonly status: 'loading' }
@@ -68,7 +72,7 @@ type ViewState =
           readonly intent: 'allow' | 'deny';
       }
     | { readonly status: 'redirecting' }
-    | { readonly status: 'error'; readonly kind: ErrorKind; readonly client?: PublicClient };
+    | { readonly status: 'error'; readonly kind: ConsentErrorKind; readonly client?: PublicClient };
 
 /** The signed-in account as shown on the screen (display name + masked email). */
 interface AccountView {
@@ -157,6 +161,11 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
                     });
                     return;
                 }
+                if ((await fetchCanUseAiAssistants()) === false) {
+                    if (!cancelled) setState({ status: 'error', kind: 'notAClient' });
+                    return;
+                }
+                if (cancelled) return;
                 setState({ status: 'ready', client: result.data ?? {} });
                 void loadAccount();
             } catch {
@@ -209,7 +218,12 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
             if (result.error || !isFollowableRedirectUrl({ raw: url })) {
                 setState({
                     status: 'error',
-                    kind: result.error?.status === 400 ? 'invalidRequest' : 'submitFailed',
+                    kind:
+                        result.error?.status === 403
+                            ? 'notAClient'
+                            : result.error?.status === 400
+                              ? 'invalidRequest'
+                              : 'submitFailed',
                     client
                 });
                 return;
@@ -242,13 +256,6 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
     }
 
     if (state.status === 'error') {
-        const fallbacks: Record<ErrorKind, string> = {
-            invalidRequest:
-                'El enlace de autorización no es válido o venció. Volvé a iniciar la conexión desde tu asistente.',
-            clientNotFound: 'No encontramos la aplicación que pide acceso.',
-            loadFailed: 'No pudimos cargar la solicitud. Probá de nuevo.',
-            submitFailed: 'No pudimos completar la autorización. Probá de nuevo.'
-        };
         const canRetry = state.kind === 'loadFailed' || state.kind === 'submitFailed';
         return (
             <div className={styles.statusBox}>
@@ -268,7 +275,7 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
                     role="alert"
                     className={styles.statusText}
                 >
-                    {t(`auth.consent.errors.${state.kind}`, fallbacks[state.kind])}
+                    {t(`auth.consent.errors.${state.kind}`, CONSENT_ERROR_FALLBACKS[state.kind])}
                 </p>
                 {canRetry && (
                     <button

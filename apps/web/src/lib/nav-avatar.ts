@@ -61,6 +61,6 @@ export function getCuratedAccountNav({
         null;
     return {
         dashboardItem,
-        adminItems: resolveBusinessShortcuts({ visibility, ownsHostTradeListing, ownsPartner })
+        adminItems: resolveBusinessShortcuts({ permissions, ownsHostTradeListing, ownsPartner })
     };
 }

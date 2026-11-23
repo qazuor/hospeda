@@ -1,21 +1,25 @@
 ---
 /**
  * @file mi-cuenta/consultas/index.astro
- * @description Authenticated guest inbox — lists all conversations sorted by last activity.
+ * @description Authenticated guest inbox on the account kit (HOS-2481): one
+ * `PageHeader` and the `ConversationInbox` island with `viewer="guest"`, which
+ * renders the list `Section`.
+ *
+ * The page reads no per-user data: the island fetches the list in the browser,
+ * so the region shows loading, error with retry, empty and ready states
+ * (`AsyncRegion`). A failed read is an error, never the empty inbox
+ * (HOS-2422). Every page of the paginated API is linked (`?page=`).
+ *
  * @route /{lang}/mi-cuenta/consultas/
  * @rendering SSR (on-demand, auth-protected)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
+import { PageHeader } from '@/components/account/ui';
+import { ConversationInbox } from '@/components/account/conversations/ConversationInbox.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
-import { AlertCircleIcon, ChatIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -28,358 +32,20 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-// Pagination from URL search params
-const pageParam = Astro.url.searchParams.get('page');
-const page = Math.max(1, parseInt(pageParam ?? '1', 10));
-const pageSize = 20;
+// Pagination from URL search params (the island reads that page).
+const parsed = Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10);
+const page = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 
-// Forward the session cookie so the protected endpoint can resolve the
-// authenticated actor; without this the SSR fetch arrives anonymous and the
-// page silently renders the empty inbox.
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const result = await protectedConversationsApi.list({ page, pageSize, cookieHeader });
-
-// HOS-2422: a failed read must not look like an empty inbox. `loadFailed`
-// drives an error state with a retry link instead of "no tenés consultas".
-const loadFailed = !result.ok;
-const conversations = result.ok ? result.data.items : [];
-const pagination = result.ok ? result.data.pagination : null;
-
-function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString(
-        locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',
-        { day: '2-digit', month: 'short', year: 'numeric' }
-    );
-}
-
-/** Up-to-two-letter initials from the accommodation name for the avatar. */
-function getInitials(name: string): string {
-    const words = name.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return '?';
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-}
+const title = t('conversations.inbox.guestInboxTitle');
 ---
 
 <AccountLayout
     locale={locale}
-    title={t('conversations.inbox.guestInboxTitle')}
+    title={title}
     description={t('conversations.empty.guestInbox')}
     activeSection="messages"
 >
-    <AccountPageHeader title={t('conversations.inbox.guestInboxTitle')} />
+    <PageHeader title={title} locale={locale} />
 
-    <AccountSectionCard>
-        <div class="messages-inbox">
-            {loadFailed ? (
-                <AccountEmptyState
-                    title={t('conversations.inbox.loadError.title', 'No pudimos cargar tus consultas')}
-                    description={t(
-                        'conversations.inbox.loadError.body',
-                        'Hubo un problema al leer tu bandeja. Tus consultas siguen ahí: probá de nuevo en un momento.'
-                    )}
-                    ctaHref={Astro.url.pathname + Astro.url.search}
-                    ctaLabel={t('conversations.inbox.loadError.retry', 'Reintentar')}
-                >
-                    <AlertCircleIcon slot="icon" size={28} aria-hidden={true} />
-                </AccountEmptyState>
-            ) : conversations.length === 0 ? (
-                <AccountEmptyState
-                    title={t('conversations.empty.guestInboxTitle', 'Todavía no tenés consultas')}
-                    description={t('conversations.empty.guestInbox')}
-                    ctaHref={buildUrl({ locale, path: 'alojamientos' })}
-                    ctaLabel={t('conversations.empty.guestInboxCta', 'Explorar alojamientos')}
-                >
-                    <ChatIcon slot="icon" size={28} aria-hidden={true} />
-                </AccountEmptyState>
-            ) : (
-                <ul class="messages-inbox__list" role="list">
-                    {conversations.map((conv) => {
-                        const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas/${conv.id}` });
-                        const excerpt = conv.lastMessageExcerpt
-                            ? conv.lastMessageExcerpt.slice(0, 200)
-                            : '';
-                        const isUnread = conv.unreadCount > 0;
-                        return (
-                            <li class="messages-inbox__item">
-                                <a
-                                    href={threadUrl}
-                                    class:list={[
-                                        'messages-inbox__link',
-                                        { 'messages-inbox__link--unread': isUnread }
-                                    ]}
-                                >
-                                    <span class="messages-inbox__avatar" aria-hidden="true">
-                                        {getInitials(conv.accommodationName)}
-                                    </span>
-                                    <div class="messages-inbox__content">
-                                        <span class="messages-inbox__accommodation">
-                                            {conv.accommodationName}
-                                        </span>
-                                        {excerpt && (
-                                            <p class="messages-inbox__excerpt">{excerpt}</p>
-                                        )}
-                                    </div>
-                                    <div class="messages-inbox__meta">
-                                        <time
-                                            datetime={conv.lastActivityAt}
-                                            class="messages-inbox__time"
-                                        >
-                                            {formatDate(conv.lastActivityAt)}
-                                        </time>
-                                        {isUnread && (
-                                            <span
-                                                class="messages-inbox__badge"
-                                                aria-label={t(
-                                                    'conversations.inbox.unreadCount',
-                                                    undefined,
-                                                    { count: conv.unreadCount }
-                                                )}
-                                            >
-                                                {conv.unreadCount}
-                                            </span>
-                                        )}
-                                    </div>
-                                </a>
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
-
-            {pagination && pagination.totalPages > 1 && (
-                <nav class="messages-inbox__pagination" aria-label={t('common.pagination', 'Paginación')}>
-                    {page > 1 && (
-                        <a
-                            href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page - 1}`}
-                            class="messages-inbox__page-link"
-                        >
-                            &larr;
-                        </a>
-                    )}
-                    <span class="messages-inbox__page-info">
-                        {page} / {pagination.totalPages}
-                    </span>
-                    {page < pagination.totalPages && (
-                        <a
-                            href={buildUrl({ locale, path: 'mi-cuenta/consultas' }) + `?page=${page + 1}`}
-                            class="messages-inbox__page-link"
-                        >
-                            &rarr;
-                        </a>
-                    )}
-                </nav>
-            )}
-        </div>
-    </AccountSectionCard>
+    <ConversationInbox client:load locale={locale} viewer="guest" page={page} />
 </AccountLayout>
-
-<style>
-    .messages-inbox {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 16px);
-    }
-
-    .messages-inbox__empty {
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        color: var(--core-muted-foreground);
-        padding: var(--space-6, 24px) 0;
-        text-align: center;
-    }
-
-    .messages-inbox__list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2, 8px);
-    }
-
-    .messages-inbox__item {
-        border: 1px solid var(--border);
-        border-radius: var(--radius-card, 16px);
-        overflow: hidden;
-        transition: border-color var(--duration-fast, 0.2s) ease,
-            box-shadow var(--duration-fast, 0.2s) ease;
-    }
-
-    .messages-inbox__item:hover {
-        border-color: var(--brand-primary);
-        box-shadow: var(--shadow-card-hover);
-    }
-
-    .messages-inbox__link {
-        display: flex;
-        align-items: center;
-        gap: var(--space-4, 16px);
-        padding: var(--space-4, 16px);
-        text-decoration: none;
-        background-color: var(--core-card);
-    }
-
-    /* Avatar with the accommodation's initials */
-    .messages-inbox__avatar {
-        flex-shrink: 0;
-        width: 48px;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background-color: var(--brand-accent-a15);
-        color: var(--brand-accent);
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: 1rem;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-    }
-
-    .messages-inbox__content {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    .messages-inbox__accommodation {
-        font-family: var(--font-heading);
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: var(--core-foreground);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .messages-inbox__excerpt {
-        font-family: var(--font-sans);
-        font-size: 0.83rem;
-        color: var(--core-muted-foreground);
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .messages-inbox__meta {
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: var(--space-2, 8px);
-    }
-
-    .messages-inbox__time {
-        font-family: var(--font-sans);
-        font-size: 0.75rem;
-        color: var(--core-muted-foreground);
-        white-space: nowrap;
-    }
-
-    .messages-inbox__badge {
-        font-family: var(--font-sans);
-        font-size: 0.72rem;
-        font-weight: 700;
-        color: var(--primary-foreground, #fff);
-        background-color: var(--brand-accent);
-        border-radius: var(--radius-pill, 9999px);
-        min-width: 20px;
-        height: 20px;
-        padding: 0 6px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-    }
-
-    /* Unread state: stronger name, accent avatar, accent rail */
-    .messages-inbox__link--unread {
-        position: relative;
-    }
-
-    .messages-inbox__link--unread::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 3px;
-        background-color: var(--brand-accent);
-    }
-
-    .messages-inbox__link--unread .messages-inbox__accommodation {
-        font-weight: 700;
-        color: var(--core-foreground);
-    }
-
-    .messages-inbox__link--unread .messages-inbox__excerpt {
-        color: var(--core-foreground);
-        font-weight: 500;
-    }
-
-    .messages-inbox__link--unread .messages-inbox__avatar {
-        background-color: var(--brand-accent);
-        color: var(--primary-foreground, #fff);
-    }
-
-    .messages-inbox__pagination {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-3, 12px);
-        margin-top: var(--space-4, 16px);
-    }
-
-    .messages-inbox__page-link {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--brand-primary);
-        text-decoration: none;
-        padding: var(--space-2, 8px) var(--space-3, 12px);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-button, 8px);
-        transition: background-color var(--duration-fast, 0.2s) ease;
-    }
-
-    .messages-inbox__page-link:hover {
-        background-color: var(--muted);
-    }
-
-    .messages-inbox__page-info {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--core-muted-foreground);
-    }
-
-    /* ≤ 480px: the date no longer competes with the name and excerpt for the
-       row. It drops under the content so those two use the full width. */
-    @media (max-width: 480px) {
-        .messages-inbox__link {
-            display: grid;
-            grid-template-columns: 48px minmax(0, 1fr);
-            column-gap: var(--space-3, 12px);
-            row-gap: var(--space-2, 8px);
-            align-items: start;
-        }
-
-        .messages-inbox__avatar {
-            grid-row: 1 / span 2;
-        }
-
-        .messages-inbox__content {
-            grid-column: 2;
-        }
-
-        .messages-inbox__meta {
-            grid-column: 2;
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-        }
-    }
-</style>

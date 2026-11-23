@@ -24,9 +24,10 @@ vi.mock('../../../src/components/account/ProfileEditForm.module.css', () => ({
     })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
+vi.mock('../../../src/lib/i18n', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/lib/i18n')>();
     const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
+    return { ...actual, createTranslations: () => ({ t }) };
 });
 
 vi.mock('../../../src/lib/avatar-utils', () => ({
@@ -96,57 +97,61 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
     describe('pre-population from the server-fetched user', () => {
         it('pre-fills the birth date from initialUser.birthDate', () => {
             renderForm();
-            expect((document.getElementById('birthDate') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-birthDate') as HTMLInputElement).value).toBe(
                 '1990-04-22'
             );
         });
 
         it('pre-fills the website from initialUser.website', () => {
             renderForm();
-            expect((document.getElementById('website') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-website') as HTMLInputElement).value).toBe(
                 'https://juan.com'
             );
         });
 
         it('pre-fills occupation from initialUser.profile.occupation', () => {
             renderForm();
-            expect((document.getElementById('occupation') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-occupation') as HTMLInputElement).value).toBe(
                 'Developer'
             );
         });
 
         it('pre-fills all 5 social network URLs', () => {
             renderForm();
-            expect((document.getElementById('facebookUrl') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-facebookUrl') as HTMLInputElement).value).toBe(
                 'https://facebook.com/juan'
             );
-            expect((document.getElementById('instagramUrl') as HTMLInputElement).value).toBe(
-                'https://instagram.com/juan'
-            );
-            expect((document.getElementById('twitterUrl') as HTMLInputElement).value).toBe(
+            expect(
+                (document.getElementById('profile-instagramUrl') as HTMLInputElement).value
+            ).toBe('https://instagram.com/juan');
+            expect((document.getElementById('profile-twitterUrl') as HTMLInputElement).value).toBe(
                 'https://twitter.com/juan'
             );
-            expect((document.getElementById('linkedinUrl') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-linkedinUrl') as HTMLInputElement).value).toBe(
                 'https://linkedin.com/in/juan'
             );
-            expect((document.getElementById('youtubeUrl') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-youtubeUrl') as HTMLInputElement).value).toBe(
                 'https://youtube.com/@juan'
             );
         });
 
         it('pre-fills the 5 postal address fields', () => {
             renderForm();
-            expect((document.getElementById('country') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-country') as HTMLInputElement).value).toBe(
                 'Argentina'
             );
-            expect((document.getElementById('province') as HTMLInputElement).value).toBe('CABA');
-            expect((document.getElementById('city') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-province') as HTMLInputElement).value).toBe(
+                'CABA'
+            );
+            expect((document.getElementById('profile-city') as HTMLInputElement).value).toBe(
                 'Buenos Aires'
             );
-            expect((document.getElementById('addressLine1') as HTMLInputElement).value).toBe(
-                'Av. Corrientes 1234'
+            expect(
+                (document.getElementById('profile-addressLine1') as HTMLInputElement).value
+            ).toBe('Av. Corrientes 1234');
+            expect((document.getElementById('profile-postalCode') as HTMLInputElement).value).toBe(
+                'C1043'
             );
-            expect((document.getElementById('postalCode') as HTMLInputElement).value).toBe('C1043');
         });
 
         it('uses the correct firstName from initialUser (not split from displayName)', () => {
@@ -160,10 +165,12 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
                 lastName: 'Pérez'
             };
             renderForm(user);
-            expect((document.getElementById('firstName') as HTMLInputElement).value).toBe(
+            expect((document.getElementById('profile-firstName') as HTMLInputElement).value).toBe(
                 'Juan Carlos'
             );
-            expect((document.getElementById('lastName') as HTMLInputElement).value).toBe('Pérez');
+            expect((document.getElementById('profile-lastName') as HTMLInputElement).value).toBe(
+                'Pérez'
+            );
         });
     });
 
@@ -178,10 +185,14 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
                 phone: null,
                 profile: null
             });
-            expect((document.getElementById('birthDate') as HTMLInputElement).value).toBe('');
-            expect((document.getElementById('website') as HTMLInputElement).value).toBe('');
-            expect((document.getElementById('country') as HTMLInputElement).value).toBe('');
-            expect((document.getElementById('facebookUrl') as HTMLInputElement).value).toBe('');
+            expect((document.getElementById('profile-birthDate') as HTMLInputElement).value).toBe(
+                ''
+            );
+            expect((document.getElementById('profile-website') as HTMLInputElement).value).toBe('');
+            expect((document.getElementById('profile-country') as HTMLInputElement).value).toBe('');
+            expect((document.getElementById('profile-facebookUrl') as HTMLInputElement).value).toBe(
+                ''
+            );
         });
     });
 
@@ -190,7 +201,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
             // HOS-190 P2: birthDate is now diffed against the baseline (only
             // sent when it actually changed) instead of unconditionally.
             renderForm();
-            fireEvent.change(document.getElementById('birthDate') as HTMLInputElement, {
+            fireEvent.change(document.getElementById('profile-birthDate') as HTMLInputElement, {
                 target: { value: '1992-05-15' }
             });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
@@ -210,7 +221,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
             // occupation (profile block) and assert the untouched social /
             // location / contact blocks stay absent.
             renderForm();
-            fireEvent.change(document.getElementById('occupation') as HTMLInputElement, {
+            fireEvent.change(document.getElementById('profile-occupation') as HTMLInputElement, {
                 target: { value: 'Senior Engineer' }
             });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
@@ -229,7 +240,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
 
         it('nests city change inside the location JSONB key', async () => {
             renderForm();
-            const cityInput = document.getElementById('city') as HTMLInputElement;
+            const cityInput = document.getElementById('profile-city') as HTMLInputElement;
             fireEvent.change(cityInput, { target: { value: 'Rosario' } });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
@@ -250,7 +261,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
 
         it('maps province ↔ region when the location block is rebuilt', async () => {
             renderForm();
-            const provinceInput = document.getElementById('province') as HTMLInputElement;
+            const provinceInput = document.getElementById('profile-province') as HTMLInputElement;
             fireEvent.change(provinceInput, { target: { value: 'Santa Fe' } });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
@@ -268,7 +279,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
 
         it('nests social URL change inside the socialNetworks JSONB key', async () => {
             renderForm();
-            const fb = document.getElementById('facebookUrl') as HTMLInputElement;
+            const fb = document.getElementById('profile-facebookUrl') as HTMLInputElement;
             fireEvent.change(fb, { target: { value: 'https://facebook.com/changed' } });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
@@ -286,7 +297,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
 
         it('puts phone changes inside contactInfo.mobilePhone', async () => {
             renderForm();
-            const phoneInput = document.getElementById('phone') as HTMLInputElement;
+            const phoneInput = document.getElementById('profile-phone') as HTMLInputElement;
             fireEvent.change(phoneInput, { target: { value: '+5491100000000' } });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
@@ -303,7 +314,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
 
         it('puts bio/website/occupation inside the profile JSONB key on change', async () => {
             renderForm();
-            const occupation = document.getElementById('occupation') as HTMLInputElement;
+            const occupation = document.getElementById('profile-occupation') as HTMLInputElement;
             fireEvent.change(occupation, { target: { value: 'Senior Engineer' } });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
@@ -322,11 +333,11 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
     describe('validation', () => {
         it('shows an inline error for an invalid social URL', async () => {
             renderForm();
-            const fb = document.getElementById('facebookUrl') as HTMLInputElement;
+            const fb = document.getElementById('profile-facebookUrl') as HTMLInputElement;
             fireEvent.change(fb, { target: { value: 'not-a-url' } });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
-                expect(document.getElementById('facebookUrl-error')).toBeInTheDocument();
+                expect(document.getElementById('profile-facebookUrl-error')).toBeInTheDocument();
             });
             // fetch should NOT have been called — validation failed.
             expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -341,15 +352,15 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
 
         it('clears a field error when the user starts typing again', async () => {
             renderForm();
-            const fb = document.getElementById('facebookUrl') as HTMLInputElement;
+            const fb = document.getElementById('profile-facebookUrl') as HTMLInputElement;
             fireEvent.change(fb, { target: { value: 'not-a-url' } });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
-                expect(document.getElementById('facebookUrl-error')).toBeInTheDocument();
+                expect(document.getElementById('profile-facebookUrl-error')).toBeInTheDocument();
             });
             fireEvent.change(fb, { target: { value: 'https://facebook.com/juan' } });
             await waitFor(() => {
-                expect(document.getElementById('facebookUrl-error')).toBeNull();
+                expect(document.getElementById('profile-facebookUrl-error')).toBeNull();
             });
         });
     });

@@ -5,13 +5,19 @@
  * extended in HOS-166 PR-C with the create CTA and the per-listing state
  * machine — badge, completeness checklist, and publish+pay CTA).
  * HOS-1757 restores per-vertical published usage badges from effective limits.
- * Lists the authenticated VENUE_OWNER's own listings across both verticals
- * (venue + experiences) and deep-links each to its operational editor.
+ * Lists the authenticated owner's own listings of ONE vertical and deep-links
+ * each to its operational editor. HOS-2559 split the page in two lists, one
+ * per area of the sidebar: `?vertical=venue` («Comer y salir») and
+ * `?vertical=experience` («Experiencias»), see
+ * `lib/listing/owner-list-vertical.ts`.
  *
- * Auth: middleware protects /mi-cuenta/* (session required). This page adds a
- * role gate so only venue/experience owners (and staff) reach it.
+ * Auth: middleware protects /mi-cuenta/* (session required). Each list is
+ * gated by its vertical's own-edit permission (`VENUE_EDIT_OWN` /
+ * `EXPERIENCE_EDIT_OWN`) from the EFFECTIVE permissions, never a role. A URL
+ * with no list, or with a list the person cannot open, redirects to the first
+ * list they can; a person with neither goes back to `/mi-cuenta/`.
  *
- * @route     /[lang]/mi-cuenta/comercio/
+ * @route     /[lang]/mi-cuenta/comercio/?vertical=venue|experience
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -31,7 +37,6 @@ import {
     type ListingNoticesIndex
 } from '@/lib/listing/listing-notices';
 import { webLogger as logger } from '@/lib/logger';
-import { hasListingNavAccess } from '@/lib/nav-gating';
 import {
     fetchOwnerListingsWithState,
     isVenueListing,
@@ -40,6 +45,14 @@ import {
     VENUE_VERTICAL
 } from '@/lib/listing/owner-listings';
 import { resolveListingPublishAffordances } from '@/lib/listing/listing-publish-affordance';
+import {
+    filterOwnerListingsByVertical,
+    OWNER_LIST_LABEL_KEYS,
+    OWNER_LIST_VERTICAL_PARAM,
+    ownerListPath,
+    ownerListSectionKey,
+    resolveOwnerListPage
+} from '@/lib/listing/owner-list-vertical';
 import {
     buildListingUsage,
     fetchListingEffectiveSets,
@@ -66,14 +79,21 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-// Role gate: only venue/experience owners (and staff) may manage listings.
-// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-// so a VENUE_OWNER who is ALSO a HOST keeps venue/experience access (AC-1).
-if (!hasListingNavAccess({ roles: user.roles })) {
+// HOS-2559: one list per vertical, gated by that vertical's permission (never a
+// role), so a person with only one of the two verticals reaches only that list.
+const decision = resolveOwnerListPage({
+    requested: Astro.url.searchParams.get(OWNER_LIST_VERTICAL_PARAM),
+    permissions: user.permissions
+});
+if (decision.kind === 'forbidden') {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
+if (decision.kind === 'redirect') {
+    return Astro.redirect(buildUrl({ locale, path: ownerListPath({ vertical: decision.vertical }) }));
+}
+const listVertical = decision.vertical;
 
-const title = t('listing.owner.list.title', 'Mi comercio');
+const title = t(OWNER_LIST_LABEL_KEYS[listVertical]);
 const subtitle = t('listing.owner.list.subtitle', '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
@@ -84,7 +104,10 @@ const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 let listings: readonly OwnerListingSummaryWithState[] = [];
 let listingsLoadFailed = false;
 try {
-    listings = await fetchOwnerListingsWithState({ cookieHeader });
+    listings = filterOwnerListingsByVertical({
+        listings: await fetchOwnerListingsWithState({ cookieHeader }),
+        vertical: listVertical
+    });
 } catch (error) {
     if (!(error instanceof OwnerListingsUnavailableError)) throw error;
     listingsLoadFailed = true;
@@ -206,7 +229,12 @@ const venueStatsUnlockingPlanName =
 const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 ---
 
-<AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
+<AccountLayout
+    locale={locale}
+    title={title}
+    description={subtitle}
+    activeSection={ownerListSectionKey({ vertical: listVertical })}
+>
     <div class="mc-page">
     <div class="mc-header">
         <AccountPageHeader title={title} description={subtitle || undefined} />

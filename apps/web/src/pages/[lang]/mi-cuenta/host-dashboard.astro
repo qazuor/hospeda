@@ -1,35 +1,43 @@
 ---
 /**
  * @file mi-cuenta/host-dashboard.astro
- * @description Host dashboard page — aggregated view of property counts, plan info,
- * unread messages, and quick actions for the authenticated host user.
+ * @description Host dashboard (HOS-2474, D19 «tableros separados, sin duplicación»).
  *
- * Data is fetched client-side by the HostDashboard React island.
- * The island renders a loading skeleton, then hydrates with live data.
+ * Host data only: the `HostDashboard` island draws the properties and unread
+ * OWNER conversations (or the onboarding, or a plan LockedState with catalog
+ * names), and a Section of quick actions follows. The account plan summary is
+ * on the general dashboard and is not repeated here.
  *
- * Auth protection: middleware redirects unauthenticated users. This page
- * is only reachable by users with an active session.
+ * Auth protection: middleware redirects unauthenticated users; the in-page
+ * guard is the safety net. Role gate through the shared `nav-gating`
+ * predicate (HOS-296), so this page and the sidebar never disagree.
  *
  * @route    /[lang]/mi-cuenta/host-dashboard/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { EntitlementKeyEnum } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { buildUrl } from '@/lib/urls';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
+import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
+import { HOST_QUICK_ACTIONS } from '@/lib/account/host-dashboard';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PageHeader } from '@/components/account/ui';
+import { DashboardLinksSection } from '@/components/account/dashboard/DashboardLinksSection';
 import { HostDashboard } from '@/components/host/HostDashboard.client';
+import styles from '@/components/account/dashboard/Dashboard.module.css';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
-const title = t('host.dashboard.pageTitle', 'Panel del anfitrión');
-const description = t('host.dashboard.pageDescription', 'Resumen de tus propiedades y suscripción');
+const title = t('host.dashboard.pageTitle');
+const description = t('host.dashboard.pageDescription');
 
 // Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
 const user = Astro.locals.user;
@@ -41,16 +49,30 @@ if (!user) {
 
 // Role gate: only host-level roles may reach the host dashboard. A plain
 // tourist reaching this URL directly is redirected back to the account home.
-// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-// so this page and the sidebar that links to it can never disagree, and a
-// user who holds HOST alongside other hats still passes.
 if (!hasAccommodationsNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
+
+// HOS-2214: the lock names the catalog plans that carry the dashboard. The catalog
+// reader is server-only, so the names are read here and handed to the island.
+const planNames = planNamesWithEntitlement({
+    result: await fetchPublicPlans({ vertical: 'accommodation' }),
+    entitlement: EntitlementKeyEnum.VIEW_BASIC_STATS
+});
+const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPathForAudience({ audience: 'host' }) });
 ---
 
-<AccountLayout locale={locale} title={title} description={description} activeSection="host-dashboard">
-    <AccountPageHeader title={title} description={description} />
+<AccountLayout locale={locale} title={title} description={description} activeSection="host-dashboard" template="dashboard">
+    <div class={styles.page}>
+        <PageHeader locale={locale} title={title} description={description} helpId="section:host.dashboard" />
 
-    <HostDashboard client:load locale={locale} />
+        <HostDashboard client:load locale={locale} planNames={planNames} plansHref={plansHref} />
+
+        <DashboardLinksSection
+            locale={locale}
+            title={t('host.dashboard.widgets.quickActions')}
+            helpId="section:host.dashboard"
+            rows={HOST_QUICK_ACTIONS}
+        />
+    </div>
 </AccountLayout>

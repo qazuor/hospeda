@@ -10,12 +10,14 @@ import type { AccommodationPublic } from '@repo/schemas';
 import { render, screen, waitFor } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BookmarkItem } from '../../src/components/account/BookmarkGrid';
-import { BookmarkGrid } from '../../src/components/account/BookmarkGrid';
+import { FavoriteBookmarkCard } from '../../src/components/account/favorites/FavoriteBookmarkCard';
+import type { BookmarkItem } from '../../src/components/account/favorites/favorites-api';
 import { RecommendationsFeed } from '../../src/components/account/RecommendationsFeed.client';
 import { ResultCard } from '../../src/components/ai-search/ResultCard';
 
-vi.mock('../../src/lib/i18n', () => ({
+// Partial mock: the kit pieces of the favorites card read `createT`.
+vi.mock('../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../src/lib/i18n')>()),
     createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
 }));
 
@@ -86,7 +88,7 @@ describe('HOS-1094 tourist grids transform the card image', () => {
         expect(screen.queryByText('Sin imagen')).toBeNull();
     });
 
-    it('BookmarkGrid renders the card-preset URL for the enriched entityImage', () => {
+    it('the favorites card renders the card-preset URL for the enriched entityImage', () => {
         const bookmark: BookmarkItem = {
             id: 'b1',
             entityId: 'a1',
@@ -94,43 +96,21 @@ describe('HOS-1094 tourist grids transform the card image', () => {
             entityName: 'Casa',
             entitySlug: 'casa',
             entityImage: CLD_ORIGINAL
-        } as BookmarkItem;
+        };
         const noop = () => undefined;
         const html = renderToStaticMarkup(
-            <BookmarkGrid
-                bookmarks={[bookmark]}
-                total={1}
-                page={1}
-                totalPages={1}
-                removingIds={new Set()}
-                locale="es"
-                pathSegment="alojamientos"
-                cardTypeLabel="Alojamiento"
-                removeLabel="x"
-                removingLabel="x"
-                removeBtnLabel="x"
-                noImageLabel="x"
-                untitledLabel="x"
-                listAriaLabel="x"
-                paginationAriaLabel="x"
-                prevLabel="x"
-                nextLabel="x"
-                prevPageLabel="x"
-                nextPageLabel="x"
-                apiBase="http://localhost:3001"
-                notePlaceholder="x"
-                noteSaveLabel="x"
-                noteCancelLabel="x"
-                noteTextareaLabel="x"
-                noteEditButtonLabel="x"
-                noteSaveErrorMessage="x"
-                moveBtnLabel="x"
-                moveBtnAriaLabel="x"
-                onRemove={noop}
-                onPageChange={noop}
-                onMove={noop}
-                onNoteUpdated={noop}
-            />
+            <ul>
+                <FavoriteBookmarkCard
+                    bookmark={bookmark}
+                    locale="es"
+                    apiBase="http://localhost:3001"
+                    removing={false}
+                    onMove={noop}
+                    onRemove={noop}
+                    removeLabel="x"
+                    removeAriaLabel="x"
+                />
+            </ul>
         );
         expect(imgSrc(html)).toBe(CLD_TRANSFORMED);
     });

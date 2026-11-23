@@ -36,6 +36,7 @@ import {
 } from '@/lib/editor/listing-editor-registry';
 import { isListingEditorVertical } from '@/lib/editor/listing-editor-sections';
 import type { SupportedLocale } from '@/lib/i18n';
+import { ownerListPath } from '@/lib/listing/owner-list-vertical';
 import {
     fetchOwnerListingDetail,
     type ListingDetail,
@@ -152,7 +153,7 @@ export async function resolveListingEditorPage({
             error: buildListingEditorErrorResponse({
                 locale,
                 retryHref: astro.url.pathname,
-                backHref: buildUrl({ locale, path: 'mi-cuenta/comercio' })
+                backHref: buildUrl({ locale, path: ownerListPath({ vertical }) })
             })
         };
     }

@@ -548,11 +548,11 @@ function collectFrontmatterBindings(frontmatter: string): Map<string, string> {
 /**
  * Finds every component hydrated by a `client:*` directive in an `.astro` file.
  *
- * `*.client.tsx` is a NAMING CONVENTION, not the hydration surface: three
+ * `*.client.tsx` is a NAMING CONVENTION, not the hydration surface: some
  * islands here are hydrated from modules without the suffix
- * (`AiChatWidget.tsx`, `PriceAlertButton.tsx`, `EditableNote.tsx`), plus
+ * (`AiChatWidget.tsx`, `PriceAlertButton.tsx`, the account kit), plus
  * `FeedbackForm` from the bare `@repo/feedback`. A filename sweep never scans
- * any of them, and "outside the sweep" is reason enough — none of the three
+ * any of them, and "outside the sweep" is reason enough — none of them
  * imports `@repo/billing` today, directly or transitively.
  *
  * Each directive is attributed to the nearest preceding `<Capitalized` tag with

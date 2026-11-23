@@ -15,9 +15,9 @@
  *
  *   2. CROSS-OWNER BLOCKED — a logged-in VENUE_OWNER (Julieta) navigating
  *      to another owner's (Rodrigo's) venue CARTA is redirected back to
- *      /es/mi-cuenta/comercio/ (her own listing index). The gate lives in:
+ *      /es/mi-cuenta/comercio/?vertical=venue (her own venue list, HOS-2559). The gate lives in:
  *        apps/web/src/lib/editor/resolve-listing-editor-page.ts (the shared front door)
- *        `if (!ownsListing && !isStaff) → redirect('mi-cuenta/comercio')`
+ *        `if (!ownsListing && !isStaff) → redirect(ownerListPath({ vertical }))`
  *
  * Actors:
  *   - e2e-tourist@local.test          (role USER, seeded by venues.seed.ts Step 2b)

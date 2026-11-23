@@ -31,17 +31,8 @@ describe('owner thread page inquiry header', () => {
         expect(SOURCE).toContain('guests: conversation.guests');
     });
 
-    it('renders the block only when a summary exists', () => {
-        expect(SOURCE).toContain('{inquirySummary && (');
-        expect(SOURCE).toContain('data-inquiry-summary');
-    });
-
-    it('places the summary in the header, above the message list', () => {
-        const header = SOURCE.indexOf('conv-thread__header"');
-        const summary = SOURCE.indexOf('data-inquiry-summary');
-        const messages = SOURCE.indexOf('conv-thread__messages"');
-        expect(header).toBeGreaterThan(-1);
-        expect(summary).toBeGreaterThan(header);
-        expect(summary).toBeLessThan(messages);
+    it('shows the summary in the page header description only when it exists', () => {
+        expect(SOURCE).toContain('if (inquirySummary) headerDescription =');
+        expect(SOURCE).toContain('description={headerDescription}');
     });
 });

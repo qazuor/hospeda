@@ -38,10 +38,11 @@ vi.mock('../../../src/components/account/ProfileEditForm.module.css', () => ({
 // which is what stops a size message shipping with a raw `{{maxSize}}` in it
 // (HOS-322). The previous stub returned the inline fallback that HOS-616
 // removed from these call sites.
-vi.mock('../../../src/lib/i18n', async () => {
+vi.mock('../../../src/lib/i18n', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/lib/i18n')>();
     const { tFromCatalog } = await import('../../helpers/i18n-catalog');
     const translations = { t: tFromCatalog } as const;
-    return { createTranslations: () => translations };
+    return { ...actual, createTranslations: () => translations };
 });
 
 vi.mock('../../../src/lib/avatar-utils', () => ({

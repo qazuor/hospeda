@@ -134,6 +134,8 @@
         "groupTourist": "Área do turista",
         "groupHost": "Área do anfitrião",
         "groupListings": "Área comercial",
+        "groupVenues": "Comer e sair",
+        "groupExperiences": "Experiências",
         "groupEditorial": "Área editorial",
         "groupProvider": "Área do fornecedor",
         "groupProfile": "Meu perfil",
@@ -152,8 +154,8 @@
         "editProfile": "Editar perfil",
         "subscription": "Assinatura",
         "preferences": "Preferências",
-        "newsletter": "Newsletter",
-        "whatsNew": "O que há de novo",
+        "newsletter": "Newsletter por e-mail",
+        "whatsNew": "Novidades do Hospeda",
         "aiAssistants": "Assistentes de IA",
         "favorites": "Favoritos",
         "searchHistory": "Histórico de buscas",
@@ -167,10 +169,14 @@
         "benefitUsages": "Usos do benefício",
         "myPosts": "Minhas publicações",
         "myEvents": "Meus eventos",
+        "myVenues": "Meus locais",
+        "myExperiences": "Minhas experiências",
         "provider": "Minha ficha de fornecedor",
         "repeatTour": "Repetir tour",
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
-        "help": "Ajuda"
+        "help": "Ajuda",
+        "venueDashboard": "Painel de locais",
+        "experienceDashboard": "Painel de experiências"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -334,7 +340,8 @@
             "appearance": "Aparência",
             "notifications": "Notificações",
             "onboarding": "Onboarding",
-            "newsletter": "Boletim de novidades"
+            "newsletter": "Newsletter por e-mail",
+            "searchHistory": "Histórico de buscas"
         },
         "onboarding": {
             "restartTour": "Repetir tour de boas-vindas",
@@ -367,7 +374,7 @@
             "description": "Idioma de la plataforma web"
         },
         "newsletter": {
-            "label": "Receber newsletter",
+            "label": "Receber a newsletter por e-mail",
             "description": "Recibir novedades, ofertas y destinos destacados"
         },
         "errors": {
@@ -382,6 +389,10 @@
             "title": "Resumo semanal de perguntas à IA",
             "label": "Receber o resumo semanal",
             "description": "Um e-mail às segundas com as perguntas que o assistente dos seus anúncios não conseguiu responder. Se não houver nenhuma, não enviamos."
+        },
+        "changeInPreferences": "Alterar em Preferências",
+        "searchHistory": {
+            "planFallback": "Plano superior"
         }
     },
     "aiAssistants": {
@@ -927,7 +938,14 @@
                 "message_other": "As coleções estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
                 "messageNoPlans": "As coleções não estão incluídas no seu plano atual. Atualize seu plano para acessar.",
                 "cta": "Ver planos"
-            }
+            },
+            "lock": {
+                "plan": "Seu plano não inclui coleções.",
+                "description": "Agrupe seus favoritos por viagem ou tema e volte a eles quando quiser."
+            },
+            "loadError": "Não conseguimos carregar suas coleções",
+            "emptyDescription": "Crie uma coleção para agrupar seus favoritos por viagem ou tema.",
+            "detailSectionTitle": "Favoritos desta coleção"
         },
         "filter": {
             "all": "Todos",
@@ -951,7 +969,9 @@
             "cancel": "Cancelar",
             "placeholder": "Adicione uma nota pessoal...",
             "save": "Salvar nota",
-            "saved": "Nota salva"
+            "saved": "Nota salva",
+            "label": "Nota pessoal",
+            "edit": "Editar a nota"
         },
         "removeBtn": "Remover",
         "removeLabel": "Remover dos favoritos",
@@ -1048,7 +1068,9 @@
                 "recommendations": "Sugestões",
                 "recommendationsDesc": "Acomodações escolhidas para você",
                 "myListingDesc": "Gerencie sua ficha, suas fotos e sua assinatura",
-                "myMessagesListingDesc": "Consultas que você recebe sobre seu comércio"
+                "myMessagesListingDesc": "Consultas que você recebe sobre seu comércio",
+                "venueDashboardDesc": "Seus locais e as visitas deles",
+                "experienceDashboardDesc": "Suas experiências e as visitas delas"
             },
             "stats": {
                 "favorites": "Meus favoritos",
@@ -1075,6 +1097,8 @@
                 "viewAllSubscriptions": "Ver todas as assinaturas",
                 "multipleSubscriptions_one": "{{count}} assinatura ativa",
                 "multipleSubscriptions_other": "{{count}} assinaturas ativas",
+                "subscriptionsCount_one": "{{count}} assinatura",
+                "subscriptionsCount_other": "{{count}} assinaturas",
                 "properties": "Meus imóveis",
                 "propertiesDesc": "Acomodações publicadas",
                 "messages": "Mensagens não lidas",
@@ -1090,11 +1114,15 @@
                 "viewReviews": "Ver minhas avaliações",
                 "viewSubscription": "Ver minha assinatura"
             },
-            "sectionsLabel": "Seções"
+            "sectionsLabel": "Seções",
+            "linksTitle": "Atalhos"
         },
         "editProfile": {
             "title": "Editar perfil",
             "description": "Atualize suas informações pessoais e preferencias de conta.",
+            "identitySection": "Sua identidade",
+            "contactSection": "Contato e localização",
+            "aboutSection": "Sobre você",
             "avatarSection": "Foto do perfil",
             "personalSection": "Informações pessoais",
             "extrasSection": "Más sobre vos",
@@ -1144,7 +1172,7 @@
             }
         },
         "whatsNew": {
-            "title": "Novidades",
+            "title": "Novidades do Hospeda",
             "desc": "Novidades e atualizações da plataforma"
         },
         "searchHistory": {
@@ -1165,7 +1193,7 @@
         }
     },
     "newsletter": {
-        "title": "Newsletter",
+        "title": "Newsletter por e-mail",
         "loading": "Carregando preferências…",
         "statusLabel": "Status",
         "statusActive": "Ativo",
@@ -1778,7 +1806,8 @@
         "pageSubtitle": "Gerencie sua presença como parceiro da Hospeda",
         "empty": {
             "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em \"Seja parceiro\" e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
-            "cta": "Ir para Seja parceiro"
+            "cta": "Ir para Seja parceiro",
+            "title": "Sua ficha de parceiro"
         },
         "status": {
             "empty": "Sua candidatura foi aprovada. Preencha seu logo e seus textos para que um admin os revise. Você ainda não está publicado.",
@@ -1826,13 +1855,15 @@
                 "linkedIn": "LinkedIn",
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
-            }
+            },
+            "sectionTitle": "Dados da sua ficha"
         },
         "presence": {
             "hidden": "Enquanto isso, sua página aparece como inexistente para o público.",
             "notDeleted": "Nada foi apagado: seu perfil e seus dados continuam salvos.",
             "returnsAlone": "Sua presença volta sozinha quando você recuperar o plano que a concede.",
-            "moderated": "Um administrador moderou sua presença. Mesmo com o plano, ela não aparecerá até que a moderação seja suspensa."
+            "moderated": "Um administrador moderou sua presença. Mesmo com o plano, ela não aparecerá até que a moderação seja suspensa.",
+            "title": "Sua presença está oculta"
         },
         "installment": {
             "title": "Sua parcela a pagar",
@@ -1841,6 +1872,17 @@
             "amountPending": "A equipe vai confirmar o valor junto com os dados para a transferência.",
             "dueOn": "Vence em {{date}}",
             "howToPay": "O pagamento é por transferência bancária. A equipe da Hospeda vai te enviar por e-mail os dados para a transferência. Quando registrarmos o pagamento, sua assinatura fica em dia."
+        },
+        "nextAction": {
+            "title": "Próximo passo"
+        },
+        "statusPill": {
+            "revoked": "Removida",
+            "active": "Ativa",
+            "approved": "Aprovada",
+            "underReview": "Em revisão",
+            "rejected": "Com alterações pedidas",
+            "draft": "Rascunho"
         }
     },
     "partnerStats": {
@@ -2082,6 +2124,73 @@
         "breadcrumbs": "Caminho de navegação",
         "gallery": {
             "title": "Kit de componentes"
+        },
+        "chrome": {
+            "siteNav": "Navegação do site",
+            "helpCenter": "Central de ajuda",
+            "helpGroup": "Ajuda",
+            "whatsNew": "O que há de novo",
+            "whatsNewUnread_one": "O que há de novo, {{count}} novidade não lida",
+            "whatsNewUnread_other": "O que há de novo, {{count}} novidades não lidas",
+            "publish": "Publique",
+            "footerNav": "Links do site",
+            "legalNav": "Links legais"
+        },
+        "stat": {
+            "unavailable": "Dado indisponível"
+        },
+        "thread": {
+            "label": "Mensagens da conversa",
+            "you": "Você",
+            "sender": {
+                "guest": "Hóspede",
+                "owner": "Anfitrião",
+                "system": "Mensagem do sistema"
+            },
+            "sending": "Enviando mensagem…",
+            "failed": "Não foi possível enviar",
+            "retry": "Tentar novamente"
+        },
+        "composer": {
+            "label": "Sua mensagem",
+            "placeholder": "Escreva sua mensagem…",
+            "send": "Enviar mensagem"
+        },
+        "entityCard": {
+            "noImage": "Sem imagem"
         }
+    },
+    "ownerDashboard": {
+        "venue": {
+            "title": "Painel de locais",
+            "description": "Como estão seus locais na Hospeda.",
+            "listingsLabel": "Seus locais",
+            "listingsLink": "Ver meus locais",
+            "listingsLinkDesc": "Edite, publique ou arquive seus anúncios",
+            "newListing": "Publicar um local",
+            "onboardingSection": "Primeiros passos",
+            "onboardingTitle": "Você ainda não publicou nenhum local",
+            "onboardingDescription": "Cadastre seu primeiro local para que os viajantes o encontrem.",
+            "trafficLockedFeature": "Visitas aos seus locais"
+        },
+        "experience": {
+            "title": "Painel de experiências",
+            "description": "Como estão suas experiências na Hospeda.",
+            "listingsLabel": "Suas experiências",
+            "listingsLink": "Ver minhas experiências",
+            "listingsLinkDesc": "Edite, publique ou arquive seus anúncios",
+            "newListing": "Publicar uma experiência",
+            "onboardingSection": "Primeiros passos",
+            "onboardingTitle": "Você ainda não publicou nenhuma experiência",
+            "onboardingDescription": "Cadastre sua primeira experiência para que os viajantes a encontrem.",
+            "trafficLockedFeature": "Visitas às suas experiências"
+        },
+        "listingsHint": "{{published}} publicados · {{draft}} rascunhos",
+        "manage": "Gerenciar",
+        "quickActions": "Ações rápidas",
+        "trafficLabel": "Visualizações",
+        "trafficHint_one": "nos últimos {{days}} dias · {{unique}} pessoa",
+        "trafficHint_other": "nos últimos {{days}} dias · {{unique}} pessoas",
+        "trafficLockedDescription": "As visitas aos seus anúncios vêm com estes planos."
     }
 }

@@ -81,7 +81,10 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
         async () =>
             ({
                 ...ACTOR,
-                permissions: [PermissionEnum.CONVERSATION_VIEW_OWN]
+                permissions: [
+                    PermissionEnum.ACCOMMODATION_CREATE,
+                    PermissionEnum.CONVERSATION_VIEW_OWN
+                ]
             }) as unknown as Actor
     )
 }));
