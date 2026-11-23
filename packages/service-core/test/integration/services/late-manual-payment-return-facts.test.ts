@@ -28,6 +28,7 @@ import {
     seedPlanChangePublications,
     seedPlanChangeTargetWithLimit
 } from './support/plan-change-fixtures.js';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 
 const now = new Date('2026-10-10T12:00:00.000Z');
 const extraSubscriptions: string[] = [];
@@ -85,7 +86,7 @@ async function seedVersion(input: {
             .values({
                 planId: row.plan_id,
                 vertical: row.vertical,
-                rank: 1_600_000_000 + Math.floor(Math.random() * 100_000_000),
+                rank: nextPlanVersionRank(),
                 sellable: false,
                 current: false,
                 trialDays: 0,

@@ -20,6 +20,7 @@ import { expireManualGraces } from '../../../src/services/billing/subscription/e
 import { registerLateManualPayment } from '../../../src/services/billing/subscription/register-late-manual-payment.service';
 import { registerManualPayment } from '../../../src/services/billing/subscription/register-manual-payment.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 
 const now = new Date('2026-10-20T12:00:00.000Z');
 const periodStart = new Date('2026-10-18T12:00:00.000Z');
@@ -68,7 +69,7 @@ async function seed(
         .values({
             planId: plan.id,
             vertical: 'partner',
-            rank: Math.floor(Math.random() * 100000000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

@@ -2,6 +2,7 @@ import { billingOptions, LIVE_SUBSCRIPTION_STATUSES, subscriptions, users } from
 import { afterAll, describe, expect, it } from 'vitest';
 import { countAnchoredCustomersFromSubscriptions } from '../../../src/services/plan-catalog/plan-publication.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 
 afterAll(closeServiceTestPool);
 
@@ -25,14 +26,14 @@ describe('HOS-1653 countAnchoredCustomersFromSubscriptions', () => {
             await pool.query<{ id: string }>(
                 `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause)
                  VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id`,
-                [planId, Math.floor(Math.random() * 100000000) + 1000]
+                [planId, nextPlanVersionRank()]
             )
         ).rows[0]?.id;
         const otherVersionId = (
             await pool.query<{ id: string }>(
                 `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause)
                  VALUES ($1, 'accommodation', $2, true, false, 0, false) RETURNING id`,
-                [planId, Math.floor(Math.random() * 100000000) + 100000000]
+                [planId, nextPlanVersionRank()]
             )
         ).rows[0]?.id;
         if (!versionId || !otherVersionId) throw new Error('No version');

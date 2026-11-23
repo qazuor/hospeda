@@ -1,6 +1,7 @@
 import { eq, providerLinks, subscriptionScheduledChanges, subscriptions } from '@repo/db';
 import type { FakePaymentProvider } from '@repo/payments/fake';
 import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 
 /** Links a local row to a real but unapproved fake authorization for state TEST:B11:7. */
 export async function attachPendingFakeAuthorization(input: {
@@ -42,7 +43,7 @@ export async function seedDifferentScheduledAmount(input: {
     if (!plan) throw new Error('Anchored plan version was not found');
     const targetVersion = await getServiceTestPool().query<{ id: string }>(
         'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, true, false, 0, false) RETURNING id',
-        [plan.plan_id, plan.vertical, Math.floor(Math.random() * 100000000) + 1]
+        [plan.plan_id, plan.vertical, nextPlanVersionRank()]
     );
     const targetPlanVersionId = targetVersion.rows[0]?.id;
     if (!targetPlanVersionId) throw new Error('Could not create destination version');

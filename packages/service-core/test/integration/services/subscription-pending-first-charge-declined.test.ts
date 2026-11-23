@@ -15,6 +15,7 @@ import { recordChargeFact } from '../../../src/services/billing/payment/record-c
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import { noTouristVip } from './support/tourist-vip';
 
 afterAll(closeServiceTestPool);
@@ -48,7 +49,7 @@ async function setup({
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
             "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, 'accommodation', $2, true, true, 0, false, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 1_000_000_000)]
+            [planId, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     if (!versionId) throw new Error('Missing version');

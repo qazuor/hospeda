@@ -18,6 +18,7 @@ import {
     previewManualUnpaidDeclaration
 } from '../../../src/services/billing/subscription/declare-manual-unpaid.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 
 const now = new Date('2026-09-04T12:00:00.000Z');
 const graceStartedAt = new Date('2026-09-03T12:00:00.000Z');
@@ -63,7 +64,7 @@ async function seed(
         .values({
             planId: plan.id,
             vertical: 'partner',
-            rank: Math.floor(Math.random() * 100000000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

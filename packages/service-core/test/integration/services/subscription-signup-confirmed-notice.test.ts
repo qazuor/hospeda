@@ -20,6 +20,7 @@ import { expireAuthorizationWindows } from '../../../src/services/billing/subscr
 import { enqueueSignupConfirmedNotice } from '../../../src/services/billing/subscription/signup-confirmed-notice.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import { noTouristVip } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);
@@ -82,7 +83,7 @@ async function startPending(
         .values({
             planId: plan.id,
             vertical,
-            rank: Math.floor(Math.random() * 100000000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

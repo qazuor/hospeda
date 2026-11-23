@@ -9,6 +9,7 @@ import {
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import {
     ensureBillingDeadlineVersion1,
     seedPredecessor,
@@ -479,7 +480,7 @@ describe('HOS-2218: replace unapplied successor', () => {
         const alternativeVersionId = (
             await getServiceTestPool().query<{ id: string }>(
                 'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, true, true, 0, false) RETURNING id',
-                [alternativePlanId, 'accommodation', Math.floor(Math.random() * 100000000) + 1]
+                [alternativePlanId, 'accommodation', nextPlanVersionRank()]
             )
         ).rows[0]?.id;
         if (!alternativeVersionId) throw new Error('Alternative plan version missing');

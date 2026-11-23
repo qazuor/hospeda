@@ -22,6 +22,7 @@ import { expireAuthorizationWindows } from '../../../src/services/billing/subscr
 import { startManualSubscription } from '../../../src/services/billing/subscription/start-manual-subscription.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import { noTouristVip } from './support/tourist-vip';
 
 const openedAt = new Date('2026-10-08T20:00:00.000Z');
@@ -53,7 +54,7 @@ async function seedChoice(vertical: 'partner' | 'accommodation' = 'partner') {
         .values({
             planId: plan.id,
             vertical,
-            rank: Math.floor(Math.random() * 100000000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

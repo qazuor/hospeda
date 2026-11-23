@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
 import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import {
     ensureBillingDeadlineVersion1,
     seedPredecessor,
@@ -239,7 +240,7 @@ describe('TEST:B3:39 S1 succession branch refusals', () => {
         const versionId = (
             await getServiceTestPool().query<{ id: string }>(
                 "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, 'venue', $2, true, true, 0, false) RETURNING id",
-                [planId, Math.floor(Math.random() * 100000000) + 1]
+                [planId, nextPlanVersionRank()]
             )
         ).rows[0]?.id;
         const optionId = (

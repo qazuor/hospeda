@@ -10,6 +10,7 @@ import {
 } from '../../../src/services/billing/subscription/expire-authorization-windows.service.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import { noTouristVip } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);
@@ -75,7 +76,7 @@ async function startPending(provider: PaymentProvider) {
         .values({
             planId: plan.id,
             vertical: 'accommodation',
-            rank: Math.floor(Math.random() * 1e8) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

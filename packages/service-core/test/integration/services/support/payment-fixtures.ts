@@ -11,6 +11,7 @@ import type {
 import { activateSubscription } from '../../../../src/services/billing/subscription/activate-subscription.service.js';
 import { startSubscription } from '../../../../src/services/billing/subscription/start-subscription.service.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 import { noTouristVip } from './tourist-vip.js';
 
 export const billingDeadlineValues = {
@@ -77,7 +78,7 @@ export async function paymentFixture({
         )
     ).rows[0]?.id;
     if (!planId) throw new Error('payment fixture plan missing');
-    const rank = Math.floor(Math.random() * 1_000_000_000);
+    const rank = nextPlanVersionRank();
     const versionQuery =
         versionGraceDays === undefined
             ? await getServiceTestPool().query<{ id: string }>(

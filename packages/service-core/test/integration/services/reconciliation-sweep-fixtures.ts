@@ -18,6 +18,7 @@ import {
     recordProviderCancellationDecided
 } from '../../../src/services/billing/reconciliation/provider-cancellation-decision.js';
 import { getServiceTestDb, getServiceTestPool } from './helpers.js';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 
 const seededIds = new Set<string>();
 export function resetSeededReconciliationInventory(): void {
@@ -144,7 +145,7 @@ async function anchors(
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, false, true, 0, false) RETURNING id',
-            [planId, Math.floor(Math.random() * 100000000) + 1, vertical]
+            [planId, nextPlanVersionRank(), vertical]
         )
     ).rows[0]?.id;
     if (!versionId) throw new Error('No plan version was seeded');

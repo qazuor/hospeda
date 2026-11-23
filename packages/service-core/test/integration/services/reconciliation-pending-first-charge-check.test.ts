@@ -24,6 +24,7 @@ import {
     getServiceTestPool,
     isServiceTestDbAvailable
 } from './helpers.js';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import { noTouristVip } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);
@@ -58,7 +59,7 @@ async function setup({
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
             "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, 'accommodation', $2, true, true, 0, false, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 1_000_000_000)]
+            [planId, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     if (!versionId) throw new Error('Missing version');

@@ -17,6 +17,7 @@ import {
     startSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import {
     seededSubscriptionIds,
     withSeededSubscriptionSweep
@@ -59,7 +60,7 @@ async function seedChoice(userId: string, vertical: 'accommodation' | 'venue') {
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, $2, $3, true, true, 0, false, false) RETURNING id',
-            [planId, vertical, Math.floor(Math.random() * 1_000_000_000)]
+            [planId, vertical, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     if (!versionId) throw new Error(`missing ${vertical} plan version`);

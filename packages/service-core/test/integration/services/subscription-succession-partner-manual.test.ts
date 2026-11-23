@@ -3,6 +3,7 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import { noTouristVip } from './support/tourist-vip';
 
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
@@ -36,7 +37,7 @@ describe('TEST:1739:3 succession rejects manual-only Partner plans', () => {
             .values({
                 planId: plan.id,
                 vertical: 'partner',
-                rank: Math.floor(Math.random() * 100000000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,

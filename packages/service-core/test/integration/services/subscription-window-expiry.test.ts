@@ -23,6 +23,7 @@ import {
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { namespaceFake } from './support/payment-provider';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 import {
     seededSubscriptionIds,
     withSeededInheritedTouristVipSweep,
@@ -95,7 +96,7 @@ async function seedChoice(inheritsTouristVip = false) {
         await getServiceTestPool().query<{ id: string }>(
             `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip)
          VALUES ($1, 'accommodation', $2, true, true, 0, false, $3) RETURNING id`,
-            [planId, Math.floor(Math.random() * 100000000) + 1000, inheritsTouristVip]
+            [planId, nextPlanVersionRank(), inheritsTouristVip]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('No version');
@@ -472,7 +473,7 @@ describe('TEST:B3:37 inherited Tourist VIP at S3', () => {
             .values({
                 planId: vipPlan[0]!.id,
                 vertical: 'tourist',
-                rank: Math.floor(Math.random() * 100000000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,
@@ -557,7 +558,7 @@ describe('TEST:B3:28 inherited Tourist VIP at S2 from expiry', () => {
             .values({
                 planId: vipPlan!.id,
                 vertical: 'tourist',
-                rank: Math.floor(Math.random() * 100000000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,

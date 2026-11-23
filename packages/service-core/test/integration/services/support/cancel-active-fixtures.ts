@@ -16,6 +16,7 @@ import {
 import type { FakePaymentProvider } from '@repo/payments/fake';
 import type { ComplementPolicyPorts } from '../../../../src/services/billing/subscription/complement-ports.js';
 import { getServiceTestDb } from '../helpers.js';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 
 const trackedUsers: string[] = [];
 const trackedSubscriptions: string[] = [];
@@ -109,7 +110,7 @@ export async function seedCancelActive(input: {
             .values({
                 planId: plan.id,
                 vertical: 'accommodation',
-                rank: Math.floor(Math.random() * 1e9) + 1,
+                rank: nextPlanVersionRank(),
                 sellable: false,
                 current: true,
                 trialDays: 0,

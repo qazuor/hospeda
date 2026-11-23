@@ -14,6 +14,7 @@ import {
 import type { BillingDeadlineValues } from '@repo/schemas';
 import type { HangablePayment } from '../../../../src/services/billing/reconciliation/reconciliation-mark-payments.port.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers.js';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 
 /** Fixed clock shared by the mark-payment suites (TEST:B5:19, TEST:B5:20). */
 export const markPaymentClock = { now: () => new Date('2026-10-10T12:00:00.000Z') };
@@ -69,7 +70,7 @@ export async function markPaymentFixture(): Promise<MarkPaymentFixture> {
     const versionId = (
         await pool.query<{ id: string }>(
             "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 1e8) + 1]
+            [planId, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     const optionId = (

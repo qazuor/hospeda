@@ -5,6 +5,7 @@ import { type BillingDeadlineValues, PermissionEnum } from '@repo/schemas';
 import { startSubscription } from '../../../../src/services/billing/subscription/start-subscription.service.js';
 import { getServiceTestDb } from '../helpers.js';
 import { namespaceFake } from './payment-provider.js';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 import { noTouristVip } from './tourist-vip.js';
 
 const values = {
@@ -54,7 +55,7 @@ export async function seedCyclePriceVersion(graceDays = 10) {
         .values({
             planId: plan.id,
             vertical: 'accommodation',
-            rank: Math.floor(Math.random() * 1_000_000_000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             graceDays,

@@ -32,6 +32,7 @@ import {
 } from './support/coverage-fixtures.js';
 import { graceWithFailedCycle } from './support/grace-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import { nextPlanVersionRank } from './support/plan-version-rank';
 
 afterAll(closeServiceTestPool);
 
@@ -231,7 +232,7 @@ async function seedInheritingVenueTitle(userId: string) {
         .values({
             planId: plan.id,
             vertical: 'venue',
-            rank: Math.floor(Math.random() * 1_000_000_000),
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

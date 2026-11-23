@@ -16,6 +16,7 @@ import { createBillingCoverage } from '../../../../src/services/billing/coverage
 import { createCoverageNoticeRegistry } from '../../../../src/services/billing/coverage/coverage-notice-registry';
 import { creditedPaymentsFromLedger } from '../../../../src/services/billing/payment/payment-ledger';
 import { getServiceTestDb, getServiceTestPool } from '../helpers';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 
 /** What the consumer saw when the notice reached it. */
 export interface ObservedNotice {
@@ -181,7 +182,7 @@ export async function seedCensusChoice(
         await getServiceTestPool().query<{ id: string }>(
             `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip)
              VALUES ($1, $2, $3, false, false, 0, false, false) RETURNING id`,
-            [planId, vertical, Math.floor(Math.random() * 1_000_000_000) + 1000]
+            [planId, vertical, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('census plan version missing');
