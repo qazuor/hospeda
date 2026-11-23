@@ -163,7 +163,8 @@ describe('HOS-2101 — the AI questions page', () => {
                 id: 'aiQuestions',
                 slug: 'preguntas-ia',
                 group: 'content',
-                labelKey: 'listing.owner.editor.sectionNav.aiQuestions'
+                labelKey: 'listing.owner.editor.sectionNav.aiQuestions',
+                saveModel: 'auto'
             });
         }
     });
