@@ -29,7 +29,10 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './SearchHistoryList.module.css';
-import { SearchHistoryEntries } from './search-history/SearchHistoryEntries';
+import {
+    SearchHistoryEntries,
+    type SearchHistoryEntry
+} from './search-history/SearchHistoryEntries';
 import {
     Button,
     EmptyState,
@@ -231,7 +234,7 @@ export function SearchHistoryList({
      * dialog runs the request and stays open with a retry when it fails.
      */
     const requestDelete = useCallback(
-        async (entry: SearchHistoryApiItem) => {
+        async (entry: SearchHistoryEntry) => {
             await askConfirmation({
                 title: t('account.searchHistory.deleteConfirmTitle'),
                 description: t('account.searchHistory.deleteConfirmBody', undefined, {
