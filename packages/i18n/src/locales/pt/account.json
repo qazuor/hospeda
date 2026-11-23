@@ -2400,7 +2400,11 @@
             "mapLoading": "Carregando o mapa…",
             "touchToActivate": "Toque para mover o pin",
             "pinHint": "Arraste o pin ou toque no mapa para ajustar o ponto exato.",
-            "noPinHint": "Ainda não há pin. Toque no mapa onde fica o lugar para marcá-lo.",
+            "noPinNotice": {
+                "title": "Você ainda não marcou o lugar no mapa",
+                "body": "Sem o pino, sua ficha não mostra no mapa onde fica. Toque no mapa ou arraste o pino até o ponto exato.",
+                "action": "Ir para o mapa"
+            },
             "coordinates": "Coordenadas",
             "latitude": "Latitude",
             "longitude": "Longitude"

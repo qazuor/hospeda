@@ -20,7 +20,7 @@
  * @module components/account/editor-fields/EditorMapPin
  */
 
-import { lazy, Suspense, useState } from 'react';
+import { lazy, type Ref, Suspense, useState } from 'react';
 import { Field } from '@/components/account/ui/Field';
 import { TextInput } from '@/components/account/ui/TextInput';
 import { buildFieldId } from '@/lib/forms/build-field-id';
@@ -61,6 +61,11 @@ export interface EditorMapPinProps {
     readonly mapLabel: string;
     /** Locks the pin and the inputs (a plan that does not grant the map). */
     readonly disabled?: boolean;
+    /**
+     * The map frame, so the section's «no pin» notice can scroll to it and
+     * focus it ({@link focusEditorMap}).
+     */
+    readonly frameRef?: Ref<HTMLDivElement>;
 }
 
 /** Props of the internal {@link CoordinateInput}. */
@@ -85,6 +90,24 @@ export function parseMapCoordinate({ value }: { readonly value: string }): numbe
     if (trimmed.length === 0) return null;
     const parsed = Number(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
+}
+
+/**
+ * Scrolls the map frame into view and focuses what places the pin there: the
+ * touch activation overlay when it covers the map, else the Leaflet map itself,
+ * else the frame.
+ *
+ * @param params - The map `frame` (null while not mounted: then nothing happens).
+ * @returns Nothing.
+ */
+export function focusEditorMap({ frame }: { readonly frame: HTMLElement | null }): void {
+    if (!frame) return;
+    frame.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const target =
+        frame.querySelector<HTMLElement>('button') ??
+        frame.querySelector<HTMLElement>('.leaflet-container') ??
+        frame;
+    target.focus({ preventScroll: true });
 }
 
 /**
@@ -149,7 +172,8 @@ export function EditorMapPin({
     long,
     onChange,
     mapLabel,
-    disabled = false
+    disabled = false,
+    frameRef
 }: EditorMapPinProps) {
     const t = createT(locale);
     const [active, setActive] = useState(false);
@@ -161,7 +185,12 @@ export function EditorMapPin({
 
     return (
         <div className={styles.root}>
-            <div className={styles.mapFrame}>
+            <div
+                ref={frameRef}
+                className={styles.mapFrame}
+                tabIndex={-1}
+                data-editor-map-frame=""
+            >
                 <Suspense
                     fallback={
                         <p className={styles.loading}>
@@ -194,11 +223,10 @@ export function EditorMapPin({
                     </button>
                 )}
             </div>
-            <p className={styles.hint}>
-                {pin
-                    ? t('account.editorFields.location.pinHint')
-                    : t('account.editorFields.location.noPinHint')}
-            </p>
+            {/* Without a pin the section's top notice says it (owner decision 12). */}
+            {pin ? (
+                <p className={styles.hint}>{t('account.editorFields.location.pinHint')}</p>
+            ) : null}
             <details
                 className={styles.coordinates}
                 open={hasCoordinateError || undefined}

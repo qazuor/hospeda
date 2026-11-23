@@ -2400,7 +2400,11 @@
             "mapLoading": "Loading the map…",
             "touchToActivate": "Tap to move the pin",
             "pinHint": "Drag the pin or tap the map to set the exact spot.",
-            "noPinHint": "No pin yet. Tap the map where the place is to set it.",
+            "noPinNotice": {
+                "title": "You have not marked the place on the map yet",
+                "body": "Without a pin, your listing does not show where it is on the map. Tap the map or drag the pin to the exact spot.",
+                "action": "Go to the map"
+            },
             "coordinates": "Coordinates",
             "latitude": "Latitude",
             "longitude": "Longitude"
