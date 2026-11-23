@@ -228,14 +228,24 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
             )}
 
             {/* ── Contact button ── */}
-            <LinkButton
-                href={contactHref}
-                className={styles.contactButton}
-                target={contactHref.startsWith('http') ? '_blank' : undefined}
-                rel={contactHref.startsWith('http') ? 'noopener noreferrer' : undefined}
-            >
-                {t('host-trades.card.contact', 'Contactar')}
-            </LinkButton>
+            {contactHref.startsWith('http') ? (
+                // `external` opens a new tab with a safe rel and says so to screen readers
+                <LinkButton
+                    href={contactHref}
+                    className={styles.contactButton}
+                    external
+                    locale={locale}
+                >
+                    {t('host-trades.card.contact', 'Contactar')}
+                </LinkButton>
+            ) : (
+                <LinkButton
+                    href={contactHref}
+                    className={styles.contactButton}
+                >
+                    {t('host-trades.card.contact', 'Contactar')}
+                </LinkButton>
+            )}
         </article>
     );
 }
