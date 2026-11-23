@@ -1,3 +1,4 @@
+export * from './attribution/index.js';
 export type {
     BrowserAnalyticsClient,
     BrowserAnalyticsDiagnostics,
