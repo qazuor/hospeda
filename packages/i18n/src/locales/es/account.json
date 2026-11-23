@@ -2256,6 +2256,29 @@
             "tiktok": "TikTok",
             "youtube": "YouTube",
             "linkedIn": "LinkedIn"
+        },
+        "location": {
+            "title": "Dirección",
+            "addressHint": "La ciudad sale del destino que elegiste en Información básica. Esta dirección se muestra en tu ficha pública.",
+            "street": "Calle",
+            "number": "Número",
+            "floor": "Piso",
+            "apartment": "Departamento o local",
+            "venueMapLabel": "Mapa con la ubicación de tu comercio",
+            "meetingPointTitle": "Punto de encuentro",
+            "meetingPoint": "Dónde arranca la experiencia",
+            "meetingPointHint": "Puede ser una dirección o una referencia del lugar.",
+            "meetingPointMapLabel": "Mapa con el punto de encuentro",
+            "directions": "Cómo llegar",
+            "directionsHint": "Una indicación por línea. Dónde estacionar, qué colectivo, cuánto se camina desde la ruta, qué referencia buscar.",
+            "directionsLocked": "El mapa y las indicaciones de cómo llegar no están incluidos en tu plan. El punto de encuentro sí, y se sigue publicando.",
+            "mapLoading": "Cargando el mapa…",
+            "touchToActivate": "Tocá para mover el pin",
+            "pinHint": "Arrastrá el pin o tocá el mapa para ajustar el punto exacto.",
+            "noPinHint": "Todavía no hay pin. Tocá el mapa donde está el lugar para ubicarlo.",
+            "coordinates": "Coordenadas",
+            "latitude": "Latitud",
+            "longitude": "Longitud"
         }
     }
 }

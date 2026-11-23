@@ -48,7 +48,12 @@
  */
 
 import type { JSX } from 'react';
-import styles from '@/components/listing/editor/editor-fields.module.css';
+import fieldStyles from '@/components/account/editor-fields/EditorFields.module.css';
+import { EditorMapPin } from '@/components/account/editor-fields/EditorMapPin';
+import { Field } from '@/components/account/ui/Field';
+import { Section } from '@/components/account/ui/Section';
+import { Textarea } from '@/components/account/ui/Textarea';
+import { TextInput } from '@/components/account/ui/TextInput';
 import { LISTING_FIELD_PREFIX } from '@/components/listing/editor/field-ids';
 import type {
     ListingEditData,
@@ -58,10 +63,11 @@ import {
     checklistItemsToLines,
     linesToChecklistItems
 } from '@/components/listing/editor/PracticalInfoSection.client';
-import { TextField } from '@/components/ui/TextField';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { buildFieldId } from '@/lib/forms/build-field-id';
+import { sectionHelpId } from '@/lib/help/section-help-id';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 
+/** Props of {@link MeetingPointSection}. */
 export interface MeetingPointSectionProps {
     readonly locale: SupportedLocale;
     readonly data: ListingEditData;
@@ -100,141 +106,103 @@ export function parseCoordinateInput({ raw }: { readonly raw: string }): number 
  * the control genuinely empty when there is no pin.
  *
  * @param value - The stored coordinate, or `null`.
- * @returns A string safe to hand a controlled `<input type="number">`.
+ * @returns A string safe to hand a controlled input.
  */
 export function coordinateInputValue({ value }: { readonly value: number | null }): string {
     return value === null ? '' : String(value);
 }
 
+/**
+ * The experience meeting point: where it starts, its map pin and, on plans
+ * that grant it, how to get there (HOS-1049). On the kit since HOS-2496.
+ *
+ * @param props - Locale, form state, field errors and the change callback.
+ * @returns A kit `Section`.
+ */
 export function MeetingPointSection({
     locale,
     data,
     errors,
     onFieldChange
 }: MeetingPointSectionProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const t = createT(locale);
+    const directionsEnabled = data.meetingPointDirectionsEnabled;
 
     return (
-        <section
-            className={styles.section}
+        <Section
             id="editor-meetingPoint"
+            title={t('account.editorFields.location.meetingPointTitle')}
+            helpId={sectionHelpId({ vertical: 'experience', slug: 'punto-de-encuentro' })}
         >
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="meetingPoint"
-                label={t('listing.owner.editor.sections.meetingPoint', 'Punto de encuentro')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors.meetingPoint}
-                type="text"
-                maxLength={300}
-                value={data.meetingPoint}
-                placeholder={t(
-                    'listing.owner.editor.sections.meetingPointPlaceholder',
-                    'Ej: Muelle 3 del puerto, frente a la caseta azul'
-                )}
-                onChange={(event) => {
-                    onFieldChange('meetingPoint', event.target.value);
-                }}
-            />
-
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.meetingPointHint',
-                    'Dónde arranca la experiencia. Puede ser una dirección o una referencia del lugar.'
-                )}
-            </p>
-
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="meetingPointLat"
-                label={t('listing.owner.editor.sections.meetingPointLat', 'Latitud (opcional)')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors.meetingPointLat}
-                type="number"
-                step="any"
-                min={-90}
-                max={90}
-                value={coordinateInputValue({ value: data.meetingPointLat })}
-                placeholder="-32.4825"
-                onChange={(event) => {
-                    onFieldChange(
-                        'meetingPointLat',
-                        parseCoordinateInput({ raw: event.target.value })
-                    );
-                }}
-            />
-
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="meetingPointLong"
-                label={t('listing.owner.editor.sections.meetingPointLong', 'Longitud (opcional)')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors.meetingPointLong}
-                type="number"
-                step="any"
-                min={-180}
-                max={180}
-                value={coordinateInputValue({ value: data.meetingPointLong })}
-                placeholder="-58.2333"
-                onChange={(event) => {
-                    onFieldChange(
-                        'meetingPointLong',
-                        parseCoordinateInput({ raw: event.target.value })
-                    );
-                }}
-            />
-
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.meetingPointCoordsHint',
-                    'Si cargás las coordenadas, mostramos el punto en un mapa. Podés dejarlas vacías.'
-                )}
-            </p>
-
-            {/*
-             * HOS-1049 — the paid half. Rendered for every experience provider,
-             * `disabled` for the ones whose plan does not grant it, so a
-             * downgrade does not read as data loss and the capability is
-             * visible to the person who could buy it. The API refuses the write
-             * on its own; this attribute is the affordance, not the gate.
-             */}
-            <TextField
-                as="textarea"
-                prefix={LISTING_FIELD_PREFIX}
-                name="meetingPointDirections"
-                label={t('listing.owner.editor.sections.meetingPointDirections', 'Cómo llegar')}
-                labelClassName={styles.label}
-                className={styles.textarea}
-                error={errors.meetingPointDirections}
-                rows={4}
-                disabled={!data.meetingPointDirectionsEnabled}
-                value={checklistItemsToLines({ items: data.meetingPointDirections })}
-                placeholder={t(
-                    'listing.owner.editor.sections.meetingPointDirectionsPlaceholder',
-                    'Estacioná en la bajada municipal, sobre la costanera\nEl colectivo 4 te deja en la rotonda\nSon 300 m por camino de ripio, buscá el muelle de madera'
-                )}
-                onChange={(event) => {
-                    onFieldChange(
-                        'meetingPointDirections',
-                        linesToChecklistItems({ raw: event.target.value })
-                    );
-                }}
-            />
-
-            <p className={styles.hint}>
-                {data.meetingPointDirectionsEnabled
-                    ? t(
-                          'listing.owner.editor.sections.meetingPointDirectionsHint',
-                          'Una indicación por línea. Dónde estacionar, qué colectivo, cuánto se camina desde la ruta, qué referencia buscar.'
-                      )
-                    : t(
-                          'listing.owner.editor.sections.meetingPointDirectionsLocked',
-                          'El mapa y las indicaciones de cómo llegar no están incluidos en tu plan. El punto de encuentro sí, y se sigue publicando.'
-                      )}
-            </p>
-        </section>
+            <div className={fieldStyles.stack}>
+                <Field
+                    locale={locale}
+                    label={t('account.editorFields.location.meetingPoint')}
+                    hint={t('account.editorFields.location.meetingPointHint')}
+                    id={buildFieldId({ prefix: LISTING_FIELD_PREFIX, name: 'meetingPoint' })}
+                    error={errors.meetingPoint}
+                >
+                    <TextInput
+                        type="text"
+                        maxLength={300}
+                        value={data.meetingPoint}
+                        onChange={(event) => onFieldChange('meetingPoint', event.target.value)}
+                    />
+                </Field>
+                {/* The pin is data, so it ships from the basic tier (owner decision 2026-09-01). */}
+                <EditorMapPin
+                    locale={locale}
+                    idPrefix={LISTING_FIELD_PREFIX}
+                    mapLabel={t('account.editorFields.location.meetingPointMapLabel')}
+                    lat={{
+                        name: 'meetingPointLat',
+                        value: coordinateInputValue({ value: data.meetingPointLat }),
+                        error: errors.meetingPointLat
+                    }}
+                    long={{
+                        name: 'meetingPointLong',
+                        value: coordinateInputValue({ value: data.meetingPointLong }),
+                        error: errors.meetingPointLong
+                    }}
+                    onChange={(next) => {
+                        onFieldChange('meetingPointLat', parseCoordinateInput({ raw: next.lat }));
+                        onFieldChange('meetingPointLong', parseCoordinateInput({ raw: next.long }));
+                    }}
+                />
+                {/*
+                 * HOS-1049: the directions are the paid half. They render for
+                 * every provider and lock when the plan does not grant them, so
+                 * a downgrade does not read as data loss. The API refuses the
+                 * write on its own; this is the affordance.
+                 */}
+                <Field
+                    locale={locale}
+                    label={t('account.editorFields.location.directions')}
+                    hint={
+                        directionsEnabled
+                            ? t('account.editorFields.location.directionsHint')
+                            : t('account.editorFields.location.directionsLocked')
+                    }
+                    id={buildFieldId({
+                        prefix: LISTING_FIELD_PREFIX,
+                        name: 'meetingPointDirections'
+                    })}
+                    error={errors.meetingPointDirections}
+                    optional
+                >
+                    <Textarea
+                        rows={4}
+                        disabled={!directionsEnabled}
+                        value={checklistItemsToLines({ items: data.meetingPointDirections })}
+                        onChange={(event) =>
+                            onFieldChange(
+                                'meetingPointDirections',
+                                linesToChecklistItems({ raw: event.target.value })
+                            )
+                        }
+                    />
+                </Field>
+            </div>
+        </Section>
     );
 }

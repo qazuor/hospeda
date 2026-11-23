@@ -1,23 +1,25 @@
 /**
  * @file VenueLocationSection.client.tsx
- * @description Postal address section of the venue owner editor (HOS-2189).
+ * @description Postal address section of the venue owner editor (HOS-2189),
+ * on the kit with a map pin since HOS-2496.
  *
  * Mirrors the accommodation `location` model: street, number, floor,
  * apartment and optional coordinates. City, neighborhood and department are
  * NOT asked here; they come from the destination chosen in the basic-info
  * page. Unlike an accommodation, a venue is a business open to the public, so
- * the address entered here is the one the public page shows.
- *
- * The coordinates are plain inputs (like the experience meeting point) rather
- * than the accommodation map picker: that picker's copy talks about
- * accommodations and about an approximate public pin, both false for a venue.
+ * the address entered here is the one the public page shows, and the pin is
+ * exact.
  */
 
 import type { JSX } from 'react';
-import { TextField } from '@/components/ui/TextField';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
-import styles from './editor-fields.module.css';
+import fieldStyles from '@/components/account/editor-fields/EditorFields.module.css';
+import { EditorMapPin } from '@/components/account/editor-fields/EditorMapPin';
+import { Field } from '@/components/account/ui/Field';
+import { Section } from '@/components/account/ui/Section';
+import { TextInput } from '@/components/account/ui/TextInput';
+import { buildFieldId } from '@/lib/forms/build-field-id';
+import { sectionHelpId } from '@/lib/help/section-help-id';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange, LocationValues } from './listing-edit-data';
 
@@ -29,11 +31,24 @@ export interface VenueLocationSectionProps {
     readonly onFieldChange: ListingFieldChange;
 }
 
+/** One address input: its member, its i18n label key, its cap and whether it is optional. */
+const ADDRESS_FIELDS = [
+    { key: 'street', label: 'street', maxLength: 50, optional: false },
+    { key: 'number', label: 'number', maxLength: 10, optional: false },
+    { key: 'floor', label: 'floor', maxLength: 10, optional: true },
+    { key: 'apartment', label: 'apartment', maxLength: 10, optional: true }
+] as const satisfies ReadonlyArray<{
+    readonly key: keyof LocationValues;
+    readonly label: string;
+    readonly maxLength: number;
+    readonly optional: boolean;
+}>;
+
 /**
- * Renders the venue address form.
+ * Renders the venue address and its map pin.
  *
  * @param props - Locale, form state, field errors and the change callback.
- * @returns The section.
+ * @returns A kit `Section`.
  */
 export function VenueLocationSection({
     locale,
@@ -41,115 +56,62 @@ export function VenueLocationSection({
     errors,
     onFieldChange
 }: VenueLocationSectionProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const t = createT(locale);
+    const location = data.location;
 
-    const setMember = ({
-        key,
-        value
-    }: {
-        readonly key: keyof LocationValues;
-        readonly value: string;
-    }) => {
-        onFieldChange('location', { ...data.location, [key]: value });
+    const setMembers = (patch: Partial<LocationValues>) => {
+        onFieldChange('location', { ...location, ...patch });
     };
 
     return (
-        <fieldset
-            className={styles.section}
+        <Section
             id="editor-location"
+            title={t('account.editorFields.location.title')}
+            description={t('account.editorFields.location.addressHint')}
+            helpId={sectionHelpId({ vertical: 'venue', slug: 'ubicacion' })}
         >
-            <legend className={styles.label}>
-                {t('listing.owner.editor.sections.location', 'Dirección')}
-            </legend>
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="location.street"
-                label={t('listing.owner.editor.sections.locationStreet', 'Calle')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors['location.street']}
-                type="text"
-                maxLength={50}
-                value={data.location.street}
-                onChange={(event) => setMember({ key: 'street', value: event.target.value })}
-            />
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="location.number"
-                label={t('listing.owner.editor.sections.locationNumber', 'Número')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors['location.number']}
-                type="text"
-                maxLength={10}
-                value={data.location.number}
-                onChange={(event) => setMember({ key: 'number', value: event.target.value })}
-            />
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="location.floor"
-                label={t('listing.owner.editor.sections.locationFloor', 'Piso (opcional)')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors['location.floor']}
-                type="text"
-                maxLength={10}
-                value={data.location.floor}
-                onChange={(event) => setMember({ key: 'floor', value: event.target.value })}
-            />
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="location.apartment"
-                label={t(
-                    'listing.owner.editor.sections.locationApartment',
-                    'Departamento o local (opcional)'
-                )}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors['location.apartment']}
-                type="text"
-                maxLength={10}
-                value={data.location.apartment}
-                onChange={(event) => setMember({ key: 'apartment', value: event.target.value })}
-            />
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.locationHint',
-                    'La ciudad sale del destino que elegiste en Información básica. Esta dirección se muestra en tu ficha pública.'
-                )}
-            </p>
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="location.coordinates.lat"
-                label={t('listing.owner.editor.sections.locationLat', 'Latitud (opcional)')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors['location.coordinates.lat']}
-                type="text"
-                inputMode="decimal"
-                value={data.location.lat}
-                placeholder="-32.4825"
-                onChange={(event) => setMember({ key: 'lat', value: event.target.value })}
-            />
-            <TextField
-                prefix={LISTING_FIELD_PREFIX}
-                name="location.coordinates.long"
-                label={t('listing.owner.editor.sections.locationLong', 'Longitud (opcional)')}
-                labelClassName={styles.label}
-                className={styles.input}
-                error={errors['location.coordinates.long']}
-                type="text"
-                inputMode="decimal"
-                value={data.location.long}
-                placeholder="-58.2333"
-                onChange={(event) => setMember({ key: 'long', value: event.target.value })}
-            />
-            <p className={styles.hint}>
-                {t(
-                    'listing.owner.editor.sections.locationCoordsHint',
-                    'Si cargás las dos coordenadas, mostramos el local en un mapa. Podés dejarlas vacías.'
-                )}
-            </p>
-        </fieldset>
+            <div className={fieldStyles.stack}>
+                <div className={fieldStyles.grid}>
+                    {ADDRESS_FIELDS.map((field) => (
+                        <Field
+                            key={field.key}
+                            locale={locale}
+                            label={t(`account.editorFields.location.${field.label}`)}
+                            id={buildFieldId({
+                                prefix: LISTING_FIELD_PREFIX,
+                                name: `location.${field.key}`
+                            })}
+                            error={errors[`location.${field.key}`]}
+                            optional={field.optional}
+                        >
+                            <TextInput
+                                type="text"
+                                maxLength={field.maxLength}
+                                value={location[field.key]}
+                                onChange={(event) =>
+                                    setMembers({ [field.key]: event.target.value })
+                                }
+                            />
+                        </Field>
+                    ))}
+                </div>
+                <EditorMapPin
+                    locale={locale}
+                    idPrefix={LISTING_FIELD_PREFIX}
+                    mapLabel={t('account.editorFields.location.venueMapLabel')}
+                    lat={{
+                        name: 'location.coordinates.lat',
+                        value: location.lat,
+                        error: errors['location.coordinates.lat']
+                    }}
+                    long={{
+                        name: 'location.coordinates.long',
+                        value: location.long,
+                        error: errors['location.coordinates.long']
+                    }}
+                    onChange={(next) => setMembers({ lat: next.lat, long: next.long })}
+                />
+            </div>
+        </Section>
     );
 }

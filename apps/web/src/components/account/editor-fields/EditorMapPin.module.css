@@ -1,0 +1,80 @@
+/* EditorMapPin.module.css — shared map pin of the owner editors (HOS-2496).
+   Tokens only. The touch overlay exists only for coarse pointers. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.mapFrame {
+    position: relative;
+}
+
+.loading {
+    margin: 0;
+    padding: var(--space-4);
+    font: var(--app-ui);
+    color: var(--core-muted-foreground);
+}
+
+/* Covers the map until the owner taps it, so a scroll gesture over the map
+   scrolls the page instead of panning it. */
+.touchOverlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    border: 0;
+    border-radius: var(--radius-surface);
+    background-color: var(--overlay);
+    cursor: pointer;
+}
+
+.overlayLabel {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    font: var(--app-control);
+}
+
+.touchOverlay:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+    .touchOverlay {
+        display: flex;
+    }
+}
+
+.hint {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.coordinates {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.summary {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--control-h-lg);
+    font: var(--app-control);
+    color: var(--core-foreground);
+    cursor: pointer;
+}
+
+.summary:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}

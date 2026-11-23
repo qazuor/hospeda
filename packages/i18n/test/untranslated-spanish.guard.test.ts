@@ -80,6 +80,9 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Sáb: ['pt'],
     // Same adjectives in Brazilian Portuguese (HOS-2415 editor nav status).
     Completa: ['pt'],
+    // Same words in Brazilian Portuguese (HOS-2496 editor location fields).
+    Coordenadas: ['pt'],
+    Número: ['pt'],
     Incompleta: ['pt'],
     Dom: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).

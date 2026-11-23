@@ -2256,6 +2256,29 @@
             "tiktok": "TikTok",
             "youtube": "YouTube",
             "linkedIn": "LinkedIn"
+        },
+        "location": {
+            "title": "Address",
+            "addressHint": "The city comes from the destination you chose in Basic information. This address is shown on your public listing.",
+            "street": "Street",
+            "number": "Number",
+            "floor": "Floor",
+            "apartment": "Unit or shop",
+            "venueMapLabel": "Map with your business location",
+            "meetingPointTitle": "Meeting point",
+            "meetingPoint": "Where the experience starts",
+            "meetingPointHint": "It can be an address or a landmark.",
+            "meetingPointMapLabel": "Map with the meeting point",
+            "directions": "How to get there",
+            "directionsHint": "One instruction per line. Where to park, which bus, how far to walk from the road, what landmark to look for.",
+            "directionsLocked": "The map and the directions are not included in your plan. The meeting point is, and it stays published.",
+            "mapLoading": "Loading the map…",
+            "touchToActivate": "Tap to move the pin",
+            "pinHint": "Drag the pin or tap the map to set the exact spot.",
+            "noPinHint": "No pin yet. Tap the map where the place is to set it.",
+            "coordinates": "Coordinates",
+            "latitude": "Latitude",
+            "longitude": "Longitude"
         }
     }
 }
