@@ -39,6 +39,9 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     // Bed/beds share the same spelling in Spanish and Brazilian Portuguese.
     '{{count}} cama': ['pt'],
     '{{count}} camas': ['pt'],
+    // Same words in Brazilian Portuguese (HOS-2527 listing section tab labels).
+    Fotos: ['pt'],
+    Comodidades: ['pt'],
     Facebook: ['en', 'pt'],
     Instagram: ['en', 'pt'],
     YouTube: ['en', 'pt'],

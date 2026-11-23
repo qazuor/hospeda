@@ -429,6 +429,19 @@
         "clearFilters": "Clear filters"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Read more",
+            "less": "Read less"
+        },
+        "sectionTabs": {
+            "label": "Listing sections",
+            "photos": "Photos",
+            "details": "Details",
+            "amenities": "Amenities",
+            "location": "Location",
+            "reviews": "Reviews",
+            "host": "Host"
+        },
         "listingContact": {
             "bar": {
                 "inquire": "Inquire",
