@@ -26,7 +26,6 @@ import { SET_PASSWORD_SEGMENT } from '@/lib/routes';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import PageHelpRow from '@/components/account/help/PageHelpRow.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm.client';
 
@@ -96,7 +95,6 @@ const returnUrl = resolveSafeReturnPath({ rawReturn: rawReturnUrl, locale });
         noindex={true}
     />
 
-    <PageHelpRow locale={locale} />
 
     <ChangePasswordForm
         client:load

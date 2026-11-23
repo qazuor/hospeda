@@ -26,6 +26,10 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
 
 import { HelpAudiencePreselect } from '../../../../src/components/account/help/HelpAudiencePreselect.client';
 import { HELP_SELECT_AUDIENCE_EVENT } from '../../../../src/lib/help/help-audience';
+import {
+    HELP_READER_WITHOUT_AUDIENCE_EVENT,
+    isReaderWithoutAudience
+} from '../../../../src/lib/help/help-audience-shared';
 
 const session = (permissions: readonly string[]) => ({
     isAuthenticated: true,
@@ -53,6 +57,7 @@ describe('HelpAudiencePreselect', () => {
     });
 
     afterEach(() => {
+        document.documentElement.removeAttribute('data-help-reader-without-audience');
         window.removeEventListener(HELP_SELECT_AUDIENCE_EVENT, onSelect);
         vi.clearAllMocks();
         selected.mockReset();
@@ -151,5 +156,35 @@ describe('HelpAudiencePreselect', () => {
 
         // Assert
         expect(selected).not.toHaveBeenCalled();
+    });
+
+    it('announces a pure tourist (every read ok, nothing matched) and selects nothing', async () => {
+        // Arrange
+        mocks.readCachedAuthMe.mockReturnValue(session(['accommodation.review.create']));
+        const announced = vi.fn();
+        window.addEventListener(HELP_READER_WITHOUT_AUDIENCE_EVENT, announced);
+
+        // Act
+        render(<HelpAudiencePreselect />);
+
+        // Assert
+        await waitFor(() => expect(announced).toHaveBeenCalledTimes(1));
+        expect(isReaderWithoutAudience()).toBe(true);
+        expect(selected).not.toHaveBeenCalled();
+        expect(window.location.search).toBe('');
+        window.removeEventListener(HELP_READER_WITHOUT_AUDIENCE_EVENT, announced);
+    });
+
+    it('does not announce a tourist when a row read failed (could be a provider)', async () => {
+        // Arrange
+        mocks.readCachedAuthMe.mockReturnValue(session([]));
+        mocks.tradeMine.mockResolvedValue({ ok: false, error: { status: 500 } });
+
+        // Act
+        render(<HelpAudiencePreselect />);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        // Assert
+        expect(isReaderWithoutAudience()).toBe(false);
     });
 });

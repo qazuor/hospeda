@@ -13,10 +13,10 @@ import type { Page } from '@playwright/test';
  * calling this in a `test.beforeEach` registers the cookie for every page the
  * test visits, including initial loads and client-side transitions.
  *
- * This approach mirrors the pattern used in
- * `apps/web/tests/visual-snapshots/capture-baseline.visual.ts` (lines 112-128)
- * and intentionally avoids introducing a custom `test.extend` base fixture or
- * any flag in app source.
+ * This approach intentionally avoids introducing a custom `test.extend` base
+ * fixture or any flag in app source. The visual-regression specs
+ * (`tests/visual/`) rely on it too: a consent banner in a baseline would be a
+ * diff on every page.
  *
  * Cookie shape (version 2):
  *   { necessary: true, crashReporting: false, analytics: false,

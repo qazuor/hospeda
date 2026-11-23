@@ -46,11 +46,11 @@ Encontrar cómo se hace algo en tu cuenta sin salir de {{link:help|Ayuda}}: busc
 
 ## Cómo se hace
 
-1. Entrá a «Ayuda» desde el menú de tu cuenta.
+1. Entrá a «Ayuda» con el botón «?» de arriba de todo, en el encabezado de tu cuenta. Está siempre, en todas las pantallas.
 2. Escribí en el buscador lo que querés hacer, con tus palabras. Los resultados aparecen mientras escribís, desde la segunda letra.
 3. Si dejás marcado «Solo para mi tipo de cuenta», ves solo los artículos de la pestaña elegida. Desmarcalo para buscar en todos.
 4. Para ver todo lo que hay, elegí la pestaña de lo que publicás: alojamientos, comer y salir, experiencias, proveedores o aliados.
-5. En las pantallas de tu cuenta, tocá el botón «?» que está al lado del título para abrir en otra pestaña la ayuda de esa pantalla.
+5. En las pantallas de tu cuenta, tocá el botón «?» que está al lado del título para abrir en otra pestaña la ayuda de esa pantalla. El «?» del encabezado abre la ayuda general; el del título, la de esa pantalla.
 6. Dentro de un artículo, usá el índice para ir directo a una parte.
 
 ## Qué esperar
@@ -61,7 +61,7 @@ Encontrar cómo se hace algo en tu cuenta sin salir de {{link:help|Ayuda}}: busc
 
 ## Qué NO esperar
 
-- Que todas las pantallas tengan el botón «?»: aparece solo donde ya hay un artículo para esa pantalla.
+- Que todas las pantallas tengan el botón «?» al lado del título: aparece solo donde ya hay un artículo para esa pantalla. El «?» del encabezado sí está siempre.
 - Que la ayuda haga cambios en tu cuenta: solo explica cómo hacerlos. Para que un asistente los haga por vos, mirá {{article:ai-assistants|cómo conectar un asistente de IA}}.
 
 ## Problemas comunes

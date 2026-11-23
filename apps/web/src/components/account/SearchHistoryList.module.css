@@ -37,11 +37,12 @@
     align-self: flex-start;
 }
 
-/* ─── Opt-out preference toggle ────────────────────────────────────────────── */
+/* ─── Recording state (the switch lives in Preferences) ────────────────────────────────────────────── */
 
 .search-history__opt-out {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: var(--space-4);
     padding: var(--space-4) var(--space-5);
@@ -68,63 +69,6 @@
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     color: var(--core-muted-foreground);
-}
-
-/* Switch-style toggle button */
-.search-history__toggle {
-    position: relative;
-    width: 44px;
-    height: 24px;
-    border: none;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background-color var(--duration-fast) ease;
-    flex-shrink: 0;
-}
-
-.search-history__toggle--on {
-    background-color: var(--brand-primary);
-}
-
-.search-history__toggle--off {
-    background-color: var(--core-muted-foreground-a40);
-}
-
-.search-history__toggle:disabled {
-    opacity: 0.6;
-    cursor: default;
-}
-
-.search-history__toggle-thumb {
-    position: absolute;
-    top: 3px;
-    width: 18px;
-    height: 18px;
-    background-color: #fff;
-    border-radius: 50%;
-    transition: transform var(--duration-fast) ease;
-    pointer-events: none;
-}
-
-.search-history__toggle--on .search-history__toggle-thumb {
-    transform: translateX(22px);
-}
-
-.search-history__toggle--off .search-history__toggle-thumb {
-    transform: translateX(3px);
-}
-
-/* Screen-reader only label */
-.search-history__toggle-label-sr {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
 }
 
 /* ─── Header (clear-all) ────────────────────────────────────────────────────── */

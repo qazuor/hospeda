@@ -1,169 +1,89 @@
 /**
  * @file CollectionDetailActions.client.tsx
- * @description React island that renders the Edit and Delete action buttons for a
- * bookmark collection detail page.
+ * @description «Editar» and «Borrar» of the collection detail page, on the
+ * account kit (HOS-2480).
  *
- * - Edit: opens the CreateEditCollectionModal in EDIT mode pre-filled with the
- *   collection data. On save, reloads the page so the header reflects any changes.
- * - Delete: asks with the product-styled `showConfirmationDialog()` (HOS-957 —
- *   it used to raise `window.confirm()`, which shows the site's domain and
- *   cannot be styled or translated). On confirm, calls the delete API and
- *   redirects to the favorites page. On error, shows an error toast.
- *
- * Hydration: caller must use `client:load`.
+ * - Edit opens the kit create/edit dialog in EDIT mode; on save the page
+ *   reloads so the header shows the new name, color and icon.
+ * - Delete asks through `useConfirm` (the kit ConfirmDialog, HOS-957: never
+ *   `window.confirm`). The delete runs inside the dialog, so a failure keeps it
+ *   open with its error and retry; on success the user goes back to favorites.
  */
 
 import { useState } from 'react';
-import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
+import { Button, useConfirm } from '@/components/account/ui';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
-import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import styles from './CollectionDetailActions.module.css';
 import type { CollectionForEdit } from './CreateEditCollectionModal.client';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-/**
- * The collection data passed to this island.
- * All fields match what is available from the collection detail API.
- */
+/** Props of {@link CollectionDetailActions}. */
 export interface CollectionDetailActionsProps {
     /** The collection to act on. */
     readonly collection: CollectionForEdit;
-    /** Active locale for i18n strings. */
+    /** Active locale. */
     readonly locale: SupportedLocale;
-    /** URL language segment (e.g. "es") used to build the redirect path. */
-    readonly lang: string;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 /**
- * Renders Editar and Borrar buttons for a collection detail page.
- * Manages the edit modal and delete confirmation flow.
+ * Edit and Delete actions of a collection.
+ *
+ * @param props - See {@link CollectionDetailActionsProps}.
+ * @returns The two buttons, the edit dialog and the confirmation.
  */
-export function CollectionDetailActions({
-    collection,
-    locale,
-    lang
-}: CollectionDetailActionsProps) {
+export function CollectionDetailActions({ collection, locale }: CollectionDetailActionsProps) {
     const t = createT(locale);
-
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    // ── Edit handlers ─────────────────────────────────────────────────────
-
-    function handleEditOpen(): void {
-        setIsEditModalOpen(true);
-    }
-
-    function handleEditClose(): void {
-        setIsEditModalOpen(false);
-    }
-
-    function handleEditSaved(): void {
-        setIsEditModalOpen(false);
-        // Reload the page so the header reflects the updated name/color/icon
-        window.location.reload();
-    }
-
-    // ── Delete handler ────────────────────────────────────────────────────
+    const [editOpen, setEditOpen] = useState(false);
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
 
     async function handleDelete(): Promise<void> {
-        const confirmed = await showConfirmationDialog({
-            title: t('account.favorites.collections.deleteDialogTitle', 'Borrar colección'),
-            message: t(
-                'account.favorites.collections.delete_confirm',
-                '¿Estás seguro de que querés borrar esta colección?'
-            ),
-            confirmLabel: t(
-                'account.favorites.collections.deleteConfirmButton',
-                'Borrar colección'
-            ),
-            cancelLabel: t('common.cancel', 'Cancelar')
-        });
-
-        if (!confirmed) {
-            return;
-        }
-
-        setIsDeleting(true);
-
-        try {
-            const result = await userBookmarkCollectionsApi.delete({ id: collection.id });
-
-            if (!result.ok) {
-                addToast({
-                    type: 'error',
-                    message: t(
-                        'account.favorites.collections.deleteError',
-                        'No se pudo borrar la colección. Intentá de nuevo.'
-                    )
-                });
-                return;
+        const deleted = await askConfirm({
+            title: t('account.favorites.collections.deleteDialogTitle'),
+            description: t('account.favorites.collections.delete_confirm'),
+            confirmLabel: t('account.favorites.collections.deleteConfirmButton'),
+            onConfirm: async () => {
+                const result = await userBookmarkCollectionsApi.delete({ id: collection.id });
+                // A rejection keeps the dialog open with its error and retry.
+                if (!result.ok) throw new Error('delete failed');
             }
-
-            // Show success toast (visible briefly via storage before redirect)
-            addToast({
-                type: 'success',
-                message: t(
-                    'account.favorites.collections.deleteSuccess',
-                    'Colección borrada correctamente'
-                )
-            });
-
-            // Redirect to the favorites page on success
-            window.location.href = `/${lang}/mi-cuenta/favoritos/`;
-        } finally {
-            setIsDeleting(false);
-        }
+        });
+        if (!deleted) return;
+        addToast({ type: 'success', message: t('account.favorites.collections.deleteSuccess') });
+        window.location.href = buildUrl({ locale, path: 'mi-cuenta/favoritos' });
     }
 
-    // ── JSX ───────────────────────────────────────────────────────────────
-
-    const editLabel = t('account.favorites.collections.edit', 'Editar');
-    const deleteLabel = t('account.favorites.collections.delete', 'Borrar');
-    const deletingLabel = t('account.favorites.collections.deleting', 'Borrando...');
-
     return (
-        <div className={styles.actions}>
-            <button
-                type="button"
-                className={styles.editBtn}
-                onClick={handleEditOpen}
-                disabled={isDeleting}
-                aria-label={t('account.favorites.collections.edit', 'Editar colección')}
+        <>
+            <Button
+                variant="secondary"
+                onClick={() => setEditOpen(true)}
                 data-testid="collection-actions-edit"
             >
-                {editLabel}
-            </button>
-
-            <LoadingButton
-                className={styles.deleteBtn}
-                onClick={() => void handleDelete()}
-                loading={isDeleting}
-                loadingLabel={deletingLabel}
-                aria-label={
-                    isDeleting
-                        ? deletingLabel
-                        : t('account.favorites.collections.delete', 'Borrar colección')
-                }
+                {t('account.favorites.collections.edit')}
+            </Button>
+            <Button
+                variant="danger-ghost"
+                onClick={() => {
+                    void handleDelete();
+                }}
                 data-testid="collection-actions-delete"
             >
-                {deleteLabel}
-            </LoadingButton>
-
+                {t('account.favorites.collections.delete')}
+            </Button>
             <CreateEditCollectionModal
-                isOpen={isEditModalOpen}
-                onClose={handleEditClose}
-                onSaved={handleEditSaved}
+                isOpen={editOpen}
+                onClose={() => setEditOpen(false)}
+                onSaved={() => {
+                    setEditOpen(false);
+                    window.location.reload();
+                }}
                 locale={locale}
                 collection={collection}
             />
-        </div>
+            {confirmDialog}
+        </>
     );
 }

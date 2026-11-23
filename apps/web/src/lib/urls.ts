@@ -23,6 +23,9 @@ import { SUPPORTED_LOCALES, type SupportedLocale } from './i18n';
  *
  * buildUrl({ locale: 'es', path: 'mi-cuenta/editar' });
  * // Returns: '/es/mi-cuenta/editar/'
+ *
+ * buildUrl({ locale: 'es', path: 'mi-cuenta/comercio?vertical=venue' });
+ * // Returns: '/es/mi-cuenta/comercio/?vertical=venue'
  * ```
  */
 export function buildUrl({
@@ -32,9 +35,16 @@ export function buildUrl({
     readonly locale: SupportedLocale;
     readonly path?: string;
 }): string {
-    const normalized = path.startsWith('/') ? path : `/${path}`;
+    // A query string or a fragment stays AFTER the trailing slash
+    // (`mi-cuenta/comercio?vertical=venue` → `/es/mi-cuenta/comercio/?vertical=venue`,
+    // HOS-2559): appending the slash to the whole string would corrupt the
+    // last parameter's value.
+    const suffixStart = path.search(/[?#]/);
+    const pathname = suffixStart === -1 ? path : path.slice(0, suffixStart);
+    const suffix = suffixStart === -1 ? '' : path.slice(suffixStart);
+    const normalized = pathname.startsWith('/') ? pathname : `/${pathname}`;
     const withTrailingSlash = normalized.endsWith('/') ? normalized : `${normalized}/`;
-    return `/${locale}${withTrailingSlash}`;
+    return `/${locale}${withTrailingSlash}${suffix}`;
 }
 
 /**

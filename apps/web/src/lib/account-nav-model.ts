@@ -6,9 +6,9 @@
  * model instead of three copies of the same filtering.
  *
  * It is pure: no `Astro`, no session read. The layout frontmatter keeps reading
- * the session and passes the facts in (`roles`, `ownsHostTradeListing`,
- * `mcpEnabled`, `activeSection`), which also keeps every page that renders this
- * session-blind.
+ * the session and passes the facts in (`roles`, `permissions`,
+ * `ownsHostTradeListing`, `ownsPartner`, `mcpEnabled`, `activeSection`), which
+ * also keeps every page that renders this session-blind.
  *
  * What it computes, in the order the legacy layout did:
  *
@@ -16,8 +16,9 @@
  * 2. the provider group, placed right before Tourist (`placeProviderGroup`);
  * 3. per group: whether its header is suppressed, whether it holds the active
  *    page and whether it renders open (`resolveGroupDefaultOpen`);
- * 4. per item: its section key (through `ACTIVE_SECTION_OVERRIDES`), whether it
- *    is the active one, and whether the AI-assistants entry starts hidden;
+ * 4. per item: its section key (through `ACTIVE_SECTION_OVERRIDES`) and whether
+ *    it is the active one. The «Asistentes de IA» entry is dropped unless the
+ *    person is a real client and the MCP feature is on (HOS-2562);
  * 5. the discovery doors and their labels;
  * 6. the i18n key of the active entry, for the mobile bar;
  * 7. the kit shell's zoned view (HOS-2551, `buildShellNavModel` in
@@ -26,6 +27,7 @@
  * @module lib/account-nav-model
  */
 
+import { isRealClient } from '@repo/schemas';
 import type { DiscoveryDoor } from '@/config/discovery-doors';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import type { NavGroup, NavItem } from '@/config/navigation';
@@ -41,7 +43,6 @@ import {
     buildShellNavModel,
     withShellOpen
 } from '@/lib/account-nav-shell';
-import { hasBusinessVertical } from '@/lib/business-verticals';
 import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
 
 export { ACTIVE_SECTION_OVERRIDES, getActiveSectionKey } from '@/lib/account-nav-section';
@@ -54,6 +55,13 @@ export const ACCOUNT_MENU_LABEL_KEY = 'account.menu';
 export interface AccountNavModelInput {
     /** The session's role SET (HOS-296), or `null` for no session. */
     readonly roles: readonly string[] | null;
+    /**
+     * The session's EFFECTIVE permissions (`SessionUser.permissions`). They,
+     * with the ownership facts, decide whether the person is a real client
+     * (HOS-2562), through the same rule the API applies. Optional: absent
+     * reads as none (fail-closed).
+     */
+    readonly permissions?: readonly string[];
     /** Row-ownership answer for the provider group (HOS-278 AC-7). */
     readonly ownsHostTradeListing: boolean;
     /**
@@ -61,7 +69,10 @@ export interface AccountNavModelInput {
      * `SessionUser.ownsPartner`. Optional: absent defaults to `false`.
      */
     readonly ownsPartner?: boolean;
-    /** Whether the MCP feature is on (the AI-assistants entry is gated on it). */
+    /**
+     * Whether the MCP feature is on. «Asistentes de IA» is listed only for a
+     * real client AND with the feature on (HOS-2562).
+     */
     readonly mcpEnabled: boolean;
     /** The page's `activeSection` prop. */
     readonly activeSection: string;
@@ -75,8 +86,6 @@ export interface AccountNavItemModel {
     readonly sectionKey: string;
     /** True for the entry of the current page. */
     readonly active: boolean;
-    /** True when the AI-assistants entry must render `hidden` until revealed. */
-    readonly hiddenUntilRevealed: boolean;
 }
 
 /** One group of the model. */
@@ -127,6 +136,7 @@ export interface AccountNavModel {
  */
 export function buildAccountNavModel({
     roles,
+    permissions = [],
     ownsHostTradeListing,
     ownsPartner = false,
     mcpEnabled,
@@ -134,6 +144,11 @@ export function buildAccountNavModel({
 }: AccountNavModelInput): AccountNavModel {
     const visibility = (node: Parameters<typeof isVisibleByRoles>[0]) =>
         isVisibleByRoles(node, roles);
+    // HOS-2562: «Asistentes de IA» exists only for a real client, decided by
+    // the shared rule from the EFFECTIVE permissions (never the roles), and
+    // only while the MCP feature is on.
+    const showAiAssistants =
+        mcpEnabled && isRealClient({ permissions, ownsHostTradeListing, ownsPartner });
 
     const { groups: baseGroups } = getNavForSurface({ surface: 'sidebar', visibility });
 
@@ -146,15 +161,12 @@ export function buildAccountNavModel({
 
     const groups = withShellOpen({
         groups: ordered.map((group): AccountNavGroupModel => {
-            const items: AccountNavItemModel[] = group.items.map((item) => {
-                const sectionKey = getActiveSectionKey({ href: item.href });
-                return {
-                    item,
-                    sectionKey,
-                    active: sectionKey === activeSection,
-                    hiddenUntilRevealed: item.id === AI_ASSISTANTS_NAV_ITEM_ID && !mcpEnabled
-                };
-            });
+            const items: AccountNavItemModel[] = group.items
+                .filter((item) => showAiAssistants || item.id !== AI_ASSISTANTS_NAV_ITEM_ID)
+                .map((item) => {
+                    const sectionKey = getActiveSectionKey({ href: item.href });
+                    return { item, sectionKey, active: sectionKey === activeSection };
+                });
             const containsActive = items.some((entry) => entry.active);
             return {
                 group,
@@ -187,8 +199,7 @@ export function buildAccountNavModel({
         groups,
         doors,
         activeSection,
-        ownsPartner,
-        isClient: hasBusinessVertical({ visibility, ownsHostTradeListing, ownsPartner })
+        ownsPartner
     });
 
     // Legacy groups first; the partner entry only exists in the shell.

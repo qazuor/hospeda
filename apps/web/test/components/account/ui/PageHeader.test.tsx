@@ -83,4 +83,17 @@ describe('PageHeader', () => {
         );
         expect(screen.getByTestId('tabs')).toBeInTheDocument();
     });
+
+    it('renders the help slot in the title row, right after the h1 (HOS-2546)', () => {
+        render(
+            <PageHeader
+                title="Consultas"
+                locale="es"
+                help={<a href="/es/mi-cuenta/ayuda/inquiries/">?</a>}
+            />
+        );
+        const heading = screen.getByRole('heading', { level: 1 });
+        const help = screen.getByRole('link', { name: '?' });
+        expect(heading.nextElementSibling).toBe(help);
+    });
 });

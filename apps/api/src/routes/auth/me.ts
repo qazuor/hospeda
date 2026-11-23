@@ -1,13 +1,10 @@
 import { UserModel } from '@repo/db';
 import { AuthMeResponseSchema, PermissionEnum } from '@repo/schemas';
-import { HostTradeService, PartnerService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createGuestActor, isGuestActor } from '../../utils/actor';
+import { probeBusinessOwnership } from '../../utils/business-ownership';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
-
-const hostTradeService = new HostTradeService({ logger: apiLogger });
-const partnerService = new PartnerService({ logger: apiLogger });
 
 /**
  * Builds the `/auth/me` payload from the actor the middleware resolved.
@@ -64,26 +61,11 @@ export async function handleAuthMe(c: Context) {
         // listing (HOS-2551). A revoked or soft-deleted partner does not count
         // (`ownsActivePartner`, a one-row indexed existence check).
         //
-        // Both probes run in parallel, each swallowing its own failure.
-        const probeHostTrade = async (): Promise<boolean> => {
-            try {
-                const own = await hostTradeService.getOwn(actor);
-                return own.data?.trade != null;
-            } catch {
-                return false;
-            }
-        };
-        const probePartner = async (): Promise<boolean> => {
-            try {
-                const own = await partnerService.ownsActivePartner(actor);
-                return own.data?.owns === true;
-            } catch {
-                return false;
-            }
-        };
-        const [ownsHostTradeListing, ownsPartner] = isAuthenticated
-            ? await Promise.all([probeHostTrade(), probePartner()])
-            : [false, false];
+        // Both probes live in `probeBusinessOwnership` (HOS-2562), shared with
+        // the MCP «real client» gate so the web and the API read one answer.
+        const { ownsHostTradeListing, ownsPartner } = isAuthenticated
+            ? await probeBusinessOwnership({ actor })
+            : { ownsHostTradeListing: false, ownsPartner: false };
 
         const result = {
             actor: filteredActor,

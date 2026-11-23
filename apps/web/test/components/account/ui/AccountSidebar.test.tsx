@@ -2,16 +2,22 @@
  * Tests for AccountSidebar and buildSidebarView (HOS-2413 T-019).
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { AccountSidebar, buildSidebarView } from '../../../../src/components/account/ui';
 import { buildAccountNavModel } from '../../../../src/lib/account-nav-model';
+
+/** HOS-2562: a host's effective permissions (the AI-assistants gate reads them, not roles). */
+const permissionsFor = (roles: readonly string[]): readonly string[] =>
+    roles.includes('HOST') ? [PermissionEnum.ACCOMMODATION_CREATE] : [];
 
 function viewFor(roles: readonly string[], activeSection = 'mi-cuenta') {
     return buildSidebarView({
         locale: 'es',
         model: buildAccountNavModel({
             roles,
+            permissions: permissionsFor(roles),
             ownsHostTradeListing: false,
             mcpEnabled: true,
             activeSection
@@ -130,18 +136,16 @@ describe('AccountSidebar', () => {
         }
     });
 
-    it('slots the existing count-pill islands', () => {
-        render(
+    it('lists no «Qué hay de nuevo» or «Ayuda» link: they moved to the header (HOS-2550)', () => {
+        const { container } = render(
             <AccountSidebar
                 view={viewFor(['USER'], 'editar')}
                 locale="es"
-                whatsNewCount={<span data-testid="wn">3</span>}
             />
         );
-        expect(screen.getByTestId('wn').closest('a')).toHaveAttribute(
-            'href',
-            expect.stringContaining('novedades')
-        );
+        const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+        expect(hrefs.some((href) => href?.includes('/mi-cuenta/novedades'))).toBe(false);
+        expect(hrefs.some((href) => href?.includes('/mi-cuenta/ayuda'))).toBe(false);
     });
 });
 
@@ -165,6 +169,18 @@ describe('AccountSidebar: personal and business zones (HOS-2551)', () => {
         expect(hrefs).toContain('/es/mi-cuenta/asistentes-ia/');
         expect(hrefs).toContain('/es/mi-cuenta/favoritos/');
         expect(hrefs).not.toContain('/es/mi-cuenta/propiedades/');
+    });
+
+    it('renders no AI-assistants link at all for a pure tourist (HOS-2562)', () => {
+        const { container } = render(
+            <AccountSidebar
+                view={viewFor(['USER'], 'editar')}
+                locale="es"
+            />
+        );
+        const hrefs = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+        expect(hrefs).not.toContain('/es/mi-cuenta/asistentes-ia/');
+        expect(container.querySelector('[data-ai-assistants-entry]')).toBeNull();
     });
 
     it('on /mi-cuenta/ renders Mi perfil and Mis viajes open', () => {
