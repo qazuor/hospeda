@@ -1,0 +1,40 @@
+/* KeyValueList.module.css — read-only labelled facts (HOS-2472).
+   Adapts to its own container: stacked below 30rem, two columns from there. */
+
+.container {
+    container-type: inline-size;
+}
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin: 0;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+}
+
+.label {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.value {
+    margin: 0;
+    min-inline-size: 0;
+    font: var(--app-body);
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+@container (width >= 30rem) {
+    .row {
+        grid-template-columns: minmax(8rem, 1fr) minmax(0, 2fr);
+        gap: var(--space-4);
+    }
+}

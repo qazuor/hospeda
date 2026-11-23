@@ -144,9 +144,8 @@ export function useCollectionMutation({
                 if (code === 'ENTITLEMENT_REQUIRED') {
                     onClose();
                     // Routed through t() (not a naked literal) so a non-`es`
-                    // locale gets the translated copy — mirrors the key/
-                    // fallback already used by the sibling upgrade cartel in
-                    // UserFavoritesList.client.tsx (HOS-899).
+                    // locale gets the translated copy, naming the catalog
+                    // plans like the rest of the collections gate (HOS-899).
                     addToast({
                         type: 'error',
                         message: resolveCollectionsGateMessage({

@@ -1,10 +1,9 @@
 /**
  * @file favoritos-collection-usage.test.ts
  * @description Source-reading tests for the favoritos page collection usage counter.
- * Verifies that the SSR fetch pattern and the CollectionUsageMeter island wiring
- * are present in the page source (T-UI-CL1, SPEC-098; island extraction HOS-999).
- * The counter's own rendering behavior lives in
- * test/components/account/CollectionUsageMeter.test.tsx.
+ * Verifies that the SSR fetch pattern and the FavoritesView island wiring are
+ * present in the page source (T-UI-CL1, SPEC-098; kit migration HOS-2480).
+ * The gate's own behavior lives in test/components/account/favorites/.
  */
 
 import { readFileSync } from 'node:fs';
@@ -76,30 +75,27 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
         });
     });
 
-    // ── HOS-999: usage counter moved to the CollectionUsageMeter island ────────
-    // The "X / max" counter + progress bar markup (role="progressbar",
-    // account.favorites.collections.usage/limit_reached, the warning modifier,
-    // the null-collectionUsage skip) used to be rendered inline here and was
-    // covered by source-reading assertions in this file. It now lives in
-    // CollectionUsageMeter.client.tsx, covered by behavioral RTL tests in
-    // test/components/account/CollectionUsageMeter.test.tsx. This page only
-    // needs to wire the SSR-resolved usage into that island correctly.
-    describe('usage counter wiring (HOS-999)', () => {
-        it('imports the CollectionUsageMeter island', () => {
+    // ── HOS-2480: the usage seeds the collections gate of the FavoritesView ───
+    // The usage line («3 de 10 colecciones usadas») and every «Crear colección»
+    // entry point now read one gate inside the FavoritesView island, covered by
+    // test/components/account/favorites/*.test.tsx. This page only has to hand
+    // the SSR-resolved usage and the 403 flag to that island.
+    describe('collections gate wiring (HOS-2480)', () => {
+        it('renders the FavoritesView island with client:load', () => {
             expect(src).toContain(
-                "import { CollectionUsageMeter } from '@/components/account/CollectionUsageMeter.client'"
+                "import { FavoritesView } from '@/components/account/favorites/FavoritesView.client'"
             );
-        });
-
-        it('renders CollectionUsageMeter with client:load and the SSR-resolved usage as `initial`', () => {
-            expect(src).toContain('<CollectionUsageMeter');
+            expect(src).toContain('<FavoritesView');
             expect(src).toContain('client:load');
-            expect(src).toContain('initial={collectionUsage}');
         });
 
-        it('still computes isAtLimit for CreateCollectionCTA', () => {
-            expect(src).toContain('isAtLimit');
-            expect(src).toContain('isAtLimit={isAtLimit}');
+        it('passes the SSR-resolved usage as the initial usage', () => {
+            expect(src).toContain('initialUsage={collectionUsage}');
+        });
+
+        it('passes the catalog plan names of the gate (HOS-2544)', () => {
+            expect(src).toContain('planNamesWithEntitlement');
+            expect(src).toContain('gatePlanNames={gatePlanNames}');
         });
     });
 
@@ -124,8 +120,8 @@ describe('favoritos page — collection usage counter (T-UI-CL1)', () => {
             expect(src).toContain("errorBody.error?.code === 'ENTITLEMENT_REQUIRED'");
         });
 
-        it('passes accessDenied to CreateCollectionCTA instead of folding it into isAtLimit', () => {
-            expect(src).toContain('accessDenied={collectionsAccessDenied}');
+        it('passes the 403 flag to the island as its own fact, not as a limit', () => {
+            expect(src).toContain('initialAccessDenied={collectionsAccessDenied}');
         });
     });
 });

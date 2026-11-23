@@ -1,0 +1,97 @@
+/* CollectionForm.module.css — the collection form layout and its color and
+   icon pickers (HOS-2480). Tokens only; selection is a double ring, never color alone. */
+
+.colorPickerRow,
+.iconPickerGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-start: var(--space-1);
+}
+
+.colorSwatch {
+    position: relative;
+    flex-shrink: 0;
+    inline-size: var(--space-8);
+    block-size: var(--space-8);
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+}
+
+.colorSwatch:focus-visible,
+.iconBtn:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.colorSwatchSelected,
+.colorSwatchNoneSelected {
+    outline: 2px solid var(--action-primary);
+    outline-offset: 2px;
+}
+
+/* "Sin color": transparent with a diagonal stroke. */
+.colorSwatchNone {
+    background-color: transparent;
+    border-color: var(--border);
+}
+
+.colorSwatchNone::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom right,
+        transparent calc(50% - 1px),
+        var(--status-danger-solid) calc(50% - 1px),
+        var(--status-danger-solid) calc(50% + 1px),
+        transparent calc(50% + 1px)
+    );
+}
+
+.iconBtn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--control-h-md);
+    block-size: var(--control-h-md);
+    padding: 0;
+    background-color: var(--control-bg);
+    border: 2px solid var(--control-border);
+    border-radius: var(--radius-control);
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+}
+
+.iconBtn:hover {
+    border-color: var(--action-primary);
+    color: var(--core-foreground);
+}
+
+.iconBtnSelected {
+    background-color: var(--nav-active-bg);
+    border-color: var(--action-primary);
+    color: var(--nav-active-fg);
+}
+
+/* "Sin ícono": wider, to fit its label. */
+.iconBtnNone {
+    inline-size: auto;
+    padding-inline: var(--space-3);
+    font: var(--app-meta);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.pickerLabel {
+    font: var(--app-ui);
+    color: var(--core-foreground);
+}

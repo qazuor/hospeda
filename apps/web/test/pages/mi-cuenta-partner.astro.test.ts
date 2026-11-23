@@ -74,7 +74,7 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
         it('the installment card has no link', () => {
             // Arrange
             const start = source.indexOf('data-testid="partner-installment"');
-            const end = source.indexOf('</AccountSectionCard>', start);
+            const end = source.indexOf('</Section>', start);
             // Act
             const card = source.slice(start, end);
             // Assert
@@ -205,6 +205,50 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
     it('wraps content in AccountLayout with the partner active section', () => {
         expect(source).toContain('<AccountLayout');
         expect(source).toContain('activeSection="partner"');
+    });
+
+    describe('partner dashboard on the kit (HOS-2477)', () => {
+        it('has one PageHeader with a StatusPill and none of the legacy primitives', () => {
+            expect(source.match(/<PageHeader\b/g)).toHaveLength(1);
+            expect(source).toContain('<StatusPill slot="status"');
+            expect(source).not.toContain('AccountPageHeader');
+            expect(source).not.toContain('AccountSectionCard');
+        });
+
+        it('shows the state banner as a «próxima acción» Alert', () => {
+            expect(source).toContain("title={t('account.partner.nextAction.title')}");
+        });
+
+        it('reads the numbers from mineStats through the stats island, only for live content', () => {
+            expect(source).toContain(
+                '{!isRevoked && isContentApproved && <PartnerStatsGrid client:visible locale={locale} />}'
+            );
+        });
+
+        it('puts the edit form inside a Section', () => {
+            const form = source.indexOf('<PartnerEditForm');
+            const section = source.lastIndexOf('<Section', form);
+            expect(section).toBeGreaterThan(-1);
+            expect(source.slice(section, form)).toContain('section:partner.edit-form');
+        });
+
+        it('every pill state has a label in every locale', () => {
+            for (const dict of [es, en, pt]) {
+                for (const state of [
+                    'revoked',
+                    'active',
+                    'approved',
+                    'underReview',
+                    'rejected',
+                    'draft'
+                ]) {
+                    expect(
+                        (dict.partner as unknown as { statusPill: Record<string, string> })
+                            .statusPill[state]
+                    ).toBeTruthy();
+                }
+            }
+        });
     });
 
     it('resolves locale from Astro.locals, not Astro.params.lang', () => {

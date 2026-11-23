@@ -1,0 +1,35 @@
+/* ProviderDetail.module.css — layout only; every surface is a kit piece. */
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.benefit {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-foreground);
+}
+
+.channel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.channelValue {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
