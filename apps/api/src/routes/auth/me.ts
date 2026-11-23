@@ -1,12 +1,13 @@
 import { UserModel } from '@repo/db';
 import { AuthMeResponseSchema, PermissionEnum } from '@repo/schemas';
-import { HostTradeService } from '@repo/service-core';
+import { HostTradeService, PartnerService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createGuestActor, isGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 
 const hostTradeService = new HostTradeService({ logger: apiLogger });
+const partnerService = new PartnerService({ logger: apiLogger });
 
 /**
  * Builds the `/auth/me` payload from the actor the middleware resolved.
@@ -16,7 +17,7 @@ const hostTradeService = new HostTradeService({ logger: apiLogger });
  * protected routes.
  *
  * @param c - The request context carrying the resolved actor.
- * @returns The actor, its auth status, and the two derived account flags.
+ * @returns The actor, its auth status, and the derived account flags.
  */
 export async function handleAuthMe(c: Context) {
     try {
@@ -58,21 +59,38 @@ export async function handleAuthMe(c: Context) {
         // Non-blocking: an account whose listing cannot be read is treated
         // as owning none. The consequence is a missing nav entry, never a
         // broken account page, and the entry reappears on the next render.
-        let ownsHostTradeListing = false;
-        if (isAuthenticated) {
+        //
+        // Same placement and reasoning for whether it owns a LIVE partner
+        // listing (HOS-2551). A revoked or soft-deleted partner does not count
+        // (`ownsActivePartner`, a one-row indexed existence check).
+        //
+        // Both probes run in parallel, each swallowing its own failure.
+        const probeHostTrade = async (): Promise<boolean> => {
             try {
                 const own = await hostTradeService.getOwn(actor);
-                ownsHostTradeListing = own.data?.trade != null;
+                return own.data?.trade != null;
             } catch {
-                // Non-blocking: default false
+                return false;
             }
-        }
+        };
+        const probePartner = async (): Promise<boolean> => {
+            try {
+                const own = await partnerService.ownsActivePartner(actor);
+                return own.data?.owns === true;
+            } catch {
+                return false;
+            }
+        };
+        const [ownsHostTradeListing, ownsPartner] = isAuthenticated
+            ? await Promise.all([probeHostTrade(), probePartner()])
+            : [false, false];
 
         const result = {
             actor: filteredActor,
             isAuthenticated,
             passwordChangeRequired,
-            ownsHostTradeListing
+            ownsHostTradeListing,
+            ownsPartner
         };
         apiLogger.debug({ message: 'AuthMe: Returning result', result });
         return result;
@@ -87,7 +105,8 @@ export async function handleAuthMe(c: Context) {
             actor: createGuestActor(),
             isAuthenticated: false,
             passwordChangeRequired: false,
-            ownsHostTradeListing: false
+            ownsHostTradeListing: false,
+            ownsPartner: false
         };
     }
 }

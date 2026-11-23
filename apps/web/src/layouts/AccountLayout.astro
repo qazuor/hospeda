@@ -89,10 +89,16 @@ const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
  * strand that provider with no way back besides a typed URL.
  */
 const ownsHostTradeListing = Astro.locals.user?.ownsHostTradeListing === true;
+/**
+ * HOS-2551: unlike the provider flag, `ownsPartner` already excludes a revoked
+ * partner (owner decision): the API probe counts live rows only.
+ */
+const ownsPartner = Astro.locals.user?.ownsPartner === true;
 
 const navModel = buildAccountNavModel({
 	roles: userRoles,
 	ownsHostTradeListing,
+	ownsPartner,
 	mcpEnabled,
 	activeSection,
 });

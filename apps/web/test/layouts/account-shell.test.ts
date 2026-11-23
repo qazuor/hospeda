@@ -71,6 +71,13 @@ describe('AccountShell.astro', () => {
         expect(shellCss).toMatch(/\.bar\s*{\s*display: none;/);
     });
 
+    it('keeps the bar wrapper out of the box tree below 64rem so the sticky bar can travel (HOS-2563)', () => {
+        // The wrapper is the base `.bar` rule, before any @media block.
+        const base = shellCss.slice(0, shellCss.indexOf('@media'));
+        expect(base).toMatch(/\.bar\s*{[^}]*display: contents;/);
+        expect(base).not.toMatch(/\.bar\s*{[^}]*display: block;/);
+    });
+
     it('caps the form and reading templates with their layout tokens', () => {
         expect(shellCss).toContain('data-template="form"');
         expect(shellCss).toContain('var(--form-max)');
