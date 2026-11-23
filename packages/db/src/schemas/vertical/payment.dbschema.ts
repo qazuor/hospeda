@@ -48,6 +48,15 @@ export const payments = pgTable(
          * `cc_rejected_high_risk`); null when the payment was not rejected or the provider gave none (HOS-1991).
          */
         providerStatusDetail: varchar('provider_status_detail', { length: 255 }),
+        /**
+         * When a rejection of this charge was first observed (HOS-1883). Set once, by the first
+         * read that sees the charge rejected (terminal or inside the provider's retry window),
+         * through `… WHERE rejection_observed_at IS NULL`; the call whose write took the row is
+         * the only one that reports the decline. Null while no rejection was ever read, and on
+         * payments rejected before the column existed. It is not the payment's state: a charge
+         * retried and later approved keeps it, and `status` stays the only source of truth.
+         */
+        rejectionObservedAt: timestamp('rejection_observed_at', { withTimezone: true }),
         /** fecha del hecho */
         factAt: timestamp('fact_at', { withTimezone: true }).notNull(),
         /** monto reembolsado acumulado */

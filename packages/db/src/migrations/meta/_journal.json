@@ -1723,6 +1723,13 @@
       "when": 1795237318594,
       "tag": "0245_hos2519_email_template_preview",
       "breakpoints": true
+    },
+    {
+      "idx": 246,
+      "version": "7",
+      "when": 1795392471621,
+      "tag": "0246_hos1883_payment_rejection_observed_at",
+      "breakpoints": true
     }
   ]
 }
