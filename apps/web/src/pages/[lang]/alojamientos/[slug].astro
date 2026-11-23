@@ -55,6 +55,7 @@ import type { NearbyPoi } from '@repo/schemas';
 import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
+import ClampedText from '@/components/listing/ClampedText.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
 import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
@@ -667,10 +668,12 @@ const faqSections = accommodation.faqs.map((faq) => ({
                         <p>{accommodation.summary}</p>
                     </div>
                 )}
-                <div class="description-rich__body" set:html={safeRichDescriptionHtml} />
+                <ClampedText lang={locale}>
+                    <div class="description-rich__body" set:html={safeRichDescriptionHtml} />
+                </ClampedText>
             </section>
         ) : (
-            <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
+            <Description lang={locale} summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
         )}
         </div>
         )}
