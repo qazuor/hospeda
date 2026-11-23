@@ -160,7 +160,7 @@ test.describe('TEST:B13a:20 AC:B13a:19 the cancellation end to end from its scre
             timeoutMs: MAIL_TIMEOUT_MS
         });
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
-        const island = page.locator('section[aria-label="Tus suscripciones"]');
+        const island = page.getByRole('region', { name: 'Tus suscripciones', exact: true });
         await expect(island).toContainText('No tenés suscripciones vigentes.');
         await expect(subscriptionArticle({ page, subscriptionId })).toHaveCount(0);
     });
