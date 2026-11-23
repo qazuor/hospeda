@@ -256,6 +256,7 @@ export function KitGalleryFeedback({ locale, openOverlay }: KitGalleryFeedbackPr
                                 onSave={() => {}}
                                 onDiscard={() => {}}
                                 onGoToFirstError={() => {}}
+                                contained
                             />
                         </div>
                     </Visual>
