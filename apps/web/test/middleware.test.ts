@@ -1159,3 +1159,64 @@ describe('middleware — anonymous protected route keeps the query in returnUrl 
         );
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-2359 (OD-6, AC-15): a redirect that copies the visitor's query string is
+// never cacheable. A cached redirect would hand one visitor's UTMs to the next.
+// The three redirects that append `context.url.search` (trailing slash, legacy
+// alias, locale) all go through `buildRedirectResponse`.
+// ---------------------------------------------------------------------------
+describe('middleware onRequest — redirects carrying a query are no-store (HOS-2359)', () => {
+    it('locale redirect: /?utm_source=x keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.status).toBe(301);
+        expect(response?.headers.get('location')).toBe('/es/?utm_source=x');
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('trailing-slash redirect: /alojamientos?utm_source=x keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/alojamientos?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.status).toBe(301);
+        expect(response?.headers.get('location')).toBe('/alojamientos/?utm_source=x');
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('legacy alias redirect: /es/blog/?utm_source=x keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/es/blog/?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.headers.get('location')).toBe('/es/publicaciones/?utm_source=x');
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it('legacy alias reached from a slashless path keeps the query and answers no-store', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/tipo/cabin?utm_source=x' });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect(response?.headers.get('location')).toBe(
+            '/es/alojamientos/tipo/cabana/?utm_source=x'
+        );
+        expect(response?.headers.get('cache-control')).toBe('no-store');
+    });
+
+    it.each([
+        '/',
+        '/alojamientos',
+        '/es/blog/'
+    ])('a query-less redirect (%s) carries no no-store', async (pathname) => {
+        const context = createContext({ pathname });
+
+        const response = await onRequest(context as any, vi.fn());
+
+        expect([301, 308]).toContain(response?.status);
+        expect(response?.headers.get('cache-control')).not.toBe('no-store');
+    });
+});

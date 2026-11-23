@@ -407,6 +407,49 @@ export function buildLocaleRedirect({
     return `/${DEFAULT_LOCALE}${normalizedPath}${search}`;
 }
 
+/** Input of {@link buildRedirectResponse}. */
+export interface BuildRedirectResponseInput {
+    /**
+     * The Astro context (only `redirect` is used). Passed whole, not as a bare
+     * `context.redirect`, so the method keeps its receiver.
+     */
+    readonly context: {
+        readonly redirect: (location: string, status?: number) => Response;
+    };
+    /** Redirect target, query string included when the caller copied one. */
+    readonly location: string;
+    /** HTTP status of the redirect (301, 302, 308 ...). */
+    readonly status: number;
+}
+
+/**
+ * Builds a redirect and, when its `Location` carries a query string, marks it
+ * `Cache-Control: no-store` (HOS-2359, owner decision OD-6).
+ *
+ * Why: three middleware redirects copy the visitor's query into `Location`
+ * (trailing slash, legacy aliases, locale). A cached redirect would replay one
+ * visitor's `?utm_*` (or any other parameter) to every later visitor of the same
+ * URL, misattributing their visit. A query-less redirect is identical for
+ * everyone and keeps its default caching.
+ *
+ * The response still comes from Astro's own `context.redirect`, so its status and
+ * `Location` semantics are unchanged; only the header is added.
+ *
+ * @param input - See {@link BuildRedirectResponseInput}
+ * @returns The redirect response
+ */
+export function buildRedirectResponse({
+    context,
+    location,
+    status
+}: BuildRedirectResponseInput): Response {
+    const response = context.redirect(location, status);
+    if (location.includes('?')) {
+        response.headers.set('Cache-Control', 'no-store');
+    }
+    return response;
+}
+
 /**
  * User information parsed from session cookie.
  */
