@@ -32,16 +32,16 @@ import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import LocationSection from '@/components/accommodation/LocationSection.astro';
 import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.astro';
+import WaveDivider from '@/components/shared/ui/WaveDivider.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import HostSection from '@/components/accommodation/HostSection.astro';
 import { toReviewStripItems } from '@/lib/review-strip';
-import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
-import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
 import { ListingContactPanel } from '@/components/listing/contact/ListingContactPanel.client';
+import { ListingContactCard } from '@/components/listing/contact/ListingContactCard.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
@@ -316,6 +316,7 @@ const ratingBreakdown = (() => {
 // Posts and events: pass raw items for lightweight cards
 const postItems = extractItems(postsResult);
 const eventItems = extractItems(eventsResult).slice(0, 6);
+const hasRelatedContent = similarCards.length + ownerCards.length + postItems.length + eventItems.length > 0;
 
 // Active promotions for this accommodation — graceful degradation via extractItems.
 const activePromos = extractItems(promotionsResult) as unknown as OwnerPromotionPublicItem[];
@@ -739,6 +740,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
     <Fragment slot="after-content">
     <!-- Full-width related content after the main article and host sidebar. -->
+    {hasRelatedContent && <WaveDivider />}
     {similarCards.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.similar')} ariaLabel={t('accommodations.detail.related.similar')} lang={locale} count={similarCards.length}>
             {similarCards.map((card) => <AccommodationCard data={card} locale={locale} />)}
@@ -860,22 +862,17 @@ const faqSections = accommodation.faqs.map((faq) => ({
                 />
             </PriceAlertButton>
             <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} lang={locale}>
-                <ContactHost
-                    client:idle
+                <ListingContactCard
+                    client:media="(min-width: 768px)"
                     accommodation={contactAccommodation}
-                    locale={locale}
+                    accommodationName={accommodation.name}
+                    hasWhatsapp={accommodation.hasWhatsapp}
+                    whatsappPlansHref={whatsappPlansHref}
+                    phone={accommodation.contactInfo?.phone}
+                    capacity={accommodation.extraInfo?.capacity}
                     initialMessage={prefilledMessage}
-                    origin="sidebar"
+                    locale={locale}
                 />
-                {accommodation.hasWhatsapp && (
-                    <WhatsAppContact
-                        client:idle
-                        accommodationId={accommodation.id}
-                        accommodationName={accommodation.name}
-                        plansHref={whatsappPlansHref}
-                        locale={locale}
-                    />
-                )}
             </OwnerCard>
             <!-- client:idle, NOT client:visible (which it used to be). The
                  island now SSRs the anonymous sign-in CTA and swaps itself in

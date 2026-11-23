@@ -20,8 +20,9 @@ import {
     DialogBody,
     DialogFloatingCloseButton
 } from '@/components/shared/ui/Dialog.client';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { useSwipe } from '@/hooks/useSwipe';
-import type { SupportedLocale } from '@/lib/i18n';
+import type { PluralTranslationFn, SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { PhotoCreditParts } from '@/lib/photo-credit.types';
 import { GalleryHeroPreload } from './gallery/GalleryHeroPreload';
@@ -498,6 +499,7 @@ interface DetailVariantProps {
     readonly mobile?: MobileGalleryOptions;
     readonly onOpen: (index: number) => void;
     readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+    readonly tPlural: PluralTranslationFn;
     /**
      * When provided AND total images exceed the visible inline count (count >= 5),
      * a "Ver todas las fotos" link is rendered below the mosaic grid.
@@ -505,7 +507,15 @@ interface DetailVariantProps {
     readonly viewAllHref?: string;
 }
 
-function DetailVariant({ images, onOpen, t, viewAllHref, locale, mobile }: DetailVariantProps) {
+function DetailVariant({
+    images,
+    onOpen,
+    t,
+    tPlural,
+    viewAllHref,
+    locale,
+    mobile
+}: DetailVariantProps) {
     const [featured, ...rest] = images;
     const count = images.length;
     const visibleThumbCount = getVisibleThumbCount(count);
@@ -664,6 +674,26 @@ function DetailVariant({ images, onOpen, t, viewAllHref, locale, mobile }: Detai
                                 </button>
                             );
                         })}
+                    </div>
+                )}
+                {/* HOS-2531: desktop "see all N photos" button. It lives inside the
+                mosaic so it disappears with it on mobile, where the swipe track
+                already carries its own counter. */}
+                {count >= 2 && (
+                    <div className={styles.seeAllPhotos}>
+                        <GradientButton
+                            as="button"
+                            variant="outline-primary"
+                            size="sm"
+                            label={tPlural('accommodations.detail.gallery.viewAllCount', count)}
+                            leadingIcon={
+                                <FullscreenIcon
+                                    size={16}
+                                    aria-hidden="true"
+                                />
+                            }
+                            onClick={() => onOpen(0)}
+                        />
                     </div>
                 )}
             </div>
@@ -886,7 +916,7 @@ export function ImageGallery({
     viewAllHref,
     mobile
 }: ImageGalleryProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
     const openLightbox = useCallback((index: number): void => {
@@ -906,6 +936,7 @@ export function ImageGallery({
                     images={images}
                     onOpen={openLightbox}
                     t={t}
+                    tPlural={tPlural}
                     viewAllHref={viewAllHref}
                     locale={locale}
                     mobile={mobile}

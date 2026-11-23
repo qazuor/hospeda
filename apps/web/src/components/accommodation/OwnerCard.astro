@@ -139,6 +139,14 @@ const shouldProxyOwnerAvatar = ownerAvatarUrl ? isCloudinaryDeliveryUrl(ownerAva
     font-weight: 700;
     font-size: 1.2rem;
   }
+  /* HOS-2531: below 768px the stacked sidebar would show the host a second
+   * time (HostSection already sits in the main content) and the contact lives
+   * in the dock + sheet, so the card is desktop/tablet only. */
+  @media (max-width: 767px) {
+    .owner-card {
+      display: none;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .owner-card,
     .owner-card:hover {

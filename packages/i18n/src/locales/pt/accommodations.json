@@ -460,6 +460,7 @@
                 "social": "Redes sociais"
             },
             "fields": { "checkIn": "Chegada", "checkOut": "Saída", "guests": "Hóspedes" },
+            "card": { "direct": "Ou contate diretamente" },
             "errors": {
                 "checkOutAfterCheckIn": "A saída deve ser depois da chegada",
                 "invalidDate": "Informe uma data válida.",
@@ -539,6 +540,8 @@
         "gallery": {
             "viewAll": "Ver todas as fotos",
             "moreOverlay": "+{{count}} mais",
+            "viewAllCount_one": "Ver a foto",
+            "viewAllCount_other": "Ver as {{count}} fotos",
             "viewFullscreen": "Ver foto {n} em tela cheia",
             "backToAccommodation": "← Voltar ao alojamento",
             "photosSubpage": "Fotos"
