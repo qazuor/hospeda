@@ -106,9 +106,12 @@ describe('mi-cuenta/comercio/nuevo — both URLs are now 301s (HOS-1156 D-6)', (
 
 describe('only the CREATE path was ever opened (HOS-687 companion half)', () => {
     it('the listing index and the editor KEEP their listing-role gate', () => {
-        // The pages that READ and WRITE existing listings still require the
-        // role. If a later change strips the gate from either, this fails.
-        expect(listingIndexSource).toContain('hasListingNavAccess');
+        // The pages that READ and WRITE existing listings still require a
+        // gate. If a later change strips it from either, this fails. HOS-2559
+        // moved the index to the per-vertical permission gate
+        // (`resolveOwnerListPage`, VENUE_EDIT_OWN / EXPERIENCE_EDIT_OWN).
+        expect(listingIndexSource).toContain('resolveOwnerListPage');
+        expect(listingIndexSource).toMatch(/decision\.kind === 'forbidden'/);
         expect(editorResolverSource).toContain('hasListingNavAccess');
     });
 });

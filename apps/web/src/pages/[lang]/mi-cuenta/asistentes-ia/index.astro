@@ -10,6 +10,10 @@
  * browser. A static link leads to the assistant history (`historial/`,
  * HOS-2348). The only server-side input is the MCP URL, which is the same for
  * everyone (`null` while the feature is off).
+ *
+ * HOS-2562: only a real client (a person with a business vertical) may open
+ * it. Anybody else gets the in-layout 404 (`no-encontrado`), indistinguishable
+ * from a route that does not exist. Same rule as the API's OAuth gate.
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -21,12 +25,18 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildAccountNotFoundTarget } from '@/lib/account-not-found';
+import { canUseAiAssistants } from '@/lib/ai-assistants-access';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
 
 if (!user) {
 	return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
+}
+
+if (!canUseAiAssistants({ user })) {
+	return Astro.rewrite(buildAccountNotFoundTarget({ locale }));
 }
 
 const { t } = createTranslations(locale);

@@ -41,7 +41,10 @@ jobs:
     # This raises the ceiling; it does not fix the cause. The real fix is making
     # the cache hit, after which the step costs seconds and 15 would be ample.
     # The header's "< 6 minutes" target still describes the suite itself.
-    timeout-minutes: 25
+    #
+    # 30, not 25 (HOS-2471): the visual-regression step pulls the pinned
+    # Playwright image (~1 GB compressed) and re-boots the three servers.
+    timeout-minutes: 30
 
     services:
       # NOTE: service container port mappings are evaluated before any steps
@@ -226,9 +229,35 @@ jobs:
         run: pnpm --filter hospeda-e2e e2e:seed
 
       - name: Run E2E P0 suite
+        id: p0
         run: pnpm --filter hospeda-e2e e2e:test:p0
         env:
           PLAYWRIGHT_HTML_OPEN: never
+
+      # HOS-2471 (HOS-2413 §6.11, OD-5/OD-7): Mi Cuenta visual regression, light
+      # and dark, desktop and mobile. The browser runs inside the pinned
+      # Playwright image (mcr.microsoft.com/playwright:v<@playwright/test>-noble)
+      # because the committed baselines were generated there: the runner's own
+      # Chromium and fonts would never match them. The test runner and the app
+      # servers stay on the runner, on the production builds above.
+      # CI only compares: a missing or different screenshot fails this step and
+      # nothing is written back. Runs whenever the P0 step ran, pass or fail, so
+      # one red does not hide the other.
+      - name: Visual regression
+        if: ${{ !cancelled() && steps.p0.conclusion != 'skipped' }}
+        run: pnpm --filter hospeda-e2e e2e:test:visual
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+
+      - name: Upload visual regression report (diffs)
+        if: ${{ failure() && steps.p0.conclusion != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-visual-report-pr-${{ github.run_id }}
+          path: |
+            apps/e2e/playwright-report-visual/
+            apps/e2e/test-results-visual/
+          retention-days: 14
 
       - name: Upload Playwright HTML report
         if: always()

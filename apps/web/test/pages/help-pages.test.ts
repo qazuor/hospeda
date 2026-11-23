@@ -30,11 +30,29 @@ const HEADER = read('components/account/AccountPageHeader.astro');
 const SHELL = read('layouts/EditorShellLayout.astro');
 const HELP_LINK = read('components/account/help/HelpLink.astro');
 const LAYOUT = read('layouts/AccountLayout.astro');
-const HELP_ROW = read('components/account/help/PageHelpRow.astro');
+const ACCOUNT_HEADER = read('layouts/AccountHeader.astro');
 
-/** What gives a page its «?»: the header, an editor layout, the account layout's row, or the row itself. */
-const HELP_PATH =
-    /<AccountPageHeader\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b|<AccountLayout\b|<PageHelpRow\b/;
+/**
+ * What gives a page the «?» of ITS OWN article (HOS-2546): the title row of
+ * `AccountPageHeader`, directly or through an editor layout. Since
+ * `PageHelpRow` is gone, the account layout alone is not enough.
+ */
+const PAGE_HELP_PATH = /<AccountPageHeader\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
+
+/** What gives a page at least the general «?»: a page «?», or the account header's. */
+const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b`);
+
+/**
+ * Onboarding gates the middleware sends a user to before the account itself:
+ * they render the site chrome (`BaseLayout`), so they have neither «?». No
+ * article claims their anchors; a test below fails if one ever does, because
+ * such a page would then need a «?» wired next to its title.
+ */
+const ONBOARDING_GATE_PAGES = [
+    'agregar-contrasena/index.astro',
+    'cambiar-contrasena/index.astro',
+    'completar-perfil/index.astro'
+];
 
 /**
  * Account pages with no user surface: they redirect before rendering, so they
@@ -211,7 +229,7 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
 
         // Assert: the page exists, has a «?» path, derives this anchor, and it finds the article
         expect(source, `${anchor} names no page`).toBeDefined();
-        expect(source).toMatch(HELP_PATH);
+        expect(source).toMatch(PAGE_HELP_PATH);
         expect(source).not.toMatch(/helpAnchor=\{null\}/);
         expect(file, `no page derives ${anchor}`).toBeDefined();
         expect(findHelpEntry({ anchor, locale: 'es' })?.id).toBe(id);
@@ -256,6 +274,7 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
         const missing = accountPages().filter(
             (page) =>
                 !REDIRECT_ONLY_PAGES.includes(page) &&
+                !ONBOARDING_GATE_PAGES.includes(page) &&
                 !HELP_PATH.test(readFileSync(resolve(PAGES, 'mi-cuenta', page), 'utf8'))
         );
 
@@ -266,13 +285,41 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
         }
     });
 
-    it('the account layout renders the page row, hidden next to a header', () => {
-        expect(LAYOUT).toContain('<PageHelpRow locale={locale} fallback />');
-        expect(LAYOUT).toContain(
-            '.account-page__content:has([data-account-page-header]) > [data-help-fallback]'
+    it('PageHelpRow and its fallback CSS no longer exist (HOS-2546)', () => {
+        expect(existsSync(resolve(SRC, 'components/account/help/PageHelpRow.astro'))).toBe(false);
+        expect(LAYOUT).not.toContain('PageHelpRow');
+        expect(LAYOUT).not.toContain('data-help-fallback');
+        for (const page of accountPages()) {
+            const source = readFileSync(resolve(PAGES, 'mi-cuenta', page), 'utf8');
+            expect(source, page).not.toContain('PageHelpRow');
+        }
+    });
+
+    it('the onboarding gates have no article, so they need no «?»', () => {
+        for (const page of ONBOARDING_GATE_PAGES) {
+            const anchor = pageHelpAnchor({ routePattern: routePatternOf(page) });
+            expect(anchor).toBeDefined();
+            expect(findHelpEntry({ anchor, locale: 'es' }), anchor).toBeUndefined();
+        }
+    });
+
+    it('the account header gives every account page the general «?» (HOS-2550)', () => {
+        expect(ACCOUNT_HEADER).toContain('href={actions.help.href}');
+        expect(ACCOUNT_HEADER).toContain("ariaLabel={t('account.ui.chrome.helpCenter')}");
+    });
+
+    it('a page with an article gets its «?»; a page without one renders none', () => {
+        // The article «?» resolves for a registered page…
+        const claimed = HELP_INDEX.locales.es.find((article) =>
+            article.entryFor.includes('page:mi-cuenta/complementos')
         );
-        expect(HEADER).toContain('data-account-page-header');
-        expect(HELP_ROW).toContain('pageHelpAnchor({ routePattern: Astro.routePattern })');
+        expect(claimed).toBeDefined();
+        expect(findHelpEntry({ anchor: 'page:mi-cuenta/complementos', locale: 'es' })?.id).toBe(
+            claimed?.id
+        );
+        // …and HelpLink renders nothing when no article claims the anchor.
+        expect(findHelpEntry({ anchor: 'page:mi-cuenta/favoritos', locale: 'es' })).toBeUndefined();
+        expect(HELP_LINK).toContain('{entry !== undefined && link !== undefined && (');
     });
 
     it('claims outside /mi-cuenta get no «?» from the account header (AC-21)', () => {

@@ -11,6 +11,13 @@
  *   1. The URL prefix (`/es/...`, authoritative for the request).
  *   2. `localStorage.preferredLocale` as a hint for cross-tab consistency.
  *
+ * The query string of the current page is carried over to the target locale
+ * (HOS-2559: `/es/mi-cuenta/comercio/?vertical=experience` must switch to
+ * `/en/mi-cuenta/comercio/?vertical=experience`, not to the venue list). The
+ * server renders the bare path (pages stay session-blind and cacheable); the
+ * query is read from `window.location` after hydration and again at click
+ * time, because some islands rewrite it with `history.replaceState`.
+ *
  * Used in three contexts via the `variant` prop:
  *   - "navbar": condensed pill in the desktop navbar's right zone.
  *   - "menu": full-width row inside dropdown menus (UserMenu, SettingsDropdown).
@@ -18,6 +25,7 @@
  */
 
 import type { JSX } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import styles from './LanguageSwitcher.module.css';
@@ -50,13 +58,20 @@ export interface LanguageSwitcherProps {
 
 function buildLocaleUrl({
     currentPath,
-    targetLocale
+    targetLocale,
+    search
 }: {
     readonly currentPath: string;
     readonly targetLocale: LocaleOption;
+    readonly search: string;
 }): string {
     const pathWithoutLocale = currentPath.replace(/^\/(es|en|pt)(\/|$)/, '/');
-    return `/${targetLocale}${pathWithoutLocale}`;
+    return `/${targetLocale}${pathWithoutLocale}${search}`;
+}
+
+/** Reads the current query string, or `''` outside a browser. */
+function readCurrentSearch(): string {
+    return typeof window === 'undefined' ? '' : window.location.search;
 }
 
 /**
@@ -73,6 +88,12 @@ export function LanguageSwitcher({
     variant = 'navbar',
     className
 }: LanguageSwitcherProps): JSX.Element {
+    // Empty on the server and on the first client render so hydration matches.
+    const [search, setSearch] = useState('');
+    useEffect(() => {
+        setSearch(readCurrentSearch());
+    }, []);
+
     const handleSelect = (targetLocale: LocaleOption) => {
         if (targetLocale === locale) return;
 
@@ -104,12 +125,22 @@ export function LanguageSwitcher({
                    before anything hydrates. */
                 <a
                     key={loc}
-                    href={buildLocaleUrl({ currentPath, targetLocale: loc })}
+                    href={buildLocaleUrl({ currentPath, targetLocale: loc, search })}
                     onClick={(event) => {
                         // The leave-warning registry claims this click while it asks the
                         // host to confirm leaving. Persist the locale only once the
                         // confirmed click is replayed, so cancelling changes nothing.
                         if (event.defaultPrevented) return;
+                        // The query may have been rewritten since mount; the browser
+                        // follows the href it reads after the click handlers run.
+                        event.currentTarget.setAttribute(
+                            'href',
+                            buildLocaleUrl({
+                                currentPath,
+                                targetLocale: loc,
+                                search: readCurrentSearch()
+                            })
+                        );
                         handleSelect(loc);
                     }}
                     className={cn(styles.option, loc === locale && styles.optionActive)}

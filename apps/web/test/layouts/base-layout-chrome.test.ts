@@ -45,20 +45,51 @@ describe('BaseLayout chrome slots (HOS-2413)', () => {
 });
 
 describe('AccountShell fills the chrome slots (HOS-2413)', () => {
-    it('provides the compact header, the one-line footer and the account toast region', () => {
+    it('provides the account header, the two-row footer and the account toast region', () => {
         expect(shell).toContain('<AccountHeader slot="chrome-header"');
-        expect(shell).toContain('<AccountFooter slot="chrome-footer"');
+        expect(shell).toMatch(
+            /<AccountFooter\s+slot="chrome-footer"[^>]*logoSrc=\{footerLogoSrc\}/
+        );
         expect(shell).toContain('<AccountToastRegion slot="chrome-toasts" client:idle');
         expect(shell.match(/<AccountToastRegion/g)).toHaveLength(1);
     });
 });
 
-describe('AccountHeader.astro (HOS-2413)', () => {
-    it('is 56px tall and composes the existing islands instead of copying them', () => {
-        expect(header).toContain('block-size: 3.5rem;');
+describe('AccountHeader.astro (HOS-2413, HOS-2550)', () => {
+    it('is 64px tall and composes the existing islands instead of copying them', () => {
+        expect(header).toContain('block-size: 4rem;');
         expect(header).toContain('UserMenu');
         expect(header).toContain('PublishMenu');
         expect(header).toContain('MobileMenuIsland');
-        expect(header).toContain("'mobile-toggle'");
+    });
+
+    it('renders the 36px logo and the site nav from the chrome model', () => {
+        expect(header).toMatch(/<Image src=\{logoSrc\} alt="" width=\{34\} height=\{36\}/);
+        expect(header).toContain('siteNav.inline.map(');
+        expect(header).toContain('navItems={siteNav.menu}');
+        expect(header).toContain("aria-label={t('account.ui.chrome.siteNav')}");
+    });
+
+    it('shows the inline nav and hides the hamburger only from 80rem', () => {
+        const wide = header.slice(header.indexOf('@media (min-width: 80rem)'));
+        expect(header).toMatch(/\.account-header__nav \{\s*display: none;/);
+        expect(wide).toMatch(/\.account-header__nav \{\s*display: block;/);
+        expect(wide).toMatch(/:global\(\.account-header__hamburger\)\s*\{\s*display: none;/);
+    });
+
+    it('wires its own hamburger, with an attribute the site header listener ignores', () => {
+        expect(header).toContain("data={{ 'account-mobile-toggle': '' }}");
+        expect(header).not.toContain("'mobile-toggle'");
+        expect(header).toContain('wireAccountMenuToggle({ doc: document });');
+    });
+
+    it('carries labelled help and what-s-new icons, the badge as a client island', () => {
+        expect(header).toContain("ariaLabel={t('account.ui.chrome.helpCenter')}");
+        expect(header).toContain('href={actions.help.href}');
+        expect(header).toContain("ariaLabel={t('account.ui.chrome.whatsNew')}");
+        expect(header).toContain('href={actions.whatsNew.href}');
+        expect(header).toContain(
+            '<WhatsNewCountPill locale={locale} labelsParentLink client:idle />'
+        );
     });
 });

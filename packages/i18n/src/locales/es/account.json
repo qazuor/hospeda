@@ -134,6 +134,8 @@
         "groupTourist": "Área turista",
         "groupHost": "Área anfitrión",
         "groupListings": "Área comercio",
+        "groupVenues": "Comer y salir",
+        "groupExperiences": "Experiencias",
         "groupEditorial": "Área editorial",
         "groupProvider": "Área proveedor",
         "groupProfile": "Mi perfil",
@@ -167,6 +169,8 @@
         "benefitUsages": "Usos del beneficio",
         "myPosts": "Mis publicaciones",
         "myEvents": "Mis eventos",
+        "myVenues": "Mis locales",
+        "myExperiences": "Mis experiencias",
         "provider": "Mi ficha de proveedor",
         "repeatTour": "Repetir tour",
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
@@ -2082,6 +2086,17 @@
         "breadcrumbs": "Ruta de navegación",
         "gallery": {
             "title": "Kit de componentes"
+        },
+        "chrome": {
+            "siteNav": "Navegación del sitio",
+            "helpCenter": "Centro de ayuda",
+            "helpGroup": "Ayuda",
+            "whatsNew": "Qué hay de nuevo",
+            "whatsNewUnread_one": "Qué hay de nuevo, {{count}} novedad sin leer",
+            "whatsNewUnread_other": "Qué hay de nuevo, {{count}} novedades sin leer",
+            "publish": "Publicá",
+            "footerNav": "Enlaces del sitio",
+            "legalNav": "Enlaces legales"
         }
     }
 }

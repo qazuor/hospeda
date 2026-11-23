@@ -114,6 +114,26 @@ label a connection in the account's AI assistants panel. Their copy lives in
 `apps/web/src/lib/ai-assistants.ts`. A tool that adds a new kind of access adds its
 capability in the same PR.
 
+### Only real clients (HOS-2562)
+
+AI assistants are only for a person with at least one business vertical
+(accommodation, venue, experience, editorial, partner or provider). The rule is
+`isRealClient` in `@repo/schemas`, fed with the actor's effective permissions and the
+`probeBusinessOwnership` facts, never the roles. The web reads the same function, so
+it cannot disagree. Anybody else is refused with `403` and OAuth's `access_denied` at
+three points (`lib/auth-mcp-client-guard.ts`):
+
+1. `/oauth2/authorize` with a session (no session still goes to sign-in).
+2. `/oauth2/consent` with `accept: true`. After sign-in the provider resumes the
+   authorization internally, so no `/oauth2/authorize` request reaches a hook there;
+   this check covers that path. `accept: false` still returns `access_denied`.
+3. Token issuance: `customAccessTokenClaims` throws, so neither a code exchange nor a
+   refresh yields a token.
+
+`/mcp` checks it again on every request (check 6 below). A tourist's connection made
+before the rule is not revoked: it stops working at once and its consent stays until
+the user disconnects it.
+
 Scopes are `openid`, `profile`, `email`, `offline_access`. Grants are
 `authorization_code` and `refresh_token`. There is no `client_credentials`: every
 token acts for a user.
@@ -163,6 +183,7 @@ The raw token is never logged.
 | 3 | Live grant (see above) | 401 |
 | 4 | User exists, not soft-deleted, not banned | 401 |
 | 5 | `mustChangePassword` | 403 `PASSWORD_CHANGE_REQUIRED` |
+| 6 | Real client (HOS-2562, `isActorRealClient`) | 403 `FORBIDDEN` |
 
 Check 5 is parity with `mustChangePasswordGate`, which a bearer request never
 reaches. Email verification is not a request gate. It is a per-tool check (see

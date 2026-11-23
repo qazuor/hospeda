@@ -191,7 +191,23 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
             new RegExp(`/mi-cuenta/comercio/venue/${venueId}/editar/?$`)
         );
 
-        // Experience listing also appears in the index.
+        // Listings owned by OTHER venue owners must NOT appear.
+        // La Cervecería del Río belongs to rodrigo (venue-owner-rodrigo@local.test).
+        await expect(
+            page.locator('.mc-list__name', { hasText: 'La Cervecería del Río' })
+        ).not.toBeVisible();
+
+        // HOS-2559: venues and experiences are separate lists. The bare URL lands
+        // on the venue list; the experience list is its own `?vertical=` page.
+        expect(page.url()).toContain('vertical=venue');
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/?vertical=experience`, {
+            waitUntil: 'domcontentloaded'
+        });
+        await expect(
+            page.locator('.mc-list__name', { hasText: 'La Parrilla del Puerto' })
+        ).toHaveCount(0);
+
+        // Experience listing appears in its own list.
         await expect(
             page.locator('.mc-list__name', { hasText: 'Excursión al Río Uruguay' })
         ).toBeVisible();
@@ -200,12 +216,6 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
             `a.mc-list__edit[href*="/experience/${experienceId}/editar"]`
         );
         await expect(experienceEditLink).toBeVisible();
-
-        // Listings owned by OTHER venue or experience owners must NOT appear.
-        // La Cervecería del Río belongs to rodrigo (venue-owner-rodrigo@local.test).
-        await expect(
-            page.locator('.mc-list__name', { hasText: 'La Cervecería del Río' })
-        ).not.toBeVisible();
 
         // ── Step 3: edit venue — change menuUrl ───────────────────────────
 

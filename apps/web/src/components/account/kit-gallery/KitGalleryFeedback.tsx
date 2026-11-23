@@ -12,6 +12,7 @@
  * @module components/account/kit-gallery/KitGalleryFeedback
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { useState } from 'react';
 import {
     AccountBar,
@@ -76,6 +77,7 @@ export function KitGalleryFeedback({ locale, openOverlay }: KitGalleryFeedbackPr
         locale,
         model: buildAccountNavModel({
             roles: ['USER', 'HOST'],
+            permissions: [PermissionEnum.ACCOMMODATION_CREATE],
             ownsHostTradeListing: false,
             ownsPartner: false,
             mcpEnabled: true,

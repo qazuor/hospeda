@@ -1250,13 +1250,16 @@ over the [MCP server](../api/docs/mcp-server.md) and disconnect the ones they co
   (`src/lib/mcp-discovery.ts`). Any failure reads as "off". The answer is cached
   (60 s positive, 30 s negative, stale-while-revalidate), so no request waits on it
   after the first.
-- **Visibility.** Flag on: the entry shows for every signed-in user. Flag off: it
-  shows only for a user with at least one connection, so they can disconnect. The
-  count comes from one shared lookup (`src/lib/ai-connections-count.ts`, one request
-  per page load) and the rule lives in `useAiAssistantsEntry`. The account sidebar,
-  the avatar menu and the mobile menu all use it, so the three cannot disagree. A
-  failed lookup hides the entry. The sidebar item is server-rendered `hidden` and
-  revealed by `AiAssistantsNavReveal`, which keeps the page session-blind.
+- **Only real clients (HOS-2562).** A real client is a person with at least one
+  business vertical: `isRealClient` in `@repo/schemas`, read from the EFFECTIVE
+  permissions plus the `ownsHostTradeListing` / `ownsPartner` facts, never the roles.
+  The API applies the same function (OAuth authorize, consent, token issuance and
+  every `/mcp` request), so the web never decides alone. The sidebar and drawer list
+  the entry only for a real client while the flag is on (`buildAccountNavModel`);
+  nobody else gets a hidden copy (the HOS-2430 reveal island is gone). Both pages
+  under `/mi-cuenta/asistentes-ia/` rewrite to the in-layout 404 for a non-client
+  (`canUseAiAssistants`, `src/lib/ai-assistants-access.ts`), and the consent screen
+  and the post-reset prompt offer no link to it.
 - **Untrusted client text.** A client's `name`, `uri` and `logoUri` come from the
   client itself. They render as plain React text. Links go through `toSafeHttpsUrl`
   (https only) and the logo is never fetched.
