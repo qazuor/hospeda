@@ -34,6 +34,7 @@ import LocationSection from '@/components/accommodation/LocationSection.astro';
 import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
+import ContactHostShell from '@/components/accommodation/ContactHostShell.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
@@ -808,13 +809,15 @@ const faqSections = accommodation.faqs.map((faq) => ({
                 />
             </PriceAlertButton>
             <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} lang={locale}>
-                <ContactHost
-                    client:idle
-                    accommodation={contactAccommodation}
-                    locale={locale}
-                    initialMessage={prefilledMessage}
-                    origin="sidebar"
-                />
+                <ContactHostShell contactInfo={accommodation.contactInfo} locale={locale}>
+                    <ContactHost
+                        client:idle
+                        accommodation={contactAccommodation}
+                        locale={locale}
+                        initialMessage={prefilledMessage}
+                        origin="sidebar"
+                    />
+                </ContactHostShell>
                 {accommodation.hasWhatsapp && (
                     <WhatsAppContact
                         client:idle
