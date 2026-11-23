@@ -13,7 +13,8 @@
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageHeader } from '@/components/account/ui';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -41,6 +42,8 @@ const description = t(door.subtitleI18nKey);
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="publica">
-    <AccountPageHeader title={title} />
+    <PageHeader title={title} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
     <DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />
 </AccountLayout>

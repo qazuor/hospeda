@@ -4,10 +4,10 @@
  *
  * Renders the authenticated user's price-alert subscriptions with:
  *  - Accommodation name, subscription-time price, and target-drop threshold
- *  - Delete-one action (inline confirmation, optimistic removal on success)
+ *  - Delete-one action (kit ConfirmDialog, optimistic removal on success)
  *  - Empty state (CTA to browse accommodations)
- *  - Plan-gate ("upgrade") state when the API reports the actor lacks the
- *    `PRICE_ALERTS` entitlement
+ *  - Plan-gate state (kit LockedState, plan names from the catalog) when the
+ *    API reports the actor lacks the `PRICE_ALERTS` entitlement
  *  - Closed alerts (HOS-1492, V8a row 27): an alert whose listing reached
  *    `PURGED` (`closedBecauseListingGone`) is listed apart, as CLOSED, saying
  *    only that the listing no longer exists — never why (that belongs to the
@@ -29,13 +29,15 @@
  *    subscription-time snapshot (`basePriceSnapshot`). The accommodation name
  *    is rendered as plain text (not a link) until a follow-up adds the slug.
  *
+ * HOS-2501: kit Sections, DataList rows, Skeleton, ErrorState, EmptyState,
+ * LockedState and ConfirmDialog (no inline confirmation of its own).
+ *
  * Hydration: caller MUST use `client:load`.
  */
 
 import { BellIcon } from '@repo/icons';
 import type { PriceAlertListItem } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { visibleApiMessage } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -45,6 +47,19 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './AlertsList.module.css';
+import {
+    Button,
+    DataList,
+    EmptyState,
+    ErrorState,
+    LinkButton,
+    ListRow,
+    LockedState,
+    Section,
+    Skeleton,
+    StatusPill,
+    useConfirm
+} from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,14 +122,13 @@ export function AlertsList({
     userId: _userId,
     gatePlanNames = []
 }: AlertsListProps) {
-    const { t, tPlural } = createTranslations(locale);
+    const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
     // ── State ─────────────────────────────────────────────────────────────────
     const [status, setStatus] = useState<ListStatus>({ kind: 'loading' });
     const [alerts, setAlerts] = useState<PriceAlertListItem[]>([]);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const { confirm: askConfirmation, confirmDialog } = useConfirm({ locale });
 
     const isMountedRef = useRef(true);
 
@@ -193,51 +207,50 @@ export function AlertsList({
     // ── Delete one ────────────────────────────────────────────────────────────
 
     /**
-     * Cancel (soft-delete) a single price-alert subscription. Shows inline
-     * confirmation before calling the API. Optimistically removes the item
-     * from local state on success — the endpoint returns a true 204 No
-     * Content, so no response body is parsed on the happy path.
+     * Cancel (soft-delete) a single price-alert subscription. Asks first with
+     * the kit ConfirmDialog; the dialog runs the request itself and stays open
+     * with a retry if it fails. Removes the item from local state on success:
+     * the endpoint returns a true 204 No Content, so no body is parsed on the
+     * happy path.
      */
-    const handleDeleteConfirm = useCallback(
-        async (id: string) => {
-            setDeletingId(id);
-            setConfirmDeleteId(null);
-            try {
-                const res = await fetch(`${base}/api/v1/protected/price-alerts/${id}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
+    const requestDelete = useCallback(
+        async (alert: PriceAlertListItem) => {
+            await askConfirmation({
+                title: t('account.alerts.deleteConfirmTitle'),
+                description: t('account.alerts.deleteConfirmBody', undefined, {
+                    name: alert.accommodationName
+                }),
+                confirmLabel: t('account.alerts.deleteOneConfirm'),
+                cancelLabel: t('account.alerts.deleteCancel'),
+                onConfirm: async () => {
+                    const res = await fetch(`${base}/api/v1/protected/price-alerts/${alert.id}`, {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    });
 
-                if (!res.ok) {
-                    // Only attempt to parse a body on failure — success is 204.
-                    let message = deleteErrorMsg;
-                    try {
-                        const body = (await res.json()) as ErrorResponse;
-                        message =
-                            visibleApiMessage({ error: body.error, status: res.status }) ??
-                            deleteErrorMsg;
-                    } catch {
-                        // Non-JSON error body — keep the generic message.
+                    if (!res.ok) {
+                        // Only attempt to parse a body on failure: success is 204.
+                        let message = deleteErrorMsg;
+                        try {
+                            const body = (await res.json()) as ErrorResponse;
+                            message =
+                                visibleApiMessage({ error: body.error, status: res.status }) ??
+                                deleteErrorMsg;
+                        } catch {
+                            // Non-JSON error body: keep the generic message.
+                        }
+                        // A rejection keeps the dialog open so the user can retry.
+                        throw new Error(message);
                     }
-                    throw new Error(message);
-                }
 
-                if (isMountedRef.current) {
-                    setAlerts((prev) => prev.filter((a) => a.id !== id));
-                    addToast({ type: 'success', message: deleteSuccessMsg });
+                    if (isMountedRef.current) {
+                        setAlerts((prev) => prev.filter((a) => a.id !== alert.id));
+                        addToast({ type: 'success', message: deleteSuccessMsg });
+                    }
                 }
-            } catch (err) {
-                addToast({
-                    type: 'error',
-                    message: err instanceof Error ? err.message : deleteErrorMsg
-                });
-            } finally {
-                if (isMountedRef.current) {
-                    setDeletingId(null);
-                }
-            }
+            });
         },
-        [base, deleteErrorMsg, deleteSuccessMsg]
+        [base, askConfirmation, t, deleteErrorMsg, deleteSuccessMsg]
     );
 
     // ── Render helpers ────────────────────────────────────────────────────────
@@ -256,7 +269,7 @@ export function AlertsList({
     }
 
     const listingHref = buildUrl({ locale, path: 'alojamientos' });
-    // Tourist-only Área Turista feature — the CTA must point at the tourist
+    // Tourist-only Área Turista feature: the CTA must point at the tourist
     // pricing page, not the owner one (BETA-174).
     const upgradeHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
@@ -264,51 +277,31 @@ export function AlertsList({
 
     if (status.kind === 'loading') {
         return (
-            <div
-                className={styles.alerts}
-                aria-busy="true"
+            <Section
+                title={t('account.alerts.activeHeading')}
+                helpId="section:account.alerts-active"
             >
-                <p
-                    className={styles.alertsLoading}
-                    aria-live="polite"
-                >
-                    {t('account.alerts.loading', 'Cargando alertas...')}
-                </p>
-            </div>
+                <Skeleton.Row locale={locale} />
+                <Skeleton.Row locale={locale} />
+            </Section>
         );
     }
 
-    // ── Upgrade (plan-gate) state ────────────────────────────────────────────
+    // ── Plan-gate state ──────────────────────────────────────────────────────
+    // The plan names come from the catalog (read by the SSR page), never a literal.
 
     if (status.kind === 'upgrade') {
         return (
-            <div
-                className={styles.alertsUpgrade}
-                aria-live="polite"
-            >
-                <p className={styles.alertsUpgradeTitle}>
-                    {t('account.alerts.upgrade.title', 'Alertas de precio')}
-                </p>
-                <p className={styles.alertsUpgradeMessage}>
-                    {gatePlanNames.length > 0
-                        ? tPlural('account.alerts.upgrade.message', gatePlanNames.length, {
-                              plans: new Intl.ListFormat(locale, {
-                                  style: 'long',
-                                  type: 'conjunction'
-                              }).format(gatePlanNames)
-                          })
-                        : t(
-                              'account.alerts.upgrade.messageNoPlans',
-                              'Las alertas de precio no están incluidas en tu plan actual. Actualizá tu plan para acceder.'
-                          )}
-                </p>
-                <a
-                    href={upgradeHref}
-                    className={styles.alertsUpgradeCta}
-                >
-                    {t('account.alerts.upgrade.cta', 'Ver planes')}
-                </a>
-            </div>
+            <LockedState
+                locale={locale}
+                reason={{
+                    kind: 'plan',
+                    feature: t('account.alerts.upgrade.title'),
+                    description: t('account.alerts.lock.description'),
+                    plans: gatePlanNames.map((name) => ({ name })),
+                    plansHref: upgradeHref
+                }}
+            />
         );
     }
 
@@ -316,39 +309,26 @@ export function AlertsList({
 
     if (status.kind === 'error') {
         return (
-            <div className={styles.alerts}>
-                <p
-                    className={styles.alertsError}
-                    role="alert"
-                >
-                    {status.message}
-                </p>
-                <button
-                    type="button"
-                    className={styles.alertsRetryBtn}
-                    onClick={() => void fetchAlerts()}
-                >
-                    {t('common.retry', 'Reintentar')}
-                </button>
-            </div>
+            <ErrorState
+                locale={locale}
+                description={status.message}
+                onRetry={() => fetchAlerts()}
+            />
         );
     }
 
     // ── Empty state ───────────────────────────────────────────────────────────
 
-    const isEmpty = alerts.length === 0;
-
-    if (isEmpty) {
+    if (alerts.length === 0) {
         return (
-            <AccountEmptyState
+            <EmptyState
                 title={t('account.alerts.empty.title', 'No tenés alertas activas')}
                 description={t(
                     'account.alerts.empty.body',
                     'Explorá alojamientos y activá alertas para enterarte cuando bajen de precio.'
                 )}
                 icon={<BellIcon size={28} />}
-                ctaLabel={t('account.alerts.empty.cta', 'Explorar alojamientos')}
-                ctaHref={listingHref}
+                action={<LinkButton href={listingHref}>{t('account.alerts.empty.cta')}</LinkButton>}
             />
         );
     }
@@ -361,124 +341,76 @@ export function AlertsList({
      * because it no longer alerts. Both keep the delete action.
      */
     function renderItem(alert: PriceAlertListItem) {
-        const isDeleting = deletingId === alert.id;
-        const confirmingThis = confirmDeleteId === alert.id;
-
+        const closed = alert.closedBecauseListingGone;
         return (
-            <li
+            <ListRow
                 key={alert.id}
-                className={[styles.alertsItem, isDeleting ? styles.alertsItemDeleting : '']
-                    .filter(Boolean)
-                    .join(' ')}
-                aria-busy={isDeleting}
-                data-alert-state={alert.closedBecauseListingGone ? 'closed' : 'active'}
-            >
-                <div className={styles.alertsItemContent}>
-                    {/*
-                     * The API response has no `accommodationSlug`, only
-                     * `accommodationName` — rendered as plain text rather
-                     * than a link. A follow-up that adds the slug to
-                     * `PriceAlertResponseSchema` can turn this into an
-                     * `<a href={buildUrl({ locale, path: `alojamientos/${slug}` })}>`.
-                     */}
-                    <p className={styles.alertsItemName}>{alert.accommodationName}</p>
-
-                    {alert.closedBecauseListingGone ? (
-                        <p className={styles.alertsItemClosed}>
-                            {t('account.alerts.closedNotice')}
-                        </p>
-                    ) : (
-                        <div className={styles.alertsItemMeta}>
-                            <span className={styles.alertsItemPrice}>
-                                {t('account.alerts.item.priceLabel', 'Precio al suscribirte')}:{' '}
-                                {formatPrice({ amount: alert.basePriceSnapshot / 100, locale })}
-                            </span>
-                            <span className={styles.alertsItemTarget}>
-                                {t('account.alerts.item.targetLabel', 'Alertar cuando baje')}:{' '}
-                                {formatTargetDrop(alert.targetPercentDrop)}
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                <div className={styles.alertsItemActions}>
-                    {confirmingThis ? (
-                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
-                        <div
-                            className={styles.alertsDeleteConfirm}
-                            role="group"
-                            aria-label={`${t('account.alerts.deleteConfirmAria', 'Confirmar eliminación de alerta')}: ${alert.accommodationName}`}
-                        >
-                            <button
-                                type="button"
-                                className={styles.alertsConfirmYes}
-                                onClick={() => void handleDeleteConfirm(alert.id)}
-                            >
-                                {t('account.alerts.deleteOneConfirm', 'Sí, eliminar')}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.alertsConfirmNo}
-                                onClick={() => setConfirmDeleteId(null)}
-                            >
-                                {t('account.alerts.deleteCancel', 'Cancelar')}
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            className={styles.alertsDeleteBtn}
-                            onClick={() => setConfirmDeleteId(alert.id)}
-                            disabled={isDeleting || deletingId !== null}
-                            aria-label={`${t('account.alerts.deleteOne', 'Eliminar')}: ${alert.accommodationName}`}
-                        >
-                            {t('account.alerts.deleteOne', 'Eliminar')}
-                        </button>
-                    )}
-                </div>
-            </li>
+                rowId={alert.id}
+                title={alert.accommodationName}
+                // The API response has no `accommodationSlug`, only the name: plain text
+                // until a follow-up adds the slug to `PriceAlertResponseSchema`.
+                meta={
+                    closed
+                        ? undefined
+                        : `${t('account.alerts.item.priceLabel')}: ${formatPrice({
+                              amount: alert.basePriceSnapshot / 100,
+                              locale
+                          })}`
+                }
+                description={
+                    closed
+                        ? t('account.alerts.closedNotice')
+                        : `${t('account.alerts.item.targetLabel')}: ${formatTargetDrop(alert.targetPercentDrop)}`
+                }
+                trailing={
+                    closed ? (
+                        <StatusPill tone="neutral">{t('account.alerts.closedStatus')}</StatusPill>
+                    ) : undefined
+                }
+                actions={[
+                    <Button
+                        key="delete"
+                        variant="danger-ghost"
+                        size="sm"
+                        onClick={() => void requestDelete(alert)}
+                        aria-label={`${t('account.alerts.deleteOne')}: ${alert.accommodationName}`}
+                    >
+                        {t('account.alerts.deleteOne')}
+                    </Button>
+                ]}
+                className={styles.row}
+            />
         );
     }
 
     const activeAlerts = alerts.filter((alert) => !alert.closedBecauseListingGone);
     const closedAlerts = alerts.filter((alert) => alert.closedBecauseListingGone);
 
-    const activeList =
-        activeAlerts.length > 0 ? (
-            <ul
-                className={styles.alertsList}
-                aria-label={t('account.alerts.listLabel', 'Tus alertas de precio activas')}
-            >
-                {activeAlerts.map(renderItem)}
-            </ul>
-        ) : null;
-
-    // Without closed alerts the island looks exactly as before row 27.
-    if (closedAlerts.length === 0) {
-        return activeList;
-    }
-
-    // With closed alerts the two lists are separated and headed, so no list
-    // that holds a closed alert is called "active".
+    // Each list is its own flat Section; a list that holds a closed alert is never
+    // called "active".
     return (
-        <div className={styles.alertsGroups}>
-            {activeList && (
-                <section className={styles.alertsGroup}>
-                    <h2 className={styles.alertsGroupHeading}>
-                        {t('account.alerts.activeHeading')}
-                    </h2>
-                    {activeList}
-                </section>
-            )}
-            <section className={styles.alertsGroup}>
-                <h2 className={styles.alertsGroupHeading}>{t('account.alerts.closedHeading')}</h2>
-                <ul
-                    className={styles.alertsList}
-                    aria-label={t('account.alerts.closedListLabel')}
+        <div className={styles.groups}>
+            {activeAlerts.length > 0 && (
+                <Section
+                    title={t('account.alerts.activeHeading')}
+                    helpId="section:account.alerts-active"
                 >
-                    {closedAlerts.map(renderItem)}
-                </ul>
-            </section>
+                    <DataList label={t('account.alerts.listLabel')}>
+                        {activeAlerts.map(renderItem)}
+                    </DataList>
+                </Section>
+            )}
+            {closedAlerts.length > 0 && (
+                <Section
+                    title={t('account.alerts.closedHeading')}
+                    helpId="section:account.alerts-closed"
+                >
+                    <DataList label={t('account.alerts.closedListLabel')}>
+                        {closedAlerts.map(renderItem)}
+                    </DataList>
+                </Section>
+            )}
+            {confirmDialog}
         </div>
     );
 }

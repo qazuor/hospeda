@@ -1,0 +1,87 @@
+/* Stepper.module.css — the progress of a short task (HOS-2501).
+   A row of numbered markers joined by a rule. The marker carries the state
+   with an icon or a number, never only a color. Narrow containers keep the
+   label of the current step only. */
+
+.root {
+    container-type: inline-size;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+}
+
+/* The rule between two steps. */
+.step + .step::before {
+    content: "";
+    inline-size: var(--space-6);
+    block-size: 1px;
+    background-color: var(--border);
+}
+
+.marker {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    inline-size: var(--space-6);
+    block-size: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background-color: var(--core-background);
+    font: var(--app-caption);
+}
+
+.done .marker {
+    border-color: var(--status-success-border);
+    background-color: var(--status-success-bg);
+    color: var(--status-success-fg);
+}
+
+.current {
+    color: var(--core-foreground);
+    font-weight: 600;
+}
+
+.current .marker {
+    border-color: var(--action-primary);
+    background-color: var(--action-primary);
+    color: var(--on-action-primary);
+}
+
+.label {
+    min-inline-size: 0;
+}
+
+.visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+@container (width < 30rem) {
+    .step:not(.current) .label {
+        display: none;
+    }
+
+    .step + .step::before {
+        inline-size: var(--space-3);
+    }
+}

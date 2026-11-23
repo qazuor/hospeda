@@ -1,12 +1,22 @@
+/**
+ * @file WhatsNewPageList.client.tsx
+ * @description The «Novedades de Hospeda» page body (HOS-2501, HOS-2416 §5.1):
+ * a reading-width list of entries, one flat row each (image, date, «Nuevo»
+ * pill, title, markdown body), with kit `Skeleton` while loading, kit
+ * `ErrorState` with a retry, kit `EmptyState` and a kit `Pagination` (load
+ * more) so the ~50 entries of the catalog do not render at once (HOS-2449).
+ */
+
 import { SparkleIcon } from '@repo/icons';
 import { formatCalendarDate } from '@repo/utils';
 import { useEffect, useMemo, useState } from 'react';
-import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import type { WhatsNewItem } from '@/hooks/use-whats-new';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { renderMarkdownToHtml } from '@/lib/whats-new/render-markdown';
+import { EmptyState, ErrorState, Pagination, Skeleton, StatusPill } from './ui';
+import styles from './WhatsNewPageList.module.css';
 
 /**
  * Entries shown before the reader asks for more (HOS-2449). The catalog grows
@@ -19,9 +29,29 @@ interface WhatsNewPageListProps {
     readonly locale: SupportedLocale;
 }
 
+/**
+ * The page body. A failed load can be retried: the retry remounts the body, which
+ * makes the hook fetch again (a failure is never cached).
+ *
+ * @param props - See {@link WhatsNewPageListProps}.
+ */
 export function WhatsNewPageList({ locale }: WhatsNewPageListProps) {
+    const [attempt, setAttempt] = useState(0);
+    return (
+        <WhatsNewPageBody
+            key={attempt}
+            locale={locale}
+            onRetry={() => setAttempt((value) => value + 1)}
+        />
+    );
+}
+
+function WhatsNewPageBody({
+    locale,
+    onRetry
+}: WhatsNewPageListProps & { readonly onRetry: () => void }) {
     const { t } = createTranslations(locale);
-    const { items, isLoading, markSeen } = useWhatsNew();
+    const { items, isLoading, error, markSeen } = useWhatsNew();
     const [visibleCount, setVisibleCount] = useState(WHATS_NEW_PAGE_SIZE);
     const visibleItems = useMemo(() => items.slice(0, visibleCount), [items, visibleCount]);
 
@@ -35,62 +65,81 @@ export function WhatsNewPageList({ locale }: WhatsNewPageListProps) {
     }, [visibleItems, markSeen]);
 
     if (isLoading) {
-        return <p className="whats-new-page__empty">{t('common.loading', 'Cargando...')}</p>;
+        return (
+            <div className={styles.skeletons}>
+                <Skeleton.Row locale={locale} />
+                <Skeleton.Row locale={locale} />
+                <Skeleton.Row locale={locale} />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <ErrorState
+                locale={locale}
+                onRetry={onRetry}
+            />
+        );
     }
 
     if (items.length === 0) {
         return (
-            <AccountEmptyState
-                title={t('account.whatsNewPanel.empty', 'No hay novedades aún')}
-                description={t(
-                    'account.whatsNewPanel.emptyDesc',
-                    'Cuando publiquemos mejoras o nuevas funciones de la plataforma, vas a verlas acá.'
-                )}
+            <EmptyState
+                title={t('account.whatsNewPanel.empty')}
+                description={t('account.whatsNewPanel.emptyDesc')}
                 icon={<SparkleIcon size={28} />}
             />
         );
     }
 
     return (
-        <div>
-            {visibleItems.map((item) => (
-                <WhatsNewCard
-                    key={item.id}
-                    item={item}
-                    locale={locale}
-                />
-            ))}
-            {items.length > visibleItems.length && (
-                <div className="whats-new-page__more">
-                    <p className="whats-new-page__count">
-                        {t(
-                            'account.whatsNewPanel.showingCount',
-                            'Mostrando {{shown}} de {{total}}',
-                            {
-                                shown: visibleItems.length,
-                                total: items.length
-                            }
-                        )}
-                    </p>
-                    <button
-                        type="button"
-                        className="whats-new-page__more-btn"
-                        onClick={() => setVisibleCount((count) => count + WHATS_NEW_PAGE_SIZE)}
+        <div className={styles.page}>
+            <ol className={styles.list}>
+                {visibleItems.map((item) => (
+                    <li
+                        key={item.id}
+                        className={styles.item}
                     >
-                        {t('account.whatsNewPanel.showMore', 'Ver más novedades')}
-                    </button>
+                        <WhatsNewEntry
+                            item={item}
+                            locale={locale}
+                        />
+                    </li>
+                ))}
+            </ol>
+            {items.length > visibleItems.length && (
+                <div className={styles.more}>
+                    <p className={styles.count}>
+                        {t('account.whatsNewPanel.showingCount', undefined, {
+                            shown: visibleItems.length,
+                            total: items.length
+                        })}
+                    </p>
+                    <Pagination
+                        variant="loadMore"
+                        locale={locale}
+                        onLoadMore={async () => {
+                            const added = Math.min(
+                                WHATS_NEW_PAGE_SIZE,
+                                items.length - visibleCount
+                            );
+                            setVisibleCount((count) => count + WHATS_NEW_PAGE_SIZE);
+                            return { addedCount: added };
+                        }}
+                    />
                 </div>
             )}
         </div>
     );
 }
 
-interface WhatsNewCardProps {
+interface WhatsNewEntryProps {
     readonly item: WhatsNewItem;
     readonly locale: SupportedLocale;
 }
 
-function WhatsNewCard({ item, locale }: WhatsNewCardProps) {
+function WhatsNewEntry({ item, locale }: WhatsNewEntryProps) {
     const { t } = createTranslations(locale);
     const bodyHtml = useMemo(() => renderMarkdownToHtml(item.body), [item.body]);
 
@@ -110,43 +159,38 @@ function WhatsNewCard({ item, locale }: WhatsNewCardProps) {
         [item.publishedAt, locale]
     );
 
-    const cardClassName = item.seen ? 'whats-new-card whats-new-card--seen' : 'whats-new-card';
-
     return (
-        <article className={cardClassName}>
+        <article
+            className={styles.entry}
+            data-seen={item.seen ? 'true' : undefined}
+        >
             {item.image && (
                 <img
                     src={item.image}
                     alt=""
                     aria-hidden="true"
-                    className="whats-new-card__img"
+                    className={styles.image}
                     loading="lazy"
                 />
             )}
 
-            <div className="whats-new-card__body">
-                <div className="whats-new-card__meta">
-                    {!item.seen && (
-                        <span className="whats-new-card__badge">
-                            {t('account.status.new', 'Nuevo')}
-                        </span>
-                    )}
-                    <time
-                        className="whats-new-card__date"
-                        dateTime={item.publishedAt}
-                    >
-                        {publishedDate}
-                    </time>
-                </div>
-
-                <h2 className="whats-new-card__title">{item.title}</h2>
-
-                <div
-                    className="whats-new-card__content"
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: markdown is sanitized in renderMarkdownToHtml before rendering
-                    dangerouslySetInnerHTML={{ __html: bodyHtml }} // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-                />
+            <div className={styles.meta}>
+                {!item.seen && <StatusPill tone="info">{t('account.status.new')}</StatusPill>}
+                <time
+                    className={styles.date}
+                    dateTime={item.publishedAt}
+                >
+                    {publishedDate}
+                </time>
             </div>
+
+            <h2 className={styles.title}>{item.title}</h2>
+
+            <div
+                className={styles.content}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: markdown is sanitized in renderMarkdownToHtml before rendering
+                dangerouslySetInnerHTML={{ __html: bodyHtml }} // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+            />
         </article>
     );
 }

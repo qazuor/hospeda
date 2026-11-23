@@ -15,6 +15,7 @@ import {
     NavTabs,
     Pagination,
     StatusPill,
+    Stepper,
     Switch,
     SwitchRow,
     Tabs,
@@ -129,6 +130,17 @@ export function KitGalleryActions({ locale }: GalleryGroupProps) {
                     <StatusPill tone="info">Programada</StatusPill>
                     <StatusPill tone="neutral">Borrador</StatusPill>
                     <StatusPill tone="plan">Plan</StatusPill>
+                </Visual>
+                <Visual name="Stepper/states">
+                    <Stepper
+                        locale={locale}
+                        label="Progreso"
+                        steps={[
+                            { id: 'a', label: 'Tus datos', state: 'done' },
+                            { id: 'b', label: 'Preferencias', state: 'current' },
+                            { id: 'c', label: 'Confirmar', state: 'upcoming' }
+                        ]}
+                    />
                 </Visual>
                 <Visual name="StatusPill/domain">
                     <StatusPill

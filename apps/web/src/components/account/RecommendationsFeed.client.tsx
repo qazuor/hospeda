@@ -23,18 +23,17 @@
  *    heading per recommendation reason (destination / type / other — BETA-152).
  *    Cold-start skips grouping and renders one flat grid (no personal signal).
  *
- * Card decision: `AccommodationCard.astro` cannot be used inside a React
- * island (established precedent — see `SearchChatPanel.client.tsx`'s
- * `ResultCard` and the favorites `EntityCard`). This file defines a
- * lightweight `RecommendationCard` sub-component mirroring the same visual
- * signals (image, title, price, rating) instead of reusing an Astro-only
- * component.
+ * HOS-2501: the cards are kit `EntityCard`s sitting straight on the page
+ * background (never inside a Section box), the async states are kit
+ * `Skeleton`, `ErrorState`, `EmptyState` and `LockedState` (catalog plan names
+ * from the SSR page), and the cold-start notice is a kit `Alert`.
  *
  * Hydration: caller should use `client:visible` — this is a below-the-fold
  * feed, not required immediately on paint (see apps/web CLAUDE.md client
  * directive guide).
  */
 
+import { StarIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
 import type {
     RecommendationFeedResponse,
@@ -42,14 +41,22 @@ import type {
     ScoredAccommodation
 } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
-import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './RecommendationsFeed.module.css';
+import {
+    Alert,
+    EmptyState,
+    EntityCard,
+    EntityCardGrid,
+    ErrorState,
+    LinkButton,
+    LockedState,
+    Skeleton
+} from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -127,21 +134,13 @@ interface RecommendationCardProps {
 }
 
 /**
- * Compact accommodation card for the recommendations grid.
- *
- * `AccommodationCard.astro` cannot be used inside a React island, so this
- * renders the same visual signals (image, title, price, rating) as a
- * lightweight React equivalent — mirroring `ResultCard` in
- * `SearchChatPanel.client.tsx`.
- *
- * @param props - {@link RecommendationCardProps}
- * @returns A single grid item (`<li>`) for the recommendations list.
+ * One recommended accommodation as a kit `EntityCard`: image (card preset),
+ * name linking to the detail page, rating, price and a «Ver alojamiento» link.
  */
 function RecommendationCard({ scored, locale, t }: RecommendationCardProps) {
     const { accommodation } = scored;
     const detailHref = buildUrl({ locale, path: `/alojamientos/${accommodation.slug}/` });
     const rawThumbnail = accommodation.media?.featuredImage?.url ?? null;
-    // HOS-1094: grid card, never the untransformed original.
     const thumbnail = rawThumbnail ? getMediaUrl(rawThumbnail, { preset: 'card' }) : null;
 
     const priceValue = accommodation.price?.price;
@@ -157,55 +156,36 @@ function RecommendationCard({ scored, locale, t }: RecommendationCardProps) {
     const rating = accommodation.averageRating;
     const hasRating = typeof rating === 'number' && rating > 0;
 
-    // Single wrapping anchor (not a title-link + separate CTA-link pair) —
-    // `AccommodationCard.astro` cannot be reused inside a React island, and a
-    // per-field link duplicates the same href as multiple tab stops. Mirrors
-    // the `ResultCard` pattern in `SearchChatPanel.client.tsx`.
     return (
-        <li className={styles.card}>
-            <a
-                href={detailHref}
-                className={styles.cardLink}
-            >
-                <div className={styles.cardImage}>
-                    {thumbnail ? (
-                        <img
-                            src={thumbnail}
-                            alt=""
-                            className={styles.cardImg}
-                            loading="lazy"
-                        />
-                    ) : (
-                        <div className={styles.cardImagePlaceholder}>
-                            {t('common.noImage', 'Sin imagen')}
-                        </div>
-                    )}
-                </div>
-
-                <div className={styles.cardBody}>
-                    <h3 className={styles.cardTitle}>{accommodation.name}</h3>
-
-                    {hasRating && (
-                        <p
-                            className={styles.cardRating}
-                            aria-hidden="true"
-                        >
-                            {'★'.repeat(Math.round(rating ?? 0))}
-                            <span>{rating?.toFixed(1)}</span>
-                        </p>
-                    )}
-
-                    {formattedPrice && <p className={styles.cardPrice}>{formattedPrice}</p>}
-
+        <EntityCard
+            title={accommodation.name}
+            locale={locale}
+            href={detailHref}
+            image={thumbnail ? { src: thumbnail, alt: '' } : undefined}
+            meta={
+                hasRating ? (
                     <span
-                        className={styles.cardCta}
+                        className={styles.rating}
                         aria-hidden="true"
                     >
-                        {t('account.recommendations.viewDetails', 'Ver alojamiento')}
+                        <StarIcon size="sm" />
+                        {rating?.toFixed(1)}
                     </span>
-                </div>
-            </a>
-        </li>
+                ) : undefined
+            }
+            actions={
+                <LinkButton
+                    href={detailHref}
+                    variant="secondary"
+                    size="sm"
+                    aria-label={`${t('account.recommendations.viewDetails')}: ${accommodation.name}`}
+                >
+                    {t('account.recommendations.viewDetails')}
+                </LinkButton>
+            }
+        >
+            {formattedPrice && <p className={styles.price}>{formattedPrice}</p>}
+        </EntityCard>
     );
 }
 
@@ -306,53 +286,34 @@ export function RecommendationsFeed({
 
     if (loading) {
         return (
-            <div
-                className={styles.loadingWrap}
-                role="status"
-                aria-live="polite"
-                aria-busy="true"
-                aria-label={t('account.recommendations.loading', 'Cargando recomendaciones...')}
-            >
-                <SkeletonCardList
-                    count={SKELETON_COUNT}
-                    cardHeight="16rem"
-                    gap="var(--space-card-gap, 30px)"
-                />
+            <div className={styles.skeletonGrid}>
+                {Array.from({ length: SKELETON_COUNT }, (_, index) => (
+                    <Skeleton
+                        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders have no identity
+                        key={index}
+                        shape="block"
+                        locale={locale}
+                    />
+                ))}
             </div>
         );
     }
 
     // ── Entitlement-required (plan-gate) state ────────────────────────────────
-    // Same rich gate pattern as AlertsList / ExclusiveDealsList (BETA-168):
-    // section title + Plus/VIP explanation + "Ver planes" CTA, instead of the
-    // old bare one-line message.
+    // The plan names come from the catalog, read by the SSR page (HOS-2554).
 
     if (entitlementRequired) {
         return (
-            <div
-                className={styles.upgradeWrap}
-                aria-live="polite"
-            >
-                <p className={styles.upgradeTitle}>
-                    {t('account.recommendations.upgrade.title', 'Sugerencias para vos')}
-                </p>
-                <p className={styles.upgradeMessage}>
-                    {resolvePlanGateMessage({
-                        keyBase: 'account.recommendations.upgrade.message',
-                        locale,
-                        noPlansFallback:
-                            'Las sugerencias personalizadas no están incluidas en tu plan actual. Actualizá tu plan para acceder.',
-                        planNames: gatePlanNames,
-                        t
-                    })}
-                </p>
-                <a
-                    href={upgradeHref}
-                    className={styles.upgradeCta}
-                >
-                    {t('account.recommendations.upgrade.cta', 'Ver planes')}
-                </a>
-            </div>
+            <LockedState
+                locale={locale}
+                reason={{
+                    kind: 'plan',
+                    feature: t('account.recommendations.upgrade.title'),
+                    description: t('account.pages.recommendations.description'),
+                    plans: gatePlanNames.map((name) => ({ name })),
+                    plansHref: upgradeHref
+                }}
+            />
         );
     }
 
@@ -360,19 +321,11 @@ export function RecommendationsFeed({
 
     if (error) {
         return (
-            <div
-                className={styles.errorWrap}
-                role="alert"
-            >
-                <p>{error}</p>
-                <button
-                    type="button"
-                    className={styles.retryBtn}
-                    onClick={() => void fetchFeed()}
-                >
-                    {t('common.retry', 'Reintentar')}
-                </button>
-            </div>
+            <ErrorState
+                locale={locale}
+                description={error}
+                onRetry={() => fetchFeed()}
+            />
         );
     }
 
@@ -382,95 +335,65 @@ export function RecommendationsFeed({
 
     if (isTrulyEmpty) {
         return (
-            <div
-                className={styles.emptyWrap}
-                aria-live="polite"
-            >
-                <p className={styles.emptyTitle}>
-                    {t(
-                        'account.recommendations.empty.title',
-                        'No encontramos recomendaciones por ahora'
-                    )}
-                </p>
-                <p className={styles.emptyBody}>
-                    {t(
-                        'account.recommendations.empty.body',
-                        'Volvé más tarde o explorá todo nuestro catálogo de alojamientos.'
-                    )}
-                </p>
-            </div>
+            <EmptyState
+                title={t('account.recommendations.empty.title')}
+                description={t('account.recommendations.empty.body')}
+                action={
+                    <LinkButton href={buildUrl({ locale, path: 'alojamientos' })}>
+                        {t('account.recommendations.empty.cta')}
+                    </LinkButton>
+                }
+            />
         );
     }
 
-    // ── Cold-start banner + populated grid ────────────────────────────────────
+    // ── Cold-start notice + populated grid ────────────────────────────────────
+
+    const cards = (list: readonly ScoredAccommodation[]) =>
+        list.map((scored) => (
+            <RecommendationCard
+                key={scored.accommodation.id}
+                scored={scored}
+                locale={locale}
+                t={t}
+            />
+        ));
 
     return (
         <div className={styles.root}>
             {isColdStart && (
-                <div
-                    className={styles.coldStartBanner}
-                    aria-live="polite"
+                <Alert
+                    tone="info"
+                    locale={locale}
+                    title={t('account.recommendations.coldStart.title')}
                 >
-                    <p className={styles.coldStartTitle}>
-                        {t(
-                            'account.recommendations.coldStart.title',
-                            'Todavía estamos conociendo tus gustos'
-                        )}
-                    </p>
-                    <p className={styles.coldStartBody}>
-                        {t(
-                            'account.recommendations.coldStart.body',
-                            'Mientras tanto, te mostramos alojamientos populares. Guardá favoritos, mirá alojamientos o hacé una búsqueda para recibir recomendaciones más precisas.'
-                        )}
-                    </p>
-                </div>
+                    {t('account.recommendations.coldStart.body')}
+                </Alert>
             )}
 
             {isColdStart ? (
-                // Cold-start has no personal signal, so grouping by reason would be
-                // misleading — render one flat grid (every item is 'OTHER' anyway).
-                <ul
-                    className={styles.grid}
-                    aria-label={t('account.recommendations.listLabel', 'Sugerencias para vos')}
-                >
-                    {items.map((scored) => (
-                        <RecommendationCard
-                            key={scored.accommodation.id}
-                            scored={scored}
-                            locale={locale}
-                            t={t}
-                        />
-                    ))}
-                </ul>
+                <EntityCardGrid label={t('account.recommendations.listLabel')}>
+                    {cards(items)}
+                </EntityCardGrid>
             ) : (
-                // Personalized feed: group items under a heading per reason (BETA-152).
-                groupByReason(items).map((group) => (
-                    <section
-                        key={group.reason}
-                        className={styles.group}
-                        aria-labelledby={`rec-group-${group.reason}`}
-                    >
-                        <h2
-                            id={`rec-group-${group.reason}`}
-                            className={styles.groupHeading}
+                groupByReason(items).map((group) => {
+                    const heading = t(REASON_HEADING[group.reason].key);
+                    return (
+                        <section
+                            key={group.reason}
+                            className={styles.group}
+                            aria-labelledby={`rec-group-${group.reason}`}
                         >
-                            {t(
-                                REASON_HEADING[group.reason].key,
-                                REASON_HEADING[group.reason].fallback
-                            )}
-                        </h2>
-                        <ul className={styles.grid}>
-                            {group.items.map((scored) => (
-                                <RecommendationCard
-                                    key={scored.accommodation.id}
-                                    scored={scored}
-                                    locale={locale}
-                                    t={t}
-                                />
-                            ))}
-                        </ul>
-                    </section>
-                ))
+                            <h2
+                                id={`rec-group-${group.reason}`}
+                                className={styles.groupHeading}
+                            >
+                                {heading}
+                            </h2>
+                            <EntityCardGrid label={heading}>{cards(group.items)}</EntityCardGrid>
+                        </section>
+                    );
+                })
             )}
         </div>
     );

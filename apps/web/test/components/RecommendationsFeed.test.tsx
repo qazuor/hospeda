@@ -20,11 +20,13 @@ import { RecommendationsFeed } from '../../src/components/account/Recommendation
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
-    })
-}));
+vi.mock('../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../helpers/i18n-catalog');
+    return {
+        createTranslations: (_locale: string) => ({ t: tFromCatalog }),
+        createT: () => tFromCatalog
+    };
+});
 
 vi.mock('../../src/components/account/RecommendationsFeed.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
@@ -136,7 +138,7 @@ describe('RecommendationsFeed', () => {
                 () => new Promise<Response>(() => undefined)
             );
             renderComponent();
-            expect(screen.getByLabelText('Cargando recomendaciones...')).toBeInTheDocument();
+            expect(screen.getAllByText('Cargando…').length).toBeGreaterThan(0);
         });
     });
 
@@ -245,8 +247,8 @@ describe('RecommendationsFeed', () => {
                 ).toBeInTheDocument();
             });
 
-            const banner = container.querySelector('.coldStartBanner');
-            const grid = container.querySelector('.grid');
+            const banner = container.querySelector('[data-tone="info"]');
+            const grid = container.querySelector('ul');
             expect(banner).not.toBeNull();
             expect(grid).not.toBeNull();
             // Direct siblings under the root wrapper: DOCUMENT_POSITION_FOLLOWING
@@ -357,18 +359,21 @@ describe('RecommendationsFeed', () => {
     // ── 6. Entitlement required (403) ─────────────────────────────────────────
 
     describe('Entitlement required', () => {
-        it('renders the rich upgrade gate (title + catalog-driven message + CTA) on a 403 response', async () => {
+        it('renders the kit LockedState (feature + catalog plan names + CTA) on a 403 response', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementResponse());
-            renderComponent();
-            await waitFor(() => {
-                expect(screen.getByText('Sugerencias para vos')).toBeInTheDocument();
-                expect(
-                    screen.getByText(
-                        /las sugerencias personalizadas no están incluidas en tu plan actual/i
-                    )
-                ).toBeInTheDocument();
-                expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
-            });
+            render(
+                <RecommendationsFeed
+                    locale={LOCALE}
+                    apiUrl={API_URL}
+                    gatePlanNames={['Explorador', 'Aventurero']}
+                />
+            );
+            const feature = await screen.findByRole('heading', { name: 'Sugerencias para vos' });
+            const state = feature.closest('[data-reason]') as HTMLElement;
+            expect(state).toHaveAttribute('data-reason', 'plan');
+            expect(state).toHaveTextContent('Explorador');
+            expect(state).toHaveTextContent('Aventurero');
+            expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
         });
 
         it('does NOT render a retry button (a retry cannot change the plan)', async () => {

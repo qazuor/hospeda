@@ -1056,9 +1056,9 @@
                 "mySubscriptionDesc": "Plano atual e faturamento",
                 "myMessages": "Minhas consultas",
                 "myMessagesDesc": "Conversas com anfitriões",
-                "newsletter": "Boletim de novidades",
+                "newsletter": "Newsletter por e-mail",
                 "newsletterDesc": "Gerencie sua assinatura do boletim",
-                "whatsNew": "Novidades",
+                "whatsNew": "Novidades do Hospeda",
                 "whatsNewDesc": "Novidades e atualizações da plataforma",
                 "myProperties": "Meus imóveis",
                 "myPropertiesDesc": "Gerencie suas acomodações publicadas",
@@ -1228,7 +1228,8 @@
             "guidesDesc": "Guias editoriais e roteiros selecionados.",
             "productNews": "Novidades do produto",
             "productNewsDesc": "Novas funcionalidades e atualizações da plataforma."
-        }
+        },
+        "sectionStatus": "Sua assinatura"
     },
     "profileCompletion": {
         "pageTitle": "Complete seu perfil",
@@ -1313,7 +1314,19 @@
             "occupationMin": "A ocupação deve ter pelo menos 2 caracteres.",
             "occupationMax": "A ocupação não pode exceder 100 caracteres.",
             "submitFailed": "Não foi possível completar o perfil. Tente novamente."
-        }
+        },
+        "sections": {
+            "basics": "Seus dados",
+            "preferences": "Contato e preferências",
+            "more": "Sobre você",
+            "consent": "Para finalizar"
+        },
+        "steps": {
+            "basics": "Seus dados",
+            "preferences": "Preferências",
+            "confirm": "Confirmação"
+        },
+        "stepsLabel": "Progresso do seu perfil"
     },
     "setPassword": {
         "pageTitle": "Adicionar senha",
@@ -1364,7 +1377,8 @@
             "special": "Al menos 1 carácter especial (por ejemplo ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
-        "showPassword": "Mostrar contraseña"
+        "showPassword": "Mostrar contraseña",
+        "sectionTitle": "Sua senha"
     },
     "searchHistory": {
         "loading": "Carregando histórico...",
@@ -1408,7 +1422,13 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filtro",
             "filterCount_other": "{{count}} filtros"
-        }
+        },
+        "recordingTitle": "Salvar buscas",
+        "listTitle": "Suas buscas recentes",
+        "deleteConfirmTitle": "Excluir esta busca?",
+        "deleteConfirmBody": "“{{query}}” é removida do seu histórico. Não é possível desfazer.",
+        "clearConfirmTitle": "Apagar todo o seu histórico?",
+        "clearConfirmBody": "Todas as suas buscas salvas são removidas. Não é possível desfazer."
     },
     "alerts": {
         "loading": "Carregando alertas...",
@@ -1441,7 +1461,13 @@
         "closedNotice": "Este alerta foi encerrado porque esse anúncio não existe mais.",
         "activeHeading": "Alertas ativos",
         "closedHeading": "Alertas encerrados",
-        "closedListLabel": "Seus alertas de preço encerrados"
+        "closedListLabel": "Seus alertas de preço encerrados",
+        "lock": {
+            "description": "Ative alertas para saber quando o preço de uma hospedagem que você curte baixar."
+        },
+        "deleteConfirmTitle": "Excluir este alerta?",
+        "deleteConfirmBody": "Você deixa de receber avisos de queda de preço de {{name}}.",
+        "closedStatus": "Encerrado"
     },
     "exclusiveDeals": {
         "loading": "Carregando ofertas exclusivas...",
@@ -1478,7 +1504,8 @@
         },
         "empty": {
             "title": "Nenhuma recomendação por enquanto",
-            "body": "Volte mais tarde ou explore todo o nosso catálogo de acomodações."
+            "body": "Volte mais tarde ou explore todo o nosso catálogo de acomodações.",
+            "cta": "Explorar hospedagens"
         },
         "upgrade": {
             "title": "Sugestões para você",
@@ -1948,7 +1975,12 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Escolha uma nova senha para a sua conta. Você vai precisar da atual.",
-        "accountNotice": "Você vai alterar a senha desta conta:"
+        "accountNotice": "Você vai alterar a senha desta conta:",
+        "successTitle": "Senha atualizada",
+        "successSection": "Tudo pronto",
+        "continue": "Avançar",
+        "back": "Voltar",
+        "sectionTitle": "Sua nova senha"
     },
     "notFound": {
         "title": "Não encontramos o que você procurava",
@@ -2158,6 +2190,11 @@
         },
         "entityCard": {
             "noImage": "Sem imagem"
+        },
+        "stepper": {
+            "done": "concluído",
+            "current": "etapa atual",
+            "upcoming": "pendente"
         }
     },
     "ownerDashboard": {

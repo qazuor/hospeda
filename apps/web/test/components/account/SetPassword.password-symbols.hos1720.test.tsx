@@ -5,18 +5,10 @@ import { SetPassword } from '../../../src/components/account/SetPassword.client'
 vi.mock('../../../src/components/account/SetPassword.module.css', () => ({
     default: new Proxy({}, { get: (_target, key) => String(key) })
 }));
-vi.mock('../../../src/components/shared/ui/Dialog.module.css', () => ({
-    default: new Proxy({}, { get: (_target, key) => String(key) })
-}));
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key })
-}));
-vi.mock('../../../src/components/shared/ui/Dialog.client', () => ({
-    Dialog: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-}));
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    return { createTranslations: () => ({ t: tFromCatalog }), createT: () => tFromCatalog };
+});
 const fetchMock = vi.fn();
 describe('TEST:1720:4 SetPassword shared schema', () => {
     beforeEach(() => {
@@ -65,7 +57,7 @@ describe('TEST:1720:4 SetPassword shared schema', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Establecer contraseña' }));
         expect(fetchMock).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(
-            'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
+            'La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas, números y un carácter especial.'
         );
     });
 });

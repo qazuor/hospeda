@@ -205,3 +205,14 @@ export function ddmmyyyyToDate(value: string): Date | null {
     }
     return date;
 }
+
+/**
+ * Converts a dd/mm/yyyy string into ISO YYYY-MM-DD. Returns null when the
+ * input doesn't match the expected shape so the caller can skip the field.
+ */
+export function ddmmyyyyToIso(value: string): string | null {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const [, dd, mm, yyyy] = match;
+    return `${yyyy}-${mm}-${dd}`;
+}

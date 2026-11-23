@@ -7,7 +7,8 @@
  * moved to Preferences (D11). This island now SHOWS the lifecycle status as a
  * StatusPill and links to Preferences to change it. It keeps the read-only
  * extras (subscribed-since, channels) and the resend-verification action,
- * which is not an on/off. The rest of the page is HOS-2501.
+ * which is not an on/off. HOS-2501: the page is kit Sections (status and
+ * channels), `Skeleton` while loading and `ErrorState` with a retry.
  *
  * Status pills carry both colour AND a text label (AC-101-13.4).
  *
@@ -15,12 +16,23 @@
  */
 
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
-import { Spinner } from '@/components/shared/feedback/Spinner';
 import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { StatusPill, type StatusTone, TextLink } from '../account/ui';
+import {
+    Alert,
+    Button,
+    DataList,
+    ErrorState,
+    KeyValueList,
+    ListRow,
+    Section,
+    Skeleton,
+    StatusPill,
+    type StatusTone,
+    TextLink
+} from '../account/ui';
 import styles from './NewsletterPreferences.module.css';
 
 /** Subset of NewsletterSubscriberStatusEnum values returned by GET /status. */
@@ -218,97 +230,119 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
 
     if (island.kind === 'loading') {
         return (
-            <section
-                className={styles.wrapper}
-                aria-busy="true"
+            <Section
+                title={t('account.newsletter.sectionStatus')}
+                helpId="section:account.newsletter-status"
             >
-                <p className={styles.loading}>
-                    {/* Decorative — the visible text + the section's aria-busy already announce. */}
-                    <Spinner size="sm" />
-                    {t('account.newsletter.loading', 'Cargando…')}
-                </p>
-            </section>
+                <Skeleton
+                    lines={2}
+                    locale={locale}
+                />
+            </Section>
         );
     }
 
     if (island.kind === 'error') {
         return (
-            <section className={styles.wrapper}>
-                <p
-                    className={styles.error}
-                    role="alert"
-                >
-                    {island.message}
-                </p>
-            </section>
+            <ErrorState
+                locale={locale}
+                description={island.message}
+                onRetry={() => {
+                    setIsland({ kind: 'loading' });
+                    return fetchStatus();
+                }}
+            />
         );
     }
 
     const data = island.data;
     const status = data.status;
     const preferencesHref = buildUrl({ locale, path: 'mi-cuenta/preferencias' });
+    const presentation = STATUS_PRESENTATION[status ?? 'unsubscribed'];
 
     return (
-        <section className={styles.wrapper}>
-            <header className={styles.header}>
-                <span className={styles.statusLabel}>
-                    {t('account.newsletter.statusLabel', 'Estado')}
-                </span>
-                <StatusPill tone={STATUS_PRESENTATION[status ?? 'unsubscribed'].tone}>
-                    {t(STATUS_PRESENTATION[status ?? 'unsubscribed'].key)}
-                </StatusPill>
-            </header>
-
-            {data.subscribedAt && status !== null && (
-                <p className={styles.metadata}>
-                    {t('account.newsletter.subscribedSince', 'Suscripto desde')}:{' '}
-                    <strong>{formatLongDate(data.subscribedAt, locale)}</strong>
-                </p>
-            )}
-
-            {/* aria-live region announces every action transition */}
-            <div
-                id={liveRegionId}
-                className={styles.srOnly}
-                aria-live="polite"
-                aria-atomic="true"
+        <div className={styles.page}>
+            <Section
+                title={t('account.newsletter.sectionStatus')}
+                helpId="section:account.newsletter-status"
             >
-                {statusText}
-            </div>
+                <div className={styles.stack}>
+                    <KeyValueList
+                        items={[
+                            {
+                                key: 'status',
+                                label: t('account.newsletter.statusLabel', 'Estado'),
+                                value: (
+                                    <StatusPill tone={presentation.tone}>
+                                        {t(presentation.key)}
+                                    </StatusPill>
+                                )
+                            },
+                            ...(data.subscribedAt && status !== null
+                                ? [
+                                      {
+                                          key: 'since',
+                                          label: t(
+                                              'account.newsletter.subscribedSince',
+                                              'Suscripto desde'
+                                          ),
+                                          value: formatLongDate(data.subscribedAt, locale)
+                                      }
+                                  ]
+                                : [])
+                        ]}
+                    />
 
-            {/* HOS-2479: the on/off lives in Preferences (one source per setting). */}
-            <p>
-                <TextLink href={preferencesHref}>
-                    {t('account.preferences.changeInPreferences')}
-                </TextLink>
-            </p>
+                    {/* aria-live region announces every action transition */}
+                    <div
+                        id={liveRegionId}
+                        className={styles.srOnly}
+                        aria-live="polite"
+                        aria-atomic="true"
+                    >
+                        {statusText}
+                    </div>
+
+                    {/* === Pending verification: resend (not an on/off) === */}
+                    {status === 'pending_verification' && (
+                        <form onSubmit={handleResend}>
+                            <Alert
+                                tone="warning"
+                                locale={locale}
+                                action={
+                                    <Button
+                                        type="submit"
+                                        variant="secondary"
+                                        size="sm"
+                                        loading={actionInFlight}
+                                        disabled={actionInFlight}
+                                    >
+                                        {t(
+                                            'account.newsletter.resendVerification',
+                                            'Reenviar email de confirmación'
+                                        )}
+                                    </Button>
+                                }
+                            >
+                                {t(
+                                    'account.newsletter.pendingBanner',
+                                    'Revisá tu email para confirmar tu suscripción.'
+                                )}
+                            </Alert>
+                        </form>
+                    )}
+
+                    {/* HOS-2479: the on/off lives in Preferences (one source per setting). */}
+                    <p className={styles.change}>
+                        <TextLink href={preferencesHref}>
+                            {t('account.preferences.changeInPreferences')}
+                        </TextLink>
+                    </p>
+                </div>
+            </Section>
 
             {status === 'active' && <ChannelList t={t} />}
-
-            {/* === Pending verification — resend (not an on/off) === */}
-            {status === 'pending_verification' && (
-                <>
-                    <p className={styles.pendingBanner}>
-                        {t(
-                            'account.newsletter.pendingBanner',
-                            'Revisá tu email para confirmar tu suscripción.'
-                        )}
-                    </p>
-                    <form onSubmit={handleResend}>
-                        <button
-                            type="submit"
-                            className={styles.primaryButton}
-                            disabled={actionInFlight}
-                        >
-                            {t(
-                                'account.newsletter.resendVerification',
-                                'Reenviar email de confirmación'
-                            )}
-                        </button>
-                    </form>
-                </>
-            )}
-        </section>
+        </div>
     );
 }
 
@@ -329,45 +363,39 @@ const STATUS_PRESENTATION: Record<
 // ---------------------------------------------------------------------------
 
 interface ChannelListProps {
-    // biome-ignore lint/suspicious/noExplicitAny: t-function signature varies by overload
-    readonly t: (...args: any[]) => string;
+    readonly t: (key: string, fallback?: string) => string;
 }
 
 /**
  * Static channel summary for active subscribers. Email is the only MVP
- * delivery channel; WhatsApp ships disabled with a "próximamente" badge so
+ * delivery channel; WhatsApp ships disabled with a "próximamente" pill so
  * the user sees it's on the roadmap but can't toggle it yet.
  */
 function ChannelList({ t }: ChannelListProps) {
+    const title = t('account.newsletter.channels.title', 'Cómo te llegan');
     return (
-        <section
-            className={styles.channelSection}
-            aria-labelledby="newsletter-channels-heading"
+        <Section
+            title={title}
+            helpId="section:account.newsletter-channels"
         >
-            <h3
-                id="newsletter-channels-heading"
-                className={styles.channelHeading}
-            >
-                {t('account.newsletter.channels.title', 'Cómo te llegan')}
-            </h3>
-            <ul className={styles.channelList}>
-                <li className={styles.channelItem}>
-                    <span className={styles.channelLabel}>
-                        {t('account.newsletter.channels.email', 'Email')}
-                    </span>
-                    <span className={`${styles.channelBadge} ${styles.channelBadgeOn}`}>
-                        {t('account.newsletter.channels.enabled', 'Activado')}
-                    </span>
-                </li>
-                <li className={`${styles.channelItem} ${styles.channelItemDisabled}`}>
-                    <span className={styles.channelLabel}>
-                        {t('account.newsletter.channels.whatsapp', 'WhatsApp')}
-                    </span>
-                    <span className={`${styles.channelBadge} ${styles.channelBadgeSoon}`}>
-                        {t('account.newsletter.channels.comingSoon', 'Próximamente')}
-                    </span>
-                </li>
-            </ul>
-        </section>
+            <DataList label={title}>
+                <ListRow
+                    title={t('account.newsletter.channels.email', 'Email')}
+                    trailing={
+                        <StatusPill tone="success">
+                            {t('account.newsletter.channels.enabled', 'Activado')}
+                        </StatusPill>
+                    }
+                />
+                <ListRow
+                    title={t('account.newsletter.channels.whatsapp', 'WhatsApp')}
+                    trailing={
+                        <StatusPill tone="neutral">
+                            {t('account.newsletter.channels.comingSoon', 'Próximamente')}
+                        </StatusPill>
+                    }
+                />
+            </DataList>
+        </Section>
     );
 }

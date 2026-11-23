@@ -9,8 +9,8 @@
  * Fields: currentPassword, newPassword, confirmNewPassword.
  * Validates that newPassword === confirmNewPassword client-side.
  * Submits to POST /api/v1/protected/auth/change-password with credentials.
- * On success shows a brief confirmation banner, then redirects to
- * /{locale}/mi-cuenta/ after 1.5 s.
+ * On success shows a result state (a success alert and a «Continuar» link to
+ * the resolved destination) and redirects there after 1.5 s.
  *
  * Extras: password-strength meter (weak / medium / strong heuristic),
  * show/hide toggle on all three inputs.
@@ -20,6 +20,7 @@
 
 import { ChangePasswordInputSchema } from '@repo/schemas';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { Alert, Button, LinkButton, PageHeader, Section } from '@/components/account/ui';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { visibleApiMessage } from '@/lib/api-errors';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
@@ -251,135 +252,160 @@ export function ChangePasswordForm({
 
     if (isSuccess) {
         return (
-            <div
-                className={`${styles.feedbackBanner} ${styles.feedbackBannerSuccess}`}
-                role="alert"
-                aria-live="assertive"
-            >
-                {t(
-                    'account.changePassword.success',
-                    'Contraseña actualizada correctamente. Redirigiendo...'
-                )}
+            <div className={styles.page}>
+                <PageHeader
+                    title={t('account.changePassword.successTitle')}
+                    locale={locale}
+                />
+                <Section
+                    title={t('account.changePassword.successSection')}
+                    helpId="section:account.change-password"
+                >
+                    <div className={styles.fields}>
+                        <Alert
+                            tone="success"
+                            locale={locale}
+                        >
+                            {t(
+                                'account.changePassword.success',
+                                'Contraseña actualizada correctamente. Redirigiendo...'
+                            )}
+                        </Alert>
+                        <div className={styles.actions}>
+                            <LinkButton href={returnUrl}>
+                                {t('account.changePassword.continue')}
+                            </LinkButton>
+                        </div>
+                    </div>
+                </Section>
             </div>
         );
     }
 
     return (
-        <div className={styles.wrapper}>
-            <div className={styles.header}>
-                <h1 className={styles.heading}>
-                    {t('account.changePassword.title', 'Cambiar contraseña')}
-                </h1>
-                <p className={styles.subtitle}>
-                    {forced
-                        ? t(
-                              'account.changePassword.subtitle',
-                              'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
-                          )
-                        : t('account.changePassword.subtitleVoluntary')}
-                </p>
-                {/*
-                 * HOS-752: names the account. Not decoration — this is the only
-                 * thing on screen that distinguishes "activating the account
-                 * from the email I just opened" from "changing the password of
-                 * the session already signed in on this browser".
-                 */}
-                <p
-                    className={styles.accountNotice}
-                    data-testid="change-password-account-notice"
+        <div className={styles.page}>
+            {/* The forced and the voluntary visit read differently (HOS-2431, AC-5): the
+                forced one explains why the user cannot go on, the voluntary one offers a way back. */}
+            <PageHeader
+                title={t('account.changePassword.title', 'Cambiar contraseña')}
+                description={forced ? undefined : t('account.changePassword.subtitleVoluntary')}
+                back={
+                    forced
+                        ? undefined
+                        : { label: t('account.changePassword.back'), href: returnUrl }
+                }
+                locale={locale}
+            />
+
+            {forced ? (
+                <Alert
+                    tone="warning"
+                    locale={locale}
                 >
-                    {t('account.changePassword.accountNotice')}{' '}
-                    <span className={styles.accountNoticeEmail}>{accountEmail}</span>
-                </p>
-            </div>
-
-            <div className={styles.card}>
-                <form
-                    className={styles.form}
-                    onSubmit={(e) => void handleSubmit(e)}
-                    noValidate
-                >
-                    {/* Current password */}
-                    <PasswordField
-                        id="cpf-currentPassword"
-                        name="currentPassword"
-                        label={t(
-                            'account.changePassword.fields.currentPassword',
-                            'Contraseña actual'
-                        )}
-                        value={fields.currentPassword}
-                        onChange={(value) => handleFieldChange('currentPassword', value)}
-                        autoComplete="current-password"
-                        required
-                        disabled={isSubmitting}
-                        error={errors.currentPassword}
-                        i18n={passwordI18n}
-                    />
-
-                    {/* New password */}
-                    <PasswordField
-                        id="cpf-newPassword"
-                        name="newPassword"
-                        label={t('account.changePassword.fields.newPassword', 'Nueva contraseña')}
-                        value={fields.newPassword}
-                        onChange={(value) => handleFieldChange('newPassword', value)}
-                        autoComplete="new-password"
-                        required
-                        disabled={isSubmitting}
-                        error={errors.newPassword}
-                        showStrength
-                        i18n={passwordI18n}
-                    />
-
-                    {/* Confirm new password */}
-                    <PasswordField
-                        id="cpf-confirmNewPassword"
-                        name="confirmNewPassword"
-                        label={t(
-                            'account.changePassword.fields.confirmNewPassword',
-                            'Confirmá la nueva contraseña'
-                        )}
-                        value={fields.confirmNewPassword}
-                        onChange={(value) => handleFieldChange('confirmNewPassword', value)}
-                        autoComplete="new-password"
-                        required
-                        disabled={isSubmitting}
-                        error={errors.confirmNewPassword}
-                        i18n={passwordI18n}
-                    />
-
-                    {/* Global error banner */}
-                    {globalError && (
-                        <div
-                            className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
-                            role="alert"
-                        >
-                            {globalError}
-                        </div>
+                    {t(
+                        'account.changePassword.subtitle',
+                        'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
                     )}
+                </Alert>
+            ) : null}
 
-                    <div className={styles.actionRow}>
-                        <button
-                            type="submit"
-                            className={styles.submitBtn}
-                            disabled={isSubmitting}
-                            aria-busy={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <span
-                                        className={styles.spinner}
-                                        aria-hidden="true"
-                                    />
-                                    {t('account.changePassword.submitting', 'Guardando...')}
-                                </>
-                            ) : (
-                                t('account.changePassword.submit', 'Cambiar contraseña')
+            <form
+                onSubmit={(e) => void handleSubmit(e)}
+                noValidate
+            >
+                <Section
+                    title={t('account.changePassword.sectionTitle')}
+                    description={
+                        /*
+                         * HOS-752: names the account. Not decoration — this is the only
+                         * thing on screen that distinguishes "activating the account
+                         * from the email I just opened" from "changing the password of
+                         * the session already signed in on this browser".
+                         */
+                        <span data-testid="change-password-account-notice">
+                            {t('account.changePassword.accountNotice')}{' '}
+                            <strong>{accountEmail}</strong>
+                        </span>
+                    }
+                    helpId="section:account.change-password"
+                >
+                    <div className={styles.fields}>
+                        {/* Current password */}
+                        <PasswordField
+                            id="cpf-currentPassword"
+                            name="currentPassword"
+                            label={t(
+                                'account.changePassword.fields.currentPassword',
+                                'Contraseña actual'
                             )}
-                        </button>
+                            value={fields.currentPassword}
+                            onChange={(value) => handleFieldChange('currentPassword', value)}
+                            autoComplete="current-password"
+                            required
+                            disabled={isSubmitting}
+                            error={errors.currentPassword}
+                            i18n={passwordI18n}
+                        />
+
+                        {/* New password */}
+                        <PasswordField
+                            id="cpf-newPassword"
+                            name="newPassword"
+                            label={t(
+                                'account.changePassword.fields.newPassword',
+                                'Nueva contraseña'
+                            )}
+                            value={fields.newPassword}
+                            onChange={(value) => handleFieldChange('newPassword', value)}
+                            autoComplete="new-password"
+                            required
+                            disabled={isSubmitting}
+                            error={errors.newPassword}
+                            showStrength
+                            i18n={passwordI18n}
+                        />
+
+                        {/* Confirm new password */}
+                        <PasswordField
+                            id="cpf-confirmNewPassword"
+                            name="confirmNewPassword"
+                            label={t(
+                                'account.changePassword.fields.confirmNewPassword',
+                                'Confirmá la nueva contraseña'
+                            )}
+                            value={fields.confirmNewPassword}
+                            onChange={(value) => handleFieldChange('confirmNewPassword', value)}
+                            autoComplete="new-password"
+                            required
+                            disabled={isSubmitting}
+                            error={errors.confirmNewPassword}
+                            i18n={passwordI18n}
+                        />
+
+                        {/* Global error banner */}
+                        {globalError ? (
+                            <Alert
+                                tone="danger"
+                                locale={locale}
+                            >
+                                {globalError}
+                            </Alert>
+                        ) : null}
+
+                        <div className={styles.actions}>
+                            <Button
+                                type="submit"
+                                loading={isSubmitting}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting
+                                    ? t('account.changePassword.submitting', 'Guardando...')
+                                    : t('account.changePassword.submit', 'Cambiar contraseña')}
+                            </Button>
+                        </div>
                     </div>
-                </form>
-            </div>
+                </Section>
+            </form>
         </div>
     );
 }

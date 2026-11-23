@@ -1,0 +1,52 @@
+/* FocusShell.module.css — the focus-page frame (HOS-2501, HOS-2416 §6.1).
+   A compact header with only the logo, no sidebar, and one centred column at
+   the `reading` width. Only the four closed breakpoints; the content column
+   answers to its own container. */
+
+.header {
+    display: flex;
+    align-items: center;
+    block-size: 3.5rem;
+    padding-inline: var(--space-4);
+    border-block-end: 1px solid var(--border);
+    background: var(--core-background);
+}
+
+.logo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: 2.75rem;
+    color: var(--core-foreground);
+    text-decoration: none;
+}
+
+.logo:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.name {
+    font-family: var(--font-heading);
+    font-size: var(--text-body-lg);
+    font-weight: 600;
+}
+
+.content {
+    container-type: inline-size;
+    container-name: account-content;
+    min-inline-size: 0;
+    max-inline-size: var(--reading-max);
+    margin-inline: auto;
+    padding: var(--space-6) var(--space-4);
+}
+
+@media (min-width: 48rem) {
+    .header {
+        padding-inline: var(--space-6);
+    }
+
+    .content {
+        padding-block: var(--space-10);
+    }
+}

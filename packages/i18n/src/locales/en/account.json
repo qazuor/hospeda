@@ -1056,9 +1056,9 @@
                 "mySubscriptionDesc": "Current plan and billing",
                 "myMessages": "My inquiries",
                 "myMessagesDesc": "Conversations with hosts",
-                "newsletter": "Newsletter",
+                "newsletter": "Email newsletter",
                 "newsletterDesc": "Manage your newsletter subscription",
-                "whatsNew": "What's New",
+                "whatsNew": "Hospeda updates",
                 "whatsNewDesc": "Platform updates and announcements",
                 "myProperties": "My properties",
                 "myPropertiesDesc": "Manage your published accommodations",
@@ -1228,7 +1228,8 @@
             "guidesDesc": "Editorial guides and curated itineraries.",
             "productNews": "Product news",
             "productNewsDesc": "New features and platform updates."
-        }
+        },
+        "sectionStatus": "Your subscription"
     },
     "profileCompletion": {
         "pageTitle": "Complete your profile",
@@ -1313,7 +1314,19 @@
             "occupationMin": "Occupation must be at least 2 characters.",
             "occupationMax": "Occupation cannot exceed 100 characters.",
             "submitFailed": "Could not complete profile. Please try again."
-        }
+        },
+        "sections": {
+            "basics": "Your details",
+            "preferences": "Contact and preferences",
+            "more": "About you",
+            "consent": "To finish"
+        },
+        "steps": {
+            "basics": "Your details",
+            "preferences": "Preferences",
+            "confirm": "Confirm"
+        },
+        "stepsLabel": "Your profile progress"
     },
     "setPassword": {
         "pageTitle": "Add password",
@@ -1364,7 +1377,8 @@
             "special": "At least 1 special character (for example ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
-        "showPassword": "Mostrar contraseña"
+        "showPassword": "Mostrar contraseña",
+        "sectionTitle": "Your password"
     },
     "searchHistory": {
         "loading": "Loading history...",
@@ -1408,7 +1422,13 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filter",
             "filterCount_other": "{{count}} filters"
-        }
+        },
+        "recordingTitle": "Saving searches",
+        "listTitle": "Your recent searches",
+        "deleteConfirmTitle": "Delete this search?",
+        "deleteConfirmBody": "“{{query}}” is removed from your history. This cannot be undone.",
+        "clearConfirmTitle": "Clear your whole history?",
+        "clearConfirmBody": "All your saved searches are removed. This cannot be undone."
     },
     "alerts": {
         "loading": "Loading alerts...",
@@ -1441,7 +1461,13 @@
         "closedNotice": "This alert was closed because that listing no longer exists.",
         "activeHeading": "Active alerts",
         "closedHeading": "Closed alerts",
-        "closedListLabel": "Your closed price alerts"
+        "closedListLabel": "Your closed price alerts",
+        "lock": {
+            "description": "Turn on alerts to find out when the price of a place you like drops."
+        },
+        "deleteConfirmTitle": "Delete this alert?",
+        "deleteConfirmBody": "You will stop getting price-drop notices for {{name}}.",
+        "closedStatus": "Closed"
     },
     "exclusiveDeals": {
         "loading": "Loading exclusive deals...",
@@ -1478,7 +1504,8 @@
         },
         "empty": {
             "title": "No recommendations right now",
-            "body": "Check back later or browse our full accommodation catalog."
+            "body": "Check back later or browse our full accommodation catalog.",
+            "cta": "Browse accommodations"
         },
         "upgrade": {
             "title": "Suggestions for you",
@@ -1948,7 +1975,12 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
-        "accountNotice": "You are about to change the password for this account:"
+        "accountNotice": "You are about to change the password for this account:",
+        "successTitle": "Password updated",
+        "successSection": "All set",
+        "continue": "Continue",
+        "back": "Back",
+        "sectionTitle": "Your new password"
     },
     "notFound": {
         "title": "We could not find what you were looking for",
@@ -2158,6 +2190,11 @@
         },
         "entityCard": {
             "noImage": "No image"
+        },
+        "stepper": {
+            "done": "completed",
+            "current": "current step",
+            "upcoming": "upcoming"
         }
     },
     "ownerDashboard": {

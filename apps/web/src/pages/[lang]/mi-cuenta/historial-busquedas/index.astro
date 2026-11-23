@@ -25,8 +25,8 @@ import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
 import { webLogger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageHeader } from '@/components/account/ui';
 import { SearchHistoryList } from '@/components/account/SearchHistoryList.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -38,11 +38,8 @@ if (!user) {
 }
 
 const { t } = createTranslations(locale);
-const title = t('account.pages.searchHistory.title', 'Historial de búsquedas');
-const description = t(
-    'account.pages.searchHistory.description',
-    'Revisá y repetí tus búsquedas recientes en Hospeda'
-);
+const title = t('account.pages.searchHistory.title');
+const description = t('account.pages.searchHistory.description');
 const apiUrl = getApiUrl();
 // HOS-2554: the plan gate names the catalog plans that carry search history. The catalog
 // reader is server-only, so the names are read here and handed to the island.
@@ -86,17 +83,17 @@ try {
 }
 ---
 
-<AccountLayout locale={locale} title={title} description={description} activeSection="historial-busquedas">
-    <AccountPageHeader title={title} />
+<AccountLayout locale={locale} title={title} description={description} activeSection="historial-busquedas" template="list">
+    <PageHeader title={title} description={description} locale={locale}>
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
-    <AccountSectionCard>
-        <SearchHistoryList
-            client:load
-            locale={locale}
-            apiUrl={apiUrl}
-            userId={user.id}
-            initialHistoryEnabled={initialHistoryEnabled}
-            gatePlanNames={gatePlanNames}
-        />
-    </AccountSectionCard>
+    <SearchHistoryList
+        client:load
+        locale={locale}
+        apiUrl={apiUrl}
+        userId={user.id}
+        initialHistoryEnabled={initialHistoryEnabled}
+        gatePlanNames={gatePlanNames}
+    />
 </AccountLayout>

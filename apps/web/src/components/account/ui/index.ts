@@ -99,6 +99,13 @@ export {
     type StatValue
 } from './StatCard';
 export { CountPill, type CountPillProps, StatusPill, type StatusPillProps } from './StatusPill';
+export {
+    Stepper,
+    type StepperProps,
+    type StepperStep,
+    type StepState,
+    stepStates
+} from './Stepper';
 export { StickySaveBar, type StickySaveBarProps } from './StickySaveBar';
 export {
     Switch,

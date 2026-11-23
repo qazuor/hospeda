@@ -31,26 +31,25 @@ import { SearchHistoryList } from '../../src/components/account/SearchHistoryLis
  */
 const RATE_LIMIT_TRANSLATION = 'Demasiadas solicitudes, probá de nuevo en un momento.';
 
-vi.mock('../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
-            // Simulate a real i18n key lookup for the apiError code exercised
-            // by the RATE_LIMIT_EXCEEDED regression test below.
-            if (key === 'common.apiError.RATE_LIMIT_EXCEEDED') return RATE_LIMIT_TRANSLATION;
-            if (!fallback) return key;
-            if (!params) return fallback;
-            // Simple {{key}} interpolation for test assertions
-            return Object.entries(params).reduce(
-                (str, [k, v]) => str.replace(`{{${k}}}`, String(v)),
-                fallback
-            );
-        },
-        tPlural: (key: string, count: number) => {
-            if (key === 'account.searchHistory.results') return `${count} resultados`;
-            return `${count} filtro(s)`;
-        }
-    })
-}));
+vi.mock('../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../helpers/i18n-catalog');
+    const t = (key: string, fallback?: string, params?: Record<string, string | number>) =>
+        // Simulates a real lookup of the apiError code exercised by the
+        // RATE_LIMIT_EXCEEDED regression test below.
+        key === 'common.apiError.RATE_LIMIT_EXCEEDED'
+            ? RATE_LIMIT_TRANSLATION
+            : tFromCatalog(key, fallback, params);
+    return {
+        createTranslations: (_locale: string) => ({
+            t,
+            tPlural: (key: string, count: number) => {
+                if (key === 'account.searchHistory.results') return `${count} resultados`;
+                return `${count} filtro(s)`;
+            }
+        }),
+        createT: (_locale: string) => t
+    };
+});
 
 vi.mock('../../src/lib/format-utils', () => ({
     formatRelativeTime: () => 'hace 2 días'
@@ -194,7 +193,7 @@ describe('SearchHistoryList', () => {
                 () => new Promise<Response>(() => {}) // never resolves
             );
             renderComponent();
-            expect(screen.getByText(/cargando historial/i)).toBeInTheDocument();
+            expect(screen.getAllByText('Cargando…').length).toBeGreaterThan(0);
         });
     });
 
@@ -231,7 +230,7 @@ describe('SearchHistoryList', () => {
 
             const alertText = screen.getByRole('alert').textContent ?? '';
             expect(alertText).not.toMatch(/too many requests/i);
-            expect(alertText).toBe(RATE_LIMIT_TRANSLATION);
+            expect(alertText).toContain(RATE_LIMIT_TRANSLATION);
         });
     });
 
@@ -271,23 +270,17 @@ describe('SearchHistoryList', () => {
     // ── 3b. Entitlement-gated (free-tier) state — BETA-148 ─────────────────────
 
     describe('Entitlement-gated state (403 ENTITLEMENT_REQUIRED)', () => {
-        it('shows the upsell/empty-state message instead of the generic error', async () => {
+        it('shows the kit plan LockedState instead of the generic error', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementRequiredResponse());
             renderComponent();
-            await waitFor(() => {
-                expect(screen.getByText(/sin búsquedas guardadas/i)).toBeInTheDocument();
-                expect(
-                    screen.getByText(/tus búsquedas aparecerán acá cuando tu plan incluya/i)
-                ).toBeInTheDocument();
-            });
+            const feature = await screen.findByRole('heading', { name: 'Historial de búsquedas' });
+            expect(feature.closest('[data-reason]')).toHaveAttribute('data-reason', 'plan');
         });
 
         it('does NOT render a generic error alert', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEntitlementRequiredResponse());
             renderComponent();
-            await waitFor(() => {
-                expect(screen.getByText(/sin búsquedas guardadas/i)).toBeInTheDocument();
-            });
+            await screen.findByRole('heading', { name: 'Historial de búsquedas' });
             expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         });
 
@@ -397,7 +390,7 @@ describe('SearchHistoryList', () => {
     // ── 6. Delete one ──────────────────────────────────────────────────────────
 
     describe('Delete one', () => {
-        it('shows inline confirm buttons on delete click', async () => {
+        it('asks with the kit confirm dialog (a whole sentence) on delete click', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([ENTRY_1]));
             renderComponent();
             await waitFor(() => {
@@ -413,6 +406,9 @@ describe('SearchHistoryList', () => {
                 expect(screen.getByRole('button', { name: /sí, eliminar/i })).toBeInTheDocument();
                 expect(screen.getByRole('button', { name: /cancelar/i })).toBeInTheDocument();
             });
+            const dialog = screen.getByRole('alertdialog');
+            expect(dialog).toHaveTextContent('¿Eliminar esta búsqueda?');
+            expect(dialog).toHaveTextContent('Se elimina «cabaña con pileta» de tu historial.');
         });
 
         it('calls DELETE /:id on confirm', async () => {
@@ -594,9 +590,8 @@ describe('SearchHistoryList', () => {
         it('links to Preferences to change it', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce(makeEmptyListResponse());
             renderComponent({ initialHistoryEnabled: true });
-            // The suite's i18n mock returns the key when no fallback is given.
             const link = await screen.findByRole('link', {
-                name: 'account.preferences.changeInPreferences'
+                name: 'Cambiar en Preferencias'
             });
             expect(link).toHaveAttribute('href', '/es/mi-cuenta/preferencias/');
         });

@@ -35,8 +35,10 @@ describe('birth-date input (SPEC-113 dd/mm/yyyy hint)', () => {
         // birth-date input from type="date" (with lang="es-AR") to type="text"
         // with a dd/mm/yyyy mask. The lang attribute is no longer needed or present;
         // assert the text-mask approach instead.
-        const block = birthDateBlock(profileCompletion);
-        expect(block).toContain('type="text"');
+        // The input is now a kit TextInput inside a kit Field whose id is `pc-birthDate`.
+        expect(profileCompletion).toContain("idParts={{ prefix: 'pc', name: 'birthDate' }}");
+        expect(profileCompletion).toContain('onChange(maskBirthDate(e.target.value))');
+        expect(profileCompletion).not.toMatch(/<TextInput[^>]*type="date"/);
     });
 
     it('ProfileCompletion hint mentions dd/mm/yyyy', () => {
