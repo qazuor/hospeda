@@ -500,7 +500,7 @@ const breadcrumbItems = [
                     variant="detail"
                     mobile={{
                         backHref: buildUrl({ locale, path: 'comer-y-salir' }),
-                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: venue.name },
+                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: venue.name, campaign: 'venue' },
                         favorite: {
                             entityId: venue.id,
                             entityType: 'VENUE',

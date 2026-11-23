@@ -5,7 +5,7 @@
  * Both Astro components and React islands need the same logic for deriving
  * initials from a display name (with an email fallback) when a user has not
  * uploaded an avatar image yet. Keeping the logic here, as pure functions,
- * means OwnerCard.astro, ReviewPreview.astro, AvatarUpload.client.tsx,
+ * means HostSection.astro, ReviewPreview.astro, AvatarUpload.client.tsx,
  * ReviewCard.tsx, UserMenu.client.tsx and MobileMenu.client.tsx all agree on
  * what "CR" vs "?" means.
  *

@@ -16,8 +16,10 @@ describe('ContactHostShell.astro (source-based)', () => {
     });
 
     it('swaps form for fallback inside <noscript>', () => {
-        expect(src).toMatch(/<noscript>[\s\S]*\[data-contact-form\] \{ display: none; \}/);
-        expect(src).toMatch(/\[data-contact-fallback\] \{ display: block; \}/);
+        expect(src).toMatch(
+            /<noscript>[\s\S]*\[data-contact-form\] \{ display: none !important; \}/
+        );
+        expect(src).toMatch(/\[data-contact-fallback\] \{ display: block !important; \}/);
     });
 
     it('renders phone, landline, email and website only; never WhatsApp', () => {

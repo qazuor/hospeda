@@ -1,6 +1,6 @@
 /* ──────────────────────────────────────────────────────────────────────────
  * Review sidebar card + dialog
- * Matches the visual rhythm of PricingSidebar and OwnerCard (the two other
+ * Matches the visual rhythm of PricingSidebar and ContactCard (the two other
  * blocks in the column). The compact form lives inside a native <dialog>
  * so we get focus trap + ESC + backdrop for free.
  * ────────────────────────────────────────────────────────────────────────── */
