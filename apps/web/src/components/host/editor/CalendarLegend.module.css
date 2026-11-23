@@ -1,0 +1,109 @@
+/* CalendarLegend.module.css — the source legend under the occupancy grid
+ * (HOS-175), split out of CalendarSection.module.css by HOS-2503. It follows
+ * the calendar Section's container: collapsed behind a toggle under 37.5rem.
+ * The colour dots are the grid's `.dot*` classes (CalendarSection.module.css). */
+
+/* --- Legend --- */
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+}
+
+.legendToggle {
+    display: none;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    margin: calc(-1 * var(--space-2));
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    cursor: pointer;
+    font: var(--app-caption);
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+}
+
+.legendToggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.legendToggleIcon {
+    transition: transform var(--duration-fast) ease;
+}
+
+.legend[data-expanded="true"] .legendToggleIcon {
+    transform: rotate(180deg);
+}
+
+.legendItems {
+    display: contents;
+}
+
+.legendTitle {
+    font: var(--app-caption);
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+}
+
+.legendItem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font: var(--app-caption);
+    color: var(--core-muted-foreground);
+}
+
+.legendDot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .legendToggleIcon {
+        transition: none;
+    }
+}
+
+@container (width < 30rem) {
+    .legend {
+        gap: var(--space-2);
+    }
+}
+
+@container (width < 37.5rem) {
+    /* One tap opens the legend; it stays out of the way until asked for. */
+    .legendToggle {
+        display: inline-flex;
+    }
+
+    .legend {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .legend .legendItems {
+        display: none;
+    }
+
+    .legend[data-expanded="true"] .legendItems {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+        width: 100%;
+    }
+
+    .legendTitle {
+        display: none;
+    }
+}

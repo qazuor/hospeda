@@ -1,0 +1,152 @@
+/* OccupancyEventDialogs.module.css — the manual-event edit dialog and the
+ * sync-block detail dialog of the occupancy calendar (HOS-175), split out of
+ * CalendarSection.module.css by HOS-2503. Tokens only. */
+
+.error {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: var(--status-danger-bg);
+    color: var(--status-danger-fg);
+    border: 1px solid var(--status-danger-border);
+    font: var(--app-meta);
+    margin: var(--space-2) 0;
+}
+
+/* --- Occupancy dialogs (edit + details, HOS-175) --- */
+
+.noteField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.editForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.editInput {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font: var(--app-ui);
+}
+
+.editFooterSpread {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+.editFooterActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.saveButton,
+.deleteButton,
+.cancelButton {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-control);
+    font: var(--app-meta);
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.saveButton {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.deleteButton {
+    border-color: var(--destructive);
+    background-color: transparent;
+    color: var(--status-danger-fg);
+}
+
+.cancelButton {
+    background-color: transparent;
+    border-color: var(--border);
+    color: var(--core-muted-foreground);
+}
+
+.saveButton:focus-visible,
+.deleteButton:focus-visible,
+.cancelButton:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.saveButton:disabled,
+.deleteButton:disabled,
+.cancelButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+ * Sync-block detail dialog ("why is this day blocked?")
+ *
+ * Read-only counterpart to the manual edit form above. A definition list rather
+ * than a form: nothing here is editable, and pairing each value with its own
+ * label is what lets a screen reader announce "Origen: Google Calendar" instead
+ * of an unlabelled string. Single column first (the dialog exists mainly for
+ * the phone case), label/value pairs side by side from 30rem.
+ * ------------------------------------------------------------------------- */
+
+.detailsList {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin: 0;
+}
+
+.detailsList dt {
+    color: var(--core-muted-foreground);
+    font-weight: 500;
+}
+
+.detailsList dd {
+    margin: 0;
+    color: var(--core-foreground);
+    /* An event title comes from an external calendar, so it can be long and
+       unbroken. Wrap it rather than let it widen the dialog past the viewport. */
+    overflow-wrap: anywhere;
+}
+
+.detailsList dd:not(:last-of-type) {
+    margin-bottom: var(--space-3);
+}
+
+.detailsMuted {
+    color: var(--core-muted-foreground);
+    font-style: italic;
+}
+
+.detailsHelp {
+    margin: var(--space-4) 0 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+}
+
+@media (min-width: 30rem) {
+    .detailsList {
+        grid-template-columns: auto 1fr;
+        gap: var(--space-2) var(--space-4);
+    }
+
+    .detailsList dd:not(:last-of-type) {
+        margin-bottom: 0;
+    }
+}
