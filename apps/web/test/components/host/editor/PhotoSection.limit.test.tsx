@@ -167,11 +167,11 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
     it("pins the hook's 'LIMIT_REACHED' literal against the enum it stands for", () => {
         // The island cannot import `@repo/billing` (its barrel pulls
         // `@repo/logger`, which reads the process environment at module scope
-        // and kills hydration), so `use-photo-section.ts` matches the code as a
-        // string. A test runs in node and CAN import the enum — so the literal
+        // and kills hydration), so `photo-section-model.ts` (split out of
+        // `use-photo-section.ts` by HOS-2489) matches the code as a string. A test runs in node and CAN import the enum — so the literal
         // is checked against its source here rather than left to drift.
         const source = readFileSync(
-            resolve(__dirname, '../../../../src/components/host/editor/use-photo-section.ts'),
+            resolve(__dirname, '../../../../src/components/host/editor/photo-section-model.ts'),
             'utf8'
         );
 

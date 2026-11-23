@@ -12,14 +12,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { reportEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
-import type { AccommodationMediaItem, ApiError, MediaImage } from '@/lib/api/types';
-import { translateApiError } from '@/lib/api-errors';
-import {
-    buildLimitReachedPayloadFromDetails,
-    type LimitReachedToastPayload
-} from '@/lib/billing-limit-error';
-import type { SupportedLocale } from '@/lib/i18n';
+import type { AccommodationMediaItem, ApiError } from '@/lib/api/types';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
@@ -29,124 +24,23 @@ import { addToast } from '@/store/toast-store';
 import {
     buildCapExceededOnSelectMessage,
     buildCompressionUnsupportedTooLargeMessage,
-    MAX_PHOTOS_LIMIT_KEY,
     mediaRowToItem,
-    type PhotoMetadataUpdateBody,
     splitMediaRows,
     validatePhotoFileSize,
     validatePhotoFileType
 } from './photo-section-helpers';
+import {
+    buildCapUpsell,
+    describeAddMediaError,
+    isPlanLimitReached,
+    legacyToDisplay,
+    type UploadBatchProgress,
+    type UsePhotoSectionParams,
+    type UsePhotoSectionResult
+} from './photo-section-model';
 import { usePhotoGalleryMutations } from './use-photo-gallery-mutations';
 
-/**
- * Map a legacy `MediaImage` (no DB id, SSR-only) to a partial display object.
- * Used only for the first-paint placeholder; once listMedia resolves, these
- * are replaced by real `AccommodationMediaItem` values that carry DB ids.
- * The empty id prevents any API call until the real rows load.
- */
-function legacyToDisplay(img: MediaImage, isFeatured: boolean): AccommodationMediaItem {
-    return {
-        id: '',
-        url: img.url,
-        publicId: img.publicId,
-        // Spelled out rather than omitted: the four text keys are REQUIRED on
-        // `AccommodationMediaItem` precisely so a mapper cannot forget one (see
-        // `PhotoMetadataEditableItem`). `MediaImage` — the SSR-only legacy
-        // shape — carries none of them, so `undefined` is the honest answer
-        // here, and the empty `id` keeps the panel shut until the real rows
-        // arrive with the real text.
-        caption: undefined,
-        description: undefined,
-        alt: undefined,
-        attribution: undefined,
-        isFeatured
-    };
-}
-
-/**
- * Whether an `addMedia` failure is the plan's photo cap rather than any other
- * upload error (HOS-724).
- *
- * Both halves are load-bearing: `LIMIT_REACHED` is the code and `403` is the
- * status the API error contract pairs it with. The same literal pair is what
- * `FavoriteButton` and `CreatePropertyMiniForm` match on; the literal is pinned
- * against `ServiceErrorCode.LIMIT_REACHED` in
- * `test/components/host/editor/PhotoSection.limit.test.tsx` so a rename of the
- * enum member cannot leave this string behind. It is spelled out rather than
- * imported from `@repo/billing`, whose barrel drags `@repo/logger` into the
- * client bundle, where it reads the process environment at module scope and
- * kills the island during hydration — see
- * `test/static-guards/billing-barrel-client-isolation.test.ts`.
- */
-function isPlanLimitReached(error: ApiError): boolean {
-    return error.status === 403 && error.code === 'LIMIT_REACHED';
-}
-
-export interface UsePhotoSectionParams {
-    readonly locale: SupportedLocale;
-    readonly accommodationId: string;
-    readonly galleryCap: number;
-    readonly initialFeaturedImage?: MediaImage | null;
-    readonly initialGallery?: readonly MediaImage[];
-}
-
-/** Progress marker for a multi-file upload batch. */
-export interface UploadBatchProgress {
-    readonly current: number;
-    readonly total: number;
-}
-
-export interface UsePhotoSectionResult {
-    readonly featuredItem: AccommodationMediaItem | null;
-    readonly galleryItems: readonly AccommodationMediaItem[];
-    readonly isUploading: boolean;
-    /**
-     * Whether a selected file is currently being resized/recompressed
-     * client-side (HOS-332), BEFORE the upload itself starts. Surfaced
-     * separately from `isUploading` so the UI can show "optimizing image…"
-     * instead of a progress bar stuck at 0% while nothing has left the
-     * browser yet.
-     */
-    readonly isCompressing: boolean;
-    readonly uploadProgress: number | null;
-    readonly uploadBatch: UploadBatchProgress | null;
-    readonly error: string | null;
-    readonly isDragOverFeatured: boolean;
-    readonly isDragOverGallery: boolean;
-    readonly isGalleryFull: boolean;
-    /**
-     * Sober "at the plan cap" upsell payload (HOS-1024) — `null` unless
-     * {@link UsePhotoSectionResult.isGalleryFull} is `true`. See the
-     * assignment site for why it reuses `buildLimitReachedPayloadFromDetails`.
-     */
-    readonly capUpsell: LimitReachedToastPayload | null;
-    /** Controls are usable once the hydration attempt finished (success or failure). */
-    readonly opsReady: boolean;
-    /** True only when persisted media loaded; gates the alt-text warning, not controls. */
-    readonly mediaLoadSucceeded: boolean;
-    readonly anyOpInFlight: boolean;
-    readonly featuredInputRef: React.RefObject<HTMLInputElement | null>;
-    readonly galleryInputRef: React.RefObject<HTMLInputElement | null>;
-    readonly handleFeaturedSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    readonly handleFeaturedDrop: (e: React.DragEvent<HTMLButtonElement>) => void;
-    readonly handleFeaturedDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
-    readonly handleFeaturedDragLeave: () => void;
-    readonly handleFeaturedRemove: () => void;
-    readonly handleGallerySelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    readonly handleGalleryDrop: (e: React.DragEvent<HTMLButtonElement>) => void;
-    readonly handleGalleryDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
-    readonly handleGalleryDragLeave: () => void;
-    readonly handleGalleryRemove: (item: AccommodationMediaItem) => void;
-    readonly handlePromoteToFeatured: (item: AccommodationMediaItem) => void;
-    readonly handleMoveUp: (item: AccommodationMediaItem) => void;
-    readonly handleMoveDown: (item: AccommodationMediaItem) => void;
-    /** Drag-and-drop gallery reorder (HOS-2126). */
-    readonly handleReorderGallery: (fromIndex: number, toIndex: number) => void;
-    readonly handleUpdateMediaText: (
-        item: AccommodationMediaItem,
-        body: PhotoMetadataUpdateBody
-    ) => Promise<boolean>;
-}
+export type { UploadBatchProgress, UsePhotoSectionParams, UsePhotoSectionResult };
 
 /**
  * Self-contained photo-section state machine (SPEC-204 persistence model +
@@ -158,7 +52,8 @@ export function usePhotoSection({
     accommodationId,
     galleryCap,
     initialFeaturedImage = null,
-    initialGallery = []
+    initialGallery = [],
+    confirmRemoval
 }: UsePhotoSectionParams): UsePhotoSectionResult {
     const { t, tPlural } = createTranslations(locale);
     const featuredInputRef = useRef<HTMLInputElement>(null);
@@ -184,32 +79,13 @@ export function usePhotoSection({
 
     const isGalleryFull = galleryItems.length >= galleryCap;
 
-    /**
-     * Sober "at the plan cap" upsell payload (HOS-1024). Reuses the exact
-     * copy/CTA builder the failed-upload path already uses below
-     * (`reportAddMediaError`), so the passive "gallery is full" state and the
-     * active "upload rejected" state never show different copy or a
-     * different CTA for the same limit — one source, two moments it renders
-     * at.
-     *
-     * `null` whenever the gallery is not full — including the entire "plan
-     * cap not yet known" window, since the caller
-     * (`PhotoSection.client.tsx`) passes a placeholder `galleryCap` large
-     * enough that `isGalleryFull` cannot be `true` until the real,
-     * plan-derived cap has resolved.
-     */
-    const capUpsell: LimitReachedToastPayload | null = isGalleryFull
-        ? buildLimitReachedPayloadFromDetails({
-              details: {
-                  limitKey: MAX_PHOTOS_LIMIT_KEY,
-                  currentCount: galleryItems.length,
-                  maxAllowed: galleryCap,
-                  usagePercent: 100,
-                  upgradeAudience: 'host'
-              },
-              locale
-          })
-        : null;
+    // HOS-1024: see `buildCapUpsell` for why this reuses the limit-toast copy.
+    const capUpsell = buildCapUpsell({
+        isGalleryFull,
+        count: galleryItems.length,
+        cap: galleryCap,
+        locale
+    });
 
     // --- Hydrate from API on mount ---
 
@@ -248,73 +124,18 @@ export function usePhotoSection({
         addToast({ type: 'error', message });
     }, []);
 
-    /**
-     * Report a failed `addMedia` call (HOS-724).
-     *
-     * Hitting the plan's photo cap is NOT an ordinary upload failure: it is the
-     * product's most natural upsell moment, and it has a purchasable way out
-     * that costs a fraction of a plan upgrade. Before this branch existed the
-     * host got the API's raw, Spanish-only sentence with nothing to click, in
-     * every locale, while `error.details.limitKey` sat unread on the very same
-     * object.
-     *
-     * The payload — copy AND which CTA leads — comes whole from
-     * `buildLimitReachedPayloadFromDetails`, exactly as the two other limit
-     * toasts in the app consume it. This surface decides nothing about
-     * prominence: HOS-723 moved that decision into the helper, so re-deriving
-     * the add-on offer here would be a fourth copy of a rule that already has
-     * one home. Both slots are forwarded verbatim (guarded by
-     * `test/lib/billing-limit-toast-actions.guard.test.ts`) — dropping
-     * `secondaryAction` would silently remove the plan upgrade, since for this
-     * limit an add-on exists and takes the primary slot.
-     *
-     * `payload.title` is the message on purpose: it is the photo-specific,
-     * localized line ("Llegaste al límite de fotos"), the same shape
-     * `buildLimitReachedPayload`'s own JSDoc example uses. `payload.message`
-     * currently resolves to a generic sentence for EVERY limit — see the
-     * follow-up note on the helper.
-     *
-     * Every OTHER failure keeps the plain generic reporter: an add-on offer
-     * bolted onto a network error or a Cloudinary hiccup would be noise at
-     * best and a misdiagnosis at worst.
-     */
+    /** Report a failed `addMedia` call (HOS-724; see `describeAddMediaError`). */
     const reportAddMediaError = useCallback(
         (error: ApiError) => {
-            if (isPlanLimitReached(error)) {
-                const limitPayload = buildLimitReachedPayloadFromDetails({
-                    details: error.details,
-                    locale
-                });
-                setError(limitPayload.title);
-                addToast({
-                    type: 'error',
-                    message: limitPayload.title,
-                    action: limitPayload.action
-                });
-                return;
-            }
-
-            // HOS-1218: the API's `message` is English (or Spanish, for the
-            // plan-limit copy) log text. Resolve from `code`/`reason`/`details`
-            // instead; an unmapped code degrades to the localized fallback, so
-            // `message` is deliberately not forwarded.
-            reportUploadError(
-                translateApiError({
-                    error: {
-                        code: error.code,
-                        reason: error.reason,
-                        details: error.details,
-                        status: error.status
-                    },
-                    t,
-                    fallback: t(
-                        'host.properties.editor.photo.persistFailed',
-                        'No se pudo guardar la imagen en la base de datos'
-                    )
-                })
+            const { message, limit } = describeAddMediaError({ error, locale, t });
+            setError(message);
+            addToast(
+                limit
+                    ? { type: 'error', message, action: limit.action }
+                    : { type: 'error', message }
             );
         },
-        [locale, t, reportUploadError]
+        [locale, t]
     );
 
     // --- Featured image ---
@@ -351,6 +172,10 @@ export function usePhotoSection({
 
             setIsUploading(true);
             setUploadProgress(0);
+            // HOS-2489: an upload is a save; the shell chip says so. No chip
+            // retry: a failed upload needs the file picked again.
+            reportEditorAutoSave({ status: 'saving' });
+            let saved = false;
 
             try {
                 const uploaded = await uploadEntityImage({
@@ -380,6 +205,7 @@ export function usePhotoSection({
                 }
 
                 const { media: newRow } = addResult.data;
+                saved = true;
 
                 // The replaced cover is NOT added to the gallery. Uploading a
                 // new cover deletes the old one server-side, so appending it
@@ -399,6 +225,9 @@ export function usePhotoSection({
                     })
                 );
             } finally {
+                reportEditorAutoSave(
+                    saved ? { status: 'saved', savedAt: new Date() } : { status: 'error' }
+                );
                 setIsUploading(false);
                 setUploadProgress(null);
                 if (featuredInputRef.current) {
@@ -493,6 +322,8 @@ export function usePhotoSection({
             }
 
             setIsUploading(true);
+            reportEditorAutoSave({ status: 'saving' });
+            let allSaved = true;
 
             for (let index = 0; index < compressions.length; index += 1) {
                 const file = compressions[index]?.file;
@@ -519,6 +350,7 @@ export function usePhotoSection({
                     });
 
                     if (!addResult.ok) {
+                        allSaved = false;
                         reportAddMediaError(addResult.error);
                         // HOS-724: at the plan cap every remaining file in the
                         // batch would fail identically. Stop instead of firing
@@ -532,6 +364,7 @@ export function usePhotoSection({
 
                     setGalleryItems((prev) => [...prev, mediaRowToItem(addResult.data.media)]);
                 } catch (err) {
+                    allSaved = false;
                     reportUploadError(
                         describeUploadEntityError({
                             err,
@@ -545,6 +378,9 @@ export function usePhotoSection({
                 }
             }
 
+            reportEditorAutoSave(
+                allSaved ? { status: 'saved', savedAt: new Date() } : { status: 'error' }
+            );
             setIsUploading(false);
             setUploadProgress(null);
             setUploadBatch(null);
@@ -607,7 +443,8 @@ export function usePhotoSection({
         setGalleryItems,
         setError,
         setOpLoading,
-        reportUploadError
+        reportUploadError,
+        confirmRemoval
     });
 
     const anyOpInFlight = isUploading || isCompressing || opLoading;

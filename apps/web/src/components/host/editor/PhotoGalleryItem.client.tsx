@@ -59,12 +59,20 @@
  */
 
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
-import { GripVerticalIcon, StarIcon } from '@repo/icons';
+import {
+    ChevronDownIcon,
+    ChevronUpIcon,
+    DeleteIcon,
+    GripVerticalIcon,
+    StarIcon
+} from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
 import type { CSSProperties } from 'react';
+import { Button, PhotoTile } from '@/components/account/ui';
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PhotoAltBadge } from './PhotoAltBadge';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
 import type { PhotoMetadataUpdateBody } from './photo-section-helpers';
@@ -155,97 +163,115 @@ export function PhotoGalleryItem({
     );
 
     return (
-        <div
+        <PhotoTile
             ref={sortableRef}
-            data-sortable-id={sortableId}
-            style={sortableStyle}
-            className={`${styles.galleryItemWrapper} ${isDragging ? styles.galleryItemDragging : ''}`}
-        >
-            <div className={styles.galleryItem}>
-                <img
-                    src={thumbnailUrl}
-                    alt={
-                        item.alt ??
-                        t('host.properties.editor.photo.galleryAlt', undefined, {
-                            index: position
-                        })
-                    }
-                    className={styles.galleryItemImage}
-                />
-                <div className={styles.galleryItemActions}>
-                    <button
-                        type="button"
-                        className={styles.previewButton}
-                        onClick={() => onRemove(item)}
-                        disabled={!canOperate}
-                        aria-label={t('host.properties.editor.photo.remove', 'Eliminar')}
-                    >
-                        ✕
-                    </button>
-                </div>
-            </div>
-            <div className={styles.galleryItemToolbar}>
-                {dragHandle && (
-                    <button
-                        type="button"
-                        ref={dragHandle.ref}
-                        className={`${styles.toolbarButton} ${styles.dragHandle}`}
-                        {...dragHandle.attributes}
-                        {...dragHandle.listeners}
-                        // After the dnd-kit spreads on purpose: their
-                        // `aria-roledescription` stays, but the accessible
-                        // name must say WHICH photo this handle moves.
-                        disabled={dragHandle.disabled}
-                        aria-label={dragHandleAriaLabel}
-                        title={dragHandleAriaLabel}
-                    >
-                        <GripVerticalIcon
-                            size="sm"
-                            color="#ffffff"
-                        />
-                    </button>
-                )}
-                <button
-                    type="button"
-                    className={styles.toolbarButton}
-                    onClick={() => onMoveUp(item)}
-                    disabled={!canOperate || isFirst}
-                    aria-label={t(
-                        'host.properties.editor.photo.moveUpAria',
-                        'Mover foto {{index}} hacia arriba',
-                        { index: position }
-                    )}
-                >
-                    ↑
-                </button>
-                <button
-                    type="button"
-                    className={styles.toolbarButton}
-                    onClick={() => onMoveDown(item)}
-                    disabled={!canOperate || isLast}
-                    aria-label={t(
-                        'host.properties.editor.photo.moveDownAria',
-                        'Mover foto {{index}} hacia abajo',
-                        { index: position }
-                    )}
-                >
-                    ↓
-                </button>
-                <button
-                    type="button"
-                    className={styles.toolbarButton}
-                    onClick={() => onPromote(item)}
+            sortableId={sortableId}
+            dragStyle={sortableStyle}
+            isDragging={isDragging}
+            src={thumbnailUrl}
+            alt={
+                item.alt ??
+                t('host.properties.editor.photo.galleryAlt', undefined, {
+                    index: position
+                })
+            }
+            actions={
+                <Button
+                    variant="secondary"
+                    size="lg"
+                    iconOnly
+                    onClick={() => onRemove(item)}
                     disabled={!canOperate}
-                    aria-label={promoteAriaLabel}
-                    title={promoteAriaLabel}
+                    aria-label={t('host.properties.editor.photo.remove', 'Eliminar')}
                 >
-                    <StarIcon
+                    <DeleteIcon
                         size="sm"
-                        weight={item.isFeatured ? 'fill' : 'regular'}
-                        color="#ffffff"
+                        aria-hidden="true"
                     />
-                </button>
-            </div>
+                </Button>
+            }
+            badge={
+                <PhotoAltBadge
+                    locale={locale}
+                    item={item}
+                />
+            }
+            toolbar={
+                <>
+                    {dragHandle && (
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            iconOnly
+                            ref={dragHandle.ref}
+                            className={styles.dragHandle}
+                            {...dragHandle.attributes}
+                            {...dragHandle.listeners}
+                            // After the dnd-kit spreads on purpose: their
+                            // `aria-roledescription` stays, but the accessible
+                            // name must say WHICH photo this handle moves.
+                            disabled={dragHandle.disabled}
+                            aria-label={dragHandleAriaLabel}
+                            title={dragHandleAriaLabel}
+                        >
+                            <GripVerticalIcon
+                                size="sm"
+                                aria-hidden="true"
+                            />
+                        </Button>
+                    )}
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        iconOnly
+                        onClick={() => onMoveUp(item)}
+                        disabled={!canOperate || isFirst}
+                        aria-label={t(
+                            'host.properties.editor.photo.moveUpAria',
+                            'Mover foto {{index}} hacia arriba',
+                            { index: position }
+                        )}
+                    >
+                        <ChevronUpIcon
+                            size="sm"
+                            aria-hidden="true"
+                        />
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        iconOnly
+                        onClick={() => onMoveDown(item)}
+                        disabled={!canOperate || isLast}
+                        aria-label={t(
+                            'host.properties.editor.photo.moveDownAria',
+                            'Mover foto {{index}} hacia abajo',
+                            { index: position }
+                        )}
+                    >
+                        <ChevronDownIcon
+                            size="sm"
+                            aria-hidden="true"
+                        />
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        iconOnly
+                        onClick={() => onPromote(item)}
+                        disabled={!canOperate}
+                        aria-label={promoteAriaLabel}
+                        title={promoteAriaLabel}
+                    >
+                        <StarIcon
+                            size="sm"
+                            weight={item.isFeatured ? 'fill' : 'regular'}
+                            aria-hidden="true"
+                        />
+                    </Button>
+                </>
+            }
+        >
             <PhotoMetadataEditor
                 locale={locale}
                 item={item}
@@ -264,6 +290,6 @@ export function PhotoGalleryItem({
                 )}
                 onSave={onUpdateMetadata}
             />
-        </div>
+        </PhotoTile>
     );
 }

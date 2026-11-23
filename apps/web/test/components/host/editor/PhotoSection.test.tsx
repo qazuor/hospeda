@@ -27,18 +27,25 @@
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    __resetEditorAutoSave,
+    getEditorAutoSave
+} from '@/components/account/editor-shell/editor-auto-save-signal';
 import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
 import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
 
-import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
-
-// HOS-2429: removal now asks for confirmation. The dialog itself is covered by
-// `show-confirmation-dialog.test.tsx`; here the user always confirms.
-vi.mock('@/lib/forms/show-confirmation-dialog', () => ({
-    showConfirmationDialog: vi.fn().mockResolvedValue(true)
-}));
+/**
+ * HOS-2429 + HOS-2489: removal asks first through the kit confirm dialog.
+ * Clicks the remove control, then answers the real `alertdialog`.
+ */
+async function removeAndAnswer(control: HTMLElement, answer: 'Eliminar' | 'Cancelar') {
+    fireEvent.click(control);
+    const dialog = await screen.findByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: answer }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+}
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)
@@ -338,10 +345,12 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             });
         });
 
-        it('renders gallery add (+) button when gallery is empty', async () => {
+        it('renders the gallery add tile when gallery is empty', async () => {
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => {
-                expect(screen.getByText('+')).toBeInTheDocument();
+                expect(
+                    screen.getByRole('button', { name: 'Agregar fotos a la galería' })
+                ).toBeInTheDocument();
             });
         });
     });
@@ -496,8 +505,8 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(imgs).toHaveLength(2);
             });
 
-            const removeButtons = screen.getAllByLabelText('Eliminar');
-            fireEvent.click(removeButtons[0]);
+            const removeButtons = screen.getAllByRole('button', { name: 'Eliminar' });
+            await removeAndAnswer(removeButtons[0] as HTMLElement, 'Eliminar');
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
@@ -515,35 +524,37 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
         });
 
         it('opens ONE confirmation when the remove button is double-clicked (HOS-2429)', async () => {
-            let resolveDialog: (value: boolean) => void = () => {};
-            vi.mocked(showConfirmationDialog).mockImplementationOnce(
-                () => new Promise<boolean>((resolve) => (resolveDialog = resolve))
-            );
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
             mockRemoveMedia.mockReturnValue(makeRemoveOk());
 
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
 
-            const button = screen.getAllByLabelText('Eliminar')[0] as HTMLElement;
+            const button = screen.getAllByRole('button', { name: 'Eliminar' })[0] as HTMLElement;
             fireEvent.click(button);
             fireEvent.click(button);
 
-            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
-            resolveDialog(false);
+            await screen.findByRole('alertdialog');
+            expect(screen.getAllByRole('alertdialog')).toHaveLength(1);
+            fireEvent.click(
+                within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' })
+            );
+            await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+            expect(mockRemoveMedia).not.toHaveBeenCalled();
         });
 
         it('asks for confirmation and deletes nothing when the user cancels (HOS-2429)', async () => {
-            vi.mocked(showConfirmationDialog).mockResolvedValueOnce(false);
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
             mockRemoveMedia.mockReturnValue(makeRemoveOk());
 
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
 
-            fireEvent.click(screen.getAllByLabelText('Eliminar')[0] as HTMLElement);
+            await removeAndAnswer(
+                screen.getAllByRole('button', { name: 'Eliminar' })[0] as HTMLElement,
+                'Cancelar'
+            );
 
-            await waitFor(() => expect(showConfirmationDialog).toHaveBeenCalledTimes(1));
             expect(mockRemoveMedia).not.toHaveBeenCalled();
             expect(screen.getAllByRole('img')).toHaveLength(2);
         });
@@ -558,8 +569,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(screen.getAllByRole('img')).toHaveLength(1);
             });
 
-            const removeButton = screen.getByLabelText('Eliminar');
-            fireEvent.click(removeButton);
+            await removeAndAnswer(screen.getByRole('button', { name: 'Eliminar' }), 'Eliminar');
 
             await waitFor(() => {
                 expect(screen.getByText('remove failed')).toBeInTheDocument();
@@ -713,7 +723,10 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             render(<PhotoSection {...defaultProps} />);
 
             await waitFor(() => {
-                expect(screen.queryByText('+')).not.toBeInTheDocument();
+                expect(screen.getAllByRole('img')).toHaveLength(GALLERY_CAP);
+                expect(
+                    screen.queryByRole('button', { name: 'Agregar fotos a la galería' })
+                ).toBeNull();
             });
         });
 
@@ -740,7 +753,9 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             render(<PhotoSection {...defaultProps} />);
 
             await waitFor(() => {
-                expect(screen.getByText('+')).toBeInTheDocument();
+                expect(
+                    screen.getByRole('button', { name: 'Agregar fotos a la galería' })
+                ).toBeInTheDocument();
             });
         });
     });
@@ -1113,7 +1128,9 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             render(<PhotoSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
-            const galleryDropZone = screen.getByText('+');
+            const galleryDropZone = screen.getByRole('button', {
+                name: 'Agregar fotos a la galería'
+            });
             const file = new File(['img'], 'dropped-gallery.jpg', { type: 'image/jpeg' });
             fireEvent.drop(galleryDropZone, { dataTransfer: { files: [file] } });
 
@@ -1348,6 +1365,39 @@ describe('PhotoSection — HOS-637 portada thumbnail transform', () => {
             expect(img.src).toContain('/upload/w_400,h_300,c_fill');
             expect(img.src).toContain('q_auto');
             expect(img.src).toContain('f_auto');
+        });
+    });
+    // ── Shell auto-save chip (HOS-2489) ────────────────────────────────
+
+    describe('reports uploads to the shell chip (HOS-2489)', () => {
+        beforeEach(() => {
+            __resetEditorAutoSave();
+        });
+
+        it('ends a successful gallery upload on «saved»', async () => {
+            mockUploadEntityImage.mockReturnValue(makeUploadOk());
+            mockAddMedia.mockReturnValue(makeAddOk());
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const galleryInput = document.querySelector('#gallery-image-input') as HTMLInputElement;
+            const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+            fireEvent.change(galleryInput, { target: { files: [file] } });
+
+            await waitFor(() => expect(getEditorAutoSave().status).toBe('saved'));
+        });
+
+        it('ends a refused gallery upload on «error»', async () => {
+            mockUploadEntityImage.mockReturnValue(makeUploadOk());
+            mockAddMedia.mockReturnValue(makeError('add failed'));
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const galleryInput = document.querySelector('#gallery-image-input') as HTMLInputElement;
+            const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+            fireEvent.change(galleryInput, { target: { files: [file] } });
+
+            await waitFor(() => expect(getEditorAutoSave().status).toBe('error'));
         });
     });
 });

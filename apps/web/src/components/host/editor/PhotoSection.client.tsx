@@ -50,15 +50,28 @@
  * they lack DB ids and are display-only.
  */
 
+import { DeleteIcon } from '@repo/icons';
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, getMediaUrl } from '@repo/media';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+    Alert,
+    Button,
+    MediaDropzone,
+    PhotoGrid,
+    PhotoTile,
+    TextLink,
+    useConfirm
+} from '@/components/account/ui';
 import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
+import { photoRemovalConfirmRequest } from '@/lib/forms/confirm-photo-removal';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PhotoAltBadge } from './PhotoAltBadge';
 import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
 import { PhotoSectionDescription } from './PhotoSectionDescription.client';
+import { PhotoUploadStatus } from './PhotoUploadStatus';
 import { PublishReadyDialog } from './PublishReadyDialog.client';
 import { MAX_PHOTOS_LIMIT_KEY, resolveEffectiveGalleryCap } from './photo-section-helpers';
 import { SortablePhotoGallery } from './SortablePhotoGallery.client';
@@ -158,6 +171,13 @@ export function PhotoSection({
         draftLimit: publishContext?.isDraft ? getDraftLimit(MAX_PHOTOS_LIMIT_KEY) : 0
     });
 
+    // HOS-2429 + HOS-2489: deletes are immediate, so the kit dialog asks first.
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
+    const confirmRemoval = useCallback(
+        () => askConfirm(photoRemovalConfirmRequest({ t })),
+        [askConfirm, t]
+    );
+
     const {
         featuredItem,
         galleryItems,
@@ -195,7 +215,8 @@ export function PhotoSection({
         accommodationId,
         galleryCap,
         initialFeaturedImage,
-        initialGallery
+        initialGallery,
+        confirmRemoval
     });
 
     // HOS-1018: ask before leaving or saving while required photo alt text is
@@ -267,41 +288,46 @@ export function PhotoSection({
             />
 
             {/* Featured Image (Portada) */}
-            <div>
+            <div className={styles.slot}>
                 <label
                     htmlFor="featured-image-input"
-                    className={styles.uploadTextStrong}
+                    className={styles.slotLabel}
                 >
                     {t('host.properties.editor.photo.featured', 'Imagen principal')}
                 </label>
 
                 {featuredItem ? (
-                    <div className={styles.preview}>
-                        {/* HOS-637: `.previewImage` box is capped at
-                            max-width:400px / max-height:300px (see
-                            PhotoSection.module.css) — this matched the
-                            `card` preset (w_400,h_300) exactly, so it is
-                            reused verbatim instead of a bespoke `raw`
-                            transform. */}
-                        <img
-                            src={getMediaUrl(featuredItem.url, { preset: 'card' })}
-                            alt={
-                                featuredItem.alt ??
-                                t('host.properties.editor.photo.featuredAlt', 'Imagen principal')
-                            }
-                            className={styles.previewImage}
-                        />
-                        <div className={styles.previewActions}>
-                            <button
-                                type="button"
-                                className={styles.previewButton}
+                    // HOS-637: the `card` preset (w_400,h_300) matches the
+                    // featured tile's 4:3 frame.
+                    <PhotoTile
+                        featured
+                        src={getMediaUrl(featuredItem.url, { preset: 'card' })}
+                        alt={
+                            featuredItem.alt ??
+                            t('host.properties.editor.photo.featuredAlt', 'Imagen principal')
+                        }
+                        actions={
+                            <Button
+                                variant="secondary"
+                                size="lg"
+                                iconOnly
                                 onClick={handleFeaturedRemove}
                                 disabled={anyOpInFlight || !opsReady || !featuredItem.id}
                                 aria-label={t('host.properties.editor.photo.remove', 'Eliminar')}
                             >
-                                ✕
-                            </button>
-                        </div>
+                                <DeleteIcon
+                                    size="sm"
+                                    aria-hidden="true"
+                                />
+                            </Button>
+                        }
+                        badge={
+                            <PhotoAltBadge
+                                locale={locale}
+                                item={featuredItem}
+                            />
+                        }
+                    >
                         <PhotoMetadataEditor
                             locale={locale}
                             item={featuredItem}
@@ -317,32 +343,25 @@ export function PhotoSection({
                             )}
                             onSave={handleUpdateMediaText}
                         />
-                    </div>
+                    </PhotoTile>
                 ) : (
-                    <button
-                        type="button"
-                        className={`${styles.uploadArea} ${anyOpInFlight ? styles.uploadAreaDisabled : ''} ${isDragOverFeatured ? styles.uploadAreaDragOver : ''}`}
-                        onClick={() => !anyOpInFlight && featuredInputRef.current?.click()}
+                    <MediaDropzone
+                        title={t(
+                            'host.properties.editor.photo.dropOrClick',
+                            'Arrastrá una imagen o hacé clic para seleccionar'
+                        )}
+                        hint={t(
+                            'host.properties.editor.photo.formats',
+                            'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                            { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+                        )}
+                        isDragOver={isDragOverFeatured}
+                        disabled={anyOpInFlight}
+                        onPick={() => featuredInputRef.current?.click()}
                         onDrop={handleFeaturedDrop}
                         onDragOver={handleFeaturedDragOver}
                         onDragLeave={handleFeaturedDragLeave}
-                        disabled={anyOpInFlight}
-                    >
-                        <span className={styles.uploadIcon}>📷</span>
-                        <span className={styles.uploadText}>
-                            {t(
-                                'host.properties.editor.photo.dropOrClick',
-                                'Arrastrá una imagen o hacé clic para seleccionar'
-                            )}
-                        </span>
-                        <span className={styles.uploadHint}>
-                            {t(
-                                'host.properties.editor.photo.formats',
-                                'JPG, PNG o WebP — máx. {{maxSize}}MB',
-                                { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                            )}
-                        </span>
-                    </button>
+                    />
                 )}
 
                 <input
@@ -355,42 +374,29 @@ export function PhotoSection({
                 />
             </div>
 
-            {/* Compressing (HOS-332) — shown while a large file is being
-                resized/recompressed client-side, BEFORE anything is sent, so
-                the picker does not look stuck at 0% for a multi-second decode. */}
-            {isCompressing && (
-                <p className={styles.uploadBatchStatus}>
-                    {t('host.properties.editor.photo.processingImage', 'Optimizando imagen…')}
-                </p>
-            )}
+            {/* HOS-332: compressing before anything is sent, then the upload. */}
+            <PhotoUploadStatus
+                locale={locale}
+                isCompressing={isCompressing}
+                isUploading={isUploading}
+                progress={uploadProgress}
+                batch={uploadBatch}
+            />
 
-            {/* Upload Progress */}
-            {isUploading && uploadProgress !== null && (
-                <div className={styles.progressBar}>
-                    <div
-                        className={styles.progressBarFill}
-                        style={{ width: `${uploadProgress}%` }}
-                    />
-                </div>
+            {error && (
+                <Alert
+                    tone="danger"
+                    locale={locale}
+                >
+                    {error}
+                </Alert>
             )}
-            {isUploading && uploadBatch && uploadBatch.total > 1 && (
-                <p className={styles.uploadBatchStatus}>
-                    {t(
-                        'host.properties.editor.photo.uploadingBatch',
-                        'Subiendo foto {{current}} de {{total}}…',
-                        { current: uploadBatch.current, total: uploadBatch.total }
-                    )}
-                </p>
-            )}
-
-            {/* Inline Error */}
-            {error && <div className={styles.error}>{error}</div>}
 
             {/* Gallery */}
-            <div style={{ marginTop: '1.5rem' }}>
+            <div className={styles.slot}>
                 <label
                     htmlFor="gallery-image-input"
-                    className={styles.uploadTextStrong}
+                    className={styles.slotLabel}
                     aria-busy={!isGalleryCapResolved}
                 >
                     {isGalleryCapResolved
@@ -403,28 +409,26 @@ export function PhotoSection({
                 </label>
 
                 {isGalleryFull && (
-                    <p className={styles.error}>
+                    // HOS-1024: sober, single-line upsell — the same copy/CTA
+                    // the failed-upload toast already uses.
+                    <Alert
+                        tone="warning"
+                        locale={locale}
+                        action={
+                            capUpsell ? (
+                                <TextLink href={capUpsell.action.href}>
+                                    {capUpsell.action.label}
+                                </TextLink>
+                            ) : undefined
+                        }
+                    >
                         {tPlural('host.properties.editor.photo.galleryCapReached', galleryCap, {
                             cap: galleryCap
                         })}
-                        {/* HOS-1024: sober, single-line upsell — the same copy/CTA
-                            the failed-upload toast already uses, reused here rather
-                            than re-derived. */}
-                        {capUpsell && (
-                            <>
-                                {' '}
-                                <a
-                                    href={capUpsell.action.href}
-                                    className={styles.upsellLink}
-                                >
-                                    {capUpsell.action.label}
-                                </a>
-                            </>
-                        )}
-                    </p>
+                    </Alert>
                 )}
 
-                <div className={styles.gallery}>
+                <PhotoGrid>
                     {/* HOS-2126: drag-and-drop reorder, on top of (not instead
                         of) the per-photo move buttons. The cover above is not
                         part of this list. */}
@@ -441,27 +445,21 @@ export function PhotoSection({
                     />
 
                     {!isGalleryFull && (
-                        <button
-                            type="button"
-                            className={`${styles.galleryAddButton} ${isDragOverGallery ? styles.galleryDragOver : ''}`}
-                            onClick={() =>
-                                !anyOpInFlight &&
-                                isGalleryCapResolved &&
-                                galleryInputRef.current?.click()
-                            }
-                            onDrop={handleGalleryDrop}
-                            onDragOver={handleGalleryDragOver}
-                            onDragLeave={handleGalleryDragLeave}
-                            disabled={anyOpInFlight || !isGalleryCapResolved}
-                            aria-label={t(
+                        <MediaDropzone
+                            variant="tile"
+                            title={t(
                                 'host.properties.editor.photo.addToGallery',
                                 'Agregar fotos a la galería'
                             )}
-                        >
-                            +
-                        </button>
+                            isDragOver={isDragOverGallery}
+                            disabled={anyOpInFlight || !isGalleryCapResolved}
+                            onPick={() => galleryInputRef.current?.click()}
+                            onDrop={handleGalleryDrop}
+                            onDragOver={handleGalleryDragOver}
+                            onDragLeave={handleGalleryDragLeave}
+                        />
                     )}
-                </div>
+                </PhotoGrid>
 
                 <input
                     ref={galleryInputRef}
@@ -475,6 +473,7 @@ export function PhotoSection({
                 />
             </div>
 
+            {confirmDialog}
             <PublishReadyDialog
                 isOpen={publishPrompt.isOpen}
                 onClose={publishPrompt.close}
