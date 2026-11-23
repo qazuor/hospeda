@@ -14,14 +14,13 @@
 import type {
     ExperienceOwnerCreateInput,
     ExperienceProtected,
-    ListingCompletenessListing,
     OwnerListingSummary,
     ResolveListingCompletenessResult,
     VenueOrExperience,
     VenueOwnerCreateInput,
     VenueProtected
 } from '@repo/schemas';
-import { PublicationStatusEnum, resolveListingCompleteness } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { apiClient } from '../api/client';
 import type { ApiResult } from '../api/types';
 
@@ -157,7 +156,7 @@ export async function fetchOwnerListingDetail({
  *
  * `completeness` is `null` when the listing is already public (no need to
  * compute it — a public listing is complete by construction, per G-3) or
- * when its detail fetch failed (degrades to an "unknown" card state rather
+ * when the list carried no requirements for it (degrades to an "unknown" card state rather
  * than a wrong one — see `resolveListingCardState`).
  */
 export interface OwnerListingSummaryWithState extends OwnerListingSummary {
@@ -165,62 +164,48 @@ export interface OwnerListingSummaryWithState extends OwnerListingSummary {
 }
 
 /**
- * Fetches the owner's listings (both verticals) and enriches every
- * non-public one with a completeness preview, fetched from the same
- * protected getById the editor uses. Public listings are skipped (G-3: a
- * public listing is complete by construction, and paying for the extra
- * fetch would tell the owner nothing new).
+ * Fetches the owner's listings of ONE vertical with their state, in a single
+ * request (HOS-2484, AC-7 «one list request»).
  *
- * The per-listing detail fetch is fanned out with `Promise.all` — venue/experience
- * owners are expected to hold a handful of listings (HOS-166 OQ-4: no cap in
- * v1, but not a bulk-catalog use case), so an N+1 SSR fetch here is an
- * accepted tradeoff over adding new API surface. This preview calls the SAME
- * canonical `resolveListingCompleteness` (from `@repo/schemas`, HOS-166
- * judgment-day R-5) as the checkout route's server-side gate and the
- * visibility reconciler — one definition, three consumers, no separately
- * maintained web mirror to drift out of lockstep with the other two.
+ * Before HOS-2484 this fetched both verticals and then every non-public
+ * listing's detail to compute its checklist: one request per listing. The
+ * `/mine` endpoint now carries each unpublished listing's unmet requirements
+ * (`missingRequirements`), computed by the SAME canonical
+ * `resolveListingCompleteness` the checkout gate and the reconciler use, so the
+ * preview stays one definition with three consumers.
  *
- * @param cookieHeader - Raw `Cookie` header from the SSR request.
- * @returns The merged, enriched list.
- * @throws {OwnerListingsUnavailableError} See {@link fetchOwnerListings}.
+ * `completeness` is `null` for a public or purged listing (nothing to check)
+ * and whenever the summary carries no requirements (the API could not read
+ * them): the card then shows an «unknown» state, never a false «complete».
+ *
+ * @param input.vertical - The list the page shows (`?vertical=`).
+ * @param input.cookieHeader - Raw `Cookie` header from the SSR request.
+ * @returns That vertical's listings, enriched.
+ * @throws {OwnerListingsUnavailableError} When the list could not be read.
  */
 export async function fetchOwnerListingsWithState({
+    vertical,
     cookieHeader
 }: {
-    cookieHeader?: string;
+    readonly vertical: VenueOrExperience;
+    readonly cookieHeader?: string;
 }): Promise<readonly OwnerListingSummaryWithState[]> {
-    const summaries = await fetchOwnerListings({ cookieHeader });
-
-    return Promise.all(
-        summaries.map(async (summary): Promise<OwnerListingSummaryWithState> => {
-            // A purged listing has nothing left to complete (HOS-1641): its card
-            // renders no action, so its detail is not fetched either.
-            if (summary.isPublic || summary.publicationStatus === PublicationStatusEnum.PURGED) {
-                return { ...summary, completeness: null };
-            }
-
-            const detail = await fetchOwnerListingDetail({
-                vertical: summary.vertical,
-                id: summary.id,
-                cookieHeader
-            });
-
-            if (!detail) {
-                return { ...summary, completeness: null };
-            }
-
-            // `detail` is a venue|experience union whose two members share no
-            // nameable structural supertype; the canonical function reads a narrow,
-            // field-compatible subset (`ListingCompletenessListing`).
-            const completeness = resolveListingCompleteness({
-                entityType: summary.vertical,
-                // TYPE-WORKAROUND: union detail → narrow completeness subset (see above).
-                listing: detail as unknown as ListingCompletenessListing
-            });
-
-            return { ...summary, completeness };
-        })
-    );
+    const result = await apiClient.getProtected<ListResponse>({
+        path: vertical === VENUE_VERTICAL ? VENUE_MINE_PATH : EXPERIENCE_MINE_PATH,
+        cookieHeader
+    });
+    if (!result.ok) throw new OwnerListingsUnavailableError();
+    return result.data.listings.map((summary): OwnerListingSummaryWithState => {
+        const missing = summary.missingRequirements;
+        if (
+            summary.isPublic ||
+            summary.publicationStatus === PublicationStatusEnum.PURGED ||
+            missing === undefined
+        ) {
+            return { ...summary, completeness: null };
+        }
+        return { ...summary, completeness: { complete: missing.length === 0, missing } };
+    });
 }
 
 /** Payload accepted by {@link createOwnerListing} — one per vertical. */

@@ -111,7 +111,8 @@
                 "title": "Não conseguimos carregar seus comércios",
                 "body": "Houve um problema ao ler suas fichas. Elas continuam aí: tente novamente em instantes.",
                 "retry": "Tentar novamente"
-            }
+            },
+            "moreActions": "Mais ações para {{name}}"
         },
         "editor": {
             "sectionNav": {

@@ -21,9 +21,17 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
+import {
+    Alert,
+    EmptyState,
+    LinkButton,
+    ListingCard,
+    ListingCardGrid,
+    Menu,
+    PageHeader
+} from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageLoadError } from '@/components/account/PageLoadError.client';
 import { ListingActions } from '@/components/listing/ListingActions.client';
 import { ListingViewsWidget } from '@/components/listing/ListingViewsWidget.client';
 import { TourController } from '@/components/account/TourController.client';
@@ -45,6 +53,8 @@ import {
     VENUE_VERTICAL
 } from '@/lib/listing/owner-listings';
 import { resolveListingPublishAffordances } from '@/lib/listing/listing-publish-affordance';
+import { resolveOwnerListingPrimaryAction } from '@/lib/listing/owner-listing-primary-action';
+import { resolveUsageAlertTone } from '@/lib/listing/usage-alert-tone';
 import {
     filterOwnerListingsByVertical,
     OWNER_LIST_LABEL_KEYS,
@@ -66,7 +76,7 @@ import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
 import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { AlertCircleIcon } from '@repo/icons';
+import { VenueIcon } from '@repo/icons';
 import { PublicationStatusEnum } from '@repo/schemas';
 
 export const prerender = false;
@@ -98,14 +108,15 @@ const subtitle = t('listing.owner.list.subtitle', '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 // HOS-2421: a failed read must never render the "you have no listings" empty
-// state, which tells an owner their listings are gone. The helper throws only
-// when the failure left nothing to show; the page then renders an error with a
-// retry link instead.
+// state, which tells an owner their listings are gone. The helper throws when
+// the list could not be read; the page then renders the kit ErrorState with a
+// retry instead. HOS-2484: ONE request for the list this page shows, which
+// already carries every checklist (no per-listing detail read).
 let listings: readonly OwnerListingSummaryWithState[] = [];
 let listingsLoadFailed = false;
 try {
     listings = filterOwnerListingsByVertical({
-        listings: await fetchOwnerListingsWithState({ cookieHeader }),
+        listings: await fetchOwnerListingsWithState({ vertical: listVertical, cookieHeader }),
         vertical: listVertical
     });
 } catch (error) {
@@ -227,6 +238,9 @@ const venueStatsUnlockingPlanName =
 // landing for an old inbound link and the wrong one for this button, which a
 // venue/experience owner presses expecting to choose a vertical.
 const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
+const editUrl = (listing: OwnerListingSummaryWithState): string =>
+    buildUrl({ locale, path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar` });
+const listHelpId = 'section:comercio.listado' as const;
 ---
 
 <AccountLayout
@@ -236,52 +250,127 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
     activeSection={ownerListSectionKey({ vertical: listVertical })}
 >
     <div class="mc-page">
-    <div class="mc-header">
-        <AccountPageHeader title={title} description={subtitle || undefined} />
-        <a
-            class="mc-create-cta"
-            href={createUrl}
-        >
+    <PageHeader
+        title={title}
+        description={subtitle || undefined}
+    >
+        <PageHelpLink slot="help" locale={locale} />
+        <LinkButton slot="actions" href={createUrl}>
             {t('listing.owner.list.createCta', '+ Nuevo comercio')}
-        </a>
-    </div>
+        </LinkButton>
+    </PageHeader>
 
-    {usageBadges.length > 0 && (
-        <div class="mc-usage-row">
-            {usageBadges.map((usage) => (
-                <div
-                    class:list={[
-                        'mc-usage',
-                        `mc-usage--${usage.threshold}`,
-                        { 'mc-usage--card': usage.threshold !== 'ok' || usage.currentUsage >= usage.maxAllowed }
-                    ]}
-                    role="status"
+    {/* HOS-2443: reaching the cap is informational, never an error tone. */}
+    {usageBadges.map((usage) => (
+        <Alert
+            locale={locale}
+            tone={resolveUsageAlertTone({ threshold: usage.threshold })}
+            title={tPlural(`listing.owner.list.usage.${usage.vertical}.label`, usage.maxAllowed, {
+                current: usage.currentUsage,
+                max: usage.maxAllowed
+            })}
+        >
+            {usage.currentUsage >= usage.maxAllowed && t('listing.owner.list.usage.atLimit')}
+            {usage.threshold !== 'ok' && (
+                <LinkButton
+                    slot="action"
+                    variant="secondary"
+                    size="sm"
+                    href={buildUrl({ locale, path: resolveUsageUpgradePath({ vertical: usage.vertical }) })}
                 >
-                    <span class="mc-usage__label">
-                        {tPlural(`listing.owner.list.usage.${usage.vertical}.label`, usage.maxAllowed, {
-                            current: usage.currentUsage,
-                            max: usage.maxAllowed
-                        })}
-                    </span>
-                    {usage.currentUsage >= usage.maxAllowed && (
-                        <span class="mc-usage__at-limit">{t('listing.owner.list.usage.atLimit')}</span>
+                    {t('listing.owner.list.usage.upgrade')}
+                </LinkButton>
+            )}
+        </Alert>
+    ))}
+
+    {/* HOS-788: welcome-tour anchor for the listings list, shared by the
+        venue and experience welcome tours. HOS-2484: the list comes first. */}
+    <div data-tour="listings">
+        {
+            listingsLoadFailed ? (
+                <PageLoadError
+                    client:load
+                    locale={locale}
+                    title={t('listing.owner.list.loadError.title', 'No pudimos cargar tus comercios')}
+                    description={t(
+                        'listing.owner.list.loadError.body',
+                        'Hubo un problema al leer tus fichas. Siguen ahí: probá de nuevo en un momento.'
                     )}
-                    {usage.threshold !== 'ok' && (
-                        <a
-                            href={buildUrl({ locale, path: resolveUsageUpgradePath({ vertical: usage.vertical }) })}
-                            class="mc-usage__upgrade"
-                        >
-                            {t('listing.owner.list.usage.upgrade')}
-                        </a>
+                    helpId={listHelpId}
+                />
+            ) : listings.length === 0 ? (
+                <EmptyState
+                    title={t(
+                        'listing.owner.list.empty',
+                        'Todavía no tenés comercios. Creá tu primera ficha para empezar.'
                     )}
-                </div>
-            ))}
-        </div>
-    )}
+                    helpId={listHelpId}
+                >
+                    <VenueIcon slot="icon" size="lg" aria-hidden="true" />
+                    <LinkButton slot="action" href={createUrl}>
+                        {t('listing.owner.list.emptyCta', 'Crear mi primer comercio')}
+                    </LinkButton>
+                </EmptyState>
+            ) : (
+                <ListingCardGrid label={title} helpId={listHelpId}>
+                    {listings.map((listing) => {
+                        const affordance =
+                            publishAffordances.get(listing.vertical) ?? UNKNOWN_PUBLISH_AFFORDANCE;
+                        const primary = resolveOwnerListingPrimaryAction({ listing, affordance });
+                        return (
+                            <ListingCard
+                                title={listing.name}
+                                vertical={listing.vertical}
+                                href={isPurged(listing) ? undefined : editUrl(listing)}
+                                meta={[t(`listing.owner.list.badge.${listing.vertical}`, listing.vertical)]}
+                            >
+                                {/* The state block: badge, checklist, downloads, and in
+                                    the publishable states the ONE primary action
+                                    (the publish button). */}
+                                <ListingActions
+                                    client:visible
+                                    listing={listing}
+                                    locale={locale}
+                                    publishAffordance={affordance}
+                                />
+                                <ListingNotices
+                                    locale={locale}
+                                    vertical={listing.vertical}
+                                    listingId={listing.id}
+                                    item={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}
+                                />
+                                {primary === 'edit' && (
+                                    <LinkButton slot="primaryAction" href={editUrl(listing)} variant="secondary">
+                                        {t('listing.owner.list.edit', 'Editar')}
+                                    </LinkButton>
+                                )}
+                                {primary === 'publish' && (
+                                    <Menu
+                                        slot="menu"
+                                        client:visible
+                                        locale={locale}
+                                        label={t('listing.owner.list.moreActions', undefined, { name: listing.name })}
+                                        items={[
+                                            {
+                                                id: 'edit',
+                                                label: t('listing.owner.list.edit', 'Editar'),
+                                                href: editUrl(listing)
+                                            }
+                                        ]}
+                                    />
+                                )}
+                            </ListingCard>
+                        );
+                    })}
+                </ListingCardGrid>
+            )
+        }
+    </div>
 
     {/* HOS-788: welcome-tour anchor shared by the venue and experience
         welcome tours — both verticals get `VIEW_BASIC_STATS`. See
-        `src/config/tours.ts`. */}
+        `src/config/tours.ts`. HOS-2484: performance comes after the list. */}
     <div data-tour="listing-views">
         <ListingViewsWidget
             client:visible
@@ -317,82 +406,6 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         />
     )}
 
-    {/* HOS-788: welcome-tour anchor for the listings list, shared by the
-        venue and experience welcome tours. */}
-    <div data-tour="listings">
-    <AccountSectionCard>
-        {
-            listingsLoadFailed ? (
-                <AccountEmptyState
-                    title={t('listing.owner.list.loadError.title', 'No pudimos cargar tus comercios')}
-                    description={t(
-                        'listing.owner.list.loadError.body',
-                        'Hubo un problema al leer tus fichas. Siguen ahí: probá de nuevo en un momento.'
-                    )}
-                    ctaHref={Astro.url.pathname + Astro.url.search}
-                    ctaLabel={t('listing.owner.list.loadError.retry', 'Reintentar')}
-                >
-                    <AlertCircleIcon slot="icon" size={28} aria-hidden={true} />
-                </AccountEmptyState>
-            ) : listings.length === 0 ? (
-                <div class="mc-empty">
-                    <p class="mc-empty__text">
-                        {t(
-                            'listing.owner.list.empty',
-                            'Todavía no tenés comercios. Creá tu primera ficha para empezar.'
-                        )}
-                    </p>
-                    <a
-                        class="mc-empty__cta"
-                        href={createUrl}
-                    >
-                        {t('listing.owner.list.emptyCta', 'Crear mi primer comercio')}
-                    </a>
-                </div>
-            ) : (
-                <ul class="mc-list">
-                    {listings.map((listing) => (
-                        <li class="mc-list__item">
-                            <div class="mc-list__main">
-                                <span class="mc-list__name">{listing.name}</span>
-                                <span class="mc-badge">
-                                    {t(`listing.owner.list.badge.${listing.vertical}`, listing.vertical)}
-                                </span>
-                            </div>
-
-                            <ListingActions
-                                client:visible
-                                listing={listing}
-                                locale={locale}
-                                publishAffordance={publishAffordances.get(listing.vertical) ?? UNKNOWN_PUBLISH_AFFORDANCE}
-                            />
-
-                            <ListingNotices
-                                locale={locale}
-                                vertical={listing.vertical}
-                                listingId={listing.id}
-                                item={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}
-                            />
-
-                            {!isPurged(listing) && (
-                                <a
-                                    class="mc-list__edit"
-                                    href={buildUrl({
-                                        locale,
-                                        path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar`
-                                    })}
-                                >
-                                    {t('listing.owner.list.edit', 'Editar')}
-                                </a>
-                            )}
-                        </li>
-                    ))}
-                </ul>
-            )
-        }
-    </AccountSectionCard>
-    </div>
-
     {/* HOS-1856: the venue/experience welcome tour targets the anchors on this
         page, so it has to run here. `TourController` skips steps whose target
         is absent from the DOM (the BOLICHE-only venue tour has no `venue-qr`
@@ -407,234 +420,10 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 </AccountLayout>
 
 <style>
-    /* The account content slot has no flow gap, so sibling cards (usage notice,
-       views, menu QR, listings) were glued together. One stack owns the rhythm. */
+    /* The account content slot has no flow gap: one stack owns the rhythm. */
     .mc-page {
         display: flex;
         flex-direction: column;
-        gap: var(--space-6, 1.5rem);
-    }
-
-    .mc-usage-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3, 0.75rem);
-    }
-
-    .mc-usage {
-        display: inline-flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: var(--space-3, 0.75rem);
-        padding: 0.5rem 1rem;
-        border-radius: var(--radius-pill);
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        font-weight: 500;
-        background-color: var(--surface-warm);
-        color: var(--core-foreground);
-        border: 1px solid var(--border);
-    }
-
-    .mc-usage--ok {
-        background-color: oklch(0.95 0.04 145);
-        color: oklch(0.35 0.12 145);
-        border-color: oklch(0.85 0.08 145);
-    }
-
-    .mc-usage--warning {
-        background-color: oklch(0.95 0.05 65);
-        color: oklch(0.40 0.12 65);
-        border-color: oklch(0.85 0.10 65);
-    }
-
-    /* HOS-2443: reaching the cap is informational (neutral blue), never an error tone. */
-    .mc-usage--atLimit {
-        background-color: oklch(0.95 0.03 240);
-        color: oklch(0.38 0.10 240);
-        border-color: oklch(0.85 0.06 240);
-    }
-
-    .mc-usage--critical,
-    .mc-usage--exceeded {
-        background-color: oklch(0.95 0.04 25);
-        color: oklch(0.45 0.15 25);
-        border-color: oklch(0.85 0.10 25);
-    }
-
-    .mc-usage__label {
-        white-space: nowrap;
-    }
-
-    /* A notice that carries a message and/or a CTA wraps onto several lines, and a
-       pill radius turns a wrapped block into an oval. Render it as a full-width
-       card (same --radius-card as the other account notices) instead; the plain
-       one-line "ok" badge stays a pill. */
-    .mc-usage--card {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-        flex: 1 1 100%;
-        column-gap: var(--space-4, 1rem);
-        row-gap: var(--space-1, 0.25rem);
-        padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
-        border-radius: var(--radius-card);
-    }
-
-    .mc-usage--card .mc-usage__label {
-        grid-column: 1;
-        font-weight: 700;
-        white-space: normal;
-    }
-
-    .mc-usage--card .mc-usage__at-limit {
-        grid-column: 1;
-        font-weight: 400;
-    }
-
-    .mc-usage--card .mc-usage__upgrade {
-        grid-column: 2;
-        grid-row: 1 / span 2;
-        justify-self: end;
-    }
-
-    @media (max-width: 40rem) {
-        .mc-usage--card {
-            grid-template-columns: minmax(0, 1fr);
-        }
-
-        .mc-usage--card .mc-usage__upgrade {
-            grid-column: 1;
-            grid-row: auto;
-            justify-self: start;
-            margin-top: var(--space-2, 0.5rem);
-        }
-    }
-
-    .mc-usage__upgrade {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: var(--radius-pill);
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground);
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: var(--text-caption);
-        text-decoration: none;
-        white-space: nowrap;
-        transition: opacity 150ms ease-out;
-    }
-
-    .mc-usage__upgrade:hover {
-        opacity: 0.88;
-    }
-
-    .mc-usage__at-limit {
-        flex-basis: 100%;
-    }
-
-    .mc-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: var(--space-4);
-        flex-wrap: wrap;
-    }
-
-    .mc-create-cta {
-        flex-shrink: 0;
-        padding: var(--space-2) var(--space-4);
-        border-radius: var(--radius-button);
-        background: var(--brand-accent);
-        color: var(--accent-foreground);
-        font-weight: 600;
-        font-size: var(--text-body-sm);
-        text-decoration: none;
-        transition: opacity 150ms ease;
-    }
-
-    .mc-create-cta:hover {
-        opacity: 0.85;
-    }
-
-    .mc-empty {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-4);
-    }
-
-    .mc-empty__text {
-        margin: 0;
-        color: var(--core-muted-foreground);
-        font-size: var(--text-body-sm);
-    }
-
-    .mc-empty__cta {
-        padding: var(--space-3) var(--space-8);
-        border-radius: var(--radius-button);
-        background: var(--brand-accent);
-        color: var(--accent-foreground);
-        font-weight: 600;
-        text-decoration: none;
-        transition: opacity 150ms ease;
-    }
-
-    .mc-empty__cta:hover {
-        opacity: 0.85;
-    }
-
-    .mc-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-    }
-
-    .mc-list__item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-4);
-        flex-wrap: wrap;
-        padding: var(--space-4);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        background: var(--core-card, var(--core-background));
-    }
-
-    .mc-list__main {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        flex-wrap: wrap;
-        min-width: 0;
-    }
-
-    .mc-list__name {
-        font-weight: 600;
-        color: var(--core-foreground);
-    }
-
-    .mc-badge {
-        font-size: var(--text-caption);
-        padding: 0.125rem 0.5rem;
-        border-radius: var(--radius-pill);
-        background: var(--surface-warm);
-        color: var(--core-muted-foreground);
-    }
-
-    .mc-list__edit {
-        flex-shrink: 0;
-        font-weight: 600;
-        color: var(--brand-primary, var(--core-foreground));
-        text-decoration: none;
-    }
-
-    .mc-list__edit:hover {
-        text-decoration: underline;
+        gap: var(--space-6);
     }
 </style>

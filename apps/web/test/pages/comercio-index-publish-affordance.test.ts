@@ -11,9 +11,11 @@ const source = readFileSync(
 describe('comercio index publish affordance — TEST:1729:6', () => {
     it('reads the canonical destination resolver and passes its per-card result', () => {
         expect(source).toContain('resolveListingPublishAffordances({ listings, cookieHeader })');
-        expect(source).toContain(
-            'publishAffordance={publishAffordances.get(listing.vertical) ?? UNKNOWN_PUBLISH_AFFORDANCE}'
+        expect(source).toMatch(
+            /const affordance =\s*publishAffordances\.get\(listing\.vertical\) \?\? UNKNOWN_PUBLISH_AFFORDANCE;/
         );
+        expect(source).toContain('publishAffordance={affordance}');
+        expect(source).toContain('resolveOwnerListingPrimaryAction({ listing, affordance })');
         expect(source).toContain('UNKNOWN_PUBLISH_AFFORDANCE');
         expect(source).not.toContain('canPublish = true');
     });
