@@ -216,7 +216,6 @@
                     "legend": "Who sees the WhatsApp button",
                     "loggedInOnly": "Signed-in users only",
                     "public": "Public",
-                    "undecided": "Until you pick an option, the WhatsApp button is not shown on your listing.",
                     "publicWarning": "Your number will be visible on the page and anyone can copy it, including automated programs.",
                     "loggedInHint": "The number does not appear on the page: only signed-in people can see it."
                 }

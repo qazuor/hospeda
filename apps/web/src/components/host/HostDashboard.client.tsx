@@ -22,6 +22,7 @@ import {
     isPlanActive,
     resolveDashboardFreeCard,
     resolveDashboardTrialStat,
+    resolvePlanActionText,
     resolvePlanStatusLabel
 } from '@/lib/billing/dashboard-plan-stat';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -211,6 +212,8 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                   formatDate: (iso) => formatNoticeInstant({ iso, locale })
               })
         : t('host.dashboard.plan.noPlan', 'Sin plan');
+    // HOS-2553: a declined charge or an unauthorized checkout says what to do.
+    const planAction = data.planInfo ? resolvePlanActionText({ info: data.planInfo, t }) : null;
 
     return (
         <div className={styles.dashboard}>
@@ -269,6 +272,14 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                             >
                                 {planBadge}
                             </span>
+                            {planAction ? (
+                                <p
+                                    className={styles.planEmpty}
+                                    data-testid="host-dashboard-plan-action"
+                                >
+                                    {planAction}
+                                </p>
+                            ) : null}
                         </>
                     ) : trialStat.kind === 'trial' ? (
                         <>

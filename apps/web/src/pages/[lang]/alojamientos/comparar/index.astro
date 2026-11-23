@@ -36,6 +36,8 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import { ArrowLeftIcon } from '@repo/icons';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
 
 export const prerender = false;
 
@@ -58,6 +60,11 @@ const backLabel = t('accommodations.comparison.page.backToListing', 'Volver a al
 const accommodationsLabel = t('accommodations.title', 'Alojamientos');
 
 const listingUrl = buildUrl({ locale, path: 'alojamientos' });
+// HOS-2554: the compare upsell names the catalog plans that carry comparison. The catalog is
+// public (not per-user), so reading it here keeps the page session-blind.
+const compareGatePlanNames = await getGatePlanNames({
+	entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
+});
 ---
 
 <DetailLayout
@@ -93,7 +100,7 @@ const listingUrl = buildUrl({ locale, path: 'alojamientos' });
 	</div>
 
 	<section class="compare-page__section">
-		<ComparisonMatrix client:only="react" locale={locale} />
+		<ComparisonMatrix client:only="react" locale={locale} gatePlanNames={compareGatePlanNames} />
 	</section>
 </DetailLayout>
 

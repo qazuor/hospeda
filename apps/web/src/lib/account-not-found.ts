@@ -18,7 +18,10 @@ export const ACCOUNT_NOT_FOUND_BACK_TARGETS = {
         path: 'mi-cuenta/consultas-propietario',
         labelKey: 'account.notFound.back.ownerMessages'
     },
-    listings: { path: 'mi-cuenta/comercio', labelKey: 'account.notFound.back.listings' }
+    listings: { path: 'mi-cuenta/comercio', labelKey: 'account.notFound.back.listings' },
+    properties: { path: 'mi-cuenta/propiedades', labelKey: 'account.notFound.back.properties' },
+    events: { path: 'mi-cuenta/eventos', labelKey: 'account.notFound.back.events' },
+    posts: { path: 'mi-cuenta/publicaciones', labelKey: 'account.notFound.back.posts' }
 } as const;
 
 /** One of the allowed back-link keys. */

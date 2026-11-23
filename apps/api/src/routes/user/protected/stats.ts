@@ -13,6 +13,7 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { getClock } from '../../../utils/clock';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { readAccountPlanSummary } from './stats-plan-summary';
@@ -67,7 +68,10 @@ export const userStatsRoute = createProtectedRoute({
         const destReviewTotal = destReviewResult.data?.pagination?.total ?? 0;
         const reviewCount = accReviewTotal + destReviewTotal;
 
-        const summary = await readAccountPlanSummary({ userId: actor.id });
+        const summary = await readAccountPlanSummary({
+            userId: actor.id,
+            now: getClock().clock.now()
+        });
         return {
             bookmarkCount,
             reviewCount,

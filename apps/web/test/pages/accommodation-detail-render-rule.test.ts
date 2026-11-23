@@ -42,11 +42,14 @@ describe('accommodation detail render rule — SPEC-187 P2-T9', () => {
         expect(PAGE_SRC).toMatch(/accommodation\.richDescription\s*\?/);
     });
 
-    it('page module does not import EntitlementKey or hasEntitlement', () => {
-        expect(PAGE_SRC).not.toMatch(/import\s*\{[^}]*EntitlementKey/);
+    it('page module does not import EntitlementKey or hasEntitlement, nor decide on an entitlement', () => {
+        // HOS-2554: EntitlementKeyEnum is allowed ONLY as the argument of the catalog
+        // plan-name lookup (which plans unlock WhatsApp), never to gate rendering.
+        const withoutPlanNameLookup = PAGE_SRC.replace(/getGatePlanNames\(\{[^}]*\}\)/g, '');
+        expect(PAGE_SRC).not.toMatch(/import\s*\{[^}]*\bEntitlementKey\b/);
         expect(PAGE_SRC).not.toMatch(/import\s*\{[^}]*hasEntitlement/);
         expect(PAGE_SRC).not.toContain('hasEntitlement(');
-        expect(PAGE_SRC).not.toContain('EntitlementKey.');
+        expect(withoutPlanNameLookup).not.toMatch(/EntitlementKey(Enum)?\./);
     });
 });
 

@@ -155,10 +155,17 @@ describe('TEST:1756:1-7 user stats plan summary', () => {
         expect((data.plan as { status: string }).status).toBe(status);
     });
     it.each([
-        // PENDING_AUTHORIZATION and CANCELLED stay excluded (HOS-2553 scope).
+        // HOS-2553: the two unsettled states are told to the owner, never hidden, and
+        // never counted as an active subscription.
         'PENDING_AUTHORIZATION',
-        'CANCELLED'
-    ] as const)('TEST:1756:4 excludes %s', async (status) => {
+        'CHARGE_DECLINED'
+    ] as const)('TEST:1756:4 shows %s without counting it active', async (status) => {
+        const row = await seedSelfState(status);
+        const data = await readStats(row.ownerId);
+        expect(data.activeSubscriptionsCount).toBe(0);
+        expect((data.plan as { status: string }).status).toBe(status);
+    });
+    it.each(['CANCELLED'] as const)('TEST:1756:4 excludes %s', async (status) => {
         const row = await seedSelfState(status);
         const data = await readStats(row.ownerId);
         expect(data.activeSubscriptionsCount).toBe(0);

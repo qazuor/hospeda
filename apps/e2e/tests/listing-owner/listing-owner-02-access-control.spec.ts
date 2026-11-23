@@ -156,7 +156,7 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
 
     // ── Case 2: Venue or experience owner blocked from another owner's editor ───────────
 
-    test("venue or experience owner (Julieta) is redirected away from a rival owner's editor to her own listing index", async ({
+    test("venue or experience owner (Julieta) gets the in-layout 404 on a rival owner's editor", async ({
         page,
         context
     }) => {
@@ -172,27 +172,26 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         // The ownership gate in `resolveListingEditorPage` checks
         // detail.ownerId === user.id, for the hub and every section alike
         // (HOS-1080 moved it out of the single page into the shared resolver).
-        // Rodrigo's listing ownerId !== Julieta's userId → redirect to /mi-cuenta/comercio/.
+        // Since HOS-2556 a foreign id is answered exactly like a missing one:
+        // the account's in-layout 404 (Astro.rewrite), so the URL stays put and
+        // the response never confirms that the id exists for someone else.
         //
-        // The CARTA section is the page that now renders `#ce-menuUrl`
+        // The CARTA section is the page that renders `#ce-menuUrl`
         // (DEC-FAC-062), so landing there would put the field on screen. Asking
         // for it — not the hub — is what makes the absence check below prove the
         // gate instead of an empty section page.
         const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/venue/${RODRIGO_VENUE_ID}/editar/carta/`;
-        await page.goto(rivalEditorUrl, { waitUntil: 'domcontentloaded' });
+        const response = await page.goto(rivalEditorUrl, { waitUntil: 'domcontentloaded' });
 
-        // The ownership gate redirects to /[lang]/mi-cuenta/comercio/ (her index).
-        // Assert the final URL is the listing-owner index and does NOT contain the editor path.
-        await expect(page).toHaveURL(`${WEB_URL}/es/mi-cuenta/comercio/`);
+        expect(response?.status()).toBe(404);
+        await expect(page).toHaveURL(rivalEditorUrl);
+        await expect(
+            page.getByRole('heading', { name: 'No encontramos lo que buscabas' })
+        ).toBeVisible();
 
-        // Additionally confirm the venue editor input is NOT present on this page.
-        // #ce-menuUrl is the stable, unique id for the venue editor's menu-link
-        // field, mounted by the CARTA section (DEC-FAC-062 moved it out of
-        // price; HOS-1787 leaf 5.3). Its absence confirms we landed on the
-        // listing index (which has no editor island) rather than any editor
-        // page. Using toHaveCount(0) avoids strict-mode multi-match violations —
-        // it passes even if the selector would theoretically match zero OR many
-        // elements, since we only care about absence.
+        // The venue editor's menu-link field (#ce-menuUrl, mounted by the CARTA
+        // section) must not be on the page: the gate rendered the 404 instead of
+        // the rival's editor. toHaveCount(0) avoids strict-mode multi-match issues.
         await expect(page.locator('#ce-menuUrl')).toHaveCount(0);
     });
 });

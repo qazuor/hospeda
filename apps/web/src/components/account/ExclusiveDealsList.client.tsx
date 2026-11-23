@@ -26,6 +26,7 @@ import type { OwnerPromotionListItem } from '@repo/schemas';
 import { TouristAudienceEnum } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
+import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -73,6 +74,11 @@ export interface ExclusiveDealsListProps {
      * `AlertsListProps.userId`).
      */
     readonly userId: string;
+    /**
+     * HOS-2554: catalog names of the plans that carry exclusive deals, read by the SSR page
+     * (the catalog reader is server-only). Empty when the catalog could not be read.
+     */
+    readonly gatePlanNames?: readonly string[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -83,7 +89,12 @@ export interface ExclusiveDealsListProps {
  * Lists the authenticated tourist's plan-scoped active owner promotions
  * (plus-tier deals, additive vip-only deals for tourist-vip).
  */
-export function ExclusiveDealsList({ locale, apiUrl, userId: _userId }: ExclusiveDealsListProps) {
+export function ExclusiveDealsList({
+    locale,
+    apiUrl,
+    userId: _userId,
+    gatePlanNames = []
+}: ExclusiveDealsListProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
@@ -200,10 +211,14 @@ export function ExclusiveDealsList({ locale, apiUrl, userId: _userId }: Exclusiv
                     {t('account.exclusiveDeals.upgrade.title', 'Ofertas exclusivas')}
                 </p>
                 <p className={styles.dealsUpgradeMessage}>
-                    {t(
-                        'account.exclusiveDeals.upgrade.message',
-                        'Las ofertas exclusivas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.'
-                    )}
+                    {resolvePlanGateMessage({
+                        keyBase: 'account.exclusiveDeals.upgrade.message',
+                        locale,
+                        noPlansFallback:
+                            'Las ofertas exclusivas no están incluidas en tu plan actual. Actualizá tu plan para acceder.',
+                        planNames: gatePlanNames,
+                        t
+                    })}
                 </p>
                 <a
                     href={upgradeHref}

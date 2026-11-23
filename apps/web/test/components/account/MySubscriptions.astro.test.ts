@@ -198,4 +198,40 @@ describe('MySubscriptions cancellation confirmation — TEST:1762:5', () => {
         expect(cancel).toContain('planName={summary.title}');
         expect(cancel).toContain('verticalLabel={t(summary.verticalLabelKey)}');
     });
+
+    it('HOS-2553: shows the exact state and a what-to-do line for the two unsettled states', () => {
+        expect(source).toContain(
+            "PENDING_AUTHORIZATION: 'account.subscription.mine.status.PENDING_AUTHORIZATION'"
+        );
+        expect(source).toContain(
+            "CHARGE_DECLINED: 'account.subscription.mine.status.CHARGE_DECLINED'"
+        );
+        expect(source).toMatch(
+            /row\.status === 'PENDING_AUTHORIZATION' \|\| row\.status === 'CHARGE_DECLINED'\) && <p[^>]*data-testid="my-subscription-todo"/u
+        );
+    });
+
+    it('HOS-2553: has the status and what-to-do copy in every supported locale', () => {
+        for (const locale of locales) {
+            const { subscription } = JSON.parse(
+                readFileSync(
+                    resolve(
+                        __dirname,
+                        '../../../../../packages/i18n/src/locales',
+                        locale,
+                        'account.json'
+                    ),
+                    'utf8'
+                )
+            ) as {
+                subscription: {
+                    mine: Record<string, unknown> & { status: Record<string, string> };
+                };
+            };
+            expect(subscription.mine.status.PENDING_AUTHORIZATION).toBeTruthy();
+            expect(subscription.mine.status.CHARGE_DECLINED).toBeTruthy();
+            expect(subscription.mine.pendingAuthorizationTodo).toBeTruthy();
+            expect(subscription.mine.chargeDeclinedTodo).toBeTruthy();
+        }
+    });
 });

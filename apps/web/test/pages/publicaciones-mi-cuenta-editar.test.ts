@@ -17,6 +17,11 @@ const pageSource = readFileSync(
     'utf8'
 );
 
+const helperSource = readFileSync(
+    resolve(__dirname, '../../src/lib/editor/resolve-authored-editor-item.ts'),
+    'utf8'
+);
+
 /**
  * The rendered TEMPLATE only — everything after the frontmatter's closing `---`.
  *
@@ -41,15 +46,24 @@ describe('mi-cuenta/publicaciones/[id]/editar.astro — data path', () => {
         // The public getById would also answer for an author, but it carries
         // `cacheTTL: 300` — an actor-shaped response there would be cached and
         // then served to the next anonymous visitor.
-        expect(pageSource).toContain('postEditApi.getById(');
-        expect(pageSource).toContain("Astro.request.headers.get('cookie')");
-        expect(pageSource).toContain('cookieHeader');
+        // The page hands the protected read to resolveAuthoredEditorItem, which
+        // forwards the session cookie to it (HOS-2556).
+        expect(pageSource).toContain('fetchById: postEditApi.getById');
+        expect(helperSource).toContain("astro.request.headers.get('cookie')");
+        expect(helperSource).toContain('fetchById({ id, cookieHeader })');
         expect(pageSource).not.toContain('/public/posts/');
+        expect(helperSource).not.toContain('/public/posts/');
+        expect(helperSource).not.toContain('fetch(');
     });
 
-    it('redirects to the listing when the post cannot be loaded', () => {
-        expect(pageSource).toContain('if (!result.ok)');
-        expect(pageSource).toContain('Astro.redirect(listUrl)');
+    it('renders the in-layout 404 (no redirect to the list) when the post cannot be loaded', () => {
+        expect(pageSource).toContain('resolveAuthoredEditorItem(');
+        expect(pageSource).toContain('if (loaded.notFound)');
+        expect(pageSource).toContain('return loaded.notFound');
+        expect(helperSource).toContain('if (!result.ok)');
+        expect(helperSource).toContain('astro.rewrite(buildAccountNotFoundTarget');
+        expect(pageSource).not.toContain('Astro.redirect(listUrl)');
+        expect(helperSource).not.toContain('redirect(');
     });
 
     it('redirects unauthenticated visitors to the login page', () => {

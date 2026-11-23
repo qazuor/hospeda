@@ -23,6 +23,8 @@ import { createTranslations } from '@/lib/i18n';
 import { Image } from 'astro:assets';
 import type { AccommodationCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
 
 interface Props {
 	readonly data: AccommodationCardData;
@@ -66,6 +68,11 @@ const isNew = data.createdAt
 	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
 	: false;
 
+// HOS-2554: the compare upsell names the catalog plans that carry comparison. The catalog is
+// public (not per-user), so reading it here keeps the page session-blind.
+const compareGatePlanNames = await getGatePlanNames({
+	entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
+});
 ---
 
 <article class="acc-card">
@@ -84,6 +91,7 @@ const isNew = data.createdAt
 			accommodationName={data.name}
 			accommodationThumbnailUrl={data.featuredImage.url}
 			locale={locale}
+			gatePlanNames={compareGatePlanNames}
 		/>
 
 		<!-- IMAGE AREA -->
