@@ -35,6 +35,8 @@ import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.as
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
+import HostSection from '@/components/accommodation/HostSection.astro';
+import { toReviewStripItems } from '@/lib/review-strip';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
 import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
@@ -657,7 +659,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
         <PromotionBanner promos={activePromos} locale={locale} />
 
-        <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} lang={locale}>
+        <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} reviews={toReviewStripItems({ items: reviewItems })} lang={locale}>
             <ReviewsModal
                 client:idle
                 accommodationId={accommodation.id}
@@ -676,6 +678,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         )}
 
         <FaqAccordion faqs={accommodation.faqs} lang={locale} />
+        <HostSection owner={accommodation.owner} accommodationId={accommodation.id} panelId={panelId} spokenLanguages={accommodation.policies.spokenLanguages} lang={locale} />
         <LocationSection
             destination={accommodation.destination}
             approximateLocation={accommodation.approximateLocation}

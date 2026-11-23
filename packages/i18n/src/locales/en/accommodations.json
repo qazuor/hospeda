@@ -580,6 +580,8 @@
             }
         },
         "reviewsDetail": {
+            "anonymous": "Anonymous",
+            "stripLabel": "Featured reviews",
             "noReviews": "No reviews yet",
             "viewAll_one": "View the {{count}} review",
             "viewAll_other": "View all {{count}} reviews",
@@ -602,6 +604,11 @@
                 "loading": "Loading reviews…"
             }
         },
+        "host": {
+            "title": "Your host",
+            "since": "Host since {date}",
+            "languages": "Speaks {languages}"
+        },
         "owner": {
             "memberSince": "Member since {date}",
             "contactUnavailable": "Contact information not available",
@@ -616,10 +623,14 @@
             "viewAll_one": "View the {{count}} amenity",
             "viewAll_other": "View all {{count}} amenities",
             "collapse": "View less",
+            "close": "Close",
             "additionalCost": "(additional cost)"
         },
         "features": {
-            "title": "Features"
+            "title": "Features",
+            "viewAll_one": "View the {{count}} feature",
+            "viewAll_other": "View all {{count}} features",
+            "close": "Close"
         },
         "faqsDetail": {
             "title": "Frequently asked questions",
