@@ -112,7 +112,7 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const subscription = page.locator(
-            `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+            `[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
         );
         await expect(subscription).toContainText('Básico');
         await expect(subscription).toContainText('Alojamiento');
@@ -168,7 +168,7 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const section = page.locator('section[aria-label="Tus suscripciones"]');
         const courtesy = section.locator(
-            `article[data-testid="my-subscription-deferred-courtesy"][data-courtesy-grant-id="${courtesyGrantId}"]`
+            `[data-testid="my-subscription-deferred-courtesy"][data-courtesy-grant-id="${courtesyGrantId}"]`
         );
         await expect(courtesy).toBeVisible();
         await expect(courtesy).toContainText('Alojamiento');

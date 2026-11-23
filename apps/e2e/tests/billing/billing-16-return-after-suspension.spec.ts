@@ -215,7 +215,7 @@ test.describe('TEST:1624:1 a suspended card subscriber comes back: S23, a new S1
             const current = subscriptionArticle({ page, subscriptionId: newSubscriptionId });
             await expect(current).toBeVisible();
             await expect(current.getByRole('button', { name: /cambiar de plan/i })).toBeVisible();
-            await expect(island.locator('article[data-testid="my-subscription"]')).toHaveCount(1);
+            await expect(island.locator('[data-testid="my-subscription"]')).toHaveCount(1);
         });
     });
 });

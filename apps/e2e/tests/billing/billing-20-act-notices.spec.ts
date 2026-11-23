@@ -25,7 +25,7 @@ import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const articleFor = (page: Page, id: string) =>
-    page.locator(`article[data-testid="my-subscription"][data-subscription-id="${id}"]`);
+    page.locator(`[data-testid="my-subscription"][data-subscription-id="${id}"]`);
 
 test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });

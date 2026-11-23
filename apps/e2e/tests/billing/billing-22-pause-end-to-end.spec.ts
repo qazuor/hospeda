@@ -18,7 +18,7 @@ import { cleanupPlanChangeCase, openActivePlanCase } from '../../fixtures/plan-c
 import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 
 const articleFor = (page: Page, id: string) =>
-    page.locator(`article[data-testid="my-subscription"][data-subscription-id="${id}"]`);
+    page.locator(`[data-testid="my-subscription"][data-subscription-id="${id}"]`);
 
 type PauseRow = {
     readonly id: string;
