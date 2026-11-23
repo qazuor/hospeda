@@ -1056,9 +1056,9 @@
                 "mySubscriptionDesc": "Plan actual y facturación",
                 "myMessages": "Mis consultas",
                 "myMessagesDesc": "Conversaciones con anfitriones",
-                "newsletter": "Boletín de novedades",
+                "newsletter": "Newsletter por mail",
                 "newsletterDesc": "Gestioná tu suscripción al boletín",
-                "whatsNew": "Novedades",
+                "whatsNew": "Novedades de Hospeda",
                 "whatsNewDesc": "Novedades y actualizaciones de la plataforma",
                 "myProperties": "Mis propiedades",
                 "myPropertiesDesc": "Gestioná tus alojamientos publicados",
@@ -1364,7 +1364,8 @@
             "special": "Al menos 1 carácter especial (por ejemplo ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
-        "showPassword": "Mostrar contraseña"
+        "showPassword": "Mostrar contraseña",
+        "sectionTitle": "Tu contraseña"
     },
     "searchHistory": {
         "loading": "Cargando historial...",
@@ -1948,7 +1949,12 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Elegí una contraseña nueva para tu cuenta. Vas a necesitar la actual.",
-        "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
+        "accountNotice": "Vas a cambiar la contraseña de esta cuenta:",
+        "successTitle": "Contraseña actualizada",
+        "successSection": "Listo",
+        "continue": "Continuar",
+        "back": "Volver",
+        "sectionTitle": "Tu nueva contraseña"
     },
     "notFound": {
         "title": "No encontramos lo que buscabas",

@@ -1,0 +1,83 @@
+---
+/**
+ * @file FocusShell.astro
+ * @description The frame of the three onboarding «focus» pages (HOS-2501,
+ * HOS-2416 §6.1): `completar-perfil`, `agregar-contrasena` and
+ * `cambiar-contrasena`. An Astro LAYOUT like `AccountShell` (OD-2): `BaseLayout`
+ * with the account chrome slots, but a compact header (the logo and nothing
+ * else), NO sidebar and NO navigation, so the user stays on the one task, a
+ * centred `reading`-width column and the account footer.
+ *
+ * Why not `AccountLayout`: these routes are onboarding gates the middleware
+ * sends a user to before the account is usable, so the account navigation
+ * would offer ways out of a step the user has to finish.
+ *
+ * Reads no session: every page that uses it stays session-blind. The page
+ * heading is the kit `PageHeader` rendered by the page's island, so the focus
+ * page keeps a single `h1`.
+ */
+
+import { getImage, Image } from 'astro:assets';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { AccountFooter } from '@/components/account/ui/AccountFooter';
+import { AccountToastRegion } from '@/components/account/ui/AccountToastRegion';
+import { getSiteUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import logoSrc from '@/assets/images/logo.webp';
+import BaseLayout from './BaseLayout.astro';
+import styles from './FocusShell.module.css';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title: string;
+	readonly description?: string;
+}
+
+const { locale, title, description } = Astro.props;
+
+const { t } = createTranslations(locale);
+const canonicalUrl = new URL(Astro.url.pathname, getSiteUrl()).href;
+const resolvedDescription = description ?? t('account.description');
+
+let footerLogoSrc = logoSrc.src;
+try {
+	footerLogoSrc = (await getImage({ src: logoSrc, width: 44, format: 'webp' })).src;
+} catch {
+	// Fall back to the unprocessed asset path
+}
+---
+
+<BaseLayout locale={locale} title={title} description={resolvedDescription}>
+	<header slot="chrome-header" class={styles.header} data-focus-header role="banner">
+		<a
+			href={buildUrl({ locale, path: '/' })}
+			class={styles.logo}
+			aria-label={t('nav.goHome', 'Hospeda - Go to home')}
+		>
+			<Image src={logoSrc} alt="" width={34} height={36} loading="eager" />
+			<span class={styles.name}>Hospeda</span>
+		</a>
+	</header>
+	<AccountFooter
+		slot="chrome-footer"
+		locale={locale}
+		year={new Date().getFullYear()}
+		logoSrc={footerLogoSrc}
+	/>
+	<AccountToastRegion slot="chrome-toasts" client:idle locale={locale} />
+	<slot name="head-early" slot="head-early" />
+	<SEOHead
+		slot="head"
+		title={title}
+		description={resolvedDescription}
+		locale={locale}
+		canonical={canonicalUrl}
+		noindex={true}
+	/>
+
+	<div class={styles.content} data-focus-content data-template="reading">
+		<slot />
+	</div>
+</BaseLayout>

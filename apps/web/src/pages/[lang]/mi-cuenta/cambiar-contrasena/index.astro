@@ -25,8 +25,7 @@ import { parseProfileStatus } from '@/lib/middleware-helpers';
 import { SET_PASSWORD_SEGMENT } from '@/lib/routes';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
+import FocusShell from '@/layouts/FocusShell.astro';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm.client';
 
 // Locale is injected and validated by middleware.
@@ -70,8 +69,6 @@ if (!forced) {
     }
 }
 
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-
 // HOS-838: the destination the onboarding gate interrupted, carried here as
 // `returnUrl` by the middleware. It is attacker-controlled by the time it
 // reaches this page — anyone can hand-edit the query — so it goes through the
@@ -81,20 +78,7 @@ const returnUrl = resolveSafeReturnPath({ rawReturn: rawReturnUrl, locale });
 
 ---
 
-<BaseLayout
-    locale={locale}
-    title={title}
-    description={description}
->
-    <SEOHead
-        slot="head"
-        title={title}
-        description={description}
-        locale={locale}
-        canonical={canonicalUrl}
-        noindex={true}
-    />
-
+<FocusShell locale={locale} title={title} description={description}>
 
     <ChangePasswordForm
         client:load
@@ -103,4 +87,4 @@ const returnUrl = resolveSafeReturnPath({ rawReturn: rawReturnUrl, locale });
         returnUrl={returnUrl}
         forced={forced}
     />
-</BaseLayout>
+</FocusShell>

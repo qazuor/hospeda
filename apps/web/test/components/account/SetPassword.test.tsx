@@ -24,13 +24,10 @@ import { SetPassword } from '../../../src/components/account/SetPassword.client'
 vi.mock('../../../src/components/account/SetPassword.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
-vi.mock('../../../src/components/shared/ui/Dialog.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    return { createTranslations: () => ({ t: tFromCatalog }), createT: () => tFromCatalog };
 });
 
 vi.mock('../../../src/lib/auth-client', () => ({
@@ -41,7 +38,8 @@ vi.mock('../../../src/store/toast-store', () => ({
     queueToastForNextPage: vi.fn()
 }));
 
-vi.mock('@repo/schemas', () => ({
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     // Mirrors StrongPasswordSchema's bounds (HOS-190 slice 3: min 8, max 128,
     // upper/lower/digit) without pulling in the full `@repo/schemas` package.
     StrongPasswordSchema: z
@@ -98,7 +96,7 @@ describe('SetPassword skip modal (BETA-61)', () => {
     it('does not render the skip modal until the skip button is clicked', () => {
         renderIsland();
 
-        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('renders the skip modal through the shared Dialog primitive, not a native <dialog>', () => {
@@ -106,10 +104,9 @@ describe('SetPassword skip modal (BETA-61)', () => {
 
         openSkipModal();
 
-        // The shared primitive renders a <div role="dialog"> via portal.
-        const dialog = screen.getByRole('dialog');
+        // The kit ConfirmDialog renders an accessible alertdialog, not a native <dialog>.
+        const dialog = screen.getByRole('alertdialog');
         expect(dialog).toBeInTheDocument();
-        expect(dialog.getAttribute('aria-modal')).toBe('true');
 
         // Regression guard: a raw <dialog> element inherits broken user-agent
         // styling and is exactly what BETA-61 fixed. It must NOT come back.
@@ -131,22 +128,22 @@ describe('SetPassword skip modal (BETA-61)', () => {
         renderIsland();
 
         openSkipModal();
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByRole('alertdialog')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
 
-        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('closes the modal when Escape is pressed', () => {
         renderIsland();
 
         openSkipModal();
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByRole('alertdialog')).toBeInTheDocument();
 
         fireEvent.keyDown(document, { key: 'Escape' });
 
-        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 });
 

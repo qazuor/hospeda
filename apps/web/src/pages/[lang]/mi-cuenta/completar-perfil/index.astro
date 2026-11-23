@@ -23,8 +23,7 @@ import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import { buildSetPasswordRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
+import FocusShell from '@/layouts/FocusShell.astro';
 import { ProfileCompletion } from '@/components/account/ProfileCompletion.client';
 import { splitFullName } from '@/components/account/ProfileCompletion.helpers';
 
@@ -45,8 +44,6 @@ const description = t(
     'account.profileCompletion.pageDescription',
     'Completá tu información para empezar a usar Hospeda'
 );
-
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 // Pre-fill the form from the OAuth/session profile so a Google sign-up does not
 // land on an empty form. `user.name` is the provider's full display name and
@@ -71,16 +68,7 @@ const setPasswordUrl = buildSetPasswordRedirect({ locale, returnUrl });
 
 ---
 
-<BaseLayout locale={locale} title={title} description={description}>
-    <SEOHead
-        slot="head"
-        title={title}
-        description={description}
-        locale={locale}
-        canonical={canonicalUrl}
-        noindex={true}
-    />
-
+<FocusShell locale={locale} title={title} description={description}>
     <ProfileCompletion
         client:load
         locale={locale}
@@ -92,4 +80,4 @@ const setPasswordUrl = buildSetPasswordRedirect({ locale, returnUrl });
         returnUrl={returnUrl}
         setPasswordUrl={setPasswordUrl}
     />
-</BaseLayout>
+</FocusShell>

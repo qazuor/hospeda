@@ -1056,9 +1056,9 @@
                 "mySubscriptionDesc": "Current plan and billing",
                 "myMessages": "My inquiries",
                 "myMessagesDesc": "Conversations with hosts",
-                "newsletter": "Newsletter",
+                "newsletter": "Email newsletter",
                 "newsletterDesc": "Manage your newsletter subscription",
-                "whatsNew": "What's New",
+                "whatsNew": "Hospeda updates",
                 "whatsNewDesc": "Platform updates and announcements",
                 "myProperties": "My properties",
                 "myPropertiesDesc": "Manage your published accommodations",
@@ -1364,7 +1364,8 @@
             "special": "At least 1 special character (for example ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
-        "showPassword": "Mostrar contraseña"
+        "showPassword": "Mostrar contraseña",
+        "sectionTitle": "Your password"
     },
     "searchHistory": {
         "loading": "Loading history...",
@@ -1948,7 +1949,12 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
-        "accountNotice": "You are about to change the password for this account:"
+        "accountNotice": "You are about to change the password for this account:",
+        "successTitle": "Password updated",
+        "successSection": "All set",
+        "continue": "Continue",
+        "back": "Back",
+        "sectionTitle": "Your new password"
     },
     "notFound": {
         "title": "We could not find what you were looking for",
