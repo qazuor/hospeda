@@ -88,7 +88,18 @@ export const AuthMeResponseSchema = z.object({
     ownsHostTradeListing: z
         .boolean()
         .optional()
-        .describe('Whether the authenticated account owns a host-trade directory listing')
+        .describe('Whether the authenticated account owns a host-trade directory listing'),
+    /**
+     * Whether this account owns a LIVE partner listing: not revoked, not
+     * soft-deleted (HOS-2551). Same reasoning as `ownsHostTradeListing`: an
+     * approved partner holds no partner role or permission (HOS-278 AC-7), so
+     * row ownership is the only signal, and riding here spares the web a round
+     * trip on every account page. Optional: older servers omit it.
+     */
+    ownsPartner: z
+        .boolean()
+        .optional()
+        .describe('Whether the authenticated account owns a live (not revoked) partner listing')
 });
 
 export type AuthMeResponse = z.infer<typeof AuthMeResponseSchema>;

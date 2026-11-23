@@ -57,6 +57,24 @@ function partnerFilterConditions(filters: SearchPartnerFilters): SQL[] {
  * Partner model extending BaseModel
  * Handles all database operations for partners
  */
+/**
+ * Predicate for "this account owns a live partner row" (HOS-2551): the row's
+ * `owner_user_id` matches, it is not revoked and not soft-deleted. Served by
+ * `partners_ownerUserId_idx` / `uq_partners_owner_user_id`.
+ *
+ * Exported so the compiled SQL can be pinned by a unit test without a database.
+ *
+ * @param ownerUserId - The account id.
+ * @returns The SQL predicate.
+ */
+export function activeOwnedPartnerCondition(ownerUserId: string): SQL {
+    return and(
+        eq(partners.ownerUserId, ownerUserId),
+        isNull(partners.revokedAt),
+        isNull(partners.deletedAt)
+    ) as SQL;
+}
+
 export class PartnerModel extends BaseModelImpl<Partner> {
     protected table = partners;
     public entityName = 'partner';
@@ -173,6 +191,27 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      */
     async findBySlug(slug: string): Promise<Partner | null> {
         return this.findOne({ slug });
+    }
+
+    /**
+     * Whether the account owns a live (not revoked, not deleted) partner row
+     * (HOS-2551). A one-row indexed existence probe: it selects only the id,
+     * so `/auth/me` can afford it on every protected render.
+     *
+     * @param args - `{ ownerUserId, tx? }`.
+     * @returns `true` when such a row exists.
+     */
+    async existsActiveForOwner(args: {
+        readonly ownerUserId: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<boolean> {
+        const db = args.tx ?? getDb();
+        const rows = await db
+            .select({ id: partners.id })
+            .from(partners)
+            .where(activeOwnedPartnerCondition(args.ownerUserId))
+            .limit(1);
+        return rows.length > 0;
     }
 
     /** Locks a non-deleted Partner row for ACC:12 (sources: action 13), AC:V7:14; V7 §1.6. */

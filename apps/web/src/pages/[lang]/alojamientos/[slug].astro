@@ -860,6 +860,20 @@ const faqSections = accommodation.faqs.map((faq) => ({
         :global(.wave-header__breadcrumbs:has(.acc-detail-breadcrumbs)) {
             display: none;
         }
+
+        /* The hidden breadcrumbs carried the band's top padding, so without this
+           the badges sit flush under the navbar. Expanded state only: the compact
+           state sets its own padding-top. */
+        :global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.acc-detail-breadcrumbs) .wave-header__content) {
+            padding-top: var(--space-6, 1.5rem);
+        }
+
+        /* The full-bleed mobile gallery meets the blue header directly: drop the
+           page-background strip DetailLayout leaves above the body. The extra
+           selector weight beats DetailLayout's scoped `.detail-page[data-astro-cid]`. */
+        :global(.wave-header .detail-page:has(.acc-detail)) {
+            padding-top: 0;
+        }
     }
     .acc-detail {
         display: flex;
