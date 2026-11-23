@@ -39,6 +39,7 @@ const { since } = formatHostSince({ ownerJoinedAt, locale });
             </ul>
         )}
     </div>
+    {owner.name && (
     <div class="booking-summary__owner">
         <span class="booking-summary__avatar" aria-hidden="true">
             {getInitialsFromName(owner.name)}
@@ -49,6 +50,7 @@ const { since } = formatHostSince({ ownerJoinedAt, locale });
             {since && <p>{t('accommodations.detail.listingContact.summary.hostSince', undefined, { date: since })}</p>}
         </div>
     </div>
+    )}
     <MobileBookingSummaryActions client:media="(max-width: 1024px)" listingId={listingId} panelId={panelId} locale={locale} hasWhatsapp={hasWhatsapp} />
 </section>
 

@@ -2,7 +2,7 @@
  * @file ReviewSidebarCard.client.tsx
  * @description Sidebar block on the accommodation detail page that lets an
  * authenticated visitor open a modal dialog with the review form. Sits next
- * to PricingSidebar + OwnerCard. Replaces the previous inline form on the
+ * to PricingSidebar + ContactCard. Replaces the previous inline form on the
  * main column — the inline form was too tall and dominated the page.
  *
  * Auth and review eligibility are resolved CLIENT-SIDE (HOS-369 WB0-7). The

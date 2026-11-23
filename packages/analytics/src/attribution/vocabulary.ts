@@ -38,12 +38,8 @@ export const UTM_MEDIUMS = [
 /** An allowed `utm_medium`. */
 export type UtmMedium = (typeof UTM_MEDIUMS)[number];
 
-/**
- * Entity types that render share buttons (`utm_campaign` for `medium=share`).
- * `venue` and `experience` share from their detail-page gallery (HOS-2520), with
- * the same names the QR vocabulary already uses for those entities.
- */
-export const SHARE_CAMPAIGNS = ['accommodation', 'event', 'post', 'venue', 'experience'] as const;
+/** Entity types that render share buttons (`utm_campaign` for `medium=share`). */
+export const SHARE_CAMPAIGNS = ['accommodation', 'event', 'post', 'experience', 'venue'] as const;
 
 /** A share-button campaign. */
 export type ShareCampaign = (typeof SHARE_CAMPAIGNS)[number];

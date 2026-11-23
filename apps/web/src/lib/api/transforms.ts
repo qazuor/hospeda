@@ -1117,9 +1117,11 @@ export function toAccommodationDetailPageProps({
         socialNetworks,
         owner: {
             id: String(ownerObj?.id || ''),
-            name: String(ownerObj?.name || 'Unknown'),
+            // HOS-2520 AC-2.5: never invent host data. A missing owner stays empty
+            // (the page then renders no host section) instead of «Unknown» / today.
+            name: ownerObj?.name ? String(ownerObj.name) : '',
             image: ownerObj?.image ? String(ownerObj.image) : null,
-            createdAt: ownerObj?.createdAt ? String(ownerObj.createdAt) : new Date().toISOString()
+            createdAt: ownerObj?.createdAt ? String(ownerObj.createdAt) : null
         },
         // SPEC-018: extract displayWeight from either the join row or the
         // nested entity (API shape varies), then order DESC so the detail

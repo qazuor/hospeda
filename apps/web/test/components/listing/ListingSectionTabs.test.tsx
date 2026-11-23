@@ -83,6 +83,12 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
+/** rootMargin of the most recent active-tab (section) observer, not the gallery one. */
+function sectionMargin(): string | undefined {
+    return observers.filter((o) => o.options?.rootMargin?.includes('-55%')).at(-1)?.options
+        ?.rootMargin;
+}
+
 describe('ListingSectionTabs', () => {
     it('server renders a nav of plain anchors, so it works without JS', () => {
         const html = renderToString(<ListingSectionTabs {...props} />);
@@ -206,7 +212,7 @@ describe('ListingSectionTabs', () => {
             expect(cta).not.toHaveAttribute('hidden');
             expect(cta).toHaveTextContent(/155\.500.*noche/);
             fireEvent.click(screen.getByRole('link', { name: 'Consultar' }));
-            expect(received).toHaveBeenCalledWith({ origin: 'bar', focus: undefined });
+            expect(received).toHaveBeenCalledWith({ origin: 'tabs', focus: undefined });
 
             act(() => {
                 galleryObserver.callback([
@@ -218,6 +224,70 @@ describe('ListingSectionTabs', () => {
             unsubscribe();
             act(clearReady);
         }
+    });
+
+    it('re-measures the observer offset when the wave band slides out (AC-2.1)', async () => {
+        const header = document.createElement('header');
+        header.setAttribute('data-wave-header', '');
+        document.body.append(header);
+        const { container } = render(<ListingSectionTabs {...props} />);
+        const nav = container.querySelector('nav') as HTMLElement;
+        let stuckTop = 152;
+        vi.spyOn(window, 'getComputedStyle').mockImplementation(
+            () =>
+                ({
+                    top: `${stuckTop}px`,
+                    getPropertyValue: () => ''
+                }) as unknown as CSSStyleDeclaration
+        );
+        nav.dispatchEvent(new Event('transitionend'));
+        await act(async () => {});
+        const before = sectionMargin();
+
+        // The band slides out: the bar now sticks directly under the navbar.
+        stuckTop = 80;
+        header.classList.add('wave-header--hidden');
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        const after = sectionMargin();
+        expect(before).toBe('-160px 0px -55% 0px');
+        expect(after).toBe('-88px 0px -55% 0px');
+        vi.restoreAllMocks();
+    });
+
+    it('re-measures the observer offset on resize', async () => {
+        const { container } = render(<ListingSectionTabs {...props} />);
+        expect(container.querySelector('nav')).not.toBeNull();
+        let stuckTop = 152;
+        vi.spyOn(window, 'getComputedStyle').mockImplementation(
+            () =>
+                ({
+                    top: `${stuckTop}px`,
+                    getPropertyValue: () => ''
+                }) as unknown as CSSStyleDeclaration
+        );
+        await act(async () => {
+            window.dispatchEvent(new Event('resize'));
+        });
+        const before = sectionMargin();
+        stuckTop = 40;
+        await act(async () => {
+            window.dispatchEvent(new Event('resize'));
+        });
+
+        expect(sectionMargin()).not.toBe(before);
+        vi.restoreAllMocks();
+    });
+
+    it('reports the desktop CTA with its own origin, never as the bottom bar', () => {
+        const source = readFileSync(
+            resolve(__dirname, '../../../src/components/listing/ListingSectionTabs.client.tsx'),
+            'utf8'
+        );
+        expect(source).toContain('origin="tabs"');
+        expect(source).not.toContain('origin="bar"');
     });
 
     it('keeps the price band off mobile and the sticky offsets in CSS', () => {

@@ -34,7 +34,7 @@ describe('UTM vocabulary (HOS-2359 OD-4)', () => {
             'direct-outreach',
             'profile'
         ]);
-        expect(SHARE_CAMPAIGNS).toEqual(['accommodation', 'event', 'post', 'venue', 'experience']);
+        expect(SHARE_CAMPAIGNS).toEqual(['accommodation', 'event', 'post', 'experience', 'venue']);
         expect(QR_CAMPAIGNS).toEqual([
             'accommodation',
             'venue',
@@ -64,8 +64,6 @@ describe('UTM vocabulary (HOS-2359 OD-4)', () => {
         { source: 'whatsapp', medium: 'share', campaign: 'post' },
         { source: 'share', medium: 'share', campaign: 'event' },
         { source: 'copy', medium: 'share', campaign: 'accommodation' },
-        { source: 'whatsapp', medium: 'share', campaign: 'venue' },
-        { source: 'copy', medium: 'share', campaign: 'experience' },
         { source: 'qr', medium: 'print', campaign: 'certificate', content: 'certificate' },
         { source: 'qr', medium: 'print', campaign: 'manual' },
         { source: 'telegram', medium: 'direct-outreach', campaign: 'presentacion-aliados' },
@@ -89,7 +87,7 @@ describe('UTM vocabulary (HOS-2359 OD-4)', () => {
             content: 'cta'
         },
         { source: 'email', medium: 'transactional', campaign: 'a', content: 'c'.repeat(41) },
-        { source: 'whatsapp', medium: 'share', campaign: 'listing' },
+        { source: 'whatsapp', medium: 'share', campaign: 'destination' },
         { source: 'share', medium: 'direct-outreach', campaign: 'presentacion-aliados' },
         { source: 'whatsapp', medium: 'direct-outreach', campaign: 'presentacion-otros' },
         { source: 'qr', medium: 'print', campaign: 'listing' },

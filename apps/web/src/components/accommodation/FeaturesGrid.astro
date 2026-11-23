@@ -5,6 +5,11 @@
  * than {@link SUMMARY_COUNT} features only the first ones show, and «Ver las N
  * características» opens a `sheet` dialog (island `ListingItemsSheet`) with the full list.
  *
+ * SEO / no-JS: the sheet island renders nothing while closed, so the features past the
+ * summary also render in SSR as a visually-hidden list (`data-features-rest`), made
+ * visible by `<noscript>` (which also hides the dead sheet button). Grouped categories
+ * only matter in the sheet; the hidden list is flat.
+ *
  * HOS-2060: the synthetic "smoking allowed" item is gone — smoking is a house
  * rule now (`policies.smokingAllowed`) and renders in `ListingHouseRules`.
  *
@@ -74,6 +79,7 @@ function toPill(feature: AccommodationFeatureItem) {
 const hasOverflow = features.length > SUMMARY_COUNT;
 const title = t('accommodations.detail.features.title');
 const summaryPills = features.slice(0, SUMMARY_COUNT).map(toPill);
+const restPills = features.slice(SUMMARY_COUNT).map(toPill);
 ---
 
 <section class="features-section">
@@ -83,6 +89,9 @@ const summaryPills = features.slice(0, SUMMARY_COUNT).map(toPill);
     <>
       <div class="features-list" data-features-summary>
         {summaryPills.map((pill) => <ListingPill {...pill} />)}
+      </div>
+      <div class="features-list features-list--rest" data-features-rest>
+        {restPills.map((pill) => <ListingPill {...pill} />)}
       </div>
       <div class="features-section__more">
         <ListingItemsSheet
@@ -114,8 +123,24 @@ const summaryPills = features.slice(0, SUMMARY_COUNT).map(toPill);
     ))
   )}
 </section>
+<noscript>
+  <style is:inline>
+    [data-features-rest] { position: static !important; inline-size: auto !important; block-size: auto !important; clip-path: none !important; overflow: visible !important; white-space: normal !important; }
+    .features-section__more { display: none !important; }
+  </style>
+</noscript>
 
 <style>
+  .features-section { position: relative; }
+  /* Visually hidden, still in the DOM and in the accessibility tree (see @file). */
+  .features-list--rest {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .features-section__title {
     font-family: var(--font-heading);
     font-size: 1.5rem;

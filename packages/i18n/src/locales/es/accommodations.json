@@ -942,7 +942,7 @@
         "reviewsDetail": {
             "anonymous": "Anónimo",
             "stripLabel": "Reseñas destacadas",
-            "noReviews": "No hay opiniones todavía",
+            "noReviews": "Todavía no hay reseñas",
             "viewAll_one": "Ver la {{count}} reseña",
             "viewAll_other": "Ver las {{count}} reseñas",
             "breakdownLabel": "Puntajes desglosados",
@@ -956,10 +956,10 @@
             },
             "outOf": "de 5",
             "modal": {
-                "title": "Opiniones",
+                "title": "Reseñas",
                 "close": "Cerrar",
                 "loadMore": "Cargar más",
-                "error": "No se pudieron cargar las opiniones",
+                "error": "No se pudieron cargar las reseñas",
                 "retry": "Reintentar",
                 "loading": "Cargando reseñas…"
             }
@@ -982,7 +982,6 @@
             "title": "Comodidades",
             "viewAll_one": "Ver la {{count}} comodidad",
             "viewAll_other": "Ver las {{count}} comodidades",
-            "collapse": "Ver menos",
             "close": "Cerrar",
             "additionalCost": "(costo adicional)"
         },

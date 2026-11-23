@@ -104,7 +104,7 @@ const unpublishNotes = buildUnpublishConfirmNotes({ locale, t, tPlural, trialRun
  * ~6.8MB photo shipped to a 220px-tall card (measured: 465x the size of the
  * same photo through the `card` transform). `getMediaUrl` is the single
  * helper every other screen already uses to avoid exactly this (the public
- * detail page's gallery, `OwnerCard`, `@/lib/media`'s `extractFeaturedImage`)
+ * detail page's gallery, `ContactCard`, `@/lib/media`'s `extractFeaturedImage`)
  * — this card just never called it. The `card` preset is `w_400,h_300,...`;
  * `height: 220` overrides it to match this card's actual rendered box instead
  * of reusing the preset's own 400x300 crop verbatim.

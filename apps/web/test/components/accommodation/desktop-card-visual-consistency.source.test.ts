@@ -28,7 +28,8 @@ function read(relativePath: string): string {
 }
 
 const PAGE = read('pages/[lang]/alojamientos/[slug].astro');
-const OWNER_CARD = read('components/accommodation/OwnerCard.astro');
+const CONTACT_CARD = read('components/accommodation/ContactCard.astro');
+const SHELL = read('components/accommodation/ContactHostShell.astro');
 const LOCATION = read('components/accommodation/LocationSection.astro');
 const REPUTATION = read('components/accommodation/ExternalReputation.astro');
 const REPUTATION_ROW = read('components/accommodation/ExternalReputationSummaryRow.astro');
@@ -38,8 +39,8 @@ const DIVIDER = read('components/shared/ui/WaveDivider.astro');
 describe('sidebar contact card (AC-2.7)', () => {
     const sidebar = PAGE.match(/<Fragment slot="sidebar">([\s\S]*?)<\/Fragment>/)?.[1] ?? '';
 
-    it('fills the OwnerCard slot with the card island, hydrated from the desktop breakpoint', () => {
-        expect(sidebar).toMatch(/<OwnerCard[\s\S]*<ListingContactCard[\s\S]*<\/OwnerCard>/);
+    it('fills the ContactCard slot with the card island, hydrated from the desktop breakpoint', () => {
+        expect(sidebar).toMatch(/<ContactCard>[\s\S]*<ListingContactCard[\s\S]*<\/ContactCard>/);
         expect(sidebar).toContain('client:media="(min-width: 768px)"');
     });
 
@@ -56,17 +57,33 @@ describe('sidebar contact card (AC-2.7)', () => {
     });
 });
 
-describe('duplicate host on mobile', () => {
-    it('hides the sidebar OwnerCard below 768px, where HostSection already shows the host', () => {
-        expect(OWNER_CARD).toMatch(
-            /@media \(max-width: 767px\)\s*\{\s*\.owner-card\s*\{\s*display: none;\s*\}\s*\}/
-        );
+describe('single host presentation (owner decision, HOS-2520)', () => {
+    it('the sidebar card never shows the host identity, at any width', () => {
+        const code = CONTACT_CARD.replace(/\/\*[\s\S]*?\*\//g, '');
+        expect(code).not.toMatch(/owner|avatar|initials|memberSince|getMediaUrl/i);
+        expect(PAGE).not.toContain('<OwnerCard');
         expect(PAGE).toContain('<HostSection');
     });
 
-    it('re-shows the OwnerCard below 768px without JS so the no-JS contact fallback stays reachable (HOS-2537)', () => {
-        expect(OWNER_CARD).toMatch(
-            /<noscript>\s*<style is:inline>\s*@media \(max-width: 767px\)\s*\{\s*\.owner-card\s*\{\s*display: block !important;\s*\}\s*\}\s*<\/style>\s*<\/noscript>/
+    it('hides the card below 768px, where the dock + panel are the contact path', () => {
+        expect(CONTACT_CARD).toMatch(
+            /@media \(max-width: 767px\)\s*\{\s*\.contact-card\s*\{\s*display: none;\s*\}/
+        );
+    });
+
+    it('keeps the public channels reachable on mobile when the form cannot be used', () => {
+        // Pre-hydration taps on «Consultar» fall back to #contact: :target reveals the channels.
+        expect(CONTACT_CARD).toContain('id="contact"');
+        expect(CONTACT_CARD).toContain('.contact-card:target [data-contact-fallback]');
+        expect(CONTACT_CARD).toContain('.contact-card:target [data-contact-form]');
+        // Hydration failed: the shell revealed its fallback inside the card.
+        expect(CONTACT_CARD).toContain('.contact-card:has([data-contact-fallback]:not([hidden]))');
+        expect(SHELL).toContain('data-contact-fallback');
+    });
+
+    it('re-shows the card below 768px without JS so the no-JS contact fallback stays reachable (HOS-2537)', () => {
+        expect(CONTACT_CARD).toMatch(
+            /<noscript>\s*<style is:inline>\s*@media \(max-width: 767px\)\s*\{\s*\.contact-card\s*\{\s*display: block !important;\s*\}\s*\}\s*<\/style>\s*<\/noscript>/
         );
     });
 });
