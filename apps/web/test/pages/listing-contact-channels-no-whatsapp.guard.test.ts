@@ -66,8 +66,8 @@ describe('experience and venue contact surfaces carry no WhatsApp', () => {
     });
 
     it('the venue page hands the panel the HOS-2256 state, never a number or a form', () => {
-        expect(venuePage).toContain('whatsapp={venue.whatsapp ?? null}');
-        expect(venuePage).toContain('hasWhatsapp: Boolean(venue.whatsapp)');
+        expect(venuePage).toContain('whatsapp={venueWhatsApp ?? null}');
+        expect(venuePage).toContain('hasWhatsapp: Boolean(venueWhatsApp)');
         expect(venuePage).not.toMatch(/wa\.me|buildWhatsAppLink/);
     });
 

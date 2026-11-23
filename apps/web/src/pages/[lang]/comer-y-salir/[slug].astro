@@ -262,16 +262,18 @@ const houseRulePolicies = showEventsCta
 
 // --- Mobile contact bar (HOS-2532) ---
 // No price and no form. The panel carries WhatsApp only through the HOS-2256 gate
-// (`venue.whatsapp`), never a number read off contactInfo or socials (HOS-1076). A published
+// (`whatsapp` state of the payload), never a number read off contactInfo or socials (HOS-1076). A published
 // menu link wins («Ver carta»); otherwise «Contactar» opens the social links; with
 // neither, there is no bar. The in-page block is a superset of both, so the bar's
 // no-JS fallback anchor always has a target.
+// HOS-2256 state (not a socialNetworks/contactInfo field; see the venue guards).
+const { whatsapp: venueWhatsApp } = venue;
 const contactChannels = buildVenueChannels({ socialNetworks: venue.socialNetworks });
 const contactMode = resolveVenueContactMode({
     menuUrl: venue.menuUrl,
     channels: contactChannels,
     // Same gate as the page's own WhatsApp button (HOS-2256).
-    hasWhatsapp: Boolean(venue.whatsapp)
+    hasWhatsapp: Boolean(venueWhatsApp)
 });
 const contactPanelId = 'listing-contact-panel';
 
@@ -617,7 +619,7 @@ const breadcrumbItems = [
             vertical="venue"
             locale={locale}
             channels={contactChannels}
-            whatsapp={venue.whatsapp ?? null}
+            whatsapp={venueWhatsApp ?? null}
             venueName={venue.name}
             signInHref={reviewSignInHref}
         />
