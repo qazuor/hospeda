@@ -45,7 +45,7 @@ covers:
   - "page:mi-cuenta/complementos"
   - "tool:set_listing_publication"
 entryFor: []
-reviewedAt: "2026-11-22"
+reviewedAt: "2026-11-23"
 ---
 
 ## Qué podés hacer
@@ -57,7 +57,7 @@ Las publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mi
 ## Cómo se hace
 
 1. Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.
-2. Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.
+2. Abrí «Más acciones» (el botón de tres puntos de la tarjeta), elegí «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.
 3. Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».
 4. Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.
 5. Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.

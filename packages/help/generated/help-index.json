@@ -1,5 +1,5 @@
 {
-  "contentHash": "35c158e29710e76904fb7c01c4122507abe8d6753836580b1c75df9c4f300408",
+  "contentHash": "20bd61c6d9d77bca915ef5cf2acdbce3b0bbca0d6fd959257797aa89e45192ed",
   "locales": {
     "es": [
       {
@@ -41,14 +41,14 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Comprar un complemento y dar de baja los recurrentes desde {{link:addons|Comprar complementos}}.",
           "expect": "- El resumen muestra el importe y la frecuencia antes de confirmar.\n- Si tu beneficio incluye el complemento, aparece «Gratis por tu beneficio».\n- Dar de baja un destaque recurrente corta el cobro y lo apaga ese mismo día.",
           "howTo": {
             "after": "",
             "steps": [
-              "Entrá a «Comprar complementos».",
+              "Entrá a «Complementos»: está en el menú de tu cuenta, debajo de «Suscripción», y también como pestaña dentro de «Suscripción».",
               "Elegí un complemento de la lista.",
               "Elegí la ficha (o la suscripción) a la que se aplica.",
               "Revisá el resumen: muestra el importe y la frecuencia. Si tu beneficio lo incluye, aparece «Gratis por tu beneficio» y podés elegirlo sin pagar.",
@@ -476,7 +476,7 @@
           "publish-requirements",
           "calendar"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
           "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",
@@ -631,7 +631,7 @@
           "addons",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-21",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis propiedades}}.\n\nPara un comercio o una experiencia, {{link:contact|escribinos}}.",
           "expect": "- Antes de confirmar ves los complementos que se pierden con la publicación, sin devolución (mirá {{article:addons|los complementos}}).\n- El borrado es definitivo: textos, fotos y preguntas se borran.",
@@ -639,7 +639,7 @@
             "after": "",
             "steps": [
               "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.",
-              "Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
+              "Abrí «Más acciones» (el botón de tres puntos de la tarjeta) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.",
               "Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.",
               "Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).",
               "En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos."
@@ -710,7 +710,7 @@
           "delete-listing",
           "pause-resume"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.",
           "expect": "- Con un pedido de arreglo la publicación sigue a la vista mientras corregís.\n- «Ya lo corregí» avisa al equipo; el pedido lo cierra Hospeda.\n- Una publicación moderada se puede ver, exportar y editar, pero no publicar.",
@@ -928,7 +928,7 @@
           "addons",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.",
           "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
@@ -936,7 +936,7 @@
             "after": "",
             "steps": [
               "Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.",
-              "Tocá «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
+              "Abrí «Más acciones» (el botón de tres puntos de la tarjeta), elegí «Despublicar» y confirmá: la propiedad deja de aparecer en el sitio.",
               "Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».",
               "Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.",
               "Si el sitio la despublicó por tu plan, la tarjeta dice «Sin publicar por tu plan» y el botón es «Publicar de nuevo»; puede llevarte a elegir un plan.",
@@ -1170,7 +1170,7 @@
           "change-plan",
           "fix-request"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.\n\nPedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.",
           "expect": "- El editor marca cada sección incompleta y la tarjeta de la publicación también.\n- Publicar pide un plan activo o la prueba gratis; si no te corresponde la prueba, te lleva a elegir un plan.\n- Un pedido de excepción lo revisa Hospeda y te responde por email.",

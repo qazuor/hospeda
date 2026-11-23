@@ -42,7 +42,7 @@ covers:
   - "enum:PublicationStatus.MODERATED"
   - "file:apps/web/src/lib/listing/listing-notices.ts"
 entryFor: []
-reviewedAt: "2026-11-22"
+reviewedAt: "2026-11-23"
 ---
 
 ## Qué podés hacer

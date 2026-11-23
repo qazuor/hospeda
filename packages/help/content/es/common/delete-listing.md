@@ -37,7 +37,7 @@ covers:
   - "page:mi-cuenta/propiedades"
   - "enum:PublicationStatus.PURGED"
 entryFor: []
-reviewedAt: "2026-11-21"
+reviewedAt: "2026-11-23"
 ---
 
 ## Qué podés hacer
@@ -49,7 +49,7 @@ Para un comercio o una experiencia, {{link:contact|escribinos}}.
 ## Cómo se hace
 
 1. Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.
-2. Tocá «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.
+2. Abrí «Más acciones» (el botón de tres puntos de la tarjeta) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.
 3. Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.
 4. Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).
 5. En comercios y experiencias el portal no ofrece el botón «Eliminar»: contactanos y lo vemos.
