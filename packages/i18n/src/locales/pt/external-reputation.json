@@ -37,7 +37,7 @@
     "ownerConfig": {
         "title": "Configuração de reputação externa",
         "addListing": "Adicionar link de plataforma",
-        "addingListing": "Adicionando...",
+        "addingListing": "Adicionando…",
         "showLink": "Mostrar link para a plataforma",
         "showReviews": "Mostrar avaliações de texto",
         "masterToggle": "Exibir seção de reputação externa",
@@ -60,24 +60,34 @@
         "removeConfirmButton": "Excluir plataforma",
         "removing": "Excluindo...",
         "removeError": "Não foi possível excluir a plataforma.",
-        "allPlatformsAdded": "Você já adicionou todas as plataformas disponíveis."
+        "allPlatformsAdded": "Você já adicionou todas as plataformas disponíveis.",
+        "addButton": "Adicionar",
+        "refreshing": "Atualizando…",
+        "platformField": "Plataforma de avaliação",
+        "urlField": "Link público (URL)",
+        "listLabel": "Plataformas vinculadas",
+        "removeLabel": "Remover {{platform}}",
+        "removeButton": "Remover"
     },
     "errors": {
         "fetchFailed": "Não foi possível carregar as avaliações externas. Tente novamente mais tarde.",
         "notFound": "Nenhum dado de reputação encontrado para esta plataforma.",
         "blocked": "O acesso aos dados desta plataforma foi bloqueado temporariamente.",
         "statusFailed": "Não foi possível obter o status da atualização.",
-        "invalidUrl": "Ingresá una URL válida (https://...).",
-        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo.",
+        "invalidUrl": "Informe uma URL válida (https://...).",
+        "masterToggleFailed": "Não foi possível alterar a visibilidade. Tente novamente.",
         "duplicatePlatform": "Você já tem um link do {{platform}} cadastrado. Para alterá-lo, exclua o atual e adicione o novo.",
-        "addFailed": "Não foi possível salvar o link. Tente novamente em alguns minutos; se continuar falhando, fale com a gente."
+        "addFailed": "Não foi possível salvar o link. Tente novamente em alguns minutos; se continuar falhando, fale com a gente.",
+        "refreshFailed": "Não foi possível atualizar a reputação. Tente novamente mais tarde.",
+        "error": "Não foi possível obter os dados desta plataforma."
     },
     "status": {
         "pending": "Atualizando...",
         "running": "Processando...",
         "error": "Falhou",
         "blocked": "Bloqueado",
-        "notFound": "Não encontrado"
+        "notFound": "Não encontrado",
+        "rating": "Nota {{rating}}"
     },
     "refresh": {
         "enqueued": "Atualizando em segundo plano...",

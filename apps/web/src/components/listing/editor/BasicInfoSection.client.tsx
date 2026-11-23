@@ -5,45 +5,40 @@
  *
  * Mirrors `host/editor/BasicInfoSection.client.tsx`: receives the whole
  * `data` object, a typed slice of `errors`, and the shared `onFieldChange`.
- * Renders a Fragment of sibling `<section>` elements rather than wrapping them
- * in a container — `.editor` is a flex column whose gap applies to its direct
- * children, so an extra wrapper would change the rendered spacing.
+ * HOS-2488: one kit `Section` with a 1-3 column grid (container query); every
+ * field is a kit `Field` + control, so each one has a visible label, a 44px
+ * control and its own hint and error. Ids stay `buildFieldId` ids.
  */
 
 import type { JSX } from 'react';
+import { Alert } from '@/components/account/ui/Alert';
+import { Checkbox } from '@/components/account/ui/Checkbox';
+import { Field } from '@/components/account/ui/Field';
+import { Section } from '@/components/account/ui/Section';
+import { Select } from '@/components/account/ui/Select';
+import { Textarea } from '@/components/account/ui/Textarea';
+import { TextInput } from '@/components/account/ui/TextInput';
 import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { BusinessLinesField } from '@/components/listing/editor/BusinessLinesField.client';
-import { FieldError } from '@/components/ui/FieldError';
-import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import { buildFieldId } from '@/lib/forms/build-field-id';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
-import styles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import type { ListingEditData, ListingFieldChange } from './listing-edit-data';
+import styles from './listing-section.module.css';
+
+/** Max length of the summary, shared with the schema (T-020). */
+const SUMMARY_MAX_LENGTH = 300;
 
 /**
- * Identity of the two fields that keep their own wiring (HOS-385).
- *
- * `summary` points `aria-describedby` at a live character counter when it is
- * VALID and at the error when it is not. `TextField` owns a single-target
- * `aria-describedby` that exists only while there is an error, and renders
- * label/control/error as flat siblings with no slot between control and error —
- * so adopting it would drop the counter from the accessible description.
- *
- * `richDescription` is a contenteditable named by `ariaLabel`, deliberately
- * titled with a `<span>` rather than a `<label>` (a `<label>` cannot name a
- * `role="textbox"`); the wrapper always renders a real `<label htmlFor>`.
- *
- * Both still DERIVE their id, which is the half that was drifting.
+ * `richDescription` is a contenteditable named by `ariaLabel` (a `<label>` cannot
+ * name a `role="textbox"`). Its id is still DERIVED, which is the half that was
+ * drifting; the kit `Field` supplies the visible label.
  */
-const SUMMARY_FIELD = { prefix: LISTING_FIELD_PREFIX, name: 'summary' } as const;
-const SUMMARY_ID = buildFieldId(SUMMARY_FIELD);
-const SUMMARY_HINT_ID = `${SUMMARY_ID}-hint`;
-
 const RICH_DESCRIPTION_ID = buildFieldId({
     prefix: LISTING_FIELD_PREFIX,
     name: 'richDescription'
@@ -82,278 +77,229 @@ export function BasicInfoSection({
     const { t } = createTranslations(locale);
     const config = LISTING_VERTICAL_FORM_CONFIG[vertical];
     const typeOptions = config.typeOptions;
+    const idOf = (name: string): { readonly prefix: string; readonly name: string } => ({
+        prefix: LISTING_FIELD_PREFIX,
+        name
+    });
 
     return (
-        <>
-            {/* HOS-166 D-1: name — identity field, now owner-editable */}
-            <section
-                className={styles.section}
-                id="editor-basicInfo"
-            >
-                <TextField
-                    prefix={LISTING_FIELD_PREFIX}
-                    name="name"
+        <Section
+            id="editor-basicInfo"
+            title={t('listing.owner.editor.groups.basicInfo', 'Identidad y descripción')}
+            helpId={sectionHelpId({ vertical, slug: 'datos' })}
+        >
+            <div className={styles.grid}>
+                {/* HOS-166 D-1: name, identity field, owner-editable */}
+                <Field
+                    locale={locale}
+                    idParts={idOf('name')}
                     label={t('listing.owner.editor.sections.name', 'Nombre del comercio')}
-                    labelClassName={styles.label}
-                    className={styles.input}
                     error={errors.name}
-                    type="text"
-                    value={data.name}
-                    onChange={(event) => {
-                        onFieldChange('name', event.target.value);
-                    }}
-                />
+                >
+                    <TextInput
+                        value={data.name}
+                        onChange={(event) => {
+                            onFieldChange('name', event.target.value);
+                        }}
+                    />
+                </Field>
+                {/* HOS-166 D-1 destinationId. `destinationsLoadFailed` surfaces a
+                    failed SSR catalog fetch instead of silently omitting a REQUIRED
+                    field; HOS-260 does the same for an empty catalog. */}
+                {destinationsLoadFailed ? (
+                    <div className={styles.full}>
+                        <Alert
+                            tone="danger"
+                            locale={locale}
+                        >
+                            {t(
+                                'listing.owner.editor.sections.destinationLoadError',
+                                'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
+                            )}
+                        </Alert>
+                    </div>
+                ) : destinations.length > 0 ? (
+                    <Field
+                        locale={locale}
+                        idParts={idOf('destinationId')}
+                        label={t('listing.owner.editor.sections.destination', 'Ciudad / Destino')}
+                        error={errors.destinationId}
+                    >
+                        <Select
+                            value={data.destinationId}
+                            onChange={(event) => {
+                                onFieldChange('destinationId', event.target.value);
+                            }}
+                        >
+                            <option value="">—</option>
+                            {destinations.map((d) => (
+                                <option
+                                    key={d.id}
+                                    value={d.id}
+                                >
+                                    {d.name}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
+                ) : (
+                    <div className={styles.full}>
+                        <Alert
+                            tone="danger"
+                            locale={locale}
+                        >
+                            {t(
+                                'listing.owner.editor.sections.destinationEmpty',
+                                'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
+                            )}
+                        </Alert>
+                    </div>
+                )}
+
+                {/* T-020: `type` is the Zod key, `listingType` the React state key
+                    (HOS-385 unifies the id layer, not the state layer). */}
+                <Field
+                    locale={locale}
+                    idParts={idOf('type')}
+                    label={t('listing.owner.editor.sections.type', 'Categoría')}
+                    hint={
+                        config.showsTypeDescription && data.listingType
+                            ? t(`venue.typeDescriptions.${data.listingType}`, '')
+                            : undefined
+                    }
+                >
+                    <Select
+                        value={data.listingType}
+                        onChange={(event) => {
+                            onFieldChange('listingType', event.target.value);
+                        }}
+                    >
+                        <option value="">—</option>
+                        {typeOptions.map((opt) => (
+                            <option
+                                key={opt}
+                                value={opt}
+                            >
+                                {config.resolveTypeLabel({ t, type: opt })}
+                            </option>
+                        ))}
+                    </Select>
+                </Field>
                 {shouldOfferSlugRefresh ? (
-                    <div>
-                        <p className={styles.hint}>
-                            {t(
-                                'listing.owner.editor.slugRefresh.notice',
-                                'Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.'
-                            )}
-                        </p>
-                        <p className={styles.hint}>
-                            {t(
-                                'listing.owner.editor.slugRefresh.warning',
-                                'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
-                            )}
-                        </p>
-                        <label className={styles.checkbox}>
-                            <input
-                                type="checkbox"
+                    <div className={styles.full}>
+                        <div className={styles.notice}>
+                            <p className={styles.hint}>
+                                {t(
+                                    'listing.owner.editor.slugRefresh.notice',
+                                    'Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.'
+                                )}
+                            </p>
+                            <p className={styles.hint}>
+                                {t(
+                                    'listing.owner.editor.slugRefresh.warning',
+                                    'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
+                                )}
+                            </p>
+                            <Checkbox
                                 checked={data.refreshSlugFromName}
                                 onChange={(event) => {
                                     onFieldChange('refreshSlugFromName', event.target.checked);
                                 }}
-                            />
-                            <span>
-                                {t(
+                                label={t(
                                     'listing.owner.editor.slugRefresh.checkbox',
                                     'Cambiar igual la dirección web para que siga este nuevo nombre'
                                 )}
-                            </span>
-                        </label>
+                            />
+                        </div>
                     </div>
                 ) : null}
-            </section>
 
-            {/* HOS-166 D-1: destinationId — identity field, now owner-editable.
-                `destinationsLoadFailed` (judgment-day fix) surfaces a failed SSR
-                catalog fetch explicitly instead of silently omitting a REQUIRED
-                field (completeness needs `destinationId`) — see the prop's doc. */}
-            {destinationsLoadFailed ? (
-                <section className={styles.section}>
-                    <p
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {t(
-                            'listing.owner.editor.sections.destinationLoadError',
-                            'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
-                        )}
-                    </p>
-                </section>
-            ) : destinations.length > 0 ? (
-                <section className={styles.section}>
-                    <TextField
-                        as="select"
-                        prefix={LISTING_FIELD_PREFIX}
-                        name="destinationId"
-                        label={t('listing.owner.editor.sections.destination', 'Ciudad / Destino')}
-                        labelClassName={styles.label}
-                        className={styles.input}
-                        error={errors.destinationId}
-                        value={data.destinationId}
-                        onChange={(event) => {
-                            onFieldChange('destinationId', event.target.value);
-                        }}
-                    >
-                        <option value="">—</option>
-                        {destinations.map((d) => (
-                            <option
-                                key={d.id}
-                                value={d.id}
-                            >
-                                {d.name}
-                            </option>
-                        ))}
-                    </TextField>
-                </section>
-            ) : (
-                // HOS-260: catalog fetch SUCCEEDED but returned zero rows. The old
-                // `destinations.length > 0` gate silently omitted the field here
-                // too, leaving `destinationId` (required for completeness)
-                // unfillable with no indication why. Distinct from the
-                // `destinationsLoadFailed` branch above (fetch failure).
-                <section className={styles.section}>
-                    <p
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {t(
-                            'listing.owner.editor.sections.destinationEmpty',
-                            'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
-                        )}
-                    </p>
-                </section>
-            )}
-
-            {/* T-020: type select */}
-            <section className={styles.section}>
-                {/*
-                 * `type` is the Zod key; `listingType` is the React state key.
-                 * HOS-385 unifies the ID layer, not the state layer — the
-                 * wrapper takes the Zod name and the caller still supplies the
-                 * state value separately (spec §6.2).
-                 */}
-                <TextField
-                    as="select"
-                    prefix={LISTING_FIELD_PREFIX}
-                    name="type"
-                    label={t('listing.owner.editor.sections.type', 'Categoría')}
-                    labelClassName={styles.label}
-                    className={styles.input}
-                    value={data.listingType}
-                    onChange={(event) => {
-                        onFieldChange('listingType', event.target.value);
-                    }}
-                >
-                    <option value="">—</option>
-                    {typeOptions.map((opt) => (
-                        <option
-                            key={opt}
-                            value={opt}
-                        >
-                            {config.resolveTypeLabel({ t, type: opt })}
-                        </option>
-                    ))}
-                </TextField>
-                {config.showsTypeDescription && data.listingType ? (
-                    <p
-                        className={styles.hint}
-                        aria-live="polite"
-                    >
-                        {t(`venue.typeDescriptions.${data.listingType}`, '')}
-                    </p>
+                {/* HOS-1787 leaf 5.6: business lines. The component renders nothing
+                    for a vertical with a single catalog line (AC:5:9). */}
+                {config.showsBusinessLines ? (
+                    <div className={styles.full}>
+                        <BusinessLinesField
+                            locale={locale}
+                            vertical={vertical}
+                            type={data.listingType}
+                            selected={data.businessLines}
+                            onChange={(next) => {
+                                onFieldChange('businessLines', next);
+                            }}
+                            errors={errors}
+                            listingId={listingId}
+                        />
+                    </div>
                 ) : null}
-            </section>
 
-            {/* HOS-1787 leaf 5.6 — business lines belong to the venue's basic
-                info. The component renders nothing for a vertical with a single
-                catalog line (AC:5:9) and hides the type-incompatible options
-                (AC:5:1); the catalog function decides both. */}
-            {config.showsBusinessLines ? (
-                <section className={styles.section}>
-                    <BusinessLinesField
+                {/* T-020: summary (min 10 / max 300), kit counter */}
+                <div className={styles.full}>
+                    <Field
                         locale={locale}
-                        vertical={vertical}
-                        type={data.listingType}
-                        selected={data.businessLines}
-                        onChange={(next) => {
-                            onFieldChange('businessLines', next);
-                        }}
-                        errors={errors}
-                        listingId={listingId}
-                    />
-                </section>
-            ) : null}
+                        idParts={idOf('summary')}
+                        label={t('listing.owner.editor.sections.summary', 'Resumen')}
+                        error={errors.summary}
+                    >
+                        <Textarea
+                            value={data.summary}
+                            rows={3}
+                            minLength={10}
+                            limit={SUMMARY_MAX_LENGTH}
+                            locale={locale}
+                            onChange={(event) => {
+                                onFieldChange('summary', event.target.value);
+                            }}
+                        />
+                    </Field>
+                </div>
 
-            {/* T-020: summary textarea (min 10 / max 300) */}
-            <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor={SUMMARY_ID}
-                >
-                    {t('listing.owner.editor.sections.summary', 'Resumen')}
-                </label>
-                <textarea
-                    id={SUMMARY_ID}
-                    className={styles.textarea}
-                    value={data.summary}
-                    rows={3}
-                    minLength={10}
-                    maxLength={300}
-                    aria-invalid={errors.summary ? 'true' : 'false'}
-                    aria-describedby={
-                        errors.summary ? buildFieldErrorId(SUMMARY_FIELD) : SUMMARY_HINT_ID
-                    }
-                    onChange={(event) => {
-                        onFieldChange('summary', event.target.value);
-                    }}
-                />
-                <span
-                    id={SUMMARY_HINT_ID}
-                    className={styles.hint}
-                    aria-live="polite"
-                >
-                    {t('listing.owner.editor.validation.summaryHint', '{{count}}/300', {
-                        count: data.summary.length
-                    })}
-                </span>
-                <FieldError
-                    id={buildFieldErrorId(SUMMARY_FIELD)}
-                    message={errors.summary}
-                />
-            </section>
+                {/* HOS-166 judgment-day W2: description, owner-editable (D-1) */}
+                <div className={styles.full}>
+                    <Field
+                        locale={locale}
+                        idParts={idOf('description')}
+                        label={t('listing.owner.editor.sections.description', 'Descripción')}
+                        error={errors.description}
+                    >
+                        <Textarea
+                            value={data.description}
+                            rows={5}
+                            onChange={(event) => {
+                                onFieldChange('description', event.target.value);
+                            }}
+                        />
+                    </Field>
+                </div>
 
-            {/* HOS-166 judgment-day W2: description — identity field, already
-                owner-editable server-side (D-1) but never exposed here. */}
-            <section className={styles.section}>
-                <TextField
-                    as="textarea"
-                    prefix={LISTING_FIELD_PREFIX}
-                    name="description"
-                    label={t('listing.owner.editor.sections.description', 'Descripción')}
-                    labelClassName={styles.label}
-                    className={styles.textarea}
-                    error={errors.description}
-                    value={data.description}
-                    rows={5}
-                    onChange={(event) => {
-                        onFieldChange('description', event.target.value);
-                    }}
-                />
-            </section>
-
-            {/* HOS-371: TipTap instead of the bare textarea this field used to
-                be. `richDescription` is already rendered as Markdown on the
-                public pages (`VenueDescription.astro` / `ExperienceInfo.astro`
-                both run it through `renderContent`), and RichTextEditor persists
-                Markdown — so the stored shape is unchanged, the owner just stops
-                having to hand-write it.
-
-                Deliberately NOT behind a `PlanEntitlementGate`: that gate reads
-                the ACCOMMODATION entitlement set (the retired `loadEntitlements` filtered to
-                `product_domain = 'accommodation'`), so gating a listing field on
-                it would deny the field to every listing owner. Venue and experience billing
-                is a separate domain — see the root CLAUDE.md, SPEC-239.
-
-                The title is a <span>, not a <label htmlFor>: the editing surface
-                is a contenteditable `role="textbox"`, which a <label> cannot
-                name. The accessible name comes from `ariaLabel` instead.
-
-                HOS-829: no `placeholder`. The owner asked for the hint to go —
-                the field is self-explanatory next to its own title — so the
-                editor renders no overlay text at all here. Passing one back
-                would restore the copy the owner removed, not a bug fix. The
-                overlay itself is positioned correctly since HOS-828 and is
-                still used by the accommodation / event / post editors. */}
-            <section className={styles.section}>
-                <span className={styles.label}>
-                    {t('listing.owner.editor.sections.richDescription', 'Descripción ampliada')}
-                </span>
-                <RichTextEditor
-                    id={RICH_DESCRIPTION_ID}
-                    locale={locale}
-                    value={data.richDescription}
-                    ariaLabel={t(
-                        'listing.owner.editor.sections.richDescription',
-                        'Descripción ampliada'
-                    )}
-                    onChange={(value) => {
-                        onFieldChange('richDescription', value);
-                    }}
-                />
-            </section>
-        </>
+                {/* HOS-371: TipTap, persisted as Markdown (the stored shape is
+                    unchanged). Deliberately NOT behind `PlanEntitlementGate`: that
+                    gate reads the ACCOMMODATION entitlement set, so gating a
+                    listing field on it would deny it to every listing owner.
+                    HOS-829: no `placeholder`, the owner asked for the hint to go. */}
+                <div className={styles.full}>
+                    <Field
+                        locale={locale}
+                        id={RICH_DESCRIPTION_ID}
+                        label={t(
+                            'listing.owner.editor.sections.richDescription',
+                            'Descripción ampliada'
+                        )}
+                    >
+                        <RichTextEditor
+                            id={RICH_DESCRIPTION_ID}
+                            locale={locale}
+                            value={data.richDescription}
+                            ariaLabel={t(
+                                'listing.owner.editor.sections.richDescription',
+                                'Descripción ampliada'
+                            )}
+                            onChange={(value) => {
+                                onFieldChange('richDescription', value);
+                            }}
+                        />
+                    </Field>
+                </div>
+            </div>
+        </Section>
     );
 }

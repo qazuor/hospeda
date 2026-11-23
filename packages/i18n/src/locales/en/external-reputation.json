@@ -37,7 +37,7 @@
     "ownerConfig": {
         "title": "External reputation settings",
         "addListing": "Add platform link",
-        "addingListing": "Adding...",
+        "addingListing": "Adding…",
         "showLink": "Show link to platform",
         "showReviews": "Show text reviews",
         "masterToggle": "Show external reputation section",
@@ -60,24 +60,34 @@
         "removeConfirmButton": "Delete platform",
         "removing": "Deleting...",
         "removeError": "Could not delete the platform.",
-        "allPlatformsAdded": "You've already added every available platform."
+        "allPlatformsAdded": "You've already added every available platform.",
+        "addButton": "Add",
+        "refreshing": "Refreshing…",
+        "platformField": "Platform",
+        "urlField": "Public link (URL)",
+        "listLabel": "Connected platforms",
+        "removeLabel": "Remove {{platform}}",
+        "removeButton": "Remove"
     },
     "errors": {
         "fetchFailed": "Could not load external reviews. Please try again later.",
         "notFound": "No reputation data found for this platform.",
         "blocked": "Access to this platform's data has been temporarily blocked.",
         "statusFailed": "Could not retrieve the update status.",
-        "invalidUrl": "Ingresá una URL válida (https://...).",
-        "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo.",
+        "invalidUrl": "Enter a valid URL (https://...).",
+        "masterToggleFailed": "Could not change the visibility. Please try again.",
         "duplicatePlatform": "You already have a {{platform}} link saved. To change it, delete the current one and add the new one.",
-        "addFailed": "We couldn't save the link. Try again in a few minutes; if it keeps failing, contact us."
+        "addFailed": "We couldn't save the link. Try again in a few minutes; if it keeps failing, contact us.",
+        "refreshFailed": "Could not refresh your reputation. Please try again later.",
+        "error": "Could not get this platform's data."
     },
     "status": {
         "pending": "Updating...",
         "running": "Processing...",
         "error": "Failed",
         "blocked": "Blocked",
-        "notFound": "Not found"
+        "notFound": "Not found",
+        "rating": "Rating {{rating}}"
     },
     "refresh": {
         "enqueued": "Updating in the background...",

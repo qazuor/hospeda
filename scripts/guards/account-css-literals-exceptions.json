@@ -160,11 +160,6 @@
         "font-size": 7,
         "radius": 4
     },
-    "apps/web/src/components/host/ExternalReputationSection.module.css": {
-        "color": 12,
-        "font-size": 20,
-        "radius": 10
-    },
     "apps/web/src/components/host/PromotionList.module.css": {
         "color": 20,
         "font-size": 16,

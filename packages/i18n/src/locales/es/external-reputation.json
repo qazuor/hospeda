@@ -37,7 +37,7 @@
     "ownerConfig": {
         "title": "Configuración de reputación externa",
         "addListing": "Agregar enlace de plataforma",
-        "addingListing": "Agregando...",
+        "addingListing": "Agregando…",
         "showLink": "Mostrar enlace a la plataforma",
         "showReviews": "Mostrar reseñas de texto",
         "masterToggle": "Mostrar sección de reputación externa",
@@ -60,7 +60,14 @@
         "removeConfirmButton": "Eliminar plataforma",
         "removing": "Eliminando...",
         "removeError": "No se pudo eliminar la plataforma.",
-        "allPlatformsAdded": "Ya agregaste todas las plataformas disponibles."
+        "allPlatformsAdded": "Ya agregaste todas las plataformas disponibles.",
+        "addButton": "Agregar",
+        "refreshing": "Actualizando…",
+        "platformField": "Plataforma",
+        "urlField": "Enlace público (URL)",
+        "listLabel": "Plataformas conectadas",
+        "removeLabel": "Eliminar {{platform}}",
+        "removeButton": "Eliminar"
     },
     "errors": {
         "fetchFailed": "No se pudieron cargar las reseñas externas. Intentá de nuevo más tarde.",
@@ -70,14 +77,17 @@
         "invalidUrl": "Ingresá una URL válida (https://...).",
         "masterToggleFailed": "No se pudo cambiar la visibilidad. Intentá de nuevo.",
         "duplicatePlatform": "Ya tenés un enlace de {{platform}} cargado. Para cambiarlo, eliminá el actual y agregá el nuevo.",
-        "addFailed": "No pudimos guardar el enlace. Probá de nuevo en unos minutos; si sigue fallando, escribinos."
+        "addFailed": "No pudimos guardar el enlace. Probá de nuevo en unos minutos; si sigue fallando, escribinos.",
+        "refreshFailed": "No se pudo actualizar la reputación. Intentá de nuevo más tarde.",
+        "error": "No se pudieron obtener los datos de esta plataforma."
     },
     "status": {
         "pending": "Actualizando...",
         "running": "Procesando...",
         "error": "Falló",
         "blocked": "Bloqueado",
-        "notFound": "No encontrado"
+        "notFound": "No encontrado",
+        "rating": "Puntaje {{rating}}"
     },
     "refresh": {
         "enqueued": "Actualizando en segundo plano...",

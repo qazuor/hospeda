@@ -65,6 +65,7 @@ export const ACCOUNT_SCOPE_DIRS: readonly string[] = [
     'apps/web/src/components/account/',
     'apps/web/src/pages/[lang]/mi-cuenta/',
     'apps/web/src/components/host/editor/',
+    'apps/web/src/components/host/external-reputation/',
     'apps/web/src/components/host/host-trades/',
     'apps/web/src/components/listing/editor/',
     'apps/web/src/components/listing/ai-questions/',
