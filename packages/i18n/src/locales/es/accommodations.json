@@ -829,7 +829,9 @@
             "emailAriaLabel": "Enviar email al alojamiento",
             "websiteAriaLabel": "Visitar sitio web del alojamiento",
             "facebookAriaLabel": "Facebook del alojamiento",
-            "instagramAriaLabel": "Instagram del alojamiento"
+            "instagramAriaLabel": "Instagram del alojamiento",
+            "fallbackNotice": "Para enviar la consulta desde acá necesitás JavaScript. Mientras tanto, contactá directo al alojamiento:",
+            "fallbackNoChannels": "Para enviar la consulta desde acá necesitás JavaScript. Recargá la página para intentarlo de nuevo."
         },
         "share": "Compartir",
         "checkIn": "Check-in",

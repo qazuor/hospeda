@@ -491,7 +491,9 @@
             "emailAriaLabel": "Enviar email para a acomodação",
             "websiteAriaLabel": "Visitar o site da acomodação",
             "facebookAriaLabel": "Facebook da acomodação",
-            "instagramAriaLabel": "Instagram da acomodação"
+            "instagramAriaLabel": "Instagram da acomodação",
+            "fallbackNotice": "Para enviar a consulta daqui é preciso JavaScript. Enquanto isso, entre em contato direto com a acomodação:",
+            "fallbackNoChannels": "Para enviar a consulta daqui é preciso JavaScript. Recarregue a página para tentar de novo."
         },
         "share": "Compartilhar",
         "checkIn": "Check-in",
