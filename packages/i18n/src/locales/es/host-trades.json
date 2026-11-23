@@ -7,6 +7,24 @@
             "retry": "Reintentar"
         }
     },
+    "detail": {
+        "dataTitle": "Datos del proveedor",
+        "benefitTitle": "Beneficio para hosts",
+        "schedule": "Horario",
+        "contact": "Contacto",
+        "contactDialogTitle": "Contactar a {{name}}",
+        "contactDialogDescription": "Estos son los datos de contacto que cargó el proveedor.",
+        "channel": {
+            "phone": "Llamar",
+            "whatsapp": "Escribir por WhatsApp",
+            "email": "Enviar un correo",
+            "web": "Abrir el enlace"
+        },
+        "notFound": {
+            "title": "No encontramos este proveedor",
+            "body": "Puede que el enlace esté desactualizado o que el proveedor ya no figure. Volvé al directorio para ver los disponibles."
+        }
+    },
     "filter": {
         "all": "Todos"
     },

@@ -35,7 +35,7 @@ export interface TourStepConfig {
  * reached its `/mi-cuenta/comercio/` steps.
  *
  * - `dashboard` — `/{lang}/mi-cuenta/`
- * - `comercio` — `/{lang}/mi-cuenta/comercio/`
+ * - `comercio` — `/{lang}/mi-cuenta/comercio/` (both lists, `?vertical=…`, HOS-2559)
  */
 export type TourPage = 'dashboard' | 'comercio';
 
@@ -205,7 +205,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
             },
             {
                 id: 'comercio-listings',
-                target: '[data-tour="comercio-listings"]',
+                target: '[data-tour="comercio-listings-venue"]',
                 title: 'account.welcomeTour.listing.title',
                 body: 'account.welcomeTour.listingVenue.body',
                 bodyWhenAnchorAbsent: {
@@ -270,7 +270,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
             },
             {
                 id: 'comercio-listings',
-                target: '[data-tour="comercio-listings"]',
+                target: '[data-tour="comercio-listings-experience"]',
                 title: 'account.welcomeTour.listing.title',
                 body: 'account.welcomeTour.listingExperience.body',
                 side: 'right',

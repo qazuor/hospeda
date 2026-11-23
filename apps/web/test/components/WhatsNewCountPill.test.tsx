@@ -38,4 +38,74 @@ describe('WhatsNewCountPill', () => {
         render(<WhatsNewCountPill locale="es" />);
         expect(screen.getByText('99+')).toBeInTheDocument();
     });
+
+    describe('labelsParentLink (account header icon link)', () => {
+        function renderInLink(count: number, locale: 'es' | 'en' | 'pt' = 'es') {
+            mockUnseen(count);
+            return render(
+                <a
+                    href="/es/mi-cuenta/novedades/"
+                    aria-label="Qué hay de nuevo"
+                >
+                    <WhatsNewCountPill
+                        locale={locale}
+                        labelsParentLink
+                    />
+                </a>
+            );
+        }
+
+        it('puts the unseen count into the link accessible name (plural)', () => {
+            // Arrange + Act
+            renderInLink(3);
+
+            // Assert
+            expect(screen.getByRole('link')).toHaveAccessibleName(
+                'Qué hay de nuevo, 3 novedades sin leer'
+            );
+        });
+
+        it('uses the singular form for one unseen entry', () => {
+            renderInLink(1, 'en');
+            expect(screen.getByRole('link')).toHaveAccessibleName("What's new, 1 unread update");
+        });
+
+        it('leaves the link label alone when nothing is unseen', () => {
+            renderInLink(0);
+            expect(screen.getByRole('link')).toHaveAccessibleName('Qué hay de nuevo');
+        });
+
+        it('restores the original label when it unmounts', () => {
+            const { rerender } = renderInLink(2, 'pt');
+            expect(screen.getByRole('link')).toHaveAccessibleName(
+                'O que há de novo, 2 novidades não lidas'
+            );
+            mockUnseen(0);
+            rerender(
+                <a
+                    href="/es/mi-cuenta/novedades/"
+                    aria-label="Qué hay de nuevo"
+                >
+                    <WhatsNewCountPill
+                        locale="pt"
+                        labelsParentLink
+                    />
+                </a>
+            );
+            expect(screen.getByRole('link')).toHaveAccessibleName('Qué hay de nuevo');
+        });
+
+        it('does not touch the parent link without the prop (sidebar)', () => {
+            mockUnseen(3);
+            render(
+                <a
+                    href="/es/mi-cuenta/novedades/"
+                    aria-label="Qué hay de nuevo"
+                >
+                    <WhatsNewCountPill locale="es" />
+                </a>
+            );
+            expect(screen.getByRole('link')).toHaveAccessibleName('Qué hay de nuevo');
+        });
+    });
 });

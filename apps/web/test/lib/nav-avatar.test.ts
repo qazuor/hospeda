@@ -33,8 +33,8 @@ describe('getCuratedAccountNav', () => {
         });
         expect(adminItems.map((item) => [item.id, item.href])).toEqual([
             ['accommodations', 'mi-cuenta/host-dashboard'],
-            ['venues', 'mi-cuenta/comercio'],
-            ['experiences', 'mi-cuenta/comercio'],
+            ['venues', 'mi-cuenta/comercio?vertical=venue'],
+            ['experiences', 'mi-cuenta/comercio?vertical=experience'],
             ['editorial', 'mi-cuenta/publicaciones'],
             ['partner', 'mi-cuenta/partner'],
             ['provider', 'mi-cuenta/proveedor']

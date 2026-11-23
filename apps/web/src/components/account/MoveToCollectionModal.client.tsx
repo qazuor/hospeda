@@ -1,41 +1,30 @@
 /**
  * @file MoveToCollectionModal.client.tsx
- * @description React island modal for moving a bookmark into a collection (or removing it
- * from any collection). Renders a radio list of the user's existing collections plus a
- * "Sin colección" option and a "+ Crear nueva colección" trigger.
+ * @description Move a bookmark into a collection, or out of every collection,
+ * in the kit `Dialog` (HOS-2480).
  *
- * API wiring implemented in T-048b.
- *
- * Inline-create flow: when the user taps "+ Crear nueva colección" and saves the
- * sub-modal, the bookmark is moved into the freshly created collection in the
- * same gesture (see `handleCreateModalSaved`). The parent receives the new
- * collection via `onSaved` and is expected to refetch its collections list so
- * the next opening of the modal includes the new entry.
- *
- * Hydration: caller must use `client:load`.
+ * A radio list of the user's collections plus «Sin colección». «+ Crear nueva
+ * colección» is offered ONLY when the collections gate allows creating; when
+ * it does not, the dialog says why with the same sentence «Crear colección»
+ * shows (HOS-2414 AC-6). Creating from here moves the bookmark into the new
+ * collection in the same gesture.
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-    Dialog,
-    DialogBody,
-    DialogFooter,
-    DialogHeader
-} from '@/components/shared/ui/Dialog.client';
+import { Button, Dialog, Radio, RadioGroup } from '@/components/account/ui';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
-import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
 import { COLLECTION_CREATED_EVENT } from './collection-created-event';
-import styles from './MoveToCollectionModal.module.css';
+import {
+    type CollectionsGate,
+    canCreateCollection,
+    collectionsLockText
+} from './favorites/collections-gate';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-/**
- * A single collection item shown in the radio list.
- */
+/** One collection of the radio list. */
 export interface CollectionOption {
     readonly id: string;
     readonly name: string;
@@ -44,22 +33,15 @@ export interface CollectionOption {
     readonly bookmarkCount?: number;
 }
 
-/**
- * Props for the MoveToCollectionModal component.
- *
- * The modal is fully controlled: the parent manages `isOpen` and calls `onClose`
- * to dismiss it. Pass `currentCollectionId` to pre-select the matching radio option.
- */
+/** Props of {@link MoveToCollectionModal}. Fully controlled. */
 export interface MoveToCollectionModalProps {
-    /** Whether the modal is open. Controlled. */
+    /** Whether the dialog is open. */
     readonly isOpen: boolean;
-    /** Called when the user requests to close (Escape, click outside, X button, Cancel). */
+    /** Called when the user asks to close. */
     readonly onClose: () => void;
     /**
-     * Called after a successful save. Receives the new collection id
-     * (null means "uncollected") and the collection name (null when uncollected
-     * or when no matching collection is found in `collections`). The name lets
-     * the parent show a toast with the destination collection name.
+     * Called after a successful move with the new collection id (null =
+     * uncollected) and its name (null when uncollected or unknown).
      */
     readonly onSaved?: (params: {
         readonly newCollectionId: string | null;
@@ -69,36 +51,24 @@ export interface MoveToCollectionModalProps {
     readonly locale: SupportedLocale;
     /** The bookmark being moved. */
     readonly bookmarkId: string;
-    /**
-     * The current collection id of the bookmark — pre-selects this option.
-     * null (or undefined) means the bookmark is currently uncollected.
-     */
+    /** Its current collection; null means uncollected. */
     readonly currentCollectionId?: string | null;
-    /**
-     * The user's existing collections. Should be fetched by the parent before opening.
-     * Passed as readonly to enforce immutability at the call site.
-     */
+    /** The user's collections. */
     readonly collections: readonly CollectionOption[];
-    /**
-     * When true, the "+ Crear nueva colección" button is disabled and shows a
-     * tooltip-level hint. The 403 fallback in T-048b handles actual enforcement.
-     */
-    readonly isAtLimit?: boolean;
+    /** The collections gate: decides whether «+ Crear nueva colección» is offered. */
+    readonly gate: CollectionsGate;
+    /** Catalog names of the plans that carry collections (entitlement toast). */
+    readonly gatePlanNames?: readonly string[];
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-/** Value used to represent the "no collection" (uncollected) radio option. */
-const NO_COLLECTION_VALUE = '__none__' as const;
-
-/** Stable ID for the modal title element used by aria-labelledby. */
-const MODAL_TITLE_ID = 'move-to-collection-modal-title';
-
-// ─── Component ────────────────────────────────────────────────────────────────
+/** Radio value of «Sin colección». */
+const NO_COLLECTION_VALUE = '__none__';
 
 /**
- * Modal for moving a bookmark to one of the user's collections, or removing it
- * from any collection ("Sin colección").
+ * The move-to-collection dialog.
+ *
+ * @param props - See {@link MoveToCollectionModalProps}.
+ * @returns The kit Dialog and, when opened, the nested create dialog.
  */
 export function MoveToCollectionModal({
     isOpen,
@@ -108,90 +78,47 @@ export function MoveToCollectionModal({
     bookmarkId,
     currentCollectionId = null,
     collections,
-    isAtLimit = false
+    gate,
+    gatePlanNames
 }: MoveToCollectionModalProps) {
     const { t, tPlural } = createTranslations(locale);
+    const [selected, setSelected] = useState<string>(currentCollectionId ?? NO_COLLECTION_VALUE);
+    const [createOpen, setCreateOpen] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const canCreate = canCreateCollection({ gate });
+    const lockText = collectionsLockText({ gate, t });
 
-    // ── State ──────────────────────────────────────────────────────────────
-
-    /**
-     * The currently selected radio value.
-     * Initialised from currentCollectionId (null → NO_COLLECTION_VALUE).
-     */
-    const [selectedValue, setSelectedValue] = useState<string>(
-        currentCollectionId ?? NO_COLLECTION_VALUE
-    );
-
-    /** Controls whether the CreateEditCollectionModal sub-modal is open. */
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-    /** True while an API call is in-flight. Disables the Save button. */
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Sync selected value when modal opens or currentCollectionId changes
     useEffect(() => {
-        if (isOpen) {
-            setSelectedValue(currentCollectionId ?? NO_COLLECTION_VALUE);
-        }
+        if (isOpen) setSelected(currentCollectionId ?? NO_COLLECTION_VALUE);
     }, [isOpen, currentCollectionId]);
 
     const handleClose = useCallback(() => {
-        // Don't close while the sub-modal is open
-        if (isCreateModalOpen) return;
+        if (createOpen) return;
         onClose();
-    }, [onClose, isCreateModalOpen]);
-
-    // ── Save handler ──────────────────────────────────────────────────────
+    }, [onClose, createOpen]);
 
     /**
-     * Persist the move from `currentCollectionId` to `targetCollectionId`.
-     * Handles the four transitions: no-op, add, remove, move. Returns true on
-     * success so callers can decide what to do next (toast, close, refresh).
-     *
-     * Extracted so both the "Save" button and the inline "create + auto-move"
-     * flow can share the API sequencing.
+     * Persists the move. Moving INTO a collection is one update that sets the
+     * target whatever the previous value, so a failure never leaves the
+     * bookmark uncollected; moving out removes it from its current one.
      */
-    const moveBookmarkTo = useCallback(
-        async (targetCollectionId: string | null): Promise<boolean> => {
-            if (targetCollectionId === currentCollectionId) {
-                return true;
-            }
-
-            // Moving INTO a collection (a fresh add, or a move A→B) is a SINGLE
-            // update that sets collectionId = target regardless of the previous
-            // value (see UserBookmarkCollectionService.addBookmarkToCollection).
-            // There is no separate remove step, so a move can never leave the
-            // bookmark uncollected on a partial failure — on error it stays in
-            // its current collection.
-            if (targetCollectionId !== null) {
-                const result = await userBookmarkCollectionsApi.addBookmark({
-                    collectionId: targetCollectionId,
-                    bookmarkId
-                });
-                if (!result.ok) {
-                    addToast({
-                        type: 'error',
-                        message: translateApiError({ error: result.error, t })
-                    });
-                    return false;
-                }
-                return true;
-            }
-
-            // targetCollectionId === null: remove from the current collection.
-            // (null→null already returned via the equality guard above.)
-            if (currentCollectionId === null) {
-                return true;
-            }
-            const result = await userBookmarkCollectionsApi.removeBookmark({
-                collectionId: currentCollectionId,
-                bookmarkId
-            });
-            if (!result.ok) {
-                addToast({
-                    type: 'error',
-                    message: translateApiError({ error: result.error, t })
-                });
+    const moveTo = useCallback(
+        async (target: string | null): Promise<boolean> => {
+            if (target === currentCollectionId) return true;
+            const result =
+                target === null
+                    ? currentCollectionId === null
+                        ? null
+                        : await userBookmarkCollectionsApi.removeBookmark({
+                              collectionId: currentCollectionId,
+                              bookmarkId
+                          })
+                    : await userBookmarkCollectionsApi.addBookmark({
+                          collectionId: target,
+                          bookmarkId
+                      });
+            if (result && !result.ok) {
+                addToast({ type: 'error', message: translateApiError({ error: result.error, t }) });
                 return false;
             }
             return true;
@@ -199,279 +126,132 @@ export function MoveToCollectionModal({
         [currentCollectionId, bookmarkId, t]
     );
 
-    const handleSave = useCallback(async (): Promise<void> => {
-        // Derive the selected collection id: __none__ maps to null
-        const newCollectionId = selectedValue === NO_COLLECTION_VALUE ? null : selectedValue;
-
-        // No-op: selection unchanged
-        if (newCollectionId === currentCollectionId) {
+    const handleSave = useCallback(async () => {
+        const target = selected === NO_COLLECTION_VALUE ? null : selected;
+        if (target === currentCollectionId) {
             onClose();
             return;
         }
-
-        setIsSubmitting(true);
-
+        setSubmitting(true);
         try {
-            const ok = await moveBookmarkTo(newCollectionId);
-            if (!ok) return;
-
-            const newCollectionName =
-                newCollectionId === null
-                    ? null
-                    : (collections.find((c) => c.id === newCollectionId)?.name ?? null);
-            onSaved?.({ newCollectionId, newCollectionName });
+            if (!(await moveTo(target))) return;
+            const name =
+                target === null ? null : (collections.find((c) => c.id === target)?.name ?? null);
+            onSaved?.({ newCollectionId: target, newCollectionName: name });
             onClose();
         } finally {
-            setIsSubmitting(false);
+            setSubmitting(false);
         }
-    }, [selectedValue, currentCollectionId, moveBookmarkTo, onSaved, onClose, collections]);
+    }, [selected, currentCollectionId, moveTo, onSaved, onClose, collections]);
 
-    // ESC, focus trap, scroll lock, click outside, focus management — all
-    // owned by the shared <Dialog> wrapper. Nothing to wire here.
-
-    function handleRadioChange(value: string): void {
-        setSelectedValue(value);
-    }
-
-    function handleNewCollectionClick(): void {
-        if (!isAtLimit) setIsCreateModalOpen(true);
-    }
-
-    function handleCreateModalClose(): void {
-        setIsCreateModalOpen(false);
-    }
-
-    /**
-     * Called after the inline "+ Crear nueva colección" sub-modal saves a new
-     * collection. We auto-complete the move flow into that collection so the
-     * user does not have to reopen the parent modal and re-select.
-     */
-    const handleCreateModalSaved = useCallback(
-        async (collection: { id: string; name: string }): Promise<void> => {
-            // Close the create sub-modal first so the user sees the move land.
-            setIsCreateModalOpen(false);
-            setSelectedValue(collection.id);
-
-            // The collection row exists in the DB the instant this callback
-            // fires, independent of whether the move below succeeds — so
-            // broadcast right away rather than after `moveBookmarkTo`
-            // resolves. Otherwise a failed move (network blip, the bookmark
-            // deleted concurrently) would silently swallow the create too:
-            // CollectionUsageMeter's counter and UserFavoritesList's "Mis
-            // colecciones" section would never learn the collection exists
-            // (HOS-999).
+    const handleCreated = useCallback(
+        async (collection: { id: string; name: string }) => {
+            setCreateOpen(false);
+            setSelected(collection.id);
+            // The collection exists whatever happens to the move below: tell the
+            // page now, so its list and gate learn about it (HOS-999).
             window.dispatchEvent(
                 new CustomEvent(COLLECTION_CREATED_EVENT, {
                     detail: { id: collection.id, name: collection.name }
                 })
             );
-
-            setIsSubmitting(true);
+            setSubmitting(true);
             try {
-                const ok = await moveBookmarkTo(collection.id);
-                if (!ok) return;
-
+                if (!(await moveTo(collection.id))) return;
                 onSaved?.({ newCollectionId: collection.id, newCollectionName: collection.name });
                 onClose();
             } finally {
-                setIsSubmitting(false);
+                setSubmitting(false);
             }
         },
-        [moveBookmarkTo, onSaved, onClose]
+        [moveTo, onSaved, onClose]
     );
 
-    // ── Derived labels ─────────────────────────────────────────────────────
-
-    const modalTitle = t('account.favorites.collections.move_to', 'Mover a colección');
-    const noCollectionLabel = t('account.favorites.collections.no_collection', 'Sin colección');
-    const newCollectionLabel = t(
-        'account.favorites.collections.new_collection',
-        '+ Crear nueva colección'
-    );
-    const cancelLabel = t('common.cancel', 'Cancelar');
-    const saveLabel = t('account.favorites.collections.move', 'Mover');
-
-    // ── JSX ────────────────────────────────────────────────────────────────
+    const unchanged = selected === (currentCollectionId ?? NO_COLLECTION_VALUE);
+    const title = t('account.favorites.collections.move_to');
 
     return (
         <>
             <Dialog
-                isOpen={isOpen}
-                onClose={handleClose}
-                size="md"
-                ariaLabelledBy={MODAL_TITLE_ID}
-                closeOnEscape={!isCreateModalOpen}
-                closeOnOverlayClick={!isCreateModalOpen}
-            >
-                <div data-testid="move-bookmark-modal">
-                    <DialogHeader
-                        titleId={MODAL_TITLE_ID}
-                        onClose={handleClose}
-                        closeLabel={t('common.auth.close', 'Cerrar')}
-                    >
-                        {modalTitle}
-                    </DialogHeader>
-
-                    <DialogBody>
-                        {/* Radio group — one option per collection + "Sin colección" */}
-                        <div
-                            className={styles.radioGroup}
-                            role="radiogroup"
-                            aria-label={modalTitle}
-                        >
-                            {/* "Sin colección" option — always first */}
-                            <label
-                                data-testid="move-bookmark-collection-option-uncollected"
-                                className={`${styles.radioRow}${selectedValue === NO_COLLECTION_VALUE ? ` ${styles.radioRowSelected}` : ''}`}
-                            >
-                                <span
-                                    className={styles.radioControl}
-                                    aria-hidden="true"
-                                >
-                                    <input
-                                        type="radio"
-                                        className={styles.radioInput}
-                                        name="collection-select"
-                                        value={NO_COLLECTION_VALUE}
-                                        checked={selectedValue === NO_COLLECTION_VALUE}
-                                        onChange={() => handleRadioChange(NO_COLLECTION_VALUE)}
-                                        aria-label={noCollectionLabel}
-                                    />
-                                    <span
-                                        className={styles.radioIndicator}
-                                        aria-hidden="true"
-                                    />
-                                </span>
-
-                                {/* Color swatch placeholder (no color for "none") */}
-                                <span
-                                    className={`${styles.colorDot} ${styles.colorDotNone}`}
-                                    aria-hidden="true"
-                                />
-
-                                <span className={styles.radioLabel}>{noCollectionLabel}</span>
-                            </label>
-
-                            {/* Existing collections */}
-                            {collections.map((collection) => {
-                                const isSelected = selectedValue === collection.id;
-                                return (
-                                    <label
-                                        key={collection.id}
-                                        data-testid={`move-bookmark-collection-option-${collection.id}`}
-                                        className={`${styles.radioRow}${isSelected ? ` ${styles.radioRowSelected}` : ''}`}
-                                    >
-                                        <span
-                                            className={styles.radioControl}
-                                            aria-hidden="true"
-                                        >
-                                            <input
-                                                type="radio"
-                                                className={styles.radioInput}
-                                                name="collection-select"
-                                                value={collection.id}
-                                                checked={isSelected}
-                                                onChange={() => handleRadioChange(collection.id)}
-                                                aria-label={collection.name}
-                                            />
-                                            <span
-                                                className={styles.radioIndicator}
-                                                aria-hidden="true"
-                                            />
-                                        </span>
-
-                                        {/* Color dot */}
-                                        {collection.color ? (
-                                            <span
-                                                className={styles.colorDot}
-                                                style={{ backgroundColor: collection.color }}
-                                                aria-hidden="true"
-                                            />
-                                        ) : (
-                                            <span
-                                                className={`${styles.colorDot} ${styles.colorDotNone}`}
-                                                aria-hidden="true"
-                                            />
-                                        )}
-
-                                        {/* Icon + name */}
-                                        <span className={styles.collectionInfo}>
-                                            <span className={styles.radioLabel}>
-                                                {collection.name}
-                                            </span>
-                                            {collection.bookmarkCount !== undefined && (
-                                                <span
-                                                    className={styles.countBadge}
-                                                    role="img"
-                                                    aria-label={tPlural(
-                                                        'account.favorites.collections.bookmark_count',
-                                                        collection.bookmarkCount
-                                                    )}
-                                                >
-                                                    {collection.bookmarkCount}
-                                                </span>
-                                            )}
-                                        </span>
-                                    </label>
-                                );
-                            })}
-                        </div>
-
-                        {/* ── "+ Crear nueva colección" ────────────────── */}
-                        <button
-                            type="button"
-                            className={styles.newCollectionBtn}
-                            onClick={handleNewCollectionClick}
-                            disabled={isAtLimit}
-                            aria-disabled={isAtLimit}
-                            title={
-                                isAtLimit
-                                    ? t(
-                                          'account.favorites.collections.limit_reached_short',
-                                          'Límite de colecciones alcanzado'
-                                      )
-                                    : undefined
-                            }
-                        >
-                            {newCollectionLabel}
-                        </button>
-                    </DialogBody>
-
-                    <DialogFooter>
-                        <button
-                            type="button"
-                            className={styles.cancelBtn}
+                open={isOpen}
+                onOpenChange={(next) => {
+                    if (!next) handleClose();
+                }}
+                title={title}
+                locale={locale}
+                dismissible={!createOpen}
+                footer={
+                    <>
+                        <Button
+                            variant="ghost"
                             onClick={handleClose}
                         >
-                            {cancelLabel}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.saveBtn}
-                            onClick={handleSave}
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
                             data-testid="move-bookmark-confirm"
-                            disabled={
-                                isSubmitting ||
-                                selectedValue === (currentCollectionId ?? NO_COLLECTION_VALUE)
-                            }
-                            aria-disabled={
-                                isSubmitting ||
-                                selectedValue === (currentCollectionId ?? NO_COLLECTION_VALUE)
-                            }
+                            onClick={() => {
+                                void handleSave();
+                            }}
+                            loading={submitting}
+                            disabled={unchanged}
                         >
-                            {saveLabel}
-                        </button>
-                    </DialogFooter>
+                            {t('account.favorites.collections.move')}
+                        </Button>
+                    </>
+                }
+            >
+                <div data-testid="move-bookmark-modal">
+                    <RadioGroup
+                        legend={t('account.favorites.collections.assignPrompt')}
+                        locale={locale}
+                        value={selected}
+                        onValueChange={setSelected}
+                    >
+                        <Radio
+                            value={NO_COLLECTION_VALUE}
+                            label={t('account.favorites.collections.no_collection')}
+                            data-testid="move-bookmark-collection-option-uncollected"
+                        />
+                        {collections.map((collection) => (
+                            <Radio
+                                key={collection.id}
+                                value={collection.id}
+                                label={collection.name}
+                                description={
+                                    collection.bookmarkCount === undefined
+                                        ? undefined
+                                        : tPlural(
+                                              'account.favorites.bookmarks.count',
+                                              collection.bookmarkCount,
+                                              { count: collection.bookmarkCount }
+                                          )
+                                }
+                                data-testid={`move-bookmark-collection-option-${collection.id}`}
+                            />
+                        ))}
+                    </RadioGroup>
+                    {canCreate ? (
+                        <Button
+                            variant="quiet"
+                            onClick={() => setCreateOpen(true)}
+                        >
+                            {t('account.favorites.collections.new_collection')}
+                        </Button>
+                    ) : (
+                        <p data-testid="move-bookmark-create-locked">{lockText}</p>
+                    )}
                 </div>
             </Dialog>
-
-            {/* ── Sub-modal: CreateEditCollectionModal ─────────────────── */}
             <CreateEditCollectionModal
-                isOpen={isCreateModalOpen}
-                onClose={handleCreateModalClose}
-                onSaved={handleCreateModalSaved}
+                isOpen={createOpen}
+                onClose={() => setCreateOpen(false)}
+                onSaved={(collection) => {
+                    void handleCreated(collection);
+                }}
                 locale={locale}
-                isAtLimit={isAtLimit}
+                lockedReason={lockText}
+                gatePlanNames={gatePlanNames}
             />
         </>
     );

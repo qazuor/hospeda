@@ -1,49 +1,40 @@
 /**
  * @file CreateEditCollectionModal.client.tsx
- * @description React island modal for creating or editing a user bookmark collection.
+ * @description Create or edit a bookmark collection in the kit `Dialog`
+ * (HOS-2480). Modes: CREATE (no `collection` prop) or EDIT (`collection`
+ * provided). API: POST/PATCH through `useCollectionMutation`.
  *
- * Modes: CREATE (no `collection` prop) or EDIT (`collection` provided).
- * API: POST/PATCH /api/v1/protected/user-bookmark-collections via useCollectionMutation.
- * T-047c will implement the color and icon picker UIs.
- *
- * Hydration: caller must use `client:load`.
+ * In CREATE mode a `lockedReason` (from the collections gate, the same one
+ * «Crear colección» and «Mover» read) shows as an Alert and blocks the submit:
+ * the API's 403 stays the real enforcement.
  */
 
 import { UserBookmarkCollectionCreateInputSchema } from '@repo/schemas';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Button, Dialog, Field, Textarea, TextInput } from '@/components/account/ui';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import styles from './CollectionForm.module.css';
 import { CollectionColorPicker, CollectionIconPicker } from './CollectionPickers';
-import styles from './CreateEditCollectionModal.module.css';
 import { useCollectionMutation } from './useCollectionMutation';
 
 /**
- * Client-validated form schema — the user-editable fields only. Derived from
- * `UserBookmarkCollectionCreateInputSchema` (not the `*UpdateInputSchema`,
- * which is `.partial()` and would make `name` optional) because the modal
- * ALWAYS submits `name` in both CREATE and EDIT mode; `userId` is omitted
- * since it's never a form field (resolved server-side from the session,
- * exactly like the API's own `CreateCollectionRequestSchema`).
+ * Client-validated form schema: the user-editable fields only. `userId` is
+ * resolved server-side from the session, so it is never a form field.
  */
 const CollectionFormSchema = UserBookmarkCollectionCreateInputSchema.omit({ userId: true });
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-/** Maximum characters for the collection name field */
+/** Maximum characters for the collection name field. */
 const NAME_MAX_LENGTH = 60;
 
-/** Maximum characters for the collection description field */
+/** Maximum characters for the collection description field. */
 const DESCRIPTION_MAX_LENGTH = 300;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+/** Form element id, so the footer submit button can live outside the form. */
+const FORM_ID = 'collection-form';
 
-/**
- * The minimal shape of an existing collection passed in EDIT mode.
- * All fields are readonly; optional fields may be null (as returned by the API).
- */
+/** The minimal shape of an existing collection passed in EDIT mode. */
 export interface CollectionForEdit {
     readonly id: string;
     readonly name: string;
@@ -52,60 +43,50 @@ export interface CollectionForEdit {
     readonly icon?: string | null;
 }
 
-/**
- * Props for the CreateEditCollectionModal component.
- *
- * The modal is fully controlled: the parent manages `isOpen` and calls `onClose`
- * to close it. Pass a `collection` to enter EDIT mode; omit it for CREATE mode.
- */
+/** Props of {@link CreateEditCollectionModal}. Fully controlled. */
 export interface CreateEditCollectionModalProps {
-    /** Whether the modal is open. Controlled. */
+    /** Whether the modal is open. */
     readonly isOpen: boolean;
-    /** Called when the user requests to close (Escape, click outside, X button). */
+    /** Called when the user asks to close (Escape, scrim, close button, Cancel). */
     readonly onClose: () => void;
-    /**
-     * Called after a successful save. Receives the created or updated collection.
-     * T-047b will wire this; the skeleton leaves it unused.
-     */
+    /** Called after a successful save with the created or updated collection. */
     readonly onSaved?: (collection: { id: string; name: string }) => void;
     /** Locale for i18n. */
     readonly locale: SupportedLocale;
-    /**
-     * When provided, the modal is in EDIT mode and pre-fills the form fields.
-     * When undefined, the modal is in CREATE mode.
-     */
+    /** EDIT mode when given; CREATE mode otherwise. */
     readonly collection?: CollectionForEdit;
     /**
-     * When true and the modal is in CREATE mode, a warning banner is shown
-     * inside the modal and the submit button is disabled.
-     * This provides better UX when the user hits the limit while the modal
-     * is open (race condition guard — the 403 API fallback handles the actual
-     * enforcement).
+     * Why creating is locked (from the collections gate), or null when it is
+     * not. Only read in CREATE mode.
      */
-    readonly isAtLimit?: boolean;
+    readonly lockedReason?: string | null;
     /** HOS-2544: catalog names of the plans that carry collections (entitlement toast). */
     readonly gatePlanNames?: readonly string[];
-    /**
-     * The plan-level maximum number of collections allowed.
-     * Used to render the limit-reached banner with the actual cap number.
-     * Only meaningful when `isAtLimit` is true.
-     */
-    readonly collectionMax?: number;
 }
 
-/** Internal form state for the modal */
+/** Internal form state. */
 interface ModalFormState {
-    name: string;
-    description: string;
-    color: string;
-    icon: string;
+    readonly name: string;
+    readonly description: string;
+    readonly color: string;
+    readonly icon: string;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+/** Initial form values for a collection (or an empty form). */
+function formFor(collection?: CollectionForEdit): ModalFormState {
+    return {
+        name: collection?.name ?? '',
+        description: collection?.description ?? '',
+        color: collection?.color ?? '',
+        icon: collection?.icon ?? ''
+    };
+}
 
 /**
  * Modal for creating or editing a bookmark collection.
- * CREATE mode: no `collection` prop. EDIT mode: pass an existing collection.
+ *
+ * @param props - See {@link CreateEditCollectionModalProps}.
+ * @returns The kit Dialog with the collection form.
  */
 export function CreateEditCollectionModal({
     isOpen,
@@ -113,48 +94,21 @@ export function CreateEditCollectionModal({
     onSaved,
     locale,
     collection,
-    isAtLimit = false,
-    gatePlanNames,
-    collectionMax
+    lockedReason = null,
+    gatePlanNames
 }: CreateEditCollectionModalProps) {
     const t = createT(locale);
     const isEditMode = Boolean(collection);
+    const createLocked = !isEditMode && lockedReason !== null;
 
-    /**
-     * In CREATE mode, if the user is at the plan limit, we show a banner and
-     * block submission. In EDIT mode the limit is irrelevant (editing an
-     * existing collection never creates a new one).
-     */
-    const showLimitBanner = !isEditMode && isAtLimit;
-
-    // ── Form state ────────────────────────────────────────────────────────
-
-    const [form, setForm] = useState<ModalFormState>(() => ({
-        name: collection?.name ?? '',
-        description: collection?.description ?? '',
-        color: collection?.color ?? '',
-        icon: collection?.icon ?? ''
-    }));
-
-    /**
-     * Inline error for the name field coming from the API's 409 NAME_TAKEN
-     * response (`useCollectionMutation`'s `setNameError` callback) — this is
-     * genuinely server-side (can't be known client-side) and stays a
-     * separate mechanism from `fieldErrors.name` below, which is CLIENT-side
-     * pre-submit validation. Both render under the same field; whichever is
-     * set wins (they are never both set at once — clearing one field clears
-     * the other on next change, see `handleNameChange`).
-     */
+    const [form, setForm] = useState<ModalFormState>(() => formFor(collection));
+    // Server-side 409 NAME_TAKEN; client-side errors live in `fieldErrors`.
     const [nameError, setNameError] = useState<string | null>(null);
-
-    // ── Client-side validation (HOS-190 slice 3) ──────────────────────────
 
     const { fieldErrors, validate, clearError } = useZodForm({
         schema: CollectionFormSchema,
         t
     });
-
-    // ── Mutation callbacks (stable reference via useMemo) ─────────────────
 
     const mutationCallbacks = useMemo(
         () => ({ onSaved, onClose, setNameError }),
@@ -168,55 +122,38 @@ export function CreateEditCollectionModal({
         gatePlanNames
     });
 
-    // ── Sync with collection prop in EDIT mode ────────────────────────────
-
     useEffect(() => {
         if (isOpen) {
-            setForm({
-                name: collection?.name ?? '',
-                description: collection?.description ?? '',
-                color: collection?.color ?? '',
-                icon: collection?.icon ?? ''
-            });
+            setForm(formFor(collection));
             setNameError(null);
         }
     }, [isOpen, collection]);
 
-    // ── Reset form on close ───────────────────────────────────────────────
-
     const handleClose = useCallback(() => {
-        // Prevent accidental close while a request is in flight
+        // Never close while a request is in flight.
         if (isSubmitting) return;
-        setForm({ name: '', description: '', color: '', icon: '' });
+        setForm(formFor());
         setNameError(null);
         onClose();
     }, [onClose, isSubmitting]);
 
-    // ESC, focus trap, scroll lock, focus management, click outside — all
-    // owned by the shared <Dialog> wrapper.
-
-    // ── Field change handlers ─────────────────────────────────────────────
-
-    function handleNameChange(event: React.ChangeEvent<HTMLInputElement>): void {
-        setForm((prev) => ({ ...prev, name: event.target.value }));
+    function handleNameChange(event: ChangeEvent<HTMLInputElement>): void {
+        const name = event.target.value;
+        setForm((prev) => ({ ...prev, name }));
         if (nameError) setNameError(null);
         clearError('name');
     }
 
-    function handleDescriptionChange(event: React.ChangeEvent<HTMLTextAreaElement>): void {
-        setForm((prev) => ({ ...prev, description: event.target.value }));
+    function handleDescriptionChange(event: ChangeEvent<HTMLTextAreaElement>): void {
+        const description = event.target.value;
+        setForm((prev) => ({ ...prev, description }));
         clearError('description');
     }
 
-    // ── Submit ────────────────────────────────────────────────────────────
-
-    function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
+    function handleSubmit(event: FormEvent<HTMLFormElement>): void {
         event.preventDefault();
-
-        // Client-side validation against the same schema the API validates
-        // create/update bodies with (name required 1-60 chars, description
-        // max 300, color/icon hex/key format when set — though color/icon
-        // only ever come from the fixed picker options, never free text).
+        if (createLocked) return;
+        // Same schema the API validates create/update bodies with.
         const parsed = validate({
             name: form.name.trim(),
             description: form.description.trim() || null,
@@ -224,235 +161,117 @@ export function CreateEditCollectionModal({
             icon: form.icon.trim() || null
         });
         if (!parsed.success) return;
-
-        // Delegate to mutation hook (async, non-blocking for the handler).
-        // useCollectionMutation does its own trimming + null-conversion for
-        // color/icon, so the original (untrimmed) form state is passed —
-        // parsed.data is only used as the client-side validation gate.
+        // The hook trims and null-converts itself; `parsed` is only the gate.
         void submit(form);
     }
 
-    // ── Computed values ───────────────────────────────────────────────────
-
-    /**
-     * Combined name-field error: the API's 409 NAME_TAKEN error (server-side,
-     * can only be known after a submit attempt) takes precedence when both
-     * happen to be set, otherwise falls back to the client-side Zod error.
-     */
     const nameFieldError = nameError ?? fieldErrors.name;
-
-    const modalTitle = isEditMode
-        ? t('account.favorites.collections.edit', 'Editar colección')
-        : t('account.favorites.collections.create', 'Crear colección');
-
-    const submitLabel = isEditMode ? t('common.form.save') : t('common.form.create');
-
-    const cancelLabel = t('common.form.cancel');
-
-    const MODAL_TITLE_ID = 'create-edit-collection-modal-title';
-
-    // ── JSX ───────────────────────────────────────────────────────────────
+    const title = isEditMode
+        ? t('account.favorites.collections.edit')
+        : t('account.favorites.collections.create');
 
     return (
         <Dialog
-            isOpen={isOpen}
-            onClose={handleClose}
-            size="md"
-            ariaLabelledBy={MODAL_TITLE_ID}
-            closeOnEscape={!isSubmitting}
-            closeOnOverlayClick={!isSubmitting}
-        >
-            <DialogHeader
-                titleId={MODAL_TITLE_ID}
-                onClose={handleClose}
-                closeLabel={t('common.modal.close')}
-            >
-                {modalTitle}
-            </DialogHeader>
-
-            <DialogBody>
-                {/* ── Limit banner (CREATE mode only, when plan cap reached) ── */}
-                {showLimitBanner && (
-                    <div
-                        className={styles.limitBanner}
-                        role="alert"
-                        aria-live="assertive"
+            open={isOpen}
+            onOpenChange={(next) => {
+                if (!next) handleClose();
+            }}
+            title={title}
+            locale={locale}
+            dismissible={!isSubmitting}
+            footer={
+                <>
+                    <Button
+                        variant="ghost"
+                        onClick={handleClose}
                     >
-                        {t(
-                            'account.favorites.collections.limit_reached',
-                            'Ya alcanzaste el máximo de {{max}} colecciones',
-                            { max: collectionMax ?? 0 }
-                        )}
-                    </div>
-                )}
-
-                {/* ── Form ────────────────────────────────────────────── */}
-                <form
-                    className={styles.form}
-                    onSubmit={handleSubmit}
-                    noValidate
+                        {t('common.form.cancel')}
+                    </Button>
+                    <Button
+                        type="submit"
+                        form={FORM_ID}
+                        loading={isSubmitting}
+                        disabled={form.name.trim().length === 0 || createLocked}
+                    >
+                        {isEditMode ? t('common.form.save') : t('common.form.create')}
+                    </Button>
+                </>
+            }
+        >
+            {createLocked ? (
+                <Alert
+                    tone="warning"
+                    locale={locale}
                 >
-                    {/* Name field (required) */}
-                    <div className={styles.field}>
-                        <div className={styles.labelRow}>
-                            <label
-                                className={styles.label}
-                                htmlFor="collection-name"
-                            >
-                                {t('account.favorites.collections.fields.name')}
-                                <span
-                                    className={styles.required}
-                                    aria-hidden="true"
-                                >
-                                    {' '}
-                                    *
-                                </span>
-                            </label>
-                            <span
-                                className={styles.counter}
-                                role="status"
-                                aria-live="polite"
-                                aria-label={t('common.form.charCounter', undefined, {
-                                    current: form.name.length,
-                                    max: NAME_MAX_LENGTH
-                                })}
-                            >
-                                {form.name.length}/{NAME_MAX_LENGTH}
-                            </span>
-                        </div>
-                        <input
-                            id="collection-name"
-                            type="text"
-                            className={`${styles.input}${nameFieldError ? ` ${styles.inputError}` : ''}`}
-                            value={form.name}
-                            onChange={handleNameChange}
-                            maxLength={NAME_MAX_LENGTH}
-                            aria-required="true"
-                            aria-invalid={!!nameFieldError}
-                            aria-describedby={nameFieldError ? fieldErrorId('name') : undefined}
-                            autoComplete="off"
-                        />
-                        <FieldError
-                            id={fieldErrorId('name')}
-                            message={nameFieldError}
-                        />
-                    </div>
-
-                    {/* Description field (optional) */}
-                    <div className={styles.field}>
-                        <div className={styles.labelRow}>
-                            <label
-                                className={styles.label}
-                                htmlFor="collection-description"
-                            >
-                                {t('account.favorites.collections.fields.description')}
-                            </label>
-                            <span
-                                className={styles.counter}
-                                role="status"
-                                aria-live="polite"
-                                aria-label={t(
-                                    'common.form.charCounter',
-                                    '{{current}} de {{max}} caracteres',
-                                    {
-                                        current: form.description.length,
-                                        max: DESCRIPTION_MAX_LENGTH
-                                    }
-                                )}
-                            >
-                                {form.description.length}/{DESCRIPTION_MAX_LENGTH}
-                            </span>
-                        </div>
-                        <textarea
-                            id="collection-description"
-                            className={styles.textarea}
-                            value={form.description}
-                            onChange={handleDescriptionChange}
-                            maxLength={DESCRIPTION_MAX_LENGTH}
-                            rows={3}
-                            aria-invalid={!!fieldErrors.description}
-                            aria-describedby={
-                                fieldErrors.description
-                                    ? fieldErrorId('description')
-                                    : 'collection-description-hint'
-                            }
-                        />
-                        <p
-                            id="collection-description-hint"
-                            className={styles.hint}
-                        >
-                            {t('account.favorites.collections.fields.descriptionHint')}
-                        </p>
-                        <FieldError
-                            id={fieldErrorId('description')}
-                            message={fieldErrors.description}
-                        />
-                    </div>
-
-                    {/* Color picker */}
-                    <div className={styles.field}>
-                        <span
-                            id="color-picker-label"
-                            className={styles.label}
-                        >
-                            {t('account.favorites.collections.fields.color')}
-                        </span>
-                        <CollectionColorPicker
-                            value={form.color}
-                            onChange={(color) => setForm((prev) => ({ ...prev, color }))}
-                            locale={locale}
-                            labelId="color-picker-label"
-                        />
-                    </div>
-
-                    {/* Icon picker */}
-                    <div className={styles.field}>
-                        <span
-                            id="icon-picker-label"
-                            className={styles.label}
-                        >
-                            {t('account.favorites.collections.fields.icon')}
-                        </span>
-                        <CollectionIconPicker
-                            value={form.icon}
-                            onChange={(icon) => setForm((prev) => ({ ...prev, icon }))}
-                            locale={locale}
-                            labelId="icon-picker-label"
-                        />
-                    </div>
-
-                    {/* ── Action buttons ───────────────────────────────── */}
-                    <div className={styles.actions}>
-                        <button
-                            type="button"
-                            className={styles.cancelBtn}
-                            onClick={handleClose}
-                        >
-                            {cancelLabel}
-                        </button>
-                        <button
-                            type="submit"
-                            className={styles.submitBtn}
-                            disabled={
-                                form.name.trim().length === 0 || isSubmitting || showLimitBanner
-                            }
-                            aria-busy={isSubmitting}
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <span
-                                        className={styles.spinner}
-                                        aria-hidden="true"
-                                    />
-                                    {submitLabel}
-                                </>
-                            ) : (
-                                submitLabel
-                            )}
-                        </button>
-                    </div>
-                </form>
-            </DialogBody>
+                    {lockedReason}
+                </Alert>
+            ) : null}
+            <form
+                id={FORM_ID}
+                className={styles.form}
+                onSubmit={handleSubmit}
+                noValidate
+            >
+                <Field
+                    id="collection-name"
+                    label={t('account.favorites.collections.fields.name')}
+                    locale={locale}
+                    error={nameFieldError}
+                    required
+                >
+                    <TextInput
+                        type="text"
+                        value={form.name}
+                        onChange={handleNameChange}
+                        maxLength={NAME_MAX_LENGTH}
+                        autoComplete="off"
+                    />
+                </Field>
+                <Field
+                    id="collection-description"
+                    label={t('account.favorites.collections.fields.description')}
+                    locale={locale}
+                    hint={t('account.favorites.collections.fields.descriptionHint')}
+                    error={fieldErrors.description}
+                    optional
+                >
+                    <Textarea
+                        value={form.description}
+                        onChange={handleDescriptionChange}
+                        limit={DESCRIPTION_MAX_LENGTH}
+                        locale={locale}
+                        rows={3}
+                    />
+                </Field>
+                <div>
+                    <span
+                        id="color-picker-label"
+                        className={styles.pickerLabel}
+                    >
+                        {t('account.favorites.collections.fields.color')}
+                    </span>
+                    <CollectionColorPicker
+                        value={form.color}
+                        onChange={(color) => setForm((prev) => ({ ...prev, color }))}
+                        locale={locale}
+                        labelId="color-picker-label"
+                    />
+                </div>
+                <div>
+                    <span
+                        id="icon-picker-label"
+                        className={styles.pickerLabel}
+                    >
+                        {t('account.favorites.collections.fields.icon')}
+                    </span>
+                    <CollectionIconPicker
+                        value={form.icon}
+                        onChange={(icon) => setForm((prev) => ({ ...prev, icon }))}
+                        locale={locale}
+                        labelId="icon-picker-label"
+                    />
+                </div>
+            </form>
         </Dialog>
     );
 }

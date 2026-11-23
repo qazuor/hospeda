@@ -28,8 +28,6 @@ export interface SidebarItemView {
     readonly href: string;
     /** True for the current page. */
     readonly active: boolean;
-    /** True when the entry renders `hidden` until an island reveals it. */
-    readonly hidden: boolean;
     /** `data-tour` target of the welcome tour, if any. */
     readonly tourTarget?: string;
 }
@@ -91,8 +89,7 @@ export function buildSidebarView({
                       id: DASHBOARD_NAV_ITEM_ID,
                       label: t('account.ui.sidebar.backToAccount'),
                       href: buildUrl({ locale, path: 'mi-cuenta' }),
-                      active: false,
-                      hidden: false
+                      active: false
                   }
                 : null,
         groups: shell.groups.map((entry) => ({
@@ -106,7 +103,6 @@ export function buildSidebarView({
                 label: t(item.item.i18nKey),
                 href: buildUrl({ locale, path: item.item.href }),
                 active: item.active,
-                hidden: item.hiddenUntilRevealed,
                 tourTarget: item.item.tourTarget
             }))
         })),
@@ -115,8 +111,7 @@ export function buildSidebarView({
             id: door.door.id,
             label: t(door.labelKey),
             href: buildUrl({ locale, path: door.door.href }),
-            active: door.active,
-            hidden: false
+            active: door.active
         })),
         activeLabel: t(model.activeLabelKey)
     };

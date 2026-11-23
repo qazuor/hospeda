@@ -1,30 +1,47 @@
 ---
 /**
  * @file AccountHeader.astro
- * @description The compact 56px header of the account chrome (HOS-2413 T-018,
- * D1 «marco compacto»). Rendered by `BaseLayout chrome="account"`.
+ * @description The header of the account chrome (HOS-2413 T-018, resized by
+ * HOS-2550). Rendered by `BaseLayout chrome="account"`.
  *
- * It COMPOSES the islands the site header already owns (logo, «Publicar»,
- * user menu, the site menu behind the hamburger) instead of copying them, so
- * `Header.astro` stays untouched. The user keeps the way back to the public
- * site through the site menu (D3).
+ * The owner's «punto intermedio» (2026-11-22) between the 56px compact header
+ * and the 82px marketing one: 64px tall, a 36px logo, and
  *
- * Open decision (recorded in the PR): the catalog's CURATED site-menu entries
- * are not specified in the spec, so this first version feeds the menu the same
- * entries the site header does.
+ * - from 80rem (1280px), the compact site nav (Alojamientos, Destinos, Comer y
+ *   salir, Experiencias; Eventos is deliberately not inline);
+ * - below 80rem, the hamburger, which opens the site menu with every entry
+ *   (Eventos, Blog and Contacto included). From 80rem it is not shown;
+ * - «Qué hay de nuevo» as an icon with the unseen-count badge, and «Ayuda» as
+ *   a «?» icon to the help center (HOS-2546: the page's own article is the «?»
+ *   next to its title, in `AccountPageHeader`). Both icons show at every width,
+ *   so they stay reachable on a phone now that the sidebar no longer lists them.
+ *
+ * The hamburger carries `data-account-mobile-toggle`, NOT the site header's
+ * `data-mobile-toggle`: this file wires its own click (the site header's
+ * listener only exists on pages that render `Header.astro`, which is why the
+ * button did nothing here), and a distinct attribute keeps the two listeners
+ * from both toggling the same click after a ClientRouter navigation.
+ *
+ * It COMPOSES the islands the site header owns (logo, «Publicar», user menu,
+ * the site menu) instead of copying them, so `Header.astro` stays untouched.
+ * Session-blind: the badge count is fetched by its island in the browser.
  */
 
 import { getImage, Image } from 'astro:assets';
-import { HamburgerIcon } from '@repo/icons';
+import { FaqsIcon, HamburgerIcon, SparkleIcon } from '@repo/icons';
 import MobileMenuIsland from '@/components/shared/navigation/MobileMenuIsland.astro';
 import { PublishMenu } from '@/components/shared/navigation/PublishMenu.client';
 import { UserMenu } from '@/components/shared/navigation/UserMenu.client';
+import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
 import IconButton from '@/components/shared/ui/IconButton.astro';
+import {
+	buildAccountHeaderActions,
+	buildAccountHeaderSiteNav,
+} from '@/components/account/ui/account-chrome';
 import { getAdminUrl } from '@/lib/env';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { buildVenueCollectionNavItems } from '@/lib/venue/business-line-collection';
 import logoSrc from '@/assets/images/logo.webp';
 
 interface Props {
@@ -41,21 +58,10 @@ try {
 	// Fall back to the unprocessed asset path
 }
 
-const menuNavItems = [
-	{ label: t('nav.accommodations'), href: buildUrl({ locale, path: '/alojamientos/' }) },
-	{ label: t('nav.destinations'), href: buildUrl({ locale, path: '/destinos/' }) },
-	{ label: t('nav.events'), href: buildUrl({ locale, path: '/eventos/' }) },
-	{
-		label: t('nav.venue'),
-		href: buildUrl({ locale, path: '/comer-y-salir/' }),
-		children: buildVenueCollectionNavItems({ locale, t }),
-	},
-	{ label: t('nav.experiences'), href: buildUrl({ locale, path: '/experiencias/' }) },
-	{ label: t('nav.blog'), href: buildUrl({ locale, path: '/publicaciones/' }) },
-	{ label: t('nav.contact'), href: buildUrl({ locale, path: '/contacto/' }) },
-];
-
 const currentPath = Astro.url.pathname;
+const siteNav = buildAccountHeaderSiteNav({ locale, t });
+const actions = buildAccountHeaderActions({ locale, currentPath });
+
 const serverUser = Astro.locals.user ?? null;
 const initialUser = serverUser
 	? {
@@ -83,12 +89,51 @@ const adminPanelUrl = getAdminUrl();
 			class="account-header__logo"
 			aria-label={t('nav.goHome', 'Hospeda - Go to home')}
 		>
-			<Image src={logoSrc} alt="" width={28} height={30} loading="eager" />
+			<Image src={logoSrc} alt="" width={34} height={36} loading="eager" />
 			<span class="account-header__name">Hospeda</span>
 		</a>
 
+		<nav class="account-header__nav" aria-label={t('account.ui.chrome.siteNav')}>
+			<ul class="account-header__nav-list">
+				{siteNav.inline.map((link) => (
+					<li>
+						<a class="account-header__nav-link" href={link.href} data-site-nav={link.id}>
+							{link.label}
+						</a>
+					</li>
+				))}
+			</ul>
+		</nav>
+
 		<div class="account-header__right">
 			<PublishMenu client:idle locale={locale} className="account-header__cta" />
+			<IconButton
+				as="a"
+				href={actions.whatsNew.href}
+				ariaLabel={t('account.ui.chrome.whatsNew')}
+				variant="ghost"
+				size="md"
+				class="account-header__icon"
+				data={{ 'account-header-action': 'whatsNew' }}
+				aria={actions.whatsNew.current ? { current: 'page' } : undefined}
+			>
+				<SparkleIcon size={20} aria-hidden="true" />
+				<span class="account-header__badge">
+					<WhatsNewCountPill locale={locale} labelsParentLink client:idle />
+				</span>
+			</IconButton>
+			<IconButton
+				as="a"
+				href={actions.help.href}
+				ariaLabel={t('account.ui.chrome.helpCenter')}
+				variant="ghost"
+				size="md"
+				class="account-header__icon"
+				data={{ 'account-header-action': 'help' }}
+				aria={actions.help.current ? { current: 'page' } : undefined}
+			>
+				<FaqsIcon size={22} aria-hidden="true" />
+			</IconButton>
 			<UserMenu
 				client:load
 				initialUser={initialUser}
@@ -101,7 +146,8 @@ const adminPanelUrl = getAdminUrl();
 				ariaLabel={t('nav.openMenu', 'Open navigation menu')}
 				variant="ghost"
 				size="md"
-				data={{ 'mobile-toggle': '' }}
+				class="account-header__hamburger"
+				data={{ 'account-mobile-toggle': '' }}
 				aria={{ expanded: false }}
 			>
 				<HamburgerIcon size={24} aria-hidden="true" />
@@ -112,7 +158,7 @@ const adminPanelUrl = getAdminUrl();
 
 <MobileMenuIsland
 	locale={locale}
-	navItems={menuNavItems}
+	navItems={siteNav.menu}
 	currentPath={currentPath}
 	logoSrc={menuLogoSrc}
 	homeHref={buildUrl({ locale, path: '/' })}
@@ -120,6 +166,12 @@ const adminPanelUrl = getAdminUrl();
 	initialRoles={serverUser?.roles ?? []}
 	adminPanelUrl={adminPanelUrl}
 />
+
+<script>
+	import { wireAccountMenuToggle } from '@/lib/account-menu-toggle';
+
+	wireAccountMenuToggle({ doc: document });
+</script>
 
 <style>
 	.account-header {
@@ -134,9 +186,8 @@ const adminPanelUrl = getAdminUrl();
 	.account-header__inner {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-3);
-		block-size: 3.5rem;
+		block-size: 4rem;
 		padding-inline: var(--space-4);
 		max-inline-size: 90rem;
 		margin-inline: auto;
@@ -150,7 +201,8 @@ const adminPanelUrl = getAdminUrl();
 		border-radius: var(--radius-control);
 	}
 
-	.account-header__logo:focus-visible {
+	.account-header__logo:focus-visible,
+	.account-header__nav-link:focus-visible {
 		outline: 2px solid var(--focus-ring);
 		outline-offset: 2px;
 	}
@@ -160,13 +212,61 @@ const adminPanelUrl = getAdminUrl();
 		color: var(--brand-secondary-foreground);
 	}
 
+	/* The inline site nav exists from 80rem only; below it the hamburger holds it. */
+	.account-header__nav {
+		display: none;
+	}
+
+	.account-header__nav-list {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.account-header__nav-link {
+		display: inline-flex;
+		align-items: center;
+		min-block-size: var(--control-h-md);
+		padding-inline: var(--space-3);
+		border-radius: var(--radius-control);
+		font: var(--app-ui);
+		color: var(--core-foreground);
+		text-decoration: none;
+	}
+
+	.account-header__nav-link:hover {
+		color: var(--brand-primary);
+	}
+
 	.account-header__right {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+		margin-inline-start: auto;
 	}
 
-	/* The «Publicar» CTA needs room: from 48rem it shows next to the avatar. */
+	.account-header__right :global(.account-header__icon) {
+		position: relative;
+		color: var(--core-foreground);
+	}
+
+	.account-header__right :global(.account-header__icon[aria-current='page']) {
+		color: var(--brand-primary);
+	}
+
+	/* The unseen-count pill sits on the icon's top-end corner. */
+	.account-header__badge {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-end: 0;
+		line-height: 1;
+		pointer-events: none;
+	}
+
+	/* The «Publicar» CTA needs room: from 48rem it shows next to the icons. */
 	.account-header__right :global(.account-header__cta) {
 		display: none;
 	}
@@ -174,6 +274,17 @@ const adminPanelUrl = getAdminUrl();
 	@media (min-width: 48rem) {
 		.account-header__right :global(.account-header__cta) {
 			display: inline-flex;
+		}
+	}
+
+	@media (min-width: 80rem) {
+		.account-header__nav {
+			display: block;
+			margin-inline-start: var(--space-6);
+		}
+
+		.account-header__right :global(.account-header__hamburger) {
+			display: none;
 		}
 	}
 </style>

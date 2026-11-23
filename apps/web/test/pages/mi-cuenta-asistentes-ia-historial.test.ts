@@ -51,11 +51,26 @@ function lookUp(locale: (typeof LOCALES)[number], key: string): unknown {
 describe('assistant history page (AC-C48)', () => {
     const page = code(PAGE);
 
-    it('reads no session on the server', () => {
-        expect(page).not.toMatch(/Astro\.locals\.user/);
-        expect(page).not.toMatch(/const\s*\{[^}]*\buser\b[^}]*\}\s*=\s*Astro\.locals/);
+    it('reads the session only for the HOS-2562 gate, and calls no protected API', () => {
+        expect(page).toMatch(/const user = Astro\.locals\.user;/);
+        expect(page.match(/Astro\.locals\.user/g)).toHaveLength(1);
+        expect(page).toMatch(/canUseAiAssistants\(\{ user \}\)/);
         expect(page).not.toMatch(/Astro\.request\.headers/);
         expect(page).not.toMatch(/endpoints-protected/);
+    });
+
+    it.each([
+        ['history', PAGE],
+        ['assistants', INDEX]
+    ])('the %s page answers the in-layout 404 to anybody but a real client (HOS-2562)', (_label, path) => {
+        const source = code(path);
+        expect(source).toMatch(
+            /if \(!canUseAiAssistants\(\{ user \}\)\) \{\s*return Astro\.rewrite\(buildAccountNotFoundTarget\(\{ locale \}\)\);/
+        );
+        // The gate runs before anything renders.
+        expect(source.indexOf('canUseAiAssistants({ user })')).toBeLessThan(
+            source.indexOf('<AccountLayout')
+        );
     });
 
     it('leaves the per-user list to the island, hydrated on load', () => {

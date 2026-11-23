@@ -19,6 +19,7 @@ import {
 } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
+import { ownerListPath } from '@/lib/listing/owner-list-vertical';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 
 /**
@@ -161,12 +162,12 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // to that page, and the repoint was mechanically correct. The
                 // result was a "Publicar" button that sold to you instead.
                 //
-                // `manageHref` below stays `mi-cuenta/comercio`: this href is
+                // `manageHref` below is the venue list (HOS-2559): this href is
                 // where you go to publish, that one is where you go once you do.
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.venue,
                 ctaI18nKey: 'account.doors.publish.options.venue.cta',
                 acquiredPermission: PermissionEnum.VENUE_EDIT_OWN,
-                manageHref: 'mi-cuenta/comercio'
+                manageHref: ownerListPath({ vertical: 'venue' })
             },
             {
                 id: 'experience',
@@ -178,7 +179,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.experience,
                 ctaI18nKey: 'account.doors.publish.options.experience.cta',
                 acquiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN,
-                manageHref: 'mi-cuenta/comercio'
+                manageHref: ownerListPath({ vertical: 'experience' })
             }
         ]
     },

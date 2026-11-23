@@ -7,6 +7,12 @@
  * @module lib/account-nav-section
  */
 
+import {
+    OWNER_LIST_VERTICALS,
+    ownerListPath,
+    ownerListSectionKey
+} from '@/lib/listing/owner-list-vertical';
+
 /**
  * `activeSection` (passed by every `/mi-cuenta/*` page) predates the nav
  * config's item `href`s and diverges from the URL path segment for the two
@@ -15,10 +21,20 @@
  * Kept as an explicit override (rather than renamed across every consuming
  * page) so the active-state highlight matches exactly what it did before
  * this was extracted (HOS-131 T-007).
+ *
+ * HOS-2559: the two owner lists share one path and differ by the `vertical`
+ * query, so each maps to its own key (`comercio-venue`, `comercio-experience`),
+ * which the list page and the editors of that vertical pass.
  */
 export const ACTIVE_SECTION_OVERRIDES: Readonly<Record<string, string>> = {
     'mi-cuenta/consultas': 'messages',
-    'mi-cuenta/consultas-propietario': 'owner-messages'
+    'mi-cuenta/consultas-propietario': 'owner-messages',
+    ...Object.fromEntries(
+        OWNER_LIST_VERTICALS.map((vertical) => [
+            ownerListPath({ vertical }),
+            ownerListSectionKey({ vertical })
+        ])
+    )
 };
 
 /**

@@ -1,15 +1,27 @@
 ---
 /**
  * @file mi-cuenta/consultas/[conversationId].astro
- * @description Authenticated guest conversation thread page.
+ * @description Authenticated guest conversation thread on the account kit
+ * (HOS-2481): a `PageHeader` with a labelled back link and the
+ * `ConversationPanel` island with `viewer="guest"` (kit `ConversationThread` +
+ * `Composer`, optimistic reply, no page reload).
+ *
+ * The thread is read here with the session cookie (the existing per-user read
+ * of this exempt account page). A 404 — a missing conversation or one that
+ * belongs to somebody else — rewrites to the in-layout not-found page, which
+ * keeps the 404 status inside the account shell (HOS-2434). Any other failure
+ * renders `ErrorState` with a retry inside the shell: a failed read is never
+ * presented as a missing conversation.
+ *
  * @route /{lang}/mi-cuenta/consultas/{conversationId}/
  * @rendering SSR (on-demand, auth-protected)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { ConversationReply } from '@/components/account/ConversationReply.client';
+import { PageHeader } from '@/components/account/ui';
+import { ConversationPanel } from '@/components/account/conversations/ConversationPanel.client';
+import { ConversationLoadError } from '@/components/account/conversations/ConversationLoadError.client';
 import ListingGoneNotice from '@/components/account/ListingGoneNotice.astro';
-import { resolveConversationBubbleSide } from '@/lib/conversation-bubble-side';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -42,336 +54,78 @@ const result = await protectedConversationsApi.getThread({
     cookieHeader
 });
 
-if (!result.ok) {
+// HOS-2434: only a real «not found» becomes the in-layout 404 page.
+if (!result.ok && result.error.status === 404) {
     return Astro.rewrite(buildAccountNotFoundTarget({ locale, back: 'messages' }));
 }
 
-const { conversation, messages, nextCursor, listingAvailability } = result.data;
+const inboxHref = buildUrl({ locale, path: 'mi-cuenta/consultas' });
+const back = { label: t('conversations.thread.backToInbox'), href: inboxHref };
+const thread = result.ok ? result.data : null;
 
-// Determine if reply is allowed: the conversation must be open AND its listing
-// must still admit new messages (HOS-1492, rows 28 and 35). Otherwise the
-// whole conversation stays visible, read-only, under `ListingGoneNotice`.
-const closedStatuses = ['CLOSED', 'BLOCKED'];
-const listingAdmitsMessages = listingAvailability === 'AVAILABLE';
-const canReply =
-    listingAdmitsMessages && !closedStatuses.includes(conversation.status.toUpperCase());
+let pageTitle = t('conversations.inbox.guestInboxTitle');
+let canReply = false;
+let listingAdmitsMessages = true;
+let readAt: string | undefined;
+let olderHref: string | undefined;
 
-// Determine if owner read receipt should be shown
-let showOwnerReadReceipt = false;
-if (conversation.lastReadAtByOwner) {
-    const lastGuestMsg = [...messages]
-        .reverse()
-        .find((m) => m.senderType?.toLowerCase() === 'guest');
-    if (lastGuestMsg) {
-        showOwnerReadReceipt =
-            new Date(conversation.lastReadAtByOwner) >= new Date(lastGuestMsg.createdAt);
+if (thread) {
+    const { conversation, messages, nextCursor, listingAvailability } = thread;
+    pageTitle = conversation.accommodationName ?? pageTitle;
+
+    // Reply only while the conversation is open AND its listing still admits
+    // messages (HOS-1492, rows 28 and 35). Otherwise the whole conversation
+    // stays visible, read-only, under `ListingGoneNotice`.
+    const closedStatuses = ['CLOSED', 'BLOCKED'];
+    listingAdmitsMessages = listingAvailability === 'AVAILABLE';
+    canReply = listingAdmitsMessages && !closedStatuses.includes(conversation.status.toUpperCase());
+
+    // Owner read receipt: shown when the owner read after the guest's last message.
+    const lastGuestMsg = [...messages].reverse().find((m) => m.senderType?.toLowerCase() === 'guest');
+    if (
+        conversation.lastReadAtByOwner &&
+        lastGuestMsg &&
+        new Date(conversation.lastReadAtByOwner) >= new Date(lastGuestMsg.createdAt)
+    ) {
+        readAt = conversation.lastReadAtByOwner;
     }
+
+    // The API already computes the cursor of the previous page (or null).
+    olderHref = nextCursor
+        ? `${buildUrl({ locale, path: `mi-cuenta/consultas/${conversationId}` })}?cursor=${encodeURIComponent(nextCursor)}`
+        : undefined;
 }
 
-function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleString(
-        locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',
-        { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
-    );
-}
-
-/** Up-to-two-letter initials for the thread avatar. */
-function getInitials(name: string): string {
-    const words = name.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return '?';
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-}
-
-const avatarSeed = conversation.accommodationName ?? conversation.ownerName ?? '?';
-
-const pageTitle = t('conversations.thread.title', undefined, {
-    senderName: conversation.ownerName
-});
-
-// Older messages link: the API already computes the cursor for the previous
-// page (oldest message's createdAt, or null when there are no older messages).
-const olderCursor = nextCursor;
+const subtitle = thread
+    ? t('conversations.thread.title', undefined, { senderName: thread.conversation.ownerName })
+    : undefined;
 ---
 
-<AccountLayout
-    locale={locale}
-    title={pageTitle}
-    description={pageTitle}
-    activeSection="messages"
->
-    <div class="conv-thread">
-        <a href={buildUrl({ locale, path: 'mi-cuenta/consultas' })} class="conv-thread__back">
-            <span aria-hidden="true">&larr;</span>
-            {t('conversations.thread.backToInbox', 'Volver a mis consultas')}
-        </a>
-        <div class="conv-thread__header">
-            <span class="conv-thread__avatar" aria-hidden="true">{getInitials(avatarSeed)}</span>
-            <div class="conv-thread__header-text">
-                <h1 class="conv-thread__title">
-                    {conversation.accommodationName ?? pageTitle}
-                </h1>
-                <span class="conv-thread__accommodation">{pageTitle}</span>
-            </div>
-        </div>
+<AccountLayout locale={locale} title={pageTitle} description={subtitle ?? pageTitle} activeSection="messages">
+    <PageHeader title={pageTitle} description={subtitle} locale={locale} back={back} />
 
-        <div data-conversation-thread style="display: contents">
-        {olderCursor && (
-            <div class="conv-thread__load-older">
-                <a
-                    href={buildUrl({ locale, path: `mi-cuenta/consultas/${conversationId}` }) +
-                        `?cursor=${encodeURIComponent(olderCursor)}`}
-                    class="conv-thread__older-link"
-                >
-                    {t('conversations.thread.older')}
-                </a>
-            </div>
-        )}
-
-        <ol class="conv-thread__messages" aria-label={pageTitle}>
-            {messages.map((msg) => (
-                <li
-                    class:list={[
-                        'conv-thread__message',
-                        `conv-thread__message--${resolveConversationBubbleSide({ senderType: msg.senderType, viewerRole: 'guest' })}`
-                    ]}
-                >
-                    <div class="conv-thread__bubble">
-                        <p class="conv-thread__body">{msg.body}</p>
-                        <time
-                            datetime={msg.createdAt}
-                            class="conv-thread__timestamp"
-                        >
-                            {formatDate(msg.createdAt)}
-                        </time>
-                    </div>
-                </li>
-            ))}
-        </ol>
-
-        {showOwnerReadReceipt && (
-            <p class="conv-thread__read-receipt">
-                {t('conversations.thread.readByOwner')}
-                {' '}
-                <time datetime={conversation.lastReadAtByOwner ?? ''}>
-                    {formatDate(conversation.lastReadAtByOwner ?? '')}
-                </time>
-            </p>
-        )}
-        </div>
-
-        {!listingAdmitsMessages ? (
-            <ListingGoneNotice locale={locale} availability={listingAvailability} />
-        ) : canReply ? (
-            <ConversationReply
-                client:visible
-                mode="auth"
-                conversationId={conversationId}
-                locale={locale}
-            />
-        ) : (
-            <p class="conv-thread__closed-notice">
-                {conversation.status === 'BLOCKED'
-                    ? t('conversations.errors.conversationBlocked')
-                    : t('conversations.status.closed')}
-            </p>
-        )}
-    </div>
+    {thread ? (
+        <ConversationPanel
+            client:load
+            locale={locale}
+            viewer="guest"
+            conversationId={conversationId}
+            initialMessages={thread.messages}
+            canReply={canReply}
+            olderHref={olderHref}
+            readAt={readAt}
+        >
+            {!listingAdmitsMessages ? (
+                <ListingGoneNotice locale={locale} availability={thread.listingAvailability} />
+            ) : canReply ? null : (
+                <p role="status">
+                    {thread.conversation.status.toUpperCase() === 'BLOCKED'
+                        ? t('conversations.errors.conversationBlocked')
+                        : t('conversations.status.closed')}
+                </p>
+            )}
+        </ConversationPanel>
+    ) : (
+        <ConversationLoadError client:load locale={locale} helpId="section:messages.thread" />
+    )}
 </AccountLayout>
-
-<style>
-    .conv-thread {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 16px);
-    }
-
-    .conv-thread__back {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-family: var(--font-sans);
-        font-size: 0.85rem;
-        color: var(--core-muted-foreground);
-        text-decoration: none;
-        align-self: flex-start;
-        transition: color var(--duration-fast, 0.2s) ease;
-    }
-
-    .conv-thread__back:hover {
-        color: var(--brand-primary);
-    }
-
-    .conv-thread__header {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3, 12px);
-        padding-bottom: var(--space-4, 16px);
-        border-bottom: 1px solid var(--border);
-    }
-
-    .conv-thread__avatar {
-        flex-shrink: 0;
-        width: 44px;
-        height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background-color: var(--brand-accent-a15);
-        color: var(--brand-accent);
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: 0.95rem;
-        text-transform: uppercase;
-    }
-
-    .conv-thread__header-text {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-    }
-
-    .conv-thread__title {
-        font-family: var(--font-heading);
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--core-foreground);
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .conv-thread__accommodation {
-        font-family: var(--font-sans);
-        font-size: 0.83rem;
-        color: var(--core-muted-foreground);
-    }
-
-    .conv-thread__load-older {
-        text-align: center;
-    }
-
-    .conv-thread__older-link {
-        display: inline-flex;
-        align-items: center;
-        font-family: var(--font-sans);
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: var(--brand-primary);
-        text-decoration: none;
-        padding: 6px 14px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-pill, 9999px);
-        background-color: var(--core-card);
-        transition: background-color var(--duration-fast, 0.2s) ease;
-    }
-
-    .conv-thread__older-link:hover {
-        background-color: var(--surface-warm);
-    }
-
-    .conv-thread__messages {
-        list-style: none;
-        padding: var(--space-4, 16px);
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3, 12px);
-        background-color: var(--surface-warm);
-        border-radius: var(--radius-card, 16px);
-    }
-
-    .conv-thread__message {
-        display: flex;
-    }
-
-    .conv-thread__message--mine {
-        justify-content: flex-end;
-    }
-
-    .conv-thread__message--theirs,
-    .conv-thread__message--system {
-        justify-content: flex-start;
-    }
-
-    .conv-thread__bubble {
-        max-width: 75%;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1, 4px);
-    }
-
-    .conv-thread__message--mine .conv-thread__bubble {
-        background-color: var(--brand-primary);
-        color: white;
-        border-radius: var(--radius-card);
-        border-bottom-right-radius: var(--radius-button);
-        padding: var(--space-3, 12px) var(--space-4, 16px);
-        box-shadow: var(--shadow-card);
-    }
-
-    .conv-thread__message--theirs .conv-thread__bubble {
-        background-color: var(--core-card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-card);
-        border-bottom-left-radius: var(--radius-button);
-        padding: var(--space-3, 12px) var(--space-4, 16px);
-        box-shadow: var(--shadow-card);
-    }
-
-    .conv-thread__message--system .conv-thread__bubble {
-        background-color: var(--muted);
-        border-radius: var(--radius-md);
-        padding: var(--space-2, 8px) var(--space-3, 12px);
-    }
-
-    .conv-thread__body {
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
-    }
-
-    .conv-thread__message--mine .conv-thread__body {
-        color: white;
-    }
-
-    .conv-thread__message--theirs .conv-thread__body,
-    .conv-thread__message--system .conv-thread__body {
-        color: var(--core-foreground);
-    }
-
-    .conv-thread__timestamp {
-        font-family: var(--font-sans);
-        font-size: 0.72rem;
-        color: var(--core-muted-foreground);
-        align-self: flex-end;
-    }
-
-    .conv-thread__message--mine .conv-thread__timestamp {
-        color: var(--white-a75);
-    }
-
-    .conv-thread__read-receipt {
-        font-family: var(--font-sans);
-        font-size: 0.78rem;
-        color: var(--core-muted-foreground);
-        text-align: right;
-        margin: 0;
-    }
-
-    .conv-thread__closed-notice {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--core-muted-foreground);
-        text-align: center;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-button, 8px);
-        padding: var(--space-3, 12px);
-        margin: 0;
-    }
-</style>

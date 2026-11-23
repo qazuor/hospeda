@@ -21,7 +21,6 @@ import type { IconProps } from '@repo/icons';
 import {
     AlertsIcon,
     AskToAiIcon,
-    BriefcaseIcon,
     BuildingIcon,
     ChatIcon,
     CompassIcon,
@@ -41,10 +40,16 @@ import {
     SparkleIcon,
     StarIcon,
     UserIcon,
+    VenueIcon,
     WrenchIcon
 } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
+import {
+    OWNER_LIST_LABEL_KEYS,
+    OWNER_LIST_VERTICAL_PERMISSION,
+    ownerListPath
+} from '@/lib/listing/owner-list-vertical';
 import { AI_ASSISTANTS_PATH } from '@/lib/routes';
 
 /**
@@ -98,7 +103,7 @@ export interface NavGroup {
     readonly requiredPermissions?: readonly PermissionEnum[];
     /**
      * When `true`, surfaces should render this group's single item without a
-     * group header (used for the `comercio` "cajón" group per spec §6.1).
+     * group header (a single-item "cajón" group, spec §6.1).
      */
     readonly suppressHeaderWhenSingle?: boolean;
     readonly items: readonly NavItem[];
@@ -114,6 +119,12 @@ export interface NavGroup {
  */
 /** Id of the AI assistants nav item, which the sidebar gates on the MCP feature. */
 export const AI_ASSISTANTS_NAV_ITEM_ID = 'aiAssistants';
+
+/** Id of the «Comer y salir» business area (HOS-2559). */
+export const VENUE_LISTINGS_GROUP_ID = 'comercio-venue';
+
+/** Id of the «Experiencias» business area (HOS-2559). */
+export const EXPERIENCE_LISTINGS_GROUP_ID = 'comercio-experience';
 
 /** Id of the `/mi-cuenta/` entry: the account home (HOS-2551). */
 export const DASHBOARD_NAV_ITEM_ID = 'dashboard';
@@ -257,19 +268,55 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
             }
         ]
     },
+    // HOS-2559: «Comer y salir» and «Experiencias» are two areas, each over
+    // its own list (`/mi-cuenta/comercio/?vertical=…`, see
+    // `lib/listing/owner-list-vertical.ts`). Each is gated by its own vertical
+    // permission, so a person with one of the two verticals sees only that one.
     {
-        id: 'comercio',
-        i18nKey: 'account.nav.groupListings',
-        requiredPermissions: [PermissionEnum.VENUE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_OWN],
-        suppressHeaderWhenSingle: true,
+        id: VENUE_LISTINGS_GROUP_ID,
+        i18nKey: 'account.nav.groupVenues',
+        requiredPermission: OWNER_LIST_VERTICAL_PERMISSION.venue,
         items: [
             {
-                id: 'comercio-listings',
-                i18nKey: 'listing.owner.nav',
-                href: 'mi-cuenta/comercio',
-                icon: BriefcaseIcon,
+                // HOS-2475: the venue owner dashboard, mirroring `hostDashboard`.
+                id: 'venueDashboard',
+                i18nKey: 'account.nav.venueDashboard',
+                href: 'mi-cuenta/tablero-locales',
+                icon: DashboardIcon,
+                requiredPermission: PermissionEnum.VENUE_EDIT_OWN,
+                surfaces: FULL_SURFACES
+            },
+            {
+                id: 'venue-listings',
+                i18nKey: OWNER_LIST_LABEL_KEYS.venue,
+                href: ownerListPath({ vertical: 'venue' }),
+                icon: VenueIcon,
                 surfaces: FULL_SURFACES,
-                tourTarget: 'comercio-listings'
+                tourTarget: 'comercio-listings-venue'
+            }
+        ]
+    },
+    {
+        id: EXPERIENCE_LISTINGS_GROUP_ID,
+        i18nKey: 'account.nav.groupExperiences',
+        requiredPermission: OWNER_LIST_VERTICAL_PERMISSION.experience,
+        items: [
+            {
+                // HOS-2476: the experience owner dashboard.
+                id: 'experienceDashboard',
+                i18nKey: 'account.nav.experienceDashboard',
+                href: 'mi-cuenta/tablero-experiencias',
+                icon: DashboardIcon,
+                requiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN,
+                surfaces: FULL_SURFACES
+            },
+            {
+                id: 'experience-listings',
+                i18nKey: OWNER_LIST_LABEL_KEYS.experience,
+                href: ownerListPath({ vertical: 'experience' }),
+                icon: CompassIcon,
+                surfaces: FULL_SURFACES,
+                tourTarget: 'comercio-listings-experience'
             }
         ]
     },
@@ -396,9 +443,9 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
  * `GET /host-trades/mine` fetch confirms ownership — the SAME signal
  * `mi-cuenta/aliados/index.astro` already uses to force-acquire the
  * `serviceProvider` discovery-door option (`resolveDoorOptionState`'s
- * `acquiredOptionIds` override in `src/lib/nav-gating.ts`). Shaped exactly
- * like the `comercio` group (`suppressHeaderWhenSingle`, single item) so it
- * reads as the same kind of "manage what you have" entry.
+ * `acquiredOptionIds` override in `src/lib/nav-gating.ts`). A single-item
+ * «cajón» group (`suppressHeaderWhenSingle`), the same kind of "manage what
+ * you have" entry as the partner group.
  */
 export const PROVIDER_NAV_GROUP: NavGroup = {
     id: 'proveedor',
