@@ -928,7 +928,14 @@
                 "message_other": "Las colecciones están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
                 "messageNoPlans": "Las colecciones no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
                 "cta": "Ver planes"
-            }
+            },
+            "lock": {
+                "plan": "Tu plan no incluye colecciones.",
+                "description": "Agrupá tus favoritos por viaje o por tema y volvé a ellos cuando quieras."
+            },
+            "loadError": "No pudimos cargar tus colecciones",
+            "emptyDescription": "Creá una colección para agrupar tus favoritos por viaje o por tema.",
+            "detailSectionTitle": "Favoritos de esta colección"
         },
         "filter": {
             "all": "Todos",
@@ -952,7 +959,9 @@
             "cancel": "Cancelar",
             "placeholder": "Agregá una nota personal...",
             "save": "Guardar nota",
-            "saved": "Nota guardada"
+            "saved": "Nota guardada",
+            "label": "Nota personal",
+            "edit": "Editar nota"
         },
         "removeBtn": "Quitar",
         "removeLabel": "Quitar de favoritos",
@@ -2090,6 +2099,9 @@
             "label": "Tu mensaje",
             "placeholder": "Escribí tu mensaje…",
             "send": "Enviar"
+        },
+        "entityCard": {
+            "noImage": "Sin imagen"
         }
     }
 }

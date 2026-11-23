@@ -1,5 +1,5 @@
 /**
- * Gallery group: data lists and conversations (HOS-2481).
+ * Gallery group: data lists, entity cards (HOS-2480) and conversations (HOS-2481).
  *
  * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
  *
@@ -12,6 +12,8 @@ import {
     ConversationThread,
     CountPill,
     DataList,
+    EntityCard,
+    EntityCardGrid,
     ListRow,
     MessageBubble,
     type ThreadMessage
@@ -133,6 +135,41 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                             delivery="sending"
                         />
                     </ol>
+                </Visual>
+                <Visual name="EntityCardGrid/cards">
+                    <EntityCardGrid label="Favoritos">
+                        <EntityCard
+                            locale={locale}
+                            title="Cabaña del río"
+                            href="#cabana"
+                            meta="Alojamiento"
+                            actions={
+                                <Button
+                                    variant="danger-ghost"
+                                    size="sm"
+                                >
+                                    Quitar
+                                </Button>
+                            }
+                        >
+                            <p>Para el finde largo de marzo.</p>
+                        </EntityCard>
+                        <EntityCard
+                            locale={locale}
+                            title="Verano en familia"
+                            href="#verano"
+                            media={<span>★</span>}
+                            meta="4 favoritos"
+                        />
+                    </EntityCardGrid>
+                </Visual>
+                <Visual name="EntityCard/no-image">
+                    <EntityCard
+                        as="div"
+                        locale={locale}
+                        title="Museo histórico"
+                        meta="Atracción"
+                    />
                 </Visual>
                 <Visual name="Composer/default">
                     <Composer

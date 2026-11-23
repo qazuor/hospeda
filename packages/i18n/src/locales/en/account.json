@@ -928,7 +928,14 @@
                 "message_other": "Collections are available on the {{plans}} plans. Upgrade your plan to access this feature.",
                 "messageNoPlans": "Collections are not included in your current plan. Upgrade your plan to access this feature.",
                 "cta": "View plans"
-            }
+            },
+            "lock": {
+                "plan": "Your plan does not include collections.",
+                "description": "Group your favorites by trip or theme and come back to them whenever you want."
+            },
+            "loadError": "We could not load your collections",
+            "emptyDescription": "Create a collection to group your favorites by trip or theme.",
+            "detailSectionTitle": "Favorites in this collection"
         },
         "filter": {
             "all": "All",
@@ -952,7 +959,9 @@
             "cancel": "Cancel",
             "placeholder": "Add a personal note...",
             "save": "Save note",
-            "saved": "Note saved"
+            "saved": "Note saved",
+            "label": "Personal note",
+            "edit": "Edit note"
         },
         "removeBtn": "Remove",
         "removeLabel": "Remove from favorites",
@@ -2090,6 +2099,9 @@
             "label": "Your message",
             "placeholder": "Write your message…",
             "send": "Send"
+        },
+        "entityCard": {
+            "noImage": "No image"
         }
     }
 }

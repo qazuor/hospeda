@@ -53,6 +53,13 @@ export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export {
+    EntityCard,
+    EntityCardGrid,
+    type EntityCardGridProps,
+    type EntityCardImage,
+    type EntityCardProps
+} from './EntityCard';
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
