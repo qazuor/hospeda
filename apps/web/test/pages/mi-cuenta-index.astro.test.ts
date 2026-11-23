@@ -43,6 +43,11 @@ describe('mi-cuenta/index.astro — wiring (HOS-2473)', () => {
         expect(page).not.toContain('getElementById');
     });
 
+    it('reads plan names from the catalog, never a hand-kept slug list', () => {
+        expect(page).toContain('readDashboardPlanNames');
+        expect(page).not.toContain('DASHBOARD_PLAN_SLUGS');
+    });
+
     it('keeps the What’s New / tour controller', () => {
         expect(page).toContain('<DashboardController');
     });

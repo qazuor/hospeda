@@ -22,8 +22,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { getPlanName } from '@/lib/billing-i18n';
-import { DASHBOARD_PLAN_SLUGS } from '@/lib/billing/dashboard-plan-stat';
+import { readDashboardPlanNames } from '@/lib/account/dashboard-plan-names';
 import { buildGeneralDashboardLinks } from '@/lib/account/general-dashboard';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { GeneralDashboardHeader } from '@/components/account/dashboard/GeneralDashboardHeader';
@@ -45,10 +44,9 @@ const t = createT(locale);
 const title = t('account.pages.dashboard.title');
 const description = t('account.pages.dashboard.description');
 
-// Translated plan names by catalog slug, handed to the island (the translator is server-side).
-const planNames = Object.fromEntries(
-    DASHBOARD_PLAN_SLUGS.map((slug) => [slug, getPlanName({ plan: { slug, name: slug, description: '' }, t })])
-);
+// Translated plan names by slug, read from the catalog (never a hand-kept list) and
+// handed to the island, since the catalog reader and the translator are server-side.
+const planNames = await readDashboardPlanNames({ t });
 
 const links = buildGeneralDashboardLinks({ roles: user.roles });
 ---
