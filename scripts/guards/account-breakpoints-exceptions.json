@@ -89,9 +89,6 @@
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
         "media": 1
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/consultas/index.astro": {
-        "media": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro": {
         "media": 2
     },

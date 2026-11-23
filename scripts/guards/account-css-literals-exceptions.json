@@ -554,16 +554,6 @@
         "font-size": 10,
         "radius": 4
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/consultas/[conversationId].astro": {
-        "color": 2,
-        "font-size": 9,
-        "radius": 3
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/consultas/index.astro": {
-        "color": 2,
-        "font-size": 8,
-        "radius": 3
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro": {
         "color": 1,
         "font-size": 6,

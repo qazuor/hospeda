@@ -118,7 +118,10 @@
             "title": "No pudimos cargar tus consultas",
             "body": "Hubo un problema al leer tu bandeja. Tus consultas siguen ahí: probá de nuevo en un momento.",
             "retry": "Reintentar"
-        }
+        },
+        "sectionTitle": "Conversaciones",
+        "guestListLabel": "Tus consultas",
+        "ownerListLabel": "Conversaciones con huéspedes"
     },
     "senderLabels": {
         "guest": "Huésped",
@@ -153,6 +156,16 @@
         "listingAvailability": {
             "gone": "Esta ficha ya no existe.",
             "notPublished": "Por ahora no podés mandar mensajes sobre esta ficha."
+        },
+        "sectionTitle": "Mensajes",
+        "backToOwnerInbox": "Volver a mensajes de huéspedes",
+        "loadError": {
+            "title": "No pudimos cargar la conversación",
+            "body": "Hubo un problema al leer los mensajes. Probá de nuevo en un momento."
         }
+    },
+    "ownerLocked": {
+        "feature": "Mensajes de huéspedes",
+        "description": "Esta bandeja recibe las consultas sobre los alojamientos que publicás. Se habilita cuando tu cuenta es de anfitrión."
     }
 }
