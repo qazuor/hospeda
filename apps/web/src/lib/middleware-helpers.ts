@@ -772,6 +772,29 @@ export function resolveUmamiOrigin({
 }
 
 /**
+ * Builds the `frame-ancestors` directive (HOS-2347).
+ *
+ * Prod lets nobody frame the page except the Umami origin, whose heatmap view
+ * embeds it; dev also allows `'self'` for Astro's ClientRouter iframe. With no
+ * source at all it is `'none'`, since `'none'` cannot be combined with one.
+ *
+ * @param params - Object with the dev flag and the Umami origin (or `null`)
+ * @returns The full `frame-ancestors ...` directive
+ */
+export function buildFrameAncestors({
+    isDev,
+    umamiOrigin
+}: {
+    readonly isDev: boolean;
+    readonly umamiOrigin: string | null;
+}): string {
+    const sources = [isDev ? "'self'" : null, umamiOrigin].filter(
+        (source): source is string => source !== null
+    );
+    return sources.length > 0 ? `frame-ancestors ${sources.join(' ')}` : "frame-ancestors 'none'";
+}
+
+/**
  * Builds a Content-Security-Policy header value using content-hash-based
  * script/style policy.
  *
@@ -1030,7 +1053,15 @@ export function buildCspHeader({
         // (verified in the browser — the CSP violation simply changes name).
         // Dev widens it to 'self', so only our own origin may frame us; prod
         // keeps 'none' and stays unembeddable by anyone, ourselves included.
-        isDev ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
+        //
+        // HOS-2347: the Umami origin, and only it, may also frame us. The Umami
+        // heatmap view renders the real page inside an iframe and draws the
+        // clicks over it; without this the browser refuses to render the page
+        // ("will not allow ... if another site has embedded it"). The origin is
+        // the one derived from `PUBLIC_UMAMI_SCRIPT_URL` (our own first-party
+        // subdomain); when unset the directive is unchanged. See
+        // `buildFrameAncestors`.
+        buildFrameAncestors({ isDev, umamiOrigin }),
         "media-src 'self'",
         'upgrade-insecure-requests',
         sentryReportUri ? `report-uri ${sentryReportUri}` : null
