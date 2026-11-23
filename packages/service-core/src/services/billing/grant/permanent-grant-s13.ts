@@ -26,6 +26,7 @@ import { ServiceError } from '../../../types';
 import type { CancelledAddon } from '../addon/addon-instance-a5.js';
 import { runOrphanhood } from '../addon/addon-instance-a5.js';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import {
     type CancelOurAuthorizationOutcome,
@@ -348,6 +349,48 @@ export async function cancelS13AtProvider(
         }
     }
     return { results };
+}
+
+/**
+ * Emits one `SUBSCRIPTION_CANCELLED` fact per principal the committed S13 act cancelled.
+ * A permanent grant takes over the paid vertical, so the path is `INHERITED_BY_PLAN`, and an
+ * admin signed the act, so the actor is `ADMIN`. Runs after commit; the sink never interrupts
+ * the transition.
+ *
+ * @param input.rows - The `S13Result.cancelled` rows of the committed act
+ * @param input.now - The instant of the act
+ * @param input.billingFacts - The sink that receives one fact per cancelled principal
+ */
+export function emitS13CancelledFacts(input: {
+    readonly rows: readonly S13Row[];
+    readonly now: Date;
+    readonly billingFacts: BillingFactSink;
+}): void {
+    for (const row of input.rows) {
+        const vertical = VerticalEnumSchema.safeParse(row.vertical);
+        if (!vertical.success) {
+            logger.error(
+                { subscriptionId: row.subscriptionId, vertical: row.vertical },
+                'S13 cancelled row has an invalid vertical'
+            );
+            continue;
+        }
+        emitBillingFact({
+            sink: input.billingFacts,
+            fact: {
+                kind: 'SUBSCRIPTION_CANCELLED',
+                userId: row.userId,
+                vertical: vertical.data,
+                subscriptionId: row.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'ADMIN',
+                cancelledBy: 'ADMIN',
+                path: 'INHERITED_BY_PLAN',
+                wasScheduled: row.origin === 'CANCEL_SCHEDULED',
+                occurredAt: input.now
+            }
+        });
+    }
 }
 
 /** Best-effort GRANT additions and moved subscription removals, after commit. */
