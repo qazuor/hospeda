@@ -220,6 +220,28 @@ describe('FavoritesView (HOS-2480)', () => {
             expect(screen.getByText('Lugar 2')).toBeInTheDocument();
         });
 
+        it('the tab counters drop after a removal and come back if it fails', async () => {
+            installFavoritesApi({ bookmarks: [bookmark(1), bookmark(2)] });
+            renderView();
+            const tab = async (name: RegExp) =>
+                within(screen.getByRole('tablist', { name: 'Filtrar por tipo' })).getByRole('tab', {
+                    name
+                });
+            await waitFor(async () => expect((await tab(/^Todos/)).textContent).toContain('2'));
+
+            fireEvent.click(
+                await screen.findByRole('button', { name: 'Quitar de favoritos: Lugar 1' })
+            );
+            fireEvent.click(
+                within(await screen.findByRole('alertdialog')).getByRole('button', {
+                    name: 'Quitar'
+                })
+            );
+
+            await waitFor(async () => expect((await tab(/^Todos/)).textContent).toContain('1'));
+            expect((await tab(/^Alojamientos/)).textContent).toContain('1');
+        });
+
         it('a note on a favorite warns that removing drops it (HOS-2429)', async () => {
             installFavoritesApi({ bookmarks: [bookmark(1, { description: 'Ir en marzo' })] });
             renderView();

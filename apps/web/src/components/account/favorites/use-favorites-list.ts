@@ -158,9 +158,26 @@ export function useFavoritesList({ base }: { readonly base: string }): UseFavori
 
     const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
+    // A bookmark leaving for good lowers its own tab and «Todos» by one. A
+    // count that could not be read stays absent. Moving into a collection does
+    // not call this: the counts include collected bookmarks.
+    const shiftCounts = useCallback(({ entityType, by }: { entityType: string; by: 1 | -1 }) => {
+        setCounts((prev) => {
+            const next = { ...prev };
+            for (const key of ['ALL', entityType] as const) {
+                const current = next[key as FavoritesTabKey];
+                if (current !== undefined) {
+                    next[key as FavoritesTabKey] = Math.max(0, current + by);
+                }
+            }
+            return next;
+        });
+    }, []);
+
     const remove = useCallback(
         async (bookmark: BookmarkItem) => {
             let originalIndex = -1;
+            shiftCounts({ entityType: bookmark.entityType, by: -1 });
             removedRef.current = true;
             setPageState((prev) => {
                 if (prev.status !== 'ready') return prev;
@@ -191,6 +208,7 @@ export function useFavoritesList({ base }: { readonly base: string }): UseFavori
                         data: { bookmarks: next, total: prev.data.total + 1 }
                     };
                 });
+                shiftCounts({ entityType: bookmark.entityType, by: 1 });
                 throw err;
             } finally {
                 setRemovingIds((prev) => {
@@ -200,7 +218,7 @@ export function useFavoritesList({ base }: { readonly base: string }): UseFavori
                 });
             }
         },
-        [base]
+        [base, shiftCounts]
     );
 
     const applyMove = useCallback(
