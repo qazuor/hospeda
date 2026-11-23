@@ -293,44 +293,49 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                     </ul>
                 </Visual>
                 <Visual name="MyContentList/ready">
-                    <MyContentList
-                        locale={locale}
-                        title="Mis eventos"
-                        description="Revisá el estado de tus eventos"
-                        createAction={<Button>Nuevo evento</Button>}
-                        sectionTitle="Tus eventos"
-                        helpId="section:content.events"
-                        listLabel="Mis eventos"
-                        state={{ status: 'ready' }}
-                        pagination={{ page: 1, pageCount: 3, onPageChange: noop }}
-                    >
-                        <ContentCard
+                    <div className={styles.stack}>
+                        <MyContentList
                             locale={locale}
-                            title="Fiesta del río"
-                        />
-                        <ContentCard
-                            locale={locale}
-                            title="Feria de artesanos"
-                        />
-                    </MyContentList>
+                            title="Mis eventos"
+                            description="Revisá el estado de tus eventos"
+                            createAction={<Button>Nuevo evento</Button>}
+                            sectionTitle="Tus eventos"
+                            helpId="section:content.events"
+                            listLabel="Mis eventos"
+                            state={{ status: 'ready' }}
+                            pagination={{ page: 1, pageCount: 3, onPageChange: noop }}
+                        >
+                            <ContentCard
+                                locale={locale}
+                                title="Fiesta del río"
+                            />
+                            <ContentCard
+                                locale={locale}
+                                title="Feria de artesanos"
+                            />
+                        </MyContentList>
+                    </div>
                 </Visual>
                 <Visual name="MyContentList/locked">
-                    <MyContentList
-                        locale={locale}
-                        title="Mis publicaciones"
-                        sectionTitle="Tus publicaciones"
-                        helpId="section:content.posts"
-                        listLabel="Mis publicaciones"
-                        state={{
-                            status: 'locked',
-                            reason: {
-                                kind: 'permission',
-                                feature: 'Escribir publicaciones es una función de los editores',
-                                description: 'Tu cuenta todavía no tiene permiso.',
-                                helpHref: '#editores'
-                            }
-                        }}
-                    />
+                    <div className={styles.stack}>
+                        <MyContentList
+                            locale={locale}
+                            title="Mis publicaciones"
+                            sectionTitle="Tus publicaciones"
+                            helpId="section:content.posts"
+                            listLabel="Mis publicaciones"
+                            state={{
+                                status: 'locked',
+                                reason: {
+                                    kind: 'permission',
+                                    feature:
+                                        'Escribir publicaciones es una función de los editores',
+                                    description: 'Tu cuenta todavía no tiene permiso.',
+                                    helpHref: '#editores'
+                                }
+                            }}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="Composer/default">
                     <div className={styles.stack}>

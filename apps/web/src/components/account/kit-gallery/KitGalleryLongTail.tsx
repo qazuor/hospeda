@@ -66,12 +66,14 @@ export function KitGalleryLongTail({ locale }: GalleryGroupProps) {
                     <ChipsDemo initial={null} />
                 </Visual>
                 <Visual name="CopyField/default">
-                    <CopyField
-                        label="Enlace del asistente"
-                        value="https://hospeda.com.ar/mcp/ejemplo"
-                        locale={locale}
-                        hint="Pegalo en la configuración de tu asistente."
-                    />
+                    <div className={styles.stack}>
+                        <CopyField
+                            label="Enlace del asistente"
+                            value="https://hospeda.com.ar/mcp/ejemplo"
+                            locale={locale}
+                            hint="Pegalo en la configuración de tu asistente."
+                        />
+                    </div>
                 </Visual>
             </div>
         </section>
