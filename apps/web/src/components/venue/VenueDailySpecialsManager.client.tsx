@@ -374,7 +374,10 @@ export function VenueDailySpecialsManager({
                         onMove={moveSpecial}
                         onRemove={removeSpecial}
                         onAdd={addSpecial}
-                        addLabel={t('venue.owner.editor.dailySpecials.add', 'Agregar plato del día')}
+                        addLabel={t(
+                            'venue.owner.editor.dailySpecials.add',
+                            'Agregar plato del día'
+                        )}
                         renderItem={(special, index) => (
                             <DailySpecialFields
                                 special={special}

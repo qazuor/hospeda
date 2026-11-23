@@ -83,7 +83,6 @@ beforeEach(() => {
     // place still turns a suite green through mock leakage.
 });
 
-
 /**
  * Saves through the editor save bar (HOS-2487). The bar only shows on a dirty
  * draft, so the title gets a trailing space first: the payload trims it, so

@@ -216,7 +216,7 @@ export function VenueMenuManager({
                     {isMenuGated ? (
                         <VenueMenuPlanNotice
                             id={planNoticeId}
-                            gate={menu.menuGate}
+                            gate={lockedGate}
                             locale={locale}
                             planName={upsellPlans?.menu}
                         />

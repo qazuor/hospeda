@@ -432,7 +432,10 @@ export function VenueEventsManager({
                         }}
                         onAdd={addEntry}
                         canAdd={!atMax}
-                        addLabel={t('venue.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
+                        addLabel={t(
+                            'venue.owner.editor.venueEventsManager.addEntry',
+                            'Agregar evento'
+                        )}
                         renderItem={(entryIndex) => {
                             const entry = entries[entryIndex];
                             return entry ? (
