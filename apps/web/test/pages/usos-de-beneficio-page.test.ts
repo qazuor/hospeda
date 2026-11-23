@@ -227,7 +227,8 @@ describe('usos-de-beneficio — the nav badge clears on resolve, not on view', (
     });
 
     it('states the count in the accessible label, not only as a glyph', () => {
-        expect(pillSrc).toContain('aria-label={label}');
+        // The kit CountPill requires the full-count label and exposes it as aria-label.
+        expect(pillSrc).toContain('label={label}');
 
         // The CLDR PAIR, not a base key: the label is pluralised through
         // `tPlural`, so `pendingCount` alone no longer resolves and asserting it

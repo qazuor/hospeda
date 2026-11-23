@@ -107,7 +107,8 @@
         "subtitle": "Confirme os usos que os fornecedores registram e consulte seu histórico.",
         "pending": {
             "title": "Aguardam sua confirmação",
-            "empty": "Você não tem usos pendentes de confirmação."
+            "empty": "Você não tem usos pendentes de confirmação.",
+            "countLabel": "Aguardando sua confirmação: {{count}}"
         },
         "history": {
             "title": "Histórico",

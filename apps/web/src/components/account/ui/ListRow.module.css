@@ -109,6 +109,10 @@
     white-space: nowrap;
 }
 
+.extra {
+    min-inline-size: 0;
+}
+
 .descriptionWrap {
     overflow: visible;
     text-overflow: clip;

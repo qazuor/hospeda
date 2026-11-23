@@ -40,6 +40,8 @@ export interface ListRowProps {
     readonly leading?: ReactNode;
     /** Secondary line under the title (e.g. the listing). */
     readonly meta?: ReactNode;
+    /** Block content under the description that is not text (a list of badges). */
+    readonly extra?: ReactNode;
     /** Longer text, clamped to one line (e.g. the last message). */
     readonly description?: ReactNode;
     /** Piece at the end (a date, a `CountPill`). */
@@ -70,6 +72,7 @@ export function ListRow({
     leading,
     meta,
     description,
+    extra,
     trailing,
     actions = [],
     emphasis = false,
@@ -110,6 +113,7 @@ export function ListRow({
                         {description}
                     </p>
                 )}
+                {extra !== undefined && <div className={styles.extra}>{extra}</div>}
             </div>
             {trailing !== undefined && <div className={styles.trailing}>{trailing}</div>}
             {actions.length > 0 && (

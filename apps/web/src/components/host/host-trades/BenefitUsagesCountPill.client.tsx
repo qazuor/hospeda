@@ -14,10 +14,10 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { CountPill } from '@/components/account/ui';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import styles from './BenefitUsagesPanel.module.css';
 
 /**
  * Announced on `window` when a usage is confirmed, rejected or un-rejected.
@@ -27,9 +27,6 @@ import styles from './BenefitUsagesPanel.module.css';
  * reload. Exported so both sides name the same string.
  */
 export const BENEFIT_USAGES_UPDATED_EVENT = 'hospeda:benefit-usages-updated';
-
-/** Above this the glyph is capped; the label still carries the real number. */
-const GLYPH_CAP = 99;
 
 interface BenefitUsagesCountPillProps {
     readonly locale: SupportedLocale;
@@ -76,12 +73,10 @@ export function BenefitUsagesCountPill({ locale }: BenefitUsagesCountPillProps) 
     });
 
     return (
-        <span
-            aria-label={label}
-            className={styles.countPill}
-            role="status"
-        >
-            {count > GLYPH_CAP ? `${GLYPH_CAP}+` : count}
-        </span>
+        <CountPill
+            count={count}
+            label={label}
+            variant="solid"
+        />
     );
 }

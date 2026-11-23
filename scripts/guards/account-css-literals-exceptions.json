@@ -290,11 +290,6 @@
     "apps/web/src/components/host/editor/forms/ServicesForm.module.css": {
         "font-size": 1
     },
-    "apps/web/src/components/host/host-trades/BenefitUsagesPanel.module.css": {
-        "color": 23,
-        "font-size": 14,
-        "radius": 10
-    },
     "apps/web/src/components/host/host-trades/DirectoryReviews.module.css": {
         "color": 3,
         "font-size": 11,

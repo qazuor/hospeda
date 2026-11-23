@@ -107,7 +107,8 @@
         "subtitle": "Confirm the usages providers record, and review your history.",
         "pending": {
             "title": "Waiting for your confirmation",
-            "empty": "You have no usages waiting to be confirmed."
+            "empty": "You have no usages waiting to be confirmed.",
+            "countLabel": "Waiting for your confirmation: {{count}}"
         },
         "history": {
             "title": "History",
