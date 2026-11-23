@@ -19,6 +19,8 @@ export interface SectionLoadErrorProps {
     readonly locale: SupportedLocale;
     /** URL of the current page: the retry link reloads it. */
     readonly retryHref: string;
+    /** Overrides the generic body with a more specific sentence. */
+    readonly description?: string;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface SectionLoadErrorProps {
  * @param props - See {@link SectionLoadErrorProps}.
  * @returns A danger alert with a retry link.
  */
-export function SectionLoadError({ locale, retryHref }: SectionLoadErrorProps) {
+export function SectionLoadError({ locale, retryHref, description }: SectionLoadErrorProps) {
     const t = createT(locale);
     return (
         <Alert
@@ -44,7 +46,7 @@ export function SectionLoadError({ locale, retryHref }: SectionLoadErrorProps) {
                 </LinkButton>
             }
         >
-            {t('account.ui.error.description')}
+            {description ?? t('account.ui.error.description')}
         </Alert>
     );
 }

@@ -26,11 +26,16 @@
         }
     },
     "filter": {
-        "all": "Todos"
+        "all": "Todos",
+        "label": "Filtrar por categoria",
+        "clear": "Limpar filtros"
     },
     "emptyState": {
         "noAccommodations": "Você precisa ter acomodações registradas para ver este diretório.",
-        "noTrades": "Não há fornecedores disponíveis para seus destinos por enquanto."
+        "noTrades": "Não há fornecedores disponíveis para seus destinos por enquanto.",
+        "filteredTitle": "Nenhum prestador nessas categorias",
+        "titleNoTrades": "Ainda não há prestadores",
+        "titleNoAccommodations": "Primeiro registre uma hospedagem"
     },
     "accessDenied": {
         "title": "Esta seção é exclusiva para anfitriões",
@@ -70,7 +75,8 @@
             },
             "submit": "Registrar o uso",
             "submitting": "Registrando…",
-            "footnote": "Vamos pedir a {{name}} que confirme. Até que confirme, o registro fica pendente."
+            "footnote": "Vamos pedir a {{name}} que confirme. Até que confirme, o registro fica pendente.",
+            "title": "Registrar o uso"
         },
         "errors": {
             "dateRequired": "Escolha o dia do serviço.",
