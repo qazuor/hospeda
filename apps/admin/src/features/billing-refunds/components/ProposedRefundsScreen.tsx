@@ -5,7 +5,6 @@
  */
 
 import type { TranslationKey } from '@repo/i18n';
-import { formatCurrency } from '@repo/i18n';
 import { PermissionEnum, type ProposedRefund } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
@@ -18,49 +17,26 @@ import {
     reconciliationLabel
 } from '../../billing-reconciliation/reconciliation-labels';
 import { useProposedRefunds } from '../hooks/useProposedRefunds';
+import { formatProposedRefundAmount } from '../refund-amount';
 import { ProposedRefundActions } from './ProposedRefundActions';
-import { RefundProviderCallRetryForm } from './RefundProviderCallRetryForm';
-import { RefundRemainderSettlementForm } from './RefundRemainderSettlementForm';
+import { StuckRefundsWorkspace } from './StuckRefundsWorkspace';
 
 const PAGE_SIZE = 50;
 
 /**
- * Formats a refund amount. A manual payment stores no currency, so its amount is shown as a plain
- * number rather than guessing one.
- *
- * @param input - The amount in minor units, its currency if known, and the locale.
- * @returns The amount for display.
- */
-export function formatProposedRefundAmount({
-    amountMinor,
-    currency,
-    locale
-}: {
-    readonly amountMinor: number;
-    readonly currency: string | null;
-    readonly locale: string;
-}): string {
-    return currency === null
-        ? new Intl.NumberFormat(locale, { minimumFractionDigits: 2 }).format(amountMinor / 100)
-        : formatCurrency({ value: amountMinor / 100, currency, locale });
-}
-
-/**
- * Proposed-refund screen, gated by the permission of the action it feeds. Below the list, a person
- * who may run action 14 records the remainder of a partially accepted refund (HOS-2406) or of one
- * stuck on a call unanswered for more than 24 hours (HOS-2538), and «Retry with MP» (HOS-2516)
- * resends the unanswered provider calls of a confirmed refund: those refunds have a live provider
- * call, so none is in the list.
+ * Proposed-refund screen, gated by the permission of the action it feeds. Below the list, the
+ * stuck refunds (HOS-2560): confirmed refunds with a live provider call, which the proposed list
+ * leaves out, each with its suggested action. A person who may run action 14 records the remainder
+ * of a partially accepted refund (HOS-2406) or of one stuck on a call unanswered for more than 24
+ * hours (HOS-2538), and «Retry with MP» (HOS-2516) resends the unanswered provider calls; both pick
+ * the refund from that list, with a by-id fallback at the end.
  */
 export function ProposedRefundsScreen() {
     return (
         <PermissionGate permissions={[PermissionEnum.BILLING_REFUND]}>
             <div className="space-y-6">
                 <ProposedRefundsBody />
-                <PermissionGate permissions={[PermissionEnum.BILLING_SETTLE_EXTERNAL]}>
-                    <RefundRemainderSettlementForm />
-                </PermissionGate>
-                <RefundProviderCallRetryForm />
+                <StuckRefundsWorkspace />
             </div>
         </PermissionGate>
     );

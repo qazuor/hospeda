@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4684
+    {
+        id: '2026-11-22-refunds-runbook-points-to-remainder-settlement',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'El manual de devoluciones ahora te lleva a «Asentar el resto»',
+            en: 'The refunds manual now points you to "Settle the remainder"',
+            pt: 'O manual de reembolsos agora leva você a «Registrar o restante»'
+        },
+        body: {
+            es: 'Cuando Mercado Pago acepta una devolución sólo en parte, el manual de devoluciones explica paso a paso cómo cerrarla con «Asentar el resto de una devolución desde el panel de MP», en Facturación, Conciliación, Devoluciones.',
+            en: 'When Mercado Pago accepts a refund only in part, the refunds manual now explains step by step how to close it with "Settle the remainder of a refund from the MP panel", under Billing, Reconciliation, Refunds.',
+            pt: 'Quando o Mercado Pago aceita um reembolso apenas em parte, o manual de reembolsos agora explica passo a passo como encerrá-lo com «Registrar o restante de um reembolso pelo painel do MP», em Faturamento, Conciliação, Reembolsos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4680
     {
         id: '2026-11-22-help-center-easier-to-browse',
@@ -167,6 +185,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             es: 'En **Ayuda** las pestañas entran en una sola fila en el celular, el buscador tiene botón y ejemplo, y te avisa cuando no encuentra nada. Al tocar una sección del índice saltás justo a ella, y cada artículo te dice a qué página de tu cuenta ir.',
             en: 'In **Help** the tabs fit on one row on your phone, the search box has a button and an example, and it tells you when it finds nothing. Tapping a section in the index takes you right to it, and each article tells you which page of your account to go to.',
             pt: 'Em **Ajuda** as abas cabem em uma só linha no celular, a busca tem botão e exemplo, e avisa quando não encontra nada. Ao tocar uma seção do índice você vai direto a ela, e cada artigo diz para qual página da sua conta ir.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4658, #4659, #4662
+    {
+        id: '2026-11-21-email-previewer-and-unified-layout',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Previsualizá todos los correos del sistema desde el panel',
+            en: 'Preview every system email from the panel',
+            pt: 'Visualize todos os e-mails do sistema pelo painel'
+        },
+        body: {
+            es: 'En Plataforma → Emails ves todos los correos que manda Hospeda, con datos de ejemplo: el asunto, el cuerpo y el texto plano, en ancho de escritorio o de celular. Podés buscar, filtrar por área y cambiar de escenario. Además, todos los correos comparten ahora un mismo diseño, con el logo y los colores de la marca.',
+            en: 'In Platform → Emails you see every email Hospeda sends, with sample data: the subject, the body and the plain text, at desktop or mobile width. You can search, filter by area and switch scenarios. All emails now also share one design, with the logo and the brand colors.',
+            pt: 'Em Plataforma → Emails você vê todos os e-mails que o Hospeda envia, com dados de exemplo: o assunto, o corpo e o texto simples, na largura de computador ou de celular. Você pode buscar, filtrar por área e trocar de cenário. Além disso, todos os e-mails agora compartilham um mesmo design, com o logo e as cores da marca.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },

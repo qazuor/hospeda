@@ -40,6 +40,21 @@ export interface ResumeComplementsSummary {
     }[];
 }
 
+/**
+ * Whether S33 can resume a selected paused complement at the provider: only a card
+ * complement with a provider link is resumed; any other is skipped (`SKIPPED_NO_LINK`).
+ * Shared with the read-only MP4 preview (HOS-1640).
+ *
+ * @param target - The selected complement's provider link and payment method
+ * @returns True when S33 calls the provider for it
+ */
+export function isResumableAtProvider(target: {
+    readonly authorizationId: string | null;
+    readonly paymentMethod: string | null;
+}): boolean {
+    return target.authorizationId !== null && target.paymentMethod === 'CARD';
+}
+
 /** Resumes paused complements after their principal has committed its return to ACTIVE. */
 export async function resumeComplementsS33(
     input: { readonly principalSubscriptionId: string; readonly trigger: ComplementResumeTrigger },
@@ -94,7 +109,7 @@ export async function resumeComplementsS33(
 
     const results: ResumeComplementsSummary['results'][number][] = [];
     for (const target of selection.targets) {
-        if (!target.authorizationId || target.paymentMethod !== 'CARD') {
+        if (!target.authorizationId || !isResumableAtProvider(target)) {
             logger.warn(
                 {
                     complementSubscriptionId: target.complementSubscriptionId,

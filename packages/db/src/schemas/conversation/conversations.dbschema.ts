@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
     boolean,
+    date,
     index,
     integer,
     pgTable,
@@ -55,6 +56,15 @@ export const conversations = pgTable(
 
         /** Optional phone number provided by anonymous guest at initiation. */
         anonymousPhone: varchar('anonymous_phone', { length: 50 }),
+
+        /** Inquiry check-in date (calendar date, no time). NULL when the visitor gave none. */
+        checkIn: date('check_in', { mode: 'string' }),
+
+        /** Inquiry check-out date (calendar date, no time). NULL when the visitor gave none. */
+        checkOut: date('check_out', { mode: 'string' }),
+
+        /** Inquiry guest count. NULL when the visitor gave none. */
+        guests: integer('guests'),
 
         /** Current lifecycle state of the conversation. */
         status: ConversationStatusPgEnum('status').notNull().default('PENDING_VERIFICATION'),

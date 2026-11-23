@@ -23,6 +23,10 @@ export const ConversationSchema = z.object({
     anonymousEmail: z.string().email().max(255).nullable(),
     anonymousEmailVerified: z.boolean(),
     anonymousPhone: z.string().max(50).nullable(),
+    // HOS-2534: optional so rows and fixtures predating the columns still parse.
+    checkIn: z.string().date().nullable().optional(),
+    checkOut: z.string().date().nullable().optional(),
+    guests: z.number().int().min(1).nullable().optional(),
     status: z.nativeEnum(ConversationStatusEnum),
     blockReason: z.string().max(1000).nullable(),
     locale: z.string().max(10),

@@ -2,7 +2,7 @@
  * Environment-aware origin for the email assets that must exist on the
  * deployment sending the email (HOS-2540).
  *
- * Only the logo follows it. `EMAIL_PUBLIC_SITE_URL`, the footer link and
+ * Only the isotipo follows it. `EMAIL_PUBLIC_SITE_URL`, the footer link and
  * `EMAIL_PREFERENCES_URL` keep pointing at production by design (HOS-2519 §5.1).
  *
  * The state is module-level and set once by the host app at startup, so the
@@ -14,8 +14,15 @@
 /** Production origin: the default asset origin and the footer/preferences origin. */
 export const EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar';
 
-/** Path of the hosted logo PNG, relative to the site origin (`apps/web/public/email/`). */
-export const EMAIL_LOGO_PATH = '/email/hospeda-logo@2x.png';
+/**
+ * Path of the hosted isotipo PNG (transparent background, 89x96), relative to the
+ * site origin (`apps/web/public/email/`). The "hospeda" wordmark is live text, not
+ * part of the image, so dark-mode clients never show a white rectangle.
+ *
+ * The legacy flattened `hospeda-logo@2x.png` stays in the repo only because emails
+ * already sent reference it; nothing renders it anymore.
+ */
+export const EMAIL_ISOTIPO_PATH = '/email/hospeda-isotipo@2x.png';
 
 /** Input for {@link configureEmailAssets}. */
 export interface ConfigureEmailAssetsInput {
@@ -53,7 +60,7 @@ function normalizeOrigin(siteUrl: unknown): string {
 }
 
 /**
- * Sets the origin the email logo is served from. Call it once at app startup,
+ * Sets the origin the email isotipo is served from. Call it once at app startup,
  * before anything renders an email.
  *
  * @param input - See {@link ConfigureEmailAssetsInput}. A trailing slash is stripped.
@@ -62,7 +69,7 @@ function normalizeOrigin(siteUrl: unknown): string {
  * @example
  * ```ts
  * configureEmailAssets({ siteUrl: env.HOSPEDA_SITE_URL });
- * resolveEmailLogoUrl(); // 'https://staging.hospeda.com.ar/email/hospeda-logo@2x.png'
+ * resolveEmailIsotipoUrl(); // 'https://staging.hospeda.com.ar/email/hospeda-isotipo@2x.png'
  * ```
  */
 export function configureEmailAssets(input: ConfigureEmailAssetsInput): void {
@@ -70,13 +77,13 @@ export function configureEmailAssets(input: ConfigureEmailAssetsInput): void {
 }
 
 /**
- * Absolute URL of the hosted logo for the configured origin.
+ * Absolute URL of the hosted isotipo for the configured origin.
  * Defaults to production until {@link configureEmailAssets} is called.
  *
- * @returns The logo URL, e.g. `https://hospeda.com.ar/email/hospeda-logo@2x.png`.
+ * @returns The isotipo URL, e.g. `https://hospeda.com.ar/email/hospeda-isotipo@2x.png`.
  */
-export function resolveEmailLogoUrl(): string {
-    return `${assetOrigin}${EMAIL_LOGO_PATH}`;
+export function resolveEmailIsotipoUrl(): string {
+    return `${assetOrigin}${EMAIL_ISOTIPO_PATH}`;
 }
 
 /**
