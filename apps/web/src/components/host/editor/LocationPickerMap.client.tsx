@@ -10,7 +10,7 @@
 import 'leaflet/dist/leaflet.css';
 
 import { useEffect, useRef } from 'react';
-import styles from './LocationPicker.module.css';
+import styles from './LocationPickerMap.module.css';
 
 /** Props for the inner map component. */
 export interface LocationPickerMapProps {

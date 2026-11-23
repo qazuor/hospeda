@@ -1,0 +1,96 @@
+/* EditorLocationFinder.module.css — address search and «use my location» of
+   the shared location section (HOS-2496). Tokens only. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.search {
+    position: relative;
+}
+
+.spinner {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-end: 0;
+    pointer-events: none;
+}
+
+.suggestions {
+    position: absolute;
+    z-index: 600;
+    inset-block-start: 100%;
+    inset-inline: 0;
+    max-block-size: 16rem;
+    overflow-y: auto;
+    margin: var(--space-1) 0 0;
+    padding: var(--space-1);
+    list-style: none;
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-overlay);
+}
+
+.suggestion {
+    display: block;
+    inline-size: 100%;
+    min-block-size: var(--control-h-lg);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-control);
+    background: none;
+    color: inherit;
+    font: var(--app-ui);
+    text-align: start;
+    cursor: pointer;
+}
+
+.suggestion:hover,
+.suggestion:focus-visible {
+    background-color: var(--surface-warm);
+}
+
+.suggestion:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.error {
+    font: var(--app-meta);
+    color: var(--status-danger-fg);
+}
+
+/* Shown while no pin is placed (HOS-1767): the map only opens on the city
+   centre as a starting point, nothing is saved yet. */
+.notice {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-inline-start: 3px solid var(--brand-primary);
+    border-radius: var(--radius-control);
+    background-color: var(--surface-warm);
+    font: var(--app-ui);
+    color: var(--core-foreground);
+}
+
+/* Where the pin sits, reverse-geocoded (HOS-795): reference text, never a control. */
+.reference {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.referenceLabel {
+    font-weight: 500;
+    color: var(--core-foreground);
+}

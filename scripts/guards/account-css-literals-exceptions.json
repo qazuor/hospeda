@@ -223,11 +223,6 @@
         "radius": 3,
         "shadow": 1
     },
-    "apps/web/src/components/host/editor/LocationPicker.module.css": {
-        "color": 2,
-        "font-size": 13,
-        "radius": 8
-    },
     "apps/web/src/components/host/editor/PhotoSection.module.css": {
         "color": 63,
         "font-size": 19,

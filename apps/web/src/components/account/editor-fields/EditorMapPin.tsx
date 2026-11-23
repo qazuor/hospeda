@@ -11,7 +11,11 @@
  * - The raw latitude and longitude stay editable under a «Coordenadas»
  *   disclosure, for an owner who already has them, and as the keyboard path.
  *
- * Values are the editor's own strings; an empty pair means «no pin».
+ * Values are the editor's own strings; an empty pair means «no pin». An
+ * editor that stores numbers (accommodation, meeting point) parses what it
+ * receives, so each input keeps its own draft text: a half-typed «-» or «-32.»
+ * would otherwise parse back to an empty box or «-32» and the owner could not
+ * finish typing it.
  *
  * @module components/account/editor-fields/EditorMapPin
  */
@@ -59,6 +63,17 @@ export interface EditorMapPinProps {
     readonly disabled?: boolean;
 }
 
+/** Props of the internal {@link CoordinateInput}. */
+interface CoordinateInputProps {
+    readonly locale: SupportedLocale;
+    readonly label: string;
+    readonly id: string;
+    readonly error?: string;
+    readonly value: string;
+    readonly disabled: boolean;
+    readonly onChange: (value: string) => void;
+}
+
 /**
  * Parses a coordinate string; empty or invalid reads as `null`.
  *
@@ -70,6 +85,55 @@ export function parseMapCoordinate({ value }: { readonly value: string }): numbe
     if (trimmed.length === 0) return null;
     const parsed = Number(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
+}
+
+/**
+ * One coordinate input with its own draft text.
+ *
+ * The draft follows the incoming value only when the two stop meaning the same
+ * number (a dragged pin, a discard), never while the owner is mid-typing.
+ *
+ * @param props - See {@link CoordinateInputProps}.
+ * @returns A kit `Field` with a decimal text input.
+ */
+function CoordinateInput({
+    locale,
+    label,
+    id,
+    error,
+    value,
+    disabled,
+    onChange
+}: CoordinateInputProps) {
+    const [draft, setDraft] = useState(value);
+    const [seen, setSeen] = useState(value);
+    if (value !== seen) {
+        setSeen(value);
+        if (parseMapCoordinate({ value }) !== parseMapCoordinate({ value: draft })) {
+            setDraft(value);
+        }
+    }
+
+    return (
+        <Field
+            locale={locale}
+            label={label}
+            id={id}
+            error={error}
+            optional
+        >
+            <TextInput
+                type="text"
+                inputMode="decimal"
+                disabled={disabled}
+                value={draft}
+                onChange={(event) => {
+                    setDraft(event.target.value);
+                    onChange(event.target.value);
+                }}
+            />
+        </Field>
+    );
 }
 
 /**
@@ -143,40 +207,24 @@ export function EditorMapPin({
                     {t('account.editorFields.location.coordinates')}
                 </summary>
                 <div className={fieldStyles.grid}>
-                    <Field
+                    <CoordinateInput
                         locale={locale}
                         label={t('account.editorFields.location.latitude')}
                         id={buildFieldId({ prefix: idPrefix, name: lat.name })}
                         error={lat.error}
-                        optional
-                    >
-                        <TextInput
-                            type="text"
-                            inputMode="decimal"
-                            disabled={disabled}
-                            value={lat.value}
-                            onChange={(event) =>
-                                onChange({ lat: event.target.value, long: long.value })
-                            }
-                        />
-                    </Field>
-                    <Field
+                        value={lat.value}
+                        disabled={disabled}
+                        onChange={(next) => onChange({ lat: next, long: long.value })}
+                    />
+                    <CoordinateInput
                         locale={locale}
                         label={t('account.editorFields.location.longitude')}
                         id={buildFieldId({ prefix: idPrefix, name: long.name })}
                         error={long.error}
-                        optional
-                    >
-                        <TextInput
-                            type="text"
-                            inputMode="decimal"
-                            disabled={disabled}
-                            value={long.value}
-                            onChange={(event) =>
-                                onChange({ lat: lat.value, long: event.target.value })
-                            }
-                        />
-                    </Field>
+                        value={long.value}
+                        disabled={disabled}
+                        onChange={(next) => onChange({ lat: lat.value, long: next })}
+                    />
                 </div>
             </details>
         </div>

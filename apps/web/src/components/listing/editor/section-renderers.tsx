@@ -13,6 +13,7 @@
 import type { JSX } from 'react';
 import { EditorSocialLinksSection } from '@/components/account/editor-fields/EditorSocialLinksSection';
 import { ListingContactSection } from '@/components/account/editor-fields/ListingContactSection';
+import { ListingLocationSection } from '@/components/account/editor-fields/ListingLocationSection';
 import { Section } from '@/components/account/ui/Section';
 import { MeetingPointSection } from '@/components/experience/MeetingPointSection.client';
 import type { DestinationOption } from '@/components/listing/destination-option';
@@ -21,6 +22,7 @@ import {
     type ContactValues,
     type ListingEditData,
     type ListingFieldChange,
+    type LocationValues,
     SOCIAL_KEYS,
     type SocialValues
 } from '@/components/listing/editor/listing-edit-data';
@@ -33,7 +35,6 @@ import {
 } from '@/components/listing/editor/PoliciesPanel.client';
 import { PracticalInfoSection } from '@/components/listing/editor/PracticalInfoSection.client';
 import { PriceSection } from '@/components/listing/editor/PriceSection.client';
-import { VenueLocationSection } from '@/components/listing/editor/VenueLocationSection.client';
 import {
     type ListingI18nValues,
     ListingTranslationPanel
@@ -129,6 +130,88 @@ const POLICIES_PANEL_KEYS: Readonly<Record<VenueOrExperience, readonly ListingPo
     experience: [...LISTING_BASE_POLICY_KEYS, 'privateGroups', 'cancellation']
 };
 
+/** One venue address input: its member, its i18n label, its cap and whether it is optional. */
+const VENUE_ADDRESS_FIELDS = [
+    {
+        key: 'street',
+        label: 'account.editorFields.location.street',
+        maxLength: 50,
+        optional: false
+    },
+    {
+        key: 'number',
+        label: 'account.editorFields.location.number',
+        maxLength: 10,
+        optional: false
+    },
+    { key: 'floor', label: 'account.editorFields.location.floor', maxLength: 10, optional: true },
+    {
+        key: 'apartment',
+        label: 'account.editorFields.location.apartment',
+        maxLength: 10,
+        optional: true
+    }
+] as const satisfies ReadonlyArray<{
+    readonly key: keyof LocationValues;
+    readonly label: string;
+    readonly maxLength: number;
+    readonly optional: boolean;
+}>;
+
+/**
+ * The venue postal address and its map pin, through the shared location
+ * section (HOS-2189, fused by HOS-2496).
+ *
+ * City, neighborhood and department are NOT asked here; they come from the
+ * destination chosen in the basic-info page. A venue is a business open to the
+ * public, so this address is the one its public page shows, and the pin is
+ * exact. Every edit replaces the whole `location` member set.
+ *
+ * @param context - The render context.
+ * @returns The location section.
+ */
+function renderVenueLocation(context: ListingSectionRenderContext): JSX.Element {
+    const t = createT(context.locale);
+    const location = context.data.location;
+    const setMembers = (patch: Partial<LocationValues>) => {
+        context.onFieldChange('location', { ...location, ...patch });
+    };
+
+    return (
+        <ListingLocationSection
+            locale={context.locale}
+            idPrefix={LISTING_FIELD_PREFIX}
+            sectionId="editor-location"
+            title={t('account.editorFields.location.title')}
+            description={t('account.editorFields.location.addressHint')}
+            helpId={sectionHelpId({ vertical: 'venue', slug: 'ubicacion' })}
+            address={VENUE_ADDRESS_FIELDS.map((field) => ({
+                name: `location.${field.key}`,
+                label: t(field.label),
+                value: location[field.key],
+                onChange: (value: string) => setMembers({ [field.key]: value }),
+                error: context.errors[`location.${field.key}`],
+                maxLength: field.maxLength,
+                optional: field.optional
+            }))}
+            pin={{
+                mapLabel: t('account.editorFields.location.venueMapLabel'),
+                lat: {
+                    name: 'location.coordinates.lat',
+                    value: location.lat,
+                    error: context.errors['location.coordinates.lat']
+                },
+                long: {
+                    name: 'location.coordinates.long',
+                    value: location.long,
+                    error: context.errors['location.coordinates.long']
+                },
+                onChange: (next) => setMembers({ lat: next.lat, long: next.long })
+            }}
+        />
+    );
+}
+
 /**
  * The renderers, one per form section id.
  *
@@ -152,16 +235,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
         />
     ),
     location: (context) =>
-        RENDERS_LOCATION_FORM[context.vertical] ? (
-            <VenueLocationSection
-                locale={context.locale}
-                data={context.data}
-                errors={context.errors}
-                onFieldChange={context.onFieldChange}
-            />
-        ) : (
-            <></>
-        ),
+        RENDERS_LOCATION_FORM[context.vertical] ? renderVenueLocation(context) : <></>,
     meetingPoint: (context) =>
         RENDERS_EXPERIENCE_ONLY_FORM[context.vertical] ? (
             <MeetingPointSection

@@ -1,13 +1,22 @@
 /**
- * @file VenueLocationSection.test.tsx
- * @description Unit coverage for the venue postal-address section (HOS-2189).
+ * @file ListingLocationSection.venue.test.tsx
+ * @description The venue postal-address section (HOS-2189), rendered through
+ * the shared location section since HOS-2496: the listing editor's `location`
+ * renderer, exactly as `ListingEditor` mounts it.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LISTING_FIELD_PREFIX } from '@/components/listing/editor/field-ids';
+import type {
+    ListingEditData,
+    ListingFieldChange
+} from '@/components/listing/editor/listing-edit-data';
+import {
+    LISTING_SECTION_RENDERERS,
+    type ListingSectionRenderContext
+} from '@/components/listing/editor/section-renderers';
 import { buildFieldId } from '@/lib/forms/build-field-id';
-import { VenueLocationSection } from '../../../../src/components/listing/editor/VenueLocationSection.client';
-import { buildEditData } from './edit-data-fixture';
+import { buildEditData } from '../../listing/editor/edit-data-fixture';
 
 // The map is Leaflet: out of scope here, covered by LocationPickerMap.test.tsx.
 vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
@@ -16,7 +25,40 @@ vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
 
 const idOf = (name: string) => buildFieldId({ prefix: LISTING_FIELD_PREFIX, name });
 
-describe('VenueLocationSection', () => {
+/** Props of the test harness: the slice of the render context this section reads. */
+interface VenueLocationSectionProps {
+    readonly locale: 'es';
+    readonly data: ListingEditData;
+    readonly errors: Readonly<Record<string, string>>;
+    readonly onFieldChange: ListingFieldChange;
+}
+
+/** Mounts the venue `location` renderer with an otherwise inert context. */
+function VenueLocationSection({ locale, data, errors, onFieldChange }: VenueLocationSectionProps) {
+    const context: ListingSectionRenderContext = {
+        locale,
+        vertical: 'venue',
+        data,
+        errors: { ...errors },
+        destinations: [],
+        destinationsLoadFailed: false,
+        amenities: [],
+        features: [],
+        onFieldChange,
+        onPolicyChange: vi.fn(),
+        onContactChange: vi.fn(),
+        onSocialChange: vi.fn(),
+        onToggleAmenity: vi.fn(),
+        onToggleFeature: vi.fn(),
+        onChangeAmenityAttribute: vi.fn(),
+        onI18nChange: vi.fn(),
+        shouldOfferSlugRefresh: false,
+        listingId: 'listing-1'
+    };
+    return LISTING_SECTION_RENDERERS.location(context);
+}
+
+describe('venue location (ListingLocationSection)', () => {
     it('seeds every control from the form state', () => {
         render(
             <VenueLocationSection
@@ -144,5 +186,21 @@ describe('VenueLocationSection', () => {
 
         expect(screen.getByText('Coordenadas').closest('details')).toHaveAttribute('open');
         expect(screen.getByLabelText(/^Latitud/)).toHaveAccessibleDescription(/Latitud inválida/);
+    });
+});
+
+describe('venue location — what only the accommodation has', () => {
+    it('renders no address search and no «use my location» (HOS-2496)', () => {
+        render(
+            <VenueLocationSection
+                locale="es"
+                data={buildEditData()}
+                errors={{}}
+                onFieldChange={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByLabelText('Buscar en el mapa')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Usar mi ubicación actual/)).not.toBeInTheDocument();
     });
 });

@@ -7,6 +7,7 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
     EDITOR_MAP_DEFAULT_CENTER,
@@ -122,5 +123,57 @@ describe('EditorMapPin', () => {
 
         expect(screen.getByRole('button', { name: 'Tap to move the pin' })).toBeInTheDocument();
         expect(screen.getByText('Coordinates')).toBeInTheDocument();
+    });
+
+    it('lets an editor that stores numbers finish typing a negative coordinate', () => {
+        // Regression (HOS-2496): the accommodation and meeting-point editors
+        // parse the text to a number and hand back String(number). A bare «-»
+        // parsed to null, came back as '', and the owner could never type a
+        // southern latitude by hand.
+        function NumberBacked() {
+            const [lat, setLat] = useState<number | null>(null);
+            const parse = (value: string) => parseMapCoordinate({ value });
+            return (
+                <EditorMapPin
+                    locale="es"
+                    idPrefix="acc"
+                    mapLabel="Mapa"
+                    lat={{ name: 'latitude', value: lat === null ? '' : String(lat) }}
+                    long={{ name: 'longitude', value: '' }}
+                    onChange={(next) => setLat(parse(next.lat))}
+                />
+            );
+        }
+        render(<NumberBacked />);
+        const latitude = screen.getByLabelText(/^Latitud/);
+
+        fireEvent.change(latitude, { target: { value: '-' } });
+        expect(latitude).toHaveValue('-');
+        fireEvent.change(latitude, { target: { value: '-32.' } });
+        expect(latitude).toHaveValue('-32.');
+        fireEvent.change(latitude, { target: { value: '-32.5' } });
+        expect(latitude).toHaveValue('-32.5');
+    });
+
+    it('follows a moved pin into the coordinate inputs', async () => {
+        function Controlled() {
+            const [pair, setPair] = useState({ lat: '-32.5', long: '-58.2' });
+            return (
+                <EditorMapPin
+                    locale="es"
+                    idPrefix="ce"
+                    mapLabel="Mapa del lugar"
+                    lat={{ name: 'lat', value: pair.lat }}
+                    long={{ name: 'long', value: pair.long }}
+                    onChange={setPair}
+                />
+            );
+        }
+        render(<Controlled />);
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Mapa del lugar' }));
+
+        expect(screen.getByLabelText(/^Latitud/)).toHaveValue('-32.123457');
+        expect(screen.getByLabelText(/^Longitud/)).toHaveValue('-58.765432');
     });
 });

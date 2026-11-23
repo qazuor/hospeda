@@ -38,20 +38,19 @@
  * it. The API refuses the write independently (`manage_experience_directions`),
  * so this control being read-only is an affordance, not the enforcement.
  *
- * ## Why the coordinates are typed in by hand
+ * ## The pin
  *
- * There is no map PICKER on this surface. HOS-1049 draws a map on the public
- * ficha, not an editor widget, so the owner pastes the pair they can copy out
- * of any maps app, and both stay optional: an owner who describes the spot in
- * words and never pins it leaves a perfectly valid listing. Null is "no
- * coordinate", not an error, all the way down to the column.
+ * Since HOS-2496 the section is the shared `ListingLocationSection`: a map pin
+ * the owner drags, with the raw pair still editable under «Coordenadas» for an
+ * owner who copies it out of a maps app. Both stay optional: an owner who
+ * describes the spot in words and never pins it leaves a perfectly valid
+ * listing. Null is "no coordinate", not an error, all the way down to the
+ * column.
  */
 
 import type { JSX } from 'react';
-import fieldStyles from '@/components/account/editor-fields/EditorFields.module.css';
-import { EditorMapPin } from '@/components/account/editor-fields/EditorMapPin';
+import { ListingLocationSection } from '@/components/account/editor-fields/ListingLocationSection';
 import { Field } from '@/components/account/ui/Field';
-import { Section } from '@/components/account/ui/Section';
 import { Textarea } from '@/components/account/ui/Textarea';
 import { TextInput } from '@/components/account/ui/TextInput';
 import { LISTING_FIELD_PREFIX } from '@/components/listing/editor/field-ids';
@@ -129,12 +128,13 @@ export function MeetingPointSection({
     const directionsEnabled = data.meetingPointDirectionsEnabled;
 
     return (
-        <Section
-            id="editor-meetingPoint"
+        <ListingLocationSection
+            locale={locale}
+            idPrefix={LISTING_FIELD_PREFIX}
+            sectionId="editor-meetingPoint"
             title={t('account.editorFields.location.meetingPointTitle')}
             helpId={sectionHelpId({ vertical: 'experience', slug: 'punto-de-encuentro' })}
-        >
-            <div className={fieldStyles.stack}>
+            lead={
                 <Field
                     locale={locale}
                     label={t('account.editorFields.location.meetingPoint')}
@@ -149,32 +149,32 @@ export function MeetingPointSection({
                         onChange={(event) => onFieldChange('meetingPoint', event.target.value)}
                     />
                 </Field>
-                {/* The pin is data, so it ships from the basic tier (owner decision 2026-09-01). */}
-                <EditorMapPin
-                    locale={locale}
-                    idPrefix={LISTING_FIELD_PREFIX}
-                    mapLabel={t('account.editorFields.location.meetingPointMapLabel')}
-                    lat={{
-                        name: 'meetingPointLat',
-                        value: coordinateInputValue({ value: data.meetingPointLat }),
-                        error: errors.meetingPointLat
-                    }}
-                    long={{
-                        name: 'meetingPointLong',
-                        value: coordinateInputValue({ value: data.meetingPointLong }),
-                        error: errors.meetingPointLong
-                    }}
-                    onChange={(next) => {
-                        onFieldChange('meetingPointLat', parseCoordinateInput({ raw: next.lat }));
-                        onFieldChange('meetingPointLong', parseCoordinateInput({ raw: next.long }));
-                    }}
-                />
-                {/*
+            }
+            // The pin is data, so it ships from the basic tier (owner decision 2026-09-01).
+            pin={{
+                mapLabel: t('account.editorFields.location.meetingPointMapLabel'),
+                lat: {
+                    name: 'meetingPointLat',
+                    value: coordinateInputValue({ value: data.meetingPointLat }),
+                    error: errors.meetingPointLat
+                },
+                long: {
+                    name: 'meetingPointLong',
+                    value: coordinateInputValue({ value: data.meetingPointLong }),
+                    error: errors.meetingPointLong
+                },
+                onChange: (next) => {
+                    onFieldChange('meetingPointLat', parseCoordinateInput({ raw: next.lat }));
+                    onFieldChange('meetingPointLong', parseCoordinateInput({ raw: next.long }));
+                }
+            }}
+            trail={
+                /*
                  * HOS-1049: the directions are the paid half. They render for
                  * every provider and lock when the plan does not grant them, so
                  * a downgrade does not read as data loss. The API refuses the
                  * write on its own; this is the affordance.
-                 */}
+                 */
                 <Field
                     locale={locale}
                     label={t('account.editorFields.location.directions')}
@@ -202,7 +202,7 @@ export function MeetingPointSection({
                         }
                     />
                 </Field>
-            </div>
-        </Section>
+            }
+        />
     );
 }
