@@ -2,13 +2,22 @@
  * HOS-2400: the admin list of refunds proposed from a reconciliation mark. It admits `MARK_PROPOSAL`
  * refunds that are REQUESTED, or CONFIRMED with no provider call at all, and shows the mark(s) that
  * hang each one's payment. Runs against the real database, so every assertion looks its own rows
- * up by id: other suites share the database.
+ * up by id: other suites share the database (HOS-2407).
+ *
+ * The rows this file seeds are created in year 2099, one second apart, so they always sort after
+ * every other suite's rows (which use real dates): the block is the tail of the list. Reads anchor
+ * on that tail and never compare page contents against a whole-list snapshot, because parallel
+ * workers may insert `MARK_PROPOSAL` refunds at any moment (not every writer holds the HOS-2406
+ * serial lock).
  */
 import { eq, idempotencyKeys, reconciliationMarks, refundCalls, refunds } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
-import { listProposedRefunds } from '../../../src/services/billing/refund/list-proposed-refunds.service';
+import {
+    listProposedRefunds,
+    type ProposedRefund
+} from '../../../src/services/billing/refund/list-proposed-refunds.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import { heldChargeFor, refundsOf } from './support/held-charge-refund-fixtures';
@@ -24,15 +33,53 @@ afterEach(async () => {
 });
 afterAll(closeServiceTestPool);
 
-/** One listed refund, paging the whole list; undefined when it is not listed. */
+/** One second per seeded row inside year 2099: later than every other suite's rows, whatever they
+ * do. `Date.UTC` normalizes past 59 seconds into the next minute, so the counter stays monotonic. */
+let futureSecond = 0;
+function futureCreatedAt(): Date {
+    const at = new Date(Date.UTC(2099, 0, 1, 0, 0, futureSecond));
+    futureSecond += 1;
+    return at;
+}
+
+/** One listed refund, read from the tail page that holds this file's rows; undefined when it is
+ * not listed. Never walks the whole list: the block this file seeds is at most ~30 rows, always
+ * inside the last page of 100, and one read is an internally consistent snapshot. */
 async function listed(refundId: string) {
-    for (let page = 1; page < 100; page++) {
-        const result = await listProposedRefunds({ page, pageSize: 100 });
-        const found = result.items.find((item) => item.refundId === refundId);
-        if (found) return found;
-        if (page * 100 >= result.total) return undefined;
+    const head = await listProposedRefunds({ page: 1, pageSize: 100 });
+    if (head.total === 0) return undefined;
+    const lastPage = Math.ceil(head.total / 100);
+    const page =
+        lastPage === 1 ? head : await listProposedRefunds({ page: lastPage, pageSize: 100 });
+    return page.items.find((item) => item.refundId === refundId);
+}
+
+/** Reads the last pages of the list while the row total stays still (one read epoch). The rows
+ * this file seeds are the tail of the list, so a stable epoch pins every page the block touches.
+ * Retries while parallel writers move the tail; failing loudly beats comparing against a stale
+ * whole-list snapshot (HOS-2407). */
+async function readTail(input: {
+    readonly pageSize: number;
+    readonly windowRows: number;
+}): Promise<{
+    readonly items: readonly ProposedRefund[];
+    readonly total: number;
+}> {
+    for (let attempt = 0; attempt < 40; attempt++) {
+        const head = await listProposedRefunds({ page: 1, pageSize: input.pageSize });
+        const lastPage = Math.max(1, Math.ceil(head.total / input.pageSize));
+        const firstPage = Math.max(1, lastPage - Math.ceil(input.windowRows / input.pageSize) - 1);
+        const items: ProposedRefund[] = [];
+        let stable = true;
+        for (let page = firstPage; page <= lastPage && stable; page++) {
+            const result = await listProposedRefunds({ page, pageSize: input.pageSize });
+            if (result.total !== head.total) stable = false;
+            items.push(...result.items);
+        }
+        if (stable) return { items, total: head.total };
+        await new Promise((resolve) => setTimeout(resolve, 25));
     }
-    return undefined;
+    throw new Error('the proposed-refund list never stayed still long enough to read its tail');
 }
 
 /** A credited card payment with an open mark hanging it and one refund row of the given shape. */
@@ -62,6 +109,7 @@ async function proposalOnMarkedPayment(
             amount: 10000,
             reason: 'MARK_PROPOSAL',
             status: 'REQUESTED',
+            createdAt: futureCreatedAt(),
             ...overrides
         })
         .returning({ id: refunds.id });
@@ -95,6 +143,15 @@ async function addCall(input: {
         amount: 10000,
         providerRefundId: input.providerRefundId
     });
+}
+
+/** Moves a proposal the held-charge fixture created at real time into this file's 2099 block, so
+ * the tail-scoped `listed` read can find it like every other row the file owns. */
+async function moveProposalIntoFutureBlock(refundId: string): Promise<void> {
+    await getServiceTestDb()
+        .update(refunds)
+        .set({ createdAt: futureCreatedAt() })
+        .where(eq(refunds.id, refundId));
 }
 
 describe('HOS-2400 listProposedRefunds', () => {
@@ -199,7 +256,8 @@ describe('HOS-2400 listProposedRefunds', () => {
                 paymentId: credited.payment.id,
                 amount: 5000,
                 reason: 'MARK_PROPOSAL',
-                status: 'REQUESTED'
+                status: 'REQUESTED',
+                createdAt: futureCreatedAt()
             })
             .returning({ id: refunds.id });
 
@@ -218,6 +276,7 @@ describe('HOS-2400 listProposedRefunds', () => {
             const { held } = await heldChargeFor('COBRO_DUPLICADO');
             const [proposal] = await refundsOf(held.payment.id);
             if (!proposal) throw new Error('proposal missing');
+            await moveProposalIntoFutureBlock(proposal.id);
 
             // Act
             const item = await listed(proposal.id);
@@ -235,6 +294,7 @@ describe('HOS-2400 listProposedRefunds', () => {
             const { held } = await heldChargeFor('COBRO_DUPLICADO');
             const [proposal] = await refundsOf(held.payment.id);
             if (!proposal) throw new Error('proposal missing');
+            await moveProposalIntoFutureBlock(proposal.id);
             await getServiceTestDb()
                 .update(refunds)
                 .set({ status: 'CONFIRMED' })
@@ -270,22 +330,23 @@ describe('HOS-2400 listProposedRefunds', () => {
     it.skipIf(skip)(
         'paginates in the database with live CONFIRMED rows interleaved across pages',
         async () => {
-            // Arrange: createdAt far ahead puts these rows last. Eligible rows (E) alternate with
-            // CONFIRMED ones whose provider call was accepted (L), which must never be listed.
+            // Arrange: every row lands one second inside year 2099, so the block this file seeds is
+            // the tail of the list. Eligible rows (E) alternate with CONFIRMED ones whose provider
+            // call was accepted (L), which must never be listed. Other suites may insert
+            // MARK_PROPOSAL rows at any moment, so the test anchors on its own block instead of
+            // comparing pages against a whole-list snapshot (HOS-2407).
             const eligible: string[] = [];
             const live: string[] = [];
             for (let index = 0; index < 5; index++) {
-                const at = (offset: number) =>
-                    new Date(Date.UTC(2099, 0, 1, 0, 0, index * 2 + offset));
                 const e = await proposalOnMarkedPayment({
                     status: index % 2 === 0 ? 'REQUESTED' : 'CONFIRMED',
-                    createdAt: at(0)
+                    createdAt: futureCreatedAt()
                 });
                 eligible.push(e.refundId);
                 if (index < 4) {
                     const l = await proposalOnMarkedPayment({
                         status: 'CONFIRMED',
-                        createdAt: at(1)
+                        createdAt: futureCreatedAt()
                     });
                     await addCall({
                         refundId: l.refundId,
@@ -296,27 +357,17 @@ describe('HOS-2400 listProposedRefunds', () => {
                 }
             }
 
-            // Act: the whole list as ground truth, then the same list in pages of 2.
-            const whole = await listProposedRefunds({ page: 1, pageSize: 100 });
-            const paged: string[] = [];
-            let pageTwo: readonly string[] = [];
-            let totalByPage = -1;
-            for (let page = 1; page <= Math.ceil(whole.total / 2); page++) {
-                const result = await listProposedRefunds({ page, pageSize: 2 });
-                totalByPage = result.total;
-                paged.push(...result.items.map((item) => item.refundId));
-                if (page === 2) pageTwo = result.items.map((item) => item.refundId);
-            }
+            // Act: read the tail of the list in pages of 2 while the total stays still. Five
+            // eligible rows cannot fit one page of 2, so the suffix assertion mechanically reads
+            // them across at least three page boundaries.
+            const tail = await readTail({ pageSize: 2, windowRows: 10 });
+            const tailIds = tail.items.map((item) => item.refundId);
 
-            // Assert
-            const wholeIds = whole.items.map((item) => item.refundId);
-            expect(whole.total).toBe(wholeIds.length);
-            expect(totalByPage).toBe(whole.total);
-            expect(wholeIds.slice(-5)).toEqual(eligible);
-            for (const id of live) expect(wholeIds).not.toContain(id);
-            expect(paged).toEqual(wholeIds);
-            expect(pageTwo).toEqual(wholeIds.slice(2, 4));
-            expect((await listProposedRefunds({ page: 1, pageSize: 100 })).total).toBe(whole.total);
+            // Assert: owned rows only.
+            expect(tail.total).toBeGreaterThanOrEqual(5);
+            expect(tailIds.slice(-5)).toEqual(eligible);
+            for (const id of live) expect(tailIds).not.toContain(id);
+            expect(tailIds[tailIds.length - 1]).toBe(eligible[4]);
         }
     );
 
