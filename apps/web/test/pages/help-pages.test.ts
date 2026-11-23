@@ -34,7 +34,7 @@ const HELP_ROW = read('components/account/help/PageHelpRow.astro');
 
 /** What gives a page its «?»: the header, an editor layout, the account layout's row, or the row itself. */
 const HELP_PATH =
-    /<AccountPageHeader\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b|<AccountLayout\b|<PageHelpRow\b/;
+    /<AccountPageHeader\b|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b|<AccountLayout\b|<PageHelpRow\b/;
 
 /**
  * Account pages with no user surface: they redirect before rendering, so they
