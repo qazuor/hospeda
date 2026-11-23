@@ -31,15 +31,9 @@ import teExplico from '@/assets/images/hospedin/te-explico.png';
 import telefono from '@/assets/images/hospedin/telefono.png';
 import vamos from '@/assets/images/hospedin/vamos.png';
 
-/** The poses available as cutouts. */
-export type HospedinPose =
-	| 'camara'
-	| 'lamparita'
-	| 'saludando'
-	| 'senalando'
-	| 'te-explico'
-	| 'telefono'
-	| 'vamos';
+/** The poses available as cutouts (defined in `lib/presentacion/hospedin-pose.ts`). */
+export type { HospedinPose } from '@/lib/presentacion/hospedin-pose';
+import type { HospedinPose } from '@/lib/presentacion/hospedin-pose';
 
 const POSES: Readonly<Record<HospedinPose, ImageMetadata>> = {
 	camara,
