@@ -103,7 +103,19 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
 
     useEffect(() => {
         const nav = navRef.current;
+        // The wave band is not a fixed 72px: on a detail page it holds the name and badges
+        // (~167px at 360px). Publish its real height so the bar sticks right under it in
+        // every state; a fixed offset left the band covering the tabs on scroll-up.
+        const bars = [
+            ...document.querySelectorAll<HTMLElement>('[data-wave-header] .wave-header__bar')
+        ];
+        const publishBarHeight = (): void => {
+            const bar = bars[0];
+            if (!nav || !bar) return;
+            nav.style.setProperty('--tabs-bar-height', `${bar.offsetHeight}px`);
+        };
         const measure = (): void => {
+            publishBarHeight();
             const next = readStickyOffset({ nav });
             setStickyOffset((previous) => (previous === next ? previous : next));
         };
@@ -117,10 +129,14 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
         for (const header of document.querySelectorAll('[data-wave-header]')) {
             classObserver?.observe(header, { attributes: true, attributeFilter: ['class'] });
         }
+        const barObserver =
+            typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+        for (const bar of bars) barObserver?.observe(bar);
         return () => {
             window.removeEventListener('resize', measure);
             nav?.removeEventListener('transitionend', measure);
             classObserver?.disconnect();
+            barObserver?.disconnect();
         };
     }, []);
 
