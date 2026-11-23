@@ -1512,7 +1512,8 @@
         },
         "empty": {
             "title": "No encontramos recomendaciones por ahora",
-            "body": "Volvé más tarde o explorá todo nuestro catálogo de alojamientos."
+            "body": "Volvé más tarde o explorá todo nuestro catálogo de alojamientos.",
+            "cta": "Explorar alojamientos"
         },
         "upgrade": {
             "title": "Sugerencias para vos",

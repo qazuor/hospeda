@@ -1504,7 +1504,8 @@
         },
         "empty": {
             "title": "Nenhuma recomendação por enquanto",
-            "body": "Volte mais tarde ou explore todo o nosso catálogo de acomodações."
+            "body": "Volte mais tarde ou explore todo o nosso catálogo de acomodações.",
+            "cta": "Explorar hospedagens"
         },
         "upgrade": {
             "title": "Sugestões para você",

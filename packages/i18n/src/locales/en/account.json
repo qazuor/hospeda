@@ -1504,7 +1504,8 @@
         },
         "empty": {
             "title": "No recommendations right now",
-            "body": "Check back later or browse our full accommodation catalog."
+            "body": "Check back later or browse our full accommodation catalog.",
+            "cta": "Browse accommodations"
         },
         "upgrade": {
             "title": "Suggestions for you",

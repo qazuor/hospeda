@@ -84,10 +84,6 @@
         "radius": 2,
         "shadow": 1
     },
-    "apps/web/src/components/account/RecommendationsFeed.module.css": {
-        "color": 1,
-        "font-size": 15
-    },
     "apps/web/src/components/account/SubscriptionCancel.module.css": {
         "font-size": 1,
         "radius": 2

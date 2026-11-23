@@ -73,7 +73,7 @@ const COMPLEMENT_REM = ['29.99', '47.99', '63.99', '79.99'] as const;
 export const EXCEPTIONS_PATH = 'scripts/guards/account-breakpoints-exceptions.json';
 
 /** Frozen maximum size of the exceptions list (entries = file × rule pairs). */
-export const EXCEPTIONS_CEILING = { entries: 25, total: 34 } as const;
+export const EXCEPTIONS_CEILING = { entries: 24, total: 32 } as const;
 
 /** A scan below this many files means the scope moved or the cwd is wrong. */
 export const MIN_SCANNED_FILES = 300;
