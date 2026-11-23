@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { formatDate } from '../utils/index.js';
 import {
@@ -48,21 +47,19 @@ export function TrialEnding1Day({
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
 
-            <Section style={styles.alertBox}>
+            <Callout tone="danger">
                 <Text style={styles.paragraph}>
                     Mañana <strong>{formattedEndDate}</strong> termina tu prueba gratis
                     {planFragment}. Si no elegís un plan antes, {copy.possessive} deja de aparecer
                     en las búsquedas de Hospeda.
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Elegir un plan lleva un par de minutos y tu ficha sigue online sin cortes.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Elegir un plan ahora</Button>
-            </Section>
+            <Button href={upgradeUrl}>Elegir un plan ahora</Button>
 
             <Text style={styles.footerNote}>
                 Si preferís dejarlo acá, no hace falta que hagas nada: guardamos tu publicación

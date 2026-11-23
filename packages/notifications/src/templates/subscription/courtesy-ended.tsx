@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -41,7 +40,7 @@ export function CourtesyEnded({
                 Gracias por seguir con nosotros.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="info">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -54,16 +53,14 @@ export function CourtesyEnded({
                     label="Próximo cobro"
                     value={nextBillingDate}
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 A partir de ahora la facturación vuelve a la normalidad, con el mismo medio de pago
                 que ya tenías. No hace falta que hagas nada.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
         </EmailLayout>
     );
 }
@@ -80,16 +77,5 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    infoBox: {
-        backgroundColor: '#eff6ff',
-        borderRadius: '8px',
-        borderLeft: '4px solid #3AA7D9',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     }
 };

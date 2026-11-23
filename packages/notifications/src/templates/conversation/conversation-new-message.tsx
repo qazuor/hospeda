@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { formatCalendarDate, formatCalendarDateRange } from '@repo/utils';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 
 /** Maximum number of message excerpts shown in the email */
@@ -122,18 +121,16 @@ export function ConversationNewMessage({
             )}
 
             {visibleMessages.map((msg) => (
-                <Section
+                <Callout
                     key={msg.timestamp}
-                    style={styles.excerptBox}
+                    tone="info"
                 >
                     <Text style={styles.timestamp}>{msg.timestamp}</Text>
                     <Text style={styles.excerptText}>{msg.excerpt}</Text>
-                </Section>
+                </Callout>
             ))}
 
-            <Section style={styles.buttonContainer}>
-                <Button href={ctaUrl}>Ver conversación</Button>
-            </Section>
+            <Button href={ctaUrl}>Ver conversación</Button>
 
             <Text style={styles.footerNote}>
                 Respondé directamente desde la plataforma para mantener el historial completo.
@@ -155,28 +152,15 @@ const styles = {
         lineHeight: '22px',
         margin: '0 0 16px'
     },
-    excerptBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #3b82f6',
-        padding: '16px 20px',
-        margin: '0 0 12px'
-    },
     timestamp: {
-        color: '#94a3b8',
         fontSize: '12px',
         lineHeight: '16px',
         margin: '0 0 6px'
     },
     excerptText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

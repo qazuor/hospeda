@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatDate } from '../utils/index.js';
@@ -59,7 +58,7 @@ export function SubscriptionCancelConfirmed({
                 You keep full access until <strong>{formattedAccessUntil}</strong>.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="info">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -72,7 +71,7 @@ export function SubscriptionCancelConfirmed({
                     label="Status"
                     value="Cancelled at period end"
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 After {formattedAccessUntil} your account will revert to the free plan and no
@@ -84,11 +83,7 @@ export function SubscriptionCancelConfirmed({
                 period ends.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
-                    Reactivate subscription
-                </Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivate subscription</Button>
         </EmailLayout>
     );
 }
@@ -112,16 +107,5 @@ const styles = {
         lineHeight: '24px',
         fontWeight: '600',
         margin: '0 0 16px'
-    },
-    infoBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #0f766e',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     }
 };

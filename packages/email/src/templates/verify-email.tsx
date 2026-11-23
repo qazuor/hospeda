@@ -1,4 +1,6 @@
-import { Button, Heading, Text } from '@react-email/components';
+import { Heading, Text } from '@react-email/components';
+import { Button } from '../components/button.js';
+import { Callout } from '../components/callout.js';
 import { EmailLayout } from './email-layout.js';
 import { resolveGreeting } from './greeting.js';
 
@@ -58,9 +60,10 @@ export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTempla
                 Haz clic en el botón de abajo para verificar tu correo electrónico:
             </Text>
 
+            {/* Keeps the pre-HOS-2565 attribution slot, so the text part stays byte-identical (AC-2.8). */}
             <Button
                 href={verificationUrl}
-                style={button}
+                utmContent="body-link"
             >
                 Verificar correo electrónico
             </Button>
@@ -71,10 +74,10 @@ export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTempla
                 <span style={link}>{verificationUrl}</span>
             </Text>
 
-            <Text style={notice}>
+            <Callout tone="info">
                 Este enlace expira en 24 horas. Si no solicitaste esta verificación, puedes ignorar
                 este correo de forma segura.
-            </Text>
+            </Callout>
         </EmailLayout>
     );
 }
@@ -95,32 +98,8 @@ const text = {
     margin: '0 0 16px'
 };
 
-const button = {
-    backgroundColor: '#3182ce',
-    borderRadius: '6px',
-    color: '#ffffff',
-    display: 'block',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    textAlign: 'center' as const,
-    textDecoration: 'none',
-    padding: '12px 24px',
-    margin: '24px 0'
-};
-
 const link = {
     color: '#3182ce',
     textDecoration: 'underline',
     wordBreak: 'break-all' as const
-};
-
-const notice = {
-    color: '#718096',
-    fontSize: '14px',
-    lineHeight: '20px',
-    margin: '24px 0 0',
-    padding: '16px',
-    backgroundColor: '#f7fafc',
-    borderRadius: '6px',
-    borderLeft: '4px solid #3182ce'
 };

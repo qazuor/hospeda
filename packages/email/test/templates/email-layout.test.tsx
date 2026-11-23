@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { EMAIL_BUTTON_MEDIA_RULE } from '../../src/components/button.js';
 import { configureEmailAssets, resetEmailAssets } from '../../src/email-assets.js';
 import { renderEmailBodies } from '../../src/render.js';
 import {
@@ -313,6 +314,42 @@ describe('EmailLayout', () => {
 
             // Assert
             expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-isotipo@2x.png"');
+        });
+    });
+    describe('button media rule (HOS-2565 AC-2.6)', () => {
+        it('should emit exactly one <style> whose content is the single .hospeda-btn media rule', async () => {
+            // Arrange & Act
+            const { html } = await renderEmailBodies({
+                attribution: TEST_ATTRIBUTION,
+                react: (
+                    <EmailLayout>
+                        <p>x</p>
+                    </EmailLayout>
+                )
+            });
+            const styleBlocks = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)];
+
+            // Assert
+            expect(styleBlocks).toHaveLength(1);
+            expect(styleBlocks[0]?.[1]).toBe(EMAIL_BUTTON_MEDIA_RULE);
+            expect(EMAIL_BUTTON_MEDIA_RULE).toContain('max-width:480px');
+            expect(EMAIL_BUTTON_MEDIA_RULE).toContain('.hospeda-btn{display:block !important;');
+        });
+
+        it('should keep the <style> out of the text part', async () => {
+            // Arrange & Act
+            const { text } = await renderEmailBodies({
+                attribution: TEST_ATTRIBUTION,
+                react: (
+                    <EmailLayout>
+                        <p>Contenido</p>
+                    </EmailLayout>
+                )
+            });
+
+            // Assert
+            expect(text).not.toContain('hospeda-btn');
+            expect(text).not.toContain('@media');
         });
     });
 });

@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -64,7 +63,7 @@ export function AccommodationCalendarFeedBroken({
                 <strong>doble reserva</strong>.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="warning">
                 <InfoRow
                     label="Alojamiento"
                     value={accommodationName}
@@ -77,16 +76,14 @@ export function AccommodationCalendarFeedBroken({
                     label="Estado"
                     value="Sincronización interrumpida"
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Para evitar el riesgo de doble reserva, te recomendamos reconectar el calendario
                 cuanto antes.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={reconnectUrl}>Reconectar calendario</Button>
-            </Section>
+            <Button href={reconnectUrl}>Reconectar calendario</Button>
 
             <Text style={styles.footer}>
                 Si el problema continúa después de reconectar, escribinos a nuestro equipo de
@@ -115,17 +112,6 @@ const styles = {
         lineHeight: '24px',
         fontWeight: '600',
         margin: '0 0 16px'
-    },
-    infoBox: {
-        backgroundColor: '#fffbeb',
-        borderRadius: '8px',
-        borderLeft: '4px solid #f59e0b',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footer: {
         color: '#94a3b8',

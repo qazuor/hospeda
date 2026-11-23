@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -38,11 +37,11 @@ export function NewsletterWelcomeEmail({
     return (
         <EmailLayout previewText={previewText}>
             {isTest && (
-                <Section style={styles.testBanner}>
+                <Callout tone="warning">
                     <Text style={styles.testBannerText}>
                         [PRUEBA] Este es un envío de prueba. La suscripción no fue activada.
                     </Text>
-                </Section>
+                </Callout>
             )}
 
             <Heading>¡Listo, ya estás suscripto!</Heading>
@@ -60,9 +59,7 @@ export function NewsletterWelcomeEmail({
                 cuenta.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/newsletter/`}>Ver mis preferencias</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/newsletter/`}>Ver mis preferencias</Button>
 
             {waChannelUrl && (
                 <>
@@ -71,14 +68,12 @@ export function NewsletterWelcomeEmail({
                         WhatsApp para recibir las novedades en tu celular.
                     </Text>
 
-                    <Section style={styles.buttonContainer}>
-                        <Button
-                            href={waChannelUrl}
-                            variant="secondary"
-                        >
-                            Unirme al canal de WhatsApp
-                        </Button>
-                    </Section>
+                    <Button
+                        href={waChannelUrl}
+                        variant="secondary"
+                    >
+                        Unirme al canal de WhatsApp
+                    </Button>
                 </>
             )}
 
@@ -91,15 +86,7 @@ export function NewsletterWelcomeEmail({
 }
 
 const styles = {
-    testBanner: {
-        backgroundColor: '#fef3c7',
-        border: '1px solid #f59e0b',
-        borderRadius: '6px',
-        padding: '12px 16px',
-        margin: '0 0 24px'
-    },
     testBannerText: {
-        color: '#92400e',
         fontSize: '14px',
         fontWeight: '600',
         margin: 0,
@@ -116,10 +103,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    buttonContainer: {
-        margin: '24px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

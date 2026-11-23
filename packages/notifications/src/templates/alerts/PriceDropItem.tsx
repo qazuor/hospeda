@@ -1,6 +1,6 @@
 import { Section, Text } from '@react-email/components';
+import { Button } from '@repo/email';
 import type { PriceDropMatch } from '../../types/alert.types.js';
-import { Button } from '../components/button.js';
 import { formatCurrency } from '../utils/index.js';
 import { ALERT_DIGEST_SITE_BASE_URL } from './constants.js';
 
@@ -40,7 +40,10 @@ export function PriceDropItem({ item }: PriceDropItemProps) {
     const ctaUrl = `${ALERT_DIGEST_SITE_BASE_URL}/alojamientos/${item.accommodationSlug}`;
 
     return (
-        <Section style={styles.itemBox}>
+        <Section
+            style={styles.itemBox}
+            data-card="list"
+        >
             <Text style={styles.itemTitle}>{item.accommodationName}</Text>
             <Text style={styles.previousPrice}>Precio anterior: {previousPrice}</Text>
             <Text style={styles.currentPrice}>

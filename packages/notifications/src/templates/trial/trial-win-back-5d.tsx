@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import {
     formatTrialGreeting,
@@ -49,22 +48,20 @@ export function TrialWinBack5Days({
                 con meses de anticipación.
             </Text>
 
-            <Section style={styles.calmBox}>
+            <Callout tone="info">
                 <Text style={styles.paragraph}>
                     Cada día que tu publicación está fuera del sitio son búsquedas en las que{' '}
                     {copy.possessive} no aparece. No es una penalización ni nada que se acumule en
                     tu contra: simplemente no estás en la lista.
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Si querés volver, tu ficha está lista para publicarse de nuevo en cuanto elijas un
                 plan.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Ver los planes</Button>
-            </Section>
+            <Button href={upgradeUrl}>Ver los planes</Button>
         </EmailLayout>
     );
 }

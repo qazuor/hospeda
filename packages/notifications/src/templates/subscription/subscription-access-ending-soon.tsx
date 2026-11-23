@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatDate } from '../utils/index.js';
@@ -66,7 +65,7 @@ export function SubscriptionAccessEndingSoon({
                 Your access expires on <strong>{formattedAccessUntil}</strong>.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="warning">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -79,18 +78,14 @@ export function SubscriptionAccessEndingSoon({
                     label="Days remaining"
                     value={String(daysRemaining)}
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 To keep your current features and limits, reactivate your subscription before{' '}
                 {formattedAccessUntil}.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
-                    Reactivate subscription
-                </Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivate subscription</Button>
 
             <Text style={styles.footer}>
                 If you meant to cancel, no action is needed. Your access ends automatically on{' '}
@@ -119,17 +114,6 @@ const styles = {
         lineHeight: '24px',
         fontWeight: '600',
         margin: '0 0 16px'
-    },
-    infoBox: {
-        backgroundColor: '#fffbeb',
-        borderRadius: '8px',
-        borderLeft: '4px solid #f59e0b',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footer: {
         color: '#94a3b8',

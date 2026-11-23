@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -38,7 +37,7 @@ export function SubscriptionPaused({ recipientName, planName, baseUrl }: Subscri
                 Tu suscripcion al plan <strong>{planName}</strong> ha sido pausada.
             </Text>
 
-            <Section style={styles.warningBox}>
+            <Callout tone="warning">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -47,16 +46,14 @@ export function SubscriptionPaused({ recipientName, planName, baseUrl }: Subscri
                     label="Estado"
                     value="Pausada"
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Podes revisar el estado de tu suscripcion y reactivarla cuando quieras desde tu
                 cuenta.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripcion</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripcion</Button>
         </EmailLayout>
     );
 }
@@ -73,16 +70,5 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    warningBox: {
-        backgroundColor: '#fffbeb',
-        borderRadius: '8px',
-        borderLeft: '4px solid #f59e0b',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     }
 };

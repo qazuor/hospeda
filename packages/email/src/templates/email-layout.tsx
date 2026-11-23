@@ -13,6 +13,7 @@ import {
 } from '@react-email/components';
 import { emailPalette } from '@repo/design-tokens';
 import type { ReactNode } from 'react';
+import { EMAIL_BUTTON_MEDIA_RULE } from '../components/button.js';
 import {
     EMAIL_ISOTIPO_PATH,
     EMAIL_PUBLIC_SITE_URL,
@@ -104,6 +105,8 @@ export function EmailLayout({ previewText, children, footerLink = 'none' }: Emai
                     name="supported-color-schemes"
                     content="light"
                 />
+                {/* The ONLY <style> rule (HOS-2565 D4, AC-2.6): full-width buttons on narrow screens. */}
+                <style>{EMAIL_BUTTON_MEDIA_RULE}</style>
             </Head>
             {previewText ? <Preview>{previewText}</Preview> : null}
             <Body style={styles.body}>

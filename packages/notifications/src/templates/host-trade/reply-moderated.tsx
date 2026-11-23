@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -62,10 +61,10 @@ export function ReplyModerated({ recipientName, outcome, reason, actionUrl }: Re
             )}
 
             {!approved && reason ? (
-                <Section style={styles.reasonBox}>
+                <Callout tone="info">
                     <Text style={styles.reasonLabel}>El motivo fue:</Text>
                     <Text style={styles.reasonText}>{reason}</Text>
-                </Section>
+                </Callout>
             ) : null}
 
             {approved ? null : (
@@ -74,11 +73,9 @@ export function ReplyModerated({ recipientName, outcome, reason, actionUrl }: Re
                 </Text>
             )}
 
-            <Section style={styles.actions}>
-                <Button href={actionUrl}>
-                    {approved ? 'Ver la respuesta' : 'Editar la respuesta'}
-                </Button>
-            </Section>
+            <Button href={actionUrl}>
+                {approved ? 'Ver la respuesta' : 'Editar la respuesta'}
+            </Button>
         </EmailLayout>
     );
 }
@@ -96,15 +93,7 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    reasonBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '20px 24px',
-        margin: '0 0 24px'
-    },
     reasonLabel: {
-        color: '#64748b',
         fontSize: '13px',
         lineHeight: '18px',
         margin: '0 0 8px',
@@ -112,12 +101,8 @@ const styles = {
         letterSpacing: '0.04em'
     },
     reasonText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'
-    },
-    actions: {
-        margin: '0 0 24px'
     }
 };

@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { formatDate } from '../utils/index.js';
 import {
@@ -55,7 +54,7 @@ export function TrialEnding10Days({
                 prueba y no hay nada que tengas que hacer hoy.
             </Text>
 
-            <Section style={styles.calmBox}>
+            <Callout tone="info">
                 <Text style={styles.paragraph}>
                     Tres cosas que suelen marcar la diferencia en las consultas que recibe una
                     ficha:
@@ -65,21 +64,19 @@ export function TrialEnding10Days({
                     <br />• {copy.descriptionTip}
                     <br />• {copy.detailsTip}
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Si algo no te cierra o no encontrás dónde se edita, respondé este mail y te damos
                 una mano. Leemos todo.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button
-                    href={upgradeUrl}
-                    variant="secondary"
-                >
-                    Ver los planes
-                </Button>
-            </Section>
+            <Button
+                href={upgradeUrl}
+                variant="secondary"
+            >
+                Ver los planes
+            </Button>
 
             <Text style={styles.footerNote}>
                 Tu prueba gratis{planFragment} termina el {formattedEndDate}. Te vamos a avisar
