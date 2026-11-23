@@ -46,12 +46,16 @@ vi.mock('../../../src/lib/conversation-mailer', () => ({
     })
 }));
 
-/** Token carried by the last verification email sent to `email`. */
-function capturedToken(email: string): string {
+/** The URL of the last verification email sent to `email`. */
+function capturedUrl(email: string): URL {
     const sent = [...sentVerificationEmails].reverse().find((e) => e.recipientEmail === email);
-    const token = sent ? new URL(sent.verificationUrl).searchParams.get('token') : null;
-    if (!token) throw new Error(`no verification email captured for ${email}`);
-    return token;
+    if (!sent) throw new Error(`no verification email captured for ${email}`);
+    return new URL(sent.verificationUrl);
+}
+
+/** Token carried in the path of the last verification email sent to `email`. */
+function capturedToken(email: string): string {
+    return decodeURIComponent(capturedUrl(email).pathname.split('/').pop() ?? '');
 }
 
 const app = initApp();
@@ -164,6 +168,16 @@ async function verify(token: string): Promise<Response> {
     return app.request(`/api/v1/public/conversations/verify/${token}`, {
         headers: { 'user-agent': 'vitest' }
     });
+}
+
+/**
+ * Requests EXACTLY the path and query of the emailed link against the app, instead of
+ * assembling the route by hand: this is what catches a link that points at a route that does
+ * not exist (HOS-2568: the link used the web origin and a `?token=` query).
+ */
+async function followEmailedLink(email: string): Promise<Response> {
+    const url = capturedUrl(email);
+    return app.request(`${url.pathname}${url.search}`, { headers: { 'user-agent': 'vitest' } });
 }
 
 async function readConversation(conversationId: string): Promise<ConversationRow> {
@@ -491,8 +505,13 @@ describe('HOS-2568 anonymous inquiry message', () => {
             checkOut: '2027-03-04',
             guests: 3
         });
-        const response = await verify(capturedToken(email));
+        const link = capturedUrl(email);
+        expect(link.pathname).toMatch(/^\/api\/v1\/public\/conversations\/verify\/[^/]+$/);
+        expect(link.searchParams.get('token')).toBeNull();
+        const response = await followEmailedLink(email);
 
+        expect(response.status).toBe(302);
+        expect(redirectTarget(response)).toContain('/guest/messages/');
         expect(redirectTarget(response)).not.toContain('verify-expired');
         const thread = await ownerThread({ ownerId, conversationId: created.conversationId });
         expect(thread.data?.messages?.map((m) => m.body)).toEqual([message]);
@@ -512,7 +531,7 @@ describe('HOS-2568 anonymous inquiry message', () => {
         expect(redirectTarget(older)).toContain('verify-expired');
         expect(await readMessages(first.conversationId)).toHaveLength(0);
 
-        const newer = await verify(newerToken);
+        const newer = await followEmailedLink(email);
         expect(redirectTarget(newer)).not.toContain('verify-expired');
         expect((await readMessages(first.conversationId)).map((m) => m.body)).toEqual([
             'Texto dos'
@@ -527,7 +546,7 @@ describe('HOS-2568 anonymous inquiry message', () => {
 
         expect(created.status).toBe(200);
         expect((await readConversation(created.conversationId)).pending_message).toBe('hola mundo');
-        const response = await verify(capturedToken(email));
+        const response = await followEmailedLink(email);
         expect(redirectTarget(response)).not.toContain('verify-expired');
         expect((await readMessages(created.conversationId)).map((m) => m.body)).toEqual([
             'hola mundo'

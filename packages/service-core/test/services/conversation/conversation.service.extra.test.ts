@@ -166,6 +166,7 @@ const mockMailer = {
 const SERVICE_DEPS = {
     authSecret: 'test-secret-must-be-at-least-32-chars-long!!',
     siteUrl: 'https://test.hospeda.com',
+    apiUrl: 'https://api.test.hospeda.com',
     mailer: mockMailer
 } as const;
 

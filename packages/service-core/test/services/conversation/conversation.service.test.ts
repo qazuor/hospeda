@@ -169,6 +169,7 @@ const mockMailer = {
 const SERVICE_DEPS = {
     authSecret: 'test-secret-must-be-at-least-32-chars-long!!',
     siteUrl: 'https://test.hospeda.com',
+    apiUrl: 'https://api.test.hospeda.com',
     mailer: mockMailer
 } as const;
 
@@ -447,6 +448,76 @@ describe('ConversationService', () => {
 
             expect(result.error?.code).toBe('VALIDATION_ERROR');
             expect(mockGetDb).not.toHaveBeenCalled();
+        });
+
+        it('HOS-2568: the emailed link targets the API host with the token in the path', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            mockGetDb.mockReturnValue({
+                select: makeSelectChainMock([]).select,
+                insert: makeInsertChainMock([makeConversation()]).insert
+            });
+            asMock(SERVICE_DEPS.mailer.sendVerificationEmail).mockClear();
+
+            // Act
+            const result = await service.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola',
+                locale: 'pt'
+            });
+
+            // Assert
+            expectSuccess(result);
+            const { verificationUrl } = asMock(SERVICE_DEPS.mailer.sendVerificationEmail).mock
+                .calls[0]?.[0] as { verificationUrl: string };
+            const url = new URL(verificationUrl);
+            expect(url.origin).toBe('https://api.test.hospeda.com');
+            expect(url.origin).not.toBe(new URL(SERVICE_DEPS.siteUrl).origin);
+            expect(url.pathname).toBe('/api/v1/public/conversations/verify/mock.jwt.token');
+            expect(url.searchParams.get('token')).toBeNull();
+            expect(url.searchParams.get('locale')).toBe('pt');
+        });
+
+        it('HOS-2568: refuses to mail a link when no API base URL is configured', async () => {
+            // Arrange
+            const noApiService = new ConversationService(
+                { logger: createLoggerMock() },
+                {
+                    authSecret: SERVICE_DEPS.authSecret,
+                    siteUrl: SERVICE_DEPS.siteUrl,
+                    mailer: mockMailer
+                },
+                conversationModelMock,
+                messageModelMock,
+                accommodationModelMock,
+                accessTokenServiceMock,
+                notificationScheduleMock,
+                messageServiceMock
+            );
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(conversationModelMock.findByAnonymousEmailAndAccommodationId).mockResolvedValue(
+                null
+            );
+            mockGetDb.mockReturnValue({
+                select: makeSelectChainMock([]).select,
+                insert: makeInsertChainMock([makeConversation()]).insert
+            });
+
+            // Act
+            const result = await noApiService.initiateAnonymous(ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                guestName: 'Ana García',
+                guestEmail: 'ana@example.com',
+                message: 'Hola'
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('INTERNAL_ERROR');
         });
 
         it('HOS-2568: a resent replaces the held payload and mails a link bound to it', async () => {
