@@ -90,8 +90,9 @@ islands, where React context does not reach.
 Every kit component accepts an optional `helpId` and renders it as `data-help`
 on its root through `helpAttr()`. `Section` requires one: a `Section` without
 `helpId` does not compile. The anchor grammar is
-`section:<vertical>.<slug>` or `section:<vertical>.<slug>#<element>`, with
-lowercase kebab segments (`isHelpAnchor()` checks the shape). Whether the
+`section:<vertical>.<slug>` (vertical letters only, slug lowercase kebab, no
+`#element`), the same as `parseHelpAnchor` in `@repo/help` (`isHelpAnchor()`
+checks the shape). Whether the
 anchor resolves to a help article is HOS-2410's guard.
 
 ## Guards

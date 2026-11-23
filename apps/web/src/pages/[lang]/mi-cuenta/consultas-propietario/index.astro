@@ -1,22 +1,30 @@
 ---
 /**
  * @file mi-cuenta/consultas-propietario/index.astro
- * @description Authenticated owner inbox — lists conversations for the owner's accommodations.
+ * @description Authenticated owner inbox on the account kit (HOS-2482): the same
+ * `ConversationInbox` island as the guest inbox, with `viewer="owner"`.
+ *
+ * Gate (HOS-2433): a signed-out visitor is sent to login with this URL as the
+ * return path; a signed-in user without the owner permission
+ * (`PermissionEnum.ACCOMMODATION_CREATE`, via `resolveOwnerInboxGate`) sees the
+ * kit `LockedState` inside the shell. The decision is taken before any
+ * conversation is read: the island that reads them is not mounted otherwise.
+ *
+ * The page reads no per-user data beyond that gate: the island fetches the list
+ * in the browser, with error + retry, empty and ready states.
+ *
  * @route /{lang}/mi-cuenta/consultas-propietario/
  * @rendering SSR (on-demand, auth-protected)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
+import { PageHeader } from '@/components/account/ui';
+import { ConversationInbox } from '@/components/account/conversations/ConversationInbox.client';
+import { OwnerInboxLocked } from '@/components/account/conversations/OwnerInboxLocked';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { resolveOwnerInboxGate } from '@/lib/owner-inbox-gate';
-import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
-import { ChatIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -29,274 +37,22 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-// HOS-2433: role gate by PERMISSION (never by role name). The sidebar entry for
-// this inbox lives in the host group gated on ACCOMMODATION_CREATE, so the page
-// applies the same predicate and the two can never disagree. A user without it
-// is sent back to the account home instead of seeing an empty owner inbox.
-const gate = resolveOwnerInboxGate({ roles: user.roles, locale });
-if (gate.action === 'redirect') {
-    return Astro.redirect(gate.location);
-}
+// HOS-2433 / HOS-2482: gate by PERMISSION, never by role name.
+const gate = resolveOwnerInboxGate({ roles: user.roles });
 
-// Pagination from URL search params
-const pageParam = Astro.url.searchParams.get('page');
-const parsed = parseInt(pageParam ?? '1', 10);
+// Pagination from URL search params (the island reads that page).
+const parsed = Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10);
 const page = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-const pageSize = 20;
 
-// Forward the session cookie so the protected endpoint can resolve the
-// authenticated actor; without this the SSR fetch arrives anonymous and the
-// page silently renders the empty inbox.
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const result = await ownerConversationsApi.list({ page, pageSize, cookieHeader });
-
-const conversations = result.ok ? result.data.items : [];
-const pagination = result.ok ? result.data.pagination : null;
-const fetchError = !result.ok;
-
-function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString(
-        locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',
-        { day: '2-digit', month: 'short', year: 'numeric' }
-    );
-}
+const title = t('conversations.inbox.ownerInboxTitle');
 ---
 
-<AccountLayout
-    locale={locale}
-    title={t('conversations.inbox.ownerInboxTitle')}
-    description={t('conversations.inbox.ownerInboxTitle')}
-    activeSection="owner-messages"
->
-    <AccountPageHeader title={t('conversations.inbox.ownerInboxTitle')} />
+<AccountLayout locale={locale} title={title} description={title} activeSection="owner-messages">
+    <PageHeader title={title} locale={locale} />
 
-    <AccountSectionCard>
-        <div class="owner-inbox">
-            {fetchError ? (
-                <div class="owner-inbox__error" role="alert">
-                    <p>{t('conversations.errors.loadFailed', 'No se pudieron cargar las conversaciones. Intentá recargar la página.')}</p>
-                    <a href={Astro.url.pathname} class="owner-inbox__retry">{t('conversations.errors.retry', 'Reintentar')}</a>
-                </div>
-            ) : conversations.length === 0 ? (
-                <AccountEmptyState
-                    title={t('conversations.empty.ownerInboxTitle', 'Todavía no tenés mensajes')}
-                    description={t('conversations.empty.ownerInbox')}
-                >
-                    <ChatIcon slot="icon" size={28} aria-hidden={true} />
-                </AccountEmptyState>
-            ) : (
-                <ul class="owner-inbox__list" role="list">
-                    {conversations.map((conv) => {
-                        const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conv.id}` });
-                        const excerpt = conv.lastMessageExcerpt
-                            ? conv.lastMessageExcerpt.slice(0, 200)
-                            : '';
-                        return (
-                            <li class="owner-inbox__item">
-                                <a href={threadUrl} class="owner-inbox__link">
-                                    <div class="owner-inbox__row">
-                                        <span class="owner-inbox__accommodation">
-                                            {conv.accommodationName}
-                                        </span>
-                                        <span class="owner-inbox__guest">
-                                            {conv.guestName ?? t('conversations.senderLabels.guest')}
-                                        </span>
-                                        {conv.unreadCount > 0 && (
-                                            <span
-                                                class="owner-inbox__badge"
-                                                aria-label={t(
-                                                    'conversations.inbox.unreadCount',
-                                                    undefined,
-                                                    { count: conv.unreadCount }
-                                                )}
-                                            >
-                                                {conv.unreadCount}
-                                            </span>
-                                        )}
-                                        <time
-                                            datetime={conv.lastActivityAt}
-                                            class="owner-inbox__time"
-                                        >
-                                            {formatDate(conv.lastActivityAt)}
-                                        </time>
-                                    </div>
-                                    {excerpt && (
-                                        <p class="owner-inbox__excerpt">{excerpt}</p>
-                                    )}
-                                </a>
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
-
-            {pagination && pagination.totalPages > 1 && (
-                <nav class="owner-inbox__pagination" aria-label="Pagination">
-                    {page > 1 && (
-                        <a
-                            href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page - 1}`}
-                            class="owner-inbox__page-link"
-                        >
-                            &larr;
-                        </a>
-                    )}
-                    <span class="owner-inbox__page-info">
-                        {page} / {pagination.totalPages}
-                    </span>
-                    {page < pagination.totalPages && (
-                        <a
-                            href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page + 1}`}
-                            class="owner-inbox__page-link"
-                        >
-                            &rarr;
-                        </a>
-                    )}
-                </nav>
-            )}
-        </div>
-    </AccountSectionCard>
+    {gate.action === 'locked' ? (
+        <OwnerInboxLocked locale={locale} />
+    ) : (
+        <ConversationInbox client:load locale={locale} viewer="owner" page={page} />
+    )}
 </AccountLayout>
-
-<style>
-    .owner-inbox {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 16px);
-    }
-
-    .owner-inbox__empty {
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        color: var(--core-muted-foreground);
-        padding: var(--space-6, 24px) 0;
-        text-align: center;
-    }
-
-    .owner-inbox__error {
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        color: var(--core-muted-foreground);
-        padding: var(--space-6, 24px);
-        text-align: center;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-card, 24px);
-        background-color: var(--core-card);
-    }
-
-    .owner-inbox__error p {
-        margin: 0 0 var(--space-3, 12px);
-    }
-
-    .owner-inbox__retry {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--brand-primary);
-        text-decoration: underline;
-    }
-
-    .owner-inbox__list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2, 8px);
-    }
-
-    .owner-inbox__item {
-        border: 1px solid var(--border);
-        border-radius: var(--radius-card, 24px);
-        overflow: hidden;
-        transition: box-shadow var(--duration-fast, 0.2s) ease;
-    }
-
-    .owner-inbox__item:hover {
-        box-shadow: var(--shadow-card-hover);
-    }
-
-    .owner-inbox__link {
-        display: block;
-        padding: var(--space-4, 16px);
-        text-decoration: none;
-        background-color: var(--core-card);
-    }
-
-    .owner-inbox__row {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2, 8px);
-        margin-bottom: var(--space-1, 4px);
-    }
-
-    .owner-inbox__accommodation {
-        font-family: var(--font-heading);
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: var(--core-foreground);
-        flex: 1;
-    }
-
-    .owner-inbox__guest {
-        font-family: var(--font-sans);
-        font-size: 0.83rem;
-        color: var(--core-muted-foreground);
-    }
-
-    .owner-inbox__badge {
-        font-family: var(--font-sans);
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: white;
-        background-color: var(--brand-accent);
-        border-radius: var(--radius-pill, 9999px);
-        padding: 2px 8px;
-        line-height: 1.4;
-    }
-
-    .owner-inbox__time {
-        font-family: var(--font-sans);
-        font-size: 0.78rem;
-        color: var(--core-muted-foreground);
-        white-space: nowrap;
-    }
-
-    .owner-inbox__excerpt {
-        font-family: var(--font-sans);
-        font-size: 0.83rem;
-        color: var(--core-muted-foreground);
-        margin: 0;
-        overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-    }
-
-    .owner-inbox__pagination {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-3, 12px);
-        margin-top: var(--space-4, 16px);
-    }
-
-    .owner-inbox__page-link {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--brand-primary);
-        text-decoration: none;
-        padding: var(--space-2, 8px) var(--space-3, 12px);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-button, 8px);
-        transition: background-color var(--duration-fast, 0.2s) ease;
-    }
-
-    .owner-inbox__page-link:hover {
-        background-color: var(--muted);
-    }
-
-    .owner-inbox__page-info {
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--core-muted-foreground);
-    }
-</style>

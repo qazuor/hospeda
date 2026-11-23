@@ -37,7 +37,8 @@ const ACCOUNT_HEADER = read('layouts/AccountHeader.astro');
  * `AccountPageHeader`, directly or through an editor layout. Since
  * `PageHelpRow` is gone, the account layout alone is not enough.
  */
-const PAGE_HELP_PATH = /<AccountPageHeader\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
+const PAGE_HELP_PATH =
+    /<AccountPageHeader\b|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
 
 /** What gives a page at least the general «?»: a page «?», or the account header's. */
 const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b`);

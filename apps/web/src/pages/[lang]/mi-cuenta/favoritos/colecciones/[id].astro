@@ -1,9 +1,10 @@
 ---
 /**
  * @file mi-cuenta/favoritos/colecciones/[id].astro
- * @description Collection detail page. Shows a single bookmark collection with its
- * paginated bookmarks, header metadata (name, description, color, icon, count),
- * entity-type filter tabs, and an action button to remove bookmarks from the collection.
+ * @description Collection detail page on the account kit (HOS-2480). Reads
+ * one bookmark collection with its paginated bookmarks and hands it to the
+ * `CollectionDetailView` island (PageHeader with a back link, Edit/Delete,
+ * type NavTabs, EntityCard grid, link Pagination).
  *
  * Filters and pagination are driven by URL search params:
  *   - `?entityType=ACCOMMODATION` — filter by entity type (omit for "All")
@@ -13,31 +14,18 @@
  * @rendering SSR
  */
 
-import { getMediaUrl } from '@repo/media';
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
-import { CollectionDetailActions } from '@/components/account/CollectionDetailActions.client';
-import { EditableNote } from '@/components/account/EditableNote';
-import { ICON_OPTIONS } from '@/components/account/collection-picker-config';
-import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import {
-	COLLECTION_ENTITY_PATH_SEGMENTS,
-	COLLECTION_ENTITY_TYPES,
-	COLLECTION_FILTER_LABELS,
-	parseCollectionEntityType
-} from '@/lib/collection-entity-types';
-import type { CollectionEntityType } from '@/lib/collection-entity-types';
+	CollectionDetailView,
+	type CollectionDetailRead
+} from '@/components/account/favorites/CollectionDetailView.client';
+import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
+import { parseCollectionEntityType } from '@/lib/collection-entity-types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+import { buildUrl } from '@/lib/urls';
 import { webLogger } from '@/lib/logger';
-
-// ---------------------------------------------------------------------------
-// Route params & auth
-// ---------------------------------------------------------------------------
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -55,36 +43,18 @@ if (!id) {
 	return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
 }
 
-// ---------------------------------------------------------------------------
-// Query params
-// ---------------------------------------------------------------------------
-
-const rawEntityType = Astro.url.searchParams.get('entityType');
-const rawPage = Astro.url.searchParams.get('bookmarksPage');
-
-type ValidEntityType = CollectionEntityType;
-
-const activeEntityType: ValidEntityType | undefined = parseCollectionEntityType({
-	value: rawEntityType
+// Only types in COLLECTION_ENTITY_TYPES are accepted (HOS-2423); anything
+// else falls back to "All".
+const activeEntityType = parseCollectionEntityType({
+	value: Astro.url.searchParams.get('entityType')
 });
-
+const rawPage = Astro.url.searchParams.get('bookmarksPage');
 const currentPage = rawPage && /^\d+$/.test(rawPage) ? Math.max(1, parseInt(rawPage, 10)) : 1;
-
 const PAGE_SIZE = 12;
 
-// ---------------------------------------------------------------------------
-// Translations
-// ---------------------------------------------------------------------------
+const { t } = createTranslations(locale);
 
-const { t, tPlural } = createTranslations(locale);
-
-// ---------------------------------------------------------------------------
-// Server-side fetch: collection + paginated bookmarks
-// ---------------------------------------------------------------------------
-
-// Forward the user's session cookie to the protected API endpoint. Without
-// this, the SSR fetch carries no credentials and the API responds with 401,
-// which the page surfaces as the generic "no se pudo cargar" error.
+// Forward the session cookie: without it the protected endpoint answers 401.
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
 const result = await userBookmarkCollectionsApi.getById({
@@ -95,12 +65,9 @@ const result = await userBookmarkCollectionsApi.getById({
 	cookieHeader
 });
 
-// Treat 404 (collection doesn't exist), 400 (id is not a valid UUID, i.e.
-// someone hit a manually-typed URL) and 403 (the collection belongs to another
-// user) the same way: redirect to the favorites listing. None of these are
-// retryable and 403 must not surface a "server problem" error to someone who
-// guessed another user's collection id. We only render the error state below
-// for 5xx or other unexpected failures the user can actually retry.
+// 404 (missing), 400 (not a UUID) and 403 (someone else's collection) are not
+// retryable and must not confirm that a foreign id exists: back to favorites.
+// Only a 5xx or another unexpected failure reaches the island's ErrorState.
 if (!result.ok) {
 	const status = result.error.status;
 	if (status === 404 || status === 400 || status === 403) {
@@ -110,771 +77,36 @@ if (!result.ok) {
 	webLogger.error('[coleccion-detail] failed to fetch collection', result.error);
 }
 
-// The API inlines collection fields at the top level (no `collection` wrapper)
-// and exposes bookmarks via the standard `{ data, pagination }` envelope.
 const collection = result.ok ? result.data : null;
-const bookmarksData = collection?.bookmarks ?? null;
-
-// ---------------------------------------------------------------------------
-// Pagination helpers
-// ---------------------------------------------------------------------------
-
-const totalPages = bookmarksData?.pagination.totalPages ?? 0;
-
-/**
- * Build a URL for a specific page preserving the active entityType filter.
- */
-function buildPageUrl(page: number): string {
-	const params: Record<string, string> = { bookmarksPage: String(page) };
-	if (activeEntityType) {
-		params.entityType = activeEntityType;
-	}
-	return buildUrlWithParams({
-		locale,
-		path: `mi-cuenta/favoritos/colecciones/${id}`,
-		params
-	});
-}
-
-/**
- * Build a URL for a specific entity type filter, resetting page to 1.
- */
-function buildFilterUrl(entityTypeKey: string): string {
-	if (entityTypeKey === 'ALL') {
-		return buildUrl({ locale, path: `mi-cuenta/favoritos/colecciones/${id}` });
-	}
-	return buildUrlWithParams({
-		locale,
-		path: `mi-cuenta/favoritos/colecciones/${id}`,
-		params: { entityType: entityTypeKey }
-	});
-}
-
-// ---------------------------------------------------------------------------
-// Page metadata
-// ---------------------------------------------------------------------------
+const read: CollectionDetailRead = collection
+	? {
+			ok: true,
+			collection: {
+				id: collection.id,
+				name: collection.name,
+				description: collection.description ?? null,
+				color: collection.color ?? null,
+				icon: collection.icon ?? null
+			},
+			bookmarks: collection.bookmarks?.data ?? [],
+			total: collection.bookmarks?.pagination.total ?? collection.bookmarkCount ?? 0,
+			totalPages: collection.bookmarks?.pagination.totalPages ?? 0
+		}
+	: { ok: false };
 
 const pageTitle = collection
-	? t('account.favorites.collections.title', 'Colección') + ' · ' + collection.name
-	: t('account.favorites.collections.title', 'Colección');
-
-// Resolve the stored icon key (e.g. "star") back to its Phosphor component so
-// we render an SVG instead of the raw key text. Falls back to null when the
-// collection has no icon or the key is not in the curated set.
-const HeaderIcon = collection?.icon
-	? (ICON_OPTIONS.find((opt) => opt.key === collection.icon)?.Component ?? null)
-	: null;
-
-// The endpoint returns `bookmarkCount` only when `includeBookmarkCount` is set,
-// but it always returns `bookmarks.pagination.total` when we pass `includeBookmarks: true`.
-const totalBookmarks =
-	bookmarksData?.pagination.total ?? collection?.bookmarkCount ?? 0;
-const bookmarkCountLabel = collection
-	? tPlural('account.favorites.bookmarks.count', totalBookmarks, {
-			count: totalBookmarks
-		})
-	: null;
-
-// ---------------------------------------------------------------------------
-// Entity type tab config
-// ---------------------------------------------------------------------------
-
-interface EntityTypeTab {
-	readonly key: string;
-	readonly label: string;
-}
-
-const entityTypeTabs: readonly EntityTypeTab[] = [
-	{ key: 'ALL', label: t('account.favorites.filter.all', 'Todos') },
-	...COLLECTION_ENTITY_TYPES.map((type) => ({
-		key: type,
-		label: t(COLLECTION_FILTER_LABELS[type].key, COLLECTION_FILTER_LABELS[type].fallback)
-	}))
-];
-
-function resolveEntityHref(entityType: string, entityId: string): string {
-	const segment =
-		COLLECTION_ENTITY_PATH_SEGMENTS[entityType as CollectionEntityType] ??
-		entityType.toLowerCase();
-	return buildUrl({ locale, path: `${segment}/${entityId}` });
-}
-
-// API base URL for the remove-bookmark island
-const apiBase = getApiUrl();
+	? `${t('account.favorites.collections.title')} · ${collection.name}`
+	: t('account.favorites.collections.title');
 ---
 
 <AccountLayout locale={locale} title={pageTitle} activeSection="favoritos">
-	<!-- ------------------------------------------------------------------ -->
-	<!-- Breadcrumb                                                           -->
-	<!-- ------------------------------------------------------------------ -->
-	<Breadcrumbs
-		class="coleccion-breadcrumb"
+	<CollectionDetailView
+		client:load
 		locale={locale}
-		items={[
-			{ label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos' },
-			{
-				label: collection
-					? collection.name
-					: t('account.favorites.collections.title', 'Colección')
-			}
-		]}
+		apiUrl={getApiUrl()}
+		collectionId={id}
+		read={read}
+		activeEntityType={activeEntityType}
+		currentPage={currentPage}
 	/>
-
-	<AccountSectionCard>
-	<!-- ------------------------------------------------------------------ -->
-	<!-- Error state — only reached on 5xx or other unexpected failures.    -->
-	<!-- 404 / 400 are handled by the early redirect above.                  -->
-	<!-- ------------------------------------------------------------------ -->
-	{
-		!result.ok && (
-			<section class="coleccion-error" aria-labelledby="coleccion-error-title">
-				<h1 id="coleccion-error-title" class="coleccion-error__title">
-					{t('account.favorites.collections.errorTitle', 'No pudimos cargar la colección')}
-				</h1>
-				<p class="coleccion-error__message" role="alert">
-					{t(
-						'account.favorites.collections.fetchError',
-						'Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.'
-					)}
-				</p>
-				<a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="coleccion-error__back">
-					{t('account.favorites.collections.backToList', 'Volver a mis favoritos')}
-				</a>
-			</section>
-		)
-	}
-
-	<!-- ------------------------------------------------------------------ -->
-	<!-- Collection header                                                    -->
-	<!-- ------------------------------------------------------------------ -->
-	{
-		collection && (
-			<header class="coleccion-header">
-				<!-- Color swatch + icon -->
-				<div class="coleccion-header__identity">
-					{collection.color && (
-						<span
-							class="coleccion-header__color-swatch"
-							style={`background-color: ${collection.color};`}
-							aria-hidden="true"
-						/>
-					)}
-					{HeaderIcon && (
-						<span class="coleccion-header__icon" aria-hidden="true">
-							<HeaderIcon size={28} weight="duotone" />
-						</span>
-					)}
-				</div>
-
-				<!-- Title area -->
-				<div class="coleccion-header__text">
-					<h1 class="coleccion-header__title">{collection.name}</h1>
-
-					{collection.description && (
-						<p class="coleccion-header__description">{collection.description}</p>
-					)}
-
-					{bookmarkCountLabel && (
-						<span class="coleccion-header__count">{bookmarkCountLabel}</span>
-					)}
-				</div>
-
-				<!--
-					Action buttons (Edit + Delete).
-					Hydrated as a React island so the modal + delete confirmation flow
-					can manage their own state without the rest of the page going client-side.
-				-->
-				<div class="coleccion-header__actions">
-					<CollectionDetailActions
-						client:load
-						collection={{
-							id: collection.id,
-							name: collection.name,
-							description: collection.description ?? null,
-							color: collection.color ?? null,
-							icon: collection.icon ?? null
-						}}
-						locale={locale}
-						lang={locale}
-					/>
-				</div>
-			</header>
-		)
-	}
-
-	<!-- ------------------------------------------------------------------ -->
-	<!-- Body: filter tabs + bookmark grid + pagination                      -->
-	<!-- ------------------------------------------------------------------ -->
-	{
-		collection && (
-			<div class="coleccion-body">
-				<!-- Entity type filter tabs (links — SSR navigation) -->
-				<nav
-					class="coleccion-tabs"
-					aria-label={t('account.favorites.filter.label', 'Filtrar por tipo')}
-				>
-					<ul class="coleccion-tabs__list" role="list">
-						{entityTypeTabs.map((tab) => {
-							const isActive =
-								tab.key === 'ALL' ? !activeEntityType : tab.key === activeEntityType;
-							return (
-								<li class="coleccion-tabs__item">
-									<a
-										href={buildFilterUrl(tab.key)}
-										class:list={[
-											'coleccion-tabs__btn',
-											{ 'coleccion-tabs__btn--active': isActive }
-										]}
-										aria-current={isActive ? 'true' : undefined}
-									>
-										{tab.label}
-									</a>
-								</li>
-							);
-						})}
-					</ul>
-				</nav>
-
-				<!-- Empty state when no bookmarks match the current filter -->
-				{bookmarksData && bookmarksData.data.length === 0 && (
-					<div class="coleccion-empty" role="status">
-						<p class="coleccion-empty__message">
-							{t(
-								'account.favorites.collections.emptyBookmarks',
-								'Esta colección no tiene favoritos del tipo seleccionado.'
-							)}
-						</p>
-					</div>
-				)}
-
-				<!-- Bookmark grid -->
-				{bookmarksData && bookmarksData.data.length > 0 && (
-					<ul
-						class="coleccion-grid"
-						aria-label={t('account.favorites.listLabel', 'Mis favoritos')}
-					>
-						{bookmarksData.data.map((bookmark) => {
-							// Prefer the server-resolved slug for the entity detail link; fall
-							// back to entityId when enrichment couldn't resolve the entity.
-							const identifier = bookmark.entitySlug ?? bookmark.entityId;
-							const href = resolveEntityHref(bookmark.entityType, identifier);
-							const typeLabel =
-								entityTypeTabs.find((tab) => tab.key === bookmark.entityType)?.label ??
-								bookmark.entityType;
-							const displayTitle =
-								bookmark.name ??
-								bookmark.entityName ??
-								t('common.untitled', 'Sin título');
-							return (
-								<li class="coleccion-card">
-									<!-- Image: server-enriched featured image with type label fallback -->
-									<div class="coleccion-card__image">
-										{bookmark.entityImage ? (
-											<img
-												src={getMediaUrl(bookmark.entityImage, { preset: 'card' })}
-												alt={displayTitle}
-												class="coleccion-card__img"
-												loading="lazy"
-											/>
-										) : (
-											<div class="coleccion-card__image-placeholder" aria-hidden="true">
-												{typeLabel}
-											</div>
-										)}
-									</div>
-
-									<!-- Card body: name + type + inline note editor -->
-									<div class="coleccion-card__body">
-										<h3 class="coleccion-card__title">
-											<a href={href} class="coleccion-card__link">
-												{displayTitle}
-											</a>
-										</h3>
-										<p class="coleccion-card__meta">{typeLabel}</p>
-										<EditableNote
-											client:visible
-											bookmarkId={bookmark.id}
-											initialValue={bookmark.description ?? null}
-											apiBase={apiBase}
-											placeholder={t(
-												'account.favorites.notes.placeholder',
-												'Agregá una nota personal...'
-											)}
-											saveLabel={t('account.favorites.notes.save', 'Guardar nota')}
-											cancelLabel={t('account.favorites.notes.cancel', 'Cancelar')}
-											textareaLabel={t(
-												'account.favorites.notes.placeholder',
-												'Agregá una nota personal...'
-											)}
-											editButtonLabel={t(
-												'account.favorites.notes.placeholder',
-												'Agregá una nota personal...'
-											)}
-											saveErrorMessage={t(
-												'account.favorites.errors.saveFailed'
-											)}
-											savedLabel={t('account.favorites.notes.saved', 'Nota guardada')}
-										/>
-									</div>
-
-									<!-- Footer: remove from collection (React island) -->
-									<div class="coleccion-card__footer">
-										<CollectionBookmarkRemoveBtn
-											client:visible
-											collectionId={id}
-											bookmarkId={bookmark.id}
-											apiBase={apiBase}
-											locale={locale}
-											ariaLabel={`${t('account.favorites.collections.removeFromCollection', 'Quitar de colección')}: ${displayTitle}`}
-										/>
-									</div>
-								</li>
-							);
-						})}
-					</ul>
-				)}
-
-				<!-- Pagination (SSR link-based, no client state) -->
-				{bookmarksData && totalPages > 1 && (
-					<nav
-						class="coleccion-pagination"
-						aria-label={t('common.pagination', 'Paginación')}
-					>
-						{currentPage > 1 ? (
-							<a
-								href={buildPageUrl(currentPage - 1)}
-								class="coleccion-pagination__btn"
-								aria-label={t(
-									'account.favorites.collections.prevPage',
-									'Página anterior'
-								)}
-							>
-								{t('common.prev', 'Anterior')}
-							</a>
-						) : (
-							<span
-								class="coleccion-pagination__btn coleccion-pagination__btn--disabled"
-								aria-disabled="true"
-							>
-								{t('common.prev', 'Anterior')}
-							</span>
-						)}
-
-						<span class="coleccion-pagination__info">
-							{t(
-								'account.favorites.collections.pageInfo',
-								'Página {{page}} de {{total}}',
-								{
-									page: currentPage,
-									total: totalPages
-								}
-							)}
-						</span>
-
-						{currentPage < totalPages ? (
-							<a
-								href={buildPageUrl(currentPage + 1)}
-								class="coleccion-pagination__btn"
-								aria-label={t(
-									'account.favorites.collections.nextPage',
-									'Página siguiente'
-								)}
-							>
-								{t('common.next', 'Siguiente')}
-							</a>
-						) : (
-							<span
-								class="coleccion-pagination__btn coleccion-pagination__btn--disabled"
-								aria-disabled="true"
-							>
-								{t('common.next', 'Siguiente')}
-							</span>
-						)}
-					</nav>
-				)}
-			</div>
-		)
-	}
-	</AccountSectionCard>
 </AccountLayout>
-
-<style>
-	/* ------------------------------------------------------------------ */
-	/* Breadcrumb                                                           */
-	/* ------------------------------------------------------------------ */
-	/*
-	 * Spacing only — the trail itself is styled by the shared Breadcrumbs
-	 * component. `:global` is required because the <nav> is rendered by that
-	 * component and therefore carries ITS scope hash, not this page's.
-	 */
-	:global(.coleccion-breadcrumb) {
-		margin-bottom: var(--space-5);
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Error state                                                          */
-	/* ------------------------------------------------------------------ */
-	.coleccion-error {
-		padding: var(--space-8);
-		background-color: var(--core-card);
-		border-radius: var(--radius-card);
-		border: 1px solid var(--border);
-		text-align: center;
-	}
-
-	.coleccion-error__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-2) 0;
-		line-height: 1.2;
-	}
-
-	.coleccion-error__message {
-		font-family: var(--font-sans);
-		color: var(--core-muted-foreground);
-		margin: 0 0 var(--space-4) 0;
-	}
-
-	.coleccion-error__back {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--brand-primary);
-		text-decoration: underline;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Collection header                                                    */
-	/* ------------------------------------------------------------------ */
-	.coleccion-header {
-		display: flex;
-		align-items: flex-start;
-		flex-wrap: wrap;
-		gap: var(--space-4);
-		margin-bottom: var(--space-6);
-		padding-bottom: var(--space-6);
-		border-bottom: 1px solid var(--border);
-	}
-
-	.coleccion-header__identity {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		flex-shrink: 0;
-	}
-
-	.coleccion-header__color-swatch {
-		display: inline-block;
-		width: 20px;
-		height: 20px;
-		border-radius: 50%;
-		flex-shrink: 0;
-	}
-
-	.coleccion-header__icon {
-		font-size: 1.5rem;
-		line-height: 1;
-	}
-
-	.coleccion-header__text {
-		flex: 1 1 auto;
-		min-width: 0;
-	}
-
-	.coleccion-header__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-2) 0;
-		line-height: 1.2;
-	}
-
-	.coleccion-header__description {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
-		color: var(--core-muted-foreground);
-		margin: 0 0 var(--space-2) 0;
-		line-height: 1.5;
-	}
-
-	.coleccion-header__count {
-		display: inline-block;
-		font-family: var(--font-sans);
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--core-muted-foreground);
-		background-color: var(--muted);
-		padding: 2px var(--space-2);
-		border-radius: var(--radius-pill);
-	}
-
-	.coleccion-header__actions {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		flex-shrink: 0;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Body                                                                 */
-	/* ------------------------------------------------------------------ */
-	.coleccion-body {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-6);
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Filter tabs — matches UserFavoritesList underline style             */
-	/* ------------------------------------------------------------------ */
-	.coleccion-tabs {
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.coleccion-tabs__list {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2, 8px);
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		border-bottom: 2px solid var(--border);
-		min-width: max-content;
-	}
-
-	.coleccion-tabs__btn {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2, 8px);
-		padding: var(--space-2, 8px) var(--space-4, 16px);
-		font-family: var(--font-sans);
-		font-size: 0.9375rem;
-		font-weight: 500;
-		color: var(--core-muted-foreground);
-		background-color: transparent;
-		border: none;
-		border-bottom: 2px solid transparent;
-		margin-bottom: -2px;
-		text-decoration: none;
-		white-space: nowrap;
-		transition:
-			color var(--duration-normal, 0.4s) ease,
-			border-color var(--duration-normal, 0.4s) ease;
-	}
-
-	.coleccion-tabs__btn:hover:not(.coleccion-tabs__btn--active) {
-		background-color: transparent;
-		color: var(--core-foreground);
-		border-bottom-color: var(--border);
-	}
-
-	.coleccion-tabs__btn--active {
-		background-color: transparent;
-		color: var(--brand-primary);
-		border-bottom-color: var(--brand-primary);
-		font-weight: 600;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Empty state                                                          */
-	/* ------------------------------------------------------------------ */
-	.coleccion-empty {
-		padding: var(--space-12) var(--space-8);
-		background-color: var(--core-card);
-		border-radius: var(--radius-card);
-		border: 1px dashed var(--border);
-		text-align: center;
-	}
-
-	.coleccion-empty__message {
-		font-family: var(--font-sans);
-		color: var(--core-muted-foreground);
-		margin: 0;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Bookmark grid                                                        */
-	/* ------------------------------------------------------------------ */
-	.coleccion-grid {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: var(--space-card-gap);
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	@media (min-width: 640px) {
-		.coleccion-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.coleccion-grid {
-			grid-template-columns: repeat(3, 1fr);
-		}
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Bookmark card                                                        */
-	/* ------------------------------------------------------------------ */
-	.coleccion-card {
-		background-color: var(--core-card);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-card);
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		transition:
-			box-shadow var(--duration-normal) ease,
-			transform var(--duration-normal) ease;
-	}
-
-	.coleccion-card:hover {
-		box-shadow: var(--shadow-card-hover);
-		transform: translateY(-2px);
-	}
-
-	.coleccion-card__image {
-		aspect-ratio: 16 / 9;
-		overflow: hidden;
-	}
-
-	.coleccion-card__img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.coleccion-card__image-placeholder {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background-color: var(--surface-warm);
-		color: var(--core-muted-foreground);
-		font-family: var(--font-sans);
-		font-size: 0.8125rem;
-	}
-
-	.coleccion-card__body {
-		padding: var(--space-4);
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		flex: 1;
-	}
-
-	.coleccion-card__title {
-		font-family: var(--font-heading);
-		font-weight: 600;
-		font-size: 1rem;
-		color: var(--core-foreground);
-		margin: 0;
-		line-height: 1.4;
-		overflow: hidden;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-	}
-
-	.coleccion-card__link {
-		color: inherit;
-		text-decoration: none;
-	}
-
-	.coleccion-card__link:hover {
-		color: var(--brand-primary);
-	}
-
-	.coleccion-card__meta {
-		font-family: var(--font-sans);
-		font-size: 0.8125rem;
-		color: var(--core-muted-foreground);
-		margin: 0;
-	}
-
-	.coleccion-card__note {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		color: var(--core-muted-foreground);
-		margin: 0;
-		font-style: italic;
-		overflow: hidden;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-	}
-
-	.coleccion-card__footer {
-		padding: var(--space-3) var(--space-4);
-		border-top: 1px solid var(--border);
-		display: flex;
-		justify-content: flex-end;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Pagination                                                           */
-	/* ------------------------------------------------------------------ */
-	.coleccion-pagination {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-4);
-	}
-
-	.coleccion-pagination__btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--space-2) var(--space-4);
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--brand-primary);
-		background-color: var(--core-card);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-button);
-		text-decoration: none;
-		transition:
-			background-color var(--duration-fast) ease,
-			color var(--duration-fast) ease;
-	}
-
-	.coleccion-pagination__btn:not(.coleccion-pagination__btn--disabled):hover {
-		background-color: var(--muted);
-	}
-
-	.coleccion-pagination__btn--disabled {
-		opacity: 0.4;
-		cursor: not-allowed;
-		color: var(--core-muted-foreground);
-	}
-
-	.coleccion-pagination__info {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		color: var(--core-muted-foreground);
-		white-space: nowrap;
-	}
-
-	/* ------------------------------------------------------------------ */
-	/* Responsive                                                           */
-	/* ------------------------------------------------------------------ */
-	@media (max-width: 640px) {
-		.coleccion-header {
-			flex-direction: column;
-		}
-
-		.coleccion-header__actions {
-			width: 100%;
-			justify-content: flex-end;
-		}
-	}
-</style>

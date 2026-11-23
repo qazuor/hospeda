@@ -21,12 +21,11 @@ const FILES = [
     'host/host-trades/ProviderUsagesPanel.client.tsx',
     'host/host-trades/ProviderReviewsPanel.client.tsx',
     'host/host-trades/ProviderQrPanel.client.tsx',
-    'account/ProfileEditAvatarSection.tsx',
-    'account/ProfileEditExtrasSection.tsx',
-    'account/ProfileEditLocationSection.tsx',
-    'account/ProfileEditPersonalSection.tsx',
-    'account/ProfileEditSecuritySection.tsx',
+    'account/ProfileEditIdentitySection.tsx',
+    'account/ProfileEditContactSection.tsx',
+    'account/ProfileEditAboutSection.tsx',
     'account/ProfileEditSocialSection.tsx',
+    'account/ProfileEditSecuritySection.tsx',
     'account/PreferenceToggles.client.tsx',
     'account/RestartTour.client.tsx'
 ] as const;
@@ -35,6 +34,7 @@ describe('account panels sit directly under the page h1 (HOS-2453)', () => {
     it.each(FILES)('%s uses no h3', (file) => {
         const source = readFileSync(resolve(SRC, file), 'utf8');
         expect(source).not.toMatch(/<h3[\s>]/);
-        expect(source).toMatch(/<h2[\s>]/);
+        // A kit `Section` renders its own h2 (headingLevel defaults to 2).
+        expect(source).toMatch(/<h2[\s>]|<Section[\s>]/);
     });
 });
