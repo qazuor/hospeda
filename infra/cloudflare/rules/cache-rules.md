@@ -130,6 +130,16 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/autores")))
 ```
 
+**Campaign UTMs (HOS-2359, drafted 2026-11-23, not yet applied).** Once the
+`HOS-2359 - <env> strip utm before cache` URL Rewrite Rules are live
+([`transform-rules.md`](transform-rules.md)), a request whose only params are
+`utm_*` reaches this rule and its production twin (rule 4) with an **empty query**.
+The rewrite runs in `http_request_transform`, before this phase, so
+`http.request.uri.query eq ""` matches and the request shares the plain URL's
+cache object. Any other param still fails the clause, as today. When this
+expression changes, change the rewrite's filter in the same edit: it copies the
+host, method, cookie and path clauses verbatim.
+
 **Applied and verified, 2026-09-04.** Both rules now carry all thirty-six
 `starts_with` terms above — see
 [W2-5 (HOS-519)](#w2-5-hos-519--partner-gold-pages) and
