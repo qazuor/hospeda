@@ -129,6 +129,19 @@ export function BusinessLinesField({
         readonly next: readonly string[];
     } | null>(null);
 
+    // A selection changed from OUTSIDE (a «Descartar», a reset after save) to
+    // anything but what the removal produced means that removal is no longer
+    // pending: the notice would otherwise keep warning about sections that the
+    // restored selection still shows.
+    const selectedKey = selected.join('|');
+    const [seenSelectedKey, setSeenSelectedKey] = useState(selectedKey);
+    if (selectedKey !== seenSelectedKey) {
+        setSeenSelectedKey(selectedKey);
+        if (pendingRemoval && pendingRemoval.next.join('|') !== selectedKey) {
+            setPendingRemoval(null);
+        }
+    }
+
     // A type change replaces the rules the removal notice was computed under,
     // so the notice is no longer pending. A line re-added after a removal is
     // handled by the toggle itself (it sets the notice to `null`).

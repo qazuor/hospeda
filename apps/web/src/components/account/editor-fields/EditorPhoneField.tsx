@@ -6,8 +6,10 @@
  * The kit `PhoneField` has a fixed «+54» addon and no country picker, so this
  * reuses `CountryCodeCombobox` (spec §6.3: «reused inside it if the kit piece
  * lacks a country picker») next to a kit `TextInput`. The stored value stays
- * ONE string: the pair is parsed once on mount and recomposed on every change
+ * ONE string: the pair is parsed from it and recomposed on every change
  * (`@/lib/phone-countries`), so dirty tracking and the PATCH are unchanged.
+ * The pair is re-parsed only when the value changes from OUTSIDE (a discard, a
+ * reset after save): a value the pair itself composed never resets the typing.
  *
  * Ids follow the editor contract: the number input gets
  * `buildFieldId({ prefix, name, suffix })` (the focus target of «Ir al primer
@@ -68,9 +70,22 @@ export function EditorPhoneField({
     const numberId = buildFieldId({ prefix: idPrefix, name, suffix });
     const countryId = buildFieldId({ prefix: idPrefix, name, suffix: 'country' });
 
-    // Lazy initializers: parse once, then the two halves are the source of truth.
+    // The two halves are the source of truth while the owner types.
     const [country, setCountry] = useState<PhoneCountry>(() => parsePhoneValue(value).country);
     const [number, setNumber] = useState<string>(() => parsePhoneValue(value).number);
+    // A value the halves did not compose came from outside (e.g. «Descartar»):
+    // re-parse it, or the inputs would keep showing the discarded phone and the
+    // next keystroke would write it back. Adjusting state during render is
+    // React's documented pattern for deriving from a changed prop.
+    const [seen, setSeen] = useState(value);
+    if (value !== seen) {
+        setSeen(value);
+        if (value !== composePhoneValue({ country, number })) {
+            const parsed = parsePhoneValue(value);
+            setCountry(parsed.country);
+            setNumber(parsed.number);
+        }
+    }
 
     return (
         <Field

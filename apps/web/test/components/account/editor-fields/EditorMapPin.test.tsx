@@ -176,4 +176,36 @@ describe('EditorMapPin', () => {
         expect(screen.getByLabelText(/^Latitud/)).toHaveValue('-32.123457');
         expect(screen.getByLabelText(/^Longitud/)).toHaveValue('-58.765432');
     });
+
+    it('shows the baseline coordinates again after a discard (HOS-2497 review)', () => {
+        function Discardable() {
+            const baseline = { lat: '-32.5', long: '-58.2' };
+            const [pair, setPair] = useState(baseline);
+            return (
+                <>
+                    <EditorMapPin
+                        locale="es"
+                        idPrefix="ce"
+                        mapLabel="Mapa del lugar"
+                        lat={{ name: 'lat', value: pair.lat }}
+                        long={{ name: 'long', value: pair.long }}
+                        onChange={setPair}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setPair(baseline)}
+                    >
+                        Descartar
+                    </button>
+                </>
+            );
+        }
+        render(<Discardable />);
+        const latitude = screen.getByLabelText(/^Latitud/);
+
+        fireEvent.change(latitude, { target: { value: '-31.9' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+
+        expect(latitude).toHaveValue('-32.5');
+    });
 });
