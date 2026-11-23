@@ -206,6 +206,41 @@ describe('the gate, against Astro’s installed directive scripts', () => {
         expect(harness.hydrated).toEqual(['EarlyIsland']);
     });
 
+    it('a directive that throws while queued rejects its own island and releases the rest', async () => {
+        // Astro's island `start()` wraps each `await Astro[t](...)` in its own
+        // try/catch. The gate must keep that per-island isolation: one throw
+        // (e.g. an invalid IntersectionObserver rootMargin) may neither strand
+        // the islands queued after it nor leave its own promise pending.
+        const harness = createHarness();
+        harness.run(buildHydrationGateScript({ earlyIslands: [] }));
+        harness.run(
+            '(self.Astro||(self.Astro={})).visible=function(load,opts){' +
+                'if(opts.name==="Boom")throw new Error("boom");' +
+                'return load().then(function(h){return h();});};'
+        );
+        const visible = harness.astro().visible;
+        if (!visible) throw new Error('Astro.visible is not registered');
+        const island = (name: string): unknown =>
+            visible(
+                async () => async () => {
+                    harness.hydrated.push(name);
+                },
+                { name, value: '' },
+                {}
+            );
+
+        const before = island('Before');
+        const boom = island('Boom');
+        const after = island('After');
+        harness.fireDomContentLoaded();
+        await flush();
+
+        await expect(boom).rejects.toThrow('boom');
+        await expect(before).resolves.toBeUndefined();
+        await expect(after).resolves.toBeUndefined();
+        expect(harness.hydrated).toEqual(['Before', 'After']);
+    });
+
     it('does not treat inherited object keys as allowlisted names', async () => {
         const harness = await setUp();
 

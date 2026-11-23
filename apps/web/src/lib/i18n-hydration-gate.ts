@@ -68,7 +68,10 @@ export function buildHydrationGateScript(input: {
         'set:function(fn){real=fn;},',
         'get:function(){return real&&function(load,opts,el){',
         'if(open||(opts&&early[opts.name]===1))return real(load,opts,el);',
-        'return new Promise(function(resolve){queue.push(function(){resolve(real(load,opts,el));});});',
+        // Each queued call catches its own throw and rejects, so one failing
+        // directive neither strands the islands queued after it nor hides the
+        // error from Astro's per-island catch in `start()`.
+        'return new Promise(function(resolve,reject){queue.push(function(){try{resolve(real(load,opts,el));}catch(e){reject(e);}});});',
         '};}});',
         '});',
         '})(window,document);'
