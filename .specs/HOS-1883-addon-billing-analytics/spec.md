@@ -332,6 +332,7 @@ happens through the S11 rule (`complement-s11-rule.ts:62-85`) or through the mir
 | `ACTIVE`, `PERIODICO` | `ALREADY_CANCELLED` because an earlier S20 ended its billing | A5 later | nothing: the instance was already free |
 | `ACTIVE`, free choice (no complement, `titleAnchorId` set) | none | A5 later | nothing: the instance was never paid |
 | `ACTIVE`, `UNA_VEZ` | none | A5 or A6 | `addon_cancelled` with the call site's `path` |
+| `ACTIVE`, `PERIODICO`, paid | `ACTIVE` → `CANCELLED` by the provider-cancel mirror of `processProviderNotice` (payer or provider cancelled at MercadoPago) | the notice path | `addon_cancelled{path:'PROVIDER_CANCELLED', actor_kind:'SYSTEM', was_scheduled:false}`, emitted post-commit from that branch only when its guarded `UPDATE` returned the row. Owner decision on review finding I1 (2026-11-22): the notice cannot tell payer from provider, so no existing path fit. A later A5 sees `ALREADY_CANCELLED` and owes nothing |
 
 ### 5.4 Adapter
 
