@@ -44,9 +44,6 @@
     "apps/web/src/components/host/editor/CalendarSyncPanel.module.css": {
         "media": 1
     },
-    "apps/web/src/components/host/editor/EditorRouteNav.astro": {
-        "media": 1
-    },
     "apps/web/src/components/host/editor/PhotoSection.module.css": {
         "media": 1
     },
@@ -69,9 +66,6 @@
         "media": 1
     },
     "apps/web/src/layouts/AccountLayout.astro": {
-        "media": 1
-    },
-    "apps/web/src/layouts/EditorShellLayout.astro": {
         "media": 1
     },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {

@@ -253,13 +253,6 @@
             "reason": "Editor section visibility map (which editor sections show), not a listing column."
         },
         {
-            "file": "apps/web/src/components/host/editor/EditorRouteNav.astro",
-            "name": "visibility",
-            "count": 3,
-            "table": "none (editor sections)",
-            "reason": "Editor section visibility map (which editor sections show), not a listing column."
-        },
-        {
             "file": "apps/web/src/components/host/host-trades/merge-saved-reply.ts",
             "name": "moderationState",
             "count": 1,

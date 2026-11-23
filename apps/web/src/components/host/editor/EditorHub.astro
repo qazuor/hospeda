@@ -1,33 +1,35 @@
 ---
 /**
  * @file EditorHub.astro
- * @description The editor's landing page: every section as a row (HOS-318 T-007;
- * registry-driven across verticals since HOS-1080).
+ * @description The one editor hub both editors share: the completeness meter
+ * and every section as a row (HOS-318 T-007; registry-driven since HOS-1080;
+ * rebuilt on the Mi cuenta kit by HOS-2499 / HOS-2493).
  *
- * Rendered at `…/editar/` on BOTH viewports (D-8). On narrow screens it IS the
- * navigation — there is no persistent sidebar there. On desktop it doubles as a
- * status summary of the property, which is why it is a real page and not a
- * redirect to the first section. A redirect would also trap the back button
- * (section → hub → re-redirect).
+ * Rendered at `…/editar/` on every viewport (D-8). On narrow screens it IS the
+ * navigation; on desktop it doubles as the listing's status summary, which is
+ * why it is a real page and not a redirect to the first section.
  *
- * Each group is an `AccountSectionCard`, the same surface every other
- * `/mi-cuenta` page uses, so the hub reads as part of the account area rather
- * than as a bespoke screen. Zero JavaScript.
+ * - `CompletenessMeter` on top, fed by the completeness each editor already
+ *   computes (`resolveAccommodationCompleteness` /
+ *   `resolveListingEditorCompleteness`). Its missing items link to their
+ *   sections.
+ * - Flat groups (a heading and a list, no cards), width `--form-max`.
+ * - Rows are 56px tap targets; a row's state is a `StatusPill` that says it in
+ *   words, so colour is never the only signal.
  *
- * Design constraints, all driven by the audience (largely older, non-technical
- * hosts): every row is a 44px+ tap target, every icon sits BESIDE its text and
- * never replaces it, and warnings say what is wrong in words rather than relying
- * on colour.
+ * Zero JavaScript.
  */
 
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { CompletenessMeter, StatusPill } from '@/components/account/ui';
+import type { StatusTone } from '@/components/account/ui/status-tone';
+import type { EditorCompleteness } from '@/lib/editor/editor-completeness';
+import type { EditorSectionStatus, EditorStatusTone } from '@/lib/editor/editor-hub-status-model';
 import {
 	buildEditorSectionUrl,
 	type EditorRegistry,
 	type EditorSectionVisibility,
 	getVisibleEditorSections,
 } from '@/lib/editor/editor-registry';
-import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -38,12 +40,22 @@ interface Props {
 	readonly entityId: string;
 	/** Runtime answers to the registry's visibility keys. */
 	readonly visibility?: EditorSectionVisibility;
-	/** Status lines keyed by section id. A missing key renders no second line. */
+	/** Status lines keyed by section id. A missing key renders no pill. */
 	readonly statuses: Readonly<Record<string, EditorSectionStatus>>;
+	/** What the listing still needs, by section. Omitted: no meter. */
+	readonly completeness?: EditorCompleteness;
 }
 
-const { locale, registry, entityId, visibility = {}, statuses } = Astro.props;
+const { locale, registry, entityId, visibility = {}, statuses, completeness } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
+
+/** Hub tone → kit pill tone. */
+const PILL_TONE: Readonly<Record<EditorStatusTone, StatusTone>> = {
+	neutral: 'neutral',
+	warning: 'warning',
+	blocking: 'danger',
+	locked: 'plan',
+};
 
 const visible = getVisibleEditorSections({ registry, visibility });
 
@@ -54,11 +66,47 @@ const groups = registry.groups
 		sections: visible.filter((section) => section.group === group),
 	}))
 	.filter((entry) => entry.sections.length > 0);
+
+const statusText = (status: EditorSectionStatus): string =>
+	status.tone === 'blocking' && status.missingRequirementLabelKeys
+		? t(status.labelKey, undefined, {
+				fields: status.missingRequirementLabelKeys.map((key) => t(key)).join(', '),
+			})
+		: typeof status.params?.count === 'number'
+			? tPlural(status.labelKey, status.params.count, status.params)
+			: t(status.labelKey, undefined, status.params);
+
+// A missing section links to its page when it is visible here; one the
+// registry hides (or does not know) is still named, without a link.
+const missingItems = (completeness?.missing ?? []).map((sectionId) => {
+	const section = registry.sections.find((entry) => entry.id === sectionId);
+	const isVisible = visible.some((entry) => entry.id === sectionId);
+	return {
+		id: sectionId,
+		label: section ? t(section.labelKey) : sectionId,
+		href:
+			section && isVisible
+				? buildEditorSectionUrl({ locale, registry, entityId, section })
+				: undefined,
+	};
+});
 ---
 
-<div class="editor-hub">
+<div class="editor-hub" data-editor-hub>
+	{
+		completeness && (
+			<CompletenessMeter
+				done={completeness.done}
+				total={completeness.total}
+				missing={missingItems}
+				locale={locale}
+			/>
+		)
+	}
+
 	{groups.map((entry) => (
-		<AccountSectionCard title={t(entry.headingKey)}>
+		<section class="editor-hub__group" aria-labelledby={`editor-hub-${entry.group}`}>
+			<h2 class="editor-hub__heading" id={`editor-hub-${entry.group}`}>{t(entry.headingKey)}</h2>
 			<ul class="editor-hub__list">
 				{entry.sections.map((section) => {
 					const status = statuses[section.id];
@@ -71,24 +119,9 @@ const groups = registry.groups
 								<span class="editor-hub__text">
 									<span class="editor-hub__title">{t(section.labelKey)}</span>
 									{status && (
-										<span
-											class:list={[
-												'editor-hub__status',
-												{ 'editor-hub__status--warning': status.tone === 'warning' },
-												{ 'editor-hub__status--blocking': status.tone === 'blocking' },
-												{ 'editor-hub__status--locked': status.tone === 'locked' },
-											]}
-										>
-											{status.tone === 'blocking' && status.missingRequirementLabelKeys
-												? t(status.labelKey, undefined, {
-														fields: status.missingRequirementLabelKeys
-															.map((key) => t(key))
-															.join(', '),
-													})
-												: typeof status.params?.count === 'number'
-													? tPlural(status.labelKey, status.params.count, status.params)
-													: t(status.labelKey, undefined, status.params)}
-										</span>
+										<StatusPill tone={PILL_TONE[status.tone]} className="editor-hub__status">
+											{statusText(status)}
+										</StatusPill>
 									)}
 								</span>
 								<span class="editor-hub__chevron" aria-hidden="true">›</span>
@@ -97,7 +130,7 @@ const groups = registry.groups
 					);
 				})}
 			</ul>
-		</AccountSectionCard>
+		</section>
 	))}
 </div>
 
@@ -105,35 +138,43 @@ const groups = registry.groups
 	.editor-hub {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-5, 1.5rem);
-		max-width: 720px;
+		gap: var(--space-6);
+		max-inline-size: var(--form-max);
+	}
+
+	.editor-hub__group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.editor-hub__heading {
+		margin: 0;
+		font: var(--app-section);
+		color: var(--core-foreground);
 	}
 
 	.editor-hub__list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
+		border-block-start: 1px solid var(--border);
 	}
 
-	.editor-hub__item + .editor-hub__item .editor-hub__row {
-		border-top: 1px solid var(--border);
+	.editor-hub__item {
+		border-block-end: 1px solid var(--border);
 	}
 
-	/* Rows bleed to the card's edges so the hover/focus surface covers the full
-	   width, while the text keeps the card's own inner rhythm. */
 	.editor-hub__row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--space-3, 1rem);
-		/* Tap target well above the 44px floor: this editor's audience is older
-		   and often on a phone, where a cramped row is a missed tap. */
-		min-height: 56px;
-		padding: 0.875rem 0.5rem;
-		border-radius: var(--radius-md, 10px);
+		gap: var(--space-3);
+		/* Well above the 44px floor: an older audience, often on a phone. */
+		min-block-size: 56px;
+		padding: var(--space-3) var(--space-2);
 		text-decoration: none;
 		color: inherit;
-		transition: background-color 150ms ease-out;
 	}
 
 	.editor-hub__row:hover {
@@ -148,49 +189,23 @@ const groups = registry.groups
 	.editor-hub__text {
 		display: flex;
 		flex-direction: column;
-		gap: 0.125rem;
-		min-width: 0;
+		align-items: flex-start;
+		gap: var(--space-1);
+		min-inline-size: 0;
 	}
 
 	.editor-hub__title {
-		font-family: var(--font-sans);
-		font-size: 1rem;
-		font-weight: 500;
+		font: var(--app-ui);
 		color: var(--core-foreground);
 	}
 
-	.editor-hub__status {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-sm, 0.8125rem);
-		color: var(--core-muted-foreground);
-	}
-
-	/* The warning's own text already carries the marker, so colour is
-	   reinforcement and never the only signal. */
-	.editor-hub__status--warning {
-		color: var(--brand-accent);
-	}
-
-	/* A blocker is not a louder warning, it is a different statement: "this
-	   listing cannot go live until you fix it". Its text says so on its own and
-	   names the fields, so the weight here is reinforcement too — the whole
-	   point of H-101 is that a host could not tell the two apart. */
-	.editor-hub__status--blocking {
-		color: var(--destructive);
-		font-weight: 600;
-	}
-
-	/* A locked section is stored but withheld by the plan (HOS-1854). Its own
-	   tone keeps it from reading as a warning to fix or as a publish blocker:
-	   the words say "no se publican", the colour is reinforcement. */
-	.editor-hub__status--locked {
-		color: var(--brand-primary);
+	/* A blocking line names the missing fields: let the pill wrap. */
+	:global(.editor-hub__status) {
+		white-space: normal;
 	}
 
 	.editor-hub__chevron {
 		flex-shrink: 0;
-		font-size: 1.25rem;
-		line-height: 1;
 		color: var(--core-muted-foreground);
 	}
 </style>

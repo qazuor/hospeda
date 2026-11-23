@@ -17,11 +17,13 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
+import { StatusPill } from '@/components/account/ui';
 import EditorHub from '@/components/host/editor/EditorHub.astro';
 import { HiddenByBusinessLinesSummary } from '@/components/listing/HiddenByBusinessLinesSummary.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import SupportEditNotice from '@/components/listing/SupportEditNotice.astro';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorCompleteness } from '@/lib/editor/editor-completeness';
 import { resolveListingEditorSectionStatuses } from '@/lib/editor/listing-editor-hub-status-model';
 import { LISTING_SECTION_PRESENTATION } from '@/lib/editor/listing-section-presentation';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
@@ -121,6 +123,8 @@ const statuses = resolveListingEditorSectionStatuses({
 	},
 });
 
+const completeness = resolveListingEditorCompleteness({ vertical, listing: facts.listing });
+
 const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 ---
 
@@ -136,7 +140,7 @@ const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 	description={t('listing.owner.editor.pageDescription', 'Editar la información de tu ficha')}
 >
 	<div class="listing-hub__identity">
-		<span class="listing-hub__badge">{verticalLabel}</span>
+		<StatusPill tone="neutral">{verticalLabel}</StatusPill>
 		<code class="listing-hub__slug">{detail.slug}</code>
 	</div>
 
@@ -166,6 +170,7 @@ const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 		registry={registry}
 		entityId={listingId}
 		statuses={statuses}
+		completeness={completeness}
 	/>
 </ListingEditorSectionLayout>
 
@@ -178,16 +183,8 @@ const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 		margin-bottom: var(--space-5, 1.5rem);
 	}
 
-	.listing-hub__badge {
-		font-size: var(--text-caption, 0.75rem);
-		padding: 0.125rem 0.5rem;
-		border-radius: var(--radius-pill, 999px);
-		background: var(--surface-warm, rgba(0, 0, 0, 0.06));
-		color: var(--core-muted-foreground);
-	}
-
 	.listing-hub__slug {
-		font-size: var(--text-caption, 0.75rem);
+		font: var(--app-meta);
 		color: var(--core-muted-foreground);
 	}
 

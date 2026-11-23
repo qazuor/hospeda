@@ -225,14 +225,6 @@
         "font-size": 6,
         "radius": 3
     },
-    "apps/web/src/components/host/editor/EditorHub.astro": {
-        "font-size": 3,
-        "radius": 1
-    },
-    "apps/web/src/components/host/editor/EditorRouteNav.astro": {
-        "font-size": 2,
-        "radius": 1
-    },
     "apps/web/src/components/host/editor/EditorSectionNav.module.css": {
         "font-size": 1
     },
@@ -488,11 +480,6 @@
     },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/fotos.astro": {
         "font-size": 1,
-        "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/index.astro": {
-        "color": 1,
-        "font-size": 2,
         "radius": 1
     },
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/servicios.astro": {

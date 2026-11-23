@@ -2,50 +2,70 @@
 /**
  * @file EditorShellLayout.astro
  * @description Vertical-agnostic shell for every "one section, one page" editor
- * page (HOS-1080; extracted from `EditorSectionLayout.astro`, HOS-318 T-010).
+ * page (HOS-1080; rebuilt on the Mi cuenta kit by HOS-2486 / HOS-2493 /
+ * HOS-2487, spec HOS-2415 §6.1-§6.2).
  *
- * Wraps `AccountLayout` — UNCHANGED, and that is the point. HOS-318 D-1 rejected
- * a "focus mode" that retracts the account sidebar inside the editor: for an
- * older, non-technical owner, a menu that transforms itself according to where
- * you are is disorienting. The sidebar looks and behaves identically inside the
- * editor and outside it.
+ * Wraps `AccountLayout` unchanged (HOS-318 D-1: the account sidebar looks and
+ * behaves the same inside the editor and outside it), and like every other
+ * `/mi-cuenta` page it does NOT wrap anything in `<main class="section">`: that
+ * class carries the public-site section padding (120px).
  *
- * It also follows the same *content* conventions as the rest of `/mi-cuenta`:
- * `AccountLayout` renders its children directly, with `AccountPageHeader` as the
- * page's single `<h1>`. It deliberately does NOT wrap anything in
- * `<main class="section">` — that class carries `padding-block: var(--space-section)`
- * (120px), which is the public-site section rhythm and pushes every account page
- * far down the viewport. The pre-split editors did wrap themselves that way; this
- * does not.
+ * ## What it draws
  *
- * Every editor page of every vertical renders through here, so the two-column
- * geometry, the breadcrumb trail and the route nav are written once instead of
- * once per vertical. What differs per vertical is entirely carried by the
- * `registry` prop.
+ * - The kit `PageHeader`: the page's one `<h1>`, the subtitle, a back link (a
+ *   section goes back to its editor hub, the hub back to the listing index)
+ *   and the «?» (`section:<vertical>.<slug>` on a section, the route's `page:`
+ *   anchor on the hub).
+ * - On a section page, the section navigation, chosen by the width of the
+ *   CONTENT AREA (a container query, not the viewport, because the account
+ *   sidebar opens and closes): `EditorSectionNav` as a column from 60rem, the
+ *   sticky `EditorSwitcher` below that. Both are real links, so the one
+ *   unsaved-changes guard covers every way out. The hub draws neither: the hub
+ *   IS the navigation.
+ * - The body, capped at `--form-max`.
+ *
+ * ## Save signal (HOS-2487, D8)
+ *
+ * The section's registry entry declares `saveModel`. The body carries it as
+ * `data-save-model`. For `auto`, the shell mounts the one `EditorAutoSaveChip`
+ * next to the title; the section's islands feed it through
+ * `editor-auto-save-signal`. For `bar`, the section's own island renders
+ * `EditorSaveBar` (it owns the form state the bar needs). A page renders only
+ * the signal of its model.
+ *
+ * Everything that differs per vertical comes from the `registry` prop.
  */
 
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import { sectionHelpAnchor } from '@/lib/help/help-entry';
-import EditorRouteNav from '@/components/host/editor/EditorRouteNav.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { EditorAutoSaveChip } from '@/components/account/editor-shell/EditorAutoSaveChip.client';
+import HelpLink from '@/components/account/help/HelpLink.astro';
+import { EditorSectionNav, EditorSwitcher, PageHeader } from '@/components/account/ui';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import { buildEditorBreadcrumbItems } from '@/lib/editor/editor-breadcrumbs-model';
+import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
 import type { EditorRegistry, EditorSectionVisibility } from '@/lib/editor/editor-registry';
+import { buildEditorNavModel } from '@/lib/editor/editor-route-nav-model';
+import { buildEditorSwitcherModel } from '@/lib/editor/editor-switcher-model';
+import { pageHelpAnchor, sectionHelpAnchor } from '@/lib/help/help-entry';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
 	readonly locale: SupportedLocale;
-	/** The vertical's section registry — drives the nav, the paths and the trail. */
+	/** The vertical's section registry: drives the nav, the paths and the save model. */
 	readonly registry: EditorRegistry;
 	readonly entityId: string;
 	readonly entityName: string;
 	/** `null` on the hub, where no section is active. */
 	readonly currentSectionId: string | null;
-	/** `null` on the hub. Drives the last breadcrumb. */
+	/** `null` on the hub. Drives the «?» anchor. */
 	readonly currentSectionSlug: string | null;
 	/** Runtime answers to the registry's visibility keys. */
 	readonly visibility?: EditorSectionVisibility;
+	/**
+	 * Hub status lines by section id. When given, the column and the switcher
+	 * menu show each section's state; without them they show none.
+	 */
+	readonly statuses?: Readonly<Record<string, EditorSectionStatus>>;
 	/** Which account-sidebar entry is highlighted (`propiedades`, `comercio`, …). */
 	readonly accountSection: string;
 	readonly title: string;
@@ -62,6 +82,7 @@ const {
 	currentSectionId,
 	currentSectionSlug,
 	visibility = {},
+	statuses,
 	accountSection,
 	title,
 	description,
@@ -69,78 +90,117 @@ const {
 } = Astro.props;
 
 const { t } = createTranslations(locale);
+const isHub = currentSectionId === null;
 
-// HOS-2410 web-ui §6: a section page's «?» opens the article that claims
-// `section:<vertical>.<slug>` (the registry id IS the vertical). On the hub
-// (no slug) the header falls back to the route's own `page:` anchor.
 const helpAnchor =
 	currentSectionSlug === null
-		? undefined
+		? pageHelpAnchor({ routePattern: Astro.routePattern })
 		: sectionHelpAnchor({ vertical: registry.id, slug: currentSectionSlug });
 
-// The shared Breadcrumbs component takes the FULL trail (current page last),
-// drops the current page itself — it is already the <h1> — and prepends Inicio.
-const breadcrumbItems = buildEditorBreadcrumbItems({
-	registry,
-	entityId,
-	entityName,
-	currentSectionSlug,
-	indexLabel: t(registry.indexLabelKey),
-	sectionLabel: title,
-});
+const back = isHub
+	? {
+			label: t('account.ui.editorShell.backToList', 'Volver a la lista'),
+			href: buildUrl({ locale, path: registry.indexPath }),
+		}
+	: {
+			label: t('account.ui.editorShell.backToHub', 'Volver al editor'),
+			href: buildUrl({ locale, path: registry.buildHubPath({ entityId }) }),
+		};
+
+const navGroups = isHub
+	? []
+	: buildEditorNavModel({ locale, registry, entityId, currentSectionId, visibility, statuses });
+const switcherModel = isHub ? null : buildEditorSwitcherModel({ groups: navGroups });
+
+const saveModel = isHub
+	? undefined
+	: registry.sections.find((section) => section.id === currentSectionId)?.saveModel;
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
-	<Breadcrumbs locale={locale} items={breadcrumbItems} class="editor-shell__crumbs" />
+	<PageHeader title={title} description={subtitle} back={back} locale={locale}>
+		<HelpLink slot="help" anchor={helpAnchor} locale={locale} />
+		{saveModel === 'auto' && <EditorAutoSaveChip slot="actions" client:idle locale={locale} />}
+	</PageHeader>
 
-	<AccountPageHeader title={title} description={subtitle} helpAnchor={helpAnchor} />
+	<div class="editor-shell" data-editor-shell>
+		<div class:list={['editor-shell__grid', { 'editor-shell__grid--hub': isHub }]}>
+			{
+				!isHub && (
+					<div class="editor-shell__column">
+						<EditorSectionNav groups={navGroups} locale={locale} />
+					</div>
+				)
+			}
 
-	<div class="editor-shell">
-		<div class="editor-shell__nav">
-			<EditorRouteNav
-				locale={locale}
-				registry={registry}
-				entityId={entityId}
-				currentSectionId={currentSectionId}
-				visibility={visibility}
-			/>
-		</div>
+			<div class="editor-shell__main">
+				{
+					switcherModel && (
+						<div class="editor-shell__switcher">
+							<EditorSwitcher model={switcherModel} entityName={entityName} locale={locale} />
+						</div>
+					)
+				}
 
-		<div class="editor-shell__body">
-			<slot />
+				<div class="editor-shell__body" data-save-model={saveModel}>
+					<slot />
+				</div>
+			</div>
 		</div>
 	</div>
 </AccountLayout>
 
 <style>
-	.editor-shell__crumbs {
-		margin-bottom: var(--space-3, 1rem);
+	/* The content area is the query container: the column depends on the room
+	   the form actually has, which the account sidebar changes (HOS-2486). */
+	.editor-shell {
+		container-type: inline-size;
+		/* Below 64rem the AccountBar (3rem) sits sticky under the 4rem site
+		   header; the switcher sticks right under it. */
+		--editor-switcher-top: 7rem;
 	}
 
-	/* Same two-column geometry the pre-split editor used (220px nav from
-	   1100px up). Desktop must not visibly change shape — see D-1. */
-	.editor-shell {
+	@media (min-width: 64rem) {
+		.editor-shell {
+			--editor-switcher-top: 4rem;
+		}
+	}
+
+	.editor-shell__grid {
 		display: block;
 	}
 
-	.editor-shell__nav {
-		align-self: stretch;
+	.editor-shell__column {
+		display: none;
+	}
+
+	.editor-shell__switcher {
+		position: sticky;
+		inset-block-start: var(--editor-switcher-top);
+		z-index: 2;
+		margin-block-end: var(--space-5);
 	}
 
 	.editor-shell__body {
-		max-width: 720px;
+		max-inline-size: var(--form-max);
 	}
 
-	@media (min-width: 1100px) {
-		.editor-shell {
+	@container (min-width: 60rem) {
+		.editor-shell__grid:not(.editor-shell__grid--hub) {
 			display: grid;
-			grid-template-columns: 220px 1fr;
-			gap: var(--space-8, 32px);
+			grid-template-columns: var(--editor-nav-w) minmax(0, 1fr);
+			gap: var(--space-8);
 			align-items: start;
 		}
 
-		.editor-shell__body {
-			max-width: none;
+		.editor-shell__column {
+			display: block;
+			align-self: stretch;
+			--editor-nav-top: calc(var(--editor-switcher-top) + var(--space-6));
+		}
+
+		.editor-shell__switcher {
+			display: none;
 		}
 	}
 </style>
