@@ -136,6 +136,37 @@ describe('applyEmailAttribution', () => {
             );
         });
 
+        it('decorates a URL followed by sentence punctuation without absorbing it', () => {
+            // Arrange
+            const html = doc('<a href="https://hospeda.com.ar/x">x</a>');
+            const plain = UTM_TX.replaceAll('&amp;', '&');
+            const suffix = `?${plain}&utm_content=body-link`;
+
+            // Act
+            const result = applyEmailAttribution({
+                html,
+                text: 'Mira https://hospeda.com.ar/x. Y https://hospeda.com.ar/x, o (https://hospeda.com.ar/x)!',
+                attribution: { ...TRANSACTIONAL, includePixel: false }
+            });
+
+            // Assert
+            expect(result.text).toBe(
+                `Mira https://hospeda.com.ar/x${suffix}. Y https://hospeda.com.ar/x${suffix}, o (https://hospeda.com.ar/x${suffix})!`
+            );
+        });
+
+        it('does not decorate a longer URL that merely starts with a known one', () => {
+            const html = doc('<a href="https://hospeda.com.ar/x">x</a>');
+
+            const result = applyEmailAttribution({
+                html,
+                text: 'https://hospeda.com.ar/x.html',
+                attribution: { ...TRANSACTIONAL, includePixel: false }
+            });
+
+            expect(result.text).toBe('https://hospeda.com.ar/x.html');
+        });
+
         it('replaces a decoded href that had &amp; in the HTML', () => {
             const html = doc('<a href="https://hospeda.com.ar/es/x/?a=1&amp;b=2">x</a>');
 

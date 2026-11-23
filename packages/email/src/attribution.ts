@@ -220,7 +220,10 @@ export function applyEmailAttribution(
         return { html, text: input.text };
     }
     const keys = [...replacements.keys()].sort((a, b) => b.length - a.length);
-    const pattern = new RegExp(`(?:${keys.map(escapeRegExp).join('|')})(?=[\\s\\]\\)>"'<]|$)`, 'g');
+    const pattern = new RegExp(
+        `(?:${keys.map(escapeRegExp).join('|')})(?=[.,;:!?]*(?:[\\s\\]\\)>"'<]|$))`,
+        'g'
+    );
     const text = input.text.replace(pattern, (match) => replacements.get(match) ?? match);
     return { html, text };
 }
