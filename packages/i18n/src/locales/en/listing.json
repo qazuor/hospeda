@@ -385,6 +385,7 @@
                 "localeEs": "Spanish",
                 "localeEn": "English",
                 "localePt": "Portuguese",
+                "localeHasError": "Has an error",
                 "minAgeScopeLabel": "Minimum-age scope",
                 "minAgeScopeOption": {
                     "all_day": "Applies all day",
