@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { formatDate } from '../utils/index.js';
 
@@ -17,6 +17,8 @@ export interface PlanMigrationAnnouncedProps {
     readonly applicationDate: string | null;
     readonly losesPromo: boolean;
     readonly reason?: PlanMigrationAnnouncedReason;
+    /** Absolute URL of Mi Suscripción, built by the renderer from the site URL. */
+    readonly actionUrl: string;
 }
 
 /** Subject of the plan retirement announcement. */
@@ -35,7 +37,8 @@ export function PlanMigrationAnnounced({
     newAmount,
     applicationDate,
     losesPromo,
-    reason = 'RETIREMENT'
+    reason = 'RETIREMENT',
+    actionUrl
 }: PlanMigrationAnnouncedProps) {
     if (reason === 'PRICE_INCREASE') {
         const subject = PLAN_MIGRATION_INCREASE_ANNOUNCED_SUBJECT;
@@ -58,6 +61,7 @@ export function PlanMigrationAnnounced({
                     Si no estás de acuerdo, podés cancelar tu suscripción antes de esa fecha.
                 </Text>
                 <Text>Mercado Pago también te va a avisar del cambio de monto.</Text>
+                <Button href={actionUrl}>Ver mi suscripción</Button>
             </EmailLayout>
         );
     }
@@ -89,6 +93,7 @@ export function PlanMigrationAnnounced({
                     <Text>Mercado Pago también te va a avisar del cambio de monto.</Text>
                 </>
             )}
+            <Button href={actionUrl}>Ver mi suscripción</Button>
         </EmailLayout>
     );
 }

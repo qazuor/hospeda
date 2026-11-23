@@ -20,7 +20,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { formatDate } from '../../src/templates/utils/format-helpers';
+import {
+    formatBillingCycleLabel,
+    formatDate,
+    formatDateTime
+} from '../../src/templates/utils/format-helpers';
 
 describe('formatDate — a day, not an instant', () => {
     it('renders a bare calendar date as the day it names', () => {
@@ -52,5 +56,52 @@ describe('formatDate — a day, not an instant', () => {
         expect(formatDate({ dateString: '' })).toBe('');
         expect(formatDate({ dateString: 'no es una fecha' })).toBe('');
         expect(formatDate({ dateString: '2026-02-31' })).toBe('');
+    });
+});
+
+describe('formatDateTime — an instant, in Argentina', () => {
+    it('renders an instant as DD/MM/YYYY HH:mm in Buenos Aires time', () => {
+        // 12:00 UTC is 09:00 at UTC-3, whatever timezone the runner has.
+        expect(formatDateTime({ dateString: '2026-11-21T12:00:00.000Z' })).toBe('21/11/2026 09:00');
+    });
+
+    it('converts an offset instant to the same Argentine wall clock', () => {
+        expect(formatDateTime({ dateString: '2026-11-21T09:00:00-03:00' })).toBe(
+            '21/11/2026 09:00'
+        );
+    });
+
+    it('moves to the previous day when the UTC time is before 03:00', () => {
+        expect(formatDateTime({ dateString: '2026-03-01T01:30:00.000Z' })).toBe('28/02/2026 22:30');
+    });
+
+    it('uses a 24-hour clock with midnight as 00', () => {
+        expect(formatDateTime({ dateString: '2026-11-21T03:05:00.000Z' })).toBe('21/11/2026 00:05');
+        expect(formatDateTime({ dateString: '2026-11-21T23:45:00.000Z' })).toBe('21/11/2026 20:45');
+    });
+
+    it('returns an empty string rather than the words "Invalid Date"', () => {
+        expect(formatDateTime({ dateString: '' })).toBe('');
+        expect(formatDateTime({ dateString: 'no es una fecha' })).toBe('');
+    });
+});
+
+describe('formatBillingCycleLabel — one map for three templates', () => {
+    it.each([
+        ['monthly', 'Mensual'],
+        ['quarterly', 'Trimestral'],
+        ['semiannual', 'Semestral'],
+        ['annual', 'Anual']
+    ])('labels %s as %s', (cycle, label) => {
+        expect(formatBillingCycleLabel({ cycle })).toBe(label);
+    });
+
+    it('renders an unknown cycle as received, so the information stays visible', () => {
+        expect(formatBillingCycleLabel({ cycle: 'weekly' })).toBe('weekly');
+    });
+
+    it('does not read inherited object keys as cycles', () => {
+        expect(formatBillingCycleLabel({ cycle: 'constructor' })).toBe('constructor');
+        expect(formatBillingCycleLabel({ cycle: '' })).toBe('');
     });
 });

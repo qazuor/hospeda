@@ -293,6 +293,7 @@ export const NOTIFICATION_ADMIN_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'en-one-listing',
+                locale: 'en',
                 label: 'Inglés, un alojamiento',
                 input: {
                     ...SAMPLE_RECIPIENT,

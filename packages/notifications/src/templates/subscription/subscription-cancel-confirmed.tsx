@@ -43,19 +43,19 @@ export function SubscriptionCancelConfirmed({
 
     return (
         <EmailLayout
-            previewText={`Your ${planName} cancellation is confirmed — you keep access until ${formattedAccessUntil}`}
+            previewText={`Confirmamos la baja de tu plan ${planName}: seguís con acceso hasta el ${formattedAccessUntil}`}
         >
-            <Heading>Cancellation confirmed</Heading>
+            <Heading>Confirmamos tu baja</Heading>
 
-            <Text style={styles.greeting}>Hi {recipientName},</Text>
+            <Text style={styles.greeting}>Hola {recipientName},</Text>
 
             <Text style={styles.paragraph}>
-                We have confirmed the cancellation of your <strong>{planName}</strong> subscription.
-                Your cancellation takes effect at the end of the current billing period.
+                Confirmamos la baja de tu suscripción al plan <strong>{planName}</strong>. La baja
+                se hace efectiva al final del período de facturación actual.
             </Text>
 
             <Text style={styles.accessBanner}>
-                You keep full access until <strong>{formattedAccessUntil}</strong>.
+                Seguís con acceso completo hasta el <strong>{formattedAccessUntil}</strong>.
             </Text>
 
             <Callout tone="info">
@@ -64,26 +64,26 @@ export function SubscriptionCancelConfirmed({
                     value={planName}
                 />
                 <InfoRow
-                    label="Access until"
+                    label="Acceso hasta"
                     value={formattedAccessUntil}
                 />
                 <InfoRow
-                    label="Status"
-                    value="Cancelled at period end"
+                    label="Estado"
+                    value="Baja al final del período"
                 />
             </Callout>
 
             <Text style={styles.paragraph}>
-                After {formattedAccessUntil} your account will revert to the free plan and no
-                further charges will be made.
+                Después del {formattedAccessUntil}, tu cuenta vuelve al plan gratuito y no se te van
+                a hacer más cobros.
             </Text>
 
             <Text style={styles.paragraph}>
-                Changed your mind? You can reactivate your subscription at any time before the
-                period ends.
+                ¿Cambiaste de opinión? Podés reactivar tu suscripción en cualquier momento antes de
+                que termine el período.
             </Text>
 
-            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivate subscription</Button>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivar suscripción</Button>
         </EmailLayout>
     );
 }
