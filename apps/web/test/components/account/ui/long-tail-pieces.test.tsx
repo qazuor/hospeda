@@ -146,6 +146,64 @@ describe('FilterChips', () => {
     });
 });
 
+describe('FilterChips multiple mode', () => {
+    const items = [
+        { value: 'all', label: 'Todos', exclusive: true },
+        { value: 'a', label: 'A' },
+        { value: 'b', label: 'B' }
+    ];
+
+    it('presses the exclusive chip while nothing else is selected', () => {
+        render(
+            <FilterChips
+                mode="multiple"
+                label="f"
+                items={items}
+                value={[]}
+                onChange={() => undefined}
+            />
+        );
+        expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
+        expect(screen.getByRole('button', { name: 'A' })).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('adds and removes values, and clears with the exclusive chip', () => {
+        const onChange = vi.fn();
+        render(
+            <FilterChips
+                mode="multiple"
+                label="f"
+                items={items}
+                value={['a']}
+                onChange={onChange}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'B' }));
+        expect(onChange).toHaveBeenLastCalledWith(['a', 'b']);
+        fireEvent.click(screen.getByRole('button', { name: 'A' }));
+        expect(onChange).toHaveBeenLastCalledWith([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
+        expect(onChange).toHaveBeenLastCalledWith([]);
+    });
+});
+
+describe('RatingStars valueText', () => {
+    it('shows the locale-formatted number instead of the plain value', () => {
+        render(
+            <RatingStars
+                value={4.6}
+                showValue
+                valueText="4,6"
+                label="x"
+            />
+        );
+        expect(screen.getByText('4,6')).toBeInTheDocument();
+    });
+});
+
 describe('CopyField', () => {
     beforeEach(() => {
         vi.useFakeTimers();

@@ -28,6 +28,8 @@ export interface RatingStarsProps {
     readonly label: string;
     /** Shows the numeric value after the stars. @default false */
     readonly showValue?: boolean;
+    /** Locale-formatted text for the number (`4,6`). Defaults to the plain value. */
+    readonly valueText?: string;
     /** Extra class from the caller (layout only). */
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
@@ -63,6 +65,7 @@ export function RatingStars({
     max = 5,
     label,
     showValue = false,
+    valueText,
     className,
     helpId
 }: RatingStarsProps) {
@@ -109,7 +112,7 @@ export function RatingStars({
                     className={styles.value}
                     aria-hidden="true"
                 >
-                    {Number(clamped.toFixed(1))}
+                    {valueText ?? Number(clamped.toFixed(1))}
                 </span>
             ) : null}
         </span>
