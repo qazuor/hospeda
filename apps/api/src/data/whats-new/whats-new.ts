@@ -170,6 +170,23 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4713
+    {
+        id: '2026-11-23-faster-mobile-home',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La página de inicio carga más rápido en el celular',
+            en: 'The home page loads faster on mobile',
+            pt: 'A página inicial carrega mais rápido no celular'
+        },
+        body: {
+            es: 'La portada muestra su contenido antes y la imagen principal aparece en menos de la mitad del tiempo. Además, mejoramos el contraste y las etiquetas de varios botones para que el sitio sea más fácil de usar con lectores de pantalla.',
+            en: 'The home page shows its content sooner and the main image appears in less than half the time. We also improved the contrast and labels of several buttons so the site is easier to use with screen readers.',
+            pt: 'A página inicial mostra seu conteúdo antes e a imagem principal aparece em menos da metade do tempo. Também melhoramos o contraste e os rótulos de vários botões para que o site seja mais fácil de usar com leitores de tela.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4708
     {
         id: '2026-11-23-addon-analytics-events',
