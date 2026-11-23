@@ -79,6 +79,7 @@ export function fromHoursWeek({
             shifts: week[day].slots.map((slot) => ({ open: slot.open, close: slot.close }))
         };
     }
+    // TYPE-WORKAROUND: rebuilt OpeningHours from the day map; structurally valid but TS can't infer the schema-derived shape from the plain literal.
     return { timezone: previous?.timezone ?? DEFAULT_TZ, days } as unknown as OpeningHours;
 }
 

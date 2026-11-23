@@ -79,13 +79,13 @@ export function ExternalReputationSection({
         t
     });
     const refresh = useReputationRefresh({ accommodationId, reload: data.reload, t });
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: askConfirm, confirmDialog } = useConfirm({ locale });
 
     const requestRemove = useCallback(
         (listing: ExternalListingRow) => {
             // Not awaited: the promise stays pending after a failed delete (the
             // dialog stays open for a retry) and nothing waits on the answer.
-            void confirm({
+            void askConfirm({
                 title: t('external-reputation.ownerConfig.removeDialogTitle'),
                 description: (
                     <>
@@ -97,7 +97,7 @@ export function ExternalReputationSection({
                 onConfirm: () => data.removeListing(listing)
             });
         },
-        [confirm, data.removeListing, t]
+        [askConfirm, data.removeListing, t]
     );
 
     // Nothing to refresh until a platform link exists. Only once the listings

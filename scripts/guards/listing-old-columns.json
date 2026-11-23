@@ -64,6 +64,13 @@
     ],
     "subEntityReferences": [
         {
+            "file": "apps/web/test/components/host/external-reputation/fixtures.tsx",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "accommodation external listings",
+            "reason": "Fixture of an external listing row, which keeps its own lifecycleState (HOS-2515)."
+        },
+        {
             "file": "apps/api/src/routes/accommodation/admin/getById.ts",
             "name": "lifecycleState",
             "count": 2,
