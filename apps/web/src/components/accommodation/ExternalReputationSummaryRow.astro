@@ -13,6 +13,7 @@
 
 import { ExternalLinkIcon, StarIcon } from '@repo/icons';
 import type { ExternalReputationPlatformItem } from '@repo/schemas';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolvePlatformHref } from '@/lib/external-reputation-visibility';
@@ -86,13 +87,18 @@ const rounded =
     )}
 
     {deepLinkHref && (
-        <a href={deepLinkHref} target="_blank" rel="noopener noreferrer" class={styles.summaryLink}>
-            <span>
-                {t('external-reputation.link.viewOn', 'Ver en {{platform}}', {
-                    platform: platformName
-                })}
-            </span>
-            <ExternalLinkIcon size="sm" aria-hidden="true" />
-        </a>
+        <GradientButton
+            href={deepLinkHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outline-primary"
+            size="sm"
+            class={styles.summaryLink}
+            label={t('external-reputation.link.viewOn', 'Ver en {{platform}}', {
+                platform: platformName
+            })}
+        >
+            <ExternalLinkIcon slot="trailing" size="sm" aria-hidden="true" />
+        </GradientButton>
     )}
 </div>

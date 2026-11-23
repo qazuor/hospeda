@@ -1,0 +1,83 @@
+---
+/**
+ * @file ListingPill.astro
+ * @description One amenity or feature as a pill: icon (or a dot), label and the
+ * optional extras (additional cost, attribute badges, host comment). Shared by the
+ * summarized grids and by the full-list sheet so both read the same (HOS-2528).
+ */
+import type { resolveIcon } from '@repo/icons/resolver';
+
+interface Props {
+  /** Display label, already translated. */
+  readonly label: string;
+  /** Icon component, or null for a dot. */
+  readonly Icon: ReturnType<typeof resolveIcon> | null;
+  /** Translated «additional cost» note, when the item declares one. */
+  readonly costLabel?: string | null;
+  /** Translated attribute badges (scope / availability / extra charge). */
+  readonly badges?: readonly string[];
+  /** Free-text comment the host wrote for the item. */
+  readonly comments?: string | null;
+}
+
+const { label, Icon, costLabel = null, badges = [], comments = null } = Astro.props;
+---
+
+<div class="listing-pill">
+  {Icon ? (
+    <Icon size="sm" weight="duotone" aria-hidden="true" />
+  ) : (
+    <span class="listing-pill__dot" aria-hidden="true">&#8226;</span>
+  )}
+  <span class="listing-pill__text">
+    <span class="listing-pill__name">{label}</span>
+    {comments && <span class="listing-pill__comments">{comments}</span>}
+  </span>
+  {costLabel && <span class="listing-pill__cost">{costLabel}</span>}
+  {badges.map((badge) => <span class="listing-pill__badge">{badge}</span>)}
+</div>
+
+<style>
+  .listing-pill {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    background-color: var(--core-card);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-foreground);
+    max-inline-size: 100%;
+  }
+  .listing-pill__dot {
+    color: var(--brand-accent);
+    font-size: 1.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .listing-pill__text {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+  .listing-pill__comments {
+    font-size: 0.78rem;
+    color: var(--core-muted-foreground);
+  }
+  .listing-pill__badge {
+    font-size: 0.72rem;
+    line-height: 1.4;
+    padding: 0 var(--space-2, 8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    color: var(--core-muted-foreground);
+  }
+  .listing-pill__cost {
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    font-style: italic;
+  }
+</style>

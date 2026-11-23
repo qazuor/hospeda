@@ -15,7 +15,7 @@
  * - Thumb click opens lightbox at the correct index (regression for index math).
  */
 
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { GalleryImage } from '../../src/components/ImageGallery.client';
 import { ImageGallery } from '../../src/components/ImageGallery.client';
@@ -34,7 +34,9 @@ vi.mock('../../src/lib/i18n', () => ({
                 );
             }
             return fallback ?? _key;
-        }
+        },
+        tPlural: (_key: string, count: number) =>
+            count === 1 ? 'Ver la foto' : `Ver las ${count} fotos`
     })
 }));
 
@@ -889,5 +891,37 @@ describe('caption and description in the lightbox', () => {
             'aria-expanded',
             'false'
         );
+    });
+});
+
+// ─── "Ver las N fotos" button (HOS-2531, AC-2.7) ──────────────────────────────
+
+describe('ImageGallery detail variant: see-all-photos button (HOS-2531)', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    it('is absent with a single photo', () => {
+        render(
+            <ImageGallery
+                images={makeImages(1)}
+                variant="detail"
+                locale="es"
+            />
+        );
+        expect(screen.queryByRole('button', { name: /Ver las \d+ fotos/ })).toBeNull();
+    });
+
+    it('shows the total photo count and opens the lightbox at the first photo', () => {
+        render(
+            <ImageGallery
+                images={makeImages(7)}
+                variant="detail"
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Ver las 7 fotos' }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('1 / 7')).toBeInTheDocument();
     });
 });

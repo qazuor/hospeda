@@ -769,6 +769,19 @@
         "clearFilters": "Limpiar filtros"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Leer más",
+            "less": "Leer menos"
+        },
+        "sectionTabs": {
+            "label": "Secciones del alojamiento",
+            "photos": "Fotos",
+            "details": "Detalles",
+            "amenities": "Comodidades",
+            "location": "Ubicación",
+            "reviews": "Reseñas",
+            "host": "Anfitrión"
+        },
         "listingContact": {
             "bar": {
                 "inquire": "Consultar",
@@ -781,7 +794,13 @@
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Llamar", "email": "Email" },
                 "trust": "Tu consulta va directo al anfitrión. Sin comisiones."
             },
+            "channels": {
+                "title": "Contactar",
+                "website": "Web",
+                "social": "Redes sociales"
+            },
             "fields": { "checkIn": "Llegada", "checkOut": "Salida", "guests": "Huéspedes" },
+            "card": { "direct": "O contactá directo" },
             "errors": {
                 "checkOutAfterCheckIn": "La salida tiene que ser después de la llegada",
                 "invalidDate": "Ingresá una fecha válida.",
@@ -865,6 +884,8 @@
         "gallery": {
             "viewAll": "Ver todas las fotos",
             "moreOverlay": "+{{count}} más",
+            "viewAllCount_one": "Ver la foto",
+            "viewAllCount_other": "Ver las {{count}} fotos",
             "viewFullscreen": "Ver foto {n} en pantalla completa",
             "backToAccommodation": "← Volver al alojamiento",
             "photosSubpage": "Fotos"
@@ -919,9 +940,11 @@
             }
         },
         "reviewsDetail": {
+            "anonymous": "Anónimo",
+            "stripLabel": "Reseñas destacadas",
             "noReviews": "No hay opiniones todavía",
-            "viewAll_one": "Ver la {{count}} opinión",
-            "viewAll_other": "Ver las {{count}} opiniones",
+            "viewAll_one": "Ver la {{count}} reseña",
+            "viewAll_other": "Ver las {{count}} reseñas",
             "breakdownLabel": "Puntajes desglosados",
             "categories": {
                 "cleanliness": "Limpieza",
@@ -941,6 +964,11 @@
                 "loading": "Cargando reseñas…"
             }
         },
+        "host": {
+            "title": "Tu anfitrión",
+            "since": "Anfitrión desde {date}",
+            "languages": "Atiende en {languages}"
+        },
         "owner": {
             "memberSince": "Miembro desde {date}",
             "contactUnavailable": "Información de contacto no disponible",
@@ -953,12 +981,16 @@
         "amenitiesDetail": {
             "title": "Comodidades",
             "viewAll_one": "Ver la {{count}} comodidad",
-            "viewAll_other": "Ver todas las {{count}} comodidades",
+            "viewAll_other": "Ver las {{count}} comodidades",
             "collapse": "Ver menos",
+            "close": "Cerrar",
             "additionalCost": "(costo adicional)"
         },
         "features": {
-            "title": "Características"
+            "title": "Características",
+            "viewAll_one": "Ver la {{count}} característica",
+            "viewAll_other": "Ver las {{count}} características",
+            "close": "Cerrar"
         },
         "faqsDetail": {
             "title": "Preguntas frecuentes",

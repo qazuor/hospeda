@@ -109,3 +109,24 @@ export function buildInquiryMessage(input: BuildInquiryMessageInput): BuildInqui
               })
     };
 }
+
+/**
+ * Converts the raw booking inputs into the optional structured fields sent to the API
+ * (HOS-2534). Empty or non-integer values are omitted. Callers pass the result only while
+ * the fields validate.
+ *
+ * @param values - Raw string values of the arrival, departure and guests inputs.
+ * @returns The subset of `checkIn`, `checkOut` and `guests` the visitor actually filled.
+ */
+export function toInquiryFields(values: {
+    readonly checkIn: string;
+    readonly checkOut: string;
+    readonly guests: string;
+}): { checkIn?: string; checkOut?: string; guests?: number } {
+    const guests = values.guests === '' ? undefined : Number(values.guests);
+    return {
+        ...(values.checkIn ? { checkIn: values.checkIn } : {}),
+        ...(values.checkOut ? { checkOut: values.checkOut } : {}),
+        ...(guests !== undefined && Number.isInteger(guests) ? { guests } : {})
+    };
+}
