@@ -28,7 +28,7 @@ export const WEBSITE = 'site-1';
 /** Number of declared reports. */
 export const REPORT_COUNT = buildReportDefinitions().length;
 /** Number of declared boards. */
-export const BOARD_COUNT = 6;
+export const BOARD_COUNT = 7;
 /** Number of declared segments. */
 export const SEGMENT_COUNT = buildSegmentDefinitions().filter((d) => d.type === 'segment').length;
 /** Number of declared cohorts. */
