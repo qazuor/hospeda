@@ -12,7 +12,8 @@ export const ContactOriginSchema = z.enum([
     'summary',
     'sidebar',
     'contact_block',
-    'gallery'
+    'gallery',
+    'tabs'
 ]);
 const nullableStringSchema = z.string().min(1).nullable().optional();
 const nullableNumberSchema = z.number().finite().nullable().optional();
