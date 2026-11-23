@@ -20,6 +20,7 @@ import {
     DialogBody,
     DialogFloatingCloseButton
 } from '@/components/shared/ui/Dialog.client';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { useSwipe } from '@/hooks/useSwipe';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -664,6 +665,30 @@ function DetailVariant({ images, onOpen, t, viewAllHref, locale, mobile }: Detai
                                 </button>
                             );
                         })}
+                    </div>
+                )}
+                {/* HOS-2531: desktop "see all N photos" button. It lives inside the
+                mosaic so it disappears with it on mobile, where the swipe track
+                already carries its own counter. */}
+                {count >= 2 && (
+                    <div className={styles.seeAllPhotos}>
+                        <GradientButton
+                            as="button"
+                            variant="outline-primary"
+                            size="sm"
+                            label={t(
+                                'accommodations.detail.gallery.viewAllCount',
+                                `Ver las ${count} fotos`,
+                                { count }
+                            )}
+                            leadingIcon={
+                                <FullscreenIcon
+                                    size={16}
+                                    aria-hidden="true"
+                                />
+                            }
+                            onClick={() => onOpen(0)}
+                        />
                     </div>
                 )}
             </div>

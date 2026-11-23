@@ -447,6 +447,7 @@
                 "social": "Social media"
             },
             "fields": { "checkIn": "Check-in", "checkOut": "Check-out", "guests": "Guests" },
+            "card": { "direct": "Or contact directly" },
             "errors": {
                 "checkOutAfterCheckIn": "Check-out must be after check-in",
                 "invalidDate": "Enter a valid date.",
@@ -526,6 +527,7 @@
         "gallery": {
             "viewAll": "View all photos",
             "moreOverlay": "+{{count}} more",
+            "viewAllCount": "See all {{count}} photos",
             "viewFullscreen": "View photo {n} fullscreen",
             "backToAccommodation": "← Back to accommodation",
             "photosSubpage": "Photos"

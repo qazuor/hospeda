@@ -75,7 +75,12 @@ describe('MobileBookingSummary', () => {
         expect(page.indexOf('<MobileBookingSummary')).toBeLessThan(
             page.indexOf('<RelatedCarousel')
         );
-        for (const element of ['PricingSidebar', 'OwnerCard', 'ContactHost', 'ReviewSidebarCard']) {
+        for (const element of [
+            'PricingSidebar',
+            'OwnerCard',
+            'ListingContactCard',
+            'ReviewSidebarCard'
+        ]) {
             expect(sidebar).toContain(`<${element}`);
         }
     });
