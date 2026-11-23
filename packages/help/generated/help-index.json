@@ -1,5 +1,5 @@
 {
-  "contentHash": "35c158e29710e76904fb7c01c4122507abe8d6753836580b1c75df9c4f300408",
+  "contentHash": "601d58389d3c6bbaa1edb239414abe69e2ee2b2818f5200239234a0ee87406e8",
   "locales": {
     "es": [
       {
@@ -394,7 +394,7 @@
           "publish-requirements",
           "inquiries"
         ],
-        "reviewedAt": "2026-11-20",
+        "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Bloquear y liberar fechas, y conectar calendarios externos, desde {{link:section:accommodation:calendario|Calendario}}.",
           "expect": "- Las fechas bloqueadas no aparecen disponibles en las búsquedas.\n- Un calendario conectado muestra su estado y se puede sincronizar a mano o desconectar.\n- El calendario y la sincronización dependen de tu plan: compará {{link:plans:accommodation|los planes para alojamientos}}.",
