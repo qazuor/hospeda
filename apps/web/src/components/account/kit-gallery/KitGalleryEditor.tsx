@@ -8,15 +8,22 @@
  * @module components/account/kit-gallery/KitGalleryEditor
  */
 
+import { DeleteIcon } from '@repo/icons';
 import { useState } from 'react';
 import {
+    Button,
     CompletenessMeter,
     EditorSectionNav,
     EditorSwitcher,
     Field,
     HoursEditor,
     type HoursWeek,
+    MediaDropzone,
+    MediaUploadStatus,
+    PhotoGrid,
+    PhotoTile,
     Repeater,
+    StatusPill,
     TextInput
 } from '@/components/account/ui';
 import type { EditorNavGroup } from '@/lib/editor/editor-route-nav-model';
@@ -24,6 +31,9 @@ import { buildEditorSwitcherModel } from '@/lib/editor/editor-switcher-model';
 import styles from './KitGallery.module.css';
 import type { GalleryGroupProps } from './KitGalleryActions';
 import { Visual } from './Visual';
+
+/** A static photo shipped with the web app, for the MediaManager entries. */
+const DEMO_PHOTO = '/og/hero-atardecer.jpg';
 
 /** A fixture editor nav: two groups, one active section, every status. */
 const GROUPS: readonly EditorNavGroup[] = [
@@ -132,6 +142,49 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
                             description: 'Agregá el primero para armar la carta.'
                         }}
                     />
+                </Visual>
+                <Visual name="MediaDropzone/slot">
+                    <div className={styles.stack}>
+                        <MediaDropzone
+                            title="Arrastrá una imagen o hacé clic para seleccionar"
+                            hint="JPG, PNG o WebP — máx. 10MB"
+                            onPick={() => undefined}
+                        />
+                        <MediaUploadStatus
+                            label="Subiendo foto 2 de 3…"
+                            progress={60}
+                        />
+                    </div>
+                </Visual>
+                <Visual name="PhotoGrid/tiles">
+                    <div className={styles.stack}>
+                        <PhotoGrid ariaLabel="Galería">
+                            <PhotoTile
+                                src={DEMO_PHOTO}
+                                alt="Atardecer sobre el río"
+                                actions={
+                                    <Button
+                                        variant="secondary"
+                                        size="lg"
+                                        iconOnly
+                                        aria-label="Eliminar"
+                                    >
+                                        <DeleteIcon size="sm" />
+                                    </Button>
+                                }
+                            />
+                            <PhotoTile
+                                src={DEMO_PHOTO}
+                                alt=""
+                                badge={<StatusPill tone="warning">Falta descripción</StatusPill>}
+                            />
+                            <MediaDropzone
+                                variant="tile"
+                                title="Agregar fotos a la galería"
+                                onPick={() => undefined}
+                            />
+                        </PhotoGrid>
+                    </div>
                 </Visual>
             </div>
         </section>

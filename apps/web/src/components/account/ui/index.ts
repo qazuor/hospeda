@@ -101,6 +101,16 @@ export { ListRow, type ListRowActions, type ListRowProps } from './ListRow';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
 export {
+    MediaDropzone,
+    type MediaDropzoneProps,
+    MediaUploadStatus,
+    type MediaUploadStatusProps,
+    PhotoGrid,
+    type PhotoGridProps,
+    PhotoTile,
+    type PhotoTileProps
+} from './MediaManager';
+export {
     MessageBubble,
     type MessageBubbleProps,
     type MessageBubbleSide,
