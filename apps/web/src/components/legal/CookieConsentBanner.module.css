@@ -161,14 +161,17 @@
 }
 
 .btnPrimary {
-    background-color: var(--brand-accent);
-    color: var(--accent-foreground);
-    border-color: var(--brand-accent);
+    /* AA pair in both themes (HOS-2572): --brand-accent-text is a deep orange in
+       light (4.53:1 with --core-card) and the brand orange in dark (5.65:1).
+       The previous --brand-accent + --accent-foreground pair was 2.8:1 in light. */
+    background-color: var(--brand-accent-text);
+    color: var(--core-card);
+    border-color: var(--brand-accent-text);
     box-shadow: 0 2px 8px var(--brand-accent-a30);
 }
 
 .btnPrimary:hover {
-    background-color: var(--accent-hover, var(--brand-accent));
+    filter: brightness(0.92);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px var(--brand-accent-a40);
 }
@@ -177,7 +180,9 @@
  * so the eye lands on "Aceptar" / "Rechazar" first. */
 .btnSecondary {
     background-color: transparent;
-    color: var(--brand-primary);
+    /* --brand-primary was 3.5:1 on the light card; --brand-primary-text is
+       10.9:1 in light and 5.1:1 in dark (HOS-2572). */
+    color: var(--brand-primary-text);
     border-color: transparent;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -186,7 +191,6 @@
 }
 
 .btnSecondary:hover {
-    color: var(--primary-hover, var(--brand-primary));
     text-decoration-thickness: 2px;
 }
 

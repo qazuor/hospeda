@@ -192,7 +192,14 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                         className={styles.image}
                         style={{
                             opacity: index === activeIndex ? 1 : 0,
-                            transition: reducedMotion ? 'none' : 'opacity 1.5s ease-in-out'
+                            // The crossfade only exists once the rotation has
+                            // started. Before that (SSR HTML, hydration, and the
+                            // whole LCP window) the first image is painted at its
+                            // final opacity with no transition attached, so
+                            // nothing can defer or animate its first paint
+                            // (HOS-2572).
+                            transition:
+                                started && !reducedMotion ? 'opacity 1.5s ease-in-out' : 'none'
                         }}
                         loading={index === 0 ? 'eager' : 'lazy'}
                         // The first image is fetched at high priority so the browser

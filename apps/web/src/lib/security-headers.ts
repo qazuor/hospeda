@@ -21,13 +21,26 @@
  * future change overrides the API's values away from these defaults via its
  * env vars, this file will NOT follow — that drift is an accepted tradeoff
  * of keeping this fix env-var-free.
+ *
+ * HOS-2572 adds `Cross-Origin-Opener-Policy` (flagged by PageSpeed "Best
+ * practices": no origin isolation against XSS-opened windows). The value is
+ * `same-origin`, chosen after auditing every cross-window flow in the web app:
+ * there is NO `window.open` and no `window.opener` / `postMessage` use anywhere
+ * in `apps/web/src` or `@repo/auth-ui`; social sign-in (`signIn.social`) and the
+ * MercadoPago checkout are full-page redirects, not popups; the video embeds
+ * are `<iframe>`s, which COOP does not affect (it governs top-level browsing
+ * contexts only); share uses `navigator.share`. With no popup that needs its
+ * opener, the stricter `same-origin` is safe. If a popup-based flow is ever
+ * added (an OAuth popup, a payment SDK modal in a window), relax this to
+ * `same-origin-allow-popups` instead of removing it.
  */
 
 /** Header name → value applied to every response, mirroring apps/api's security middleware defaults. */
 export const SECURITY_HEADER_VALUES = {
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
     'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'strict-origin-when-cross-origin'
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Cross-Origin-Opener-Policy': 'same-origin'
 } as const;
 
 /**
