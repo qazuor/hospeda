@@ -43,6 +43,7 @@ export const NEWSLETTER_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'campaign',
         name: 'Campaña de newsletter',
         domain: 'newsletter',
+        audience: 'user',
         scenarios: [
             {
                 id: 'default',
@@ -79,6 +80,7 @@ export const NEWSLETTER_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'verify',
         name: 'Confirmación de suscripción al newsletter',
         domain: 'newsletter',
+        audience: 'user',
         wired: false,
         scenarios: [
             { id: 'with-name', label: 'Con nombre', input: { firstName: 'Ana' } },
@@ -98,6 +100,7 @@ export const NEWSLETTER_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'welcome',
         name: 'Bienvenida al newsletter',
         domain: 'newsletter',
+        audience: 'user',
         wired: false,
         scenarios: [
             { id: 'with-name', label: 'Con nombre', input: { firstName: 'Ana' } },
