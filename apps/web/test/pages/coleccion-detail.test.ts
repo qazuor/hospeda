@@ -5,11 +5,10 @@
  * Verifies that the SSR page:
  *  - reads entityType and bookmarksPage from URL search params
  *  - uses the correct API endpoint with filter params
- *  - renders the entity type filter tabs as anchor links
- *  - renders the bookmark grid
- *  - renders pagination controls
- *  - mounts CollectionBookmarkRemoveBtn as a React island
- *  - shows the empty state when no bookmarks exist
+ *  - redirects a missing or foreign collection instead of rendering it
+ *  - hands the read to the `CollectionDetailView` island (HOS-2480), whose
+ *    tabs, cards, empty/error states, pagination and removal are covered
+ *    behaviorally by test/components/account/favorites/CollectionDetailView.test.tsx
  */
 
 import { readFileSync } from 'node:fs';
@@ -21,27 +20,18 @@ const pageSrc = readFileSync(
     'utf8'
 );
 
-const removeBtnSrc = readFileSync(
-    resolve(__dirname, '../../src/components/account/CollectionBookmarkRemoveBtn.client.tsx'),
-    'utf8'
-);
-
-const removeBtnCssSrc = readFileSync(
-    resolve(__dirname, '../../src/components/account/CollectionBookmarkRemoveBtn.module.css'),
+const viewSrc = readFileSync(
+    resolve(__dirname, '../../src/components/account/favorites/CollectionDetailView.client.tsx'),
     'utf8'
 );
 
 describe('collection detail page — T-051b (SPEC-098)', () => {
-    // ── Auth guard ───────────────────────────────────────────────────────────
-
     describe('auth guard', () => {
         it('redirects unauthenticated users to sign-in', () => {
             expect(pageSrc).toContain('auth/signin');
             expect(pageSrc).toContain('Astro.redirect');
         });
     });
-
-    // ── Query param reading ──────────────────────────────────────────────────
 
     describe('URL search param handling', () => {
         it('reads entityType from URL search params', () => {
@@ -52,8 +42,7 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
             expect(pageSrc).toContain("searchParams.get('bookmarksPage')");
         });
 
-        it('validates entityType against an allowed set', () => {
-            expect(pageSrc).toContain('COLLECTION_ENTITY_TYPES');
+        it('validates entityType against the shared allowed set', () => {
             expect(pageSrc).toContain('parseCollectionEntityType');
         });
 
@@ -62,8 +51,6 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
             expect(pageSrc).toContain('parseInt(rawPage');
         });
     });
-
-    // ── API call ─────────────────────────────────────────────────────────────
 
     describe('API integration', () => {
         it('calls userBookmarkCollectionsApi.getById', () => {
@@ -79,225 +66,43 @@ describe('collection detail page — T-051b (SPEC-098)', () => {
             expect(pageSrc).toContain('bookmarksPageSize: PAGE_SIZE');
         });
 
-        it('redirects to /mi-cuenta/favoritos on 404', () => {
-            expect(pageSrc).toContain('mi-cuenta/favoritos');
+        it('redirects 404/400/403 to /mi-cuenta/favoritos (never confirms a foreign id)', () => {
+            expect(pageSrc).toContain('status === 404 || status === 400 || status === 403');
+            expect(pageSrc).toContain("path: 'mi-cuenta/favoritos'");
+        });
+
+        it('hands any other failure to the island as a failed read, never as empty', () => {
+            expect(pageSrc).toContain(': { ok: false }');
         });
     });
 
-    // ── Filter tabs ──────────────────────────────────────────────────────────
-
-    describe('entity type filter tabs', () => {
-        it('renders filter tabs inside a nav element', () => {
-            expect(pageSrc).toContain('coleccion-tabs');
+    describe('island wiring (HOS-2480)', () => {
+        it('renders CollectionDetailView with client:load', () => {
+            expect(pageSrc).toContain('<CollectionDetailView');
+            expect(pageSrc).toContain('client:load');
         });
 
-        it('uses anchor elements for tabs (SSR navigation)', () => {
-            expect(pageSrc).toContain('coleccion-tabs__btn');
-            // Tabs are <a> not <button> — they navigate via full page reload
-            expect(pageSrc).toContain('<a');
-            expect(pageSrc).toContain('buildFilterUrl');
-        });
-
-        it('marks the active tab with aria-current', () => {
-            expect(pageSrc).toContain("aria-current={isActive ? 'true' : undefined}");
-        });
-
-        it('applies active modifier class when tab matches active filter', () => {
-            expect(pageSrc).toContain('coleccion-tabs__btn--active');
-        });
-
-        it('uses i18n keys for tab labels', () => {
-            expect(pageSrc).toContain('account.favorites.filter.all');
-            // The per-type labels come from COLLECTION_FILTER_LABELS
-            // (src/lib/collection-entity-types.ts, covered by its own test).
-            expect(pageSrc).toContain('COLLECTION_FILTER_LABELS');
-        });
-
-        it('resets page to 1 when changing filter', () => {
-            // buildFilterUrl does not include bookmarksPage param when building filter URLs
-            expect(pageSrc).toContain('buildFilterUrl');
-            // The "ALL" tab goes back to the base URL (no query params)
-            expect(pageSrc).toContain("entityTypeKey === 'ALL'");
-        });
-    });
-
-    // ── Bookmark grid ────────────────────────────────────────────────────────
-
-    describe('bookmark grid', () => {
-        it('renders a grid list when bookmarks exist', () => {
-            expect(pageSrc).toContain('coleccion-grid');
-            // The endpoint returns `{ data, pagination }` per PaginationResultSchema.
-            expect(pageSrc).toContain('bookmarksData.data.length > 0');
-        });
-
-        it('renders card elements for each bookmark', () => {
-            expect(pageSrc).toContain('coleccion-card');
-        });
-
-        it('links each card to the entity URL', () => {
-            expect(pageSrc).toContain('coleccion-card__link');
-            expect(pageSrc).toContain('resolveEntityHref');
-        });
-
-        it('shows the bookmark name (falls back to no_collection label)', () => {
-            expect(pageSrc).toContain('bookmark.name');
-        });
-
-        it('shows the optional description (note)', () => {
-            expect(pageSrc).toContain('bookmark.description');
-            expect(pageSrc).toContain('coleccion-card__note');
-        });
-
-        it('shows the entity type label in card meta', () => {
-            expect(pageSrc).toContain('coleccion-card__meta');
-        });
-    });
-
-    // ── Empty state ──────────────────────────────────────────────────────────
-
-    describe('empty state', () => {
-        it('shows empty state when rows is empty', () => {
-            expect(pageSrc).toContain('bookmarksData.data.length === 0');
-            expect(pageSrc).toContain('coleccion-empty');
-        });
-
-        it('uses the correct i18n key for empty message', () => {
-            expect(pageSrc).toContain('account.favorites.collections.emptyBookmarks');
-        });
-    });
-
-    // ── Pagination ───────────────────────────────────────────────────────────
-
-    describe('pagination', () => {
-        it('renders pagination when totalPages > 1', () => {
-            expect(pageSrc).toContain('coleccion-pagination');
-            expect(pageSrc).toContain('totalPages > 1');
-        });
-
-        it('shows prev/next as links when navigation is possible', () => {
-            expect(pageSrc).toContain('buildPageUrl(currentPage - 1)');
-            expect(pageSrc).toContain('buildPageUrl(currentPage + 1)');
-        });
-
-        it('disables prev button on first page', () => {
-            expect(pageSrc).toContain('currentPage > 1');
-            expect(pageSrc).toContain('coleccion-pagination__btn--disabled');
-        });
-
-        it('disables next button on last page', () => {
-            expect(pageSrc).toContain('currentPage < totalPages');
-        });
-
-        it('renders page indicator with i18n key', () => {
-            expect(pageSrc).toContain('account.favorites.collections.pageInfo');
-            expect(pageSrc).toContain('coleccion-pagination__info');
-        });
-
-        it('preserves entityType param across page changes', () => {
-            // buildPageUrl includes entityType when activeEntityType is set
-            expect(pageSrc).toContain('buildPageUrl');
-            expect(pageSrc).toContain('params.entityType = activeEntityType');
-        });
-    });
-
-    // ── Remove island ────────────────────────────────────────────────────────
-
-    describe('CollectionBookmarkRemoveBtn island', () => {
-        it('mounts CollectionBookmarkRemoveBtn with client:visible', () => {
-            expect(pageSrc).toContain('CollectionBookmarkRemoveBtn');
-            expect(pageSrc).toContain('client:visible');
-        });
-
-        it('passes collectionId to the island', () => {
+        it('passes the read, the filter, the page and the API origin', () => {
+            expect(pageSrc).toContain('read={read}');
+            expect(pageSrc).toContain('activeEntityType={activeEntityType}');
+            expect(pageSrc).toContain('currentPage={currentPage}');
+            expect(pageSrc).toContain('apiUrl={getApiUrl()}');
             expect(pageSrc).toContain('collectionId={id}');
         });
 
-        it('passes bookmarkId to the island', () => {
-            expect(pageSrc).toContain('bookmarkId={bookmark.id}');
+        it('replaces the shared Breadcrumbs with the PageHeader back link', () => {
+            expect(pageSrc).not.toContain('Breadcrumbs');
+            expect(viewSrc).toContain("t('account.favorites.collections.backToList')");
         });
 
-        it('passes apiBase to the island', () => {
-            expect(pageSrc).toContain('apiBase={apiBase}');
+        it('builds the type tabs from the shared list as URL links (NavTabs)', () => {
+            expect(viewSrc).toContain('COLLECTION_ENTITY_TYPES.map');
+            expect(viewSrc).toContain('COLLECTION_FILTER_LABELS');
+            expect(viewSrc).toContain('<NavTabs');
         });
 
-        it('passes locale to the island', () => {
-            expect(pageSrc).toContain('locale={locale}');
+        it('has no page-local styles left (kit only)', () => {
+            expect(pageSrc).not.toContain('<style');
         });
-
-        it('reads apiBase via the validated getApiUrl() helper', () => {
-            expect(pageSrc).toContain('getApiUrl()');
-        });
-    });
-
-    // ── Styling ──────────────────────────────────────────────────────────────
-
-    describe('styling', () => {
-        it('uses CSS custom properties (no hardcoded hex/rgb colors)', () => {
-            expect(pageSrc).toContain('var(--brand-primary)');
-            expect(pageSrc).toContain('var(--core-muted-foreground)');
-            expect(pageSrc).toContain('var(--core-card)');
-        });
-
-        it('does not use standalone Tailwind utility classes', () => {
-            // Web app uses BEM-lite CSS classes — check that no class attribute
-            // contains standalone Tailwind utilities (those begin the value or
-            // follow a space, and are not part of a BEM name like "coleccion-grid")
-            expect(pageSrc).not.toMatch(/class(Name)?="\s*(flex|text-sm|text-lg|bg-\w|p-\d)\b/);
-        });
-    });
-});
-
-// ────────────────────────────────────────────────────────────────────────────
-// CollectionBookmarkRemoveBtn island tests
-// ────────────────────────────────────────────────────────────────────────────
-
-describe('CollectionBookmarkRemoveBtn — source structure', () => {
-    it('exports CollectionBookmarkRemoveBtn as a named export', () => {
-        expect(removeBtnSrc).toContain('export function CollectionBookmarkRemoveBtn');
-    });
-
-    it('declares CollectionBookmarkRemoveBtnProps interface as readonly', () => {
-        expect(removeBtnSrc).toContain('CollectionBookmarkRemoveBtnProps');
-        expect(removeBtnSrc).toContain('readonly collectionId: string');
-        expect(removeBtnSrc).toContain('readonly bookmarkId: string');
-        expect(removeBtnSrc).toContain('readonly apiBase: string');
-        expect(removeBtnSrc).toContain('readonly locale: SupportedLocale');
-    });
-
-    it('calls the correct DELETE endpoint', () => {
-        expect(removeBtnSrc).toContain('/api/v1/protected/user-bookmark-collections/');
-        expect(removeBtnSrc).toContain("method: 'DELETE'");
-    });
-
-    it('forwards credentials to the API call', () => {
-        expect(removeBtnSrc).toContain("credentials: 'include'");
-    });
-
-    it('reloads the page on successful removal', () => {
-        expect(removeBtnSrc).toContain('window.location.reload()');
-    });
-
-    it('shows error state when API call fails', () => {
-        expect(removeBtnSrc).toContain('setError(');
-        expect(removeBtnSrc).toContain('account.favorites.collections.removeError');
-    });
-
-    it('disables the button while removing', () => {
-        expect(removeBtnSrc).toContain('disabled={removing}');
-    });
-
-    it('styles the button via a CSS module (no inline style, no hardcoded colors)', () => {
-        expect(removeBtnSrc).not.toContain('style={{');
-        expect(removeBtnSrc).toContain(
-            "import styles from './CollectionBookmarkRemoveBtn.module.css'"
-        );
-        expect(removeBtnSrc).toContain('className={styles.removeBtn}');
-        expect(removeBtnCssSrc).toContain(
-            'composes: dangerCompact from "./AccountButton.module.css"'
-        );
-    });
-
-    it('uses createTranslations for i18n', () => {
-        expect(removeBtnSrc).toContain('createTranslations(locale)');
     });
 });

@@ -1,0 +1,150 @@
+/**
+ * Safe previews of guest-typed inquiry data for the verification email (HOS-2568).
+ *
+ * The verification email goes to an address that has NOT been verified yet, and the guest
+ * only has to type that address. Rendering their free text verbatim would let anyone make
+ * Hospeda send arbitrary text, links included, to any inbox. So the email shows structured
+ * fields plus a short plain-text excerpt in which links, email addresses and phone-like
+ * numbers are replaced by neutral markers. The full text stays server-side until the owner
+ * of the address clicks the link.
+ *
+ * @module templates/conversation/inquiry-excerpt
+ */
+
+/** Maximum visible length of the excerpt, ellipsis included. */
+export const INQUIRY_EXCERPT_MAX_LENGTH = 120;
+
+/** Marker that replaces a link (Spanish copy, like the rest of the template). */
+export const INQUIRY_LINK_MARKER = '[enlace]';
+/** Marker that replaces an email address. */
+export const INQUIRY_EMAIL_MARKER = '[email]';
+/** Marker that replaces a phone-like number. */
+export const INQUIRY_PHONE_MARKER = '[teléfono]';
+
+// Every repetition below is bounded so a long hostile message cannot make a pattern
+// quadratic: a start position never scans further than a fixed window.
+const EMAIL_PATTERN = /[^\s@<>()[\]]{1,64}@[^\s@<>()[\]]{1,255}\.[^\s@<>()[\]]{1,63}/g;
+const SCHEME_URL_PATTERN = /\b(?:[a-z][a-z0-9+.-]{1,15}:\/\/|www\.)\S{1,2000}/gi;
+const BARE_DOMAIN_PATTERN = /\b(?:[a-z0-9-]{1,63}\.){1,10}[a-z]{2,24}\b(?:[/?#]\S{0,500})?/gi;
+/**
+ * Seven or more digits, with up to three space, dot, dash or bracket characters between
+ * digits. Whitespace is already collapsed to one space when this runs.
+ */
+const PHONE_PATTERN = /\+?\d(?:[\s().-]{0,3}\d){6,}/g;
+
+/** `evil[.]com`, `evil(.)com`, `evil{.}com`, `evil[dot]com` and the ideographic full stop. */
+const OBFUSCATED_DOT_PATTERN = /[[({]\s{0,3}(?:\.|dot)\s{0,3}[\])}]|[。｡]/gi;
+/** `hxxps[:]//`. */
+const OBFUSCATED_COLON_PATTERN = /[[({]\s{0,3}:\s{0,3}[\])}]/g;
+/** `ana[at]evil.com`. */
+const OBFUSCATED_AT_PATTERN = /[[({]\s{0,3}at\s{0,3}[\])}]/gi;
+const OBFUSCATED_SCHEME_PATTERN = /\bhxxp(s?)\b/gi;
+
+/**
+ * Normalizes a guest-typed string before any detection runs: compatibility folding (so
+ * fullwidth digits and punctuation become ASCII), control characters and whitespace
+ * collapsed to single spaces, and the usual link/email obfuscations undone.
+ */
+function normalizeForDetection(text: string): string {
+    return (
+        text
+            .normalize('NFKC')
+            // biome-ignore lint/suspicious/noControlCharactersInRegex: strips control characters on purpose
+            .replace(/[\u0000-\u001f\u007f]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(OBFUSCATED_DOT_PATTERN, '.')
+            .replace(OBFUSCATED_COLON_PATTERN, ':')
+            .replace(OBFUSCATED_AT_PATTERN, '@')
+            .replace(OBFUSCATED_SCHEME_PATTERN, 'http$1')
+            .trim()
+    );
+}
+
+/**
+ * Builds the plain-text excerpt of an inquiry message for the verification email.
+ *
+ * The text is normalized first (NFKC, whitespace and control characters collapsed, link and
+ * email obfuscations undone). Then emails are replaced (they contain dots that would read as
+ * domains), then links, then phone-like sequences. The result is cut to at most
+ * {@link INQUIRY_EXCERPT_MAX_LENGTH} characters ending in an ellipsis when shortened. A
+ * marker is never cut in half.
+ *
+ * @param input - `{ message }` the raw guest text.
+ * @returns `{ excerpt }` neutralized, single-line text; empty when the message is blank.
+ *
+ * @example
+ * ```ts
+ * buildInquiryExcerpt({ message: 'Escribime a ana@x.com o entrá a http://evil.test' });
+ * // { excerpt: 'Escribime a [email] o entrá a [enlace]' }
+ * ```
+ */
+export function buildInquiryExcerpt({ message }: { readonly message: string }): {
+    readonly excerpt: string;
+} {
+    const neutralized = normalizeForDetection(message)
+        .replace(EMAIL_PATTERN, INQUIRY_EMAIL_MARKER)
+        .replace(SCHEME_URL_PATTERN, INQUIRY_LINK_MARKER)
+        .replace(BARE_DOMAIN_PATTERN, INQUIRY_LINK_MARKER)
+        .replace(PHONE_PATTERN, INQUIRY_PHONE_MARKER)
+        .trim();
+
+    if (neutralized.length <= INQUIRY_EXCERPT_MAX_LENGTH) {
+        return { excerpt: neutralized };
+    }
+
+    let cut = neutralized.slice(0, INQUIRY_EXCERPT_MAX_LENGTH - 1);
+    // Do not leave half a marker ("[enla") at the cut.
+    const lastOpen = cut.lastIndexOf('[');
+    if (lastOpen !== -1 && cut.indexOf(']', lastOpen) === -1) {
+        cut = cut.slice(0, lastOpen);
+    }
+    return { excerpt: `${cut.trimEnd()}…` };
+}
+
+/**
+ * Masks a phone number so only its last three digits remain.
+ *
+ * @param input - `{ phone }` the declared phone, as typed.
+ * @returns `{ masked }` e.g. `'*** *** 567'`; empty when there are no digits.
+ *
+ * @example
+ * ```ts
+ * maskPhone({ phone: '+54 3442 123456' }); // { masked: '*** 456' }
+ * ```
+ */
+export function maskPhone({ phone }: { readonly phone: string }): { readonly masked: string } {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 0) {
+        return { masked: '' };
+    }
+    return { masked: `*** ${digits.slice(-3)}` };
+}
+
+const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function toDisplayDate(value: string | null | undefined): string {
+    const match = value ? ISO_DATE.exec(value) : null;
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
+/**
+ * Formats the declared stay dates for the verification email.
+ *
+ * Only well-formed `YYYY-MM-DD` values are rendered (as `DD/MM/YYYY`); anything else is
+ * dropped, so a date field can never carry free text into the email.
+ *
+ * @param input - `{ checkIn, checkOut }` declared dates.
+ * @returns the label (`'12/12/2026 al 15/12/2026'`, or a single date), or `''` for none.
+ */
+export function formatInquiryDates({
+    checkIn,
+    checkOut
+}: {
+    readonly checkIn?: string | null;
+    readonly checkOut?: string | null;
+}): string {
+    const from = toDisplayDate(checkIn);
+    const to = toDisplayDate(checkOut);
+    if (from && to) return `${from} al ${to}`;
+    return from || to;
+}

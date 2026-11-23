@@ -1,0 +1,97 @@
+/* MessageBubble.module.css — one message of a ConversationThread (HOS-2481).
+   Own messages right, the other party left, system notes centred. */
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.mine {
+    align-items: flex-end;
+}
+
+.theirs {
+    align-items: flex-start;
+}
+
+.system {
+    align-items: center;
+}
+
+.bubble {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    max-inline-size: 85%;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-card);
+}
+
+.mine .bubble {
+    border-end-end-radius: var(--radius-control);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.theirs .bubble {
+    border: 1px solid var(--border);
+    border-end-start-radius: var(--radius-control);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+}
+
+.system .bubble {
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-control);
+    background-color: var(--muted);
+    color: var(--core-foreground);
+}
+
+.failed {
+    opacity: 0.7;
+}
+
+.body {
+    margin: 0;
+    font: var(--app-body);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.time {
+    align-self: flex-end;
+    font: var(--app-meta);
+    opacity: 0.8;
+}
+
+.delivery {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.failedNote {
+    color: var(--status-danger-fg);
+}
+
+.visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+@container (width >= 40rem) {
+    .bubble {
+        max-inline-size: 70%;
+    }
+}

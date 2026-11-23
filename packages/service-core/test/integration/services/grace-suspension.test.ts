@@ -2,7 +2,7 @@ import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
 import { emailOutbox, eq, inArray, providerLinks, subscriptions } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
 import type { CoverageNotices } from '../../../src/services/billing/payment/payment-ports.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -182,7 +182,7 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
         'TEST:1878:9 grace-expiry sweep emits suspension for the owner with SYSTEM actor after commit',
         async () => {
             const s = await suspensionFixture();
-            const facts: BillingFact[] = [];
+            const facts: SinkFact[] = [];
             const occurredAt = s.fixture.clock.now();
             await s.runCheck({ billingFacts: { emit: (fact) => facts.push(fact) } });
 
@@ -294,7 +294,7 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
         'TEST:1878:9 LOST_RACE during S6 emits no suspension fact',
         async () => {
             const s = await suspensionFixture();
-            const facts: BillingFact[] = [];
+            const facts: SinkFact[] = [];
             s.onCancel(async () => {
                 await getServiceTestDb()
                     .update(subscriptions)

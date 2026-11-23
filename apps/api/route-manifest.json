@@ -3323,6 +3323,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/experiences/mine/stats"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/experiences/mine/views"
         },
         {
@@ -3980,6 +3984,10 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/venues/mine"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/mine/stats"
         },
         {
             "method": "GET",

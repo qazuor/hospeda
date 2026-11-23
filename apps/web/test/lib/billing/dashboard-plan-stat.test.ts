@@ -2,14 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-    DASHBOARD_PLAN_SLUGS,
-    isPlanActive,
+    getActionStatusKey,
     parsePlanNames,
     resolveDashboardFreeCard,
     resolveDashboardPlanStat,
     resolveDashboardTrialStat,
-    resolvePlanActionText,
-    resolvePlanStatusLabel,
     statusNeedsAction
 } from '../../../src/lib/billing/dashboard-plan-stat';
 
@@ -19,18 +16,6 @@ const plan = {
     status: 'ACTIVE',
     vertical: 'accommodation'
 } as const;
-
-/** Read the translated plan slugs from one locale's billing catalog. */
-function readBillingPlanSlugs(locale: string): string[] {
-    const file = path.resolve(
-        __dirname,
-        '../../../../../packages/i18n/src/locales',
-        locale,
-        'billing.json'
-    );
-    const billing = JSON.parse(fs.readFileSync(file, 'utf8')) as { plan?: Record<string, unknown> };
-    return Object.keys(billing.plan ?? {});
-}
 
 describe('TEST:1756:9-11 dashboard plan stat resolver', () => {
     it('TEST:1756:9 prefers a translation and falls back to the API name', () => {
@@ -84,12 +69,6 @@ describe('TEST:1756:9-11 dashboard plan stat resolver', () => {
         expect(parsePlanNames('{"owner-basico":"Básico","bad":1}')).toEqual({
             'owner-basico': 'Básico'
         });
-    });
-
-    it('TEST:1756:11 keeps helper slugs in sync with all three billing catalogs', () => {
-        for (const locale of ['es', 'en', 'pt']) {
-            expect([...DASHBOARD_PLAN_SLUGS].sort()).toEqual(readBillingPlanSlugs(locale).sort());
-        }
     });
 });
 
@@ -173,67 +152,6 @@ describe('HOS-1996 dashboard free-branch decision', () => {
     });
 });
 
-describe('HOS-2543 resolvePlanStatusLabel', () => {
-    const t = (key: string, _fallback: string, params?: Record<string, unknown>) =>
-        params?.date ? `${key}|${String(params.date)}` : key;
-    const formatDate = (iso: string) => `D(${iso})`;
-    const info = (subscriptionStatus: string | null, serviceEndsAt: string | null = null) => ({
-        status: 'active',
-        subscriptionStatus,
-        serviceEndsAt
-    });
-
-    it.each([
-        ['ACTIVE', 'host.dashboard.plan.active'],
-        ['GRACE_PERIOD', 'host.dashboard.plan.gracePeriod'],
-        ['SUSPENDED', 'host.dashboard.plan.suspended'],
-        ['PAUSED', 'host.dashboard.plan.paused']
-    ])('gives %s its own label', (status, key) => {
-        expect(resolvePlanStatusLabel({ info: info(status), t, formatDate })).toBe(key);
-    });
-
-    it('shows the end date on a scheduled cancellation', () => {
-        expect(
-            resolvePlanStatusLabel({
-                info: info('CANCEL_SCHEDULED', '2026-12-31T00:00:00.000Z'),
-                t,
-                formatDate
-            })
-        ).toBe('host.dashboard.plan.cancelScheduled|D(2026-12-31T00:00:00.000Z)');
-    });
-
-    it('drops the date when a scheduled cancellation has none', () => {
-        expect(resolvePlanStatusLabel({ info: info('CANCEL_SCHEDULED'), t, formatDate })).toBe(
-            'host.dashboard.plan.cancelScheduledNoDate'
-        );
-    });
-
-    it('falls back to the coarse status for an API without subscriptionStatus', () => {
-        expect(resolvePlanStatusLabel({ info: info(null), t, formatDate })).toBe(
-            'host.dashboard.plan.active'
-        );
-        expect(
-            resolvePlanStatusLabel({
-                info: { status: 'past_due', subscriptionStatus: null, serviceEndsAt: null },
-                t,
-                formatDate
-            })
-        ).toBe('host.dashboard.plan.inactive');
-    });
-});
-
-describe('isPlanActive', () => {
-    it.each([
-        ['ACTIVE', 'active', true],
-        ['GRACE_PERIOD', 'past_due', false],
-        ['PAUSED', 'cancelled', false],
-        [null, 'active', true],
-        [null, 'cancelled', false]
-    ])('subscriptionStatus %s / status %s -> %s', (subscriptionStatus, status, expected) => {
-        expect(isPlanActive({ info: { status, subscriptionStatus } })).toBe(expected);
-    });
-});
-
 describe('HOS-2553 subscription card with every subscription', () => {
     const sub = (slug: string, status: string) => ({
         slug,
@@ -308,31 +226,14 @@ describe('HOS-2553 subscription card with every subscription', () => {
         expect(statusNeedsAction({ statusKey: 'active' })).toBe(false);
         expect(statusNeedsAction({ statusKey: 'grace-period' })).toBe(false);
     });
-});
 
-describe('HOS-2553 host dashboard labels for the unsettled statuses', () => {
-    const t = (key: string) => key;
-    const info = (subscriptionStatus: string) => ({
-        status: 'past_due',
-        subscriptionStatus,
-        serviceEndsAt: null
-    });
-
-    it.each([
-        ['CHARGE_DECLINED', 'host.dashboard.plan.chargeDeclined'],
-        ['PENDING_AUTHORIZATION', 'host.dashboard.plan.pendingAuthorization']
-    ])('labels %s with its own text instead of "Inactivo"', (status, key) => {
-        expect(resolvePlanStatusLabel({ info: info(status), t, formatDate: () => null })).toBe(key);
-    });
-
-    it('adds an action line for both and none for an active plan', () => {
-        expect(resolvePlanActionText({ info: info('CHARGE_DECLINED'), t })).toBe(
-            'host.dashboard.plan.chargeDeclinedAction'
+    it('narrows the action key to the two unsettled statuses and null otherwise', () => {
+        expect(getActionStatusKey({ statusKey: 'charge-declined' })).toBe('charge-declined');
+        expect(getActionStatusKey({ statusKey: 'pending-authorization' })).toBe(
+            'pending-authorization'
         );
-        expect(resolvePlanActionText({ info: info('PENDING_AUTHORIZATION'), t })).toBe(
-            'host.dashboard.plan.pendingAuthorizationAction'
-        );
-        expect(resolvePlanActionText({ info: info('ACTIVE'), t })).toBeNull();
+        expect(getActionStatusKey({ statusKey: 'active' })).toBeNull();
+        expect(getActionStatusKey({ statusKey: 'grace-period' })).toBeNull();
     });
 });
 
@@ -370,10 +271,9 @@ describe('HOS-2553 declined sign-up action copy', () => {
         pt: /perder seu plano|plano continue ativo/i
     } as const;
     const RETRY = { es: /intent/i, en: /try/i, pt: /tent/i } as const;
-    const KEYS = [
-        ['host', 'dashboard.plan.chargeDeclinedAction'],
-        ['account', 'pages.dashboard.stats.chargeDeclinedAction']
-    ] as const;
+    // The host dashboard no longer carries a plan widget (D19), so the account card is
+    // the one place this copy lives.
+    const KEYS = [['account', 'pages.dashboard.stats.chargeDeclinedAction']] as const;
 
     it.each(
         (['es', 'en', 'pt'] as const).flatMap((locale) =>

@@ -7,6 +7,24 @@
             "retry": "Tentar de novo"
         }
     },
+    "detail": {
+        "dataTitle": "Dados do prestador",
+        "benefitTitle": "Benefício para anfitriões",
+        "schedule": "Horário",
+        "contact": "Contato",
+        "contactDialogTitle": "Contatar {{name}}",
+        "contactDialogDescription": "Estes são os dados de contato informados pelo prestador.",
+        "channel": {
+            "phone": "Ligar",
+            "whatsapp": "Escrever no WhatsApp",
+            "email": "Enviar um e-mail",
+            "web": "Abrir o link"
+        },
+        "notFound": {
+            "title": "Não encontramos este prestador",
+            "body": "O link pode estar desatualizado ou o prestador pode não estar mais listado. Volte ao diretório para ver os disponíveis."
+        }
+    },
     "filter": {
         "all": "Todos"
     },

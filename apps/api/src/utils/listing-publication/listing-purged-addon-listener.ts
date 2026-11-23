@@ -1,5 +1,6 @@
 import { subscribeListingPurgedAddons } from '@repo/service-core';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice';
+import { getAnalyticsFactSink } from '../analytics/analytics-facts';
 import { getClock } from '../clock';
 import { getCoverageNotices } from '../listing-access/coverage-notices';
 import { getPaymentProvider } from '../payment-provider';
@@ -33,7 +34,8 @@ export function subscribeListingPurgedAddonCancellation(): () => void {
             provider: getPaymentProvider(),
             clock: getClock().clock,
             beforeCancelNotice,
-            coverageNotices: getCoverageNotices()
+            coverageNotices: getCoverageNotices(),
+            billingFacts: getAnalyticsFactSink()
         }
     );
     return () => {

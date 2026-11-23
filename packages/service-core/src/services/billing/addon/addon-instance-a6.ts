@@ -14,6 +14,7 @@ import {
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
@@ -45,6 +46,8 @@ export interface CancelPurgedListingAddonPorts extends ApplyA6Ports {
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly cancellationSeen?: CancellationSeenAnnotator;
     readonly markPayments?: ReconciliationMarkPayments;
+    /** HOS-1883: where the ending's add-on fact goes. */
+    readonly billingFacts?: BillingFactSink;
 }
 
 /** A6 inside one transaction: consume a live LISTING addon and close its complement by S21. */
@@ -104,6 +107,7 @@ export async function applyA6(
         tx
     });
     let providerCancellation: CancelledAddon['providerCancellation'] = null;
+    let complement: CancelledAddon['ending']['complement'] = null;
     if (instance.complementSubscriptionId) {
         const s21 = await applyS21({
             tx,
@@ -112,6 +116,10 @@ export async function applyA6(
             cause: 'OTHER_CAUSE',
             markPayments: input.markPayments
         });
+        complement =
+            s21.outcome === 'CANCELLED'
+                ? { outcome: 'CANCELLED', from: s21.from }
+                : { outcome: s21.outcome };
         if (s21.outcome === 'CANCELLED') {
             const [complement] = await tx
                 .select({
@@ -153,7 +161,13 @@ export async function applyA6(
             clause: 'ORPHANED',
             coverageVerticals,
             complementSubscriptionId: instance.complementSubscriptionId,
-            providerCancellation
+            providerCancellation,
+            ending: {
+                origin: instance.status === 'ACTIVE' ? 'ACTIVE' : 'PENDING_AUTHORIZATION',
+                paid: instance.titleAnchorId === null,
+                complement,
+                endedAt: now
+            }
         }
     };
 }
@@ -187,15 +201,25 @@ export async function cancelPurgedListingAddon(
         )
     );
     if (result.outcome === 'NOT_LIVE') return result;
+    let results: Awaited<ReturnType<typeof cancelAddonComplementAtProviderForA6>>['results'] = [];
     await emitAddonCoverageRemoved({
         cancelled: [result.addon],
         coverageNotices: {
             emitCoverageChanged: (notice) => ports.coverageNotices.emitCoverageChanged(notice)
+        },
+        // A6 labels its result ORPHANED; the purged listing is its own path (HOS-1883 §5.2).
+        end: {
+            path: 'LISTING_PURGED',
+            actorKind: 'SYSTEM',
+            billingFacts: ports.billingFacts,
+            listing: ports.listing
+        },
+        // HOS-1883: the provider half runs before analytics, which never delays it.
+        beforeFacts: async () => {
+            results = (
+                await cancelAddonComplementAtProviderForA6({ cancelled: [result.addon] }, ports)
+            ).results;
         }
     });
-    const { results } = await cancelAddonComplementAtProviderForA6(
-        { cancelled: [result.addon] },
-        ports
-    );
     return { outcome: 'CANCELLED', cancelCall: results[0]?.cancelCall };
 }

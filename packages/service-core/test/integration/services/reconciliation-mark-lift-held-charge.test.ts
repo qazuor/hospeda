@@ -88,11 +88,14 @@ async function heldChargeFor(reason: 'DIVERGENCIA_DE_MONTO' | 'COBRO_DUPLICADO' 
             s.ports
         );
     } else {
-        await abandonOneTimeAddon({
-            instanceId: instance.id,
-            expectedProviderOrderId: null,
-            now: s.f.ports.clock.now()
-        });
+        await abandonOneTimeAddon(
+            {
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            },
+            { billingFacts: undefined }
+        );
         await confirmOneTimePagePayment(
             { instanceId: instance.id, chargeId: first.chargeId },
             s.ports

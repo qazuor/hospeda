@@ -19,214 +19,29 @@
  * misreported as unreachable.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve as resolvePath } from 'node:path';
-import { namespaces } from '@repo/i18n/web';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     CLIENT_I18N_KEY_PREFIXES,
     EXTERNAL_I18N_KEY_PREFIXES
 } from '../../src/lib/i18n-client-namespaces';
+import {
+    ALL_NAMESPACES,
+    allIslandEntries,
+    buildGraph,
+    isCovered,
+    prefixesNameableFrom,
+    REPO_ROOT,
+    TYPE_ONLY_STATEMENT_RE
+} from '../helpers/i18n-client-graph';
 
-const REPO_ROOT = resolvePath(__dirname, '../../../..');
-const WEB_SRC = join(REPO_ROOT, 'apps/web/src');
-
-/** Workspace packages whose modules are bundled into the browser build. */
-const CLIENT_PACKAGE_ROOTS: ReadonlyArray<readonly [string, string]> = [
-    ['@repo/auth-ui', 'packages/auth-ui/src'],
-    ['@repo/feedback', 'packages/feedback/src']
-];
-
-const ALL_NAMESPACES: ReadonlySet<string> = new Set(namespaces as readonly string[]);
-
-function walk(dir: string, out: string[] = []): string[] {
-    let entries: string[];
-    try {
-        entries = readdirSync(dir);
-    } catch {
-        return out;
-    }
-    for (const entry of entries) {
-        if (entry === 'node_modules' || entry === 'dist' || entry.startsWith('.')) continue;
-        const full = join(dir, entry);
-        if (statSync(full).isDirectory()) walk(full, out);
-        else out.push(full);
-    }
-    return out;
-}
-
-const isTestFile = (f: string): boolean => /\.test\.tsx?$/.test(f) || f.includes('__tests__');
-
-/**
- * Resolves an import specifier to a file on disk.
- *
- * @returns The resolved path; `null` when the specifier is external (node_modules
- *   or a workspace package that does not ship to the browser); `undefined` when
- *   it looked like ours but did not resolve — which the caller must treat as a
- *   failure, never as "external".
- */
-function resolveSpecifier(spec: string, fromFile: string): string | null | undefined {
-    // An asset import is legitimately not a TS module, so it is external to
-    // this graph. Checked BEFORE the path branches, and against the specifier
-    // stripped of Vite's query suffix: `?url` (see `lib/ensure-stylesheet.ts`)
-    // means "give me the built asset's URL as a string", and the specifier
-    // then ends in `?url`, not in `.css`. An end-anchored extension test on
-    // the raw specifier misses it and reports the import as UNRESOLVED —
-    // which is a hard failure here, since an unresolved import truncates the
-    // graph. Only `@/…` and workspace-package specifiers reach that far
-    // (a bare `react-day-picker/style.css?url` exits earlier as external),
-    // which is why this stayed latent until a `?url` import of a workspace
-    // package's stylesheet appeared.
-    if (/\.(css|svg|png|jpe?g|webp|json)$/.test(spec.replace(/\?.*$/, ''))) return null;
-
-    let base: string;
-    if (spec.startsWith('@/')) {
-        base = join(WEB_SRC, spec.slice(2));
-    } else if (spec.startsWith('.')) {
-        base = resolvePath(dirname(fromFile), spec);
-    } else {
-        const pkg = CLIENT_PACKAGE_ROOTS.find(
-            ([name]) => spec === name || spec.startsWith(`${name}/`)
-        );
-        if (!pkg) return null;
-        const [name, root] = pkg;
-        const sub = spec.slice(name.length).replace(/^\//, '');
-        base = join(REPO_ROOT, root, sub || 'index');
-    }
-
-    // ESM specifiers carry `.js` for a `.ts`/`.tsx` file on disk.
-    const stripped = base.endsWith('.js') ? base.slice(0, -3) : base;
-    const candidates = [
-        base,
-        `${base}.ts`,
-        `${base}.tsx`,
-        `${stripped}.ts`,
-        `${stripped}.tsx`,
-        join(base, 'index.ts'),
-        join(base, 'index.tsx')
-    ];
-    for (const candidate of candidates) {
-        if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
-    }
-    return undefined;
-}
-
-const IMPORT_RE = /(?:^|\n)\s*(?:import|export)[\s\S]{0,400}?from\s*['"]([^'"]+)['"]/g;
-const DYNAMIC_IMPORT_RE = /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g;
-const SIDE_EFFECT_IMPORT_RE = /(?:^|\n)\s*import\s*['"]([^'"]+)['"]/g;
-
-/**
- * A whole-statement `import type` / `export type`, which is erased at build
- * time and therefore reaches no browser.
- *
- * {@link IMPORT_RE} cannot tell the two apart — `import type { X } from './y'`
- * matches it exactly as a value import does — so without this the graph walks
- * edges that do not exist at runtime. The cost is not a false alarm you can
- * wave through: it is pressure to declare namespaces the client never needs,
- * which is the opposite of what the subsetting this file protects was built
- * for (HOS-369 measured a 26.9% i18n payload reduction).
- *
- * Found via HOS-1233: two islands importing `PricingAudience` as a TYPE from
- * `lib/billing-i18n.ts` pulled that module's six key prefixes into the
- * "reachable" set, and shipping them would have grown every pricing island's
- * payload for an import that does not survive compilation.
- *
- * **The inline form is deliberately NOT matched.** `import { type A, B }`
- * still imports `B` at runtime, so that statement must keep its edge — which
- * is why this anchors on `type` as the token right after `import`/`export`,
- * never on the mere presence of the word.
- */
-const TYPE_ONLY_STATEMENT_RE = /^\s*(?:import|export)\s+type\s/;
-
-interface GraphResult {
-    readonly modules: ReadonlySet<string>;
-    readonly unresolved: readonly string[];
-}
-
-/** Walks every module the browser can reach, starting from the island entries. */
-function buildClientGraph(): GraphResult {
-    const entries = [
-        ...walk(join(WEB_SRC, 'components')).filter((f) => f.endsWith('.tsx')),
-        ...CLIENT_PACKAGE_ROOTS.flatMap(([, root]) =>
-            walk(join(REPO_ROOT, root)).filter((f) => /\.tsx?$/.test(f))
-        )
-    ].filter((f) => !isTestFile(f));
-
-    const modules = new Set<string>();
-    const unresolved: string[] = [];
-    const queue = [...entries];
-
-    while (queue.length > 0) {
-        const file = queue.pop() as string;
-        if (modules.has(file)) continue;
-        modules.add(file);
-        if (!/\.tsx?$/.test(file)) continue;
-
-        const src = readFileSync(file, 'utf8');
-        for (const re of [IMPORT_RE, DYNAMIC_IMPORT_RE, SIDE_EFFECT_IMPORT_RE]) {
-            for (const match of src.matchAll(re)) {
-                // A type-only statement is erased at build time, so its edge
-                // does not exist in the browser. See TYPE_ONLY_STATEMENT_RE.
-                if (TYPE_ONLY_STATEMENT_RE.test(match[0])) continue;
-
-                const target = resolveSpecifier(match[1] as string, file);
-                if (target === null) continue;
-                if (target === undefined) {
-                    unresolved.push(`${relative(REPO_ROOT, file)} -> ${match[1]}`);
-                    continue;
-                }
-                if (!modules.has(target)) queue.push(target);
-            }
-        }
-    }
-
-    return { modules, unresolved };
-}
-
-const stripComments = (src: string): string =>
-    src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-
-/**
- * Every two-segment key prefix a reachable module can name.
- *
- * Matches any string literal whose head is a known namespace — NOT only
- * literals inside a `t()` call. Keys routinely live in a data structure first
- * (`config/navigation.ts`, tour steps, filter definitions) and reach `t()`
- * through a variable, so a call-site-only scan would miss them.
- *
- * A template literal contributes only the part before its first `${`, so
- * `` `host.miniForm.types.${v}` `` yields `host.miniForm` and covers the whole
- * subtree beneath it. That is the most that can be claimed without guessing.
- */
-function prefixesNameableFrom(modules: ReadonlySet<string>): Map<string, string[]> {
-    const found = new Map<string, string[]>();
-    const literal = /['"`]([A-Za-z0-9_-]+)\.([A-Za-z0-9_.$-]*)/g;
-    for (const file of modules) {
-        if (!/\.tsx?$/.test(file)) continue;
-        const src = stripComments(readFileSync(file, 'utf8'));
-        for (const match of src.matchAll(literal)) {
-            const ns = match[1] as string;
-            if (!ALL_NAMESPACES.has(ns)) continue;
-            // Cut at the first interpolation, then keep at most two segments.
-            const rest = (match[2] as string).split('$')[0] as string;
-            const second = rest.split('.')[0] ?? '';
-            const prefix = second ? `${ns}.${second}` : ns;
-            const list = found.get(prefix) ?? [];
-            const rel = relative(REPO_ROOT, file);
-            if (list.length < 3 && !list.includes(rel)) list.push(rel);
-            found.set(prefix, list);
-        }
-    }
-    return found;
-}
-
-/** True when some declared prefix equals `key` or is an ancestor of it. */
-function isCovered(key: string, declared: readonly string[]): boolean {
-    return declared.some((p) => key === p || key.startsWith(`${p}.`));
-}
+// The graph walk, the specifier resolver and the literal scan live in
+// `test/helpers/i18n-client-graph.ts`, shared with the HOS-2572 critical-prefix
+// guard so the two lists are derived by the same rules.
 
 describe('HOS-369 W3-2 — client i18n key prefixes', () => {
-    const graph = buildClientGraph();
+    const graph = buildGraph({ entries: allIslandEntries() });
     const nameable = prefixesNameableFrom(graph.modules);
     const declared = [...CLIENT_I18N_KEY_PREFIXES] as string[];
 

@@ -47,11 +47,14 @@ async function paidAfterAbandon() {
     const s = await pageSetup();
     const { instance, paymentPageId } = await boughtPage(s);
     const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-    await abandonOneTimeAddon({
-        instanceId: instance.id,
-        expectedProviderOrderId: null,
-        now: s.f.ports.clock.now()
-    });
+    await abandonOneTimeAddon(
+        {
+            instanceId: instance.id,
+            expectedProviderOrderId: null,
+            now: s.f.ports.clock.now()
+        },
+        { billingFacts: undefined }
+    );
     return { s, instance, paid };
 }
 

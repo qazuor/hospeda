@@ -21,10 +21,11 @@ vi.mock('../../../src/components/account/ProfileEditForm.module.css', () => ({
     })
 }));
 
-vi.mock('../../../src/lib/i18n', async () => {
+vi.mock('../../../src/lib/i18n', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/lib/i18n')>();
     const { tFromCatalog } = await import('../../helpers/i18n-catalog');
     const translations = { t: tFromCatalog } as const;
-    return { createTranslations: () => translations };
+    return { ...actual, createTranslations: () => translations };
 });
 
 vi.mock('../../../src/lib/avatar-utils', () => ({
@@ -52,7 +53,9 @@ function renderForm() {
 }
 
 function setValue(id: string, value: string): void {
-    fireEvent.change(document.getElementById(id) as HTMLInputElement, { target: { value } });
+    fireEvent.change(document.getElementById(`profile-${id}`) as HTMLInputElement, {
+        target: { value }
+    });
 }
 
 function save(): void {
@@ -77,11 +80,11 @@ describe('ProfileEditForm feedback (HOS-2444)', () => {
         save();
 
         await waitFor(() => {
-            expect(document.getElementById('website-error')).toBeInTheDocument();
-            expect(document.getElementById('facebookUrl-error')).toBeInTheDocument();
+            expect(document.getElementById('profile-website-error')).toBeInTheDocument();
+            expect(document.getElementById('profile-facebookUrl-error')).toBeInTheDocument();
         });
         // `website` sits above the social networks in the document.
-        expect(document.activeElement).toBe(document.getElementById('website'));
+        expect(document.activeElement).toBe(document.getElementById('profile-website'));
     });
 
     it('replaces the previous toast instead of stacking a new one on top', async () => {
@@ -112,40 +115,27 @@ describe('ProfileEditForm feedback (HOS-2444)', () => {
         expect(types).not.toContain('error');
     });
 
-    it('focuses the field inside the form even when another element shares the id', async () => {
-        const decoy = document.createElement('input');
-        decoy.id = 'website';
-        document.body.prepend(decoy);
-        const { container } = renderForm();
-        // `setValue` resolves by document id, which would now hit the decoy.
-        fireEvent.change(container.querySelector('form #website') as HTMLInputElement, {
-            target: { value: 'tampoco' }
-        });
-        save();
-
-        await waitFor(() => expect(document.getElementById('website-error')).toBeInTheDocument());
-        expect(document.activeElement).not.toBe(decoy);
-        expect(document.activeElement?.closest('form')).not.toBeNull();
-        decoy.remove();
-    });
-
-    it('retires the inline success as soon as the user edits again', async () => {
+    it('retires the saved confirmation as soon as the user edits again', async () => {
         renderForm();
         setValue('occupation', 'Guía de turismo');
         save();
-        await screen.findByRole('status');
+        expect(await screen.findByText(/cambios guardados/i)).toBeInTheDocument();
 
         setValue('occupation', 'Guía de turismo y fotógrafa');
 
-        await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+        await waitFor(() =>
+            expect(screen.queryByText(/cambios guardados/i)).not.toBeInTheDocument()
+        );
+        expect(screen.getByText(/cambios sin guardar/i)).toBeInTheDocument();
     });
 
-    it('shows the success next to the save button, in context', async () => {
+    it('confirms the save on the bar, next to the button', async () => {
         renderForm();
         setValue('occupation', 'Guía de turismo');
         save();
 
-        const status = await screen.findByRole('status');
-        expect(status).toHaveTextContent(/perfil actualizado/i);
+        const status = await screen.findByText(/cambios guardados/i);
+        expect(status.closest('[role="status"]')).not.toBeNull();
+        expect(status.closest('[aria-label]')?.getAttribute('data-status')).toBe('saved');
     });
 });

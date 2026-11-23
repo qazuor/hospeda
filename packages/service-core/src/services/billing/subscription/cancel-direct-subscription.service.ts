@@ -348,33 +348,50 @@ export async function cancelDirectSubscription(
             'Direct cancellation has no valid coverage subject'
         );
     const provider = await cancelAtProvider({ reading, ports });
+    let addonCancelCalls: readonly AddonProviderCancellationResult[] = [];
+    let addonProviderRan = false;
+    const addonProviderHalf = async () => {
+        addonProviderRan = true;
+        try {
+            addonCancelCalls = (
+                await cancelAddonComplementsAtProvider(
+                    { cancelled },
+                    {
+                        provider: ports.provider,
+                        clock: ports.clock,
+                        beforeCancelNotice: ports.beforeCancelNotice,
+                        cancellationSeen: ports.cancellationSeen
+                    }
+                )
+            ).results;
+        } catch (error) {
+            logger.error(
+                { subscriptionId: reading.subscriptionId, error },
+                'Direct cancellation addon provider cancellations failed'
+            );
+        }
+    };
+    // HOS-1883: notices, then the provider half, then analytics; the provider half still runs
+    // if the notices throw before reaching it.
     try {
-        await emitAddonCoverageRemoved({ cancelled, coverageNotices: ports.coverageNotices });
+        await emitAddonCoverageRemoved({
+            cancelled,
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            },
+            beforeFacts: addonProviderHalf
+        });
     } catch (error) {
         logger.error(
             { subscriptionId: reading.subscriptionId, error },
             'Direct cancellation addon coverage notice failed'
         );
     }
-    let addonCancelCalls: readonly AddonProviderCancellationResult[] = [];
-    try {
-        addonCancelCalls = (
-            await cancelAddonComplementsAtProvider(
-                { cancelled },
-                {
-                    provider: ports.provider,
-                    clock: ports.clock,
-                    beforeCancelNotice: ports.beforeCancelNotice,
-                    cancellationSeen: ports.cancellationSeen
-                }
-            )
-        ).results;
-    } catch (error) {
-        logger.error(
-            { subscriptionId: reading.subscriptionId, error },
-            'Direct cancellation addon provider cancellations failed'
-        );
-    }
+    if (!addonProviderRan) await addonProviderHalf();
     return {
         outcome: 'CANCELLED',
         subscriptionId: reading.subscriptionId,

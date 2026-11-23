@@ -15,7 +15,7 @@ import {
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveSubscriptionSources } from '../../../src/services/billing/coverage/subscription-sources.js';
-import type { BillingFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
 import type { CoverageNotices } from '../../../src/services/billing/payment/payment-ports.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -265,7 +265,7 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             s.fixture.advanceToAttempt(2);
 
             // Act
-            const facts: BillingFact[] = [];
+            const facts: SinkFact[] = [];
             const result = await recordChargeFact(
                 { chargeId: s.fixture.chargeId },
                 { ...s.ports, billingFacts: { emit: (fact) => facts.push(fact) } }
@@ -423,8 +423,8 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             // Arrange
             const s = await suspendedByHand();
             track(s.fixture);
-            const facts: BillingFact[] = [];
-            const billingFacts = { emit: (fact: BillingFact) => facts.push(fact) };
+            const facts: SinkFact[] = [];
+            const billingFacts = { emit: (fact: SinkFact) => facts.push(fact) };
             const before = await subscriptionRow(s.subscriptionId);
             const previous = await paymentFor(s.fixture.initialChargeId);
             expect(previous.status).toBe('SUCCEEDED');

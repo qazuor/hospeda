@@ -54,6 +54,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             planPolicy: currentFloorPolicy,
             clock: h.f.ports.clock,
             provider: h.f.fake,
+            billingFacts: { emit: () => undefined },
             beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
             coverageNotices: { emitCoverageChanged: async () => undefined },
             orphanhood: {
@@ -138,6 +139,7 @@ describe('TEST:B10:10 AC:B10:9 LISTA:B10 cut clauses re-run on A1 rows (B5, B9a)
             planPolicy: currentFloorPolicy,
             clock: h.f.ports.clock,
             provider: h.f.fake,
+            billingFacts: { emit: () => undefined },
             beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
             coverageNotices: { emitCoverageChanged: async () => undefined },
             orphanhood: {

@@ -3,19 +3,19 @@
  * @description React island for editing a user's public profile.
  *
  * Orchestrator: owns ALL state + handlers + submit, then delegates
- * rendering to five pure subcomponents:
- *   1. ProfileEditAvatarSection    (image preview + change button)
- *   2. ProfileEditPersonalSection  (displayName, firstName, lastName,
- *                                   birthDate, phone, bio)
- *   3. ProfileEditExtrasSection    (website, occupation)
- *   4. ProfileEditSocialSection    (facebook/instagram/twitter/linkedin/youtube)
- *   5. ProfileEditLocationSection  (country, province, city, addressLine1,
- *                                   postalCode)
+ * rendering to five flat kit `Section`s:
+ *   1. ProfileEditIdentitySection  (avatar, displayName, firstName,
+ *                                   lastName, birthDate)
+ *   2. ProfileEditContactSection   (phone, website, postal address)
+ *   3. ProfileEditAboutSection     (bio, occupation)
+ *   4. ProfileEditSocialSection    (five URLs + the public-page opt-in)
+ *   5. ProfileEditSecuritySection  (link to change/add the password)
  *
- * Validates with `ProfileEditSchema` from `@repo/schemas`. On submit,
- * uploads any pending avatar via the media endpoint, then PATCHes the
- * user via `/api/v1/protected/users/:id`. Uses only native HTML form +
- * React state — no react-hook-form (web-app convention: native forms).
+ * Saving is explicit (D8): a `StickySaveBar` driven by `useSaveBar` appears
+ * once something changed, saves on Ctrl/Cmd+S and warns before leaving through
+ * the shared unsaved-changes guard. Validates with `ProfileEditSchema` from
+ * `@repo/schemas`. On save, uploads any pending avatar via the media endpoint,
+ * then PATCHes the user via `/api/v1/protected/users/:id`.
  *
  * Hydration: caller must use `client:load`.
  */
@@ -27,14 +27,17 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { addToast } from '@/store/toast-store';
-import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
-import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
+import { ProfileEditAboutSection } from './ProfileEditAboutSection';
+import { ProfileEditContactSection } from './ProfileEditContactSection';
+import { PROFILE_FIELD_PREFIX } from './ProfileEditFields';
 import { buildInitialProfileSnapshot, type ProfileSnapshot } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
-import { ProfileEditLocationSection } from './ProfileEditLocationSection';
-import { ProfileEditPersonalSection } from './ProfileEditPersonalSection';
+import { ProfileEditIdentitySection } from './ProfileEditIdentitySection';
 import { ProfileEditSecuritySection } from './ProfileEditSecuritySection';
 import { ProfileEditSocialSection } from './ProfileEditSocialSection';
+import { Alert } from './ui/Alert';
+import { StickySaveBar } from './ui/StickySaveBar';
+import { useSaveBar } from './ui/use-save-bar';
 import { useProfileEditSubmit } from './useProfileEditSubmit';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -255,9 +258,8 @@ export function ProfileEditForm({
         setAvatarFile(uploadableFile);
     }
 
-    const formRef = useRef<HTMLFormElement>(null);
     // Validation state (`fieldErrors`, `formError`) is owned by the submit hook.
-    const { fieldErrors, formError, clearError, submitting, saved, setSaved, handleSubmit } =
+    const { fieldErrors, formError, clearError, submitting, resetErrors, submitProfile } =
         useProfileEditSubmit({
             userId: initialUser.id,
             base,
@@ -274,65 +276,122 @@ export function ProfileEditForm({
                 setPreviewUrl,
                 setFile: setAvatarFile,
                 setUploading: setAvatarUploading
-            },
-            formRef
+            }
         });
+
+    /** Puts every field, the avatar pick and the errors back to the saved values. */
+    function discardChanges(): void {
+        setDisplayName(baseline.displayName);
+        setFirstName(baseline.firstName);
+        setLastName(baseline.lastName);
+        setBirthDate(baseline.birthDate);
+        setPhone(baseline.phone);
+        setBio(baseline.bio);
+        setWebsite(baseline.website);
+        setOccupation(baseline.occupation);
+        setFacebookUrl(baseline.facebookUrl);
+        setInstagramUrl(baseline.instagramUrl);
+        setTwitterUrl(baseline.twitterUrl);
+        setLinkedinUrl(baseline.linkedinUrl);
+        setYoutubeUrl(baseline.youtubeUrl);
+        setPublicProfileShowSocialNetworks(baseline.publicProfileShowSocialNetworks);
+        setCountry(baseline.country);
+        setProvince(baseline.province);
+        setCity(baseline.city);
+        setAddressLine1(baseline.addressLine1);
+        setPostalCode(baseline.postalCode);
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+        setAvatarFile(null);
+        setAvatarUrl(baseline.avatarUrl);
+        resetErrors();
+    }
+
+    const current = snapshotFromState();
+    const isDirty =
+        avatarFile !== null ||
+        (Object.keys(baseline) as Array<keyof ProfileSnapshot>).some(
+            (key) => current[key] !== baseline[key]
+        );
+
+    const saveBar = useSaveBar({
+        locale,
+        isDirty,
+        onSave: submitProfile,
+        onDiscard: discardChanges,
+        idPrefix: PROFILE_FIELD_PREFIX
+    });
 
     // ── Render ────────────────────────────────────────────────────────────
 
     return (
         <form
-            ref={formRef}
             className={styles.form}
-            // HOS-2444: editing anything after a save retires the inline success.
-            onChange={() => setSaved(false)}
             onSubmit={(e) => {
-                void handleSubmit(e);
+                // Enter inside a field saves, like the bar's button.
+                e.preventDefault();
+                if (isDirty) void saveBar.save();
             }}
             noValidate
             aria-label={t('account.pages.editProfile.title', 'Editar perfil')}
         >
-            <ProfileEditAvatarSection
-                activeImageUrl={activeImageUrl}
-                initials={initials}
-                avatarUploading={avatarUploading}
-                avatarCompressing={avatarCompressing}
-                submitting={submitting}
-                fileInputRef={fileInputRef}
+            <ProfileEditIdentitySection
+                locale={locale}
                 t={t}
-                onChangeClick={handleAvatarButtonClick}
-                onFileChange={handleFileChange}
-            />
-
-            <ProfileEditPersonalSection
                 displayName={displayName}
                 firstName={firstName}
                 lastName={lastName}
                 birthDate={birthDate}
-                phone={phone}
-                bio={bio}
                 fieldErrors={fieldErrors}
                 submitting={submitting}
-                t={t}
+                activeImageUrl={activeImageUrl}
+                initials={initials}
+                avatarUploading={avatarUploading}
+                avatarCompressing={avatarCompressing}
+                fileInputRef={fileInputRef}
+                onChangeClick={handleAvatarButtonClick}
+                onFileChange={handleFileChange}
                 onDisplayNameChange={bindChange('displayName', setDisplayName)}
                 onFirstNameChange={bindChange('firstName', setFirstName)}
                 onLastNameChange={bindChange('lastName', setLastName)}
                 onBirthDateChange={bindChange('birthDate', setBirthDate)}
-                onPhoneChange={bindChange('phone', setPhone)}
-                onBioChange={bindChange('bio', setBio)}
             />
 
-            <ProfileEditExtrasSection
+            <ProfileEditContactSection
+                locale={locale}
+                t={t}
+                phone={phone}
                 website={website}
+                country={country}
+                province={province}
+                city={city}
+                addressLine1={addressLine1}
+                postalCode={postalCode}
+                fieldErrors={fieldErrors}
+                submitting={submitting}
+                onPhoneChange={bindChange('phone', setPhone)}
+                onWebsiteChange={bindChange('website', setWebsite)}
+                onCountryChange={bindChange('country', setCountry)}
+                onProvinceChange={bindChange('province', setProvince)}
+                onCityChange={bindChange('city', setCity)}
+                onAddressLine1Change={bindChange('addressLine1', setAddressLine1)}
+                onPostalCodeChange={bindChange('postalCode', setPostalCode)}
+            />
+
+            <ProfileEditAboutSection
+                locale={locale}
+                t={t}
+                bio={bio}
                 occupation={occupation}
                 fieldErrors={fieldErrors}
                 submitting={submitting}
-                t={t}
-                onWebsiteChange={bindChange('website', setWebsite)}
+                onBioChange={bindChange('bio', setBio)}
                 onOccupationChange={bindChange('occupation', setOccupation)}
             />
 
             <ProfileEditSocialSection
+                locale={locale}
+                t={t}
                 facebookUrl={facebookUrl}
                 instagramUrl={instagramUrl}
                 twitterUrl={twitterUrl}
@@ -341,7 +400,6 @@ export function ProfileEditForm({
                 showOnPublicProfile={publicProfileShowSocialNetworks}
                 fieldErrors={fieldErrors}
                 submitting={submitting}
-                t={t}
                 onShowOnPublicProfileChange={setPublicProfileShowSocialNetworks}
                 onFacebookChange={bindChange('facebookUrl', setFacebookUrl)}
                 onInstagramChange={bindChange('instagramUrl', setInstagramUrl)}
@@ -350,58 +408,28 @@ export function ProfileEditForm({
                 onYoutubeChange={bindChange('youtubeUrl', setYoutubeUrl)}
             />
 
-            <ProfileEditLocationSection
-                country={country}
-                province={province}
-                city={city}
-                addressLine1={addressLine1}
-                postalCode={postalCode}
-                fieldErrors={fieldErrors}
-                submitting={submitting}
-                t={t}
-                onCountryChange={bindChange('country', setCountry)}
-                onProvinceChange={bindChange('province', setProvince)}
-                onCityChange={bindChange('city', setCity)}
-                onAddressLine1Change={bindChange('addressLine1', setAddressLine1)}
-                onPostalCodeChange={bindChange('postalCode', setPostalCode)}
-            />
-
             <ProfileEditSecuritySection
                 locale={locale}
                 t={t}
                 hasPassword={hasPassword}
             />
 
-            {formError && (
-                <div
-                    className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
-                    role="alert"
-                    aria-live="polite"
+            {formError ? (
+                <Alert
+                    tone="danger"
+                    locale={locale}
                 >
                     {formError}
-                </div>
-            )}
+                </Alert>
+            ) : null}
 
-            {saved && (
-                <div
-                    className={`${styles.feedbackBanner} ${styles.feedbackBannerSuccess}`}
-                    role="status"
-                >
-                    {t('account.editProfile.success', 'Perfil actualizado correctamente')}
-                </div>
-            )}
-
-            <div className={styles.submitRow}>
-                <button
-                    type="submit"
-                    className={styles.submitBtn}
-                    disabled={submitting || avatarUploading || avatarCompressing}
-                >
-                    {submitting
-                        ? t('account.editProfile.saving', 'Guardando…')
-                        : t('account.editProfile.save', 'Guardar cambios')}
-                </button>
-            </div>
+            <StickySaveBar
+                status={saveBar.status}
+                locale={locale}
+                onSave={() => void saveBar.save()}
+                onDiscard={saveBar.discard}
+                onGoToFirstError={saveBar.goToFirstError}
+            />
         </form>
     );
 }

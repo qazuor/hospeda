@@ -1,6 +1,7 @@
 import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
 import { planCatalogModel } from '@repo/db';
 import { createPlanCatalogInverse } from '@repo/verticals';
+import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports';
 import { getClock } from '../../utils/clock';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices';
@@ -23,6 +24,7 @@ export function buildAddonPurchasePorts() {
         clock: getClock().clock,
         addonPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).addonPolicy,
         listing: testListing ?? complements.listing,
-        coverageNotices: getCoverageNotices()
+        coverageNotices: getCoverageNotices(),
+        billingFacts: getAnalyticsFactSink()
     };
 }

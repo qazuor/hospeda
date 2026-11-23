@@ -114,6 +114,7 @@ export * from './billing/coverage/grant-sources.js';
 export * from './billing/coverage/retention-stopped.js';
 export * from './billing/coverage/subscription-sources.js';
 export * from './billing/deadlines/billing-deadlines.service.js';
+export * from './billing/facts/addon-fact.js';
 export * from './billing/facts/billing-fact-sink.js';
 export * from './billing/grant/permanent-grant.service.js';
 export * from './billing/grant/permanent-grant-authorization.js';
@@ -416,6 +417,7 @@ export * from './mcpActivity/index.js';
 export * from './media';
 export * from './moderation';
 export * from './newsletter';
+export * from './owner-dashboard';
 export * from './owner-promotion';
 // Listed as a FILE, like every other partner module here: this barrel does not
 // re-export the `./partner` folder index, so an export added there alone never

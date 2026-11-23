@@ -1,7 +1,8 @@
 /**
  * @file i18n-client-data-coverage.test.ts
  * @description Guard for the client translation dictionary (HOS-160 lever A,
- * reworked by HOS-369 Wave D). Two properties, both invisible at runtime here:
+ * reworked by HOS-369 Wave D, split by HOS-2572). Three properties, all
+ * invisible at runtime here:
  *
  *  1. Every standalone HTML shell renders `<I18nClientData>`, and renders it
  *     inside `<head>`. Client islands read their translations from the global
@@ -10,6 +11,10 @@
  *     placed earlier in the document hydrate against an empty dictionary.
  *  2. `I18nClientData.astro` links the dictionary instead of inlining it. The
  *     inline form was ~632 KB of byte-identical HTML on every page.
+ *  3. It links it as TWO scripts in a fixed contract (HOS-2572): the critical
+ *     part first and parser-blocking (it installs the hydration gate), the rest
+ *     second and `defer`. And `<I18nClientData>` precedes every island in each
+ *     shell, so the gate exists before any island can hydrate.
  *
  * The global test seed in `test/setup.ts` masks both failures at runtime, so
  * these source-level assertions are the only thing that can catch them.
@@ -93,6 +98,22 @@ describe('I18nClientData coverage across HTML shells', () => {
                 `${layout}: <I18nClientData> must render inside <head>. From <body> an island placed earlier in the document hydrates with an empty dictionary.`
             ).toBe(true);
         });
+
+        it(`${layout} renders it before any island (HOS-2572)`, () => {
+            // The critical script installs the hydration gate. An island the
+            // parser reached first would hydrate ungated, against no dictionary.
+            const { template } = splitAstro(readLayout(layout));
+            const markup = template.replace(/<!--[\s\S]*?-->/g, '');
+            const tagAt = markup.indexOf('<I18nClientData');
+            const firstIsland = markup.search(/\bclient:[a-z]+\b/);
+
+            expect(tagAt, `${layout}: <I18nClientData> not found`).toBeGreaterThan(-1);
+            if (firstIsland !== -1) {
+                expect(tagAt, `${layout}: an island precedes <I18nClientData>`).toBeLessThan(
+                    firstIsland
+                );
+            }
+        });
     }
 });
 
@@ -100,25 +121,39 @@ describe('I18nClientData.astro links the dictionary instead of inlining it', () 
     const source = readFileSync(COMPONENT_PATH, 'utf8');
     const { frontmatter, template } = splitAstro(source);
 
-    it('emits a blocking classic script pointing at the hashed asset (HOS-2388)', () => {
-        // The TAG, not a mention of it. A parser-blocking classic script is the
-        // contract: Astro's `client:load` islands start their dynamic import()
-        // while the document is still being parsed, so a `defer`/`async` script
-        // can run AFTER an island has already rendered with an empty dictionary
-        // (raw keys on a cold first load, reproduced against staging).
-        expect(template).toContain('<script src={i18nAssetUrl(locale)} is:inline></script>');
+    const scriptTags = (): string[] =>
+        stripComments({ source: template }).match(/<script\b[^>]*>/g) ?? [];
+
+    it('emits exactly two dictionary scripts: critical first, rest second (HOS-2572)', () => {
+        const tags = scriptTags();
+
+        // Non-vacuity: both tags must be found, in this order.
+        expect(tags).toHaveLength(2);
+        const [critical = '', rest = ''] = tags;
+        expect(critical).toContain("src={i18nAssetUrl({ locale, part: 'critical' })}");
+        expect(rest).toContain("src={i18nAssetUrl({ locale, part: 'rest' })}");
     });
 
-    it('the dictionary script tag is neither defer, async nor a module (HOS-2388)', () => {
-        const tags = stripComments({ source: template }).match(/<script\b[^>]*>/g) ?? [];
+    it('the critical script is parser-blocking: neither defer, async nor a module (HOS-2388)', () => {
+        // A parser-blocking classic script is the contract: it installs the
+        // hydration gate and the early islands' keys, and Astro's islands start
+        // hydrating while the document is still being parsed. A `defer`/`async`
+        // critical script could run AFTER an island had already rendered.
+        const [critical = ''] = scriptTags();
+        expect(critical).not.toMatch(/\bdefer\b/);
+        expect(critical).not.toMatch(/\basync\b/);
+        expect(critical).not.toMatch(/\btype\s*=/);
+    });
 
-        // Non-vacuity: exactly the one dictionary tag must be found.
-        expect(tags).toHaveLength(1);
-        const [tag = ''] = tags;
-        expect(tag).toContain('src={i18nAssetUrl(locale)}');
-        expect(tag).not.toMatch(/\bdefer\b/);
-        expect(tag).not.toMatch(/\basync\b/);
-        expect(tag).not.toMatch(/\btype\s*=/);
+    it('the rest script is deferred, never async, never a module (HOS-2572)', () => {
+        // `defer` keeps it off the critical path while preserving the one
+        // ordering the gate relies on: DOMContentLoaded fires only after it ran.
+        // `async` would break that — an async script may run after
+        // DOMContentLoaded, and the gate would release islands too early.
+        const [, rest = ''] = scriptTags();
+        expect(rest).toMatch(/\bdefer\b/);
+        expect(rest).not.toMatch(/\basync\b/);
+        expect(rest).not.toMatch(/\btype\s*=/);
     });
 
     it('resolves that URL through the shared builder', () => {
