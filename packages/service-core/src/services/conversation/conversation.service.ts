@@ -354,6 +354,13 @@ export interface ConversationServiceDeps {
     readonly authSecret: string;
     /** Base URL for the web app (e.g. `https://hospeda.com.ar`). */
     readonly siteUrl: string;
+    /**
+     * Public base URL of the API (e.g. `https://api.hospeda.com.ar`, the API's
+     * `HOSPEDA_API_URL`). Required by anything that mails a link that lands on an API route,
+     * namely the anonymous verification link (HOS-2568); the web origin does not serve
+     * `/api/v1`. Optional so the many call sites that never mail such links stay unchanged.
+     */
+    readonly apiUrl?: string;
     /** Email dispatcher. When absent, email sending is skipped with a warning. */
     readonly mailer?: ConversationMailer;
 }
@@ -1703,8 +1710,10 @@ export class ConversationService extends BaseService {
     /**
      * Signs a 24-hour JWT and sends the verification email to the anonymous guest.
      *
-     * JWT payload: `{ conversationId, email }`. Algorithm: HS256.
-     * The verification URL is: `{siteUrl}/api/v1/public/conversations/verify?token={jwt}`.
+     * JWT payload: `{ conversationId, email, payloadHash? }`. Algorithm: HS256.
+     * The verification URL targets the API route (the web origin has no `/api/v1`):
+     * `{apiUrl}/api/v1/public/conversations/verify/{jwt}?locale={locale}`, which verifies the
+     * token and redirects the guest to their thread on the web app.
      *
      * When `resendApiKey` is absent, logs a warning and returns without sending
      * (safe degradation for local development).
@@ -1757,8 +1766,6 @@ export class ConversationService extends BaseService {
             .setExpirationTime('24h')
             .sign(secret);
 
-        const verificationUrl = `${this.deps.siteUrl}/api/v1/public/conversations/verify?token=${jwt}`;
-
         if (!this.deps.mailer) {
             this.logger.warn(
                 { conversationId },
@@ -1766,6 +1773,15 @@ export class ConversationService extends BaseService {
             );
             return;
         }
+
+        if (!this.deps.apiUrl) {
+            // A link built from the web origin 404s, so fail loudly instead of mailing it.
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'ConversationService requires deps.apiUrl to build the verification link'
+            );
+        }
+        const verificationUrl = `${this.deps.apiUrl.replace(/\/+$/, '')}/api/v1/public/conversations/verify/${jwt}?locale=${locale}`;
 
         try {
             await this.deps.mailer.sendVerificationEmail({

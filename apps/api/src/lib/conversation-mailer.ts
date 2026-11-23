@@ -14,6 +14,7 @@
  *   {
  *     authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
  *     siteUrl:    env.HOSPEDA_SITE_URL,
+ *     apiUrl:     env.HOSPEDA_API_URL,
  *     mailer:     createConversationMailer(),
  *   }
  * );

@@ -48,6 +48,8 @@ function buildConversationService(): ConversationService {
         {
             authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
             siteUrl: env.HOSPEDA_SITE_URL,
+            // The verification link lands on an API route, not on the web app (HOS-2568).
+            apiUrl: env.HOSPEDA_API_URL,
             mailer: createConversationMailer()
         }
     );
