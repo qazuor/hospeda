@@ -181,17 +181,6 @@
         "radius": 5,
         "shadow": 1
     },
-    "apps/web/src/components/host/editor/CalendarSection.module.css": {
-        "color": 10,
-        "font-size": 25,
-        "radius": 18,
-        "shadow": 3
-    },
-    "apps/web/src/components/host/editor/CalendarSyncLauncher.module.css": {
-        "color": 1,
-        "font-size": 3,
-        "radius": 2
-    },
     "apps/web/src/components/host/editor/CalendarSyncMessage.module.css": {
         "font-size": 2,
         "radius": 1

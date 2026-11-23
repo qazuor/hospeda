@@ -38,9 +38,6 @@
     "apps/web/src/components/host/PropertyCard.astro": {
         "media": 1
     },
-    "apps/web/src/components/host/editor/CalendarSection.module.css": {
-        "media": 3
-    },
     "apps/web/src/components/host/editor/CalendarSyncPanel.module.css": {
         "media": 1
     },

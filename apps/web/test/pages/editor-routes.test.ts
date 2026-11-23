@@ -36,7 +36,7 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     PhotoSection: 'fotos.astro',
     VideoSection: 'fotos.astro',
     FaqSection: 'preguntas.astro',
-    CalendarSection: 'calendario.astro',
+    CalendarSectionGate: 'calendario.astro',
     TranslationPanel: 'traducciones.astro',
     ExternalReputationSection: 'reputacion.astro',
     BasicsForm: 'datos.astro',
@@ -273,10 +273,19 @@ describe('editor routes — preserved behaviours', () => {
     });
 
     it('should keep the entitlement gate around the calendar', () => {
+        // HOS-2503: the route mounts CalendarSectionGate, which wraps the shared
+        // PlanEntitlementGate on `can_use_calendar` and swaps only the locked look.
         const source = readRoute('calendario.astro');
+        const gate = readFileSync(
+            resolve(__dirname, '../../src/components/host/editor/CalendarSectionGate.client.tsx'),
+            'utf8'
+        );
 
-        expect(source).toContain('PlanEntitlementGate');
-        expect(source).toContain('can_use_calendar');
+        expect(source).toContain('<CalendarSectionGate');
+        expect(source).toContain('CALENDAR_ENTITLEMENT');
+        expect(gate).toContain('<PlanEntitlementGate');
+        expect(gate).toContain("CALENDAR_ENTITLEMENT = 'can_use_calendar'");
+        expect(gate).toContain('<CalendarSection');
     });
 
     it('should not mount an owner-facing featured toggle anywhere (HOS-929)', () => {

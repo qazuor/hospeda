@@ -3,14 +3,23 @@
  * @description Action bar shown once a range of days is selected in the
  * occupancy calendar: the count, an optional note, «Bloquear» and «Cancelar
  * selección» (HOS-43, split out of `CalendarSection` by HOS-2503).
+ *
+ * Built on the kit `Field` + `TextInput`, `Button` and `Alert`. It sits inside
+ * the calendar `Section`, so it draws a separator, never a box of its own
+ * (D5 «nunca una caja dentro de otra»).
  */
 
 import type { JSX } from 'react';
-import type { PluralTranslationFn, TranslationFn } from '@/lib/i18n';
+import { Alert } from '@/components/account/ui/Alert';
+import { Button } from '@/components/account/ui/Button';
+import { Field } from '@/components/account/ui/Field';
+import { TextInput } from '@/components/account/ui/TextInput';
+import type { PluralTranslationFn, SupportedLocale, TranslationFn } from '@/lib/i18n';
 import styles from './CalendarSection.module.css';
 
 /** Props of {@link CalendarSelectionBar}. */
 export interface CalendarSelectionBarProps {
+    readonly locale: SupportedLocale;
     readonly t: TranslationFn;
     readonly tPlural: PluralTranslationFn;
     /** Number of selected days (at least one). */
@@ -30,6 +39,7 @@ export interface CalendarSelectionBarProps {
  * @returns A labelled `<section>`.
  */
 export function CalendarSelectionBar({
+    locale,
     t,
     tPlural,
     count,
@@ -48,15 +58,12 @@ export function CalendarSelectionBar({
         >
             <p className={styles.selectionCount}>{countLabel}</p>
 
-            <label
-                className={styles.noteField}
-                htmlFor="calendar-note"
+            <Field
+                locale={locale}
+                id="calendar-note"
+                label={t('host.properties.editor.calendar.noteLabel', 'Nota (opcional)')}
             >
-                <span>{t('host.properties.editor.calendar.noteLabel', 'Nota (opcional)')}</span>
-                <input
-                    id="calendar-note"
-                    type="text"
-                    className={styles.noteInput}
+                <TextInput
                     value={note}
                     maxLength={500}
                     placeholder={t(
@@ -66,36 +73,34 @@ export function CalendarSelectionBar({
                     onChange={(e) => onNoteChange(e.target.value)}
                     disabled={isSubmitting}
                 />
-            </label>
+            </Field>
 
             <div className={styles.actionButtons}>
-                <button
-                    type="button"
-                    className={styles.blockButton}
+                <Button
+                    variant="danger"
                     onClick={onBlock}
                     disabled={isSubmitting}
                 >
                     {isSubmitting
                         ? t('host.properties.editor.calendar.blockingAction', 'Bloqueando...')
                         : t('host.properties.editor.calendar.blockAction', 'Bloquear')}
-                </button>
-                <button
-                    type="button"
-                    className={styles.cancelButton}
+                </Button>
+                <Button
+                    variant="secondary"
                     onClick={onCancel}
                     disabled={isSubmitting}
                 >
                     {t('host.properties.editor.calendar.cancelSelection', 'Cancelar selección')}
-                </button>
+                </Button>
             </div>
 
             {submitError && (
-                <div
-                    className={styles.error}
-                    role="alert"
+                <Alert
+                    tone="danger"
+                    locale={locale}
                 >
                     {submitError}
-                </div>
+                </Alert>
             )}
         </section>
     );

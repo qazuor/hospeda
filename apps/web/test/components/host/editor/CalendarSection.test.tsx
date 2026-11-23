@@ -40,7 +40,8 @@ const { mockList, mockBatchToggle, mockUpdateEvent } = vi.hoisted(() => ({
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw = fallback ?? key;
@@ -472,5 +473,56 @@ describe('CalendarSection', () => {
 
         await waitFor(() => expect(mockList).toHaveBeenCalled());
         expect(document.body.textContent).not.toMatch(/host\.properties\.editor\.calendar/);
+    });
+
+    describe('kit layout (HOS-2503)', () => {
+        it('renders the calendar and the external sync as two flat kit sections with the calendar help anchor', async () => {
+            // Arrange
+            mockList.mockReturnValue(makeListOk([]));
+
+            // Act
+            const { container } = render(<CalendarSection {...defaultProps} />);
+            await waitFor(() => expect(mockList).toHaveBeenCalled());
+
+            // Assert
+            const sections = container.querySelectorAll('[data-kit-section]');
+            expect(sections).toHaveLength(2);
+            for (const section of sections) {
+                expect(section.getAttribute('data-help')).toBe('section:accommodation.calendario');
+            }
+            expect(
+                screen.getByRole('heading', { name: 'Sincronización de calendarios externos' })
+            ).toBeInTheDocument();
+            expect(within(sections[1] as HTMLElement).getByRole('button')).toHaveTextContent(
+                'Conectar calendarios externos'
+            );
+        });
+
+        it('shows a busy skeleton while the month loads', () => {
+            // Arrange — a list call that never settles keeps the loading state.
+            mockList.mockReturnValue(new Promise(() => {}));
+
+            // Act
+            const { container } = render(<CalendarSection {...defaultProps} />);
+
+            // Assert
+            expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+            expect(screen.queryByRole('button', { name: /Libre/ })).not.toBeInTheDocument();
+        });
+
+        it('shows the kit error state on a failed load and re-fetches on retry', async () => {
+            // Arrange
+            mockList.mockReturnValueOnce(Promise.resolve({ ok: false, error: { status: 500 } }));
+            const user = userEvent.setup();
+
+            // Act
+            render(<CalendarSection {...defaultProps} />);
+            const alert = await screen.findByRole('alert');
+            expect(alert).toHaveTextContent('No pudimos cargar el calendario. Intentá de nuevo.');
+            await user.click(within(alert).getByRole('button'));
+
+            // Assert
+            await waitFor(() => expect(mockList).toHaveBeenCalledTimes(2));
+        });
     });
 });

@@ -25,11 +25,18 @@
  * HOS-2503 split the component: month data (`use-occupancy-month`), selection
  * and edits (`use-occupancy-selection`), navigation (`CalendarMonthHeader`),
  * the grid (`CalendarMonthGrid`) and the range bar (`CalendarSelectionBar`).
+ * It renders two flat kit `Section`s: the calendar itself and, below it, the
+ * external calendar sync (its own section, not a button lost in the header).
+ * Async states use the kit `Skeleton` and `ErrorState`.
  */
 
 import { useCallback, useMemo } from 'react';
+import { ErrorState } from '@/components/account/ui/ErrorState';
+import { Section } from '@/components/account/ui/Section';
+import { Skeleton } from '@/components/account/ui/Skeleton';
 import { toDateKey } from '@/lib/calendar/occupancy-calendar-grid';
 import { formatDate } from '@/lib/format-utils';
+import { sectionHelpId } from '@/lib/help/section-help-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { sourceFallbackLabel, sourceKeySuffix } from './CalendarDayCell.client';
@@ -102,141 +109,155 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         [occupancyByDate]
     );
     const { viewingEvent } = selection;
+    const helpId = sectionHelpId({ vertical: 'accommodation', slug: 'calendario' });
 
     return (
-        <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>
-                {t('host.properties.editor.calendar.title', 'Calendario de ocupación')}
-            </h3>
-            <p className={styles.sectionDescription}>
-                {t(
+        <>
+            <Section
+                title={t('host.properties.editor.calendar.title', 'Calendario de ocupación')}
+                description={t(
                     'host.properties.editor.calendar.description',
                     'Marcá los días en los que tu alojamiento está ocupado. Esas fechas no aparecerán disponibles en las búsquedas.'
                 )}
-            </p>
+                helpId={helpId}
+            >
+                <CalendarMonthHeader
+                    locale={locale}
+                    t={t}
+                    viewedMonth={month.viewedMonth}
+                    canGoPrev={month.canGoPrev}
+                    onPrev={month.goPrev}
+                    onNext={month.goNext}
+                />
 
-            {/*
-             * External calendar sync, collapsed behind a button that opens the
-             * connect/sync panel in a modal (CalendarSyncLauncher). The button
-             * is ALWAYS shown; the launcher itself checks the
-             * can_sync_external_calendar entitlement and opens an upgrade nudge
-             * instead of the panel when the plan lacks it (HOS-175).
-             */}
-            <CalendarSyncLauncher
-                locale={locale}
-                accommodationId={accommodationId}
-            />
+                {month.loadError && (
+                    <ErrorState
+                        variant="inline"
+                        locale={locale}
+                        description={t(
+                            'host.properties.editor.calendar.loadError',
+                            'No pudimos cargar el calendario. Intentá de nuevo.'
+                        )}
+                        onRetry={month.reload}
+                    />
+                )}
 
-            <CalendarMonthHeader
-                locale={locale}
-                t={t}
-                viewedMonth={month.viewedMonth}
-                canGoPrev={month.canGoPrev}
-                onPrev={month.goPrev}
-                onNext={month.goNext}
-            />
+                {month.isLoading ? (
+                    <Skeleton
+                        shape="block"
+                        locale={locale}
+                        className={styles.gridSkeleton}
+                    />
+                ) : (
+                    <>
+                        <CalendarMonthGrid
+                            locale={locale}
+                            t={t}
+                            viewedMonth={month.viewedMonth}
+                            occupancyByDate={occupancyByDate}
+                            todayKey={todayKey}
+                            selection={selection.selection}
+                            pendingStart={selection.pendingStart}
+                            onSelectDay={selection.handleDayClick}
+                            onEditEvent={selection.setEditingEvent}
+                            onViewEvent={selection.setViewingEvent}
+                        />
 
-            {month.loadError && (
-                <div
-                    className={styles.error}
-                    role="alert"
-                >
-                    {t(
-                        'host.properties.editor.calendar.loadError',
-                        'No pudimos cargar el calendario. Intentá de nuevo.'
-                    )}
-                </div>
-            )}
+                        {!hasAnyOccupiedDayInMonth && (
+                            <p className={styles.emptyHint}>
+                                {t(
+                                    'host.properties.editor.calendar.emptyMonth',
+                                    'Ningún día bloqueado este mes'
+                                )}
+                            </p>
+                        )}
+                    </>
+                )}
 
-            {month.isLoading ? (
-                <p className={styles.loading}>
-                    {t('host.properties.editor.calendar.loading', 'Cargando calendario...')}
-                </p>
-            ) : (
-                <>
-                    <CalendarMonthGrid
+                {selection.pendingStart && !selection.selection && (
+                    <p className={styles.hint}>
+                        {t(
+                            'host.properties.editor.calendar.rangeHint',
+                            'Hacé clic en otro día para completar el rango, o clic de nuevo en el mismo día para elegir solo esa fecha.'
+                        )}
+                    </p>
+                )}
+
+                {selection.selection && selection.selection.length > 0 && (
+                    <CalendarSelectionBar
                         locale={locale}
                         t={t}
-                        viewedMonth={month.viewedMonth}
-                        occupancyByDate={occupancyByDate}
-                        todayKey={todayKey}
-                        selection={selection.selection}
-                        pendingStart={selection.pendingStart}
-                        onSelectDay={selection.handleDayClick}
-                        onEditEvent={selection.setEditingEvent}
-                        onViewEvent={selection.setViewingEvent}
+                        tPlural={tPlural}
+                        count={selection.selection.length}
+                        note={selection.note}
+                        onNoteChange={selection.setNote}
+                        isSubmitting={selection.isSubmitting}
+                        submitError={selection.submitError}
+                        onBlock={() => void selection.handleApply(true)}
+                        onCancel={selection.handleCancelSelection}
                     />
+                )}
 
-                    {!hasAnyOccupiedDayInMonth && (
-                        <p className={styles.emptyHint}>
-                            {t(
-                                'host.properties.editor.calendar.emptyMonth',
-                                'Ningún día bloqueado este mes'
-                            )}
-                        </p>
-                    )}
-                </>
-            )}
-
-            {selection.pendingStart && !selection.selection && (
-                <p className={styles.hint}>
-                    {t(
-                        'host.properties.editor.calendar.rangeHint',
-                        'Hacé clic en otro día para completar el rango, o clic de nuevo en el mismo día para elegir solo esa fecha.'
-                    )}
-                </p>
-            )}
-
-            {selection.selection && selection.selection.length > 0 && (
-                <CalendarSelectionBar
+                <CalendarLegend
                     t={t}
-                    tPlural={tPlural}
-                    count={selection.selection.length}
-                    note={selection.note}
-                    onNoteChange={selection.setNote}
-                    isSubmitting={selection.isSubmitting}
-                    submitError={selection.submitError}
-                    onBlock={() => void selection.handleApply(true)}
-                    onCancel={selection.handleCancelSelection}
+                    presentSources={presentSources}
                 />
-            )}
 
-            <CalendarLegend
-                t={t}
-                presentSources={presentSources}
-            />
+                <OccupancyEventEditDialog
+                    isOpen={selection.editingEvent !== null}
+                    t={t}
+                    event={selection.editingEvent}
+                    minDate={todayKey}
+                    isSubmitting={selection.editSubmitting}
+                    error={selection.editError}
+                    onSave={selection.handleEditSave}
+                    onDelete={selection.handleEditDelete}
+                    onClose={selection.handleEditClose}
+                />
 
-            <OccupancyEventEditDialog
-                isOpen={selection.editingEvent !== null}
-                t={t}
-                event={selection.editingEvent}
-                minDate={todayKey}
-                isSubmitting={selection.editSubmitting}
-                error={selection.editError}
-                onSave={selection.handleEditSave}
-                onDelete={selection.handleEditDelete}
-                onClose={selection.handleEditClose}
-            />
+                <OccupancyEventDetailsDialog
+                    isOpen={viewingEvent !== null}
+                    t={t}
+                    event={
+                        viewingEvent
+                            ? {
+                                  startKey: viewingEvent.startKey,
+                                  endKey: viewingEvent.endKey,
+                                  title: viewingEvent.title,
+                                  sourceLabel: t(
+                                      `host.properties.editor.calendar.source.${sourceKeySuffix(viewingEvent.source)}`,
+                                      sourceFallbackLabel(viewingEvent.source)
+                                  )
+                              }
+                            : null
+                    }
+                    formatDateKey={formatOccupancyDateKey}
+                    onClose={() => selection.setViewingEvent(null)}
+                />
+            </Section>
 
-            <OccupancyEventDetailsDialog
-                isOpen={viewingEvent !== null}
-                t={t}
-                event={
-                    viewingEvent
-                        ? {
-                              startKey: viewingEvent.startKey,
-                              endKey: viewingEvent.endKey,
-                              title: viewingEvent.title,
-                              sourceLabel: t(
-                                  `host.properties.editor.calendar.source.${sourceKeySuffix(viewingEvent.source)}`,
-                                  sourceFallbackLabel(viewingEvent.source)
-                              )
-                          }
-                        : null
-                }
-                formatDateKey={formatOccupancyDateKey}
-                onClose={() => selection.setViewingEvent(null)}
-            />
-        </div>
+            {/*
+             * External calendar sync, its own section. The launcher button is
+             * ALWAYS shown; the launcher itself checks the
+             * can_sync_external_calendar entitlement and opens an upgrade nudge
+             * instead of the connect panel when the plan lacks it (HOS-175).
+             */}
+            <Section
+                title={t(
+                    'host.properties.editor.calendarSync.title',
+                    'Sincronización de calendarios externos'
+                )}
+                description={t(
+                    'host.properties.editor.calendarSync.description',
+                    'Conectá tus calendarios externos (Google, Airbnb, Booking.com u otro) y las fechas ocupadas se bloquearán automáticamente en tu calendario.'
+                )}
+                helpId={helpId}
+            >
+                <CalendarSyncLauncher
+                    locale={locale}
+                    accommodationId={accommodationId}
+                />
+            </Section>
+        </>
     );
 }

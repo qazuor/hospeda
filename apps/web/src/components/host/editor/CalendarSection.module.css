@@ -1,27 +1,13 @@
-/* CalendarSection.module.css — HOS-43 Phase 1 occupancy calendar */
-
-.section {
-    border: none;
-    padding: 0;
-    margin: 0 0 var(--space-5, 2rem);
-}
-
-.sectionTitle {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1.125rem;
-    color: var(--core-foreground);
-    margin-bottom: var(--space-2, 0.5rem);
-    padding-bottom: var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border);
-}
-
-.sectionDescription {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground);
-    margin-bottom: var(--space-4, 1.5rem);
-}
+/* CalendarSection.module.css — HOS-43 occupancy calendar.
+ *
+ * HOS-2503: the calendar lives inside a kit Section, so the section chrome,
+ * the buttons, the note field and the async states come from the kit. What is
+ * left here is the grid (a «keep distinct» pattern, HOS-2416 R-5: restyled
+ * onto tokens, structure and mobile behaviour unchanged), the legend and the
+ * two occupancy dialogs. Every font size is a type token; none goes under
+ * `--app-caption-size` (12px). Responsive rules follow the Section's own
+ * container (its body padding is --space-6, --space-4 under 30rem).
+ */
 
 /* --- Month header --- */
 
@@ -29,80 +15,49 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-4, 1rem);
-    margin-bottom: var(--space-3, 0.75rem);
-}
-
-.navButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    background-color: var(--core-card);
-    color: var(--core-foreground);
-    cursor: pointer;
-    transition: background-color var(--duration-fast, 0.2s) ease-in-out;
-}
-
-.navButton:hover:not(:disabled) {
-    background-color: var(--muted);
-}
-
-.navButton:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
 }
 
 .monthLabel {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1rem;
-    color: var(--core-foreground);
-    min-width: 10rem;
     justify-content: center;
+    gap: var(--space-2);
+    min-width: 10rem;
+    font: var(--app-card-title);
+    color: var(--core-foreground);
 }
 
-/* --- Loading / error / empty states --- */
+/* --- Loading / empty states --- */
 
-.loading {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground);
-    text-align: center;
-    padding: var(--space-6, 1.5rem) 0;
+/* Placeholder with the grid's footprint, so the page does not jump. */
+.gridSkeleton {
+    min-height: 24rem;
 }
 
 .error {
-    padding: 0.625rem 0.875rem;
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
-    color: var(--destructive);
-    border: 1px solid var(--destructive-a25, oklch(0.88 0.06 25));
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    margin: var(--space-2, 0.5rem) 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: var(--status-danger-bg);
+    color: var(--status-danger-fg);
+    border: 1px solid var(--status-danger-border);
+    font: var(--app-meta);
+    margin: var(--space-2) 0;
 }
 
 .emptyHint {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font: var(--app-meta);
     color: var(--core-muted-foreground);
     text-align: center;
-    margin-top: var(--space-2, 0.5rem);
+    margin: var(--space-2) 0 0;
 }
 
 .hint {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--brand-primary);
+    font: var(--app-meta);
+    color: var(--brand-primary-link);
     text-align: center;
-    margin-top: var(--space-2, 0.5rem);
+    margin: var(--space-2) 0 0;
 }
 
 /* --- Grid --- */
@@ -110,13 +65,13 @@
 .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: var(--space-1, 0.25rem);
-    margin-bottom: var(--space-1, 0.25rem);
+    gap: var(--space-1);
+    margin-bottom: var(--space-1);
 }
 
 .weekdays span {
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: var(--app-caption-size);
     font-weight: 600;
     color: var(--core-muted-foreground);
     text-align: center;
@@ -134,7 +89,7 @@
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     overflow: hidden;
 }
 
@@ -178,26 +133,32 @@
     border-bottom: 1px solid var(--border);
     background-color: var(--core-card);
     color: var(--core-foreground);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font: var(--app-meta);
     cursor: pointer;
     transition:
-        background-color var(--duration-fast, 0.2s) ease-in-out,
-        border-color var(--duration-fast, 0.2s) ease-in-out;
+        background-color var(--duration-fast) ease-in-out,
+        border-color var(--duration-fast) ease-in-out;
 }
 
 /* Bar mode: number pinned top-left, cell body left free for the bar overlay. */
 .dayBarMode {
     align-items: flex-start;
     justify-content: flex-start;
-    padding: 0.25rem 0.375rem;
-    font-size: 0.75rem;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
 }
 
 .day:hover:not(:disabled) {
     z-index: 1;
-    box-shadow: inset 0 0 0 1px var(--brand-primary);
+    outline: 1px solid var(--brand-primary);
+    outline-offset: -1px;
+}
+
+.day:focus-visible {
+    z-index: 1;
+    outline: 2px solid var(--focus-ring);
+    outline-offset: -2px;
 }
 
 .day:disabled {
@@ -222,37 +183,43 @@
     overflow: hidden;
     /* Sit above a hovered cell (which raises itself to z-index 1) so the hover
      * highlight never paints over an event bar. Bars stay click-through; the
-     * clickable bar itself opts back into pointer events (see `.bar`). */
+     * clickable bar itself opts back into pointer events (see `.barButton`). */
     z-index: 2;
     pointer-events: none;
 }
 
+/*
+ * A bar is a translucent tint of its source colour with a darker label. The
+ * tints are mixed from the source token (never a literal), so they follow the
+ * theme: mixing towards `--core-foreground` darkens the label in light mode
+ * and lightens it in dark mode.
+ */
 .bar {
     position: absolute;
     height: var(--bar-height);
     display: flex;
     align-items: center;
-    padding: 0 0.4375rem;
+    padding: 0 var(--space-2);
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: var(--app-caption-size);
     font-weight: 600;
     line-height: 1;
-    background-color: oklch(from var(--bar-color) l c h / 0.18);
-    color: oklch(from var(--bar-color) calc(l - 0.2) c h);
-    border: 1px solid oklch(from var(--bar-color) l c h / 0.4);
+    background-color: color-mix(in oklch, var(--bar-color) 18%, transparent);
+    color: color-mix(in oklch, var(--bar-color), var(--core-foreground) 40%);
+    border: 1px solid color-mix(in oklch, var(--bar-color) 40%, transparent);
     box-sizing: border-box;
     overflow: hidden;
 }
 
 /* Rounded caps only on the event's real ends; flat where it continues weeks. */
 .barStart {
-    border-top-left-radius: var(--radius-pill, 9999px);
-    border-bottom-left-radius: var(--radius-pill, 9999px);
+    border-top-left-radius: var(--radius-pill);
+    border-bottom-left-radius: var(--radius-pill);
 }
 
 .barEnd {
-    border-top-right-radius: var(--radius-pill, 9999px);
-    border-bottom-right-radius: var(--radius-pill, 9999px);
+    border-top-right-radius: var(--radius-pill);
+    border-bottom-right-radius: var(--radius-pill);
 }
 
 .barLabel {
@@ -261,9 +228,8 @@
     text-overflow: ellipsis;
 }
 
-/* A manual event bar is an interactive button that opens the edit dialog. It
- * opts back into the pointer events `.weekBars` disables and resets the native
- * button chrome so it looks identical to a decorative `.bar`. */
+/* Every bar is a button (edit for manual, details for sync). It opts back into
+ * the pointer events `.weekBars` disables and resets the native button chrome. */
 .barButton {
     appearance: none;
     -webkit-appearance: none;
@@ -278,8 +244,8 @@
 }
 
 .barButton:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--brand-primary);
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
 }
 
 /* Per-day "+N" indicator for events that overflow the fixed lane band. */
@@ -288,21 +254,21 @@
     height: var(--bar-height);
     display: flex;
     align-items: center;
-    padding: 0 0.4375rem;
+    padding: 0 var(--space-2);
     font-family: var(--font-sans);
-    font-size: 0.625rem;
+    font-size: var(--app-caption-size);
     font-weight: 600;
     line-height: 1;
     color: var(--core-muted-foreground);
     background-color: var(--muted);
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     box-sizing: border-box;
     overflow: hidden;
     white-space: nowrap;
 }
 
 .barManual {
-    --bar-color: var(--destructive, #e40016);
+    --bar-color: var(--destructive);
 }
 
 .barGoogle {
@@ -322,9 +288,9 @@
 }
 
 .dayOccupied {
-    background-color: var(--destructive-a10, rgb(228 0 22 / 0.1));
-    border-color: var(--destructive-a35, rgb(228 0 22 / 0.35));
-    color: var(--destructive);
+    background-color: var(--destructive-a10);
+    border-color: var(--destructive-a35);
+    color: var(--status-danger-fg);
 }
 
 .daySync {
@@ -340,8 +306,9 @@
 .daySelected {
     background-color: var(--brand-primary-a15);
     border-color: var(--brand-primary);
-    color: var(--brand-primary);
-    box-shadow: 0 0 0 1px var(--brand-primary);
+    color: var(--brand-primary-link);
+    outline: 1px solid var(--brand-primary);
+    outline-offset: -1px;
 }
 
 .dayPast {
@@ -355,7 +322,7 @@
     right: 2px;
     width: 6px;
     height: 6px;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
 }
 
 .dotManual {
@@ -385,70 +352,88 @@
 
 /* --- Action bar (range selection) --- */
 
+/* Inside the Section: a separator, never a second box (D5). */
 .actionBar {
-    margin-top: var(--space-4, 1rem);
-    padding: var(--space-4, 1rem);
-    border: 1px solid var(--brand-primary-a30, rgb(56 133 249 / 0.3));
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--brand-primary-a08, rgb(56 133 249 / 0.08));
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: var(--space-3, 0.75rem);
+    gap: var(--space-3);
 }
 
 .selectionCount {
-    font-family: var(--font-sans);
+    font: var(--app-ui);
     font-weight: 600;
-    font-size: 0.875rem;
     color: var(--core-foreground);
     margin: 0;
-}
-
-.noteField {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1, 0.25rem);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground);
-}
-
-.noteInput {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    background-color: var(--core-card);
-    color: var(--core-foreground);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
 }
 
 .actionButtons {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2, 0.5rem);
+    gap: var(--space-2);
 }
 
-.blockButton,
-.unblockButton,
+/* --- Occupancy dialogs (edit + details, HOS-175) --- */
+
+.noteField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.editForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.editInput {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font: var(--app-ui);
+}
+
+.editFooterSpread {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+}
+
+.editFooterActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.saveButton,
+.deleteButton,
 .cancelButton {
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-control);
+    font: var(--app-meta);
     font-weight: 600;
-    font-size: 0.8125rem;
     cursor: pointer;
     border: 1px solid transparent;
 }
 
-.blockButton {
-    background-color: var(--destructive);
-    color: var(--destructive-foreground);
-}
-
-.unblockButton {
+.saveButton {
     background-color: var(--brand-primary);
     color: var(--primary-foreground);
+}
+
+.deleteButton {
+    border-color: var(--destructive);
+    background-color: transparent;
+    color: var(--status-danger-fg);
 }
 
 .cancelButton {
@@ -457,71 +442,16 @@
     color: var(--core-muted-foreground);
 }
 
-.blockButton:disabled,
-.unblockButton:disabled,
-.cancelButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* --- Edit-event dialog (HOS-175) --- */
-
-.editForm {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 0.75rem);
-}
-
-.editInput {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
-    background-color: var(--core-card);
-    color: var(--core-foreground);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-}
-
-.editFooterSpread {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3, 0.75rem);
-    width: 100%;
-}
-
-.editFooterActions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-}
-
-.saveButton {
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.8125rem;
-    cursor: pointer;
-    border: 1px solid transparent;
-    background-color: var(--brand-primary);
-    color: var(--primary-foreground);
-}
-
-.deleteButton {
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-button, 8px);
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.8125rem;
-    cursor: pointer;
-    border: 1px solid var(--destructive);
-    background-color: transparent;
-    color: var(--destructive);
+.saveButton:focus-visible,
+.deleteButton:focus-visible,
+.cancelButton:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
 }
 
 .saveButton:disabled,
-.deleteButton:disabled {
+.deleteButton:disabled,
+.cancelButton:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
@@ -532,30 +462,34 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-3, 0.75rem);
-    margin-top: var(--space-4, 1rem);
-    padding-top: var(--space-3, 0.75rem);
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
     border-top: 1px solid var(--border);
 }
 
 .legendToggle {
     display: none;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.375rem 0.5rem;
-    margin: -0.375rem -0.5rem;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    margin: calc(-1 * var(--space-2));
     border: 0;
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: none;
     cursor: pointer;
-    font-family: var(--font-sans);
+    font: var(--app-caption);
     font-weight: 600;
-    font-size: 0.75rem;
     color: var(--core-muted-foreground);
 }
 
+.legendToggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
 .legendToggleIcon {
-    transition: transform 0.15s ease;
+    transition: transform var(--duration-fast) ease;
 }
 
 .legend[data-expanded="true"] .legendToggleIcon {
@@ -567,34 +501,38 @@
 }
 
 .legendTitle {
-    font-family: var(--font-sans);
+    font: var(--app-caption);
     font-weight: 600;
-    font-size: 0.75rem;
     color: var(--core-muted-foreground);
 }
 
 .legendItem {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
+    gap: var(--space-2);
+    font: var(--app-caption);
     color: var(--core-muted-foreground);
 }
 
 .legendDot {
     width: 8px;
     height: 8px;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
 }
 
-/* --- Responsive collapse --- */
+@media (prefers-reduced-motion: reduce) {
+    .day,
+    .legendToggleIcon {
+        transition: none;
+    }
+}
 
-@media (max-width: 480px) {
+/* --- Narrow Section (was the 480px viewport rule) --- */
+
+@container (width < 30rem) {
     .day {
-        font-size: 0.6875rem;
-        border-radius: var(--radius-sm, 6px);
+        border-radius: var(--radius-sm);
     }
 
     .sourceDot {
@@ -604,30 +542,27 @@
 
     .monthLabel {
         min-width: 0;
-        font-size: 0.875rem;
+        font: var(--app-ui);
+        font-weight: 600;
     }
 
     .legend {
-        gap: var(--space-2, 0.5rem);
+        gap: var(--space-2);
     }
 }
 
-/* --- Mobile (HOS-316) -------------------------------------------------- */
+/* --- Mobile (HOS-316, was the 600px viewport rule) ----------------------- */
 
-@media (max-width: 600px) {
+@container (width < 37.5rem) {
     /*
-     * Full-bleed the grid out of the card's horizontal padding. Seven columns
-     * need 308px to clear the 44px touch-target guideline, and the padded
-     * content box on a 390px screen is only 294px — the padding is the whole
-     * shortfall, so reclaiming it is what buys the target size rather than
-     * shrinking anything else.
-     *
-     * Below roughly 355px viewport the columns dip under 44px again; at that
-     * width no horizontal padding at all would be enough for seven of them, and
-     * the cells stay far above the 24x24 WCAG minimum thanks to their height.
+     * Full-bleed the grid out of the Section's horizontal padding. Seven
+     * columns need 308px to clear the 44px touch-target guideline, and the
+     * padded content box on a 390px screen falls short by exactly the padding,
+     * so reclaiming it is what buys the target size rather than shrinking
+     * anything else.
      */
     .grid {
-        margin-inline: calc(-1 * var(--space-6, 1.5rem));
+        margin-inline: calc(-1 * var(--space-6));
         border-inline: 0;
         border-radius: 0;
     }
@@ -650,12 +585,19 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--space-2, 0.5rem);
+        gap: var(--space-2);
         width: 100%;
     }
 
     .legendTitle {
         display: none;
+    }
+}
+
+/* Under 30rem the Section's body padding drops to --space-4: match it. */
+@container (width < 30rem) {
+    .grid {
+        margin-inline: calc(-1 * var(--space-4));
     }
 }
 
@@ -665,13 +607,14 @@
  * Read-only counterpart to the manual edit form above. A definition list rather
  * than a form: nothing here is editable, and pairing each value with its own
  * label is what lets a screen reader announce "Origen: Google Calendar" instead
- * of an unlabelled string.
+ * of an unlabelled string. Single column first (the dialog exists mainly for
+ * the phone case), label/value pairs side by side from 30rem.
  * ------------------------------------------------------------------------- */
 
 .detailsList {
     display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--space-2) var(--space-4);
+    grid-template-columns: 1fr;
+    gap: 0;
     margin: 0;
 }
 
@@ -688,6 +631,10 @@
     overflow-wrap: anywhere;
 }
 
+.detailsList dd:not(:last-of-type) {
+    margin-bottom: var(--space-3);
+}
+
 .detailsMuted {
     color: var(--core-muted-foreground);
     font-style: italic;
@@ -698,19 +645,16 @@
     padding-top: var(--space-3);
     border-top: 1px solid var(--border);
     color: var(--core-muted-foreground);
-    font-size: 0.875rem;
-    line-height: 1.5;
+    font: var(--app-ui);
 }
 
-/* Single column on narrow screens — the label/value pair reads better stacked
-   than squeezed, and this dialog exists mainly for the phone case. */
-@media (max-width: 30rem) {
+@media (min-width: 30rem) {
     .detailsList {
-        grid-template-columns: 1fr;
-        gap: 0;
+        grid-template-columns: auto 1fr;
+        gap: var(--space-2) var(--space-4);
     }
 
     .detailsList dd:not(:last-of-type) {
-        margin-bottom: var(--space-3);
+        margin-bottom: 0;
     }
 }

@@ -18,11 +18,17 @@
  *  - Arriving via the broken-feed notification email link (`#calendar-sync`
  *    hash) — the panel is the scroll/anchor target.
  *
+ * The trigger is a kit `Button` and the upsell CTA a kit `LinkButton`
+ * (HOS-2503); the calendar page renders this launcher inside its own
+ * «Sincronización de calendarios externos» `Section`.
+ *
  * @module components/host/editor/CalendarSyncLauncher
  */
 
 import { CalendarIcon } from '@repo/icons';
 import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/account/ui/Button';
+import { LinkButton } from '@/components/account/ui/LinkButton';
 import {
     Dialog,
     DialogBody,
@@ -83,9 +89,8 @@ export function CalendarSyncLauncher({ locale, accommodationId }: CalendarSyncLa
 
     return (
         <div className={styles.launcher}>
-            <button
-                type="button"
-                className={styles.openButton}
+            <Button
+                variant="secondary"
                 onClick={() => setMode(isLocked ? 'upsell' : 'sync')}
             >
                 <CalendarIcon
@@ -97,7 +102,7 @@ export function CalendarSyncLauncher({ locale, accommodationId }: CalendarSyncLa
                     'host.properties.editor.calendarSync.openButton',
                     'Conectar calendarios externos'
                 )}
-            </button>
+            </Button>
 
             {/* Connect / sync panel — only reachable with the entitlement. */}
             <Dialog
@@ -147,12 +152,12 @@ export function CalendarSyncLauncher({ locale, accommodationId }: CalendarSyncLa
                     </p>
                 </DialogBody>
                 <DialogFooter>
-                    <a
+                    <LinkButton
                         href={plansUrl}
-                        className={styles.upsellCta}
+                        variant="accent"
                     >
                         {t('host.properties.editor.calendarSync.upsellCta', 'Mejorar plan')}
-                    </a>
+                    </LinkButton>
                 </DialogFooter>
             </Dialog>
         </div>

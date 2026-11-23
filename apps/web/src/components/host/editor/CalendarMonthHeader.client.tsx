@@ -2,10 +2,12 @@
  * @file CalendarMonthHeader.client.tsx
  * @description Month navigation of the occupancy calendar: previous, the
  * month label and next (HOS-43, split out of `CalendarSection` by HOS-2503).
+ * The arrows are kit `Button`s.
  */
 
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
 import type { JSX } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import { formatMonthYearLabel } from '@/lib/format-utils';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import styles from './CalendarSection.module.css';
@@ -38,9 +40,10 @@ export function CalendarMonthHeader({
 }: CalendarMonthHeaderProps): JSX.Element {
     return (
         <div className={styles.monthHeader}>
-            <button
-                type="button"
-                className={styles.navButton}
+            <Button
+                variant="secondary"
+                size="sm"
+                iconOnly
                 onClick={onPrev}
                 disabled={!canGoPrev}
                 aria-label={t('host.properties.editor.calendar.prevMonth', 'Mes anterior')}
@@ -50,7 +53,7 @@ export function CalendarMonthHeader({
                     weight="regular"
                     aria-hidden="true"
                 />
-            </button>
+            </Button>
             <span className={styles.monthLabel}>
                 <CalendarIcon
                     size={16}
@@ -59,9 +62,10 @@ export function CalendarMonthHeader({
                 />
                 {formatMonthYearLabel({ date: viewedMonth, locale })}
             </span>
-            <button
-                type="button"
-                className={styles.navButton}
+            <Button
+                variant="secondary"
+                size="sm"
+                iconOnly
                 onClick={onNext}
                 aria-label={t('host.properties.editor.calendar.nextMonth', 'Mes siguiente')}
             >
@@ -70,7 +74,7 @@ export function CalendarMonthHeader({
                     weight="regular"
                     aria-hidden="true"
                 />
-            </button>
+            </Button>
         </div>
     );
 }

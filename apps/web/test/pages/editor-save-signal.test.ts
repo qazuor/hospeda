@@ -36,6 +36,7 @@ const ISLANDS: Readonly<Record<string, string>> = {
     SeoForm: 'src/components/host/editor/forms/SeoForm.client.tsx',
     ListingEditor: 'src/components/listing/ListingEditor.client.tsx',
     CalendarSection: 'src/components/host/editor/CalendarSection.client.tsx',
+    CalendarSectionGate: 'src/components/host/editor/CalendarSectionGate.client.tsx',
     PhotoSection: 'src/components/host/editor/PhotoSection.client.tsx',
     FaqSection: 'src/components/host/editor/FaqSection.client.tsx',
     AiQuestionsPanel: 'src/components/listing/ai-questions/AiQuestionsPanel.client.tsx',
