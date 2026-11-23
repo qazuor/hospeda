@@ -18,12 +18,19 @@
  * vertical whose read fails is left out, never invented. The block is
  * self-contained so B13a.4 can move it whole.
  *
+ * HOS-2485: on the account kit — `PageHeader` with the «Plan / Complementos»
+ * `NavTabs` (which replace the bare add-ons link), each subscription a
+ * `PlanSummary`, the trial promo block a `Section`. Presentation only: the
+ * reads, the return flow and every Fase 1 notice are unchanged.
+ *
  * @route /{lang}/mi-cuenta/suscripcion/
  * @rendering SSR
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PageHeader, Section } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
 import TrialSummary from '@/components/account/TrialSummary.astro';
 import MySubscriptions from '@/components/account/MySubscriptions.astro';
 import { PromoCodeRedeem } from '@/components/account/PromoCodeRedeem.client';
@@ -36,7 +43,6 @@ import { parseReturnSubscriptionId, selectDeclinedNoticesToShow } from '@/lib/bi
 import { getPlanName } from '@/lib/billing-i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -96,7 +102,10 @@ if (returnSubscriptionId) {
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
 	<StripMercadoPagoReturnParams slot="head-early" />
-	<AccountPageHeader title={title} />
+	<PageHeader title={title}>
+		<PageHelpLink slot="help" locale={locale} />
+		<SubscriptionTabs slot="tabs" locale={locale} current="plan" />
+	</PageHeader>
 	{returnSubscriptionId && <SubscriptionReturn
 		client:load
 		locale={locale}
@@ -118,15 +127,24 @@ if (returnSubscriptionId) {
 			attemptPlanName={getPlanName({ plan: { slug: notice.plan.slug, name: notice.plan.name, description: '' }, t })}
 		/>
 	))}
-	<a data-testid="addon-purchase-link" href={buildUrl({ locale, path: 'mi-cuenta/complementos' })}>{t('billing.addons.viewAvailable')}</a>
-	<div data-subscription-sections>
+	<div data-subscription-sections class="sub-page__sections">
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />
-	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <section data-testid="trial-promo-redeem">
-		<h2>{t('account.subscription.promoRedeem.trialSectionTitle')}</h2>
+	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <div data-testid="trial-promo-redeem">
+		<Section title={t('account.subscription.promoRedeem.trialSectionTitle')} helpId="section:suscripcion.promo">
 		{trialSummaries.filter(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE).map(({ vertical }) =>
 			<PromoCodeRedeem client:visible vertical={vertical} locale={locale} offer="TRIAL" />
 		)}
-	</section>}
+		</Section>
+	</div>}
 	</div>
 </AccountLayout>
+
+<style>
+	/* The account content slot has no flow gap: one stack owns the rhythm. */
+	.sub-page__sections {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
+	}
+</style>

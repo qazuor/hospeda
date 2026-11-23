@@ -176,7 +176,8 @@
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
         "help": "Ajuda",
         "venueDashboard": "Painel de locais",
-        "experienceDashboard": "Painel de experiências"
+        "experienceDashboard": "Painel de experiências",
+        "addons": "Complementos"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -866,6 +867,11 @@
             "forever": "Sua mensalidade passa para {{amount}}, sem data para terminar.",
             "trialExtension_one": "Você ganhou {{count}} dia de teste.",
             "trialExtension_other": "Você ganhou {{count}} dias de teste."
+        },
+        "tabs": {
+            "ariaLabel": "Seções da assinatura",
+            "plan": "Plano",
+            "addons": "Complementos"
         }
     },
     "favorites": {

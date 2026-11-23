@@ -33,6 +33,7 @@ import {
     MegaphoneIcon,
     NewsletterIcon,
     OffersIcon,
+    PackageIcon,
     PostIcon,
     ReceiptIcon,
     SearchIcon,
@@ -169,6 +170,14 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 href: 'mi-cuenta/suscripcion',
                 icon: CreditCardIcon,
                 surfaces: CURATED_SURFACES
+            },
+            {
+                // HOS-2485 (AC-8): the add-ons page highlights its own item.
+                id: 'addons',
+                i18nKey: 'account.nav.addons',
+                href: 'mi-cuenta/complementos',
+                icon: PackageIcon,
+                surfaces: FULL_SURFACES
             },
             {
                 id: 'preferences',

@@ -13,10 +13,10 @@ import type { SupportedLocale } from '@/lib/i18n';
 export interface PageLoadErrorProps {
     /** Page locale. */
     readonly locale: SupportedLocale;
-    /** Translated title: what could not be read. */
-    readonly title: string;
-    /** Translated body: reassurance and what to do. */
-    readonly description: string;
+    /** Translated title: what could not be read. Defaults to the kit copy. */
+    readonly title?: string;
+    /** Translated body: reassurance and what to do. Defaults to the kit copy. */
+    readonly description?: string;
     /** Help anchor of the region that failed. */
     readonly helpId?: HelpAnchor;
 }

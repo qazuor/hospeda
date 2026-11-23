@@ -1,11 +1,23 @@
 ---
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+/**
+ * @file mi-cuenta/complementos/index.astro
+ * @description The add-ons page (HOS-2485): kit `PageHeader` with the «Plan /
+ * Complementos» tabs, the add-on purchase flow (its own island: per-user
+ * billing state, a Stepper and catalog-driven OptionCards, a back step on every
+ * step) and the recurring add-ons withdrawal as a kit `Section`. Highlights its
+ * own sidebar item («Complementos», under «Cuenta»).
+ *
+ * @route /{lang}/mi-cuenta/complementos/
+ * @rendering SSR
+ */
+import { PageHeader, Section } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import SubscriptionTabs from '@/components/account/SubscriptionTabs.astro';
 import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
 import { RecurringAddonWithdrawal } from '@/components/billing/recurring-addons/RecurringAddonWithdrawal.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { parseReturnOrderRequestId } from '@/lib/billing/addon-purchase-return';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -19,11 +31,28 @@ const returnOrderRequestId = parseReturnOrderRequestId({ search: Astro.url.searc
 const listingId = Astro.url.searchParams.get('listing');
 ---
 
-<AccountLayout locale={locale} title={title} activeSection="suscripcion">
-    <AccountPageHeader title={title} />
+<AccountLayout locale={locale} title={title} activeSection="complementos">
+    <div class="addons-page">
+    <PageHeader title={title}>
+        <PageHelpLink slot="help" locale={locale} />
+        <SubscriptionTabs slot="tabs" locale={locale} current="addons" />
+    </PageHeader>
     <AddonPurchase client:load locale={locale} returnOrderRequestId={returnOrderRequestId} accountEmail={user.email} />
-    <section id="recurring-addons">
-        <h2>{t('billing.addonPurchase.recurringAddons.title')}</h2>
+    <Section
+        id="recurring-addons"
+        title={t('billing.addonPurchase.recurringAddons.title')}
+        helpId="section:complementos.recurrentes"
+    >
         <RecurringAddonWithdrawal client:visible locale={locale} listingId={listingId} />
-    </section>
+    </Section>
+    </div>
 </AccountLayout>
+
+<style>
+    /* The account content slot has no flow gap: one stack owns the rhythm. */
+    .addons-page {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+    }
+</style>
