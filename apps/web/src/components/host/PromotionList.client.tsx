@@ -92,7 +92,7 @@ export function PromotionList({
     help
 }: PromotionListProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const { confirm, confirmDialog } = useConfirm({ locale });
+    const { confirm: requestConfirm, confirmDialog } = useConfirm({ locale });
     const [page, setPage] = useState(1);
     const [state, setState] = useState<ListState>({ status: 'loading' });
     const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export function PromotionList({
     const handleDelete = useCallback(
         async (promo: OwnerPromotionData) => {
             setDeleteError(null);
-            await confirm({
+            await requestConfirm({
                 title: t('host.promotions.kit.deleteTitle', undefined, { title: promo.title }),
                 description: t('host.promotions.actions.confirmDelete'),
                 confirmLabel: t('host.promotions.actions.delete'),
@@ -153,7 +153,7 @@ export function PromotionList({
                 }
             });
         },
-        [confirm, fetchPromotions, page, t]
+        [requestConfirm, fetchPromotions, page, t]
     );
 
     const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
