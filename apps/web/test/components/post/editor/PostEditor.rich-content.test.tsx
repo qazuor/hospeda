@@ -18,7 +18,8 @@ import type { PostEditDetail } from '../../../../src/lib/api/types';
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`,
         tPlural: (key: string, count: number) => `[MISSING:${key}] ${count}`
@@ -135,7 +136,8 @@ describe('PostEditor — the body as a real rich text editor', () => {
         renderEditor(NON_CANONICAL_BODY);
         await waitForEditorMount();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        // A clean form shows no save bar (D8), so no save can be triggered.
+        expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
 
         // TipTap fires an update transaction when it first parses `content`.
         // Before HOS-371 that reached the parent's onChange and left the form
@@ -149,7 +151,8 @@ describe('PostEditor — the body as a real rich text editor', () => {
         renderEditor('');
         await waitForEditorMount();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        // A clean form shows no save bar (D8), so no save can be triggered.
+        expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
 
         // The empty case emitted onChange('') before the fix — the same false
         // dirty signal, and the one a brand-new post would always hit.
@@ -165,7 +168,7 @@ describe('PostEditor — the body as a real rich text editor', () => {
         fireEvent.change(screen.getByLabelText('Título *'), {
             target: { value: 'Un título nuevo' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
         const body = mockUpdate.mock.calls[0]?.[0]?.data as Record<string, unknown>;

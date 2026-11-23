@@ -42,7 +42,8 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     )
 }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`,
         tPlural: (key: string, count: number) => `[MISSING:${key}] ${count}`
@@ -137,7 +138,7 @@ describe('EventEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Nombre *'), {
             target: { value: 'Otra fiesta' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
         expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
@@ -153,7 +154,7 @@ describe('EventEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Termina'), {
             target: { value: '2026-09-11T04:00' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
         const body = mockUpdate.mock.calls[0]?.[0]?.data as Record<string, unknown>;
@@ -166,7 +167,7 @@ describe('EventEditor — saving', () => {
         renderEditor();
 
         fireEvent.change(screen.getByLabelText('Comienza *'), { target: { value: '' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         // Without this guard the cleared start drops out of the diff and the
         // rest of the form saves as if nothing were wrong, silently keeping
@@ -184,20 +185,18 @@ describe('EventEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Descripción *'), {
             target: { value: 'y'.repeat(200) }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
         const body = mockUpdate.mock.calls[0]?.[0]?.data as Record<string, unknown>;
         expect(body).toEqual({ description: 'y'.repeat(200) });
     });
 
-    it('does not call the API when nothing changed, and says so', () => {
+    it('offers no save control while nothing changed (D8: the bar shows only when dirty)', () => {
         renderEditor();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-
+        expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
         expect(mockUpdate).not.toHaveBeenCalled();
-        expect(addToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'info' }));
     });
 });
 
@@ -341,7 +340,7 @@ describe('EventEditor — moderation edit lock (§7.6.3)', () => {
         renderEditor({ isEditLocked: true });
 
         expect(screen.getByTestId('event-editor-lock-notice')).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
     });
 
     it('disables the plain fields and the rich-text description', () => {
@@ -357,6 +356,7 @@ describe('EventEditor — moderation edit lock (§7.6.3)', () => {
         renderEditor({ isEditLocked: false });
 
         expect(screen.queryByTestId('event-editor-lock-notice')).not.toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Guardar' })).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Nombre *'), { target: { value: 'Otro nombre' } });
+        expect(screen.getByRole('button', { name: /Guardar/ })).toBeInTheDocument();
     });
 });

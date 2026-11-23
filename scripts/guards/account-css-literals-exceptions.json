@@ -137,16 +137,6 @@
         "font-size": 4,
         "radius": 1
     },
-    "apps/web/src/components/account/editor/content-editor-fields.module.css": {
-        "color": 1,
-        "font-size": 4,
-        "radius": 1
-    },
-    "apps/web/src/components/account/editor/content-editor-layout.module.css": {
-        "color": 5,
-        "font-size": 2,
-        "radius": 2
-    },
     "apps/web/src/components/auth/ChangePasswordForm.module.css": {
         "color": 2,
         "font-size": 5,
@@ -507,9 +497,6 @@
         "font-size": 2,
         "radius": 2
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/eventos/[id]/editar.astro": {
-        "font-size": 2
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
         "color": 13
     },
@@ -517,8 +504,5 @@
         "color": 1,
         "font-size": 1,
         "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/[id]/editar.astro": {
-        "font-size": 1
     }
 }
