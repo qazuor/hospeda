@@ -76,6 +76,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // hub already named — see `discovery-doors.ts`.
     'account.doors',
     'account.editProfile',
+    'account.editorFields',
     'account.exclusiveDeals',
     'account.favorites',
     'account.help',

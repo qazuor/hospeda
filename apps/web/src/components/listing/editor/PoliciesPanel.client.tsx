@@ -3,6 +3,9 @@
  * @description The house-rules ("Políticas") panel shared by the listing owner
  * editor and the host accommodation editor (HOS-2060).
  *
+ * HOS-2488: kit fields (`Field` + controls); the panel has no title of its own,
+ * the hosting kit `Section` provides it.
+ *
  * It edits keys of the `policies` JSONB. Which keys it renders is the caller's
  * decision (`keys`): every vertical gets the shared base (payment methods,
  * pets, smoking, events), plus its own — accommodation adds check-in/out, the
@@ -31,7 +34,11 @@ import {
     type VenueReservationPolicy
 } from '@repo/schemas';
 import type { JSX } from 'react';
-import { TextField } from '@/components/ui/TextField';
+import { Checkbox, CheckboxGroup } from '@/components/account/ui/Checkbox';
+import { Field } from '@/components/account/ui/Field';
+import { Select } from '@/components/account/ui/Select';
+import { Textarea } from '@/components/account/ui/Textarea';
+import { TextInput } from '@/components/account/ui/TextInput';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
@@ -47,7 +54,6 @@ import {
     EventsDetailsField,
     SpokenLanguagesField
 } from './AccommodationPolicyFields.client';
-import fieldStyles from './editor-fields.module.css';
 import styles from './PoliciesPanel.module.css';
 
 /** Change callback: `undefined` removes the key. */
@@ -119,24 +125,25 @@ export function PoliciesPanel({
             `listing.policies.locale.${code}`,
             code === 'es' ? 'Español' : code === 'en' ? 'Inglés' : 'Portugués'
         );
+    const idOf = (name: string) => ({ prefix: idPrefix, name });
 
     const renderTriState = (key: 'eventsAllowed' | 'privateGroups', label: string) => (
-        <TextField
+        <Field
             key={key}
-            as="select"
-            prefix={idPrefix}
-            name={`policies.${key}`}
+            locale={locale}
+            idParts={idOf(`policies.${key}`)}
             label={label}
-            labelClassName={styles.groupTitle}
-            className={fieldStyles.input}
             error={errors[`policies.${key}`]}
-            value={writeTriState(policies[key])}
-            onChange={(event) => onChange(key, readTriState(event.target.value))}
         >
-            <option value="">{notInformed}</option>
-            <option value="yes">{yes}</option>
-            <option value="no">{no}</option>
-        </TextField>
+            <Select
+                value={writeTriState(policies[key])}
+                onChange={(event) => onChange(key, readTriState(event.target.value))}
+            >
+                <option value="">{notInformed}</option>
+                <option value="yes">{yes}</option>
+                <option value="no">{no}</option>
+            </Select>
+        </Field>
     );
 
     const renderWindow = (key: 'checkIn' | 'checkOut', label: string) => {
@@ -149,25 +156,18 @@ export function PoliciesPanel({
                 <legend className={styles.groupTitle}>{label}</legend>
                 <div className={styles.pair}>
                     {(['from', 'to'] as const).map((end) => (
-                        // TextField renders a bare label + input fragment; the
-                        // wrapper keeps each pair in its own grid cell.
-                        <div
+                        <Field
                             key={end}
-                            className={styles.timeField}
+                            locale={locale}
+                            idParts={idOf(`policies.${key}.${end}`)}
+                            label={
+                                end === 'from'
+                                    ? t('listing.policies.time.from', 'Desde')
+                                    : t('listing.policies.time.to', 'Hasta')
+                            }
+                            error={errors[`policies.${key}.${end}`] ?? errors[`policies.${key}`]}
                         >
-                            <TextField
-                                prefix={idPrefix}
-                                name={`policies.${key}.${end}`}
-                                label={
-                                    end === 'from'
-                                        ? t('listing.policies.time.from', 'Desde')
-                                        : t('listing.policies.time.to', 'Hasta')
-                                }
-                                labelClassName={fieldStyles.hint}
-                                className={fieldStyles.input}
-                                error={
-                                    errors[`policies.${key}.${end}`] ?? errors[`policies.${key}`]
-                                }
+                            <TextInput
                                 type="time"
                                 value={window[end] ?? ''}
                                 onChange={(event) =>
@@ -177,7 +177,7 @@ export function PoliciesPanel({
                                     )
                                 }
                             />
-                        </div>
+                        </Field>
                     ))}
                 </div>
             </fieldset>
@@ -196,83 +196,83 @@ export function PoliciesPanel({
                 <legend className={styles.groupTitle}>
                     {t('listing.policies.pets.label', 'Mascotas')}
                 </legend>
-                <TextField
-                    as="select"
-                    prefix={idPrefix}
-                    name="policies.pets.admission"
+                <Field
+                    locale={locale}
+                    idParts={idOf('policies.pets.admission')}
                     label={t('listing.policies.pets.admissionLabel', '¿Se admiten mascotas?')}
-                    labelClassName={fieldStyles.hint}
-                    className={fieldStyles.input}
                     error={errors['policies.pets.admission'] ?? errors['policies.pets']}
-                    value={pets?.admission ?? ''}
-                    onChange={(event) => {
-                        const admission = event.target.value as ListingPetAdmission | '';
-                        onChange(
-                            'pets',
-                            admission === ''
-                                ? undefined
-                                : {
-                                      ...(pets ?? {}),
-                                      admission,
-                                      ...(admission === 'no' ? { extraCost: undefined } : {})
-                                  }
-                        );
-                    }}
                 >
-                    <option value="">{notInformed}</option>
-                    {LISTING_PET_ADMISSION_VALUES.map((admission) => (
-                        <option
-                            key={admission}
-                            value={admission}
-                        >
-                            {t(`listing.policies.pets.admission.${admission}`, admission)}
-                        </option>
-                    ))}
-                </TextField>
+                    <Select
+                        value={pets?.admission ?? ''}
+                        onChange={(event) => {
+                            const admission = event.target.value as ListingPetAdmission | '';
+                            onChange(
+                                'pets',
+                                admission === ''
+                                    ? undefined
+                                    : {
+                                          ...(pets ?? {}),
+                                          admission,
+                                          ...(admission === 'no' ? { extraCost: undefined } : {})
+                                      }
+                            );
+                        }}
+                    >
+                        <option value="">{notInformed}</option>
+                        {LISTING_PET_ADMISSION_VALUES.map((admission) => (
+                            <option
+                                key={admission}
+                                value={admission}
+                            >
+                                {t(`listing.policies.pets.admission.${admission}`, admission)}
+                            </option>
+                        ))}
+                    </Select>
+                </Field>
                 {admits && (
-                    <label className={fieldStyles.checkbox}>
-                        <input
-                            type="checkbox"
-                            checked={pets.extraCost === true}
-                            onChange={(event) =>
-                                onChange('pets', { ...pets, extraCost: event.target.checked })
-                            }
-                        />
-                        {t(
+                    <Checkbox
+                        checked={pets.extraCost === true}
+                        onChange={(event) =>
+                            onChange('pets', { ...pets, extraCost: event.target.checked })
+                        }
+                        label={t(
                             'listing.policies.pets.extraCostLabel',
                             'Cobro un cargo extra por mascota'
                         )}
-                    </label>
+                    />
                 )}
                 {pets && (
                     <div className={styles.noteGrid}>
                         {LOCALES.map((code) => (
-                            <TextField
+                            <Field
                                 key={code}
-                                prefix={idPrefix}
-                                name={
+                                locale={locale}
+                                idParts={idOf(
                                     code === 'es'
                                         ? 'policies.pets.notes'
                                         : `policies.pets.notes.${code}`
-                                }
+                                )}
                                 label={`${t('listing.policies.pets.notesLabel', 'Nota')} (${localeLabel(code)})`}
-                                labelClassName={fieldStyles.hint}
-                                className={fieldStyles.input}
                                 error={
                                     code === 'es'
                                         ? errors['policies.pets.notes']
                                         : errors[`policies.pets.notes.${code}`]
                                 }
-                                maxLength={200}
-                                value={notes[code]}
-                                onChange={(event) => {
-                                    const nextNotes = { ...notes, [code]: event.target.value };
-                                    onChange('pets', {
-                                        ...pets,
-                                        notes: isEmptyPolicyNote(nextNotes) ? undefined : nextNotes
-                                    });
-                                }}
-                            />
+                            >
+                                <TextInput
+                                    maxLength={200}
+                                    value={notes[code]}
+                                    onChange={(event) => {
+                                        const nextNotes = { ...notes, [code]: event.target.value };
+                                        onChange('pets', {
+                                            ...pets,
+                                            notes: isEmptyPolicyNote(nextNotes)
+                                                ? undefined
+                                                : nextNotes
+                                        });
+                                    }}
+                                />
+                            </Field>
                         ))}
                     </div>
                 )}
@@ -280,82 +280,75 @@ export function PoliciesPanel({
         );
     };
 
+    /** Groups, long text and the accommodation sub-forms take the whole row. */
+    const wide = (key: string, node: JSX.Element) => (
+        <div
+            key={key}
+            className={styles.wide}
+        >
+            {node}
+        </div>
+    );
+
     const renderers: Readonly<Partial<Record<ListingPolicyKey, () => JSX.Element>>> = {
         paymentMethods: () => {
             const selected = policies.paymentMethods ?? [];
-            return (
-                <fieldset
-                    key="paymentMethods"
-                    className={styles.group}
-                    id={`${idPrefix}-policies-paymentMethods`}
-                >
-                    <legend className={styles.groupTitle}>
-                        {t('listing.policies.paymentMethods.label', 'Medios de pago')}
-                    </legend>
-                    <div className={styles.optionGrid}>
+            return wide(
+                'paymentMethods',
+                // The wrapper carries the id focus-on-error lands on; the kit
+                // group is a fieldset that takes no id.
+                <div id={`${idPrefix}-policies-paymentMethods`}>
+                    <CheckboxGroup
+                        locale={locale}
+                        legend={t('listing.policies.paymentMethods.label', 'Medios de pago')}
+                        error={errors['policies.paymentMethods']}
+                    >
                         {LISTING_PAYMENT_METHODS.map((method) => (
-                            <label
+                            <Checkbox
                                 key={method}
-                                className={fieldStyles.checkbox}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selected.includes(method)}
-                                    onChange={() => {
-                                        const next = selected.includes(method)
-                                            ? selected.filter((item) => item !== method)
-                                            : LISTING_PAYMENT_METHODS.filter(
-                                                  (item) =>
-                                                      item === method || selected.includes(item)
-                                              );
-                                        onChange(
-                                            'paymentMethods',
-                                            next.length > 0 ? next : undefined
-                                        );
-                                    }}
-                                />
-                                {paymentMethodLabel({ t, method })}
-                            </label>
+                                checked={selected.includes(method)}
+                                onChange={() => {
+                                    const next = selected.includes(method)
+                                        ? selected.filter((item) => item !== method)
+                                        : LISTING_PAYMENT_METHODS.filter(
+                                              (item) => item === method || selected.includes(item)
+                                          );
+                                    onChange('paymentMethods', next.length > 0 ? next : undefined);
+                                }}
+                                label={paymentMethodLabel({ t, method })}
+                            />
                         ))}
-                    </div>
-                    {errors['policies.paymentMethods'] && (
-                        <p
-                            className={fieldStyles.hint}
-                            role="alert"
-                        >
-                            {errors['policies.paymentMethods']}
-                        </p>
-                    )}
-                </fieldset>
+                    </CheckboxGroup>
+                </div>
             );
         },
-        pets: renderPets,
+        pets: () => wide('pets', renderPets()),
         smokingAllowed: () => (
-            <TextField
+            <Field
                 key="smokingAllowed"
-                as="select"
-                prefix={idPrefix}
-                name="policies.smokingAllowed"
+                locale={locale}
+                idParts={idOf('policies.smokingAllowed')}
                 label={t('listing.policies.smokingAllowed.label', 'Fumar')}
-                labelClassName={styles.groupTitle}
-                className={fieldStyles.input}
                 error={errors['policies.smokingAllowed']}
-                value={policies.smokingAllowed ?? ''}
-                onChange={(event) => {
-                    const value = event.target.value as ListingSmokingPolicy | '';
-                    onChange('smokingAllowed', value === '' ? undefined : value);
-                }}
             >
-                <option value="">{notInformed}</option>
-                {LISTING_SMOKING_VALUES.map((value) => (
-                    <option
-                        key={value}
-                        value={value}
-                    >
-                        {t(`listing.policies.smokingAllowed.${value}`, value)}
-                    </option>
-                ))}
-            </TextField>
+                <Select
+                    value={policies.smokingAllowed ?? ''}
+                    onChange={(event) => {
+                        const value = event.target.value as ListingSmokingPolicy | '';
+                        onChange('smokingAllowed', value === '' ? undefined : value);
+                    }}
+                >
+                    <option value="">{notInformed}</option>
+                    {LISTING_SMOKING_VALUES.map((value) => (
+                        <option
+                            key={value}
+                            value={value}
+                        >
+                            {t(`listing.policies.smokingAllowed.${value}`, value)}
+                        </option>
+                    ))}
+                </Select>
+            </Field>
         ),
         eventsAllowed: () =>
             renderTriState(
@@ -365,67 +358,78 @@ export function PoliciesPanel({
                     '¿Se pueden hacer eventos privados?'
                 )
             ),
-        checkIn: () => renderWindow('checkIn', t('listing.policies.checkIn.label', 'Check-in')),
-        checkOut: () => renderWindow('checkOut', t('listing.policies.checkOut.label', 'Check-out')),
-        deposit: () => (
-            <DepositPolicyField
-                key="deposit"
-                t={t}
-                idPrefix={idPrefix}
-                errors={errors}
-                deposit={policies.deposit}
-                onChange={(value) => onChange('deposit', value)}
-            />
-        ),
-        spokenLanguages: () => (
-            <SpokenLanguagesField
-                key="spokenLanguages"
-                t={t}
-                idPrefix={idPrefix}
-                errors={errors}
-                languages={policies.spokenLanguages}
-                onChange={(value) => onChange('spokenLanguages', value)}
-            />
-        ),
+        checkIn: () =>
+            wide(
+                'checkIn',
+                renderWindow('checkIn', t('listing.policies.checkIn.label', 'Check-in'))
+            ),
+        checkOut: () =>
+            wide(
+                'checkOut',
+                renderWindow('checkOut', t('listing.policies.checkOut.label', 'Check-out'))
+            ),
+        deposit: () =>
+            wide(
+                'deposit',
+                <DepositPolicyField
+                    t={t}
+                    idPrefix={idPrefix}
+                    errors={errors}
+                    deposit={policies.deposit}
+                    onChange={(value) => onChange('deposit', value)}
+                />
+            ),
+        spokenLanguages: () =>
+            wide(
+                'spokenLanguages',
+                <SpokenLanguagesField
+                    t={t}
+                    idPrefix={idPrefix}
+                    errors={errors}
+                    languages={policies.spokenLanguages}
+                    onChange={(value) => onChange('spokenLanguages', value)}
+                />
+            ),
         // Renders only while `eventsAllowed` is true; the caller lists it right
         // after `eventsAllowed` so the details sit under the yes/no.
-        eventsDetails: () => (
-            <EventsDetailsField
-                key="eventsDetails"
-                t={t}
-                idPrefix={idPrefix}
-                errors={errors}
-                eventsAllowed={policies.eventsAllowed}
-                details={policies.eventsDetails}
-                onChange={(value) => onChange('eventsDetails', value)}
-            />
-        ),
+        eventsDetails: () =>
+            wide(
+                'eventsDetails',
+                <EventsDetailsField
+                    t={t}
+                    idPrefix={idPrefix}
+                    errors={errors}
+                    eventsAllowed={policies.eventsAllowed}
+                    details={policies.eventsDetails}
+                    onChange={(value) => onChange('eventsDetails', value)}
+                />
+            ),
         reservations: () => (
-            <TextField
+            <Field
                 key="reservations"
-                as="select"
-                prefix={idPrefix}
-                name="policies.reservations"
+                locale={locale}
+                idParts={idOf('policies.reservations')}
                 label={t('listing.policies.reservations.label', 'Reservas')}
-                labelClassName={styles.groupTitle}
-                className={fieldStyles.input}
                 error={errors['policies.reservations']}
-                value={policies.reservations ?? ''}
-                onChange={(event) => {
-                    const value = event.target.value as VenueReservationPolicy | '';
-                    onChange('reservations', value === '' ? undefined : value);
-                }}
             >
-                <option value="">{notInformed}</option>
-                {VENUE_RESERVATION_POLICY_VALUES.map((value) => (
-                    <option
-                        key={value}
-                        value={value}
-                    >
-                        {t(`listing.policies.reservations.${value}`, value)}
-                    </option>
-                ))}
-            </TextField>
+                <Select
+                    value={policies.reservations ?? ''}
+                    onChange={(event) => {
+                        const value = event.target.value as VenueReservationPolicy | '';
+                        onChange('reservations', value === '' ? undefined : value);
+                    }}
+                >
+                    <option value="">{notInformed}</option>
+                    {VENUE_RESERVATION_POLICY_VALUES.map((value) => (
+                        <option
+                            key={value}
+                            value={value}
+                        >
+                            {t(`listing.policies.reservations.${value}`, value)}
+                        </option>
+                    ))}
+                </Select>
+            </Field>
         ),
         privateGroups: () =>
             renderTriState(
@@ -435,47 +439,48 @@ export function PoliciesPanel({
                     'Hago precio especial para grupos privados'
                 )
             ),
-        cancellation: () => (
-            <TextField
-                key="cancellation"
-                as="textarea"
-                prefix={idPrefix}
-                name="policies.cancellation"
-                label={t('listing.policies.cancellation.label', 'Política de cancelación')}
-                labelClassName={styles.groupTitle}
-                className={fieldStyles.textarea}
-                error={errors['policies.cancellation']}
-                maxLength={1500}
-                placeholder={t(
-                    'listing.policies.cancellation.placeholder',
-                    'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.'
-                )}
-                value={policies.cancellation ?? ''}
-                onChange={(event) =>
-                    onChange(
-                        'cancellation',
-                        event.target.value === '' ? undefined : event.target.value
-                    )
-                }
-            />
-        )
+        cancellation: () =>
+            wide(
+                'cancellation',
+                <Field
+                    locale={locale}
+                    idParts={idOf('policies.cancellation')}
+                    label={t('listing.policies.cancellation.label', 'Política de cancelación')}
+                    error={errors['policies.cancellation']}
+                >
+                    <Textarea
+                        limit={1500}
+                        locale={locale}
+                        placeholder={t(
+                            'listing.policies.cancellation.placeholder',
+                            'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.'
+                        )}
+                        value={policies.cancellation ?? ''}
+                        onChange={(event) =>
+                            onChange(
+                                'cancellation',
+                                event.target.value === '' ? undefined : event.target.value
+                            )
+                        }
+                    />
+                </Field>
+            )
     };
 
+    // The hosting page's kit `Section` gives the panel its title; the panel
+    // only renders the hint and the fields.
     return (
-        <fieldset
+        <div
             className={styles.panel}
             data-testid="policies-panel"
         >
-            <legend className={fieldStyles.label}>
-                {t('listing.policies.panelTitle', 'Políticas')}
-            </legend>
-            <p className={fieldStyles.hint}>
+            <p className={styles.hint}>
                 {t(
                     'listing.policies.panelHint',
                     'Lo que no completes se muestra como "no informado", nunca como un "no".'
                 )}
             </p>
-            {keys.map((key) => renderers[key]?.() ?? null)}
-        </fieldset>
+            <div className={styles.grid}>{keys.map((key) => renderers[key]?.() ?? null)}</div>
+        </div>
     );
 }

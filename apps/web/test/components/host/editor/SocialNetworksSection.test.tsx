@@ -9,6 +9,7 @@
  *   expected domain (nothing hidden/lost)
  * - Composes the full URL via onFieldChange when a handle is typed
  * - Displays inline validation errors
+ * - Renders as one kit Section with the contact page's help anchor (HOS-2488)
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -16,7 +17,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SocialNetworksSectionProps } from '@/components/host/editor/SocialNetworksSection.client';
 import { SocialNetworksSection } from '@/components/host/editor/SocialNetworksSection.client';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
@@ -25,10 +27,6 @@ vi.mock('@/lib/i18n', () => ({
 
 vi.mock('@/lib/cn', () => ({
     cn: (...classes: (string | undefined | false | null)[]) => classes.filter(Boolean).join(' ')
-}));
-
-vi.mock('@/components/host/editor/SocialNetworksSection.module.css', () => ({
-    default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
 const MOCK_DATA = {
@@ -71,9 +69,12 @@ const DEFAULT_PROPS: SocialNetworksSectionProps = {
 };
 
 describe('SocialNetworksSection', () => {
-    it('should render section title', () => {
+    it('should render one kit Section titled with the networks label', () => {
         render(<SocialNetworksSection {...DEFAULT_PROPS} />);
-        expect(screen.getByText('Redes sociales')).toBeInTheDocument();
+        expect(screen.getByRole('region', { name: 'Redes sociales' })).toHaveAttribute(
+            'data-help',
+            'section:accommodation.contacto'
+        );
     });
 
     it('should render all 6 social network fields', () => {
@@ -161,7 +162,9 @@ describe('SocialNetworksSection', () => {
             />
         );
 
-        expect(screen.getByRole('alert')).toHaveTextContent('URL de Facebook inválida');
+        expect(screen.getByLabelText(/facebook/i)).toHaveAccessibleDescription(
+            /URL de Facebook inválida/
+        );
         expect(screen.getByLabelText(/facebook/i)).toHaveAttribute('aria-invalid', 'true');
     });
 

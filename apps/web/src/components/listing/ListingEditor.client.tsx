@@ -26,48 +26,27 @@
  * keeps it in sync with the name while the listing is still a draft, then stops
  * auto-changing it once the listing is published (HOS-784 stage 1).
  *
- * Field-group coverage (SPEC-253 additions marked *, HOS-166 D-1 marked †):
- *   † name + destinationId (SPEC-239 decision #5 reversed — the owner now
- *     loads their own identity, see `VenueOwnerUpdateInputSchema`'s JSDoc)
- *   * type select (per-vertical enum, T-020)
- *   * summary textarea (min 10 / max 300, T-020)
- *   T-012 mechanics + richDescription
- *   T-013 simple fields (contactInfo — no website per AC-4)
- *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
- *   T-014 structured fields (openingHours)
- *   T-014 price group (venue: priceRange | experience: isPriceOnRequest + *priceFrom + *priceUnit)
- *   menuUrl lives in the carta section, not the price group (DEC-FAC-062)
- *   HOS-1048 meeting point (experience only: meetingPoint + optional lat/long)
- *   T-015 media gallery
- *   T-016 amenities / features
+ * The diff (`listing-patch-payload.ts`), the form-state readers
+ * (`listing-initial-data.ts`) and the field handlers (`use-listing-edit-state.ts`)
+ * live beside this island since HOS-2415 (AC-12, files ≤ 500 lines).
  */
 
 import {
     DUPLICATE_LOCATION_REASON,
     ExperienceOwnerUpdateInputSchema,
-    type OpeningHours,
     VenueOwnerUpdateInputSchema
 } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ZodTypeAny } from 'zod';
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { SaveOutcome } from '@/components/account/ui/use-save-bar';
-import { buildAmenityAttributesPayload } from '@/components/host/editor/amenity-attributes-payload';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { resolveBusinessLinesFieldError } from '@/components/listing/editor/BusinessLinesField.client';
-import { extractAmenityAttributes } from '@/lib/api/amenity-attributes';
 import { apiClient } from '@/lib/api/client';
-import type { AmenityAttributeValue, AmenityData } from '@/lib/api/types';
+import type { AmenityData } from '@/lib/api/types';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import {
-    buildListingPoliciesPatch,
-    LISTING_BASE_POLICY_KEYS,
-    type ListingPolicyKey,
-    parseListingPolicyValues,
-    setListingPolicy
-} from '@/lib/listing/listing-policies';
 import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import {
     buildLocationExceptionTarget,
@@ -75,10 +54,7 @@ import {
     toLocationExceptionVertical
 } from '@/lib/listing/location-exception';
 import type { ListingDetail, VenueOrExperience } from '@/lib/listing/owner-listings';
-import {
-    buildSlugRefreshPayload,
-    shouldOfferPublishedSlugRefresh
-} from '@/lib/listing-slug-refresh';
+import { shouldOfferPublishedSlugRefresh } from '@/lib/listing-slug-refresh';
 import { refineStrictContactPhone } from '@/lib/phone-editor-validation';
 import { addToast } from '@/store/toast-store';
 import {
@@ -86,22 +62,16 @@ import {
     LISTING_FIELD_ID_SUFFIXES,
     LISTING_FIELD_PREFIX
 } from './editor/field-ids';
-import {
-    type ContactValues,
-    type ListingEditData,
-    SOCIAL_KEYS,
-    type SocialValues
-} from './editor/listing-edit-data';
+import type { ListingEditData } from './editor/listing-edit-data';
+import { buildListingInitialEditData } from './editor/listing-initial-data';
+import { buildPatchPayload } from './editor/listing-patch-payload';
 import {
     type ListingEditorFormSectionId,
     restrictPayloadToSection
 } from './editor/listing-section-payload';
-import { buildLocationPatch, parseLocationValues } from './editor/location-values';
-import type { ListingPolicyChange } from './editor/PoliciesPanel.client';
-import { joinDuration, splitDuration } from './editor/PracticalInfoSection.client';
 import { LISTING_SECTION_RENDERERS } from './editor/section-renderers';
+import { useListingEditState } from './editor/use-listing-edit-state';
 import styles from './ListingEditor.module.css';
-import { type ListingI18nValues, parseListingI18nValues } from './ListingTranslationPanel.client';
 import { LocationExceptionRequestTrigger } from './LocationExceptionRequestTrigger.client';
 
 export interface ListingEditorProps {
@@ -138,497 +108,6 @@ export interface ListingEditorProps {
      */
     readonly destinationsLoadFailed?: boolean;
 }
-
-type SaveStatus =
-    | { readonly kind: 'idle' }
-    | { readonly kind: 'saving' }
-    | { readonly kind: 'success' }
-    | { readonly kind: 'error' };
-
-/** Read a nullable string field from an unknown record as a form-friendly string. */
-function strField(source: Record<string, unknown>, key: string): string {
-    const value = source[key];
-    return typeof value === 'string' ? value : '';
-}
-
-/**
- * Read a nullable numeric field as `number | null` (HOS-1048).
- *
- * Deliberately NOT `Number(value) || null`: a persisted `0` is a legitimate
- * coordinate and the falsy check would erase it into "no pin".
- */
-function numField(source: Record<string, unknown>, key: string): number | null {
-    const value = source[key];
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-/**
- * Read a `text[]` column as a readonly array of strings (HOS-1046).
- *
- * Anything that is not an array of strings collapses to `[]` — including the
- * key being absent, which is what a listing saved before the column existed
- * looks like. Non-string entries are dropped rather than coerced: `String(x)`
- * would turn a stray `null` into the literal item `"null"` and publish it as a
- * bullet on the ficha.
- */
-function strArrayField(source: Record<string, unknown>, key: string): readonly string[] {
-    const value = source[key];
-    if (!Array.isArray(value)) return [];
-    return value.filter((entry): entry is string => typeof entry === 'string');
-}
-
-/** Read one `{ es, en, pt }` JSONB field as three form-friendly strings. */
-function i18nTextField(
-    source: Record<string, unknown>,
-    key: string
-): { readonly es: string; readonly en: string; readonly pt: string } {
-    const value = source[key];
-    const record =
-        typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
-
-    return {
-        es: strField(record, 'es'),
-        en: strField(record, 'en'),
-        pt: strField(record, 'pt')
-    };
-}
-
-/** Whether every locale of a localized note is empty. */
-function isEmptyI18nText(value: {
-    readonly es: string;
-    readonly en: string;
-    readonly pt: string;
-}): boolean {
-    return value.es.trim() === '' && value.en.trim() === '' && value.pt.trim() === '';
-}
-
-/** Shallow equality for the two checklist arrays, used by the PATCH diff. */
-function sameStringList(a: readonly string[], b: readonly string[]): boolean {
-    return a.length === b.length && a.every((item, index) => item === b[index]);
-}
-
-/**
- * Map an emptied field to an explicit `null` rather than to `undefined`.
- *
- * `contactInfo` (HOS-1190) and `socialNetworks` (HOS-1262) are MERGEABLE JSONB
- * columns on `VenueModel` and `ExperienceModel` (following the `users`
- * precedent of HOS-375), so
- * the PATCH is shallow-merged into the stored object with PostgreSQL `||`
- * instead of replacing it. Under merge semantics an OMITTED key means "leave
- * the stored value alone", so expressing a clear by omission would make an
- * emptied field silently un-saveable: the owner blanks their phone (or their
- * Instagram), the request succeeds, and the old value is still on the ficha.
- *
- * `null` is the clear. Every field of the shared `ContactInfoSchema` and
- * `SocialNetworkSchema` is `.nullish()` for exactly this reason, so `null`
- * validates while an invalid non-empty phone reports `zodError.common.contact.phone.argentina`,
- * `zodError.common.social.*.invalid`) — the empty string is not an option here.
- */
-function nullWhenEmpty(value: string): string | null {
-    return value || null;
-}
-
-/**
- * Structural comparison for the nested values (openingHours, media, i18n).
- *
- * A serialization compare is key-order sensitive, so it can report a change
- * where none exists. That direction is harmless: a false positive sends a
- * redundant-but-correct value in the PATCH. The dangerous direction — reporting
- * "unchanged" for a real edit, which would silently drop the owner's work —
- * cannot be produced by key reordering, only by equal content. Every value
- * compared here is rebuilt by spreading the previous object, so ordering is
- * stable in practice anyway.
- *
- * `i18nValues`'s four members are diffed and sent ONE AT A TIME (HOS-902), not
- * as the single blob this used to be, so editing only `summaryI18n` never
- * re-sends `nameI18n`/`descriptionI18n`/`richDescriptionI18n` at all. This
- * matters because `parseListingI18nValues` is intentionally fallback-free —
- * `current`/`baseline` always hold the REAL stored i18n values, nothing
- * fabricated — but `nameI18n`/`summaryI18n`/`descriptionI18n`/
- * `richDescriptionI18n` are each a single JSONB column replaced WHOLESALE on
- * save, not merged per locale (`venue.model.ts`/`experience.model.ts`
- * do not list them in `mergeableJsonbColumns`, only `contactInfo` is there —
- * see `packages/db/src/base/base.model.ts:387-393`). So a per-FIELD diff
- * (not per-locale) is exactly right: it must still send the whole
- * `I18nLocaleValues` object of a changed field (all three locales — the
- * column can't be updated one locale at a time), while never touching a
- * sibling field the owner did not edit.
- */
-function sameValue(a: unknown, b: unknown): boolean {
-    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-}
-
-/** Set equality by membership (order-independent). */
-function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
-    return a.size === b.size && [...a].every((id) => b.has(id));
-}
-
-/**
- * Build the PATCH body as the diff between the edited form and the last
- * persisted snapshot.
- *
- * This is NOT a uniform per-leaf diff, and the asymmetries are load-bearing:
- *
- *  - `contactInfo` / `socialNetworks` are JSONB blocks that ship WHOLE whenever
- *    any member changed. Both are MERGED (`||`) at the DB layer (HOS-1190,
- *    HOS-1262), so the whole block is no longer strictly required — it is kept
- *    because it is what makes the clear explicit: every member is sent, and an
- *    emptied one is sent as `null` via `nullWhenEmpty`, because under merge an
- *    omitted key means "keep the stored value".
- *  - The four i18n fields are diffed and sent INDEPENDENTLY, per field (HOS-902;
- *    they used to travel together as one unit). Each field is still a single
- *    JSONB column replaced wholesale (all three locales at once — see
- *    `sameValue`'s JSDoc above for the DB-level reason), so editing
- *    `nameI18n.en` sends the WHOLE `nameI18n` object including its untouched
- *    `es`/`pt`. That is safe ONLY because `parseListingI18nValues` never
- *    fabricates a value — the ES display fallback for an empty i18n field
- *    lives exclusively in `ListingTranslationPanel`'s render path
- *    (`resolveDisplayValue`) and is never written into `current`/`baseline`.
- *    An earlier version of this fix baked that fallback into
- *    `parseListingI18nValues` itself, which broke exactly this case: editing
- *    ONE locale of a field would re-send its OTHER locale's fallback display
- *    text as if the owner had typed it, permanently overwriting the i18n
- *    column with content the plain `name`/`summary`/`description`/
- *    `richDescription` column held instead.
- *  - Venue's `priceRange` is `.nullish()` on the domain schema
- *    and clears to an explicit `null`. `priceUnit` now joins it (H-156 made the
- *    column nullable), so clearing it sends `null` rather than omitting the key
- *    — the old omit-instead-of-null rule (T-021) meant the owner could never
- *    actually clear a unit once set. Experience's `priceFrom` is still NOT
- *    nullable and keeps omitting the key.
- *  - `menuUrl` is NOT part of this diff any more (DEC-FAC-062): it belongs to
- *    the carta section and is saved by `VenueMenuLinkField` with its own
- *    one-key PATCH, never by the price page.
- *  - Experience's three `meetingPoint*` fields (HOS-1048) follow the `priceUnit`
- *    rule, not the `priceFrom` one: all three are `.nullish()`, so clearing one
- *    sends an explicit `null`. They ship only on the experience branch, because
- *    they exist only on `ExperienceOwnerUpdateInputSchema`.
- *  - `media` is absent by design (HOS-372): photos are persisted per operation
- *    by `MediaSection` against the relational media endpoints, so re-sending a
- *    buffered `media` block here would overwrite the rows the owner just saved.
- */
-function buildPatchPayload({
-    current,
-    baseline,
-    vertical,
-    publicationStatus
-}: {
-    current: ListingEditData;
-    baseline: ListingEditData;
-    vertical: VenueOrExperience;
-    publicationStatus?: string | null;
-}): Record<string, unknown> {
-    const payload: Record<string, unknown> = {};
-
-    if (current.name !== baseline.name) {
-        payload.name = current.name;
-    }
-    if (current.destinationId !== baseline.destinationId) {
-        payload.destinationId = current.destinationId || undefined;
-    }
-    if (current.listingType !== baseline.listingType) {
-        payload.type = current.listingType || undefined;
-    }
-    if (!sameStringList(current.businessLines, baseline.businessLines)) {
-        // `[]` is not a legitimate state (the selector keeps one minimum), so
-        // an empty diff can only be the initial load of a row with no column.
-        payload.businessLines = [...current.businessLines];
-    }
-    if (current.summary !== baseline.summary) {
-        payload.summary = current.summary || undefined;
-    }
-    if (current.description !== baseline.description) {
-        payload.description = current.description || undefined;
-    }
-    Object.assign(
-        payload,
-        buildSlugRefreshPayload({
-            currentPublicationStatus: publicationStatus,
-            initialName: baseline.name,
-            currentName: current.name,
-            refreshSlugFromName: current.refreshSlugFromName
-        })
-    );
-    if (current.richDescription !== baseline.richDescription) {
-        payload.richDescription = current.richDescription;
-    }
-
-    // HOS-902: per-FIELD, NOT the whole `i18nValues` object at once — see the
-    // JSDoc above `buildPatchPayload` and above `sameValue` for why this keeps
-    // an untouched sibling field out of the payload entirely (each field is
-    // still sent whole across its three locales, never a fabricated value).
-    if (!sameValue(current.i18nValues.nameI18n, baseline.i18nValues.nameI18n)) {
-        payload.nameI18n = current.i18nValues.nameI18n;
-    }
-    if (!sameValue(current.i18nValues.summaryI18n, baseline.i18nValues.summaryI18n)) {
-        payload.summaryI18n = current.i18nValues.summaryI18n;
-    }
-    if (!sameValue(current.i18nValues.descriptionI18n, baseline.i18nValues.descriptionI18n)) {
-        payload.descriptionI18n = current.i18nValues.descriptionI18n;
-    }
-    if (
-        !sameValue(current.i18nValues.richDescriptionI18n, baseline.i18nValues.richDescriptionI18n)
-    ) {
-        payload.richDescriptionI18n = current.i18nValues.richDescriptionI18n;
-    }
-
-    // HOS-2256: the venue WhatsApp number rides the same merged `contactInfo`
-    // block, and like the landline its key travels only when it changed, so a
-    // listing that never had one is not given an explicit `null` (an experience
-    // never changes it, so it never reaches that payload).
-    const whatsappChanged = current.whatsapp !== baseline.whatsapp;
-    if (!sameValue(current.contact, baseline.contact) || whatsappChanged) {
-        payload.contactInfo = {
-            mobilePhone: nullWhenEmpty(current.contact.mobilePhone),
-            // HOS-2042: the landline is optional and MERGED server-side, so a
-            // listing that never had one must not get an explicit `null` written
-            // just because another contact field changed (AC-3: stored data stays
-            // as it was). The key travels only when there is a value to save or a
-            // stored value to clear.
-            ...(current.contact.workPhone !== '' || baseline.contact.workPhone !== ''
-                ? { workPhone: nullWhenEmpty(current.contact.workPhone) }
-                : {}),
-            workEmail: nullWhenEmpty(current.contact.workEmail),
-            ...(whatsappChanged ? { whatsapp: nullWhenEmpty(current.whatsapp) } : {})
-        };
-    }
-
-    if (SOCIAL_KEYS.some((key) => current.social[key] !== baseline.social[key])) {
-        payload.socialNetworks = {
-            facebook: nullWhenEmpty(current.social.facebook),
-            instagram: nullWhenEmpty(current.social.instagram),
-            twitter: nullWhenEmpty(current.social.twitter),
-            tiktok: nullWhenEmpty(current.social.tiktok),
-            youtube: nullWhenEmpty(current.social.youtube),
-            linkedIn: nullWhenEmpty(current.social.linkedIn)
-        };
-    }
-
-    if (!sameValue(current.openingHours, baseline.openingHours)) {
-        payload.openingHours = current.openingHours;
-    }
-
-    if (!sameSet(current.amenityIds, baseline.amenityIds)) {
-        payload.amenityIds = [...current.amenityIds];
-    }
-    if (!sameSet(current.featureIds, baseline.featureIds)) {
-        payload.featureIds = [...current.featureIds];
-    }
-    // HOS-2061: the same `amenityAttributes` contract as the accommodation
-    // editor — only the CHECKED amenities with a declaration, sent only when
-    // the effective list changed by value.
-    Object.assign(
-        payload,
-        buildAmenityAttributesPayload({
-            values: {
-                amenityIds: [...current.amenityIds],
-                amenityAttributes: current.amenityAttributes
-            },
-            baseline: {
-                amenityIds: [...baseline.amenityIds],
-                amenityAttributes: baseline.amenityAttributes
-            }
-        })
-    );
-
-    Object.assign(payload, VERTICAL_PATCH_FIELDS[vertical]({ current, baseline }));
-
-    // HOS-2060: house rules travel as a PATCH object — only the keys that
-    // changed, `null` for a removed key — because the API shallow-merges
-    // `policies` per key. `restrictPayloadToSection` then keeps the keys the
-    // page's catalog section owns (nightInfo's three, or the rest).
-    const policies = buildListingPoliciesPatch({
-        current: current.policies,
-        baseline: baseline.policies,
-        keys: VERTICAL_POLICY_KEYS[vertical]
-    });
-    if (policies) {
-        payload.policies = policies;
-    }
-
-    return payload;
-}
-
-/**
- * The policy keys each vertical's owner update schema accepts (HOS-2060):
- * the shared base plus the vertical's own (`VenuePoliciesSchema`,
- * `ExperiencePoliciesSchema`). A record, not a branch on a vertical literal
- * (G-FAC-05).
- */
-const VERTICAL_POLICY_KEYS: Readonly<Record<VenueOrExperience, readonly ListingPolicyKey[]>> = {
-    venue: [
-        ...LISTING_BASE_POLICY_KEYS,
-        'reservations',
-        'minAge',
-        'minAgeScope',
-        'dressCode',
-        'dressCodeNote'
-    ],
-    experience: [...LISTING_BASE_POLICY_KEYS, 'privateGroups', 'cancellation']
-};
-
-/** The two form snapshots one vertical's own field diff reads. */
-interface VerticalPatchFieldsArgs {
-    readonly current: ListingEditData;
-    readonly baseline: ListingEditData;
-}
-
-/** Visibility a venue WhatsApp number gets when the owner never picked one (HOS-2557). */
-const DEFAULT_WHATSAPP_VISIBILITY = 'PUBLIC';
-
-/**
- * Fields only the venue update schema owns: the price tier and nightInfo.
- *
- * Per-vertical payload rules live in a record of builders rather than in an
- * `if (vertical === 'venue')` branch: G-FAC-05 (leaf 5.8) forbids the editor
- * from deciding by a vertical literal. Behaviour is unchanged.
- *
- * Every writable nightInfo field clears to `null`; `entryPriceUpdatedAt` is
- * server-managed and never appears here. Changing `entryKind` to `null` is what
- * makes the server drop both the price and its timestamp (4.2), so the price is
- * not forcibly cleared alongside it.
- */
-function buildVenuePatchFields({
-    current,
-    baseline
-}: VerticalPatchFieldsArgs): Record<string, unknown> {
-    const payload: Record<string, unknown> = {};
-
-    if (current.priceRange !== baseline.priceRange) {
-        payload.priceRange = current.priceRange || null;
-    }
-    // HOS-2256: who may see the WhatsApp button. Writable only through the
-    // venue update schema, hence here and not in the shared diff.
-    if (current.whatsappVisibility !== baseline.whatsappVisibility) {
-        payload.whatsappVisibility = current.whatsappVisibility || null;
-    } else if (
-        // HOS-2557: "public" is the default. The radio shows it while nothing is
-        // stored, so a number entered for the first time saves it with the number
-        // (an owner's explicit pick, sent above, always wins).
-        current.whatsappVisibility === '' &&
-        current.whatsapp !== '' &&
-        current.whatsapp !== baseline.whatsapp
-    ) {
-        payload.whatsappVisibility = DEFAULT_WHATSAPP_VISIBILITY;
-    }
-    const location = buildLocationPatch({ current: current.location, baseline: baseline.location });
-    if (location) {
-        payload.location = location;
-    }
-    if (current.entryKind !== baseline.entryKind) {
-        payload.entryKind = current.entryKind || null;
-    }
-    if (current.entryPriceFrom !== baseline.entryPriceFrom) {
-        payload.entryPriceFrom = current.entryPriceFrom;
-    }
-    if (!sameValue(current.entryNoteI18n, baseline.entryNoteI18n)) {
-        payload.entryNoteI18n = isEmptyI18nText(current.entryNoteI18n)
-            ? null
-            : current.entryNoteI18n;
-    }
-
-    return payload;
-}
-
-/**
- * Fields only the experience update schema owns: price-on-request, the starting
- * price and unit, the meeting point and the practical info.
- *
- * See {@link buildVenuePatchFields} for why this is a record entry rather than
- * an `else` branch.
- */
-function buildExperiencePatchFields({
-    current,
-    baseline
-}: VerticalPatchFieldsArgs): Record<string, unknown> {
-    const payload: Record<string, unknown> = {};
-
-    if (current.isPriceOnRequest !== baseline.isPriceOnRequest) {
-        payload.isPriceOnRequest = current.isPriceOnRequest;
-    }
-    if (current.priceFrom !== baseline.priceFrom) {
-        payload.priceFrom = current.priceFrom ?? undefined;
-    }
-    if (current.priceUnit !== baseline.priceUnit) {
-        // H-156: `priceUnit` is nullable now, so clearing it sends an
-        // explicit `null` (the venue `priceRange` pattern) instead of
-        // omitting the key. Omitting used to be the only option — a `null`
-        // failed validation — but it also meant the owner could never
-        // actually clear the unit after ticking "price on request": the PATCH
-        // silently dropped the change and the stale unit stayed on the row.
-        payload.priceUnit = current.priceUnit || null;
-    }
-    // HOS-1048: the meeting point clears to an explicit `null`, like the
-    // venue price fields and unlike `priceFrom`. The column is nullable
-    // and the schema is `.nullish()`, so `null` is the only way to say "I
-    // removed the address I had" — omitting the key would mean "no change"
-    // and the stale meeting point would survive the save silently, which is
-    // exactly the bug H-156 had to fix for `priceUnit`.
-    if (current.meetingPoint !== baseline.meetingPoint) {
-        payload.meetingPoint = current.meetingPoint || null;
-    }
-    if (current.meetingPointLat !== baseline.meetingPointLat) {
-        payload.meetingPointLat = current.meetingPointLat;
-    }
-    if (current.meetingPointLong !== baseline.meetingPointLong) {
-        payload.meetingPointLong = current.meetingPointLong;
-    }
-    // HOS-1049: `[]` is a meaningful value, not an absence — it is how the
-    // owner removes every instruction, exactly as with `whatToBring`. The
-    // key ships whenever the list differs, empty or not.
-    //
-    // Deliberately NOT also guarded on `meetingPointDirectionsEnabled`. A
-    // first draft was, and the guard turned out to be unreachable: current
-    // and baseline are seeded from the same payload, so they can only differ
-    // after an edit, and an unentitled provider's control is `disabled` and
-    // cannot be edited. An unreachable branch that no test can kill is worse
-    // than no branch — it reads as protection and provides none. The
-    // affordance is `disabled`; the ENFORCEMENT is the API's field gate,
-    // which refuses this key with a 403 regardless of what any client sends.
-    if (!sameStringList(current.meetingPointDirections, baseline.meetingPointDirections)) {
-        payload.meetingPointDirections = [...current.meetingPointDirections];
-    }
-
-    // HOS-898: two boxes, one column. The diff has to be taken on the JOINED
-    // value, not on the two halves — a change from 90 minutes to 1 h 30 min
-    // moves both boxes and changes nothing the row can tell apart, and
-    // emitting it would mark the form dirty and trip the unsaved-changes
-    // guard over a no-op.
-    const currentDuration = joinDuration({
-        hours: current.durationHours,
-        minutes: current.durationMinutesPart
-    });
-    const baselineDuration = joinDuration({
-        hours: baseline.durationHours,
-        minutes: baseline.durationMinutesPart
-    });
-    if (currentDuration !== baselineDuration) {
-        // Explicit `null` when both boxes are emptied, for the same reason
-        // as the meeting point: omitting the key means "no change" and the
-        // stale duration would survive the save in silence.
-        payload.durationMinutes = currentDuration;
-    }
-
-    // HOS-1046: `[]` is a meaningful value here, not an absence — it is how
-    // the owner removes every item. So the key ships whenever the list
-    // differs, empty or not; only an UNCHANGED list is omitted.
-    if (!sameStringList(current.whatToBring, baseline.whatToBring)) {
-        payload.whatToBring = [...current.whatToBring];
-    }
-    if (!sameStringList(current.requirements, baseline.requirements)) {
-        payload.requirements = [...current.requirements];
-    }
-
-    return payload;
-}
-
-/** The extra per-vertical field diff each vertical's update schema accepts. */
-const VERTICAL_PATCH_FIELDS: Readonly<
-    Record<VenueOrExperience, (args: VerticalPatchFieldsArgs) => Record<string, unknown>>
-> = {
-    venue: buildVenuePatchFields,
-    experience: buildExperiencePatchFields
-};
 
 /**
  * Client-side validation schemas: the real owner-update schemas (the same ones
@@ -688,222 +167,35 @@ export function ListingEditor({
         aggregateFields: LISTING_AGGREGATE_FIELDS
     });
 
-    // TYPE-WORKAROUND: the detail is a venue|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
+    // HOS-372: media is never buffered here (MediaSection persists per
+    // operation on its own route). The readers live in `listing-initial-data.ts`.
+    const buildInitialEditData = (): ListingEditData =>
+        buildListingInitialEditData({ initialData });
+    const {
+        formData,
+        setFormData,
+        baseline,
+        setBaseline,
+        status,
+        setStatus,
+        onFieldChange,
+        updateContact,
+        updateLocation,
+        updateSocial,
+        onPolicyChange,
+        toggleAmenity,
+        changeAmenityAttribute,
+        toggleFeature,
+        handleI18nChange
+    } = useListingEditState({ buildInitialEditData });
+    // TYPE-WORKAROUND: the detail is a venue|experience union; the publication status is read by key.
     const data = initialData as unknown as Record<string, unknown>;
-    const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
-    const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
-
-    // HOS-372: media is not buffered in this editor's state at all. MediaSection
-    // is self-contained (per-operation persistence against the relational
-    // venue_media / experience_media endpoints — see its file header) and
-    // hydrates its own state from the API; since HOS-1080 it is mounted by its
-    // own route rather than by this island, so nothing about photos reaches
-    // here.
-
-    // HOS-166 D-1: name + destinationId + description are identity fields the
-    // owner may edit (description was widened alongside name/destinationId on
-    // the schema — see `VenueOwnerUpdateInputSchema`/
-    // `ExperienceOwnerUpdateInputSchema` — but the FORM never exposed it,
-    // leaving it settable only at create, contradicting AC-19).
-    const buildInitialEditData = (): ListingEditData => ({
-        name: strField(data, 'name'),
-        destinationId: strField(data, 'destinationId'),
-        description: strField(data, 'description'),
-        // T-020: type select state (per-vertical enum value)
-        listingType: strField(data, 'type'),
-        // HOS-1787 leaf 5.6 — the venue's current business lines, read from the
-        // protected detail (VenueProtectedSchema) so the selector opens seeded.
-        businessLines: strArrayField(data, 'businessLines'),
-        // T-020: summary (min 10 / max 300) — validated by `schema` through
-        // `fieldErrors.summary`; no local ad hoc check.
-        summary: strField(data, 'summary'),
-        richDescription: strField(data, 'richDescription'),
-        // T-020: website removed from contact per AC-4; mobilePhone + workPhone (landline, HOS-2042) + workEmail only
-        contact: {
-            mobilePhone: strField(initialContact, 'mobilePhone'),
-            workPhone: strField(initialContact, 'workPhone'),
-            workEmail: strField(initialContact, 'workEmail')
-        },
-        // HOS-2189: venue postal address; an experience reads it as empty and
-        // `buildPatchPayload` never emits it for that vertical.
-        // HOS-2256: venue WhatsApp number and who may see the button; an
-        // experience reads them as empty and never sends them.
-        whatsapp: strField(initialContact, 'whatsapp'),
-        whatsappVisibility: strField(data, 'whatsappVisibility'),
-        location: parseLocationValues({ raw: data.location }),
-        // T-020: added linkedIn to social per AC-4
-        social: {
-            facebook: strField(initialSocial, 'facebook'),
-            instagram: strField(initialSocial, 'instagram'),
-            twitter: strField(initialSocial, 'twitter'),
-            tiktok: strField(initialSocial, 'tiktok'),
-            youtube: strField(initialSocial, 'youtube'),
-            linkedIn: strField(initialSocial, 'linkedIn')
-        },
-        openingHours: (data.openingHours as OpeningHours | null | undefined) ?? null,
-        priceRange: strField(data, 'priceRange'),
-        isPriceOnRequest: data.isPriceOnRequest === true,
-        // T-021: experience-only pricing fields
-        priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,
-        priceUnit: strField(data, 'priceUnit'),
-        // HOS-1787 leaf 5.1: nightlife fields. The two notes are always all
-        // three locales as strings; clearing every locale is a `null` in the
-        // PATCH, so `buildPatchPayload` decides that, not this loader.
-        entryKind: strField(data, 'entryKind'),
-        entryNoteI18n: i18nTextField(data, 'entryNoteI18n'),
-        entryPriceFrom: numField(data, 'entryPriceFrom'),
-        entryPriceUpdatedAt:
-            typeof data.entryPriceUpdatedAt === 'string'
-                ? data.entryPriceUpdatedAt
-                : data.entryPriceUpdatedAt instanceof Date
-                  ? data.entryPriceUpdatedAt.toISOString()
-                  : null,
-        // HOS-1048: experience-only; a venue listing simply reads them as
-        // empty/null and `buildPatchPayload` never emits them for that vertical.
-        meetingPoint: strField(data, 'meetingPoint'),
-        meetingPointLat: numField(data, 'meetingPointLat'),
-        meetingPointLong: numField(data, 'meetingPointLong'),
-        // HOS-1049: the value round-trips for everyone; the flag beside it is
-        // what decides whether the control is editable. Absent reads as NOT
-        // entitled — the one direction where guessing gives the product away.
-        meetingPointDirections: strArrayField(data, 'meetingPointDirections'),
-        meetingPointDirectionsEnabled: data.meetingPointDirectionsEnabled === true,
-        // HOS-898: one stored column, two boxes. `splitDuration` runs ONCE here
-        // and never again on re-render, which is what stops the boxes from
-        // rewriting themselves while the owner types.
-        durationHours: splitDuration({ totalMinutes: numField(data, 'durationMinutes') }).hours,
-        durationMinutesPart: splitDuration({
-            totalMinutes: numField(data, 'durationMinutes')
-        }).minutes,
-        // HOS-1046: experience-only, same as the meeting point above — a venue
-        // listing reads them as empty and `buildPatchPayload` never emits them
-        // for that vertical.
-        whatToBring: strArrayField(data, 'whatToBring'),
-        requirements: strArrayField(data, 'requirements'),
-        // HOS-2060: house rules, including the venue night keys and the
-        // experience cancellation text / private groups.
-        policies: parseListingPolicyValues({ raw: data.policies }),
-        amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
-        // HOS-2061: declared scope/availability read back by the protected getById.
-        amenityAttributes: extractAmenityAttributes(
-            data.amenityAttributes as readonly Record<string, unknown>[] | undefined
-        ),
-        featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
-        // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
-        i18nValues: parseListingI18nValues(data),
-        refreshSlugFromName: false
-    });
-
-    const [formData, setFormData] = useState<ListingEditData>(buildInitialEditData);
-    // The PATCH diff is computed against this MUTABLE baseline, resynced to the
-    // persisted values after every successful save — mirroring the accommodation
-    // editor (HOS-190 F6). Diffing against the load-time `initialData` prop
-    // instead would make reverting a just-saved field produce an empty diff
-    // while the DB still held the new value, leaving the owner unable to undo
-    // the change without a full page reload.
-    const [baseline, setBaseline] = useState<ListingEditData>(buildInitialEditData);
 
     const currentPublicationStatus = String(data.publicationStatus ?? 'DRAFT');
 
-    const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
     /** HOS-2192: the address of the save refused with 409 `DUPLICATE_LOCATION`, to request an exception for it. */
     const exceptionVertical = toLocationExceptionVertical({ vertical });
     const [refusedTarget, setRefusedTarget] = useState<LocationExceptionTarget | null>(null);
-
-    /**
-     * Generic single-field change, shared by every scalar input in the form —
-     * the venue/experience counterpart of the accommodation editor's
-     * `handleTextFieldChange`. Resets any stale save status, exactly as the
-     * former `markDirty` did.
-     */
-    const onFieldChange = useCallback(
-        <K extends keyof ListingEditData>(field: K, value: ListingEditData[K]) => {
-            setFormData((prev) => ({ ...prev, [field]: value }));
-            setStatus({ kind: 'idle' });
-        },
-        []
-    );
-
-    const updateContact = useCallback((patch: Partial<ContactValues>) => {
-        setFormData((prev) => ({ ...prev, contact: { ...prev.contact, ...patch } }));
-        setStatus({ kind: 'idle' });
-    }, []);
-
-    const updateSocial = useCallback((key: keyof SocialValues, val: string) => {
-        setFormData((prev) => ({ ...prev, social: { ...prev.social, [key]: val } }));
-        setStatus({ kind: 'idle' });
-    }, []);
-
-    /** Sets or removes (`undefined`) one house-rule key (HOS-2060). */
-    const onPolicyChange: ListingPolicyChange = useCallback((key, value) => {
-        setFormData((prev) => ({
-            ...prev,
-            policies: setListingPolicy({ policies: prev.policies, key, value })
-        }));
-        setStatus({ kind: 'idle' });
-    }, []);
-
-    const toggleAmenity = useCallback((id: string) => {
-        setFormData((prev) => {
-            const next = new Set(prev.amenityIds);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return { ...prev, amenityIds: next };
-        });
-        setStatus({ kind: 'idle' });
-    }, []);
-
-    /** Sets one declared attribute of a checked amenity (HOS-2061). */
-    const changeAmenityAttribute = useCallback(
-        <K extends keyof AmenityAttributeValue>(
-            amenityId: string,
-            field: K,
-            value: AmenityAttributeValue[K]
-        ) => {
-            setFormData((prev) => ({
-                ...prev,
-                amenityAttributes: {
-                    ...prev.amenityAttributes,
-                    [amenityId]: {
-                        ...(prev.amenityAttributes[amenityId] ?? {
-                            scope: null,
-                            availability: null
-                        }),
-                        [field]: value
-                    }
-                }
-            }));
-            setStatus({ kind: 'idle' });
-        },
-        []
-    );
-
-    const toggleFeature = useCallback((id: string) => {
-        setFormData((prev) => {
-            const next = new Set(prev.featureIds);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return { ...prev, featureIds: next };
-        });
-        setStatus({ kind: 'idle' });
-    }, []);
-
-    /**
-     * Handle i18n panel changes. The callback always carries the FULL
-     * `ListingI18nValues` shape (that is the panel's state), but the PATCH
-     * diff (`buildPatchPayload`) still compares and sends each of the four
-     * fields independently — see its JSDoc (HOS-902).
-     */
-    const handleI18nChange = useCallback((updated: ListingI18nValues) => {
-        setFormData((prev) => ({ ...prev, i18nValues: updated }));
-        setStatus({ kind: 'idle' });
-    }, []);
 
     /**
      * The PATCH body: the diff between the edited form and the last persisted
@@ -948,7 +240,7 @@ export function ListingEditor({
         if (!shouldOfferSlugRefresh && formData.refreshSlugFromName) {
             setFormData((prev) => ({ ...prev, refreshSlugFromName: false }));
         }
-    }, [formData.refreshSlugFromName, shouldOfferSlugRefresh]);
+    }, [formData.refreshSlugFromName, shouldOfferSlugRefresh, setFormData]);
 
     const save = useCallback(async (): Promise<SaveOutcome> => {
         // HOS-816: retire the previous attempt's banner as this one STARTS.
@@ -1079,7 +371,10 @@ export function ListingEditor({
         validate,
         handleApiError,
         setFormError,
-        t
+        t,
+        setBaseline,
+        setFormData,
+        setStatus
     ]);
 
     const isSaving = status.kind === 'saving';
@@ -1126,7 +421,7 @@ export function ListingEditor({
         reset();
         setRefusedTarget(null);
         setStatus({ kind: 'idle' });
-    }, [baseline, reset]);
+    }, [baseline, reset, setStatus, setFormData]);
 
     // HOS-373 / HOS-2487: the leave warning lives in the `EditorSaveBar` below
     // (`useSaveBar` → the shared guard), fed by the same diff as the save.
@@ -1156,6 +451,7 @@ export function ListingEditor({
                 onFieldChange,
                 onPolicyChange,
                 onContactChange: updateContact,
+                onLocationChange: updateLocation,
                 onSocialChange: updateSocial,
                 onToggleAmenity: toggleAmenity,
                 onToggleFeature: toggleFeature,

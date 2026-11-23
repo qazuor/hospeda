@@ -24,7 +24,10 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     },
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
-vi.mock('@/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
+vi.mock('@/lib/env', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/env')>()),
+    getApiUrl: () => 'http://api.test'
+}));
 vi.mock('@/components/listing/editor/BusinessLinesField.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));

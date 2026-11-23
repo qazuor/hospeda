@@ -72,6 +72,17 @@ afterEach(() => {
 });
 
 describe('ServicesForm amenityAttributes (HOS-2058, dialog since HOS-2123)', () => {
+    it('is one kit Section anchored to the accommodation servicios page (HOS-2488)', () => {
+        // Arrange + Act
+        const { container } = renderForm();
+
+        // Assert
+        const sections = container.querySelectorAll('[data-kit-section]');
+        expect(sections).toHaveLength(1);
+        expect(sections[0]).toHaveAttribute('data-help', 'section:accommodation.servicios');
+        expect(container.querySelector('fieldset > legend')).toBeNull();
+    });
+
     it('summarizes the declared values next to the selected tile', () => {
         renderForm();
 

@@ -77,6 +77,22 @@ export {
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
+export {
+    copyHoursDayToAll,
+    HOURS_DEFAULT_SLOT,
+    HOURS_WEEKDAYS,
+    type HoursBound,
+    type HoursDay,
+    HoursEditor,
+    type HoursEditorProps,
+    type HoursSlot,
+    type HoursWeek,
+    type HoursWeekday,
+    removeHoursSlot,
+    toggleHoursDay,
+    weekdayName,
+    withHoursDay
+} from './HoursEditor';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { type KeyValueItem, KeyValueList, type KeyValueListProps } from './KeyValueList';

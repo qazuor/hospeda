@@ -14,7 +14,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListingCreateForm } from '../../../src/components/listing/ListingCreateForm.client';
 import type { ListingDetail } from '../../../src/lib/listing/owner-listings';
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string) =>
             key === 'venue.typeDescriptions.BOLICHE'
@@ -216,10 +217,12 @@ describe('ListingCreateForm', () => {
 
             fireEvent.click(screen.getByTestId('listing-create-submit'));
 
-            const messages = await screen.findAllByRole('alert');
-            expect(messages.map((element) => element.textContent ?? '')).toContain(
-                'Este tipo de comercio no admite ese rubro'
-            );
+            // HOS-2488: the kit group describes itself by its error paragraph.
+            await waitFor(() => {
+                expect(screen.getByRole('group', { name: 'Rubros' })).toHaveAccessibleDescription(
+                    expect.stringContaining('Este tipo de comercio no admite ese rubro')
+                );
+            });
         });
 
         it('does not render the business-line fieldset for an experience (AC:5:9)', () => {

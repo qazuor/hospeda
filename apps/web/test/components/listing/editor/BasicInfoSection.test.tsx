@@ -10,7 +10,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { BasicInfoSection } from '../../../../src/components/listing/editor/BasicInfoSection.client';
 import { buildEditData } from './edit-data-fixture';
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             // `summaryHint` exists in the real catalog as the "{{count}}/300"
@@ -175,9 +176,10 @@ describe('BasicInfoSection', () => {
     it('interpolates the summary counter instead of printing the template (BETA-124)', () => {
         renderSection({ data: buildEditData({ summary: 'hello world!' }) });
 
-        const hint = screen.getByText('12/300');
+        // The kit Textarea renders the counter from `account.ui.charCount`.
+        const hint = screen.getByText('12 de 300 caracteres');
         expect(hint).toBeInTheDocument();
-        expect(hint.textContent).not.toContain('{{count}}');
+        expect(hint.textContent).not.toContain('{{');
     });
 
     describe('destination branches (HOS-260)', () => {
@@ -216,18 +218,15 @@ describe('BasicInfoSection', () => {
             'aria-invalid',
             'true'
         );
-        expect(screen.getByLabelText('Descripción')).toHaveAttribute('aria-invalid', 'false');
+        expect(screen.getByLabelText('Descripción')).not.toHaveAttribute('aria-invalid');
     });
 
     it('points the summary field at the counter when there is no error', () => {
         renderSection();
 
-        // The hint doubles as the described-by target while the field is valid,
+        // The kit counter is the described-by target while the field is valid,
         // so the character count is announced to screen readers.
-        expect(screen.getByLabelText('Resumen')).toHaveAttribute(
-            'aria-describedby',
-            'ce-summary-hint'
-        );
+        expect(screen.getByLabelText('Resumen')).toHaveAccessibleDescription(/de 300 caracteres/);
     });
 
     it('renders the scrollspy anchor the section nav will target', () => {

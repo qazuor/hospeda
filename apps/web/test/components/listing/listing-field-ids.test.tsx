@@ -242,7 +242,7 @@ function idFor(name: string): string {
  */
 function isFocusableControl(element: HTMLElement): boolean {
     return (
-        ['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName) ||
+        ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(element.tagName) ||
         element.getAttribute('contenteditable') === 'true' ||
         element.hasAttribute('tabindex')
     );
@@ -300,9 +300,12 @@ describe('listing editor — derived field ids (HOS-385 AC-5)', () => {
                     const element = document.getElementById(idFor(key));
 
                     if (GROUP_CONTAINER_KEYS.has(key) && vertical === 'venue') {
-                        expect(element?.tagName, `"${key}" should render a group container`).toBe(
-                            'FIELDSET'
-                        );
+                        // HOS-2488: the id sits on a wrapper around the kit's
+                        // `<fieldset>` group, which takes no id of its own.
+                        expect(
+                            element?.querySelector('fieldset'),
+                            `"${key}" should wrap a group container`
+                        ).not.toBeNull();
                         expect(
                             isFocusableControl(element as HTMLElement),
                             `"${key}" is exempt, so its container must not take focus.`

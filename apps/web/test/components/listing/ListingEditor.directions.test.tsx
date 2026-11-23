@@ -42,6 +42,10 @@ const { I18N_INITIAL } = vi.hoisted(() => {
     };
 });
 
+// Leaflet is out of scope here (LocationPickerMap.test.tsx covers it).
+vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
+    LocationPickerMap: () => null
+}));
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
 vi.mock('../../../src/components/listing/ListingEditor.module.css', () => ({
@@ -166,7 +170,7 @@ const DIRECTIONS = [
     'El colectivo 4 te deja en la rotonda'
 ];
 
-const directionsField = () => screen.getByLabelText('Cómo llegar');
+const directionsField = () => screen.getByLabelText(/^Cómo llegar/);
 
 describe('ListingEditor — how to get there (HOS-1049)', () => {
     beforeEach(() => {
@@ -287,7 +291,7 @@ describe('ListingEditor — how to get there (HOS-1049)', () => {
         );
 
         // Act — edit the FREE field, so there is a real save to make.
-        fireEvent.change(screen.getByLabelText('Punto de encuentro'), {
+        fireEvent.change(screen.getByLabelText('Dónde arranca la experiencia'), {
             target: { value: 'Muelle 1, junto a la rampa' }
         });
         fireEvent.click(saveButton());

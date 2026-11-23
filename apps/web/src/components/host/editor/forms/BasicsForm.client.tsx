@@ -115,19 +115,17 @@ export function BasicsForm({
             onSubmit={form.handleSubmit}
             noValidate
         >
-            <div className={styles.card}>
-                <BasicInfoSection
-                    locale={locale}
-                    data={form.values}
-                    destinations={destinations}
-                    errors={form.fieldErrors}
-                    onFieldChange={(field, value) => form.setValue(field, value)}
-                    shouldOfferSlugRefreshNearName={slugRefreshPlacement.nearName}
-                    shouldOfferSlugRefreshNearType={slugRefreshPlacement.nearType}
-                    refreshSlugFromName={refreshSlugFromName}
-                    onRefreshSlugFromNameChange={setRefreshSlugFromName}
-                />
-            </div>
+            <BasicInfoSection
+                locale={locale}
+                data={form.values}
+                destinations={destinations}
+                errors={form.fieldErrors}
+                onFieldChange={(field, value) => form.setValue(field, value)}
+                shouldOfferSlugRefreshNearName={slugRefreshPlacement.nearName}
+                shouldOfferSlugRefreshNearType={slugRefreshPlacement.nearType}
+                refreshSlugFromName={refreshSlugFromName}
+                onRefreshSlugFromNameChange={setRefreshSlugFromName}
+            />
 
             {form.formError && (
                 <div

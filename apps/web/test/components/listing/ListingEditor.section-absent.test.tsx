@@ -35,7 +35,10 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
 
-vi.mock('@/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
+vi.mock('@/lib/env', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/env')>()),
+    getApiUrl: () => 'http://api.test'
+}));
 
 vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     RichTextEditor: ({

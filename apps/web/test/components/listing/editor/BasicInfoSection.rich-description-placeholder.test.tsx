@@ -18,7 +18,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BasicInfoSection } from '../../../../src/components/listing/editor/BasicInfoSection.client';
 import { buildEditData } from './edit-data-fixture';
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw =

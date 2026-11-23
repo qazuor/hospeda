@@ -12,6 +12,7 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     BusinessLinesField,
@@ -92,8 +93,8 @@ describe('BusinessLinesField — TEST:5.7:2 type changes (AC:5:4)', () => {
     it('shows the reason and blocks the selection instead of dropping a line', () => {
         renderField({ type: 'BOLICHE', selected: ['food', 'nightlife'] });
 
-        expect(screen.getByRole('alert')).toHaveTextContent(
-            'Este tipo de comercio no admite ese rubro'
+        expect(screen.getByRole('group', { name: 'Rubros' })).toHaveAccessibleDescription(
+            expect.stringContaining('Este tipo de comercio no admite ese rubro')
         );
         // `food` is not an option for a BOLICHE; nothing was removed silently.
         expect(screen.queryByRole('checkbox', { name: /Gastronomía/ })).toBeNull();
@@ -154,6 +155,44 @@ describe('BusinessLinesField — TEST:5.7:2 removal notice (AC:5:4)', () => {
         fireEvent.click(screen.getByRole('checkbox', { name: /Noche/ }));
 
         await Promise.resolve();
+        expect(screen.queryByTestId('business-line-removal-notice')).toBeNull();
+    });
+});
+
+/** The field on a real, controlled selection with a discard, as the editor mounts it. */
+function DiscardableField({ baseline }: { readonly baseline: readonly string[] }) {
+    const [selected, setSelected] = useState<readonly string[]>(baseline);
+    return (
+        <>
+            <BusinessLinesField
+                locale="es"
+                vertical="venue"
+                type="BAR"
+                selected={selected}
+                onChange={setSelected}
+                errors={{}}
+                listingId="33333333-3333-4333-8333-333333333333"
+            />
+            <button
+                type="button"
+                onClick={() => setSelected(baseline)}
+            >
+                Descartar
+            </button>
+        </>
+    );
+}
+
+describe('BusinessLinesField — discard (HOS-2497 review)', () => {
+    it('drops the removal notice when «Descartar» restores the removed line', async () => {
+        render(<DiscardableField baseline={['food', 'nightlife']} />);
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /Noche/ }));
+        expect(await screen.findByTestId('business-line-removal-notice')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+
+        expect(screen.getByRole('checkbox', { name: /Noche/ })).toBeChecked();
         expect(screen.queryByTestId('business-line-removal-notice')).toBeNull();
     });
 });

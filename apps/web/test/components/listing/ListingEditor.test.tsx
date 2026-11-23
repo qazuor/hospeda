@@ -199,6 +199,11 @@ function formBanner(): HTMLElement {
     return banner;
 }
 
+/** The phone number inputs in DOM order: main, landline, WhatsApp (HOS-2497). */
+function phoneNumbers(): HTMLInputElement[] {
+    return Array.from(document.querySelectorAll<HTMLInputElement>('input[type="tel"]'));
+}
+
 describe('ListingEditor', () => {
     beforeEach(() => {
         mockPatch.mockReset();
@@ -277,19 +282,17 @@ describe('ListingEditor', () => {
     it('renders the summary counter interpolated, not the literal {{count}} template (BETA-124)', () => {
         renderEditor('venue');
 
-        // Summary starts empty → the counter reads "0/300", NOT the raw
-        // "{{count}}/300" template that leaked before the fix (the count was
-        // passed as the fallback, which the resolver discards for an existing
-        // key).
-        const hint = screen.getByText('0/300');
+        // Summary starts empty → the kit counter reads "0 de 300 caracteres"
+        // (HOS-2488), never a raw "{{...}}" template (BETA-124).
+        const hint = screen.getByText('0 de 300 caracteres');
         expect(hint).toBeInTheDocument();
-        expect(hint.textContent).not.toContain('{{count}}');
+        expect(hint.textContent).not.toContain('{{');
 
         // Typing a valid-length summary updates the interpolated counter.
         fireEvent.change(screen.getByLabelText('Resumen'), {
             target: { value: 'hello world!' }
         });
-        expect(screen.getByText('12/300')).toBeInTheDocument();
+        expect(screen.getByText('12 de 300 caracteres')).toBeInTheDocument();
     });
 
     it('PATCHes the venue endpoint with only the dirty field on submit', async () => {
@@ -355,9 +358,9 @@ describe('ListingEditor', () => {
         renderEditor('venue', 'contact');
 
         // HOS-371: the phone is a country-code combobox + local number pair now,
-        // so the editable control is the "Número" input; the dial code comes
+        // so the editable control is the phone number input; the dial code comes
         // from the combobox and is recomposed into the stored string.
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
@@ -373,7 +376,7 @@ describe('ListingEditor', () => {
             error: { status: 500, message: 'An unexpected error occurred' }
         });
         renderEditor('venue', 'contact');
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
@@ -443,7 +446,7 @@ describe('ListingEditor', () => {
         // (defaulting to Argentina) into the single `mobilePhone` string the
         // backend stores — the same `<dialCode> <number>` shape the
         // accommodation editor writes and `InternationalPhoneRegex` validates.
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
@@ -475,7 +478,7 @@ describe('ListingEditor', () => {
         );
         fireEvent.mouseDown(screen.getByRole('option', { name: /Brasil|Brazil/ }));
 
-        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+        fireEvent.change(phoneNumbers()[0], {
             target: { value: '11 91234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
@@ -533,7 +536,7 @@ describe('ListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('venue', 'contact');
 
-        fireEvent.change(screen.getByLabelText('facebook'), {
+        fireEvent.change(screen.getByLabelText(/^Facebook/), {
             target: { value: 'https://facebook.com/x' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
@@ -592,7 +595,7 @@ describe('ListingEditor', () => {
             />
         );
 
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByRole('switch', { name: 'Lunes abierto' }));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
@@ -621,7 +624,7 @@ describe('ListingEditor', () => {
         // HOS-2446, unticking «Cerrado» on a day without shifts seeds the
         // default 09:00-18:00 shift, so no extra "add shift" click is needed.
         // Every other day is left untouched.
-        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByRole('switch', { name: 'Lunes abierto' }));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));

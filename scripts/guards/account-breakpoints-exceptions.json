@@ -56,9 +56,6 @@
     "apps/web/src/components/host/host-trades/TradesDirectory.module.css": {
         "media": 2
     },
-    "apps/web/src/components/listing/editor/BusinessLinesField.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/listing/editor/NightInfoSection.module.css": {
         "media": 1
     },

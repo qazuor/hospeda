@@ -160,11 +160,6 @@
         "font-size": 7,
         "radius": 4
     },
-    "apps/web/src/components/host/ExternalReputationSection.module.css": {
-        "color": 12,
-        "font-size": 20,
-        "radius": 10
-    },
     "apps/web/src/components/host/PromotionList.module.css": {
         "color": 20,
         "font-size": 16,
@@ -185,11 +180,6 @@
         "font-size": 7,
         "radius": 5,
         "shadow": 1
-    },
-    "apps/web/src/components/host/editor/BasicInfoSection.module.css": {
-        "color": 1,
-        "font-size": 6,
-        "radius": 3
     },
     "apps/web/src/components/host/editor/CalendarSection.module.css": {
         "color": 10,
@@ -216,11 +206,6 @@
         "font-size": 4,
         "radius": 1
     },
-    "apps/web/src/components/host/editor/ContactInfoSection.module.css": {
-        "color": 1,
-        "font-size": 5,
-        "radius": 1
-    },
     "apps/web/src/components/host/editor/CountryCodeCombobox.module.css": {
         "font-size": 6,
         "radius": 3
@@ -237,11 +222,6 @@
         "font-size": 5,
         "radius": 3,
         "shadow": 1
-    },
-    "apps/web/src/components/host/editor/LocationPicker.module.css": {
-        "color": 2,
-        "font-size": 13,
-        "radius": 8
     },
     "apps/web/src/components/host/editor/PhotoSection.module.css": {
         "color": 63,
@@ -273,11 +253,6 @@
         "font-size": 6,
         "radius": 1
     },
-    "apps/web/src/components/host/editor/SocialNetworksSection.module.css": {
-        "color": 1,
-        "font-size": 4,
-        "radius": 3
-    },
     "apps/web/src/components/host/editor/TranslationPanel.module.css": {
         "color": 17,
         "font-size": 13,
@@ -294,9 +269,6 @@
         "color": 3,
         "font-size": 1,
         "radius": 1
-    },
-    "apps/web/src/components/host/editor/forms/ServicesForm.module.css": {
-        "font-size": 1
     },
     "apps/web/src/components/host/host-trades/BenefitUsagesPanel.module.css": {
         "color": 23,
@@ -394,14 +366,6 @@
         "font-size": 1,
         "radius": 2
     },
-    "apps/web/src/components/listing/editor/BusinessLinesField.module.css": {
-        "color": 1,
-        "font-size": 3,
-        "radius": 2
-    },
-    "apps/web/src/components/listing/editor/ContactSection.module.css": {
-        "font-size": 2
-    },
     "apps/web/src/components/listing/editor/MediaSection.module.css": {
         "color": 2,
         "font-size": 4,
@@ -410,14 +374,6 @@
     "apps/web/src/components/listing/editor/MinAgeField.module.css": {
         "font-size": 2,
         "radius": 1
-    },
-    "apps/web/src/components/listing/editor/OpeningHoursSection.module.css": {
-        "color": 4,
-        "font-size": 3,
-        "radius": 1
-    },
-    "apps/web/src/components/listing/editor/PoliciesPanel.module.css": {
-        "font-size": 1
     },
     "apps/web/src/components/listing/editor/editor-fields.module.css": {
         "color": 4,

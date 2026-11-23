@@ -1,64 +1,76 @@
 /**
- * Layout of the house-rules panel (HOS-2060). The controls themselves reuse
- * the shared primitives in `editor-fields.module.css`.
+ * Layout of the house-rules panel (HOS-2060, kit fields in HOS-2488). The kit
+ * `Section` that hosts the panel is a query container, so the grid follows the
+ * width of its card and never the viewport.
  */
 
 .panel {
-    border: none;
-    margin: 0;
-    padding: 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
 }
 
-.panel > legend {
-    float: left;
-    width: 100%;
+.hint {
+    margin: 0;
+    font: var(--app-ui);
+    color: var(--core-muted-foreground);
 }
 
-.panel > legend + * {
-    clear: both;
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+@container (min-width: 40rem) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Groups, long text and the accommodation sub-forms take the whole row. */
+.wide {
+    grid-column: 1 / -1;
+    min-inline-size: 0;
 }
 
 .group {
-    border: none;
+    min-inline-size: 0;
     margin: 0;
     padding: 0;
+    border: none;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
 }
 
 .groupTitle {
-    margin: 0;
-    font-size: var(--text-body-sm, 0.9375rem);
+    padding: 0;
+    font: var(--app-ui);
     font-weight: 600;
     color: var(--core-foreground);
 }
 
-.optionGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: var(--space-2);
-}
-
 .pair {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-3);
 }
 
-/* One check-in/check-out end: its label stacked over its own input. */
-.timeField {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    min-width: 0;
+@container (min-width: 30rem) {
+    .pair {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .noteGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: var(--space-2);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+}
+
+@container (min-width: 40rem) {
+    .noteGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
