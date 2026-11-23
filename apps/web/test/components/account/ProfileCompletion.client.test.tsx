@@ -492,3 +492,38 @@ describe('ProfileCompletion — HOS-1966: an untouched theme select never change
         expect(localStorage.getItem('theme')).toBe('dark');
     });
 });
+
+describe('ProfileCompletion layout on the kit (HOS-2501)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('renders one h1 (the kit PageHeader) and one flat Section per group', () => {
+        renderForm();
+
+        expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+        const sections = document.querySelectorAll('[data-kit-section]');
+        expect(sections).toHaveLength(4);
+    });
+
+    it('follows the form progress in the stepper: names open the next step, terms close it', () => {
+        renderForm();
+        const steps = () =>
+            Array.from(document.querySelectorAll('ol[aria-label] > li')).map((li) =>
+                li.getAttribute('data-state')
+            );
+
+        expect(steps()).toEqual(['current', 'upcoming', 'upcoming']);
+
+        fireEvent.change(document.getElementById('pc-firstName') as HTMLInputElement, {
+            target: { value: 'Maria' }
+        });
+        fireEvent.change(document.getElementById('pc-lastName') as HTMLInputElement, {
+            target: { value: 'Fernanda' }
+        });
+        expect(steps()).toEqual(['done', 'done', 'current']);
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /acepto los/i }));
+        expect(steps()).toEqual(['done', 'done', 'done']);
+    });
+});
