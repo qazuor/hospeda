@@ -9,8 +9,14 @@
  * The structured carta is a LOCAL DRAFT committed by the editor save bar in
  * one `PUT` of the whole document: `isDirty` compares it with the last saved
  * copy, `discard` restores that copy, and `saveMenu` resolves the
- * `SaveOutcome` the bar expects. The uploaded photo/PDF and the external link
- * are NOT part of the draft: they persist on their own request, as before.
+ * `SaveOutcome` the bar expects. The uploaded photo/PDF is NOT part of the
+ * draft: it persists on its own request.
+ *
+ * The external link IS on the bar since owner decision 14 (superseding the
+ * separate «Guardar enlace» of DEC-FAC-062): `useVenueMenuLink` tracks it and
+ * the same «Guardar cambios» sends it to its own one-key PATCH. A save that
+ * stores one of the two and not the other says so in the bar, and only the
+ * part that failed stays dirty.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -22,6 +28,7 @@ import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
+import { useVenueMenuLink } from './use-venue-menu-link';
 import { translateUpsell } from './VenueSectionLockedPanel.client';
 import {
     buildMenuPayload,
@@ -65,7 +72,8 @@ export function useVenueMenu({ listingId, locale, menuUrl, upsellPlans }: UseVen
     const [sections, setSections] = useState<readonly MenuSectionDraft[]>([]);
     const [savedSections, setSavedSections] = useState<readonly MenuSectionDraft[]>([]);
     const [file, setFile] = useState<MenuFile | null>(null);
-    const [currentMenuUrl, setCurrentMenuUrl] = useState<string | null>(menuUrl);
+    const link = useVenueMenuLink({ listingId, menuUrl });
+    const { currentMenuUrl, setCurrentMenuUrl } = link;
     /** HOS-1763. The name of the file chosen in THIS session (the input is cleared). */
     const [pickedFileName, setPickedFileName] = useState<string | null>(null);
     const [state, setState] = useState<MenuPanelState>('loading');
@@ -236,19 +244,19 @@ export function useVenueMenu({ listingId, locale, menuUrl, upsellPlans }: UseVen
 
     // ── Bar ─────────────────────────────────────────────────────────────────
 
-    const isDirty = !sameMenuDraft(sections, savedSections);
+    const areSectionsDirty = !sameMenuDraft(sections, savedSections);
+    const isDirty = areSectionsDirty || link.isLinkDirty;
+    const { discardLink, saveLink, isLinkDirty } = link;
 
     const discard = useCallback(() => {
         setSections(savedSections);
+        discardLink();
         setMessage(null);
-    }, [savedSections]);
+    }, [discardLink, savedSections]);
 
-    const saveMenu = useCallback(async (): Promise<SaveOutcome> => {
-        setState('saving');
-        setMessage(null);
+    const saveSections = useCallback(async (): Promise<SaveOutcome> => {
         const payload = buildMenuPayload(sections);
         const result = await apiClient.put<MenuEnvelope>({ path: basePath, body: payload });
-        setState('idle');
 
         if (result.ok) {
             setSavedSections(sections);
@@ -281,9 +289,49 @@ export function useVenueMenu({ listingId, locale, menuUrl, upsellPlans }: UseVen
             return { ok: false };
         }
 
-        setMessage(t('venue.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.'));
-        return { ok: false };
+        // Told by the save bar alone (owner decision 7), never repeated below.
+        return {
+            ok: false,
+            message: t('venue.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.')
+        };
     }, [basePath, lockToGate, sections, t, upsellPlans?.itemPhotos, upsellPlans?.translations]);
+
+    const saveMenu = useCallback(async (): Promise<SaveOutcome> => {
+        setState('saving');
+        setMessage(null);
+        const [sectionsOutcome, linkSaved] = await Promise.all([
+            areSectionsDirty ? saveSections() : Promise.resolve<SaveOutcome>({ ok: true }),
+            isLinkDirty ? saveLink() : Promise.resolve(true)
+        ]);
+        setState('idle');
+        if (sectionsOutcome.ok && linkSaved) return { ok: true };
+        if (sectionsOutcome.ok) {
+            // The carta (if it changed) is stored; the link is the part left dirty.
+            return {
+                ok: false,
+                message: areSectionsDirty
+                    ? t(
+                          'venue.owner.editor.menuManager.savedMenuNotLink',
+                          'Se guardó la carta, pero no el enlace al menú. Probá guardar de nuevo.'
+                      )
+                    : t(
+                          'venue.owner.editor.menuManager.linkSaveError',
+                          'No se pudo guardar el enlace.'
+                      )
+            };
+        }
+        if (isLinkDirty && linkSaved) {
+            // The link is stored; the carta is the part left dirty.
+            return {
+                ok: false,
+                message: t(
+                    'venue.owner.editor.menuManager.savedLinkNotMenu',
+                    'Se guardó el enlace al menú, pero no la carta. Probá guardar de nuevo.'
+                )
+            };
+        }
+        return sectionsOutcome;
+    }, [areSectionsDirty, isLinkDirty, saveLink, saveSections, t]);
 
     // ── The uploaded photo / PDF (persists on its own request) ─────────────
 
@@ -403,7 +451,7 @@ export function useVenueMenu({ listingId, locale, menuUrl, upsellPlans }: UseVen
         setState('idle');
         setMessage(t('venue.owner.editor.lockedSection.vaciarSuccess', 'Se vació la sección.'));
         return true;
-    }, [basePath, currentMenuUrl, file, listingId, t]);
+    }, [basePath, currentMenuUrl, file, listingId, setCurrentMenuUrl, t]);
 
     const vaciar = useSectionVaciar({ clear: clearMenu });
 
@@ -412,6 +460,8 @@ export function useVenueMenu({ listingId, locale, menuUrl, upsellPlans }: UseVen
         file,
         currentMenuUrl,
         setCurrentMenuUrl,
+        menuUrlDraft: link.menuUrlDraft,
+        setMenuUrlDraft: link.setMenuUrlDraft,
         pickedFileName,
         state,
         message,

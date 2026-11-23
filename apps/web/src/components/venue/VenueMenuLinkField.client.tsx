@@ -4,10 +4,12 @@
  * (HOS-1787 leaf 5.3, DEC-FAC-062).
  *
  * The link used to be a price field. It is part of the complete carta — dishes,
- * uploaded file and link — so it moved here, next to the other two, and is
- * saved by its own one-key PATCH of the listing. It deliberately does NOT ride
- * in the carta's `PUT .../menu`: that endpoint re-creates every dish, and a
- * failed cartridge save would take the link with it.
+ * uploaded file and link — so it lives here, next to the other two. It is still
+ * stored by its own one-key PATCH of the listing and never rides in the carta's
+ * `PUT .../menu` (DEC-FAC-062). Owner decision 14 (Mi cuenta UI epic)
+ * supersedes DEC-FAC-062's separate «Guardar enlace» button: this field is now a
+ * controlled input whose draft the carta's save bar tracks, saves and discards
+ * (`useVenueMenuLink`).
  *
  * ## Locked cartas never mount this component
  *
@@ -28,82 +30,40 @@ import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { LISTING_FIELD_PREFIX } from '@/components/listing/editor/field-ids';
 import { TextField } from '@/components/ui/TextField';
-import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './VenueMenuLinkField.module.css';
 
+/** Props of {@link VenueMenuLinkField}. */
 export interface VenueMenuLinkFieldProps {
-    /** UUID of the venue listing the link belongs to. */
-    readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
-    /** The stored link, or `null` when the venue has none. */
-    readonly menuUrl: string | null;
+    /** The draft, as typed (blank clears the link on save). */
+    readonly value: string;
+    /** Receives every keystroke. */
+    readonly onChange: (value: string) => void;
     /** Disables the control while the section's plan gate is unsettled. */
     readonly disabled?: boolean;
-    /** Receives the persisted value after a successful save. */
-    readonly onSaved?: (menuUrl: string | null) => void;
 }
 
 /**
- * Renders the venue's external menu link with its own save action.
+ * Renders the venue's external menu link; the carta's save bar saves it.
  *
- * Emptying the input is an explicit clear, not a no-op: it sends
- * `{ menuUrl: null }`, the same one-key body HOS-2038 keeps authorized on a
- * locked section.
- *
- * @param props - Listing id, locale, current value and save callback.
+ * @param props - See {@link VenueMenuLinkFieldProps}.
+ * @returns The labelled link input.
  */
 export function VenueMenuLinkField({
-    listingId,
     locale,
-    menuUrl,
-    disabled = false,
-    onSaved
+    value,
+    onChange,
+    disabled = false
 }: VenueMenuLinkFieldProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const [value, setValue] = useState(menuUrl ?? '');
-    const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState<string | null>(null);
     const [hydrated, setHydrated] = useState(false);
 
     useEffect(() => {
         setHydrated(true);
     }, []);
-
-    // The manager owns the value across saves and "Vaciar", so a change there
-    // (not a keystroke) is what re-seeds this draft.
-    useEffect(() => {
-        setValue(menuUrl ?? '');
-    }, [menuUrl]);
-
-    async function save(): Promise<void> {
-        const trimmed = value.trim();
-        const next = trimmed === '' ? null : trimmed;
-
-        setIsSaving(true);
-        setMessage(null);
-
-        const result = await apiClient.patch<unknown>({
-            path: `/api/v1/protected/venues/${listingId}`,
-            // ONE key: the body is the link's own edit, never the whole form.
-            body: { menuUrl: next }
-        });
-
-        setIsSaving(false);
-
-        if (!result.ok) {
-            setMessage(
-                t('venue.owner.editor.menuManager.linkSaveError', 'No se pudo guardar el enlace.')
-            );
-            return;
-        }
-
-        setValue(next ?? '');
-        onSaved?.(next);
-        setMessage(t('venue.owner.editor.menuManager.linkSaved', 'Enlace guardado.'));
-    }
 
     return (
         <div
@@ -120,34 +80,11 @@ export function VenueMenuLinkField({
                 type="url"
                 value={value}
                 placeholder="https://..."
-                disabled={disabled || isSaving}
+                disabled={disabled}
                 onChange={(event) => {
-                    setValue(event.target.value);
+                    onChange(event.target.value);
                 }}
             />
-
-            <button
-                type="button"
-                className={styles.saveButton}
-                data-testid="venue-menu-link-save"
-                disabled={disabled || isSaving}
-                onClick={() => {
-                    void save();
-                }}
-            >
-                {isSaving
-                    ? t('venue.owner.editor.menuManager.saving', 'Guardando…')
-                    : t('venue.owner.editor.menuManager.linkSave', 'Guardar enlace')}
-            </button>
-
-            {message ? (
-                <p
-                    className={styles.message}
-                    role="status"
-                >
-                    {message}
-                </p>
-            ) : null}
         </div>
     );
 }

@@ -13,7 +13,8 @@
  *
  * The external link is the third part of the same section (DEC-FAC-062): it is
  * edited here, by `VenueMenuLinkField`, and saved with its own one-key PATCH of
- * the listing. Nothing here is mandatory and nothing here excludes anything
+ * the listing — by the section's save bar since owner decision 14, which
+ * supersedes DEC-FAC-062's separate «Guardar enlace» button. Nothing here is mandatory and nothing here excludes anything
  * else: an owner may publish with a photo alone, and is never made to type
  * forty dishes.
  *
@@ -210,13 +211,14 @@ export function VenueMenuManager({
                         />
                     ) : null}
 
-                    {/* The external link (DEC-FAC-062): its own one-key PATCH. */}
+                    {/* The external link (DEC-FAC-062: its own one-key PATCH). Owner
+                        decision 14 supersedes DEC-FAC-062's separate button: the
+                        save bar below tracks, saves and discards it. */}
                     <VenueMenuLinkField
-                        listingId={listingId}
                         locale={locale}
-                        menuUrl={menu.currentMenuUrl}
+                        value={menu.menuUrlDraft}
+                        onChange={menu.setMenuUrlDraft}
                         disabled={isMenuGated}
-                        onSaved={menu.setCurrentMenuUrl}
                     />
 
                     <VenueMenuFileBlock
