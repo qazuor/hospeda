@@ -544,16 +544,6 @@
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
         "color": 12
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/consultas-propietario/[conversationId].astro": {
-        "color": 2,
-        "font-size": 8,
-        "radius": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/consultas-propietario/index.astro": {
-        "color": 1,
-        "font-size": 10,
-        "radius": 4
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro": {
         "color": 1,
         "font-size": 6,
