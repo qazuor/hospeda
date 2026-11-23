@@ -513,6 +513,17 @@ describe('ENTITY_FOLDER_MAP', () => {
         );
     });
 
+    it('should produce the expected folder for partner', () => {
+        expect(ENTITY_FOLDER_MAP.partner({ environment: ENV, entityId: ID })).toBe(
+            `hospeda/${ENV}/partners/${ID}`
+        );
+        expect(MediaEntityTypeSchema.safeParse('partner').success).toBe(true);
+    });
+
+    it('should throw for partner without an entityId', () => {
+        expect(() => ENTITY_FOLDER_MAP.partner({ environment: ENV })).toThrow(/entityId/);
+    });
+
     it('should produce the avatar folder for a user given userId', () => {
         expect(ENTITY_FOLDER_MAP.user({ environment: ENV, userId: ID })).toBe(
             `hospeda/${ENV}/avatars/${ID}`
