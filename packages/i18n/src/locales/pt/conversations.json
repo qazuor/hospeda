@@ -118,7 +118,10 @@
             "title": "Não conseguimos carregar suas consultas",
             "body": "Houve um problema ao ler sua caixa de entrada. Suas consultas continuam aí: tente novamente em instantes.",
             "retry": "Tentar novamente"
-        }
+        },
+        "sectionTitle": "Conversas",
+        "guestListLabel": "Suas consultas",
+        "ownerListLabel": "Conversas com hóspedes"
     },
     "notifications": {
         "conversationArchived": "Conversa arquivada.",
@@ -153,6 +156,16 @@
         "listingAvailability": {
             "gone": "Este anúncio não existe mais.",
             "notPublished": "Por enquanto você não pode enviar mensagens sobre este anúncio."
+        },
+        "sectionTitle": "Mensagens",
+        "backToOwnerInbox": "Voltar às mensagens de hóspedes",
+        "loadError": {
+            "title": "Não conseguimos carregar a conversa",
+            "body": "Houve um problema ao ler as mensagens. Tente novamente em instantes."
         }
+    },
+    "ownerLocked": {
+        "feature": "Mensagens de hóspedes",
+        "description": "Esta caixa recebe as consultas sobre as hospedagens que você publica. Ela é liberada quando sua conta é de anfitrião."
     }
 }

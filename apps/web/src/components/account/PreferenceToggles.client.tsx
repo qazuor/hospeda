@@ -1,41 +1,43 @@
 /**
  * @file PreferenceToggles.client.tsx
- * @description React island for managing user web-surface preferences.
+ * @description The Preferences island (HOS-2479, D11): the ONE place every
+ * account on/off setting lives. Kit `SwitchRow`s with an `AutoSaveChip` per
+ * section (direct-action save model).
  *
- * Fetches the user's current settings on mount, then renders toggles for:
- *   - themeWeb     (system / light / dark) — applied via data-theme on <html>
- *   - languageWeb  (es / en / pt)
- *   - notifications.allowEmails
- *   - notifications.allowPush
- *   - notifications.allowSms
- *   - newsletter
+ * Sections: appearance (theme, language), notifications (email, push, SMS and
+ * the weekly AI digest), newsletter, search history. The newsletter and the
+ * search history have their own sections because their data comes from their
+ * own endpoints (the ones the newsletter and history pages used before).
  *
  * Admin-only fields (themeAdmin, languageAdmin) are intentionally NOT shown.
- *
- * Each toggle PATCHes the web-scoped settings endpoint optimistically. On
- * error the value reverts and a toast is shown.
- *
  * Hydration: caller must use `client:load`.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createTranslations } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
 import { applyThemeChoice, markThemeSynced } from '@/lib/theme';
 import { buildLocaleSwitchPathname } from '@/lib/urls';
-import { addToast } from '@/store/toast-store';
 import styles from './PreferenceToggles.module.css';
+import { PreferencesHistorySection } from './preferences/PreferencesHistorySection';
+import { PreferencesNewsletterSection } from './preferences/PreferencesNewsletterSection';
+import { joinApi, sendMutation } from './preferences/preferences-api';
+import { useAutoSave } from './preferences/use-auto-save';
+import {
+    AsyncRegion,
+    type AsyncResult,
+    AutoSaveChip,
+    ErrorState,
+    Field,
+    Section,
+    Select,
+    Skeleton,
+    SwitchRow
+} from './ui';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-/** Theme preference for the web surface */
 type ThemeWeb = 'system' | 'light' | 'dark';
-
-/** Language preference for the web surface */
 type LanguageWeb = 'es' | 'en' | 'pt';
 
-/** Notification settings shape */
 interface NotificationSettings {
     enabled: boolean;
     allowEmails: boolean;
@@ -43,556 +45,319 @@ interface NotificationSettings {
     allowSms: boolean;
 }
 
-/** Web-scoped settings managed by this component */
+/** Web-scoped settings managed by this island. */
 interface WebSettings {
     themeWeb: ThemeWeb;
     languageWeb: LanguageWeb;
     notifications: NotificationSettings;
-    newsletter: boolean;
-    /** Weekly email of unanswered AI chat questions (HOS-2101). */
+    /** Weekly email of unanswered AI chat questions (HOS-2101). Opt-out. */
     aiQuestionsDigest: boolean;
+    /** Search-history recording (opt-out: absent means enabled). */
+    searchHistoryEnabled: boolean;
 }
 
-/** Raw user object returned by GET /api/v1/protected/users/:id */
 interface UserApiResponse {
     readonly success: boolean;
     readonly data?: {
-        readonly id?: string;
         readonly settings?: {
             readonly themeWeb?: string;
             readonly languageWeb?: string;
-            readonly notifications?: {
-                readonly enabled?: boolean;
-                readonly allowEmails?: boolean;
-                readonly allowPush?: boolean;
-                readonly allowSms?: boolean;
-            };
-            readonly newsletter?: boolean;
+            readonly notifications?: Partial<NotificationSettings>;
             readonly aiQuestionsDigest?: boolean;
+            readonly searchHistoryEnabled?: boolean;
         } | null;
     };
-    readonly error?: { readonly message: string };
 }
 
-/** PATCH response */
-interface PatchApiResponse {
-    readonly success: boolean;
-    readonly error?: {
-        readonly code?: string | null;
-        readonly message?: string | null;
-        readonly reason?: string | null;
-    };
-}
-
-interface PreferenceTogglesProps {
-    /** Authenticated user ID (from Astro.locals.user) */
+/** Props of {@link PreferenceToggles}. */
+export interface PreferenceTogglesProps {
+    /** Authenticated user ID (from Astro.locals.user). */
     readonly userId: string;
-    /** Active locale for i18n */
+    /** Active locale. */
     readonly locale: SupportedLocale;
-    /** API base URL (PUBLIC_API_URL from env) */
+    /** API base URL. */
     readonly apiUrl: string;
+    /** Catalog plan names that include search history (read on the server). */
+    readonly historyGatePlanNames?: readonly string[];
+    /** Where the plan pages live, for the locked search-history row. */
+    readonly plansHref: string;
 }
-
-// ─── Defaults ─────────────────────────────────────────────────────────────────
 
 const DEFAULT_SETTINGS: WebSettings = {
     themeWeb: 'system',
     languageWeb: 'es',
-    notifications: {
-        enabled: true,
-        allowEmails: true,
-        allowPush: false,
-        allowSms: false
-    },
-    newsletter: false,
-    // Absent means subscribed: the digest is opt-out (HOS-2101).
-    aiQuestionsDigest: true
+    notifications: { enabled: true, allowEmails: true, allowPush: false, allowSms: false },
+    aiQuestionsDigest: true,
+    searchHistoryEnabled: true
 };
 
-// ─── Theme application ────────────────────────────────────────────────────────
-
-// ─── Component ────────────────────────────────────────────────────────────────
+async function loadSettings({
+    apiUrl,
+    userId
+}: {
+    readonly apiUrl: string;
+    readonly userId: string;
+}): Promise<WebSettings> {
+    const res = await fetch(joinApi({ apiUrl, path: `/api/v1/protected/users/${userId}` }), {
+        credentials: 'include'
+    });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const body = (await res.json()) as UserApiResponse;
+    if (!body.success) throw new Error('unsuccessful');
+    const raw = body.data?.settings;
+    const defaults = DEFAULT_SETTINGS;
+    return {
+        themeWeb: (raw?.themeWeb as ThemeWeb | undefined) ?? defaults.themeWeb,
+        languageWeb: (raw?.languageWeb as LanguageWeb | undefined) ?? defaults.languageWeb,
+        notifications: {
+            enabled: raw?.notifications?.enabled ?? defaults.notifications.enabled,
+            allowEmails: raw?.notifications?.allowEmails ?? defaults.notifications.allowEmails,
+            allowPush: raw?.notifications?.allowPush ?? defaults.notifications.allowPush,
+            allowSms: raw?.notifications?.allowSms ?? defaults.notifications.allowSms
+        },
+        aiQuestionsDigest: raw?.aiQuestionsDigest ?? defaults.aiQuestionsDigest,
+        // Explicit `false` is the opt-out; everything else is enabled.
+        searchHistoryEnabled: raw?.searchHistoryEnabled !== false
+    };
+}
 
 /**
- * Preference toggles island.
- * Web-surface only: no themeAdmin or languageAdmin fields.
+ * Preferences island: every account on/off setting, saved on its own.
+ *
+ * @param props - See {@link PreferenceTogglesProps}.
  */
-export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesProps) {
-    const { t } = createTranslations(locale);
-    const base = apiUrl.replace(/\/$/, '');
+export function PreferenceToggles({
+    userId,
+    locale,
+    apiUrl,
+    historyGatePlanNames = [],
+    plansHref
+}: PreferenceTogglesProps) {
+    const t = createT(locale);
+    const [state, setState] = useState<AsyncResult<WebSettings>>({ status: 'loading' });
+    const settingsRef = useRef<WebSettings>(DEFAULT_SETTINGS);
+    const appearanceSave = useAutoSave();
+    const notificationsSave = useAutoSave();
 
-    const [settings, setSettings] = useState<WebSettings>(DEFAULT_SETTINGS);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    /** Track which field is currently being saved (to show "Guardando" inline) */
-    const [savingField, setSavingField] = useState<string | null>(null);
-
-    // Debounce timer ref to batch rapid changes
-    const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // ── Fetch current settings ─────────────────────────────────────────────
-
-    // Pre-compute the fetch-error fallback string here so the useCallback
-    // below can depend on it without depending on `t` itself.
-    // `createTranslations(locale)` returns a new object every render, so
-    // putting `t` in the deps would re-create fetchSettings every render,
-    // re-fire the useEffect below, and spam the API in an infinite loop
-    // (it was hitting the 429 rate limit on mount before this rewrite).
-    // The string returned from `t()` has value-based identity, so React
-    // sees the same dep across renders.
-    const fetchErrorMsg = t(
-        'account.preferences.errors.fetchFailed',
-        'Error al cargar preferencias'
-    );
-
-    const fetchSettings = useCallback(async () => {
-        setLoading(true);
-        setError(null);
+    const load = useCallback(async () => {
+        setState({ status: 'loading' });
         try {
-            const res = await fetch(`${base}/api/v1/protected/users/${userId}`, {
-                credentials: 'include'
-            });
-            if (!res.ok) {
-                throw new Error(fetchErrorMsg);
-            }
-            const body = (await res.json()) as UserApiResponse;
-            if (!body.success) {
-                throw new Error(body.error?.message ?? fetchErrorMsg);
-            }
-            const raw = body.data?.settings;
-            setSettings({
-                themeWeb: (raw?.themeWeb as ThemeWeb | undefined) ?? DEFAULT_SETTINGS.themeWeb,
-                languageWeb:
-                    (raw?.languageWeb as LanguageWeb | undefined) ?? DEFAULT_SETTINGS.languageWeb,
-                notifications: {
-                    enabled: raw?.notifications?.enabled ?? DEFAULT_SETTINGS.notifications.enabled,
-                    allowEmails:
-                        raw?.notifications?.allowEmails ??
-                        DEFAULT_SETTINGS.notifications.allowEmails,
-                    allowPush:
-                        raw?.notifications?.allowPush ?? DEFAULT_SETTINGS.notifications.allowPush,
-                    allowSms:
-                        raw?.notifications?.allowSms ?? DEFAULT_SETTINGS.notifications.allowSms
-                },
-                newsletter: raw?.newsletter ?? DEFAULT_SETTINGS.newsletter,
-                aiQuestionsDigest: raw?.aiQuestionsDigest ?? DEFAULT_SETTINGS.aiQuestionsDigest
-            });
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : fetchErrorMsg;
-            setError(msg);
-        } finally {
-            setLoading(false);
+            const settings = await loadSettings({ apiUrl, userId });
+            settingsRef.current = settings;
+            setState({ status: 'ready', data: settings });
+        } catch {
+            setState({ status: 'error', retry: () => void load() });
         }
-    }, [base, userId, fetchErrorMsg]);
+    }, [apiUrl, userId]);
 
     useEffect(() => {
-        void fetchSettings();
-    }, [fetchSettings]);
+        void load();
+    }, [load]);
 
-    // ── Persist settings ───────────────────────────────────────────────────
+    /** PATCHes one slice of `settings` and merges it into the island state. */
+    const patchSettings = async ({
+        patch,
+        local
+    }: {
+        readonly patch: Record<string, unknown>;
+        readonly local: Partial<WebSettings>;
+    }): Promise<void> => {
+        await sendMutation({
+            url: joinApi({ apiUrl, path: `/api/v1/protected/users/${userId}` }),
+            method: 'PATCH',
+            body: { settings: patch },
+            locale,
+            fallback: t('account.preferences.errors.saveFailed')
+        });
+        const next = { ...settingsRef.current, ...local };
+        settingsRef.current = next;
+        setState({ status: 'ready', data: next });
+    };
 
-    /**
-     * PATCH the web-scoped settings (themeWeb/languageWeb/notifications/newsletter/aiQuestionsDigest).
-     * Called optimistically — caller already updated local state.
-     */
-    async function persistSettings(
-        patch: Partial<WebSettings>,
-        fieldKey: string,
-        previousSettings: WebSettings
-    ): Promise<boolean> {
-        setSavingField(fieldKey);
-        try {
-            const body: Record<string, unknown> = {};
-            if (patch.themeWeb !== undefined) body.themeWeb = patch.themeWeb;
-            if (patch.languageWeb !== undefined) body.languageWeb = patch.languageWeb;
-            if (patch.notifications !== undefined) body.notifications = patch.notifications;
-            if (patch.newsletter !== undefined) body.newsletter = patch.newsletter;
-            if (patch.aiQuestionsDigest !== undefined) {
-                body.aiQuestionsDigest = patch.aiQuestionsDigest;
-            }
-
-            const res = await fetch(`${base}/api/v1/protected/users/${userId}`, {
-                method: 'PATCH',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings: body })
-            });
-
-            if (!res.ok) {
-                let msg = t('account.preferences.errors.saveFailed');
+    const changeTheme = (value: ThemeWeb) =>
+        appearanceSave.run({
+            save: async () => {
+                const previous = settingsRef.current.themeWeb;
+                applyThemeChoice({ choice: value });
                 try {
-                    const errBody = (await res.json()) as PatchApiResponse;
-                    msg = translateApiError({
-                        error: errBody.error,
-                        t,
-                        fallback: msg
-                    });
-                } catch {
-                    // ignore
+                    await patchSettings({ patch: { themeWeb: value }, local: { themeWeb: value } });
+                } catch (error) {
+                    applyThemeChoice({ choice: previous });
+                    throw error;
                 }
-                throw new Error(msg);
+                markThemeSynced({ userId });
             }
-            return true;
-        } catch (err) {
-            // Revert on failure
-            setSettings(previousSettings);
-            const msg =
-                err instanceof Error ? err.message : t('account.preferences.errors.saveFailed');
-            addToast({ type: 'error', message: msg });
-            return false;
-        } finally {
-            setSavingField(null);
+        });
+
+    const changeLanguage = async (value: LanguageWeb) => {
+        try {
+            await appearanceSave.run({
+                save: () =>
+                    patchSettings({ patch: { languageWeb: value }, local: { languageWeb: value } })
+            });
+        } catch {
+            return;
         }
-    }
-
-    // ── Handlers ──────────────────────────────────────────────────────────
-
-    function handleThemeChange(value: ThemeWeb) {
-        const prev = { ...settings };
-        const next = { ...settings, themeWeb: value };
-        setSettings(next);
-        applyThemeChoice({ choice: value });
-        markThemeSynced({ userId });
-        void persistSettings({ themeWeb: value }, 'themeWeb', prev);
-    }
-
-    async function handleLanguageChange(value: LanguageWeb) {
-        const prev = { ...settings };
-        const next = { ...settings, languageWeb: value };
-        setSettings(next);
-        const ok = await persistSettings({ languageWeb: value }, 'languageWeb', prev);
-        // The web locale comes from the URL prefix, not from `languageWeb`, so
-        // persisting alone changes nothing visible. Apply the choice by swapping
-        // the locale segment in the current path and reloading — mirrors the
-        // header language switcher. Skip on failure (persistSettings reverted).
-        if (!ok || typeof window === 'undefined') return;
-        // Swap the locale segment of the current path and reload. We assign to
-        // `location.pathname` (not `location.assign`) so the navigation target
-        // can only ever be a same-origin path — the setter cannot carry a scheme,
-        // so a crafted path can never become a `javascript:`/cross-origin
-        // navigation. The browser preserves the current query and hash. `null`
-        // means there is no locale segment to swap, so we don't navigate.
+        // The web locale comes from the URL prefix, so persisting alone changes
+        // nothing visible: swap the locale segment (same-origin path only).
+        if (typeof window === 'undefined') return;
         const nextPath = buildLocaleSwitchPathname({
             pathname: window.location.pathname,
             locale: value
         });
-        if (nextPath) {
-            window.location.pathname = nextPath;
-        }
-    }
+        if (nextPath) window.location.pathname = nextPath;
+    };
 
-    function handleNotifToggle(key: keyof NotificationSettings) {
-        const prev = { ...settings };
-        const nextNotif = { ...settings.notifications, [key]: !settings.notifications[key] };
-        const next = { ...settings, notifications: nextNotif };
-        setSettings(next);
+    const toggleNotification = ({
+        key,
+        next
+    }: {
+        readonly key: 'allowEmails' | 'allowPush' | 'allowSms';
+        readonly next: boolean;
+    }) =>
+        notificationsSave.run({
+            save: () => {
+                const notifications = { ...settingsRef.current.notifications, [key]: next };
+                return patchSettings({ patch: { notifications }, local: { notifications } });
+            }
+        });
 
-        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = setTimeout(() => {
-            void persistSettings({ notifications: nextNotif }, `notif.${key}`, prev);
-        }, 400);
-    }
+    const toggleDigest = (next: boolean) =>
+        notificationsSave.run({
+            save: () =>
+                patchSettings({
+                    patch: { aiQuestionsDigest: next },
+                    local: { aiQuestionsDigest: next }
+                })
+        });
 
-    function handleNewsletterToggle() {
-        const prev = { ...settings };
-        const next = { ...settings, newsletter: !settings.newsletter };
-        setSettings(next);
-        void persistSettings({ newsletter: next.newsletter }, 'newsletter', prev);
-    }
-
-    function handleAiQuestionsDigestToggle() {
-        const prev = { ...settings };
-        const next = { ...settings, aiQuestionsDigest: !settings.aiQuestionsDigest };
-        setSettings(next);
-        void persistSettings(
-            { aiQuestionsDigest: next.aiQuestionsDigest },
-            'aiQuestionsDigest',
-            prev
-        );
-    }
-
-    // ── Render ────────────────────────────────────────────────────────────
-
-    if (loading) {
-        return (
-            <div
-                className={styles.loadingWrap}
-                aria-live="polite"
-                aria-busy="true"
-            >
-                {t('common.loading', 'Cargando…')}
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div
-                className={styles.errorWrap}
-                role="alert"
-            >
-                {error}
-            </div>
-        );
-    }
+    const chip = (save: ReturnType<typeof useAutoSave>) =>
+        save.status ? (
+            <AutoSaveChip
+                status={save.status}
+                savedAt={save.savedAt}
+                onRetry={save.retry}
+                locale={locale}
+            />
+        ) : undefined;
 
     return (
-        <div className={styles.root}>
-            {/* ── Appearance section ─────────────────────────────────── */}
-            <section
-                className={styles.section}
-                aria-labelledby="appearance-title"
-            >
-                <h2
-                    className={styles.sectionTitle}
-                    id="appearance-title"
-                >
-                    {t('account.preferences.sections.appearance', 'Apariencia')}
-                </h2>
-
-                {/* themeWeb */}
-                <div className={styles.prefRow}>
-                    <div className={styles.prefInfo}>
-                        <span className={styles.prefLabel}>
-                            {t('account.preferences.theme.label', 'Tema')}
-                        </span>
-                        <span className={styles.prefDescription}>
-                            {t('account.preferences.theme.description', 'Color de la interfaz web')}
-                        </span>
-                    </div>
-                    <div className={styles.toggleWrap}>
-                        <select
-                            className={styles.select}
-                            value={settings.themeWeb}
-                            disabled={savingField === 'themeWeb'}
-                            aria-label={t('account.preferences.theme.label', 'Tema')}
-                            onChange={(e) => handleThemeChange(e.target.value as ThemeWeb)}
-                        >
-                            <option value="system">
-                                {t('account.preferences.theme.system', 'Sistema')}
-                            </option>
-                            <option value="light">
-                                {t('account.preferences.theme.light', 'Claro')}
-                            </option>
-                            <option value="dark">
-                                {t('account.preferences.theme.dark', 'Oscuro')}
-                            </option>
-                        </select>
-                        {savingField === 'themeWeb' && (
-                            <span className={styles.toggleSaving}>
-                                {t('common.saving', 'Guardando…')}
-                            </span>
-                        )}
-                    </div>
-                </div>
-
-                {/* languageWeb */}
-                <div className={styles.prefRow}>
-                    <div className={styles.prefInfo}>
-                        <span className={styles.prefLabel}>
-                            {t('account.preferences.language.label', 'Idioma')}
-                        </span>
-                        <span className={styles.prefDescription}>
-                            {t('account.preferences.language.description')}
-                        </span>
-                    </div>
-                    <div className={styles.toggleWrap}>
-                        <select
-                            className={styles.select}
-                            value={settings.languageWeb}
-                            disabled={savingField === 'languageWeb'}
-                            aria-label={t('account.preferences.language.label', 'Idioma')}
-                            onChange={(e) => {
-                                void handleLanguageChange(e.target.value as LanguageWeb);
-                            }}
-                        >
-                            <option value="es">Español</option>
-                            <option value="en">English</option>
-                            <option value="pt">Português</option>
-                        </select>
-                        {savingField === 'languageWeb' && (
-                            <span className={styles.toggleSaving}>
-                                {t('common.saving', 'Guardando…')}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Notifications section ──────────────────────────────── */}
-            <section
-                className={styles.section}
-                aria-labelledby="notifications-title"
-            >
-                <h2
-                    className={styles.sectionTitle}
-                    id="notifications-title"
-                >
-                    {t('account.preferences.sections.notifications', 'Notificaciones')}
-                </h2>
-
-                {/* allowEmails */}
-                <ToggleRow
-                    label={t('account.preferences.notifications.email.label', 'Correo electrónico')}
-                    description={t('account.preferences.notifications.email.description')}
-                    checked={settings.notifications.allowEmails}
-                    saving={savingField === 'notif.allowEmails'}
-                    id="pref-allow-emails"
-                    savingLabel={t('common.saving', 'Guardando…')}
-                    onToggle={() => handleNotifToggle('allowEmails')}
+        <AsyncRegion
+            state={state}
+            loading={() => (
+                <Skeleton
+                    locale={locale}
+                    shape="block"
                 />
-
-                {/* allowPush */}
-                <ToggleRow
-                    label={t('account.preferences.notifications.push.label', 'Notificaciones push')}
-                    description={t('account.preferences.notifications.push.description')}
-                    checked={settings.notifications.allowPush}
-                    saving={savingField === 'notif.allowPush'}
-                    id="pref-allow-push"
-                    savingLabel={t('common.saving', 'Guardando…')}
-                    onToggle={() => handleNotifToggle('allowPush')}
+            )}
+            error={({ retry }) => (
+                <ErrorState
+                    locale={locale}
+                    onRetry={retry}
                 />
-
-                {/* allowSms */}
-                <ToggleRow
-                    label={t('account.preferences.notifications.sms.label', 'SMS')}
-                    description={t('account.preferences.notifications.sms.description')}
-                    checked={settings.notifications.allowSms}
-                    saving={savingField === 'notif.allowSms'}
-                    id="pref-allow-sms"
-                    savingLabel={t('common.saving', 'Guardando…')}
-                    onToggle={() => handleNotifToggle('allowSms')}
-                />
-            </section>
-
-            {/* ── Newsletter section ─────────────────────────────────── */}
-            <section
-                className={styles.section}
-                aria-labelledby="newsletter-title"
-            >
-                <h2
-                    className={styles.sectionTitle}
-                    id="newsletter-title"
-                >
-                    {t('account.preferences.sections.newsletter', 'Boletín de novedades')}
-                </h2>
-
-                <ToggleRow
-                    label={t(
-                        'account.preferences.newsletter.label',
-                        'Recibir el boletín de novedades'
-                    )}
-                    description={t('account.preferences.newsletter.description')}
-                    checked={settings.newsletter}
-                    saving={savingField === 'newsletter'}
-                    id="pref-newsletter"
-                    savingLabel={t('common.saving', 'Guardando…')}
-                    onToggle={handleNewsletterToggle}
-                />
-            </section>
-
-            {/* ── AI questions digest (HOS-2101) ─────────────────────── */}
-            <section
-                className={styles.section}
-                aria-labelledby="ai-questions-digest-title"
-            >
-                <h2
-                    className={styles.sectionTitle}
-                    id="ai-questions-digest-title"
-                >
-                    {t(
-                        'account.preferences.aiQuestionsDigest.title',
-                        'Resumen semanal de preguntas a la IA'
-                    )}
-                </h2>
-
-                <ToggleRow
-                    label={t(
-                        'account.preferences.aiQuestionsDigest.label',
-                        'Recibir el resumen semanal'
-                    )}
-                    description={t('account.preferences.aiQuestionsDigest.description')}
-                    checked={settings.aiQuestionsDigest}
-                    saving={savingField === 'aiQuestionsDigest'}
-                    id="pref-ai-questions-digest"
-                    savingLabel={t('common.saving', 'Guardando…')}
-                    onToggle={handleAiQuestionsDigestToggle}
-                />
-            </section>
-        </div>
-    );
-}
-
-// ─── Toggle row sub-component ─────────────────────────────────────────────────
-
-interface ToggleRowProps {
-    readonly label: string;
-    readonly description: string;
-    readonly checked: boolean;
-    readonly saving: boolean;
-    readonly id: string;
-    readonly savingLabel: string;
-    readonly onToggle: () => void;
-}
-
-/**
- * Accessible toggle row with label, description, and custom switch UI.
- */
-function ToggleRow({
-    label,
-    description,
-    checked,
-    saving,
-    id,
-    savingLabel,
-    onToggle
-}: ToggleRowProps) {
-    return (
-        <div className={styles.prefRow}>
-            <div className={styles.prefInfo}>
-                <label
-                    className={styles.prefLabel}
-                    htmlFor={id}
-                >
-                    {label}
-                </label>
-                <span
-                    className={styles.prefDescription}
-                    id={`${id}-desc`}
-                >
-                    {description}
-                </span>
-            </div>
-            <div className={styles.toggleWrap}>
-                <label className={styles.toggle}>
-                    <input
-                        id={id}
-                        type="checkbox"
-                        role="switch"
-                        aria-checked={checked}
-                        checked={checked}
-                        disabled={saving}
-                        onChange={onToggle}
-                        aria-describedby={`${id}-desc`}
-                    />
-                    <span
-                        className={styles.toggleTrack}
-                        aria-hidden="true"
-                    />
-                    <span
-                        className={styles.toggleThumb}
-                        aria-hidden="true"
-                    />
-                </label>
-                {saving && (
-                    <span
-                        className={styles.toggleSaving}
-                        aria-live="polite"
+            )}
+            empty={() => null}
+            locked={() => null}
+            ready={(settings) => (
+                <div className={styles.root}>
+                    <Section
+                        title={t('account.preferences.sections.appearance')}
+                        helpId="section:preferences.appearance"
+                        actions={chip(appearanceSave)}
                     >
-                        {savingLabel}
-                    </span>
-                )}
-            </div>
-        </div>
+                        <div className={styles.fields}>
+                            <Field
+                                label={t('account.preferences.theme.label')}
+                                hint={t('account.preferences.theme.description')}
+                                locale={locale}
+                            >
+                                <Select
+                                    value={settings.themeWeb}
+                                    onChange={(event) => {
+                                        void changeTheme(event.target.value as ThemeWeb).catch(
+                                            () => undefined
+                                        );
+                                    }}
+                                >
+                                    <option value="system">
+                                        {t('account.preferences.theme.system')}
+                                    </option>
+                                    <option value="light">
+                                        {t('account.preferences.theme.light')}
+                                    </option>
+                                    <option value="dark">
+                                        {t('account.preferences.theme.dark')}
+                                    </option>
+                                </Select>
+                            </Field>
+                            <Field
+                                label={t('account.preferences.language.label')}
+                                hint={t('account.preferences.language.description')}
+                                locale={locale}
+                            >
+                                <Select
+                                    value={settings.languageWeb}
+                                    onChange={(event) => {
+                                        void changeLanguage(event.target.value as LanguageWeb);
+                                    }}
+                                >
+                                    <option value="es">Español</option>
+                                    <option value="en">English</option>
+                                    <option value="pt">Português</option>
+                                </Select>
+                            </Field>
+                        </div>
+                    </Section>
+
+                    <Section
+                        title={t('account.preferences.sections.notifications')}
+                        helpId="section:preferences.notifications"
+                        actions={chip(notificationsSave)}
+                    >
+                        <SwitchRow
+                            label={t('account.preferences.notifications.email.label')}
+                            description={t('account.preferences.notifications.email.description')}
+                            locale={locale}
+                            checked={settings.notifications.allowEmails}
+                            onChange={(next) => toggleNotification({ key: 'allowEmails', next })}
+                        />
+                        <SwitchRow
+                            label={t('account.preferences.notifications.push.label')}
+                            description={t('account.preferences.notifications.push.description')}
+                            locale={locale}
+                            checked={settings.notifications.allowPush}
+                            onChange={(next) => toggleNotification({ key: 'allowPush', next })}
+                        />
+                        <SwitchRow
+                            label={t('account.preferences.notifications.sms.label')}
+                            description={t('account.preferences.notifications.sms.description')}
+                            locale={locale}
+                            checked={settings.notifications.allowSms}
+                            onChange={(next) => toggleNotification({ key: 'allowSms', next })}
+                        />
+                        <SwitchRow
+                            label={t('account.preferences.aiQuestionsDigest.label')}
+                            description={t('account.preferences.aiQuestionsDigest.description')}
+                            locale={locale}
+                            checked={settings.aiQuestionsDigest}
+                            onChange={toggleDigest}
+                        />
+                    </Section>
+
+                    <PreferencesNewsletterSection
+                        locale={locale}
+                        apiUrl={apiUrl}
+                    />
+
+                    <PreferencesHistorySection
+                        locale={locale}
+                        apiUrl={apiUrl}
+                        enabled={settings.searchHistoryEnabled}
+                        gatePlanNames={historyGatePlanNames}
+                        plansHref={plansHref}
+                    />
+                </div>
+            )}
+        />
     );
 }

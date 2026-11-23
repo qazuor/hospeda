@@ -152,8 +152,8 @@
         "editProfile": "Editar perfil",
         "subscription": "Assinatura",
         "preferences": "Preferências",
-        "newsletter": "Newsletter",
-        "whatsNew": "O que há de novo",
+        "newsletter": "Newsletter por e-mail",
+        "whatsNew": "Novidades do Hospeda",
         "aiAssistants": "Assistentes de IA",
         "favorites": "Favoritos",
         "searchHistory": "Histórico de buscas",
@@ -336,7 +336,8 @@
             "appearance": "Aparência",
             "notifications": "Notificações",
             "onboarding": "Onboarding",
-            "newsletter": "Boletim de novidades"
+            "newsletter": "Newsletter por e-mail",
+            "searchHistory": "Histórico de buscas"
         },
         "onboarding": {
             "restartTour": "Repetir tour de boas-vindas",
@@ -369,7 +370,7 @@
             "description": "Idioma de la plataforma web"
         },
         "newsletter": {
-            "label": "Receber newsletter",
+            "label": "Receber a newsletter por e-mail",
             "description": "Recibir novedades, ofertas y destinos destacados"
         },
         "errors": {
@@ -384,6 +385,10 @@
             "title": "Resumo semanal de perguntas à IA",
             "label": "Receber o resumo semanal",
             "description": "Um e-mail às segundas com as perguntas que o assistente dos seus anúncios não conseguiu responder. Se não houver nenhuma, não enviamos."
+        },
+        "changeInPreferences": "Alterar em Preferências",
+        "searchHistory": {
+            "planFallback": "Plano superior"
         }
     },
     "aiAssistants": {
@@ -925,7 +930,14 @@
                 "message_other": "As coleções estão disponíveis nos planos {{plans}}. Atualize seu plano para acessar.",
                 "messageNoPlans": "As coleções não estão incluídas no seu plano atual. Atualize seu plano para acessar.",
                 "cta": "Ver planos"
-            }
+            },
+            "lock": {
+                "plan": "Seu plano não inclui coleções.",
+                "description": "Agrupe seus favoritos por viagem ou tema e volte a eles quando quiser."
+            },
+            "loadError": "Não conseguimos carregar suas coleções",
+            "emptyDescription": "Crie uma coleção para agrupar seus favoritos por viagem ou tema.",
+            "detailSectionTitle": "Favoritos desta coleção"
         },
         "filter": {
             "all": "Todos",
@@ -949,7 +961,9 @@
             "cancel": "Cancelar",
             "placeholder": "Adicione uma nota pessoal...",
             "save": "Salvar nota",
-            "saved": "Nota salva"
+            "saved": "Nota salva",
+            "label": "Nota pessoal",
+            "edit": "Editar a nota"
         },
         "removeBtn": "Remover",
         "removeLabel": "Remover dos favoritos",
@@ -1091,6 +1105,9 @@
         "editProfile": {
             "title": "Editar perfil",
             "description": "Atualize suas informações pessoais e preferencias de conta.",
+            "identitySection": "Sua identidade",
+            "contactSection": "Contato e localização",
+            "aboutSection": "Sobre você",
             "avatarSection": "Foto do perfil",
             "personalSection": "Informações pessoais",
             "extrasSection": "Más sobre vos",
@@ -1140,7 +1157,7 @@
             }
         },
         "whatsNew": {
-            "title": "Novidades",
+            "title": "Novidades do Hospeda",
             "desc": "Novidades e atualizações da plataforma"
         },
         "searchHistory": {
@@ -1161,7 +1178,7 @@
         }
     },
     "newsletter": {
-        "title": "Newsletter",
+        "title": "Newsletter por e-mail",
         "loading": "Carregando preferências…",
         "statusLabel": "Status",
         "statusActive": "Ativo",
@@ -2087,6 +2104,26 @@
         },
         "stat": {
             "unavailable": "Dado indisponível"
+        },
+        "thread": {
+            "label": "Mensagens da conversa",
+            "you": "Você",
+            "sender": {
+                "guest": "Hóspede",
+                "owner": "Anfitrião",
+                "system": "Mensagem do sistema"
+            },
+            "sending": "Enviando mensagem…",
+            "failed": "Não foi possível enviar",
+            "retry": "Tentar novamente"
+        },
+        "composer": {
+            "label": "Sua mensagem",
+            "placeholder": "Escreva sua mensagem…",
+            "send": "Enviar mensagem"
+        },
+        "entityCard": {
+            "noImage": "Sem imagem"
         }
     },
     "ownerDashboard": {

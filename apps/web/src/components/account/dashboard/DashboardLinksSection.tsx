@@ -68,7 +68,7 @@ export function DashboardLinksSection({ locale, title, helpId, rows }: Dashboard
                         title={t(row.labelKey)}
                         description={row.descriptionKey ? t(row.descriptionKey) : undefined}
                         href={buildUrl({ locale, path: row.path })}
-                        media={ICONS[row.icon]}
+                        leading={<span aria-hidden="true">{ICONS[row.icon]}</span>}
                     />
                 ))}
             </ul>

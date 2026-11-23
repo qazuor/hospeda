@@ -7,6 +7,24 @@
             "retry": "Retry"
         }
     },
+    "detail": {
+        "dataTitle": "Provider details",
+        "benefitTitle": "Benefit for hosts",
+        "schedule": "Opening hours",
+        "contact": "Contact",
+        "contactDialogTitle": "Contact {{name}}",
+        "contactDialogDescription": "This is the contact information the provider entered.",
+        "channel": {
+            "phone": "Call",
+            "whatsapp": "Write on WhatsApp",
+            "email": "Send an email",
+            "web": "Open the link"
+        },
+        "notFound": {
+            "title": "We could not find this provider",
+            "body": "The link may be out of date or the provider may no longer be listed. Go back to the directory to see who is available."
+        }
+    },
     "filter": {
         "all": "All"
     },

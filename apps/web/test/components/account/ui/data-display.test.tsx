@@ -152,29 +152,29 @@ describe('ListRow', () => {
         expect(screen.getByText('Tus datos')).toBeInTheDocument();
     });
 
-    it('renders meta and at most two actions, and a div when asked', () => {
-        const { container } = render(
-            <ListRow
-                as="div"
-                title="Casa"
-                meta="hace 2 días"
-                actions={[
-                    <button
-                        key="a"
-                        type="button"
-                    >
-                        Editar
-                    </button>,
-                    <button
-                        key="b"
-                        type="button"
-                    >
-                        Borrar
-                    </button>
-                ]}
-            />
+    it('renders meta and at most two actions', () => {
+        render(
+            <ul>
+                <ListRow
+                    title="Casa"
+                    meta="hace 2 días"
+                    actions={[
+                        <button
+                            key="a"
+                            type="button"
+                        >
+                            Editar
+                        </button>,
+                        <button
+                            key="b"
+                            type="button"
+                        >
+                            Borrar
+                        </button>
+                    ]}
+                />
+            </ul>
         );
-        expect(container.firstElementChild?.tagName).toBe('DIV');
         expect(screen.getByText('hace 2 días')).toBeInTheDocument();
         expect(screen.getAllByRole('button')).toHaveLength(2);
         expect(screen.queryByRole('link')).toBeNull();

@@ -1,447 +1,377 @@
 /**
  * @file PreferenceToggles.test.tsx
- * @description Unit tests for the PreferenceToggles React island (T-040).
- *
- * Covers:
- * - Loading state on mount
- * - Renders toggles from fetched settings
- * - Theme select and language select are rendered
- * - Newsletter toggle starts unchecked when newsletter=false
- * - Email notification toggle is checked when allowEmails=true
- * - Toggling newsletter sends a PATCH request
- * - On PATCH failure: value reverts + toast shown
- * - Admin-only fields (themeAdmin, languageAdmin) are NOT shown
- * - Error state on fetch failure
- * - SPEC-183 T-006: PATCH error with known code surfaces localized text
+ * @description RTL tests for the Preferences island (HOS-2479, D11): sections of
+ * kit SwitchRows with an autosave chip, the newsletter and search-history
+ * on/off wired to the endpoints their pages used, and the plan-locked row.
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PreferenceToggles } from '../../../src/components/account/PreferenceToggles.client';
-import { addToast } from '../../../src/store/toast-store';
 
-// ─── Module mocks ─────────────────────────────────────────────────────────────
+const API = 'http://localhost:3001';
 
-vi.mock('../../../src/components/account/PreferenceToggles.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
+interface Scenario {
+    settings?: Record<string, unknown>;
+    newsletterStatus?: string | null;
+    newsletterPrefs?: Record<string, boolean> | null;
+    historyLocked?: boolean;
+    failMutations?: boolean;
+    failUserGet?: boolean;
+}
 
-// `translateApiError` spy — lets us verify T-006 calls without needing to
-// actually translate codes (that's tested in @repo/i18n unit tests).
-// Returns a sentinel so tests can confirm the helper's return value flows
-// through to the toast, regardless of the fallback string.
-const TRANSLATE_SENTINEL = '__TRANSLATED_BY_HELPER__';
-const mockTranslateApiError = vi.fn(
-    (_params: { error?: unknown; t?: unknown; fallback?: string }) => TRANSLATE_SENTINEL
-);
-
-vi.mock('../../../src/lib/api-errors', () => ({
-    translateApiError: (params: Parameters<typeof mockTranslateApiError>[0]) =>
-        mockTranslateApiError(params)
-}));
-
-vi.mock('../../../src/lib/i18n', () => {
-    // Stable t function — avoids useCallback dep instability when t is recreated each render
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    const translations = { t } as const;
-    return {
-        createTranslations: () => translations
-    };
-});
-
-vi.mock('../../../src/store/toast-store', () => ({
-    addToast: vi.fn()
-}));
-
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
-const BASE_SETTINGS = {
-    themeWeb: 'light',
-    languageWeb: 'es',
-    notifications: {
-        enabled: true,
-        allowEmails: true,
-        allowPush: false,
-        allowSms: false
-    },
-    newsletter: false
-};
-
-function makeUserResponse(settings = BASE_SETTINGS) {
-    return JSON.stringify({
-        success: true,
-        data: { id: 'user-1', settings }
+function json(body: unknown, status = 200) {
+    return new Response(JSON.stringify(body), {
+        status,
+        headers: { 'Content-Type': 'application/json' }
     });
 }
 
-function makePatchBody(success: boolean, errorMsg?: string) {
-    return JSON.stringify(
-        success ? { success: true } : { success: false, error: { message: errorMsg ?? 'Error' } }
+/** URL + method router standing in for the API. Returns the fetch mock. */
+function installApi(scenario: Scenario = {}) {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? 'GET';
+        const mutating = method !== 'GET';
+        if (mutating && scenario.failMutations) {
+            return json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'x' } }, 500);
+        }
+        if (url.includes('/protected/users/') && method === 'GET') {
+            if (scenario.failUserGet) return json({ success: false }, 500);
+            return json({
+                success: true,
+                data: {
+                    id: 'user-1',
+                    settings: scenario.settings ?? {
+                        themeWeb: 'light',
+                        languageWeb: 'es',
+                        notifications: {
+                            enabled: true,
+                            allowEmails: true,
+                            allowPush: false,
+                            allowSms: false
+                        }
+                    }
+                }
+            });
+        }
+        if (url.endsWith('/newsletter/status')) {
+            return json({
+                success: true,
+                data: {
+                    subscribed: scenario.newsletterStatus === 'active',
+                    status: scenario.newsletterStatus ?? null,
+                    subscribedAt: null,
+                    verifiedAt: null,
+                    preferences: scenario.newsletterPrefs ?? null
+                }
+            });
+        }
+        if (url.endsWith('/protected/search-history') && method === 'GET') {
+            return scenario.historyLocked
+                ? json(
+                      { success: false, error: { code: 'ENTITLEMENT_REQUIRED', message: 'no' } },
+                      403
+                  )
+                : json({ success: true, data: { items: [] } });
+        }
+        return json({ success: true, data: {} });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+}
+
+function callsTo({
+    fetchMock,
+    method,
+    path
+}: {
+    readonly fetchMock: ReturnType<typeof installApi>;
+    readonly method: string;
+    readonly path: string;
+}) {
+    return fetchMock.mock.calls.filter(
+        ([url, init]) => String(url).includes(path) && (init?.method ?? 'GET') === method
     );
 }
 
-/** Build a GET mock that returns a fresh Response on every call */
-function buildGetMock(settings = BASE_SETTINGS) {
-    return vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
-        const method = opts?.method ?? 'GET';
-        if (method === 'GET' || method === undefined) {
-            return Promise.resolve(
-                new Response(makeUserResponse(settings), {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json' }
-                })
-            );
-        }
-        return Promise.resolve(
-            new Response(makePatchBody(true), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            })
-        );
-    });
-}
-
-function renderToggles() {
+function renderPage({ gatePlanNames = [] as readonly string[] } = {}) {
     return render(
         <PreferenceToggles
             userId="user-1"
             locale="es"
-            apiUrl="http://localhost:3001"
+            apiUrl={API}
+            historyGatePlanNames={gatePlanNames}
+            plansHref="/es/planes/turistas/precios/"
         />
     );
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+beforeEach(() => {
+    vi.clearAllMocks();
+});
 
-describe('PreferenceToggles', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        mockTranslateApiError.mockReturnValue(TRANSLATE_SENTINEL);
+afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+});
+
+describe('PreferenceToggles: async states', () => {
+    it('shows a busy skeleton while the settings load', () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(() => new Promise(() => undefined))
+        );
+        const { container } = renderPage();
+        expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
     });
 
-    it('shows loading state on mount', () => {
-        globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => undefined));
-        renderToggles();
-        expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    it('shows an error with a retry (never an empty page) when the settings fail', async () => {
+        installApi({ failUserGet: true });
+        renderPage();
+        const retry = await screen.findByRole('button', { name: /reintentar/i });
+        expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+        installApi();
+        fireEvent.click(retry);
+        expect(
+            await screen.findByRole('switch', { name: /Notificaciones por email/ })
+        ).toBeVisible();
     });
+});
 
-    it('shows error state when fetch fails', async () => {
-        globalThis.fetch = vi
-            .fn()
-            .mockImplementation(() => Promise.resolve(new Response(null, { status: 500 })));
-        renderToggles();
-        await waitFor(() => {
-            expect(screen.getByRole('alert')).toBeInTheDocument();
-        });
-    });
-
-    it('renders theme select after fetch', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-        await waitFor(() => {
-            expect(screen.getByLabelText('Tema')).toBeInTheDocument();
-        });
-    });
-
-    it('renders language select after fetch', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-        await waitFor(() => {
-            expect(screen.getByLabelText('Idioma')).toBeInTheDocument();
-        });
-    });
-
-    it('newsletter toggle is unchecked when newsletter=false', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-        await waitFor(() => {
-            const checkbox = screen.getByRole('switch', { name: /recibir el bolet.n/i });
-            expect(checkbox).not.toBeChecked();
-        });
-    });
-
-    it('email notification toggle is checked when allowEmails=true', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-        await waitFor(() => {
-            const emailCheckbox = screen.getByRole('switch', {
-                name: /correo electrónico/i
-            });
-            expect(emailCheckbox).toBeChecked();
-        });
-    });
-
-    it('toggling newsletter sends a PATCH request', async () => {
-        const patchCalls: RequestInit[] = [];
-        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
-            const method = opts?.method ?? 'GET';
-            if (method === 'PATCH') {
-                patchCalls.push(opts!);
-                return Promise.resolve(
-                    new Response(makePatchBody(true), {
-                        status: 200,
-                        headers: { 'Content-Type': 'application/json' }
-                    })
-                );
-            }
-            return Promise.resolve(
-                new Response(makeUserResponse(), {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json' }
-                })
-            );
-        });
-
-        renderToggles();
-        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
-
-        const checkbox = screen.getByRole('switch', { name: /recibir el bolet.n/i });
-        fireEvent.click(checkbox);
-
-        await waitFor(() => {
-            expect(patchCalls.length).toBeGreaterThan(0);
-        });
-
-        expect(patchCalls[0]).toMatchObject({ method: 'PATCH' });
-    });
-
-    it('reverts newsletter toggle and shows toast on PATCH failure', async () => {
-        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
-            const method = opts?.method ?? 'GET';
-            if (method === 'PATCH') {
-                return Promise.resolve(
-                    new Response(makePatchBody(false, 'No se pudo guardar'), {
-                        status: 500,
-                        headers: { 'Content-Type': 'application/json' }
-                    })
-                );
-            }
-            return Promise.resolve(
-                new Response(makeUserResponse(), {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json' }
-                })
-            );
-        });
-
-        renderToggles();
-        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
-
-        const checkbox = screen.getByRole('switch', { name: /recibir el bolet.n/i });
-        fireEvent.click(checkbox);
-
-        await waitFor(() => {
-            expect(vi.mocked(addToast)).toHaveBeenCalledWith(
-                expect.objectContaining({ type: 'error' })
-            );
-        });
-
-        // After revert, checkbox should be unchecked (original state was newsletter: false)
-        await waitFor(() => {
-            expect(checkbox).not.toBeChecked();
-        });
-    });
-
-    it('does NOT render themeAdmin or languageAdmin inputs', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-        await waitFor(() => screen.getByLabelText('Tema'));
-
-        const allSelects = screen.queryAllByRole('combobox');
-        for (const select of allSelects) {
-            const label = select.getAttribute('aria-label') ?? '';
-            expect(label.toLowerCase()).not.toContain('admin');
+describe('PreferenceToggles: sections', () => {
+    it('renders flat sections, each with a help anchor, and no nested section', async () => {
+        installApi({ newsletterStatus: 'active' });
+        const { container } = renderPage();
+        await screen.findByRole('switch', { name: /Notificaciones por email/ });
+        const sections = Array.from(container.querySelectorAll('section[data-help]'));
+        const anchors = sections.map((el) => el.getAttribute('data-help'));
+        expect(anchors).toEqual(
+            expect.arrayContaining([
+                'section:preferences.appearance',
+                'section:preferences.notifications',
+                'section:preferences.newsletter',
+                'section:preferences.history'
+            ])
+        );
+        for (const section of sections) {
+            expect(section.querySelector('section')).toBeNull();
         }
     });
 
-    // ── SPEC-183 T-006: translateApiError integration ─────────────────────────
+    it('does not show admin-only settings', async () => {
+        installApi();
+        renderPage();
+        await screen.findByRole('switch', { name: /Notificaciones por email/ });
+        expect(screen.queryByText(/themeAdmin|languageAdmin/)).not.toBeInTheDocument();
+    });
 
-    it('T-006: PATCH failure passes the full error object (with code) to translateApiError', async () => {
-        const apiError = {
-            code: 'VALIDATION_ERROR',
-            message: 'Validation failed (English raw)'
+    it('reads the saved states into the switches', async () => {
+        installApi({
+            settings: {
+                notifications: { allowEmails: true, allowPush: false, allowSms: false },
+                aiQuestionsDigest: false
+            }
+        });
+        renderPage();
+        expect(
+            await screen.findByRole('switch', { name: /Notificaciones por email/ })
+        ).toBeChecked();
+        expect(screen.getByRole('switch', { name: /Notificaciones push/ })).not.toBeChecked();
+        expect(
+            screen.getByRole('switch', { name: /Recibir el resumen semanal/ })
+        ).not.toBeChecked();
+    });
+
+    it('treats an absent aiQuestionsDigest as on (opt-out)', async () => {
+        installApi();
+        renderPage();
+        expect(
+            await screen.findByRole('switch', { name: /Recibir el resumen semanal/ })
+        ).toBeChecked();
+    });
+});
+
+describe('PreferenceToggles: autosave chip', () => {
+    it('saves a switch on its own and shows saving then saved', async () => {
+        const fetchMock = installApi();
+        renderPage();
+        const toggle = await screen.findByRole('switch', { name: /Notificaciones push/ });
+        fireEvent.click(toggle);
+        await waitFor(() => {
+            expect(document.querySelector('[data-status="saved"]')).not.toBeNull();
+        });
+        expect(document.querySelector('[data-status="saved"]')?.textContent).toMatch(/Guardado/);
+        const [patch] = callsTo({ fetchMock, method: 'PATCH', path: '/protected/users/user-1' });
+        const body = JSON.parse(String(patch?.[1]?.body)) as {
+            settings: { notifications: { allowPush: boolean; allowEmails: boolean } };
         };
+        expect(body.settings.notifications).toMatchObject({ allowPush: true, allowEmails: true });
+    });
 
-        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
-            const method = opts?.method ?? 'GET';
-            if (method === 'PATCH') {
-                return Promise.resolve(
-                    new Response(JSON.stringify({ success: false, error: apiError }), {
-                        status: 422,
-                        headers: { 'Content-Type': 'application/json' }
-                    })
-                );
-            }
-            return Promise.resolve(
-                new Response(makeUserResponse(), {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json' }
-                })
-            );
-        });
-
-        renderToggles();
-        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
-        fireEvent.click(screen.getByRole('switch', { name: /recibir el bolet.n/i }));
-
-        // translateApiError must be called with the full error object (not just message).
+    it('PATCHes only aiQuestionsDigest=false when the digest is switched off', async () => {
+        const fetchMock = installApi();
+        renderPage();
+        fireEvent.click(await screen.findByRole('switch', { name: /Recibir el resumen semanal/ }));
         await waitFor(() => {
-            expect(mockTranslateApiError).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    error: expect.objectContaining({ code: 'VALIDATION_ERROR' })
-                })
-            );
+            expect(
+                callsTo({ fetchMock, method: 'PATCH', path: '/protected/users/user-1' })
+            ).toHaveLength(1);
         });
-
-        // The toast message is the sentinel returned by our translateApiError mock,
-        // confirming that the component uses the helper's result, not a raw string.
-        await waitFor(() => {
-            expect(vi.mocked(addToast)).toHaveBeenCalledWith(
-                expect.objectContaining({ type: 'error', message: TRANSLATE_SENTINEL })
-            );
+        const [patch] = callsTo({ fetchMock, method: 'PATCH', path: '/protected/users/user-1' });
+        expect(JSON.parse(String(patch?.[1]?.body))).toEqual({
+            settings: { aiQuestionsDigest: false }
         });
     });
 
-    it('T-006: PATCH failure passes a localized fallback to translateApiError', async () => {
-        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
-            const method = opts?.method ?? 'GET';
-            if (method === 'PATCH') {
-                return Promise.resolve(
-                    new Response(
-                        JSON.stringify({ success: false, error: { message: 'Server overloaded' } }),
-                        { status: 503, headers: { 'Content-Type': 'application/json' } }
-                    )
-                );
-            }
-            return Promise.resolve(
-                new Response(makeUserResponse(), {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json' }
-                })
-            );
-        });
-
-        renderToggles();
-        await waitFor(() => screen.getByRole('switch', { name: /recibir el bolet.n/i }));
-        fireEvent.click(screen.getByRole('switch', { name: /recibir el bolet.n/i }));
-
+    it('reverts the switch and shows the failed chip with retry when the save fails', async () => {
+        installApi({ failMutations: true });
+        renderPage();
+        const toggle = await screen.findByRole('switch', { name: /Notificaciones push/ });
+        fireEvent.click(toggle);
         await waitFor(() => {
-            expect(mockTranslateApiError).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    // The component passes a pre-localized string as fallback.
-                    fallback: expect.any(String)
-                })
-            );
+            expect(document.querySelector('[data-status="error"]')).not.toBeNull();
         });
+        expect(screen.getByRole('switch', { name: /Notificaciones push/ })).not.toBeChecked();
+        const chip = document.querySelector('[data-status="error"]') as HTMLElement;
+        expect(within(chip).getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
     });
 });
 
-describe('PreferenceToggles — AI questions digest (HOS-2101)', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('is checked when the setting is absent: the digest is opt-out', async () => {
-        globalThis.fetch = buildGetMock();
-
-        renderToggles();
-        const checkbox = await waitFor(() =>
-            screen.getByRole('switch', { name: /recibir el resumen semanal/i })
-        );
-
-        expect((checkbox as HTMLInputElement).checked).toBe(true);
-    });
-
-    it('is unchecked when the owner switched it off', async () => {
-        globalThis.fetch = buildGetMock({
-            ...BASE_SETTINGS,
-            aiQuestionsDigest: false
-        } as typeof BASE_SETTINGS);
-
-        renderToggles();
-        const checkbox = await waitFor(() =>
-            screen.getByRole('switch', { name: /recibir el resumen semanal/i })
-        );
-
-        expect((checkbox as HTMLInputElement).checked).toBe(false);
-    });
-
-    it('PATCHes only aiQuestionsDigest=false when switched off', async () => {
-        // Arrange
-        const patchBodies: unknown[] = [];
-        globalThis.fetch = vi.fn().mockImplementation((_url: string, opts?: RequestInit) => {
-            if ((opts?.method ?? 'GET') === 'PATCH') {
-                patchBodies.push(JSON.parse(String(opts?.body)));
-                return Promise.resolve(new Response(makePatchBody(true), { status: 200 }));
-            }
-            return Promise.resolve(new Response(makeUserResponse(), { status: 200 }));
+describe('PreferenceToggles: newsletter (D11)', () => {
+    it('shows the subscription switch on, plus the content types when active', async () => {
+        installApi({
+            newsletterStatus: 'active',
+            newsletterPrefs: { offers: true, events: false, guides: true, productNews: true }
         });
-        renderToggles();
-        const checkbox = await waitFor(() =>
-            screen.getByRole('switch', { name: /recibir el resumen semanal/i })
+        renderPage();
+        expect(
+            await screen.findByRole('switch', { name: /Recibir el newsletter por mail/ })
+        ).toBeChecked();
+        expect(screen.getByRole('switch', { name: /Ofertas/ })).toBeChecked();
+        expect(screen.getByRole('switch', { name: /Eventos/ })).not.toBeChecked();
+    });
+
+    it('subscribes through POST /newsletter/subscribe (same call as the old page)', async () => {
+        const fetchMock = installApi({ newsletterStatus: 'unsubscribed' });
+        renderPage();
+        const toggle = await screen.findByRole('switch', {
+            name: /Recibir el newsletter por mail/
+        });
+        expect(toggle).not.toBeChecked();
+        fireEvent.click(toggle);
+        await waitFor(() => {
+            expect(
+                callsTo({ fetchMock, method: 'POST', path: '/protected/newsletter/subscribe' })
+            ).toHaveLength(1);
+        });
+        const [post] = callsTo({ fetchMock, method: 'POST', path: '/newsletter/subscribe' });
+        expect(JSON.parse(String(post?.[1]?.body))).toMatchObject({
+            locale: 'es',
+            source: 'account_preferences'
+        });
+    });
+
+    it('unsubscribes through DELETE /newsletter/unsubscribe', async () => {
+        const fetchMock = installApi({ newsletterStatus: 'active' });
+        renderPage();
+        fireEvent.click(
+            await screen.findByRole('switch', { name: /Recibir el newsletter por mail/ })
         );
+        await waitFor(() => {
+            expect(
+                callsTo({ fetchMock, method: 'DELETE', path: '/newsletter/unsubscribe' })
+            ).toHaveLength(1);
+        });
+    });
 
-        // Act
-        fireEvent.click(checkbox);
+    it('saves one content type through PATCH /newsletter/preferences with only that key', async () => {
+        const fetchMock = installApi({ newsletterStatus: 'active' });
+        renderPage();
+        fireEvent.click(await screen.findByRole('switch', { name: /Ofertas/ }));
+        await waitFor(() => {
+            expect(
+                callsTo({ fetchMock, method: 'PATCH', path: '/newsletter/preferences' })
+            ).toHaveLength(1);
+        });
+        const [patch] = callsTo({ fetchMock, method: 'PATCH', path: '/newsletter/preferences' });
+        expect(JSON.parse(String(patch?.[1]?.body))).toEqual({ offers: false });
+    });
 
-        // Assert
-        await waitFor(() => expect(patchBodies).toHaveLength(1));
-        expect(patchBodies[0]).toEqual({ settings: { aiQuestionsDigest: false } });
+    it('offers no content types and no switch to a bounced subscriber', async () => {
+        installApi({ newsletterStatus: 'bounced' });
+        renderPage();
+        const toggle = await screen.findByRole('switch', {
+            name: /Recibir el newsletter por mail/
+        });
+        expect(toggle).toBeDisabled();
+        expect(screen.queryByRole('switch', { name: /Ofertas/ })).not.toBeInTheDocument();
     });
 });
 
-describe('PreferenceToggles — switch accessibility (HOS-2435)', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('exposes each toggle as role=switch with a matching aria-checked', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-
-        const switches = await waitFor(() => {
-            const found = screen.getAllByRole('switch');
-            expect(found.length).toBeGreaterThan(0);
-            return found;
+describe('PreferenceToggles: search history (D11)', () => {
+    it('saves the opt-out through PATCH /search-history/preferences', async () => {
+        const fetchMock = installApi({ settings: { searchHistoryEnabled: true } });
+        renderPage();
+        const toggle = await screen.findByRole('switch', { name: 'Historial de búsquedas' });
+        expect(toggle).toBeChecked();
+        fireEvent.click(toggle);
+        await waitFor(() => {
+            expect(
+                callsTo({ fetchMock, method: 'PATCH', path: '/search-history/preferences' })
+            ).toHaveLength(1);
         });
-
-        for (const el of switches) {
-            expect(el.getAttribute('aria-checked')).toBe(String((el as HTMLInputElement).checked));
-        }
+        const [patch] = callsTo({
+            fetchMock,
+            method: 'PATCH',
+            path: '/search-history/preferences'
+        });
+        expect(JSON.parse(String(patch?.[1]?.body))).toEqual({ enabled: false });
     });
 
-    it('points aria-describedby at an element that exists', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-
-        const switches = await waitFor(() => screen.getAllByRole('switch'));
-
-        for (const el of switches) {
-            const describedBy = el.getAttribute('aria-describedby');
-            expect(describedBy).toBeTruthy();
-            expect(document.getElementById(describedBy as string)).not.toBeNull();
-        }
+    it('reads an explicit false as opted out', async () => {
+        installApi({ settings: { searchHistoryEnabled: false } });
+        renderPage();
+        expect(
+            await screen.findByRole('switch', { name: 'Historial de búsquedas' })
+        ).not.toBeChecked();
     });
 
-    it('does not label the switch twice (wrapper label has no aria-label)', async () => {
-        globalThis.fetch = buildGetMock();
-        renderToggles();
-        const switches = await waitFor(() => screen.getAllByRole('switch'));
-
-        for (const el of switches) {
-            expect(el.closest('label')?.hasAttribute('aria-label')).toBe(false);
-        }
-    });
-
-    it('declares a visible keyboard focus style for the switch track', () => {
-        const css = readFileSync(
-            resolve(__dirname, '../../../src/components/account/PreferenceToggles.module.css'),
-            'utf8'
+    it('renders the plan-locked row: disabled switch, LockedState, catalog plan names, no literal', async () => {
+        installApi({ historyLocked: true });
+        const { container } = renderPage({ gatePlanNames: ['Plan Catalogo A', 'Plan Catalogo B'] });
+        const toggle = await screen.findByRole('switch', { name: /Historial de búsquedas/ });
+        expect(toggle).toBeDisabled();
+        expect(toggle).not.toBeChecked();
+        const locked = container.querySelector('[data-reason="plan"]') as HTMLElement;
+        expect(locked).not.toBeNull();
+        expect(within(locked).getAllByText(/Plan Catalogo/).length).toBeGreaterThan(0);
+        expect(within(locked).getByRole('link', { name: /ver planes/i })).toHaveAttribute(
+            'href',
+            '/es/planes/turistas/precios/'
         );
-        expect(css).toMatch(/\.toggle input:focus-visible\s*\+\s*\.toggleTrack\s*\{[^}]*outline/);
+        // The old copy hardcoded plan names; none may come back.
+        expect(container.textContent).not.toMatch(/\bPlus\b|\bVIP\b/);
+    });
+
+    it('shows an error with retry (not a switch) when the access check fails', async () => {
+        const fetchMock = installApi();
+        fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+            const url = String(input);
+            if (url.endsWith('/protected/search-history')) return json({ success: false }, 500);
+            if (url.endsWith('/newsletter/status')) {
+                return json({ success: true, data: { status: null, preferences: null } });
+            }
+            return json({ success: true, data: { settings: {} } });
+        });
+        renderPage();
+        await waitFor(() => {
+            expect(screen.getAllByRole('button', { name: /reintentar/i }).length).toBeGreaterThan(
+                0
+            );
+        });
+        expect(
+            screen.queryByRole('switch', { name: 'Historial de búsquedas' })
+        ).not.toBeInTheDocument();
     });
 });

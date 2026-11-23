@@ -1,52 +1,69 @@
-/* ListRow.module.css — one list row (HOS-2414, first consumer HOS-2473).
-   Stacked below 40rem of container width, on one line from 40rem. No shadow;
-   the only hover is the row background of a linked row. */
-
-.container {
-    container-type: inline-size;
-    list-style: none;
-}
+/* ListRow.module.css — one row of a DataList (HOS-2481).
+   Stacked below 40rem of the DataList's width, one grid line from there. */
 
 .row {
     position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+        "leading body"
+        "leading trailing"
+        "leading actions";
+    align-items: start;
+    column-gap: var(--space-3);
+    row-gap: var(--space-2);
+    padding: var(--space-4);
+    border-block-end: 1px solid var(--border);
+    background-color: var(--core-card);
+}
+
+.row:last-child {
+    border-block-end: 0;
+}
+
+.row:hover {
+    background-color: var(--surface-warm);
+}
+
+.row:focus-within {
+    background-color: var(--surface-warm);
+}
+
+/* Accent rail for a row that needs attention (an unread conversation). */
+.emphasis::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--space-1);
+    background-color: var(--brand-accent);
+}
+
+.leading {
+    grid-area: leading;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    min-block-size: var(--space-12);
-    box-sizing: border-box;
 }
 
-.linked:hover {
-    background-color: var(--core-muted-foreground-a08);
-}
-
-.media {
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    color: var(--core-muted-foreground);
-}
-
-.text {
-    flex: 1 1 0;
+.body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
     min-inline-size: 0;
 }
 
 .title {
     margin: 0;
     font: var(--app-ui);
-    font-weight: var(--app-title-weight);
     color: var(--core-foreground);
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.description {
-    margin: var(--space-1) 0 0;
-    font: var(--app-meta);
-    color: var(--core-muted-foreground);
+.emphasis .title {
+    font-weight: var(--app-card-title-weight);
 }
 
 .link {
@@ -54,11 +71,15 @@
     text-decoration: none;
 }
 
-/* The whole row is the link's hit area. */
+/* The link's hit area covers the whole row; actions sit above it. */
 .link::after {
     content: "";
     position: absolute;
     inset: 0;
+}
+
+.link:hover {
+    text-decoration: underline;
 }
 
 .link:focus-visible {
@@ -68,24 +89,42 @@
 .link:focus-visible::after {
     outline: 2px solid var(--focus-ring);
     outline-offset: -2px;
-    border-radius: var(--radius-control);
-}
-
-/* Below 40rem the trailing part takes its own line. */
-.trailing {
-    display: flex;
-    flex-basis: 100%;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2);
 }
 
 .meta {
-    display: inline-flex;
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Actions sit above the stretched link so they keep their own click. */
+.description {
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.emphasis .description {
+    color: var(--core-foreground);
+}
+
+.trailing {
+    grid-area: trailing;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
 .actions {
+    grid-area: actions;
     position: relative;
     z-index: 1;
     display: flex;
@@ -94,9 +133,15 @@
 }
 
 @container (width >= 40rem) {
+    .row {
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        grid-template-areas: "leading body trailing actions";
+        align-items: center;
+        column-gap: var(--space-4);
+    }
+
     .trailing {
-        flex-basis: auto;
-        justify-content: flex-end;
-        margin-inline-start: auto;
+        flex-direction: column;
+        align-items: flex-end;
     }
 }

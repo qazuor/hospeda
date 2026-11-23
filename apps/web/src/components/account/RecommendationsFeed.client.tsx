@@ -25,7 +25,7 @@
  *
  * Card decision: `AccommodationCard.astro` cannot be used inside a React
  * island (established precedent — see `SearchChatPanel.client.tsx`'s
- * `ResultCard` and `BookmarkGrid.tsx`'s card). This file defines a
+ * `ResultCard` and the favorites `EntityCard`). This file defines a
  * lightweight `RecommendationCard` sub-component mirroring the same visual
  * signals (image, title, price, rating) instead of reusing an Astro-only
  * component.

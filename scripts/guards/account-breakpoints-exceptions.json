@@ -17,9 +17,6 @@
     "apps/web/src/components/account/ProfileCompletion.module.css": {
         "media": 3
     },
-    "apps/web/src/components/account/ProfileEditForm.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/RecommendationsFeed.module.css": {
         "media": 2
     },
@@ -28,9 +25,6 @@
     },
     "apps/web/src/components/account/SetPassword.module.css": {
         "media": 1
-    },
-    "apps/web/src/components/account/UserFavoritesList.module.css": {
-        "media": 6
     },
     "apps/web/src/components/account/WhatsNewModal.module.css": {
         "media": 1
@@ -83,17 +77,8 @@
     "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
         "media": 1
     },
-    "apps/web/src/pages/[lang]/mi-cuenta/consultas/index.astro": {
-        "media": 1
-    },
     "apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro": {
         "media": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro": {
-        "media": 3
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/favoritos/index.astro": {
-        "media": 1
     },
     "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
         "media": 4

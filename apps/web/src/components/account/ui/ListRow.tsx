@@ -1,16 +1,23 @@
 /**
- * ListRow — one row of a list of things: an entry point, a conversation, a
- * listing (HOS-2414, first consumer HOS-2473; `DataList` follows in HOS-2481).
+ * ListRow — one row of a {@link DataList} (HOS-2481, spec §6.2).
  *
- * Anatomy: optional leading `media` (an icon or an Avatar), a title, an
- * optional description, optional trailing `meta` (a CountPill, a StatusPill)
- * and at most two `actions`. A row with more than two actions belongs in a
- * `Menu` (HOS-2483), so the type refuses a third.
+ * A row reads like a line of an inbox or a listing table: an optional
+ * `leading` piece (an avatar, an icon), the `title` with a `meta` line and a
+ * `description`, a `trailing` piece (a date, a `CountPill`) and up to two
+ * `actions`. Stacked below 40rem of CONTAINER width (the `DataList`), one grid
+ * line from there.
  *
- * With `href` the whole row is clickable: the title is the real link and a
- * stretched pseudo-element covers the row, while actions sit above it and stay
- * clickable on their own. Layout responds to the row's container: a grid from
- * 40rem, stacked below.
+ * - `href` turns the title into a link whose hit area covers the whole row.
+ *   Actions sit above that hit area, so they stay separately clickable and
+ *   the row never nests one interactive element inside another.
+ * - At most TWO actions (the type allows no more). A row that needs more
+ *   belongs in an overflow `Menu`, which the kit does not have yet: until it
+ *   does, pick the two that matter and move the rest to the detail page.
+ * - `emphasis` marks the row as needing attention (an unread conversation):
+ *   stronger title and an accent rail. It is visual only; say WHY in the
+ *   content (a `CountPill` with its own label), never by color alone.
+ *
+ * Pure presentation: every string arrives translated.
  *
  * @module components/account/ui/ListRow
  */
@@ -20,25 +27,27 @@ import { cx } from './cx';
 import { type HelpAnchor, helpAttr } from './help-anchor';
 import styles from './ListRow.module.css';
 
-/** At most two row actions; more go in a Menu. */
-export type ListRowActions = readonly [ReactNode] | readonly [ReactNode, ReactNode];
+/** Zero, one or two row actions. More than two belong in an overflow Menu. */
+export type ListRowActions = readonly [] | readonly [ReactNode] | readonly [ReactNode, ReactNode];
 
 /** Props of {@link ListRow}. */
 export interface ListRowProps {
-    /** The row's title. Becomes the link text when `href` is set. */
+    /** Main line: who or what the row is about. */
     readonly title: ReactNode;
-    /** One supporting line. */
-    readonly description?: ReactNode;
-    /** Makes the whole row a link to this target. */
+    /** When given, the title links here and the whole row is the hit area. */
     readonly href?: string;
-    /** Leading icon or Avatar (decorative). */
-    readonly media?: ReactNode;
-    /** Trailing information (a CountPill, a StatusPill). */
+    /** Piece before the text (avatar, icon). Decorative pieces need `aria-hidden`. */
+    readonly leading?: ReactNode;
+    /** Secondary line under the title (e.g. the listing). */
     readonly meta?: ReactNode;
-    /** At most two actions, rendered above the row link. */
+    /** Longer text, clamped to one line (e.g. the last message). */
+    readonly description?: ReactNode;
+    /** Piece at the end (a date, a `CountPill`). */
+    readonly trailing?: ReactNode;
+    /** Up to two actions (buttons or links). */
     readonly actions?: ListRowActions;
-    /** `li` inside a list, `div` elsewhere. @default 'li' */
-    readonly as?: 'li' | 'div';
+    /** Marks the row as needing attention (visual only). */
+    readonly emphasis?: boolean;
     /** Stable id rendered as `data-row`, for tests and analytics. */
     readonly rowId?: string;
     /** Extra class from the caller (layout only). */
@@ -48,63 +57,55 @@ export interface ListRowProps {
 }
 
 /**
- * One list row.
+ * The kit list row. Render it inside a {@link DataList}.
  *
  * @param props - See {@link ListRowProps}.
- * @returns An `<li>` (or `<div>`) row.
+ * @returns A `<li>`.
  */
 export function ListRow({
     title,
-    description,
     href,
-    media,
+    leading,
     meta,
-    actions,
-    as = 'li',
+    description,
+    trailing,
+    actions = [],
+    emphasis = false,
     rowId,
     className,
     helpId
 }: ListRowProps) {
-    const Root = as;
     return (
-        <Root
+        <li
             {...helpAttr({ helpId })}
+            className={cx(styles.row, emphasis && styles.emphasis, className)}
+            data-emphasis={emphasis ? '' : undefined}
             data-row={rowId}
-            className={cx(styles.container, className)}
         >
-            <div className={cx(styles.row, href && styles.linked)}>
-                {media ? (
-                    <span
-                        className={styles.media}
-                        aria-hidden="true"
-                    >
-                        {media}
-                    </span>
-                ) : null}
-                <div className={styles.text}>
-                    <p className={styles.title}>
-                        {href ? (
-                            <a
-                                href={href}
-                                className={styles.link}
-                            >
-                                {title}
-                            </a>
-                        ) : (
-                            title
-                        )}
-                    </p>
-                    {description ? <p className={styles.description}>{description}</p> : null}
-                </div>
-                {meta || (actions && actions.length > 0) ? (
-                    <div className={styles.trailing}>
-                        {meta ? <span className={styles.meta}>{meta}</span> : null}
-                        {actions && actions.length > 0 ? (
-                            <div className={styles.actions}>{actions}</div>
-                        ) : null}
-                    </div>
-                ) : null}
+            {leading !== undefined && <div className={styles.leading}>{leading}</div>}
+            <div className={styles.body}>
+                <p className={styles.title}>
+                    {href === undefined ? (
+                        title
+                    ) : (
+                        <a
+                            href={href}
+                            className={styles.link}
+                        >
+                            {title}
+                        </a>
+                    )}
+                </p>
+                {meta !== undefined && <p className={styles.meta}>{meta}</p>}
+                {description !== undefined && <p className={styles.description}>{description}</p>}
             </div>
-        </Root>
+            {trailing !== undefined && <div className={styles.trailing}>{trailing}</div>}
+            {actions.length > 0 && (
+                <div className={styles.actions}>
+                    {actions[0]}
+                    {actions[1]}
+                </div>
+            )}
+        </li>
     );
 }

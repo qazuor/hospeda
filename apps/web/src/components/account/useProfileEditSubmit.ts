@@ -10,24 +10,19 @@
  * alone (HOS-2444).
  */
 
-import {
-    type Dispatch,
-    type FormEvent,
-    type RefObject,
-    type SetStateAction,
-    useRef,
-    useState
-} from 'react';
+import { type Dispatch, type SetStateAction, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
+import { focusFirstInvalidField } from '@/lib/forms/focus-first-invalid-field';
 import { type UseZodFormResult, useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { addToast, getToasts, removeToast } from '@/store/toast-store';
+import { PROFILE_FIELD_PREFIX } from './ProfileEditFields';
 import {
     buildProfilePatch,
-    focusFirstInvalidProfileField,
     ProfileEditFormSchema,
     type ProfileSnapshot
 } from './ProfileEditForm.helpers';
+import type { SaveOutcome } from './ui/use-save-bar';
 
 interface ApiResponse<T> {
     readonly success: boolean;
@@ -115,8 +110,6 @@ export interface UseProfileEditSubmitParams {
     readonly baseline: ProfileSnapshot;
     readonly setBaseline: Dispatch<SetStateAction<ProfileSnapshot>>;
     readonly avatar: ProfileEditSubmitAvatar;
-    /** The `<form>` element, so focus lookups stay inside it. */
-    readonly formRef: RefObject<HTMLFormElement | null>;
 }
 
 /** Result of {@link useProfileEditSubmit}. */
@@ -128,10 +121,14 @@ export interface UseProfileEditSubmitResult {
     /** Clears one field's error (call from that field's change handler). */
     readonly clearError: (field: string) => void;
     readonly submitting: boolean;
-    /** `true` after a successful save, until the user edits something again. */
-    readonly saved: boolean;
-    readonly setSaved: (saved: boolean) => void;
-    readonly handleSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>;
+    /** Clears every field error and the form banner (used by «Descartar»). */
+    readonly resetErrors: () => void;
+    /**
+     * Validates and persists the form. Feed it to `useSaveBar` as `onSave`: the
+     * outcome carries the invalid field names so «Ir al primer error» can focus
+     * the first one.
+     */
+    readonly submitProfile: () => Promise<SaveOutcome>;
 }
 
 /**
@@ -148,13 +145,12 @@ export function useProfileEditSubmit({
     snapshotFromState,
     baseline,
     setBaseline,
-    avatar,
-    formRef
+    avatar
 }: UseProfileEditSubmitParams): UseProfileEditSubmitResult {
     // Validation is delegated to the shared `useZodForm` primitive (HOS-190
     // slice 3). It lives HERE, next to the submit that clears and sets its banner.
-    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
-        useZodForm({ schema: ProfileEditFormSchema, t });
+    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError, reset } =
+        useZodForm({ schema: ProfileEditFormSchema, t, fieldIdPrefix: PROFILE_FIELD_PREFIX });
     const { file: avatarFile, url: avatarUrl, previewUrl } = avatar;
     const {
         setUrl: setAvatarUrl,
@@ -163,7 +159,6 @@ export function useProfileEditSubmit({
         setUploading: setAvatarUploading
     } = avatar;
     const [submitting, setSubmitting] = useState(false);
-    const [saved, setSaved] = useState(false);
     const ownToastIds = useRef<Set<string>>(new Set());
 
     /** Raises a toast and remembers it as this form's own. */
@@ -187,10 +182,8 @@ export function useProfileEditSubmit({
         return result;
     }
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-        e.preventDefault();
+    async function submitProfile(): Promise<SaveOutcome> {
         setFormError(null);
-        setSaved(false);
         // HOS-2444: one live toast at a time, so a new result replaces the old
         // one instead of stacking beneath it.
         dismissOwnToasts();
@@ -222,11 +215,11 @@ export function useProfileEditSubmit({
                 type: 'error',
                 message: t('validation.formHasErrors')
             });
-            focusFirstInvalidProfileField({
-                form: formRef.current,
-                fieldNames: clearedRequiredNames
+            focusFirstInvalidField({
+                fieldNames: clearedRequiredNames,
+                prefix: PROFILE_FIELD_PREFIX
             });
-            return;
+            return { ok: false, invalidFields: clearedRequiredNames };
         }
 
         // BETA-189 P2 + F6: only report success when a real change was persisted.
@@ -238,7 +231,7 @@ export function useProfileEditSubmit({
                 type: 'info',
                 message: t('account.editProfile.noChanges', 'No hay cambios para guardar')
             });
-            return;
+            return { ok: true };
         }
 
         // Validate ONLY the changed fields (read⊇write): a pre-existing invalid
@@ -248,11 +241,11 @@ export function useProfileEditSubmit({
         const parsed = trackToastsAddedBy(() => validate(omitUndefined(flatChanged)));
 
         if (!parsed.success) {
-            focusFirstInvalidProfileField({
-                form: formRef.current,
-                fieldNames: parsed.error.issues.map((issue) => String(issue.path[0] ?? ''))
-            });
-            return;
+            // `validate` already moved focus to the first invalid field.
+            return {
+                ok: false,
+                invalidFields: parsed.error.issues.map((issue) => String(issue.path[0] ?? ''))
+            };
         }
 
         setSubmitting(true);
@@ -326,18 +319,18 @@ export function useProfileEditSubmit({
                 });
                 handleApiError(apiError, localizedFallback);
                 notify({ type: 'error', message: msg });
-                return;
+                return { ok: false };
             }
 
             // F6: resync the baseline to what is now persisted (the current
             // snapshot, carrying the uploaded avatar URL) so a subsequent revert
             // of a just-saved field is correctly detected as a change.
             setBaseline({ ...current, avatarUrl: finalAvatarUrl ?? current.avatarUrl });
-            setSaved(true);
             notify({
                 type: 'success',
                 message: t('account.editProfile.success', 'Perfil actualizado correctamente')
             });
+            return { ok: true };
         } catch (err) {
             const msg =
                 err instanceof Error
@@ -345,6 +338,7 @@ export function useProfileEditSubmit({
                     : t('account.editProfile.errors.saveFailed', 'No se pudo guardar el perfil');
             setFormError(msg);
             notify({ type: 'error', message: msg });
+            return { ok: false };
         } finally {
             setSubmitting(false);
         }
@@ -355,8 +349,7 @@ export function useProfileEditSubmit({
         formError,
         clearError,
         submitting,
-        saved,
-        setSaved,
-        handleSubmit
+        resetErrors: reset,
+        submitProfile
     };
 }
