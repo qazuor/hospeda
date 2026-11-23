@@ -1,5 +1,5 @@
 import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
-import { and, eq, getDb, payments, providerLinks, subscriptions } from '@repo/db';
+import { and, eq, getDb, isNull, payments, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
@@ -155,8 +155,6 @@ export async function recordChargeFact(
     if (!linked) return { outcome: 'NO_SUBSCRIPTION', authorizationId: charge.authorizationId };
 
     let paymentId: string;
-    // HOS-1883 P-3': whether THIS call inserted the payment fact (a replay hits the unique key).
-    let insertedByThisCall = false;
     try {
         const inserted = await getDb().transaction(async (tx) =>
             tx.transaction(async (savepoint) => {
@@ -183,7 +181,6 @@ export async function recordChargeFact(
                 'PAYMENT_FACT_INSERT_RETURNING_EMPTY'
             );
         paymentId = inserted.id;
-        insertedByThisCall = true;
     } catch (error) {
         const cause = extractPostgresErrorCause(error);
         if (cause?.code !== '23505' || cause.constraint !== PAYMENT_FACT_CONSTRAINT) throw error;
@@ -392,11 +389,19 @@ export async function recordChargeFact(
             }
         });
     }
-    // HOS-1883: a rejected COMPLEMENTO charge leaves the row as it is (§1.2) and is reported as
-    // `addon_charge_declined`; it never reaches `billing_*` (P-10). P-3': only the call that wrote
-    // the rejection emits it, that is the one that inserted the fact or failed the payment now;
-    // a redelivery or a later cron pass of the same charge writes neither and emits nothing.
-    const wroteRejection = insertedByThisCall || result.terminalRejection?.outcome === 'FAILED';
+    // HOS-1883 P-3': every observed rejection, terminal or inside the retry window, with or
+    // without a provider reason, tries to set `rejection_observed_at`; only the call whose guarded
+    // write took the row reports the decline. It runs after the rejection's effects, so a failure
+    // above leaves the mark unset and the next read of the charge reports it instead. A
+    // redelivery, a later cron pass or a retried rejection of the same charge finds it set.
+    const [observed] = await getDb()
+        .update(payments)
+        .set({ rejectionObservedAt: ports.clock.now() })
+        .where(and(eq(payments.id, paymentId), isNull(payments.rejectionObservedAt)))
+        .returning({ id: payments.id });
+    const wroteRejection = observed !== undefined;
+    // A rejected COMPLEMENTO charge leaves the row as it is (§1.2) and is reported as
+    // `addon_charge_declined`; it never reaches `billing_*` (P-10).
     if (recordedPayment && linked.subscription.class === 'COMPLEMENTO' && wroteRejection)
         await emitAddonChargeRejected({
             complementSubscriptionId: linked.subscription.id,
