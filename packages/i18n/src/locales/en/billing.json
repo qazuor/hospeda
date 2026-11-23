@@ -872,6 +872,10 @@
     },
     "addonPurchase": {
         "title": "Buy add-ons",
+        "noSubscription": {
+            "title": "You need to subscribe to a plan first",
+            "description": "Add-ons are added to a plan. Choose your plan, then come back to buy add-ons."
+        },
         "chooseOffer": "Choose an add-on",
         "back": "Back",
         "noOffers": "No add-ons are available.",

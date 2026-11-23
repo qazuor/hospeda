@@ -872,6 +872,10 @@
     },
     "addonPurchase": {
         "title": "Comprar complementos",
+        "noSubscription": {
+            "title": "Antes tenés que suscribirte a un plan",
+            "description": "Los complementos se suman a un plan. Elegí tu plan y después volvé a comprar los complementos."
+        },
         "chooseOffer": "Elegí un complemento",
         "back": "Volver",
         "noOffers": "No hay complementos disponibles.",
