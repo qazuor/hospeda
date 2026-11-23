@@ -76,7 +76,7 @@ export interface ConversationInboxProps {
 /** Help anchor of each inbox's list section. */
 const INBOX_HELP_ID = {
     guest: 'section:messages.list',
-    owner: 'section:owner-messages.list'
+    owner: 'section:messages.owner-list'
 } as const;
 
 /** Route of each inbox, relative to the locale. */

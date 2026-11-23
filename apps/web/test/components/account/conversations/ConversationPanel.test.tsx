@@ -102,7 +102,7 @@ describe('ConversationPanel — one thread, two viewers', () => {
         );
         expect(container.querySelector('[data-kit-section]')).toHaveAttribute(
             'data-help',
-            'section:owner-messages.thread'
+            'section:messages.owner-thread'
         );
         expect(screen.getByRole('heading', { level: 2, name: 'Mensajes' })).toBeInTheDocument();
     });

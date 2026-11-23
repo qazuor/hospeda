@@ -55,7 +55,7 @@ export function PartnerStatsGrid({ locale }: PartnerStatsGridProps): JSX.Element
 
     if (read.status !== 'ready') {
         return (
-            <StatGrid helpId="section:partner.dashboard#stats">
+            <StatGrid helpId="section:partner.dashboard">
                 <StatCard
                     id="partnerStats"
                     label={t('account.partnerStats.title')}
@@ -77,7 +77,7 @@ export function PartnerStatsGrid({ locale }: PartnerStatsGridProps): JSX.Element
     if (!viewsReady && !clicksReady) return null;
 
     return (
-        <StatGrid helpId="section:partner.dashboard#stats">
+        <StatGrid helpId="section:partner.dashboard">
             {viewsReady ? (
                 <StatCard
                     id="partnerViews"

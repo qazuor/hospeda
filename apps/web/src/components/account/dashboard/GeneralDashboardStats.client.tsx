@@ -130,7 +130,7 @@ export function GeneralDashboardStats({ locale, planNames }: GeneralDashboardSta
             : reviewsState;
 
     return (
-        <StatGrid helpId="section:account.dashboard#stats">
+        <StatGrid helpId="section:account.dashboard">
             <StatCard
                 id="favorites"
                 label={t('account.pages.dashboard.stats.favorites')}

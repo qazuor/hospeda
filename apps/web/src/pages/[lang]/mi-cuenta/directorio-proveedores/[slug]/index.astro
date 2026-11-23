@@ -164,7 +164,7 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
         description={subtitle}
         locale={locale}
         back={{ label: backToDirectory, href: directoryHref }}
-        helpId="section:host-trade.detalle"
+        helpId="section:hosttrade.detalle"
     />
 
     {outcome === 'ok' && provider ? (
@@ -209,7 +209,7 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
                     : t('host-trades.detail.notFound.body')
             }
             action={<LinkButton href={directoryHref}>{backToDirectory}</LinkButton>}
-            helpId="section:host-trade.detalle"
+            helpId="section:hosttrade.detalle"
         />
     )}
 </AccountLayout>

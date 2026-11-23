@@ -225,7 +225,7 @@ export function PreferencesNewsletterSection({
                                 checked={status === 'active' || status === 'pending_verification'}
                                 disabled={terminal}
                                 onChange={setSubscribed}
-                                helpId="section:preferences.newsletter#subscribe"
+                                helpId="section:preferences.newsletter"
                             />
                             {status === 'pending_verification' ? (
                                 <p role="status">{t('account.newsletter.pendingBanner')}</p>

@@ -127,7 +127,7 @@ export function OwnerListingDashboard({
 
     return (
         <>
-            <StatGrid helpId={`section:${vertical}.dashboard#stats`}>
+            <StatGrid helpId={`section:${vertical}.dashboard`}>
                 <StatCard
                     id={listingsId}
                     label={t(`account.ownerDashboard.${vertical}.listingsLabel`)}
@@ -151,7 +151,7 @@ export function OwnerListingDashboard({
             {view.isEmpty ? (
                 <Section
                     title={t(`account.ownerDashboard.${vertical}.onboardingSection`)}
-                    helpId={`section:${vertical}.dashboard#onboarding`}
+                    helpId={`section:${vertical}.dashboard`}
                 >
                     <EmptyState
                         variant="compact"

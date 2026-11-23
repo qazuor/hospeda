@@ -30,7 +30,7 @@ export function OwnerInboxLocked({ locale }: OwnerInboxLockedProps) {
     return (
         <Section
             title={t('conversations.inbox.sectionTitle')}
-            helpId="section:owner-messages.list"
+            helpId="section:messages.owner-list"
         >
             <LockedState
                 locale={locale}

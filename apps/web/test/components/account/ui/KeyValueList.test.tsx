@@ -35,13 +35,13 @@ describe('KeyValueList', () => {
     it('forwards the help anchor as data-help', () => {
         const { container } = render(
             <KeyValueList
-                helpId="section:host-trade.datos"
+                helpId="section:hosttrade.datos"
                 items={[{ key: 'a', label: 'L', value: 'V' }]}
             />
         );
         expect(container.querySelector('dl')).toHaveAttribute(
             'data-help',
-            'section:host-trade.datos'
+            'section:hosttrade.datos'
         );
     });
 });

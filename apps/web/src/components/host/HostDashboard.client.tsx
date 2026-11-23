@@ -79,7 +79,7 @@ export function HostDashboard({ locale, planNames, plansHref }: HostDashboardPro
         return (
             <Section
                 title={t('host.dashboard.summaryTitle')}
-                helpId="section:host.dashboard#locked"
+                helpId="section:host.dashboard"
             >
                 <LockedState
                     locale={locale}
@@ -120,7 +120,7 @@ export function HostDashboard({ locale, planNames, plansHref }: HostDashboardPro
 
     return (
         <>
-            <StatGrid helpId="section:host.dashboard#stats">
+            <StatGrid helpId="section:host.dashboard">
                 <StatCard
                     id="hostProperties"
                     label={t('host.dashboard.widgets.properties')}
@@ -149,7 +149,7 @@ export function HostDashboard({ locale, planNames, plansHref }: HostDashboardPro
             {isEmpty ? (
                 <Section
                     title={t('host.dashboard.onboarding.sectionTitle')}
-                    helpId="section:host.dashboard#onboarding"
+                    helpId="section:host.dashboard"
                 >
                     <EmptyState
                         variant="compact"

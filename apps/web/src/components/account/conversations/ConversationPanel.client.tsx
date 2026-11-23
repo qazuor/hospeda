@@ -60,7 +60,7 @@ export interface ConversationPanelProps {
 /** Help anchor of each thread section. */
 const THREAD_HELP_ID = {
     guest: 'section:messages.thread',
-    owner: 'section:owner-messages.thread'
+    owner: 'section:messages.owner-thread'
 } as const;
 
 /**

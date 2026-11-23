@@ -86,7 +86,7 @@ export function ProviderDetail({ provider, locale, registerUsageHref }: Provider
         <div className={styles.stack}>
             <Section
                 title={t('host-trades.detail.dataTitle')}
-                helpId="section:host-trade.datos"
+                helpId="section:hosttrade.datos"
                 actions={
                     <Button
                         variant="primary"
@@ -102,7 +102,7 @@ export function ProviderDetail({ provider, locale, registerUsageHref }: Provider
 
             <Section
                 title={t('host-trades.detail.benefitTitle')}
-                helpId="section:host-trade.benefit"
+                helpId="section:hosttrade.benefit"
                 footer={
                     <LinkButton
                         href={registerUsageHref}

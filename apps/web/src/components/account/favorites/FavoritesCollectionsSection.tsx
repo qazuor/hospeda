@@ -107,7 +107,7 @@ export function FavoritesCollectionsSection({
                     <LockedState
                         reason={reason}
                         locale={locale}
-                        helpId="section:favorites.collections#locked"
+                        helpId="section:favorites.collections"
                     />
                 )}
                 ready={(collections) => (

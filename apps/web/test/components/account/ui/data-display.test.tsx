@@ -117,7 +117,7 @@ describe('StatCard', () => {
 describe('StatGrid', () => {
     it('wraps its cards and carries the help anchor', () => {
         const { container } = render(
-            <StatGrid helpId="section:host.dashboard#stats">
+            <StatGrid helpId="section:host.dashboard">
                 <StatCard
                     id="a"
                     label="A"
@@ -126,10 +126,7 @@ describe('StatGrid', () => {
                 />
             </StatGrid>
         );
-        expect(container.firstElementChild).toHaveAttribute(
-            'data-help',
-            'section:host.dashboard#stats'
-        );
+        expect(container.firstElementChild).toHaveAttribute('data-help', 'section:host.dashboard');
         expect(container.querySelectorAll('[data-widget]')).toHaveLength(1);
     });
 });

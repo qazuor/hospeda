@@ -25,7 +25,7 @@ export function ProviderLoadError({ locale }: ProviderLoadErrorProps) {
         <ErrorState
             locale={locale}
             onRetry={() => window.location.reload()}
-            helpId="section:host-trade.detalle"
+            helpId="section:hosttrade.detalle"
         />
     );
 }

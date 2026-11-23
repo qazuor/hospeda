@@ -159,7 +159,7 @@ export function PreferencesHistorySection({
                                     }
                                 })
                             }
-                            helpId="section:preferences.history#opt-out"
+                            helpId="section:preferences.history"
                         />
                     ) : (
                         <>

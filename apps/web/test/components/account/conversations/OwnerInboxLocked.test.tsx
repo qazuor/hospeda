@@ -20,7 +20,7 @@ describe('OwnerInboxLocked', () => {
         expect(container.querySelector('[data-reason="permission"]')).not.toBeNull();
         expect(container.querySelector('[data-kit-section]')).toHaveAttribute(
             'data-help',
-            'section:owner-messages.list'
+            'section:messages.owner-list'
         );
         expect(screen.getByText('Mensajes de huéspedes')).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'Saber más' })).toHaveAttribute(
