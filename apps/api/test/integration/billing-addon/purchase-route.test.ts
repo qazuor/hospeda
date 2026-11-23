@@ -1,5 +1,9 @@
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+    resetAnalyticsFactSinkForTests,
+    setAnalyticsFactSinkForTests
+} from '../../../src/utils/analytics/analytics-facts';
 import { testDb } from '../../e2e/setup/test-database';
 import {
     makePayingPrincipal,
@@ -22,10 +26,48 @@ beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
 });
-afterEach(retirePurchaseRoutes);
+afterEach(async () => {
+    resetAnalyticsFactSinkForTests();
+    await retirePurchaseRoutes();
+});
 afterAll(async () => testDb.teardown());
 
 describe('AC:B10:1 AC:B10:2 protected addon purchase route', () => {
+    it('emits addon_checkout_started once for a created purchase and never answers it (HOS-1883 AC-1)', async () => {
+        // Arrange
+        const fixture = await purchaseCatalog({ chargeKind: 'PERIODICO' });
+        const { app, fake } = purchaseApp();
+        await makePayingPrincipal({
+            ownerId: fixture.ownerId,
+            payerEmail: fixture.payerEmail,
+            fake
+        });
+        const emit = vi.fn();
+        setAnalyticsFactSinkForTests({ emit });
+        const body = fixture.request();
+
+        // Act
+        const created = await post(app, fixture.ownerId, body);
+        const replay = await post(app, fixture.ownerId, body);
+
+        // Assert
+        expect(created.status).toBe(201);
+        const answer = (await created.json()).data;
+        expect(answer).not.toHaveProperty('startedFact');
+        expect((await replay.json()).data).not.toHaveProperty('startedFact');
+        const started = emit.mock.calls
+            .map(([fact]) => fact)
+            .filter((fact) => fact.kind === 'ADDON_CHECKOUT_STARTED');
+        expect(started).toHaveLength(1);
+        expect(started[0]).toMatchObject({
+            userId: fixture.ownerId,
+            addonInstanceId: answer.instanceId,
+            chargeKind: 'PERIODICO',
+            actorKind: 'USER',
+            currency: 'ARS'
+        });
+    });
+
     it('rejects absent session, extra body fields, card data, and missing title', async () => {
         const fixture = await purchaseCatalog({});
         const { app, fake } = purchaseApp();

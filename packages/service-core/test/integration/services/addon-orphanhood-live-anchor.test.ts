@@ -233,6 +233,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                             idNamespace: crypto.randomUUID(),
                             clock: { now: () => orphanNow }
                         }),
+                        billingFacts: { emit: () => undefined },
                         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
                         coverageNotices: { emitCoverageChanged: async () => undefined },
                         orphanhood: {

@@ -1,6 +1,7 @@
 import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
 import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
+import type { BillingFactSink } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import type { CancellationSeenAnnotator } from '../subscription/subscription-billing-ports.js';
@@ -22,4 +23,9 @@ export interface PermanentGrantPorts {
     readonly provider: PaymentProvider;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly cancellationSeen?: CancellationSeenAnnotator;
+    /**
+     * HOS-1883: where the add-on facts of a committed act go (`addon_granted_free`, endings).
+     * Required (T-5): a grant route that forgets it fails `tsc`, not silently in production.
+     */
+    readonly billingFacts: BillingFactSink;
 }

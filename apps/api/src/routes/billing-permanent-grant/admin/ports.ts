@@ -1,6 +1,7 @@
 import { planCatalogModel } from '@repo/db';
 import { type PermanentGrantPorts, providerLinkCancellationSeen } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
+import { getAnalyticsFactSink } from '../../../utils/analytics/analytics-facts.js';
 import { getClock } from '../../../utils/clock.js';
 import { buildBillingCoveragePorts } from '../../../utils/listing-access/billing-coverage.js';
 import { createBootstrapCoverageReader } from '../../../utils/listing-access/bootstrap-coverage-reader.js';
@@ -20,6 +21,7 @@ export function buildPermanentGrantPorts(): PermanentGrantPorts {
         provider: getPaymentProvider(),
         beforeCancelNotice,
         cancellationSeen: providerLinkCancellationSeen,
-        planPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy
+        planPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy,
+        billingFacts: getAnalyticsFactSink()
     };
 }

@@ -31,6 +31,7 @@ import {
     runS20InTransaction,
     type S20ProviderResult
 } from './permanent-grant-s20.js';
+import { emitS20GrantedFreeFacts } from './permanent-grant-s20-facts.js';
 
 /**
  * Re-run the complete grant act for newly affected rows (TRANS:B:S13).
@@ -176,13 +177,28 @@ export async function resumePermanentGrant(
     if (committed.local.orphanedAddons.length > 0) {
         await emitAddonCoverageRemoved({
             cancelled: committed.local.orphanedAddons,
-            coverageNotices: ports.coverageNotices
+            coverageNotices: ports.coverageNotices,
+            end: {
+                path: 'ORPHANED',
+                actorKind: 'SYSTEM',
+                billingFacts: ports.billingFacts,
+                listing: ports.orphanhood.listing
+            },
+            beforeFacts: async () => {
+                await cancelAddonComplementsAtProvider(
+                    { cancelled: committed.local.orphanedAddons },
+                    ports
+                );
+            }
         });
-        await cancelAddonComplementsAtProvider(
-            { cancelled: committed.local.orphanedAddons },
-            ports
-        );
     }
+    // HOS-1883: the S20 facts go last, after every provider call of the act.
+    await emitS20GrantedFreeFacts({
+        rows: committed.s20.rows,
+        now,
+        billingFacts: ports.billingFacts,
+        listing: ports.orphanhood.listing
+    });
     return {
         permanentGrantId: committed.grant.id,
         providerCalls: providerResult.results,

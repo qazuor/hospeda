@@ -10,7 +10,9 @@ import {
     type SelectAddonInstance
 } from '@repo/db';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import type { BillingFactSink } from '../facts/billing-fact-sink';
 import type { CoverageNotices } from '../payment/payment-ports';
+import { emitAddonFact } from './addon-fact-emit';
 import { emitAddonCoverageAdded } from './addon-instance-a2';
 import {
     type ChooseFreeAddonInput,
@@ -23,6 +25,11 @@ import type { PurchaseAddonPorts } from './purchase-addon-ports';
 
 type FreePorts = Pick<PurchaseAddonPorts, 'clock' | 'addonPolicy' | 'listing'> & {
     readonly coverageNotices?: CoverageNotices;
+    /**
+     * HOS-1883: where `addon_granted_free{FREE_CHOICE}` goes. Required (T-5), and emitted
+     * whether or not `coverageNotices` is wired.
+     */
+    readonly billingFacts: BillingFactSink;
 };
 
 function sameChoice(row: SelectAddonInstance, input: ChooseFreeAddonInput): boolean {
@@ -171,6 +178,19 @@ export async function chooseFreeAddon(
                 target.vertical === null ? product.compatibleVerticals : [target.vertical];
             return { outcome: 'CREATED', instanceId: created.id, status: 'ACTIVE' };
         });
+        if (result.outcome === 'CREATED')
+            await emitAddonFact({
+                billingFacts: ports.billingFacts,
+                listing: ports.listing,
+                source: { instanceId: result.instanceId },
+                build: (anchored) => ({
+                    kind: 'ADDON_GRANTED_FREE',
+                    ...anchored.subject,
+                    actorKind: 'USER',
+                    occurredAt: now,
+                    source: 'FREE_CHOICE'
+                })
+            });
         if (result.outcome === 'CREATED' && ports.coverageNotices) {
             await emitAddonCoverageAdded({
                 activated: [
@@ -181,7 +201,8 @@ export async function chooseFreeAddon(
                         coverageVerticals: createdCoverageVerticals
                     }
                 ],
-                coverageNotices: ports.coverageNotices
+                coverageNotices: ports.coverageNotices,
+                fact: 'NOT_A_PAID_ACTIVATION'
             });
         }
         return result;

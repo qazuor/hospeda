@@ -107,6 +107,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planPolicy: currentFloorPolicy,
                     clock,
                     provider: fake,
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice,
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {
@@ -276,6 +277,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     planPolicy: currentFloorPolicy,
                     clock,
                     provider: fake,
+                    billingFacts: { emit: () => undefined },
                     beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {

@@ -21,10 +21,12 @@ import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import type { AddonFactListing } from '../addon/addon-fact-emit';
 import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { emitBillingFact } from '../facts/billing-fact-sink';
 import { resolvePlanDisplayName } from '../plan-display-name';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
+import { type CreditedAddonCharge, emitAddonChargeCredited } from './addon-charge-facts';
 import { advanceCardNextChargeAt } from './card-next-charge-advance';
 import { issueReceipt, readReceiptPayer } from './issue-receipt.js';
 import {
@@ -48,6 +50,8 @@ export interface CreditPaymentPorts {
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
     readonly billingFacts?: BillingFactSink;
+    /** HOS-1883: derives a `LISTING` one-time add-on's vertical for `addon_charge_succeeded`. */
+    readonly listing?: AddonFactListing;
     readonly beforeCommit?: () => Promise<void>;
     readonly markPayments?: import('../reconciliation/reconciliation-mark-payments.port').ReconciliationMarkPayments;
     readonly beforeOptimisticUpdate?: (input: { readonly paymentId: string }) => Promise<void>;
@@ -62,6 +66,7 @@ export interface CreditPaymentResult {
 interface PostCommitEffects {
     readonly coverageEvent?: CoverageChangedEvent;
     readonly chargeFact?: import('../facts/billing-fact-sink').BillingFact;
+    readonly addonCharge?: CreditedAddonCharge;
     readonly exhaustedPromos: readonly {
         readonly subscriptionId: string;
         readonly redemptionId: string;
@@ -118,8 +123,12 @@ export async function creditPayment(
                               .for('update')
                       )[0]
                     : undefined;
+                // HOS-1883 T-1: a COMPLEMENTO's first charge uses the same ledger read. It stays
+                // here, under the subscription lock and before this payment is credited: after
+                // commit the read would always see this payment, and two concurrent credits could
+                // both claim to be the first.
                 const firstPayment =
-                    subscription?.class === 'PRINCIPAL'
+                    subscription?.class === 'PRINCIPAL' || subscription?.class === 'COMPLEMENTO'
                         ? !(await creditedPaymentsFromLedger.hasCreditedPayment({
                               subscriptionId: subscription.id,
                               tx
@@ -391,10 +400,27 @@ export async function creditPayment(
                               promoApplied
                           }
                         : undefined;
+                const addonSource = payment.addonInstanceId
+                    ? { instanceId: payment.addonInstanceId }
+                    : subscription?.class === 'COMPLEMENTO'
+                      ? { complementSubscriptionId: subscription.id }
+                      : undefined;
+                const addonCharge: CreditedAddonCharge | undefined = addonSource
+                    ? {
+                          source: addonSource,
+                          paymentId: payment.id,
+                          amountMinor: payment.amount,
+                          currency: payment.currency,
+                          occurredAt: payment.factAt,
+                          ...('complementSubscriptionId' in addonSource
+                              ? { isFirstCharge: firstPayment, promoApplied }
+                              : {})
+                      }
+                    : undefined;
                 await ports.beforeCommit?.();
                 return {
                     result: { outcome: 'CREDITED', coverage },
-                    after: { coverageEvent, chargeFact, exhaustedPromos }
+                    after: { coverageEvent, chargeFact, addonCharge, exhaustedPromos }
                 };
             }
             throw new ServiceError(
@@ -428,5 +454,12 @@ export async function creditPayment(
             logger.error({ ...promo, error }, 'S30 failed after payment commit');
         }
     }
+    // HOS-1883: analytics goes after access (coverage) and the promo exhaustion, never before.
+    if (effects.after.addonCharge)
+        await emitAddonChargeCredited({
+            charge: effects.after.addonCharge,
+            billingFacts: ports.billingFacts,
+            listing: ports.listing
+        });
     return effects.result;
 }

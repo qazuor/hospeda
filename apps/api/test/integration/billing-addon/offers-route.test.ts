@@ -102,6 +102,7 @@ async function addGrant(input: {
             }),
             clock: { now: () => new Date() },
             provider: input.fake,
+            billingFacts: { emit: () => undefined },
             beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
             coverageNotices: { emitCoverageChanged: async () => undefined },
             orphanhood: {

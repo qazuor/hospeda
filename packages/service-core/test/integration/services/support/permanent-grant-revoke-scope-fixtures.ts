@@ -133,6 +133,7 @@ export async function createScopeRevokeScenario(input: {
         planPolicy: currentFloorPolicy,
         clock: { now: () => revokeNow },
         provider: namespaceFake(fake),
+        billingFacts: { emit: () => undefined },
         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
         coverageNotices: { emitCoverageChanged },
         orphanhood: { addonPolicy: addonPolicyFromTx(db), listing }

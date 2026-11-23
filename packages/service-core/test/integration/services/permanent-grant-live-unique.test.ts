@@ -97,6 +97,7 @@ function makePorts() {
             planPolicy: currentFloorPolicy,
             clock: { now: () => now },
             provider,
+            billingFacts: { emit: () => undefined },
             beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
             coverageNotices: {
                 emitCoverageChanged: async () => {

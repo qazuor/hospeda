@@ -290,7 +290,13 @@ export async function cancelPausedSubscription(
     await emitPausedAddonCoverageRemoved({
         subscriptionId: reading.subscriptionId,
         cancelled: committed.cancelled,
-        coverageNotices: ports.coverageNotices
+        coverageNotices: ports.coverageNotices,
+        end: {
+            path: 'ORPHANED',
+            actorKind: 'SYSTEM',
+            billingFacts: ports.billingFacts,
+            listing: ports.orphanhood.listing
+        }
     });
     let addonCancelCalls: Awaited<ReturnType<typeof cancelAddonComplementsAtProvider>>['results'] =
         [];

@@ -1,4 +1,5 @@
 import { addonInstances, eq } from '@repo/db';
+import type { SinkFact } from '../../../../src/services/billing/facts/billing-fact-sink';
 import { grantPermanentGrant } from '../../../../src/services/billing/grant/permanent-grant.service';
 import { revokePermanentGrant } from '../../../../src/services/billing/grant/permanent-grant-revoke';
 import { getServiceTestDb } from '../helpers';
@@ -35,6 +36,7 @@ export async function freeChoiceFixture(
         planPolicy: currentFloorPolicy,
         clock: f.ports.clock,
         provider: f.fake,
+        billingFacts: { emit: (_fact: SinkFact): void => undefined },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: {
             emitCoverageChanged: async (notice: (typeof notices)[number]) => {
@@ -63,7 +65,8 @@ export async function freeChoiceFixture(
             clock: f.ports.clock,
             addonPolicy: f.ports.addonPolicy,
             listing: f.ports.listing,
-            coverageNotices: grantPorts.coverageNotices
+            coverageNotices: grantPorts.coverageNotices,
+            billingFacts: { emit: () => undefined }
         },
         freeInput: (orderRequestId = crypto.randomUUID(), targetId: string | null = null) => ({
             ownerId: f.ownerId,
@@ -72,14 +75,15 @@ export async function freeChoiceFixture(
             orderRequestId,
             expectedAddonVersionId: f.versionId
         }),
-        revoke: () =>
+        /** Revokes the grant; `billingFacts` replaces the no-op sink (HOS-1883). */
+        revoke: (billingFacts?: (typeof grantPorts)['billingFacts']) =>
             revokePermanentGrant(
                 {
                     permanentGrantId: grant.permanentGrantId,
                     reason: 'test revocation',
                     actor: grantSignerActor(admin.userId)
                 },
-                grantPorts
+                billingFacts ? { ...grantPorts, billingFacts } : grantPorts
             ),
         instances: () =>
             db.select().from(addonInstances).where(eq(addonInstances.ownerId, f.ownerId))
