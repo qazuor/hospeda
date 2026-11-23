@@ -781,8 +781,12 @@
             "paidAfterCancellationAddons": "El cobro de tus complementos recurrentes de esta suscripción también se cortó: los seguís viendo hasta el {{date}}.",
             "deferredCourtesy_one": "Te queda 1 mes, que empieza a correr cuando completes el pago.",
             "deferredCourtesy_other": "Te quedan {{count}} meses, que empiezan a correr cuando completes el pago.",
+            "pendingAuthorizationTodo": "Falta que autorices el pago en Mercado Pago para activar tu plan. Hasta que lo hagas, esta suscripción no da servicio.",
+            "chargeDeclinedTodo": "Mercado Pago rechazó el cobro. Revisá o cambiá el medio de pago en Mercado Pago para que el cobro se reintente; mientras tanto no podemos asegurarte que tu plan siga activo.",
             "status": {
                 "ACTIVE": "Activa",
+                "PENDING_AUTHORIZATION": "Esperando autorización",
+                "CHARGE_DECLINED": "Cobro rechazado",
                 "GRACE_PERIOD": "Pago pendiente",
                 "PAUSED": "Pausada",
                 "SUSPENDED": "Suspendida",
@@ -1082,8 +1086,15 @@
                 "suspendedStatus": "Suspendida",
                 "cancelScheduledStatus": "Baja programada",
                 "pausedStatus": "Pausada",
+                "chargeDeclinedStatus": "Cobro rechazado",
+                "pendingAuthorizationStatus": "Esperando autorización",
+                "chargeDeclinedAction": "Mercado Pago no aprobó el pago y no se cobró nada. Podés volver a intentarlo con otro medio de pago desde Mi suscripción.",
+                "pendingAuthorizationAction": "Falta que autorices el pago en Mercado Pago para activar tu plan.",
+                "viewAllSubscriptions": "Ver todas",
                 "multipleSubscriptions_one": "{{count}} suscripción activa",
                 "multipleSubscriptions_other": "{{count}} suscripciones activas",
+                "subscriptionsCount_one": "{{count}} suscripción",
+                "subscriptionsCount_other": "{{count}} suscripciones",
                 "properties": "Mis propiedades",
                 "propertiesDesc": "Alojamientos publicados",
                 "messages": "Mensajes sin leer",
@@ -1357,7 +1368,9 @@
         "empty": {
             "title": "Sin búsquedas guardadas",
             "body": "Todavía no tenés búsquedas guardadas.",
-            "upsellBody": "Tus búsquedas aparecerán acá cuando tengas un plan Plus o VIP activo."
+            "upsellBody_one": "Tus búsquedas aparecerán acá cuando tengas activo el plan {{plans}}.",
+            "upsellBody_other": "Tus búsquedas aparecerán acá cuando tengas activo alguno de los planes {{plans}}.",
+            "upsellBodyNoPlans": "Tus búsquedas aparecerán acá cuando tu plan incluya el historial de búsquedas."
         },
         "clearAll": "Borrar todo",
         "clearAllInline": "Sí, borrar todo",
@@ -1391,8 +1404,7 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filtro",
             "filterCount_other": "{{count}} filtros"
-        },
-        "entitlementRequired": "Esta función está disponible para suscriptores Plus y VIP."
+        }
     },
     "alerts": {
         "loading": "Cargando alertas...",
@@ -1436,7 +1448,9 @@
         },
         "upgrade": {
             "title": "Ofertas exclusivas",
-            "message": "Las ofertas exclusivas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "message_one": "Las ofertas exclusivas están disponibles en el plan {{plans}}. Actualizá tu plan para acceder.",
+            "message_other": "Las ofertas exclusivas están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
+            "messageNoPlans": "Las ofertas exclusivas no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         },
         "listLabel": "Tus ofertas exclusivas",
@@ -1472,7 +1486,9 @@
         },
         "upgrade": {
             "title": "Sugerencias para vos",
-            "message": "Las sugerencias personalizadas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
+            "message_one": "Las sugerencias personalizadas están disponibles en el plan {{plans}}. Actualizá tu plan para acceder.",
+            "message_other": "Las sugerencias personalizadas están disponibles en los planes {{plans}}. Actualizá tu plan para acceder.",
+            "messageNoPlans": "Las sugerencias personalizadas no están incluidas en tu plan actual. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         }
     },
@@ -1937,7 +1953,10 @@
             "account": "Volver a mi cuenta",
             "messages": "Volver a mis consultas",
             "ownerMessages": "Volver a las consultas de mis propiedades",
-            "listings": "Volver a mis publicaciones"
+            "listings": "Volver a mis publicaciones",
+            "properties": "Volver a mis propiedades",
+            "events": "Volver a mis eventos",
+            "posts": "Volver a mis publicaciones de blog"
         }
     },
     "help": {

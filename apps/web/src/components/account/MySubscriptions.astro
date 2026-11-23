@@ -16,7 +16,7 @@ import {
     GRACE_PLAN_CHANGE_KEY,
     totalCourtesyMonths
 } from '@/lib/billing/my-subscription-notices';
-import { findActiveSuccessor, resolveMySubscriptionSummary, resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
+import { MY_SUBSCRIPTION_TODO_KEY, findActiveSuccessor, resolveMySubscriptionSummary, resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './MySubscriptions.module.css';
 
@@ -25,7 +25,7 @@ interface Props { readonly locale: SupportedLocale; readonly result: OwnSubscrip
 const { locale, result } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 const date = (iso: string) => formatSelfCancelDate({ iso, locale }) ?? '';
-const STATUS_KEY = { ACTIVE: 'account.subscription.mine.status.ACTIVE', GRACE_PERIOD: 'account.subscription.mine.status.GRACE_PERIOD', SUSPENDED: 'account.subscription.mine.status.SUSPENDED', CANCEL_SCHEDULED: 'account.subscription.mine.status.CANCEL_SCHEDULED', PAUSED: 'account.subscription.mine.status.PAUSED' } as const;
+const STATUS_KEY = { ACTIVE: 'account.subscription.mine.status.ACTIVE', GRACE_PERIOD: 'account.subscription.mine.status.GRACE_PERIOD', SUSPENDED: 'account.subscription.mine.status.SUSPENDED', CANCEL_SCHEDULED: 'account.subscription.mine.status.CANCEL_SCHEDULED', PAUSED: 'account.subscription.mine.status.PAUSED', PENDING_AUTHORIZATION: 'account.subscription.mine.status.PENDING_AUTHORIZATION', CHARGE_DECLINED: 'account.subscription.mine.status.CHARGE_DECLINED' } as const;
 const statusKey = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
     if (row.status === 'CANCEL_SCHEDULED') return resolveScheduledRenewal({ row }).statusKey;
     return STATUS_KEY[row.status];
@@ -53,6 +53,7 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
                     ? <p class={styles.line} data-testid="my-subscription-replaced">{t('account.subscription.mine.replacedBy', undefined, { plan: successorSummary.title })}</p>
                     : <>
                 <p class={styles.line}>{t(statusKey(row))}</p>
+                {(row.status === 'PENDING_AUTHORIZATION' || row.status === 'CHARGE_DECLINED') && <p class={styles.line} data-testid="my-subscription-todo">{t(MY_SUBSCRIPTION_TODO_KEY[row.status])}</p>}
                 {summary.priceLine && <p class={styles.line} data-testid="my-subscription-price">{summary.priceLine}</p>}
                 {summary.nextChargeLine && <p class={styles.line} data-testid="my-subscription-next-charge">{summary.nextChargeLine}</p>}
                 {(row.status === 'ACTIVE' || (row.status === 'PAUSED' && row.pause?.reason === 'COURTESY')) && <PauseOffer client:visible subscriptionId={row.id} locale={locale} />}

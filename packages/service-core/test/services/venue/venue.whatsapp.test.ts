@@ -12,6 +12,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     getVenueWhatsappForViewer,
     readVenueWhatsappNumber,
+    resolveDefaultWhatsappVisibility,
     resolveVenuePublicWhatsapp
 } from '../../../src/services/venue/venue.whatsapp';
 
@@ -101,5 +102,52 @@ describe('getVenueWhatsappForViewer', () => {
         const result = await getVenueWhatsappForViewer(modelWith(row), { venueId: 'v' });
         expect(result.error?.code).toBe('NOT_FOUND');
         expect(result.data).toBeUndefined();
+    });
+});
+
+describe('resolveDefaultWhatsappVisibility (HOS-2557)', () => {
+    const contactInfo = { whatsapp: NUMBER };
+
+    it('defaults a number with no choice and nothing stored to PUBLIC', () => {
+        expect(
+            resolveDefaultWhatsappVisibility({ contactInfo, requested: undefined, stored: null })
+        ).toEqual({ whatsappVisibility: VenueWhatsappVisibilityEnum.PUBLIC });
+    });
+
+    it('never overrides an explicit choice, an explicit null or a stored choice', () => {
+        expect(
+            resolveDefaultWhatsappVisibility({
+                contactInfo,
+                requested: VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY,
+                stored: null
+            })
+        ).toEqual({});
+        expect(
+            resolveDefaultWhatsappVisibility({ contactInfo, requested: null, stored: null })
+        ).toEqual({});
+        expect(
+            resolveDefaultWhatsappVisibility({
+                contactInfo,
+                requested: undefined,
+                stored: VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY
+            })
+        ).toEqual({});
+    });
+
+    it('adds nothing when the write carries no number', () => {
+        expect(
+            resolveDefaultWhatsappVisibility({
+                contactInfo: { mobilePhone: '1' },
+                requested: undefined,
+                stored: null
+            })
+        ).toEqual({});
+        expect(
+            resolveDefaultWhatsappVisibility({
+                contactInfo: undefined,
+                requested: undefined,
+                stored: null
+            })
+        ).toEqual({});
     });
 });

@@ -229,9 +229,51 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
         expect(response.status).toBe(200);
         expect(mocks.readOwnPlanState).toHaveBeenCalledWith({
             userId: OWNER_ID,
-            now: expect.any(Date)
+            now: expect.any(Date),
+            // HOS-2553: Mi suscripcion also shows the two unsettled states.
+            includeUnsettled: true
         });
         expect(JSON.stringify(body.data)).toBe(FROZEN_BODY);
         expect(JSON.stringify(body.data)).not.toContain('planVersionId');
+    });
+
+    it('tells a declined signup once, through declinedSignups, never as a subscription row (HOS-2553)', async () => {
+        // Arrange: the reader lists the decline (it passed the rule) and so does the notice
+        const [active] = readerRows();
+        mocks.readOwnPlanState.mockResolvedValue({
+            subscriptions: [
+                { ...active, id: SUCCESSOR_ID, status: 'CHARGE_DECLINED', nextCharge: null },
+                active
+            ],
+            deferredCourtesies: []
+        });
+        mocks.readOwnDeclinedSignups.mockResolvedValue([
+            {
+                subscriptionId: SUCCESSOR_ID,
+                vertical: 'accommodation',
+                billingOptionId: OPTION_ID,
+                declaredPayerEmail: null,
+                declinedAt: new Date('2026-11-18T10:00:00.000Z'),
+                plan: { slug: 'owner-pro', name: 'owner-pro' }
+            }
+        ]);
+
+        // Act
+        const response = await app().request('/api/v1/protected/billing-subscription', {
+            headers: { 'Content-Type': 'application/json', 'user-agent': 'vitest' }
+        });
+        const body = (await response.json()) as {
+            data: {
+                subscriptions: { id: string; status: string }[];
+                declinedSignups: { subscriptionId: string }[];
+            };
+        };
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(body.data.subscriptions.map((row) => row.status)).toEqual(['ACTIVE']);
+        expect(body.data.declinedSignups.map((notice) => notice.subscriptionId)).toEqual([
+            SUCCESSOR_ID
+        ]);
     });
 });

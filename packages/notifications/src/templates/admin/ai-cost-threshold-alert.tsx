@@ -6,7 +6,9 @@ import { InfoRow } from '../components/info-row.js';
 /**
  * Props for AiCostThresholdAlert email template (SPEC-173 T-025).
  *
- * Rendered once per SUPER_ADMIN recipient.  The factory in `apps/api`
+ * Rendered once per address in `HOSPEDA_ADMIN_NOTIFICATION_EMAILS` (see
+ * `apps/api/src/services/ai-cost-alert.service.ts`), with `recipientName: 'Admin'`.
+ * The factory in `apps/api`
  * ensures the email is sent at most once per (scope × feature × thresholdPct ×
  * period) combination.
  */

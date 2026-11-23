@@ -1,41 +1,114 @@
-import { TrialStatusEnum, type TrialSummaryResponse, type UserStatsResponse } from '@repo/schemas';
+import {
+    type OwnPlanStatus,
+    TrialStatusEnum,
+    type TrialSummaryResponse,
+    type UserStatsResponse
+} from '@repo/schemas';
 
-/** Resolve API stats into a renderable free, multiple, or single-plan dashboard state. */
+/** Key of the label a subscription status uses on the account dashboard card. */
+export type DashboardStatusKey =
+    | 'active'
+    | 'grace-period'
+    | 'suspended'
+    | 'cancel-scheduled'
+    | 'paused'
+    | 'charge-declined'
+    | 'pending-authorization';
+
+/** Exact subscription status to its card label key; one entry per `OWN_PLAN_STATUSES` value. */
+const STATUS_KEY_BY_STATUS = {
+    ACTIVE: 'active',
+    GRACE_PERIOD: 'grace-period',
+    SUSPENDED: 'suspended',
+    CANCEL_SCHEDULED: 'cancel-scheduled',
+    PAUSED: 'paused',
+    CHARGE_DECLINED: 'charge-declined',
+    PENDING_AUTHORIZATION: 'pending-authorization'
+} as const satisfies Record<OwnPlanStatus, DashboardStatusKey>;
+
+/** Most subscriptions the `/mi-cuenta/` card lists before it offers "Ver todas" (HOS-2553). */
+export const MAX_CARD_SUBSCRIPTIONS = 3;
+
+/**
+ * Whether a status needs the owner to DO something (HOS-2553): the card then adds a
+ * line saying what, next to the link to the subscription page.
+ *
+ * @param input.statusKey - The card label key of the status.
+ * @returns `true` for a declined charge and for a checkout waiting for authorization.
+ */
+export function statusNeedsAction(input: { readonly statusKey: DashboardStatusKey }): boolean {
+    return input.statusKey === 'charge-declined' || input.statusKey === 'pending-authorization';
+}
+
+/** Status keys that need the owner to act (a subset of `DashboardStatusKey`). */
+export type DashboardActionStatusKey = 'charge-declined' | 'pending-authorization';
+
+/**
+ * The action key of a status, narrowed from `DashboardStatusKey` (HOS-2553).
+ *
+ * @param input.statusKey - The card label key of the status.
+ * @returns The key when `statusNeedsAction` holds for it, otherwise `null`.
+ */
+export function getActionStatusKey(input: {
+    readonly statusKey: DashboardStatusKey;
+}): DashboardActionStatusKey | null {
+    return input.statusKey === 'charge-declined' || input.statusKey === 'pending-authorization'
+        ? input.statusKey
+        : null;
+}
+
+/** One subscription row of the `/mi-cuenta/` card. */
+export interface DashboardSubscriptionRow {
+    /** Plan name, read from the catalog (translated when the slug has a name). */
+    readonly label: string;
+    /** Exact status label key. */
+    readonly statusKey: DashboardStatusKey;
+}
+
+/** Resolve API stats into a renderable free, multiple, list, or single-plan dashboard state. */
 export function resolveDashboardPlanStat(input: {
     readonly plan: UserStatsResponse['plan'];
     readonly activeSubscriptionsCount: UserStatsResponse['activeSubscriptionsCount'];
     readonly planNames: Readonly<Record<string, string>>;
+    /** Every live subscription (HOS-2553). Absent when the API predates the field. */
+    readonly subscriptions?: UserStatsResponse['subscriptions'];
 }):
     | { readonly kind: 'free' }
     | { readonly kind: 'multiple'; readonly count: number }
     | {
+          readonly kind: 'list';
+          readonly rows: readonly DashboardSubscriptionRow[];
+          readonly total: number;
+          readonly hasMore: boolean;
+      }
+    | {
           readonly kind: 'single';
           readonly label: string;
-          readonly statusKey:
-              | 'active'
-              | 'grace-period'
-              | 'suspended'
-              | 'cancel-scheduled'
-              | 'paused';
+          readonly statusKey: DashboardStatusKey;
       } {
-    const { plan, activeSubscriptionsCount, planNames } = input;
+    const { plan, activeSubscriptionsCount, planNames, subscriptions = [] } = input;
+    const labelFor = (item: { readonly slug: string; readonly name: string }): string =>
+        planNames[item.slug] && planNames[item.slug] !== item.slug
+            ? (planNames[item.slug] as string)
+            : item.name;
+    if (subscriptions.length >= 2) {
+        return {
+            kind: 'list',
+            rows: subscriptions.slice(0, MAX_CARD_SUBSCRIPTIONS).map((item) => ({
+                label: labelFor(item),
+                statusKey: STATUS_KEY_BY_STATUS[item.status]
+            })),
+            total: subscriptions.length,
+            hasMore: subscriptions.length > MAX_CARD_SUBSCRIPTIONS
+        };
+    }
     if (activeSubscriptionsCount >= 2) return { kind: 'multiple', count: activeSubscriptionsCount };
     if (!plan) return { kind: 'free' };
 
-    const statusKeys = {
-        ACTIVE: 'active',
-        GRACE_PERIOD: 'grace-period',
-        SUSPENDED: 'suspended',
-        CANCEL_SCHEDULED: 'cancel-scheduled',
-        PAUSED: 'paused'
-    } as const;
     return {
         kind: 'single',
-        label:
-            planNames[plan.slug] && planNames[plan.slug] !== plan.slug
-                ? planNames[plan.slug]
-                : plan.name,
-        statusKey: statusKeys[plan.status]
+        label: labelFor(plan),
+        statusKey: STATUS_KEY_BY_STATUS[plan.status]
     };
 }
 

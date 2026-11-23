@@ -26,9 +26,9 @@ import { eventEditApi } from '@/lib/api/endpoints-protected';
 import { transformEventEditDetail } from '@/lib/api/transforms';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { webLogger as logger } from '@/lib/logger';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasEventsNavAccess } from '@/lib/nav-gating';
+import { resolveAuthoredEditorItem } from '@/lib/editor/resolve-authored-editor-item';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
@@ -48,28 +48,19 @@ const canManageEvents = hasEventsNavAccess({ roles: user.roles });
 let event: ReturnType<typeof transformEventEditDetail> | null = null;
 
 if (canManageEvents) {
-    const eventId = Astro.params.id;
-    if (!eventId) {
-        return Astro.redirect(listUrl);
+    // HOS-2556: a missing id, an unknown id and another author's id all answer the
+    // same in-layout 404 (see resolveAuthoredEditorItem).
+    const loaded = await resolveAuthoredEditorItem({
+        astro: Astro,
+        back: 'events',
+        fetchById: eventEditApi.getById,
+        logTag: '[mi-cuenta/eventos/editar]'
+    });
+    if (loaded.notFound) {
+        return loaded.notFound;
     }
 
-    // -----------------------------------------------------------------------
-    // Server-side fetch: the event itself, author-scoped by the protected route.
-    // -----------------------------------------------------------------------
-
-    const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-
-    const result = await eventEditApi.getById({ id: eventId, cookieHeader });
-
-    if (!result.ok) {
-        // 403 (not the author) and 404 (no such event) land in the same place on
-        // purpose: telling the two apart would confirm the existence of another
-        // author's event to someone who may not read it.
-        logger.error('[mi-cuenta/eventos/editar] Failed to fetch event', result.error.message);
-        return Astro.redirect(listUrl);
-    }
-
-    event = transformEventEditDetail({ item: result.data });
+    event = transformEventEditDetail({ item: loaded.item });
 }
 
 // ---------------------------------------------------------------------------

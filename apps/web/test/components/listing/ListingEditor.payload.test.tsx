@@ -548,7 +548,8 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
                 workEmail: 'dueno@test.com',
                 whatsapp: '+54 9 343 1234567'
             });
-            expect(body).not.toHaveProperty('whatsappVisibility');
+            // HOS-2557: the first number carries the default visibility.
+            expect(body).toHaveProperty('whatsappVisibility', 'PUBLIC');
         });
 
         it('HOS-2256: sends the chosen WhatsApp mode and nothing else (AC-16)', async () => {
@@ -560,6 +561,48 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             const body = await wireBody();
             expect(body).toHaveProperty('whatsappVisibility', 'LOGGED_IN_ONLY');
             expect(body).not.toHaveProperty('contactInfo');
+        });
+
+        it('HOS-2557: the radio opens on Publico and the first number saves it', async () => {
+            renderEditor(
+                'venue',
+                buildListing({
+                    contactInfo: { mobilePhone: '+5491100000000', workEmail: 'dueno@test.com' }
+                }),
+                'contact'
+            );
+
+            expect((screen.getByLabelText('Público') as HTMLInputElement).checked).toBe(true);
+            expect(screen.queryByText(/Hasta que elijas una opción/)).toBeNull();
+
+            const numbers = screen.getAllByLabelText('Número');
+            fireEvent.change(numbers[2] as HTMLElement, { target: { value: '9 343 1234567' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('whatsappVisibility', 'PUBLIC');
+        });
+
+        it('HOS-2557: an owner who picks Solo usuarios logueados with the number keeps it', async () => {
+            renderEditor('venue', buildListing({ contactInfo: {} }), 'contact');
+
+            const numbers = screen.getAllByLabelText('Número');
+            fireEvent.change(numbers[2] as HTMLElement, { target: { value: '9 343 1234567' } });
+            fireEvent.click(screen.getByLabelText('Solo usuarios logueados'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('whatsappVisibility', 'LOGGED_IN_ONLY');
+        });
+
+        it('HOS-2557: saving without a number sends no WhatsApp choice', async () => {
+            renderEditor('venue', buildListing({ contactInfo: {} }), 'contact');
+
+            fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.com' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).not.toHaveProperty('whatsappVisibility');
         });
 
         it('HOS-2256: does not touch the WhatsApp keys when neither control changes', async () => {

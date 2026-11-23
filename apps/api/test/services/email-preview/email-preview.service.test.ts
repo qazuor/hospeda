@@ -51,6 +51,7 @@ describe('createEmailPreviewService', () => {
             sendPath: FIRST.sendPath,
             name: FIRST.name,
             domain: FIRST.domain,
+            audience: FIRST.audience,
             wired: FIRST.wired,
             scenarios: FIRST.scenarios.map(({ id, label }) => ({ id, label }))
         });

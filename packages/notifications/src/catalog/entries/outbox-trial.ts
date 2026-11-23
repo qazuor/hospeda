@@ -111,6 +111,7 @@ function trialEntry(milestone: TrialMilestone): EmailCatalogEntry {
         template: milestone.template,
         name: milestone.name,
         domain: 'trial',
+        audience: 'user',
         scenarios: [
             {
                 id: 'host-with-name',

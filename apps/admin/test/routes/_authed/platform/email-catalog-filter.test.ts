@@ -12,8 +12,10 @@ import {
 } from '../../../../src/routes/_authed/platform/emails/-components/email-catalog-filter';
 
 const entry = (
-    input: Pick<EmailPreviewEntrySummary, 'key' | 'id' | 'name' | 'domain'>
+    input: Pick<EmailPreviewEntrySummary, 'key' | 'id' | 'name' | 'domain'> &
+        Partial<Pick<EmailPreviewEntrySummary, 'audience'>>
 ): EmailPreviewEntrySummary => ({
+    audience: 'user',
     ...input,
     sendPath: 'outbox',
     wired: true,
@@ -32,15 +34,20 @@ describe('email catalog filter', () => {
     });
 
     it('matches name, key or id, and returns everything for a blank search', () => {
-        expect(filterEmailCatalog({ entries: ENTRIES, search: 'renov', domains: [] })).toEqual([
-            ENTRIES[0]
-        ]);
-        expect(filterEmailCatalog({ entries: ENTRIES, search: 'AUTH.RESET', domains: [] })).toEqual(
-            [ENTRIES[1]]
-        );
-        expect(filterEmailCatalog({ entries: ENTRIES, search: '  ', domains: [] })).toEqual(
-            ENTRIES
-        );
+        expect(
+            filterEmailCatalog({ entries: ENTRIES, search: 'renov', domains: [], audience: 'all' })
+        ).toEqual([ENTRIES[0]]);
+        expect(
+            filterEmailCatalog({
+                entries: ENTRIES,
+                search: 'AUTH.RESET',
+                domains: [],
+                audience: 'all'
+            })
+        ).toEqual([ENTRIES[1]]);
+        expect(
+            filterEmailCatalog({ entries: ENTRIES, search: '  ', domains: [], audience: 'all' })
+        ).toEqual(ENTRIES);
     });
 
     it('matches on the id alone when neither the name nor the key contain it', () => {
@@ -56,7 +63,8 @@ describe('email catalog filter', () => {
         const result = filterEmailCatalog({
             entries: [...ENTRIES, idOnly],
             search: 'ZETA-template',
-            domains: []
+            domains: [],
+            audience: 'all'
         });
 
         // Assert
@@ -65,11 +73,53 @@ describe('email catalog filter', () => {
 
     it('combines the search with a multi-domain filter', () => {
         expect(
-            filterEmailCatalog({ entries: ENTRIES, search: '', domains: ['auth', 'billing'] })
+            filterEmailCatalog({
+                entries: ENTRIES,
+                search: '',
+                domains: ['auth', 'billing'],
+                audience: 'all'
+            })
         ).toEqual(ENTRIES);
-        expect(filterEmailCatalog({ entries: ENTRIES, search: 'pago', domains: ['auth'] })).toEqual(
-            []
+        expect(
+            filterEmailCatalog({
+                entries: ENTRIES,
+                search: 'pago',
+                domains: ['auth'],
+                audience: 'all'
+            })
+        ).toEqual([]);
+    });
+
+    it('filters by audience and combines it with search and domains', () => {
+        // Arrange
+        const staff = entry({
+            key: 'outbox.billing.reconciliation-summary',
+            id: 'billing.reconciliation-summary',
+            name: 'Resumen de conciliación',
+            domain: 'billing',
+            audience: 'staff'
+        });
+        const entries = [...ENTRIES, staff];
+
+        // Act + Assert
+        expect(filterEmailCatalog({ entries, search: '', domains: [], audience: 'staff' })).toEqual(
+            [staff]
         );
+        expect(filterEmailCatalog({ entries, search: '', domains: [], audience: 'user' })).toEqual(
+            ENTRIES
+        );
+        expect(filterEmailCatalog({ entries, search: '', domains: [], audience: 'all' })).toEqual(
+            entries
+        );
+        expect(
+            filterEmailCatalog({ entries, search: 'conciliacion', domains: [], audience: 'staff' })
+        ).toEqual([staff]);
+        expect(
+            filterEmailCatalog({ entries, search: 'renov', domains: [], audience: 'staff' })
+        ).toEqual([]);
+        expect(
+            filterEmailCatalog({ entries, search: '', domains: ['auth'], audience: 'staff' })
+        ).toEqual([]);
     });
 
     it('groups by domain and lists domains in catalog order', () => {

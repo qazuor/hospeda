@@ -938,8 +938,8 @@ support closes a peer or a less privileged account, never a more privileged
 one. It runs after the 404, so it never reveals more than existence, which the
 holder of the permission may already read.
 
-A 409 names the FIRST missing step of the manual closure, in its order (charge,
-then listings, then presence), and writes nothing, not even the audit event.
+A 422 refusal names the FIRST missing step of the manual closure, in its order
+(charge, then listings, then presence), and writes nothing, not even the audit event.
 As everywhere in `createAdminRoute`, the body is validated before the route
 permission, so a `POST` without a valid body answers 400 before 403
 (previous to this PR, Coord-184).

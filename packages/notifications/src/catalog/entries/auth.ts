@@ -42,6 +42,7 @@ export const AUTH_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'reset-password',
         name: 'Restablecer contraseña',
         domain: 'auth',
+        audience: 'user',
         scenarios: AUTH_SCENARIOS,
         render: ({ scenario, deps }) => ({
             subject: RESET_PASSWORD_EMAIL_SUBJECT,
@@ -57,6 +58,7 @@ export const AUTH_ENTRIES: readonly EmailCatalogEntry[] = [
         id: 'verify-email',
         name: 'Verificación de cuenta',
         domain: 'auth',
+        audience: 'user',
         scenarios: AUTH_SCENARIOS,
         render: ({ scenario, deps }) => ({
             subject: VERIFY_EMAIL_SUBJECT,

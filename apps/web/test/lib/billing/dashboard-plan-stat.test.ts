@@ -1,9 +1,12 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     parsePlanNames,
     resolveDashboardFreeCard,
     resolveDashboardPlanStat,
-    resolveDashboardTrialStat
+    resolveDashboardTrialStat,
+    statusNeedsAction
 } from '../../../src/lib/billing/dashboard-plan-stat';
 
 const plan = {
@@ -145,5 +148,130 @@ describe('HOS-1996 dashboard free-branch decision', () => {
             formatDate
         });
         expect(card).toEqual({ value: 'En prueba', statusText: null });
+    });
+});
+
+describe('HOS-2553 subscription card with every subscription', () => {
+    const sub = (slug: string, status: string) => ({
+        slug,
+        name: slug.toUpperCase(),
+        status,
+        vertical: 'accommodation'
+    });
+    const planNames = { 'owner-basico': 'Básico' };
+
+    it('lists the one declined subscription as a single plan with its exact status', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: { ...plan, status: 'CHARGE_DECLINED' },
+            activeSubscriptionsCount: 1,
+            subscriptions: [sub('owner-basico', 'CHARGE_DECLINED')] as never,
+            planNames
+        });
+        expect(stat).toEqual({ kind: 'single', label: 'Básico', statusKey: 'charge-declined' });
+    });
+
+    it('maps the waiting checkout to its own status key', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: { ...plan, status: 'PENDING_AUTHORIZATION' },
+            activeSubscriptionsCount: 1,
+            planNames
+        });
+        expect(stat).toMatchObject({ kind: 'single', statusKey: 'pending-authorization' });
+    });
+
+    it('shows three subscriptions with plan and status and no "Ver todas"', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: null,
+            activeSubscriptionsCount: 3,
+            subscriptions: [
+                sub('owner-basico', 'ACTIVE'),
+                sub('venue-pro', 'CHARGE_DECLINED'),
+                sub('experience-basico', 'PENDING_AUTHORIZATION')
+            ] as never,
+            planNames
+        });
+        expect(stat).toEqual({
+            kind: 'list',
+            total: 3,
+            hasMore: false,
+            rows: [
+                { label: 'Básico', statusKey: 'active' },
+                { label: 'VENUE-PRO', statusKey: 'charge-declined' },
+                { label: 'EXPERIENCE-BASICO', statusKey: 'pending-authorization' }
+            ]
+        });
+    });
+
+    it('caps the list at three and offers "Ver todas" with four', () => {
+        const stat = resolveDashboardPlanStat({
+            plan: null,
+            activeSubscriptionsCount: 4,
+            subscriptions: ['a', 'b', 'c', 'd'].map((slug) => sub(slug, 'ACTIVE')) as never,
+            planNames: {}
+        });
+        expect(stat).toMatchObject({ kind: 'list', total: 4, hasMore: true });
+        expect(stat.kind === 'list' && stat.rows).toHaveLength(3);
+    });
+
+    it('keeps the count fallback for an API that predates the subscriptions field', () => {
+        expect(
+            resolveDashboardPlanStat({ plan: null, activeSubscriptionsCount: 2, planNames: {} })
+        ).toEqual({ kind: 'multiple', count: 2 });
+    });
+
+    it('flags only the two unsettled statuses as needing action', () => {
+        expect(statusNeedsAction({ statusKey: 'charge-declined' })).toBe(true);
+        expect(statusNeedsAction({ statusKey: 'pending-authorization' })).toBe(true);
+        expect(statusNeedsAction({ statusKey: 'active' })).toBe(false);
+        expect(statusNeedsAction({ statusKey: 'grace-period' })).toBe(false);
+    });
+});
+
+/** Read one locale namespace file as a plain object. */
+function readLocale(locale: string, namespace: string): Record<string, unknown> {
+    const file = path.resolve(
+        __dirname,
+        '../../../../../packages/i18n/src/locales',
+        locale,
+        `${namespace}.json`
+    );
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, unknown>;
+}
+
+/** Walk a dotted key through a parsed locale object. */
+function at(source: Record<string, unknown>, dotted: string): string {
+    const value = dotted
+        .split('.')
+        .reduce<unknown>(
+            (node, part) =>
+                node && typeof node === 'object'
+                    ? (node as Record<string, unknown>)[part]
+                    : undefined,
+            source
+        );
+    if (typeof value !== 'string') throw new Error(`Missing key ${dotted}`);
+    return value;
+}
+
+describe('HOS-2553 declined sign-up action copy', () => {
+    // A declined sign-up never started a plan, so the copy cannot threaten to take one away.
+    const LOSE_PLAN = {
+        es: /perder tu plan|plan siga activo/i,
+        en: /lose your plan|plan stays active/i,
+        pt: /perder seu plano|plano continue ativo/i
+    } as const;
+    const RETRY = { es: /intent/i, en: /try/i, pt: /tent/i } as const;
+    // The host dashboard no longer carries a plan widget (D19), so the account card is
+    // the one place this copy lives.
+    const KEYS = [['account', 'pages.dashboard.stats.chargeDeclinedAction']] as const;
+
+    it.each(
+        (['es', 'en', 'pt'] as const).flatMap((locale) =>
+            KEYS.map(([namespace, key]) => [locale, namespace, key] as const)
+        )
+    )('%s %s.%s offers a retry and does not speak of losing a plan', (locale, namespace, key) => {
+        const copy = at(readLocale(locale, namespace), key);
+        expect(copy).not.toMatch(LOSE_PLAN[locale]);
+        expect(copy).toMatch(RETRY[locale]);
     });
 });
