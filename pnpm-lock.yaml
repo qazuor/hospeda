@@ -1920,6 +1920,9 @@ importers:
 
   packages/service-core:
     dependencies:
+      '@repo/analytics':
+        specifier: workspace:*
+        version: link:../analytics
       '@repo/billing-verticals-contract':
         specifier: workspace:*
         version: link:../billing-verticals-contract
