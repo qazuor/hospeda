@@ -131,7 +131,7 @@ test.describe('TEST:B13a:18 AC:B13a:17 paid after cancellation does not renew @b
             await attachSession(page, user.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
             const row = page.locator(
-                `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+                `[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
             );
             await expect(row).toHaveAttribute('data-renewal', 'NOT_RENEWING_AFTER_PAYMENT');
             await expect(row).toContainText('Tu pago entró y tenés servicio hasta');

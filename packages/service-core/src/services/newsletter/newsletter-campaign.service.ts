@@ -43,6 +43,10 @@ import { ServiceError } from '../../types/index.js';
 import { createSystemActor } from '../../utils/system-actor.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import {
+    type CampaignPixelProvisioner,
+    provisionCampaignAttribution
+} from './newsletter-attribution.js';
+import {
     checkCanSendCampaign,
     checkCanViewCampaign,
     checkCanWriteCampaign
@@ -265,6 +269,13 @@ export interface NewsletterCampaignServiceOptions {
      * failure does not roll back the campaign transition.
      */
     notifyCampaignClosedWithFailuresFn?: NotifyCampaignClosedWithFailuresFn;
+    /**
+     * Creates (or reuses) the campaign's Umami open pixel at dispatch (HOS-2359,
+     * OD-3). The host app wires it to `ensureUmamiPixel`; service-core never talks to
+     * Umami. Absent, failing or answering `null`: the campaign goes out without a
+     * pixel. Its UTMs are applied either way.
+     */
+    campaignPixelProvisioner?: CampaignPixelProvisioner;
 }
 
 /**
@@ -322,6 +333,7 @@ export class NewsletterCampaignService extends BaseService {
     private readonly notifyCampaignClosedWithFailuresFn:
         | NotifyCampaignClosedWithFailuresFn
         | undefined;
+    private readonly campaignPixelProvisioner: CampaignPixelProvisioner | undefined;
 
     /**
      * Creates a new NewsletterCampaignService.
@@ -338,6 +350,7 @@ export class NewsletterCampaignService extends BaseService {
             options.subscriberService ??
             new NewsletterSubscriberService(config, { hmacSecret: '__missing__' });
         this.notifyCampaignClosedWithFailuresFn = options.notifyCampaignClosedWithFailuresFn;
+        this.campaignPixelProvisioner = options.campaignPixelProvisioner;
     }
 
     // -------------------------------------------------------------------------
@@ -720,6 +733,15 @@ export class NewsletterCampaignService extends BaseService {
                     return { enqueued: 0, softcapped: softCappedCount };
                 }
 
+                // Step 3b — Attribution (HOS-2359): slug + Umami pixel, BEFORE the
+                // transaction so no DB transaction is held open across the Umami call.
+                // Bounded by the provisioner's own timeout; never throws.
+                const { attributionSlug, umamiPixelSlug } = await provisionCampaignAttribution({
+                    campaign: { id: campaign.id, title: campaign.title },
+                    provisioner: this.campaignPixelProvisioner,
+                    logger: this.logger
+                });
+
                 // Steps 4 + 5 inside a single transaction
                 let insertedDeliveryIds: string[] = [];
 
@@ -753,6 +775,8 @@ export class NewsletterCampaignService extends BaseService {
                             sentAt: new Date(),
                             totalRecipients: insertedDeliveryIds.length,
                             totalSoftcapped: softCappedCount,
+                            attributionSlug,
+                            umamiPixelSlug,
                             updatedAt: new Date()
                         })
                         .where(eq(newsletterCampaigns.id, validated.id));

@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -160,22 +160,22 @@ export function AiCostThresholdAlert({
             </Section>
 
             {thresholdPct === 100 && (
-                <Section style={styles.warningBox}>
+                <Callout tone="warning">
                     <Text style={styles.warningText}>
                         El presupuesto ha sido <strong>agotado</strong>. Las solicitudes de IA están
                         siendo bloqueadas hasta que el presupuesto sea incrementado o se reinicie el
                         período mensual.
                     </Text>
-                </Section>
+                </Callout>
             )}
 
             {thresholdPct === 80 && (
-                <Section style={styles.warningBox}>
+                <Callout tone="warning">
                     <Text style={styles.warningText}>
                         El 80% del presupuesto ha sido consumido. Revisá el panel de administración
                         para ajustar el límite si es necesario.
                     </Text>
-                </Section>
+                </Callout>
             )}
 
             <Text style={styles.footerNote}>
@@ -224,13 +224,6 @@ const styles = {
         padding: '20px',
         margin: '16px 0'
     },
-    warningBox: {
-        backgroundColor: '#fffbeb',
-        borderRadius: '6px',
-        borderLeft: '4px solid #f59e0b',
-        padding: '20px',
-        margin: '16px 0'
-    },
     sectionTitle: {
         color: '#1e293b',
         fontSize: '14px',
@@ -240,7 +233,6 @@ const styles = {
         letterSpacing: '0.5px'
     },
     warningText: {
-        color: '#1e293b',
         fontSize: '14px',
         lineHeight: '20px',
         margin: '0'

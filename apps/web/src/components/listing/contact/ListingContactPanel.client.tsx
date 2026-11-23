@@ -15,6 +15,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
     buildInquiryMessage,
+    toInquiryFields,
     validateInquiryFields
 } from '@/lib/listing-contact/build-inquiry-message';
 import type { ListingContactPanelOpen } from '@/lib/listing-contact/listing-contact-events';
@@ -52,16 +53,6 @@ export function ListingContactPanel(props: ListingContactPanelProps) {
             {...props}
         />
     );
-}
-
-/** Converts the raw panel inputs into the optional fields sent to the API. */
-function toInquiryFields(values: { checkIn: string; checkOut: string; guests: string }) {
-    const guests = values.guests === '' ? undefined : Number(values.guests);
-    return {
-        ...(values.checkIn ? { checkIn: values.checkIn } : {}),
-        ...(values.checkOut ? { checkOut: values.checkOut } : {}),
-        ...(guests !== undefined && Number.isInteger(guests) ? { guests } : {})
-    };
 }
 
 const fields = ['checkIn', 'checkOut', 'guests'] as const;

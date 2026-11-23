@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatDate } from '../utils/index.js';
@@ -49,7 +48,7 @@ export function SubscriptionCancelled({
                 </Text>
             )}
 
-            <Section style={styles.infoBox}>
+            <Callout tone="info">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -60,15 +59,13 @@ export function SubscriptionCancelled({
                         value={formattedEndDate}
                     />
                 )}
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Si no realizaste esta cancelacion, contactanos para resolverlo.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivar suscripcion</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivar suscripcion</Button>
         </EmailLayout>
     );
 }
@@ -85,16 +82,5 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    infoBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #0f766e',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     }
 };

@@ -15,7 +15,15 @@ const propsSchema = z
         price: listingContactPriceSchema,
         hasWhatsapp: z.boolean(),
         primaryLabelKey: z.string().min(1),
-        panelId: z.string().min(1)
+        panelId: z.string().min(1),
+        fallbackHref: z
+            .string()
+            .regex(/^#[\w-]+$/)
+            .optional(),
+        primaryLink: z
+            .object({ href: z.string().min(1), channel: z.literal('menu') })
+            .readonly()
+            .optional()
     })
     .readonly();
 

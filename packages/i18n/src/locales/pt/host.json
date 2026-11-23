@@ -265,7 +265,8 @@
             "unpublishTrialNote": "A avaliação gratuita continua correndo: despublicar não para o relógio da avaliação.",
             "unpublishRecurringNote_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado mesmo sem publicar, até você cancelá-lo.",
             "unpublishRecurringNote_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo sem publicar, até você cancelá-los.",
-            "recurringWithdrawLink": "Cancelar estes destaques"
+            "recurringWithdrawLink": "Cancelar estes destaques",
+            "moreActions": "Mais ações para {{name}}"
         },
         "editor": {
             "groups": {
@@ -809,7 +810,8 @@
             "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
         },
         "error": {
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "body": "Suas propriedades continuam lá: tente de novo em instantes."
         }
     },
     "landing": {
@@ -950,6 +952,20 @@
         "specialOffer": {
             "label": "Descreva a vantagem",
             "help": "Descreva o benefício em poucas palavras, por exemplo, dois drinks pelo preço de um."
+        },
+        "kit": {
+            "sectionTitle": "Suas promoções",
+            "statusLabel": "Status",
+            "validityLabel": "Validade",
+            "validRange": "De {{from}} a {{until}}",
+            "validOpen": "A partir de {{from}}, sem vencimento",
+            "editNamed": "Editar “{{title}}”",
+            "deleteNamed": "Excluir “{{title}}”",
+            "deleteTitle": "Excluir “{{title}}”?",
+            "benefitSection": "A promoção",
+            "conditionsSection": "Condições",
+            "loadFailedHint": "Volte para a lista e tente de novo.",
+            "backToList": "Voltar para minhas promoções"
         }
     },
     "dashboard": {

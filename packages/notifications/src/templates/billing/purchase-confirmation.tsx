@@ -1,6 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Button, EmailLayout, emailPalette } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatCurrency, formatDate } from '../utils/index.js';
@@ -78,9 +77,7 @@ export function PurchaseConfirmation({
                 cuenta.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/`}>Ver mi cuenta</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/`}>Ver mi cuenta</Button>
 
             <Text style={styles.footerNote}>
                 Si tienes alguna pregunta, no dudes en contactarnos.
@@ -103,14 +100,11 @@ const styles = {
         margin: '0 0 16px'
     },
     receiptBox: {
-        backgroundColor: '#f8fafc',
+        backgroundColor: emailPalette.pageBackground,
+        border: `1px solid ${emailPalette.border}`,
         borderRadius: '8px',
         padding: '24px',
         margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

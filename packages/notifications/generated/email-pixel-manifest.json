@@ -1,0 +1,752 @@
+[
+    {
+        "key": "alert-digest.alerts-digest",
+        "name": "Email · Resumen de alertas de precios y ofertas",
+        "utmCampaign": "alert-digest-alerts-digest",
+        "pixelSlug": "email-alert-digest-alerts-digest"
+    },
+    {
+        "key": "auth.reset-password",
+        "name": "Email · Restablecer contraseña",
+        "utmCampaign": "auth-reset-password",
+        "pixelSlug": "email-auth-reset-password"
+    },
+    {
+        "key": "auth.verify-email",
+        "name": "Email · Verificación de cuenta",
+        "utmCampaign": "auth-verify-email",
+        "pixelSlug": "email-auth-verify-email"
+    },
+    {
+        "key": "conversation.access-link",
+        "name": "Email · Enlace de acceso a la conversación",
+        "utmCampaign": "conversation-access-link",
+        "pixelSlug": "email-conversation-access-link"
+    },
+    {
+        "key": "conversation.new-message",
+        "name": "Email · Nuevo mensaje (usuario registrado)",
+        "utmCampaign": "conversation-new-message",
+        "pixelSlug": "email-conversation-new-message"
+    },
+    {
+        "key": "conversation.new-message-anon",
+        "name": "Email · Nuevo mensaje (huésped anónimo)",
+        "utmCampaign": "conversation-new-message-anon",
+        "pixelSlug": "email-conversation-new-message-anon"
+    },
+    {
+        "key": "conversation.token-expiring-day15",
+        "name": "Email · Enlace de acceso vence en 15 días",
+        "utmCampaign": "conversation-token-expiring-day15",
+        "pixelSlug": "email-conversation-token-expiring-day15"
+    },
+    {
+        "key": "conversation.token-expiring-day25",
+        "name": "Email · Último aviso: enlace de acceso vence en 5 días",
+        "utmCampaign": "conversation-token-expiring-day25",
+        "pixelSlug": "email-conversation-token-expiring-day25"
+    },
+    {
+        "key": "conversation.verify",
+        "name": "Email · Verificación de email del huésped",
+        "utmCampaign": "conversation-verify",
+        "pixelSlug": "email-conversation-verify"
+    },
+    {
+        "key": "newsletter.campaign",
+        "name": "Email · Campaña de newsletter",
+        "utmCampaign": "newsletter-campaign",
+        "pixelSlug": "email-newsletter-campaign"
+    },
+    {
+        "key": "newsletter.verify",
+        "name": "Email · Confirmación de suscripción al newsletter",
+        "utmCampaign": "newsletter-verify",
+        "pixelSlug": "email-newsletter-verify"
+    },
+    {
+        "key": "newsletter.welcome",
+        "name": "Email · Bienvenida al newsletter",
+        "utmCampaign": "newsletter-welcome",
+        "pixelSlug": "email-newsletter-welcome"
+    },
+    {
+        "key": "notification.accommodation_calendar_feed_broken",
+        "name": "Email · Calendario externo desconectado",
+        "utmCampaign": "notification-accommodation-calendar-feed-broken",
+        "pixelSlug": "email-notification-accommodation-calendar-feed-broken"
+    },
+    {
+        "key": "notification.admin_lead_received",
+        "name": "Email · Nuevo lead recibido (admin)",
+        "utmCampaign": "notification-admin-lead-received",
+        "pixelSlug": "email-notification-admin-lead-received"
+    },
+    {
+        "key": "notification.admin_payment_failure",
+        "name": "Email · Pago fallido (admin)",
+        "utmCampaign": "notification-admin-payment-failure",
+        "pixelSlug": "email-notification-admin-payment-failure"
+    },
+    {
+        "key": "notification.admin_system_event",
+        "name": "Email · Evento del sistema (admin)",
+        "utmCampaign": "notification-admin-system-event",
+        "pixelSlug": "email-notification-admin-system-event"
+    },
+    {
+        "key": "notification.ai_cost_threshold_alert",
+        "name": "Email · Alerta de costo de IA",
+        "utmCampaign": "notification-ai-cost-threshold-alert",
+        "pixelSlug": "email-notification-ai-cost-threshold-alert"
+    },
+    {
+        "key": "notification.ai_questions_weekly_digest",
+        "name": "Email · Resumen semanal de preguntas a la IA",
+        "utmCampaign": "notification-ai-questions-weekly-digest",
+        "pixelSlug": "email-notification-ai-questions-weekly-digest"
+    },
+    {
+        "key": "notification.alliance_claim_invite",
+        "name": "Email · Invitación a confirmar postulación de aliado",
+        "utmCampaign": "notification-alliance-claim-invite",
+        "pixelSlug": "email-notification-alliance-claim-invite"
+    },
+    {
+        "key": "notification.alliance_lead_decision",
+        "name": "Email · Decisión sobre postulación de aliado",
+        "utmCampaign": "notification-alliance-lead-decision",
+        "pixelSlug": "email-notification-alliance-lead-decision"
+    },
+    {
+        "key": "notification.comp_granted",
+        "name": "Email · Suscripción de cortesía otorgada",
+        "utmCampaign": "notification-comp-granted",
+        "pixelSlug": "email-notification-comp-granted"
+    },
+    {
+        "key": "notification.contact_submission",
+        "name": "Email · Consulta del formulario de contacto",
+        "utmCampaign": "notification-contact-submission",
+        "pixelSlug": "email-notification-contact-submission"
+    },
+    {
+        "key": "notification.courtesy_ended",
+        "name": "Email · Cortesía finalizada",
+        "utmCampaign": "notification-courtesy-ended",
+        "pixelSlug": "email-notification-courtesy-ended"
+    },
+    {
+        "key": "notification.courtesy_granted",
+        "name": "Email · Cortesía otorgada",
+        "utmCampaign": "notification-courtesy-granted",
+        "pixelSlug": "email-notification-courtesy-granted"
+    },
+    {
+        "key": "notification.courtesy_started",
+        "name": "Email · Cortesía iniciada",
+        "utmCampaign": "notification-courtesy-started",
+        "pixelSlug": "email-notification-courtesy-started"
+    },
+    {
+        "key": "notification.feedback_report",
+        "name": "Email · Reporte de feedback",
+        "utmCampaign": "notification-feedback-report",
+        "pixelSlug": "email-notification-feedback-report"
+    },
+    {
+        "key": "notification.host_trade_reply_moderated",
+        "name": "Email · Respuesta moderada",
+        "utmCampaign": "notification-host-trade-reply-moderated",
+        "pixelSlug": "email-notification-host-trade-reply-moderated"
+    },
+    {
+        "key": "notification.host_trade_review_received",
+        "name": "Email · Valoración recibida",
+        "utmCampaign": "notification-host-trade-review-received",
+        "pixelSlug": "email-notification-host-trade-review-received"
+    },
+    {
+        "key": "notification.host_trade_revoked",
+        "name": "Email · Ficha del directorio dada de baja",
+        "utmCampaign": "notification-host-trade-revoked",
+        "pixelSlug": "email-notification-host-trade-revoked"
+    },
+    {
+        "key": "notification.host_trade_usage_confirmation_reminder",
+        "name": "Email · Recordatorio de confirmación de uso del beneficio",
+        "utmCampaign": "notification-host-trade-usage-confirmation-reminder",
+        "pixelSlug": "email-notification-host-trade-usage-confirmation-reminder"
+    },
+    {
+        "key": "notification.host_trade_usage_confirmation_request",
+        "name": "Email · Pedido de confirmación de uso del beneficio",
+        "utmCampaign": "notification-host-trade-usage-confirmation-request",
+        "pixelSlug": "email-notification-host-trade-usage-confirmation-request"
+    },
+    {
+        "key": "notification.host_trade_usage_confirmed",
+        "name": "Email · Uso del beneficio confirmado",
+        "utmCampaign": "notification-host-trade-usage-confirmed",
+        "pixelSlug": "email-notification-host-trade-usage-confirmed"
+    },
+    {
+        "key": "notification.host_trade_usage_rejected",
+        "name": "Email · Uso del beneficio rechazado",
+        "utmCampaign": "notification-host-trade-usage-rejected",
+        "pixelSlug": "email-notification-host-trade-usage-rejected"
+    },
+    {
+        "key": "notification.listing_location_exception_approved",
+        "name": "Email · Excepción de ubicación aprobada",
+        "utmCampaign": "notification-listing-location-exception-approved",
+        "pixelSlug": "email-notification-listing-location-exception-approved"
+    },
+    {
+        "key": "notification.listing_location_exception_rejected",
+        "name": "Email · Excepción de ubicación rechazada",
+        "utmCampaign": "notification-listing-location-exception-rejected",
+        "pixelSlug": "email-notification-listing-location-exception-rejected"
+    },
+    {
+        "key": "notification.partner_mentions_logged",
+        "name": "Email · Difusión del aliado registrada",
+        "utmCampaign": "notification-partner-mentions-logged",
+        "pixelSlug": "email-notification-partner-mentions-logged"
+    },
+    {
+        "key": "notification.partner_revoked",
+        "name": "Email · Aliado dado de baja",
+        "utmCampaign": "notification-partner-revoked",
+        "pixelSlug": "email-notification-partner-revoked"
+    },
+    {
+        "key": "notification.payment_failure",
+        "name": "Email · Pago fallido",
+        "utmCampaign": "notification-payment-failure",
+        "pixelSlug": "email-notification-payment-failure"
+    },
+    {
+        "key": "notification.payment_retry_warning",
+        "name": "Email · Aviso de reintento de pago",
+        "utmCampaign": "notification-payment-retry-warning",
+        "pixelSlug": "email-notification-payment-retry-warning"
+    },
+    {
+        "key": "notification.payment_success",
+        "name": "Email · Pago recibido",
+        "utmCampaign": "notification-payment-success",
+        "pixelSlug": "email-notification-payment-success"
+    },
+    {
+        "key": "notification.plan_being_retired",
+        "name": "Email · Plan en retiro",
+        "utmCampaign": "notification-plan-being-retired",
+        "pixelSlug": "email-notification-plan-being-retired"
+    },
+    {
+        "key": "notification.plan_change_confirmation",
+        "name": "Email · Confirmación de cambio de plan",
+        "utmCampaign": "notification-plan-change-confirmation",
+        "pixelSlug": "email-notification-plan-change-confirmation"
+    },
+    {
+        "key": "notification.plan_downgrade_limit_warning",
+        "name": "Email · Aviso de límite por cambio a un plan menor",
+        "utmCampaign": "notification-plan-downgrade-limit-warning",
+        "pixelSlug": "email-notification-plan-downgrade-limit-warning"
+    },
+    {
+        "key": "notification.plan_price_change_notice",
+        "name": "Email · Aviso de cambio de precio",
+        "utmCampaign": "notification-plan-price-change-notice",
+        "pixelSlug": "email-notification-plan-price-change-notice"
+    },
+    {
+        "key": "notification.renewal_reminder",
+        "name": "Email · Recordatorio de renovación",
+        "utmCampaign": "notification-renewal-reminder",
+        "pixelSlug": "email-notification-renewal-reminder"
+    },
+    {
+        "key": "notification.subscription_access_ending_soon",
+        "name": "Email · El acceso termina pronto",
+        "utmCampaign": "notification-subscription-access-ending-soon",
+        "pixelSlug": "email-notification-subscription-access-ending-soon"
+    },
+    {
+        "key": "notification.subscription_cancel_confirmed",
+        "name": "Email · Cancelación confirmada",
+        "utmCampaign": "notification-subscription-cancel-confirmed",
+        "pixelSlug": "email-notification-subscription-cancel-confirmed"
+    },
+    {
+        "key": "notification.subscription_cancelled",
+        "name": "Email · Suscripción cancelada",
+        "utmCampaign": "notification-subscription-cancelled",
+        "pixelSlug": "email-notification-subscription-cancelled"
+    },
+    {
+        "key": "notification.subscription_paused",
+        "name": "Email · Suscripción pausada",
+        "utmCampaign": "notification-subscription-paused",
+        "pixelSlug": "email-notification-subscription-paused"
+    },
+    {
+        "key": "notification.subscription_purchase",
+        "name": "Email · Confirmación de compra",
+        "utmCampaign": "notification-subscription-purchase",
+        "pixelSlug": "email-notification-subscription-purchase"
+    },
+    {
+        "key": "notification.subscription_reactivated",
+        "name": "Email · Suscripción reactivada",
+        "utmCampaign": "notification-subscription-reactivated",
+        "pixelSlug": "email-notification-subscription-reactivated"
+    },
+    {
+        "key": "notification.trial_ending_10d",
+        "name": "Email · Prueba: faltan 10 días",
+        "utmCampaign": "notification-trial-ending-10d",
+        "pixelSlug": "email-notification-trial-ending-10d"
+    },
+    {
+        "key": "notification.trial_ending_1d",
+        "name": "Email · Prueba: falta 1 día",
+        "utmCampaign": "notification-trial-ending-1d",
+        "pixelSlug": "email-notification-trial-ending-1d"
+    },
+    {
+        "key": "notification.trial_ending_5d",
+        "name": "Email · Prueba: faltan 5 días",
+        "utmCampaign": "notification-trial-ending-5d",
+        "pixelSlug": "email-notification-trial-ending-5d"
+    },
+    {
+        "key": "notification.trial_ending_reminder",
+        "name": "Email · Recordatorio de fin de prueba",
+        "utmCampaign": "notification-trial-ending-reminder",
+        "pixelSlug": "email-notification-trial-ending-reminder"
+    },
+    {
+        "key": "notification.trial_expired",
+        "name": "Email · Prueba vencida",
+        "utmCampaign": "notification-trial-expired",
+        "pixelSlug": "email-notification-trial-expired"
+    },
+    {
+        "key": "notification.trial_win_back_10d",
+        "name": "Email · Reconquista: 10 días después",
+        "utmCampaign": "notification-trial-win-back-10d",
+        "pixelSlug": "email-notification-trial-win-back-10d"
+    },
+    {
+        "key": "notification.trial_win_back_1d",
+        "name": "Email · Reconquista: 1 día después",
+        "utmCampaign": "notification-trial-win-back-1d",
+        "pixelSlug": "email-notification-trial-win-back-1d"
+    },
+    {
+        "key": "notification.trial_win_back_30d",
+        "name": "Email · Reconquista: 30 días después",
+        "utmCampaign": "notification-trial-win-back-30d",
+        "pixelSlug": "email-notification-trial-win-back-30d"
+    },
+    {
+        "key": "notification.trial_win_back_5d",
+        "name": "Email · Reconquista: 5 días después",
+        "utmCampaign": "notification-trial-win-back-5d",
+        "pixelSlug": "email-notification-trial-win-back-5d"
+    },
+    {
+        "key": "notification.trial_win_back_60d",
+        "name": "Email · Reconquista: 60 días después",
+        "utmCampaign": "notification-trial-win-back-60d",
+        "pixelSlug": "email-notification-trial-win-back-60d"
+    },
+    {
+        "key": "outbox.billing.addon-authorization-expired-cancel",
+        "name": "Email · Aviso de autorización de complemento vencida",
+        "utmCampaign": "outbox-billing-addon-authorization-expired-cancel",
+        "pixelSlug": "email-outbox-billing-addon-authorization-expired-cancel"
+    },
+    {
+        "key": "outbox.billing.addon-cancelled",
+        "name": "Email · Aviso de cancelación de un complemento",
+        "utmCampaign": "outbox-billing-addon-cancelled",
+        "pixelSlug": "email-outbox-billing-addon-cancelled"
+    },
+    {
+        "key": "outbox.billing.addon-listing-purged-cancel",
+        "name": "Email · Aviso de ficha borrada con complemento",
+        "utmCampaign": "outbox-billing-addon-listing-purged-cancel",
+        "pixelSlug": "email-outbox-billing-addon-listing-purged-cancel"
+    },
+    {
+        "key": "outbox.billing.arrears-suspension",
+        "name": "Email · Suspensión por mora",
+        "utmCampaign": "outbox-billing-arrears-suspension",
+        "pixelSlug": "email-outbox-billing-arrears-suspension"
+    },
+    {
+        "key": "outbox.billing.attempt-cancelled-cancel",
+        "name": "Email · Aviso de intento de alta cancelado",
+        "utmCampaign": "outbox-billing-attempt-cancelled-cancel",
+        "pixelSlug": "email-outbox-billing-attempt-cancelled-cancel"
+    },
+    {
+        "key": "outbox.billing.attempt-replaced-cancel",
+        "name": "Email · Aviso de intento de alta reemplazado",
+        "utmCampaign": "outbox-billing-attempt-replaced-cancel",
+        "pixelSlug": "email-outbox-billing-attempt-replaced-cancel"
+    },
+    {
+        "key": "outbox.billing.before-cancel",
+        "name": "Email · Autorización pendiente vencida",
+        "utmCampaign": "outbox-billing-before-cancel",
+        "pixelSlug": "email-outbox-billing-before-cancel"
+    },
+    {
+        "key": "outbox.billing.chargeback-suspension",
+        "name": "Email · Suspensión por contracargo",
+        "utmCampaign": "outbox-billing-chargeback-suspension",
+        "pixelSlug": "email-outbox-billing-chargeback-suspension"
+    },
+    {
+        "key": "outbox.billing.closed-subscription-authorization-cancel",
+        "name": "Email · Aviso de cancelación de autorización sobre suscripción cerrada",
+        "utmCampaign": "outbox-billing-closed-subscription-authorization-cancel",
+        "pixelSlug": "email-outbox-billing-closed-subscription-authorization-cancel"
+    },
+    {
+        "key": "outbox.billing.courtesy-revoked",
+        "name": "Email · Aviso de cortesía revocada",
+        "utmCampaign": "outbox-billing-courtesy-revoked",
+        "pixelSlug": "email-outbox-billing-courtesy-revoked"
+    },
+    {
+        "key": "outbox.billing.direct-cancellation",
+        "name": "Email · Aviso de baja directa",
+        "utmCampaign": "outbox-billing-direct-cancellation",
+        "pixelSlug": "email-outbox-billing-direct-cancellation"
+    },
+    {
+        "key": "outbox.billing.duplicate-charge-detected",
+        "name": "Email · Cobro duplicado detectado",
+        "utmCampaign": "outbox-billing-duplicate-charge-detected",
+        "pixelSlug": "email-outbox-billing-duplicate-charge-detected"
+    },
+    {
+        "key": "outbox.billing.first-charge-declined-cancel",
+        "name": "Email · Aviso de cancelación por primer cobro rechazado",
+        "utmCampaign": "outbox-billing-first-charge-declined-cancel",
+        "pixelSlug": "email-outbox-billing-first-charge-declined-cancel"
+    },
+    {
+        "key": "outbox.billing.grace-reminder",
+        "name": "Email · Recordatorio de período de gracia",
+        "utmCampaign": "outbox-billing-grace-reminder",
+        "pixelSlug": "email-outbox-billing-grace-reminder"
+    },
+    {
+        "key": "outbox.billing.grace-started",
+        "name": "Email · Comenzó el período de gracia",
+        "utmCampaign": "outbox-billing-grace-started",
+        "pixelSlug": "email-outbox-billing-grace-started"
+    },
+    {
+        "key": "outbox.billing.late-payment-refunded",
+        "name": "Email · Pago tardío reembolsado",
+        "utmCampaign": "outbox-billing-late-payment-refunded",
+        "pixelSlug": "email-outbox-billing-late-payment-refunded"
+    },
+    {
+        "key": "outbox.billing.manual-installment-opened",
+        "name": "Email · Cuota de pago manual abierta",
+        "utmCampaign": "outbox-billing-manual-installment-opened",
+        "pixelSlug": "email-outbox-billing-manual-installment-opened"
+    },
+    {
+        "key": "outbox.billing.manual-installment-unpaid",
+        "name": "Email · Cuota de pago manual sin pago",
+        "utmCampaign": "outbox-billing-manual-installment-unpaid",
+        "pixelSlug": "email-outbox-billing-manual-installment-unpaid"
+    },
+    {
+        "key": "outbox.billing.mark-escalated",
+        "name": "Email · Marca de conciliación escalada",
+        "utmCampaign": "outbox-billing-mark-escalated",
+        "pixelSlug": "email-outbox-billing-mark-escalated"
+    },
+    {
+        "key": "outbox.billing.one-time-addon-activated",
+        "name": "Email · Complemento único activado",
+        "utmCampaign": "outbox-billing-one-time-addon-activated",
+        "pixelSlug": "email-outbox-billing-one-time-addon-activated"
+    },
+    {
+        "key": "outbox.billing.paid-after-cancellation",
+        "name": "Email · Pago recibido tras la cancelación",
+        "utmCampaign": "outbox-billing-paid-after-cancellation",
+        "pixelSlug": "email-outbox-billing-paid-after-cancellation"
+    },
+    {
+        "key": "outbox.billing.payment-credited",
+        "name": "Email · Pago acreditado",
+        "utmCampaign": "outbox-billing-payment-credited",
+        "pixelSlug": "email-outbox-billing-payment-credited"
+    },
+    {
+        "key": "outbox.billing.permanent-grant-addon-cancel",
+        "name": "Email · Aviso de cancelación de complemento por beneficio permanente",
+        "utmCampaign": "outbox-billing-permanent-grant-addon-cancel",
+        "pixelSlug": "email-outbox-billing-permanent-grant-addon-cancel"
+    },
+    {
+        "key": "outbox.billing.permanent-grant-cancel",
+        "name": "Email · Aviso de cancelación por beneficio permanente",
+        "utmCampaign": "outbox-billing-permanent-grant-cancel",
+        "pixelSlug": "email-outbox-billing-permanent-grant-cancel"
+    },
+    {
+        "key": "outbox.billing.plan-migration-announced",
+        "name": "Email · Anuncio de migración de plan",
+        "utmCampaign": "outbox-billing-plan-migration-announced",
+        "pixelSlug": "email-outbox-billing-plan-migration-announced"
+    },
+    {
+        "key": "outbox.billing.plan-migration-cancelled",
+        "name": "Email · Cancelación de migración de plan",
+        "utmCampaign": "outbox-billing-plan-migration-cancelled",
+        "pixelSlug": "email-outbox-billing-plan-migration-cancelled"
+    },
+    {
+        "key": "outbox.billing.plan-migration-upcoming",
+        "name": "Email · Recordatorio de migración de plan próxima",
+        "utmCampaign": "outbox-billing-plan-migration-upcoming",
+        "pixelSlug": "email-outbox-billing-plan-migration-upcoming"
+    },
+    {
+        "key": "outbox.billing.promo-ending",
+        "name": "Email · Aviso de fin de promoción",
+        "utmCampaign": "outbox-billing-promo-ending",
+        "pixelSlug": "email-outbox-billing-promo-ending"
+    },
+    {
+        "key": "outbox.billing.provider-watch-alert",
+        "name": "Email · Alerta de vigilancia del proveedor de pagos",
+        "utmCampaign": "outbox-billing-provider-watch-alert",
+        "pixelSlug": "email-outbox-billing-provider-watch-alert"
+    },
+    {
+        "key": "outbox.billing.reconciliation-summary",
+        "name": "Email · Resumen de conciliación de cobros",
+        "utmCampaign": "outbox-billing-reconciliation-summary",
+        "pixelSlug": "email-outbox-billing-reconciliation-summary"
+    },
+    {
+        "key": "outbox.billing.renewal-upcoming",
+        "name": "Email · Aviso de renovación próxima",
+        "utmCampaign": "outbox-billing-renewal-upcoming",
+        "pixelSlug": "email-outbox-billing-renewal-upcoming"
+    },
+    {
+        "key": "outbox.billing.revocation-cancel",
+        "name": "Email · Aviso de cancelación por revocación",
+        "utmCampaign": "outbox-billing-revocation-cancel",
+        "pixelSlug": "email-outbox-billing-revocation-cancel"
+    },
+    {
+        "key": "outbox.billing.revocation-refund-failed",
+        "name": "Email · Falló el reembolso por revocación",
+        "utmCampaign": "outbox-billing-revocation-refund-failed",
+        "pixelSlug": "email-outbox-billing-revocation-refund-failed"
+    },
+    {
+        "key": "outbox.billing.scheduled-cancellation",
+        "name": "Email · Aviso de cancelación del cobro automático",
+        "utmCampaign": "outbox-billing-scheduled-cancellation",
+        "pixelSlug": "email-outbox-billing-scheduled-cancellation"
+    },
+    {
+        "key": "outbox.billing.signup-confirmed",
+        "name": "Email · Suscripción activa",
+        "utmCampaign": "outbox-billing-signup-confirmed",
+        "pixelSlug": "email-outbox-billing-signup-confirmed"
+    },
+    {
+        "key": "outbox.billing.signup-declined",
+        "name": "Email · Alta rechazada",
+        "utmCampaign": "outbox-billing-signup-declined",
+        "pixelSlug": "email-outbox-billing-signup-declined"
+    },
+    {
+        "key": "outbox.billing.signup-incomplete",
+        "name": "Email · Alta sin completar",
+        "utmCampaign": "outbox-billing-signup-incomplete",
+        "pixelSlug": "email-outbox-billing-signup-incomplete"
+    },
+    {
+        "key": "outbox.billing.succession-predecessor-cancel",
+        "name": "Email · Aviso de cambio de plan (suscripción anterior)",
+        "utmCampaign": "outbox-billing-succession-predecessor-cancel",
+        "pixelSlug": "email-outbox-billing-succession-predecessor-cancel"
+    },
+    {
+        "key": "outbox.billing.successor-cut-cancel",
+        "name": "Email · Aviso de corte de la suscripción sucesora",
+        "utmCampaign": "outbox-billing-successor-cut-cancel",
+        "pixelSlug": "email-outbox-billing-successor-cut-cancel"
+    },
+    {
+        "key": "outbox.billing.tourist-vip-inherited-cancel",
+        "name": "Email · Aviso de cancelación de Turista VIP heredado",
+        "utmCampaign": "outbox-billing-tourist-vip-inherited-cancel",
+        "pixelSlug": "email-outbox-billing-tourist-vip-inherited-cancel"
+    },
+    {
+        "key": "outbox.trial_ending_10d",
+        "name": "Email · Prueba gratuita: faltan 10 días",
+        "utmCampaign": "outbox-trial-ending-10d",
+        "pixelSlug": "email-outbox-trial-ending-10d"
+    },
+    {
+        "key": "outbox.trial_ending_2d",
+        "name": "Email · Prueba gratuita: faltan 2 días",
+        "utmCampaign": "outbox-trial-ending-2d",
+        "pixelSlug": "email-outbox-trial-ending-2d"
+    },
+    {
+        "key": "outbox.trial_ending_5d",
+        "name": "Email · Prueba gratuita: faltan 5 días",
+        "utmCampaign": "outbox-trial-ending-5d",
+        "pixelSlug": "email-outbox-trial-ending-5d"
+    },
+    {
+        "key": "outbox.trial_ending_today",
+        "name": "Email · Prueba gratuita: termina hoy",
+        "utmCampaign": "outbox-trial-ending-today",
+        "pixelSlug": "email-outbox-trial-ending-today"
+    },
+    {
+        "key": "outbox.trial_win_back_15d",
+        "name": "Email · Recuperación de prueba: 15 días después",
+        "utmCampaign": "outbox-trial-win-back-15d",
+        "pixelSlug": "email-outbox-trial-win-back-15d"
+    },
+    {
+        "key": "outbox.trial_win_back_1d",
+        "name": "Email · Recuperación de prueba: 1 día después",
+        "utmCampaign": "outbox-trial-win-back-1d",
+        "pixelSlug": "email-outbox-trial-win-back-1d"
+    },
+    {
+        "key": "outbox.trial_win_back_30d",
+        "name": "Email · Recuperación de prueba: 30 días después",
+        "utmCampaign": "outbox-trial-win-back-30d",
+        "pixelSlug": "email-outbox-trial-win-back-30d"
+    },
+    {
+        "key": "outbox.trial_win_back_5d",
+        "name": "Email · Recuperación de prueba: 5 días después",
+        "utmCampaign": "outbox-trial-win-back-5d",
+        "pixelSlug": "email-outbox-trial-win-back-5d"
+    },
+    {
+        "key": "outbox.trial_win_back_60d",
+        "name": "Email · Recuperación de prueba: 60 días después",
+        "utmCampaign": "outbox-trial-win-back-60d",
+        "pixelSlug": "email-outbox-trial-win-back-60d"
+    },
+    {
+        "key": "outbox.verticals.listing-archived",
+        "name": "Email · Ficha archivada por inactividad",
+        "utmCampaign": "outbox-verticals-listing-archived",
+        "pixelSlug": "email-outbox-verticals-listing-archived"
+    },
+    {
+        "key": "outbox.verticals.listing-business-lines-changed",
+        "name": "Email · Cambio de rubros de una ficha",
+        "utmCampaign": "outbox-verticals-listing-business-lines-changed",
+        "pixelSlug": "email-outbox-verticals-listing-business-lines-changed"
+    },
+    {
+        "key": "outbox.verticals.listing-content-edited-by-support",
+        "name": "Email · Contenido editado por soporte",
+        "utmCampaign": "outbox-verticals-listing-content-edited-by-support",
+        "pixelSlug": "email-outbox-verticals-listing-content-edited-by-support"
+    },
+    {
+        "key": "outbox.verticals.listing-fix-reported",
+        "name": "Email · Arreglo informado por el titular (aviso al equipo)",
+        "utmCampaign": "outbox-verticals-listing-fix-reported",
+        "pixelSlug": "email-outbox-verticals-listing-fix-reported"
+    },
+    {
+        "key": "outbox.verticals.listing-fix-requested",
+        "name": "Email · Pedido de arreglo en una ficha",
+        "utmCampaign": "outbox-verticals-listing-fix-requested",
+        "pixelSlug": "email-outbox-verticals-listing-fix-requested"
+    },
+    {
+        "key": "outbox.verticals.listing-moderated",
+        "name": "Email · Ficha moderada",
+        "utmCampaign": "outbox-verticals-listing-moderated",
+        "pixelSlug": "email-outbox-verticals-listing-moderated"
+    },
+    {
+        "key": "outbox.verticals.listing-moderation-level-changed",
+        "name": "Email · Cambio de nivel de moderación",
+        "utmCampaign": "outbox-verticals-listing-moderation-level-changed",
+        "pixelSlug": "email-outbox-verticals-listing-moderation-level-changed"
+    },
+    {
+        "key": "outbox.verticals.listing-moderation-lifted",
+        "name": "Email · Moderación levantada",
+        "utmCampaign": "outbox-verticals-listing-moderation-lifted",
+        "pixelSlug": "email-outbox-verticals-listing-moderation-lifted"
+    },
+    {
+        "key": "outbox.verticals.listing-purged",
+        "name": "Email · Ficha borrada",
+        "utmCampaign": "outbox-verticals-listing-purged",
+        "pixelSlug": "email-outbox-verticals-listing-purged"
+    },
+    {
+        "key": "outbox.verticals.listing-restitution",
+        "name": "Email · Fichas restituidas",
+        "utmCampaign": "outbox-verticals-listing-restitution",
+        "pixelSlug": "email-outbox-verticals-listing-restitution"
+    },
+    {
+        "key": "outbox.verticals.listing-retention-before-archive",
+        "name": "Email · Aviso previo al archivado",
+        "utmCampaign": "outbox-verticals-listing-retention-before-archive",
+        "pixelSlug": "email-outbox-verticals-listing-retention-before-archive"
+    },
+    {
+        "key": "outbox.verticals.listing-retention-before-deletion",
+        "name": "Email · Aviso previo al borrado del contenido",
+        "utmCampaign": "outbox-verticals-listing-retention-before-deletion",
+        "pixelSlug": "email-outbox-verticals-listing-retention-before-deletion"
+    },
+    {
+        "key": "outbox.verticals.partner-application-rejected",
+        "name": "Email · Postulación de aliado rechazada",
+        "utmCampaign": "outbox-verticals-partner-application-rejected",
+        "pixelSlug": "email-outbox-verticals-partner-application-rejected"
+    },
+    {
+        "key": "outbox.verticals.partner-claim-notice",
+        "name": "Email · Aviso para reclamar la ficha de aliado",
+        "utmCampaign": "outbox-verticals-partner-claim-notice",
+        "pixelSlug": "email-outbox-verticals-partner-claim-notice"
+    },
+    {
+        "key": "outbox.verticals.price-alert-closed",
+        "name": "Email · Alerta de precio cerrada",
+        "utmCampaign": "outbox-verticals-price-alert-closed",
+        "pixelSlug": "email-outbox-verticals-price-alert-closed"
+    }
+]

@@ -176,7 +176,8 @@
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
         "help": "Ayuda",
         "venueDashboard": "Tablero de locales",
-        "experienceDashboard": "Tablero de experiencias"
+        "experienceDashboard": "Tablero de experiencias",
+        "addons": "Complementos"
     },
     "doors": {
         "sectionLabel": "Descubrí más",
@@ -560,7 +561,13 @@
                 "UNEXPECTED": "Ocurrió un error inesperado.",
                 "USER_DECLINED": "No lo confirmaste.",
                 "USER_CANCELLED": "Cancelaste la confirmación."
-            }
+            },
+            "sectionTitle": "Acciones registradas"
+        },
+        "tabs": {
+            "label": "Secciones de asistentes de IA",
+            "assistants": "Asistentes",
+            "history": "Historial"
         }
     },
     "subscription": {
@@ -866,6 +873,11 @@
             "forever": "Tu cuota pasa a {{amount}}, sin fecha de fin.",
             "trialExtension_one": "Sumaste {{count}} día de prueba.",
             "trialExtension_other": "Sumaste {{count}} días de prueba."
+        },
+        "tabs": {
+            "ariaLabel": "Secciones de la suscripción",
+            "plan": "Plan",
+            "addons": "Complementos"
         }
     },
     "favorites": {
@@ -1034,7 +1046,14 @@
         },
         "errors": {
             "fetchFailed": "Error al cargar las reseñas"
-        }
+        },
+        "sectionTitle": "Reseñas que escribiste",
+        "ratingAria": "Calificación: {{value}} de {{max}}",
+        "loadError": {
+            "title": "No pudimos cargar tus reseñas",
+            "body": "Probá de nuevo en unos segundos."
+        },
+        "listLabel": "Tus reseñas"
     },
     "pages": {
         "accountLabel": "Mi cuenta",
@@ -1056,9 +1075,9 @@
                 "mySubscriptionDesc": "Plan actual y facturación",
                 "myMessages": "Mis consultas",
                 "myMessagesDesc": "Conversaciones con anfitriones",
-                "newsletter": "Boletín de novedades",
+                "newsletter": "Newsletter por mail",
                 "newsletterDesc": "Gestioná tu suscripción al boletín",
-                "whatsNew": "Novedades",
+                "whatsNew": "Novedades de Hospeda",
                 "whatsNewDesc": "Novedades y actualizaciones de la plataforma",
                 "myProperties": "Mis propiedades",
                 "myPropertiesDesc": "Gestioná tus alojamientos publicados",
@@ -1228,7 +1247,8 @@
             "guidesDesc": "Guías editoriales e itinerarios curados.",
             "productNews": "Novedades del producto",
             "productNewsDesc": "Nuevas funcionalidades y novedades de la plataforma."
-        }
+        },
+        "sectionStatus": "Tu suscripción"
     },
     "profileCompletion": {
         "pageTitle": "Completá tu perfil",
@@ -1313,7 +1333,19 @@
             "occupationMin": "La ocupación debe tener al menos 2 caracteres.",
             "occupationMax": "La ocupación no puede superar los 100 caracteres.",
             "submitFailed": "No se pudo completar el perfil. Intentá nuevamente."
-        }
+        },
+        "sections": {
+            "basics": "Tus datos",
+            "preferences": "Contacto y preferencias",
+            "more": "Sobre vos",
+            "consent": "Para terminar"
+        },
+        "steps": {
+            "basics": "Tus datos",
+            "preferences": "Preferencias",
+            "confirm": "Confirmar"
+        },
+        "stepsLabel": "Progreso de tu perfil"
     },
     "setPassword": {
         "pageTitle": "Agregar contraseña",
@@ -1364,7 +1396,8 @@
             "special": "Al menos 1 carácter especial (por ejemplo ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
-        "showPassword": "Mostrar contraseña"
+        "showPassword": "Mostrar contraseña",
+        "sectionTitle": "Tu contraseña"
     },
     "searchHistory": {
         "loading": "Cargando historial...",
@@ -1408,7 +1441,13 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filtro",
             "filterCount_other": "{{count}} filtros"
-        }
+        },
+        "recordingTitle": "Guardado de búsquedas",
+        "listTitle": "Tus búsquedas recientes",
+        "deleteConfirmTitle": "¿Eliminar esta búsqueda?",
+        "deleteConfirmBody": "Se elimina «{{query}}» de tu historial. No se puede deshacer.",
+        "clearConfirmTitle": "¿Borrar todo tu historial?",
+        "clearConfirmBody": "Se eliminan todas tus búsquedas guardadas. No se puede deshacer."
     },
     "alerts": {
         "loading": "Cargando alertas...",
@@ -1441,7 +1480,13 @@
         "closedNotice": "Esta alerta se cerró porque esa ficha ya no existe.",
         "activeHeading": "Alertas activas",
         "closedHeading": "Alertas cerradas",
-        "closedListLabel": "Tus alertas de precio cerradas"
+        "closedListLabel": "Tus alertas de precio cerradas",
+        "lock": {
+            "description": "Activá alertas para enterarte cuando baje el precio de un alojamiento que te interesa."
+        },
+        "deleteConfirmTitle": "¿Eliminar esta alerta?",
+        "deleteConfirmBody": "Dejás de recibir avisos de baja de precio de {{name}}.",
+        "closedStatus": "Cerrada"
     },
     "exclusiveDeals": {
         "loading": "Cargando ofertas exclusivas...",
@@ -1459,7 +1504,11 @@
         },
         "listLabel": "Tus ofertas exclusivas",
         "item": {
-            "vipBadge": "Solo VIP"
+            "vipBadge": "Solo VIP",
+            "viewListing": "Ver alojamiento",
+            "viewListingError": "No pudimos abrir el alojamiento. Probá de nuevo.",
+            "listingUnavailable": "Este alojamiento ya no está disponible.",
+            "validUntil": "Válida hasta el {{date}}"
         }
     },
     "addons": {
@@ -1486,7 +1535,8 @@
         },
         "empty": {
             "title": "No encontramos recomendaciones por ahora",
-            "body": "Volvé más tarde o explorá todo nuestro catálogo de alojamientos."
+            "body": "Volvé más tarde o explorá todo nuestro catálogo de alojamientos.",
+            "cta": "Explorar alojamientos"
         },
         "upgrade": {
             "title": "Sugerencias para vos",
@@ -1721,6 +1771,25 @@
                     "startDateRequired": "El evento necesita una fecha de comienzo."
                 }
             }
+        },
+        "contentList": {
+            "editNamed": "Editar «{{title}}»",
+            "events": {
+                "create": "Nuevo evento",
+                "sectionTitle": "Tus eventos",
+                "locked": {
+                    "feature": "Gestionar eventos es una función de los editores",
+                    "description": "Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor."
+                }
+            },
+            "posts": {
+                "create": "Nueva publicación",
+                "sectionTitle": "Tus publicaciones",
+                "locked": {
+                    "feature": "Escribir publicaciones es una función de los editores",
+                    "description": "Tu cuenta todavía no tiene permiso para gestionar publicaciones. Si querés escribir en Hospeda, completá la solicitud para sumarte como editor."
+                }
+            }
         }
     },
     "alliances": {
@@ -1799,6 +1868,10 @@
         },
         "suspended": {
             "noReason": "Suspendimos temporalmente el registro de usos desde tu ficha."
+        },
+        "kit": {
+            "pendingCount": "Usos esperando tu respuesta: {{count}}",
+            "reviewsCount": "Valoraciones recibidas: {{count}}"
         }
     },
     "partner": {
@@ -1856,7 +1929,13 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             },
-            "sectionTitle": "Datos de tu ficha"
+            "sectionTitle": "Datos de tu ficha",
+            "logo": {
+                "label": "Logo de tu marca",
+                "previewAlt": "Vista previa del logo",
+                "pasteUrl": "Pegar URL",
+                "urlHint": "Si tu logo ya está publicado en internet, pegá su dirección en lugar de subirlo."
+            }
         },
         "presence": {
             "hidden": "Mientras tanto, para el público tu página responde como si no existiera.",
@@ -1948,7 +2027,12 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Elegí una contraseña nueva para tu cuenta. Vas a necesitar la actual.",
-        "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
+        "accountNotice": "Vas a cambiar la contraseña de esta cuenta:",
+        "successTitle": "Contraseña actualizada",
+        "successSection": "Listo",
+        "continue": "Continuar",
+        "back": "Volver",
+        "sectionTitle": "Tu nueva contraseña"
     },
     "notFound": {
         "title": "No encontramos lo que buscabas",
@@ -2205,6 +2289,32 @@
             "addSlotAria": "Agregar franja a {{day}}",
             "copyToAll": "Copiar a todos los días",
             "copyToAllAria": "Copiar a todos los días el horario de {{day}}"
+        },
+        "stepper": {
+            "progress": "Paso {{current}} de {{total}}",
+            "done": "completado"
+        },
+        "copyField": {
+            "copy": "Copiar",
+            "copied": "Copiado al portapapeles.",
+            "failed": "No pudimos copiar. Seleccioná el texto y copialo a mano."
+        },
+        "imageUploader": {
+            "choose": "Elegir imagen",
+            "replace": "Cambiar imagen",
+            "compressing": "Optimizando…",
+            "uploading": "Subiendo…",
+            "dropHint": "o arrastrá y soltá la imagen acá",
+            "hint": "Formatos: {{types}}. Máximo {{maxSize}} MB.",
+            "errors": {
+                "invalidType": "Ese formato no está permitido. Usá una imagen {{types}}.",
+                "tooLarge": "La imagen pesa más de {{maxSize}} MB incluso después de optimizarla. Elegí una más liviana.",
+                "tooLargeNoCompression": "No pudimos optimizar esta imagen en tu navegador y pesa más de {{maxSize}} MB. Probá con otro formato o una imagen más liviana.",
+                "uploadFailed": "No pudimos subir la imagen. Probá de nuevo."
+            }
+        },
+        "contentCard": {
+            "statuses": "Estados"
         }
     },
     "ownerDashboard": {

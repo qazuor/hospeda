@@ -53,19 +53,13 @@ describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
         expect(experiences?.suppressHeaderWhenSingle).toBeUndefined();
         expect(venues?.i18nKey).toBe('account.nav.groupVenues');
         expect(experiences?.i18nKey).toBe('account.nav.groupExperiences');
-        expect(venues?.items.map((item) => [item.id, item.href, item.requiredPermission])).toEqual([
-            ['venueDashboard', 'mi-cuenta/tablero-locales', PermissionEnum.VENUE_EDIT_OWN],
-            ['venue-listings', 'mi-cuenta/comercio?vertical=venue', undefined]
+        expect(venues?.items.map((item) => [item.id, item.href])).toEqual([
+            ['venueDashboard', 'mi-cuenta/tablero-locales'],
+            ['venue-listings', 'mi-cuenta/comercio?vertical=venue']
         ]);
-        expect(
-            experiences?.items.map((item) => [item.id, item.href, item.requiredPermission])
-        ).toEqual([
-            [
-                'experienceDashboard',
-                'mi-cuenta/tablero-experiencias',
-                PermissionEnum.EXPERIENCE_EDIT_OWN
-            ],
-            ['experience-listings', 'mi-cuenta/comercio?vertical=experience', undefined]
+        expect(experiences?.items.map((item) => [item.id, item.href])).toEqual([
+            ['experienceDashboard', 'mi-cuenta/tablero-experiencias'],
+            ['experience-listings', 'mi-cuenta/comercio?vertical=experience']
         ]);
     });
 

@@ -16,6 +16,13 @@ export type EmailSendPath =
     | 'alert-digest'
     | 'newsletter';
 
+/**
+ * Key of an email catalog entry: `<sendPath>.<id>` (e.g. `auth.reset-password`).
+ * Also the `templateKey` of a transactional email's attribution (HOS-2359), which
+ * derives the template's `utm_campaign` and Umami pixel slug.
+ */
+export type EmailCatalogKey = `${EmailSendPath}.${string}`;
+
 /** Grouping shown in the admin previewer. */
 export type EmailCatalogDomain =
     | 'auth'
@@ -83,7 +90,7 @@ export interface EmailCatalogRenderScenarioInput {
 /** Type-erased catalog entry (built only through `defineEmailCatalogEntry`). */
 export interface EmailCatalogEntry {
     /** `<sendPath>.<id>`, e.g. `'outbox.billing.renewal-upcoming'`. */
-    readonly key: `${EmailSendPath}.${string}`;
+    readonly key: EmailCatalogKey;
     /** NotificationType value, outbox template key, or path-local id. */
     readonly id: string;
     /** Production path that sends the email. */

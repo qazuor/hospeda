@@ -937,6 +937,12 @@
             "cancel": "Cancelar",
             "withdrawn": "El destaque fue dado de baja.",
             "withdrawError": "No pudimos dar de baja el destaque."
+        },
+        "steps": {
+            "label": "Pasos de la compra",
+            "offer": "Complemento",
+            "target": "Destino",
+            "confirm": "Confirmar"
         }
     }
 }

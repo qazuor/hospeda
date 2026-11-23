@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -58,9 +57,7 @@ export function UsageConfirmationRequest({
                 darlo por hecho.
             </Text>
 
-            <Section style={styles.actions}>
-                <Button href={actionUrl}>Confirmar o rechazar</Button>
-            </Section>
+            <Button href={actionUrl}>Confirmar o rechazar</Button>
 
             <Text style={styles.paragraph}>
                 Si no fue así, rechazalo sin vueltas: no le pasa nada malo a nadie por eso, y es lo
@@ -86,9 +83,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    actions: {
-        margin: '0 0 24px'
     },
     footnote: {
         color: '#64748b',

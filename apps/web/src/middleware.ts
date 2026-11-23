@@ -64,6 +64,7 @@ import {
     buildLocaleRedirect,
     buildLoginRedirect,
     buildProfileCompletionRedirect,
+    buildRedirectResponse,
     buildSetPasswordRedirect,
     extractLocaleFromPath,
     IMAGE_ENDPOINT_CACHE_CONTROL,
@@ -187,7 +188,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         headers: context.request.headers,
         fn: () => runMiddlewarePipeline(context, next, isNestedPass)
     });
-    applySecurityHeaders({ headers: response.headers });
+    applySecurityHeaders({ headers: response.headers, pathname: context.url.pathname });
     return response;
 });
 
@@ -294,10 +295,22 @@ async function runMiddlewarePipeline(
         const search = context.url.search;
         const pathWithSlash = `${path}/`;
         const legacyRedirect = resolveLegacyRedirectTarget({ path: pathWithSlash });
+        // HOS-2359 (OD-6): every redirect below that copies `search` goes
+        // through `buildRedirectResponse`, which marks it no-store when the
+        // query is non-empty — a cached redirect would replay one visitor's
+        // UTMs to the next.
         if (legacyRedirect) {
-            return context.redirect(`${legacyRedirect.target}${search}`, legacyRedirect.status);
+            return buildRedirectResponse({
+                context,
+                location: `${legacyRedirect.target}${search}`,
+                status: legacyRedirect.status
+            });
         }
-        return context.redirect(`${pathWithSlash}${search}`, 301);
+        return buildRedirectResponse({
+            context,
+            location: `${pathWithSlash}${search}`,
+            status: 301
+        });
     }
 
     // Step 3.1: Legacy URL aliases (the position ordinary, already-slashed
@@ -308,7 +321,11 @@ async function runMiddlewarePipeline(
     const legacyRedirect = resolveLegacyRedirectTarget({ path });
     if (legacyRedirect) {
         const search = context.url.search;
-        return context.redirect(`${legacyRedirect.target}${search}`, legacyRedirect.status);
+        return buildRedirectResponse({
+            context,
+            location: `${legacyRedirect.target}${search}`,
+            status: legacyRedirect.status
+        });
     }
 
     // Step 4: Extract and validate locale from the URL path.
@@ -343,7 +360,7 @@ async function runMiddlewarePipeline(
             restOfPath: restOfPath || path,
             search: context.url.search
         });
-        return context.redirect(redirectUrl, 301);
+        return buildRedirectResponse({ context, location: redirectUrl, status: 301 });
     }
 
     // A language-neutral route carries no locale segment to read, but every step

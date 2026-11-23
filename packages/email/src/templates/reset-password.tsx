@@ -1,4 +1,6 @@
-import { Button, Heading, Text } from '@react-email/components';
+import { Heading, Text } from '@react-email/components';
+import { Button } from '../components/button.js';
+import { Callout } from '../components/callout.js';
 import { EmailLayout } from './email-layout.js';
 import { resolveGreeting } from './greeting.js';
 
@@ -55,9 +57,10 @@ export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateP
 
             <Text style={text}>Haz clic en el botón de abajo para crear una nueva contraseña:</Text>
 
+            {/* Keeps the pre-HOS-2565 attribution slot, so the text part stays byte-identical (AC-2.8). */}
             <Button
                 href={resetUrl}
-                style={button}
+                utmContent="body-link"
             >
                 Restablecer contraseña
             </Button>
@@ -68,18 +71,18 @@ export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateP
                 <span style={link}>{resetUrl}</span>
             </Text>
 
-            <Text style={securityNotice}>
+            <Callout tone="danger">
                 <strong>¿No solicitaste esto?</strong>
                 <br />
                 Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma
                 segura. Tu contraseña actual seguirá siendo válida y no se realizarán cambios en tu
                 cuenta.
-            </Text>
+            </Callout>
 
-            <Text style={notice}>
+            <Callout tone="info">
                 Este enlace expira en 1 hora por motivos de seguridad. Si necesitas más tiempo,
                 puedes solicitar un nuevo enlace de restablecimiento.
-            </Text>
+            </Callout>
         </EmailLayout>
     );
 }
@@ -100,43 +103,8 @@ const text = {
     margin: '0 0 16px'
 };
 
-const button = {
-    backgroundColor: '#3182ce',
-    borderRadius: '6px',
-    color: '#ffffff',
-    display: 'block',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    textAlign: 'center' as const,
-    textDecoration: 'none',
-    padding: '12px 24px',
-    margin: '24px 0'
-};
-
 const link = {
     color: '#3182ce',
     textDecoration: 'underline',
     wordBreak: 'break-all' as const
-};
-
-const securityNotice = {
-    color: '#2d3748',
-    fontSize: '14px',
-    lineHeight: '20px',
-    margin: '24px 0',
-    padding: '16px',
-    backgroundColor: '#fff5f5',
-    borderRadius: '6px',
-    borderLeft: '4px solid #e53e3e'
-};
-
-const notice = {
-    color: '#718096',
-    fontSize: '14px',
-    lineHeight: '20px',
-    margin: '24px 0 0',
-    padding: '16px',
-    backgroundColor: '#f7fafc',
-    borderRadius: '6px',
-    borderLeft: '4px solid #3182ce'
 };

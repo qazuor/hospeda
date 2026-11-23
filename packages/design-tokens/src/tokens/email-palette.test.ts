@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { formatSRGB } from '../generators/srgb.js';
-import { neutral, type OKLCH, river } from './colors.js';
+import { danger, info, neutral, type OKLCH, river, success, warning } from './colors.js';
 import { type EmailPaletteRole, emailPalette } from './email-palette.js';
 
 /**
@@ -31,11 +31,26 @@ const SOURCE_TOKENS: Readonly<Record<EmailPaletteRole, OKLCH>> = {
     text: neutral[900],
     mutedText: neutral[500],
     border: neutral[200],
-    link: river[600]
+    link: river[600],
+    calloutInfoBackground: info[100],
+    calloutInfoBorder: info[500],
+    calloutInfoText: info[800],
+    calloutSuccessBackground: success[100],
+    calloutSuccessBorder: success[500],
+    calloutSuccessText: success[800],
+    calloutWarningBackground: warning[100],
+    calloutWarningBorder: warning[500],
+    calloutWarningText: warning[800],
+    calloutDangerBackground: danger[100],
+    calloutDangerBorder: danger[500],
+    calloutDangerText: danger[800],
+    buttonPrimary: river[600],
+    buttonPrimaryText: { l: 1, c: 0, h: 0 },
+    buttonSecondaryBorder: river[600]
 };
 
 describe('emailPalette', () => {
-    it('declares exactly the eight email roles', () => {
+    it('declares exactly the roles listed in SOURCE_TOKENS', () => {
         // Arrange
         const expected = Object.keys(SOURCE_TOKENS).sort();
 

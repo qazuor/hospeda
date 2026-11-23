@@ -1,6 +1,6 @@
 /**
  * Gallery group: data display (StatCard, StatGrid, Avatar), data lists, entity cards
- * (HOS-2480) and conversations (HOS-2481).
+ * (HOS-2480), conversations (HOS-2481) and authored content (HOS-2505).
  *
  * Dev-only fixture copy: exempt from i18n (see `Visual.tsx`).
  *
@@ -11,6 +11,7 @@ import {
     Avatar,
     Button,
     Composer,
+    ContentCard,
     ConversationThread,
     CountPill,
     DataList,
@@ -18,8 +19,10 @@ import {
     EntityCardGrid,
     ListRow,
     MessageBubble,
+    MyContentList,
     StatCard,
     StatGrid,
+    StatusPill,
     type ThreadMessage
 } from '@/components/account/ui';
 import styles from './KitGallery.module.css';
@@ -70,50 +73,57 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
             <h2 className={styles.groupTitle}>Data display, lists and conversations</h2>
             <div className={styles.grid}>
                 <Visual name="StatGrid/states">
-                    <StatGrid>
-                        <StatCard
-                            id="gallery-ready"
-                            label="Propiedades"
-                            locale={locale}
-                            state={{ status: 'ready', data: { value: 5, hint: '3 publicadas' } }}
-                            link={{ href: '#kit', label: 'Gestionar' }}
-                        />
-                        <StatCard
-                            id="gallery-loading"
-                            label="Mensajes"
-                            locale={locale}
-                            state={{ status: 'loading' }}
-                        />
-                        <StatCard
-                            id="gallery-error"
-                            label="Visitas"
-                            locale={locale}
-                            state={{ status: 'error', retry: noop }}
-                        />
-                        <StatCard
-                            id="gallery-empty"
-                            label="Reseñas"
-                            locale={locale}
-                            state={{ status: 'empty' }}
-                        />
-                    </StatGrid>
+                    <div className={styles.stack}>
+                        <StatGrid>
+                            <StatCard
+                                id="gallery-ready"
+                                label="Propiedades"
+                                locale={locale}
+                                state={{
+                                    status: 'ready',
+                                    data: { value: 5, hint: '3 publicadas' }
+                                }}
+                                link={{ href: '#kit', label: 'Gestionar' }}
+                            />
+                            <StatCard
+                                id="gallery-loading"
+                                label="Mensajes"
+                                locale={locale}
+                                state={{ status: 'loading' }}
+                            />
+                            <StatCard
+                                id="gallery-error"
+                                label="Visitas"
+                                locale={locale}
+                                state={{ status: 'error', retry: noop }}
+                            />
+                            <StatCard
+                                id="gallery-empty"
+                                label="Reseñas"
+                                locale={locale}
+                                state={{ status: 'empty' }}
+                            />
+                        </StatGrid>
+                    </div>
                 </Visual>
                 <Visual name="StatCard/locked">
-                    <StatCard
-                        id="gallery-locked"
-                        label="Visitas"
-                        locale={locale}
-                        state={{
-                            status: 'locked',
-                            reason: {
-                                kind: 'plan',
-                                feature: 'Estadísticas',
-                                description: 'Vienen con estos planes.',
-                                plans: PLANS,
-                                plansHref: '#kit'
-                            }
-                        }}
-                    />
+                    <div className={styles.stack}>
+                        <StatCard
+                            id="gallery-locked"
+                            label="Visitas"
+                            locale={locale}
+                            state={{
+                                status: 'locked',
+                                reason: {
+                                    kind: 'plan',
+                                    feature: 'Estadísticas',
+                                    description: 'Vienen con estos planes.',
+                                    plans: PLANS,
+                                    plansHref: '#kit'
+                                }
+                            }}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="Avatar/sizes">
                     <Avatar
@@ -130,66 +140,72 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                     />
                 </Visual>
                 <Visual name="DataList/rows">
-                    <DataList label="Consultas">
-                        <ListRow
-                            href="#kit"
-                            title="Cabañas del Río"
-                            meta="Cabaña chica"
-                            description="Hola, ¿tienen lugar del 12 al 15 de enero?"
-                            trailing={
-                                <>
-                                    <span>20 nov</span>
-                                    <CountPill
-                                        count={2}
-                                        label="2 sin leer"
-                                        variant="solid"
-                                    />
-                                </>
-                            }
-                            emphasis
-                        />
-                        <ListRow
-                            href="#kit"
-                            title="Hostel Centro"
-                            description="Gracias por la respuesta."
-                            trailing={<span>18 nov</span>}
-                        />
-                        <ListRow
-                            title="Casa de campo"
-                            meta="Sin enlace, con dos acciones"
-                            actions={[
-                                <Button
-                                    key="open"
-                                    size="sm"
-                                    variant="secondary"
-                                >
-                                    Abrir
-                                </Button>,
-                                <Button
-                                    key="archive"
-                                    size="sm"
-                                    variant="ghost"
-                                >
-                                    Archivar
-                                </Button>
-                            ]}
-                        />
-                    </DataList>
+                    <div className={styles.stack}>
+                        <DataList label="Consultas">
+                            <ListRow
+                                href="#kit"
+                                title="Cabañas del Río"
+                                meta="Cabaña chica"
+                                description="Hola, ¿tienen lugar del 12 al 15 de enero?"
+                                trailing={
+                                    <>
+                                        <span>20 nov</span>
+                                        <CountPill
+                                            count={2}
+                                            label="2 sin leer"
+                                            variant="solid"
+                                        />
+                                    </>
+                                }
+                                emphasis
+                            />
+                            <ListRow
+                                href="#kit"
+                                title="Hostel Centro"
+                                description="Gracias por la respuesta."
+                                trailing={<span>18 nov</span>}
+                            />
+                            <ListRow
+                                title="Casa de campo"
+                                meta="Sin enlace, con dos acciones"
+                                actions={[
+                                    <Button
+                                        key="open"
+                                        size="sm"
+                                        variant="secondary"
+                                    >
+                                        Abrir
+                                    </Button>,
+                                    <Button
+                                        key="archive"
+                                        size="sm"
+                                        variant="ghost"
+                                    >
+                                        Archivar
+                                    </Button>
+                                ]}
+                            />
+                        </DataList>
+                    </div>
                 </Visual>
                 <Visual name="ConversationThread/guest">
-                    <ConversationThread
-                        viewer="guest"
-                        messages={MESSAGES}
-                        locale={locale}
-                        onRetry={() => undefined}
-                    />
+                    <div className={styles.stack}>
+                        <ConversationThread
+                            viewer="guest"
+                            messages={MESSAGES}
+                            locale={locale}
+                            onRetry={() => undefined}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="ConversationThread/owner">
-                    <ConversationThread
-                        viewer="owner"
-                        messages={MESSAGES.slice(0, 3)}
-                        locale={locale}
-                    />
+                    <div className={styles.stack}>
+                        <ConversationThread
+                            viewer="owner"
+                            messages={MESSAGES.slice(0, 3)}
+                            locale={locale}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="MessageBubble/sending">
                     <ol className={styles.stack}>
@@ -205,52 +221,138 @@ export function KitGalleryData({ locale }: GalleryGroupProps) {
                     </ol>
                 </Visual>
                 <Visual name="EntityCardGrid/cards">
-                    <EntityCardGrid label="Favoritos">
-                        <EntityCard
-                            locale={locale}
-                            title="Cabaña del río"
-                            href="#cabana"
-                            meta="Alojamiento"
-                            actions={
-                                <Button
-                                    variant="danger-ghost"
-                                    size="sm"
-                                >
-                                    Quitar
-                                </Button>
-                            }
-                        >
-                            <p>Para el finde largo de marzo.</p>
-                        </EntityCard>
-                        <EntityCard
-                            locale={locale}
-                            title="Verano en familia"
-                            href="#verano"
-                            media={<span>★</span>}
-                            meta="4 favoritos"
-                        />
-                    </EntityCardGrid>
+                    <div className={styles.stack}>
+                        <EntityCardGrid label="Favoritos">
+                            <EntityCard
+                                locale={locale}
+                                title="Cabaña del río"
+                                href="#cabana"
+                                meta="Alojamiento"
+                                actions={
+                                    <Button
+                                        variant="danger-ghost"
+                                        size="sm"
+                                    >
+                                        Quitar
+                                    </Button>
+                                }
+                            >
+                                <p>Para el finde largo de marzo.</p>
+                            </EntityCard>
+                            <EntityCard
+                                locale={locale}
+                                title="Verano en familia"
+                                href="#verano"
+                                media={<span>★</span>}
+                                meta="4 favoritos"
+                            />
+                        </EntityCardGrid>
+                    </div>
                 </Visual>
                 <Visual name="EntityCard/no-image">
-                    <EntityCard
-                        as="div"
-                        locale={locale}
-                        title="Museo histórico"
-                        meta="Atracción"
-                    />
+                    <div className={styles.stack}>
+                        <EntityCard
+                            as="div"
+                            locale={locale}
+                            title="Museo histórico"
+                            meta="Atracción"
+                        />
+                    </div>
+                </Visual>
+                <Visual name="ContentCard/statuses">
+                    <ul className={styles.stack}>
+                        <ContentCard
+                            locale={locale}
+                            title="Fiesta del río"
+                            meta="12 de enero"
+                            statuses={[
+                                {
+                                    key: 'moderation',
+                                    label: 'Moderación',
+                                    value: (
+                                        <StatusPill tone="warning">
+                                            Pendiente de revisión
+                                        </StatusPill>
+                                    )
+                                },
+                                {
+                                    key: 'visibility',
+                                    label: 'Visibilidad',
+                                    value: <StatusPill tone="success">Pública</StatusPill>
+                                }
+                            ]}
+                            actions={
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    Editar
+                                </Button>
+                            }
+                        />
+                    </ul>
+                </Visual>
+                <Visual name="MyContentList/ready">
+                    <div className={styles.stack}>
+                        <MyContentList
+                            locale={locale}
+                            title="Mis eventos"
+                            description="Revisá el estado de tus eventos"
+                            createAction={<Button>Nuevo evento</Button>}
+                            sectionTitle="Tus eventos"
+                            helpId="section:content.events"
+                            listLabel="Mis eventos"
+                            state={{ status: 'ready' }}
+                            pagination={{ page: 1, pageCount: 3, onPageChange: noop }}
+                        >
+                            <ContentCard
+                                locale={locale}
+                                title="Fiesta del río"
+                            />
+                            <ContentCard
+                                locale={locale}
+                                title="Feria de artesanos"
+                            />
+                        </MyContentList>
+                    </div>
+                </Visual>
+                <Visual name="MyContentList/locked">
+                    <div className={styles.stack}>
+                        <MyContentList
+                            locale={locale}
+                            title="Mis publicaciones"
+                            sectionTitle="Tus publicaciones"
+                            helpId="section:content.posts"
+                            listLabel="Mis publicaciones"
+                            state={{
+                                status: 'locked',
+                                reason: {
+                                    kind: 'permission',
+                                    feature:
+                                        'Escribir publicaciones es una función de los editores',
+                                    description: 'Tu cuenta todavía no tiene permiso.',
+                                    helpHref: '#editores'
+                                }
+                            }}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="Composer/default">
-                    <Composer
-                        locale={locale}
-                        onSend={() => undefined}
-                    />
+                    <div className={styles.stack}>
+                        <Composer
+                            locale={locale}
+                            onSend={() => undefined}
+                        />
+                    </div>
                 </Visual>
                 <Visual name="Composer/error">
-                    <Composer
-                        locale={locale}
-                        onSend={() => undefined}
-                        error="Enviaste demasiados mensajes. Esperá un momento."
-                    />
+                    <div className={styles.stack}>
+                        <Composer
+                            locale={locale}
+                            onSend={() => undefined}
+                            error="Enviaste demasiados mensajes. Esperá un momento."
+                        />
+                    </div>
                 </Visual>
             </div>
         </section>

@@ -9,6 +9,7 @@ import {
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { attachSession, renameListing } from '../../fixtures/listing-notices.ts';
+import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -97,16 +98,28 @@ test.describe('TEST:B13a:3 AC:B13a:4 the delete confirmation names the lost add-
         const list = page.getByRole('list', { name: 'Mis propiedades' });
         const addonCard = list.getByRole('listitem').filter({ hasText: withAddonName });
         await expect(addonCard).toHaveCount(1);
-        await addonCard.getByRole('button', { name: 'Eliminar', exact: true }).click();
-        const lostAddons = addonCard.getByTestId('purge-lost-addons');
+        const addonConfirm = await openPropertyCardConfirm({
+            page,
+            card: addonCard,
+            action: 'Eliminar'
+        });
+        const lostAddons = addonConfirm.getByTestId('purge-lost-addons');
         await expect(lostAddons).toHaveAttribute('data-count', '1');
-        await expect(addonCard.getByTestId('purge-lost-addon')).toContainText(addonName);
-        await expect(addonCard.getByTestId('purge-lost-addon')).toContainText(/\$\s?2\.500,00/);
-        await addonCard.getByRole('button', { name: 'Cancelar', exact: true }).click();
+        await expect(addonConfirm.getByTestId('purge-lost-addon')).toContainText(addonName);
+        await expect(addonConfirm.getByTestId('purge-lost-addon')).toContainText(/\$\s?2\.500,00/);
+        await addonConfirm.getByRole('button', { name: 'Cancelar', exact: true }).click();
+        await expect(addonConfirm).toBeHidden();
 
         const emptyCard = list.getByRole('listitem').filter({ hasText: withoutAddonName });
         await expect(emptyCard).toHaveCount(1);
-        await emptyCard.getByRole('button', { name: 'Eliminar', exact: true }).click();
-        await expect(emptyCard.getByTestId('purge-lost-addons')).toHaveAttribute('data-count', '0');
+        const emptyConfirm = await openPropertyCardConfirm({
+            page,
+            card: emptyCard,
+            action: 'Eliminar'
+        });
+        await expect(emptyConfirm.getByTestId('purge-lost-addons')).toHaveAttribute(
+            'data-count',
+            '0'
+        );
     });
 });

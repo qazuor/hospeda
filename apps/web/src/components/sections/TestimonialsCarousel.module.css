@@ -78,8 +78,11 @@
         opacity var(--duration-normal) ease,
         transform var(--duration-normal) ease,
         filter var(--duration-normal) ease;
-    /* Non-active (peek) slides are dimmed, scaled down, and blurred */
-    opacity: 0.35;
+    /* Non-active (peek) slides are scaled down, blurred and slightly dimmed.
+       Opacity multiplies into text contrast, so 0.35 put every review string
+       at ~1.8:1 (HOS-2572). 0.92 keeps the muted date at >=4.6:1 in both
+       themes; the blur + scale carry the "not active" cue. */
+    opacity: 0.92;
     transform: scale(0.95);
     filter: blur(2px);
 }

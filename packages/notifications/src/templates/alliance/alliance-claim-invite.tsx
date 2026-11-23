@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -52,21 +51,19 @@ export function AllianceClaimInvite({
                 <strong>no la vinculamos a tu cuenta</strong>: queremos que lo confirmes vos.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={claimUrl}>Sí, la postulación es mía</Button>
-            </Section>
+            <Button href={claimUrl}>Sí, la postulación es mía</Button>
 
             <Text style={styles.paragraph}>
                 El enlace vence el <strong>{expiresAtLabel}</strong> y se puede usar una sola vez.
             </Text>
 
-            <Section style={styles.noteBox}>
+            <Callout tone="info">
                 <Text style={styles.noteText}>
                     <strong>Si no fuiste vos, no hagas nada.</strong> Tu cuenta no cambió y no va a
                     cambiar: sin ese clic, la postulación queda sin vincular. No hace falta que nos
                     escribas.
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.securityNote}>
                 ¿Dudas? Escribinos a soporte@hospeda.com.ar respondiendo este mismo email.
@@ -88,19 +85,7 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
-    },
-    noteBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '20px 24px',
-        margin: '24px 0'
-    },
     noteText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'

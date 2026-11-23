@@ -9,11 +9,31 @@
  * @module email
  */
 
+// Palette re-export so @repo/notifications templates need no direct @repo/design-tokens dependency (HOS-2565)
+export { emailPalette } from '@repo/design-tokens';
+export type {
+    ApplyEmailAttributionInput,
+    ApplyEmailAttributionResult,
+    EmailAttribution
+} from './attribution.js';
+// Attribution (HOS-2359)
+export { applyEmailAttribution, buildEmailPixelUrl, UMAMI_PIXEL_PATH } from './attribution.js';
 export type { CreateEmailClientInput, EmailClient } from './client.js';
 // Client
 export { createEmailClient } from './client.js';
+export type { ButtonProps, ButtonVariant } from './components/button.js';
+// Shared components (HOS-2565)
+export { Button, EMAIL_BUTTON_CLASS, EMAIL_BUTTON_MEDIA_RULE } from './components/button.js';
+export type { CalloutProps, CalloutTone } from './components/callout.js';
+export { Callout } from './components/callout.js';
 export type { ConfigureEmailAssetsInput } from './email-assets.js';
-export { configureEmailAssets, resetEmailAssets, resolveEmailIsotipoUrl } from './email-assets.js';
+export {
+    configureEmailAssets,
+    resetEmailAssets,
+    resolveEmailIsotipoUrl,
+    resolveEmailPixelBaseUrl,
+    resolveEmailSiteOrigin
+} from './email-assets.js';
 export type { RenderEmailBodiesInput, RenderedEmailBodies } from './render.js';
 // Rendering
 export { renderEmailBodies } from './render.js';

@@ -24,6 +24,7 @@
  */
 
 import { render } from '@react-email/render';
+import { applyEmailAttribution } from '@repo/email';
 import {
     BrevoEmailTransport,
     createEmailClient,
@@ -31,7 +32,7 @@ import {
     renderTiptapEmailContent,
     sendBatch
 } from '@repo/notifications';
-import { NewsletterDeliveryService } from '@repo/service-core';
+import { NewsletterDeliveryService, type RenderCampaignEmailFn } from '@repo/service-core';
 import type { ConnectionOptions } from 'bullmq';
 import { Queue } from 'bullmq';
 import type { Redis } from 'ioredis';
@@ -39,6 +40,38 @@ import IORedis from 'ioredis';
 import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
+
+type CampaignRenderInput = Parameters<RenderCampaignEmailFn>[0];
+
+/**
+ * Renders the newsletter campaign template and applies the campaign attribution
+ * (HOS-2359): campaign UTMs on own-origin links and, when `attribution.pixelSlug`
+ * is set, the campaign's Umami pixel. A test send arrives with `pixelSlug: null`.
+ *
+ * @param input - Subject, TipTap body HTML, unsubscribe URL, test flag and attribution
+ * @returns The attributed HTML
+ */
+export async function renderAttributedCampaignEmail(input: CampaignRenderInput): Promise<string> {
+    const { subject, bodyHtml, unsubscribeUrl, isTest, attribution } = input;
+    // Async render through `@react-email/render` so the template gets the CSS
+    // inlining + Tailwind passes that the sync `renderToStaticMarkup` path
+    // skipped (SPEC-108 T-108-01).
+    const element = NewsletterCampaign({ subject, bodyHtml, unsubscribeUrl, isTest });
+    return applyEmailAttribution({ html: await render(element), attribution }).html;
+}
+
+/**
+ * Applies the campaign attribution to an already-rendered batch HTML (HOS-2359).
+ *
+ * @param input - The HTML and the campaign attribution
+ * @returns The attributed HTML
+ */
+export function attributeCampaignHtml(input: {
+    readonly html: string;
+    readonly attribution: CampaignRenderInput['attribution'];
+}): string {
+    return applyEmailAttribution({ html: input.html, attribution: input.attribution }).html;
+}
 
 /** BullMQ queue name — must match `NewsletterDeliveryService.enqueueBatches()`. */
 export const NEWSLETTER_DISPATCH_QUEUE_NAME = 'hospeda-newsletter-dispatch';
@@ -137,22 +170,23 @@ export function getNewsletterDeliveryService(): NewsletterDeliveryService | null
         { logger: apiLogger },
         {
             queue,
-            emailTransport,
+            // HOS-2359: the test-send transport forwards the campaign attribution
+            // (always `pixelSlug: null`) to `renderEmailBodies`.
+            emailTransport: {
+                send: (input) =>
+                    emailTransport.send({
+                        ...input,
+                        // TYPE-WORKAROUND: service-core declares OpaqueReactElement on its DI seam so it never imports react; the runtime value IS a real React element.
+                        react: input.react as unknown as Parameters<
+                            BrevoEmailTransport['send']
+                        >[0]['react']
+                    })
+            },
             sendBatchFn: sendBatch,
             renderTiptapEmailFn: ({ content }) =>
                 renderTiptapEmailContent({ content: content as never }),
-            renderCampaignEmailFn: async ({ subject, bodyHtml, unsubscribeUrl, isTest }) => {
-                // Async render through `@react-email/render` so the template
-                // gets the CSS inlining + Tailwind passes that the sync
-                // `renderToStaticMarkup` path skipped (SPEC-108 T-108-01).
-                const element = NewsletterCampaign({
-                    subject,
-                    bodyHtml,
-                    unsubscribeUrl,
-                    isTest
-                });
-                return await render(element);
-            },
+            renderCampaignEmailFn: renderAttributedCampaignEmail,
+            attributeCampaignHtmlFn: attributeCampaignHtml,
             buildCampaignReactElementFn: ({ subject, bodyHtml, unsubscribeUrl, isTest }) =>
                 NewsletterCampaign({
                     subject,

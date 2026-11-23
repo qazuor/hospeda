@@ -70,7 +70,9 @@ describe('mi-cuenta/eventos/[id]/editar.astro — data path', () => {
     });
 
     it('TEST:1767:25 — shows a no-access state instead of redirecting to mi-cuenta', () => {
-        expect(pageSource).toContain('AccountEmptyState');
+        // HOS-2505: the kit LockedState with reason.kind='permission' (D9).
+        expect(pageSource).toContain('<LockedState');
+        expect(pageSource).toContain("kind: 'permission'");
         expect(pageSource).toContain('colaborar/editores');
         expect(pageSource).toContain('account.myContent.events.noAccess.title');
         expect(pageSource).not.toMatch(
@@ -135,6 +137,7 @@ describe('mi-cuenta/eventos/[id]/editar.astro — what it renders', () => {
     });
 
     it('always offers a way back to the listing, including under the edit lock', () => {
-        expect(template).toContain('href={listUrl}');
+        // HOS-2505: the kit PageHeader's back link, outside the editor island.
+        expect(template).toMatch(/back=\{\{[^}]*href: listUrl \}\}/);
     });
 });

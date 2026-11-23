@@ -25,6 +25,7 @@ import {
     readPublicationStatus,
     renameListing
 } from '../../fixtures/listing-notices.ts';
+import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -159,12 +160,12 @@ test.describe('Listing notices of V8a, row 25 @verticals @billing', () => {
         created.addonInstanceIds.push(instance.id);
 
         const card = await openPropertyCard({ page, sessionCookie: owner.sessionCookie, name });
-        await card.getByRole('button', { name: 'Despublicar', exact: true }).click();
+        const confirm = await openPropertyCardConfirm({ page, card, action: 'Despublicar' });
 
-        await expect(card.getByTestId('unpublish-recurring-note')).toHaveText(
+        await expect(confirm.getByTestId('unpublish-recurring-note')).toHaveText(
             'Tenés 1 destaque recurrente sobre esta ficha: se sigue cobrando aunque no esté publicada, hasta que lo des de baja.'
         );
-        await card.getByRole('button', { name: 'Cancelar', exact: true }).click();
+        await confirm.getByRole('button', { name: 'Cancelar', exact: true }).click();
         expect(await readPublicationStatus({ listingId })).toBe('PUBLISHED');
     });
 });

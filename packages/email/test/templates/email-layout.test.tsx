@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { EMAIL_BUTTON_MEDIA_RULE } from '../../src/components/button.js';
 import { configureEmailAssets, resetEmailAssets } from '../../src/email-assets.js';
 import { renderEmailBodies } from '../../src/render.js';
 import {
@@ -9,6 +10,12 @@ import {
     EMAIL_PUBLIC_SITE_URL,
     EmailLayout
 } from '../../src/templates/email-layout.js';
+
+const TEST_ATTRIBUTION = {
+    medium: 'transactional',
+    templateKey: 'test.layout',
+    includePixel: false
+} as const;
 
 const FOOTER_BRAND_LINE = 'Hospeda - Turismo en el Litoral';
 const FOOTER_DESCRIPTION =
@@ -27,6 +34,7 @@ describe('EmailLayout', () => {
     it('renders children inside one Spanish, light-only document', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout previewText="Vista previa">
                     <p>Contenido del email</p>
@@ -46,6 +54,7 @@ describe('EmailLayout', () => {
     it('renders the isotipo image with explicit size and the wordmark as live text', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout>
                     <p>x</p>
@@ -75,6 +84,7 @@ describe('EmailLayout', () => {
     it('omits the preheader when previewText is not set', async () => {
         // Arrange & Act
         const withPreview = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout previewText="Preheader único">
                     <p>x</p>
@@ -82,6 +92,7 @@ describe('EmailLayout', () => {
             )
         });
         const withoutPreview = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout>
                     <p>x</p>
@@ -97,6 +108,7 @@ describe('EmailLayout', () => {
     it('renders the footer lines verbatim and a link to the site home', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout>
                     <p>x</p>
@@ -107,13 +119,15 @@ describe('EmailLayout', () => {
         // Assert
         expect(html).toContain(FOOTER_BRAND_LINE);
         expect(html.replace(/\s+/g, ' ')).toContain(FOOTER_DESCRIPTION);
-        expect(html).toContain(`href="${EMAIL_PUBLIC_SITE_URL}"`);
+        // Attribution decorates the home link (HOS-2359); the base URL is unchanged.
+        expect(html).toContain(`href="${EMAIL_PUBLIC_SITE_URL}?utm_source=email`);
         expect(html).toContain('hospeda.com.ar</a>');
     });
 
     it('defaults to footerLink none (no preferences link)', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout>
                     <p>x</p>
@@ -129,6 +143,7 @@ describe('EmailLayout', () => {
     it('renders the absolute preferences link when footerLink is preferences (AC-2.2)', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout footerLink="preferences">
                     <p>x</p>
@@ -139,7 +154,7 @@ describe('EmailLayout', () => {
         // Assert
         expect(EMAIL_PREFERENCES_URL).toBe('https://hospeda.com.ar/es/mi-cuenta/preferencias/');
         expect(html).toMatch(
-            /<a href="https:\/\/hospeda\.com\.ar\/es\/mi-cuenta\/preferencias\/"[^>]*>Administrar preferencias de notificaciones<\/a>/
+            /<a href="https:\/\/hospeda\.com\.ar\/es\/mi-cuenta\/preferencias\/\?utm_source=email[^"]*utm_content=preferences"[^>]*>Administrar preferencias de notificaciones<\/a>/
         );
         expect(html).not.toContain('{{');
         expect(html).not.toContain('unsubscribe_url');
@@ -148,6 +163,7 @@ describe('EmailLayout', () => {
     it('uses only email-safe inline CSS', async () => {
         // Arrange & Act
         const { html } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout footerLink="preferences">
                     <p>x</p>
@@ -165,6 +181,7 @@ describe('EmailLayout', () => {
     it('caps the card at 600px in Outlook desktop and pads on table cells (R-2)', async () => {
         // Arrange & Act
         const { html, text } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout>
                     <p>x</p>
@@ -189,6 +206,7 @@ describe('EmailLayout', () => {
     it('keeps the logo URL and tagline out of the text part (AC-3.2)', async () => {
         // Arrange & Act
         const { text } = await renderEmailBodies({
+            attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout
                     previewText="Vista previa"
@@ -212,6 +230,7 @@ describe('EmailLayout', () => {
     describe('isotipo origin (HOS-2540)', () => {
         const render = async () =>
             renderEmailBodies({
+                attribution: TEST_ATTRIBUTION,
                 react: (
                     <EmailLayout footerLink="preferences">
                         <p>x</p>
@@ -250,8 +269,8 @@ describe('EmailLayout', () => {
             const { html } = await render();
 
             // Assert
-            expect(html).toContain('href="https://hospeda.com.ar"');
-            expect(html).toContain(`href="${EMAIL_PREFERENCES_URL}"`);
+            expect(html).toContain('href="https://hospeda.com.ar?utm_source=email');
+            expect(html).toContain(`href="${EMAIL_PREFERENCES_URL}?utm_source=email`);
             expect(EMAIL_ISOTIPO_URL).toBe('https://hospeda.com.ar/email/hospeda-isotipo@2x.png');
         });
 
@@ -295,6 +314,42 @@ describe('EmailLayout', () => {
 
             // Assert
             expect(html).toContain('src="https://hospeda.com.ar/email/hospeda-isotipo@2x.png"');
+        });
+    });
+    describe('button media rule (HOS-2565 AC-2.6)', () => {
+        it('should emit exactly one <style> whose content is the single .hospeda-btn media rule', async () => {
+            // Arrange & Act
+            const { html } = await renderEmailBodies({
+                attribution: TEST_ATTRIBUTION,
+                react: (
+                    <EmailLayout>
+                        <p>x</p>
+                    </EmailLayout>
+                )
+            });
+            const styleBlocks = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)];
+
+            // Assert
+            expect(styleBlocks).toHaveLength(1);
+            expect(styleBlocks[0]?.[1]).toBe(EMAIL_BUTTON_MEDIA_RULE);
+            expect(EMAIL_BUTTON_MEDIA_RULE).toContain('max-width:480px');
+            expect(EMAIL_BUTTON_MEDIA_RULE).toContain('.hospeda-btn{display:block !important;');
+        });
+
+        it('should keep the <style> out of the text part', async () => {
+            // Arrange & Act
+            const { text } = await renderEmailBodies({
+                attribution: TEST_ATTRIBUTION,
+                react: (
+                    <EmailLayout>
+                        <p>Contenido</p>
+                    </EmailLayout>
+                )
+            });
+
+            // Assert
+            expect(text).not.toContain('hospeda-btn');
+            expect(text).not.toContain('@media');
         });
     });
 });

@@ -57,8 +57,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<CriticalStyles />
 
 		<!-- HOS-369 Wave D: client translation dictionary (hashed immutable
-		     asset). Parser-blocking and in <head>, so it runs before any
-		     island code (HOS-2388) — see I18nClientData.astro. -->
+		     asset): a parser-blocking critical part plus a deferred rest, both in the
+		     document head so they precede every island (HOS-2388, HOS-2572) — see
+		     I18nClientData.astro. -->
 		<I18nClientData locale={locale} />
 
 		<!-- HOS-369 W3-6: the icon sprite's URL, for islands that render icons

@@ -22,6 +22,7 @@
  */
 
 .grid {
+    position: relative;
     display: grid;
     border-radius: var(--radius-card, 24px);
     overflow: hidden;
@@ -453,18 +454,37 @@
     overflow: hidden;
 }
 
+/* HOS-2531: "Ver las N fotos" button, bottom-left over the featured photo
+ * (bottom-right is the "+N más" overlay cell). */
+.seeAllPhotos {
+    position: absolute;
+    inset-block-end: var(--space-3, 12px);
+    inset-inline-start: var(--space-3, 12px);
+    z-index: 2;
+}
+
+.seeAllPhotos :global(.btn-gradient) {
+    background: var(--core-card);
+    box-shadow: var(--shadow-card);
+}
+
 /* ── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ───── */
 
 /*
- * .viewAllLink — discreet right-aligned link shown below the gallery grid
- * when viewAllHref is provided AND total images exceed the visible inline
- * count (count >= 5 in the detail variant). Styled to match the site's
- * vanilla-CSS link conventions (see LocationSection.astro .location-section__link).
+ * .viewAllLink: the crawlable link to the `/fotos` sub-page (the only link to it
+ * from the listing). HOS-2520 review: the mosaic already carries the visible
+ * «Ver las N fotos» button (lightbox), so showing this link too gave two photo CTAs.
+ * It stays in the DOM and in the tab order but is visually hidden until it takes
+ * keyboard focus (skip-link pattern), shown when viewAllHref is provided AND the
+ * total images exceed the inline count (count >= 5).
  */
 .viewAllLink {
-    display: block;
-    margin-top: var(--space-2, 8px);
-    text-align: right;
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
     font-weight: 500;
@@ -472,12 +492,17 @@
     text-decoration: none;
 }
 
-.viewAllLink:hover,
 .viewAllLink:focus-visible {
+    position: static;
+    display: block;
+    inline-size: auto;
+    block-size: auto;
+    margin-top: var(--space-2, 8px);
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    text-align: right;
     text-decoration: underline;
-}
-
-.viewAllLink:focus-visible {
     outline: 3px solid var(--primary, oklch(0.55 0.17 264));
     outline-offset: 2px;
     border-radius: 2px;

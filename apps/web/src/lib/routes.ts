@@ -103,7 +103,14 @@ export const STATIC_PREFIXES = ['/_astro/', '/favicon', '/api/'] as const;
  * URL path prefixes that live OUTSIDE the `/{lang}/` tree on purpose, and must
  * therefore never be 301-redirected into it.
  *
- * There is exactly one today: `/qr/`. A QR code is printed on a physical sign
+ * There are two today, `/qr/` and `/go/`, for the same reason: the URL is
+ * handed out once and can never acquire a locale afterwards.
+ *
+ * `/go/` (HOS-2359) carries the presentation short links (`/go/aloj-wa/`) that
+ * the team pastes into WhatsApp and other networks. It is two letters, so it
+ * falls into exactly the same trap described below for `qr`.
+ *
+ * `/qr/`: a QR code is printed on a physical sign
  * and has no language — the URL is set in ink and cannot be changed afterwards,
  * which is the whole reason the slug is indirected through a database row in
  * the first place. Prefixing it with a locale would mean choosing, at print
@@ -123,7 +130,7 @@ export const STATIC_PREFIXES = ['/_astro/', '/favicon', '/api/'] as const;
  * the 404 rewrite, so a slug that does not resolve reaches the real site 404
  * page instead of a blank body (HOS-981).
  */
-export const LANGUAGE_NEUTRAL_PREFIXES = ['/qr/'] as const;
+export const LANGUAGE_NEUTRAL_PREFIXES = ['/qr/', '/go/'] as const;
 
 /** Type representing a protected route segment. */
 export type ProtectedSegment = (typeof PROTECTED_SEGMENTS)[number];

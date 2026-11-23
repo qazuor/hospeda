@@ -265,7 +265,8 @@
             "unpublishTrialNote": "The free trial keeps running: unpublishing does not stop the trial clock.",
             "unpublishRecurringNote_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged while unpublished, until you cancel it.",
             "unpublishRecurringNote_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while unpublished, until you cancel them.",
-            "recurringWithdrawLink": "Withdraw these featured add-ons"
+            "recurringWithdrawLink": "Withdraw these featured add-ons",
+            "moreActions": "More actions for {{name}}"
         },
         "editor": {
             "groups": {
@@ -809,7 +810,8 @@
             "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
         },
         "error": {
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "body": "Your properties are still there: try again in a moment."
         }
     },
     "landing": {
@@ -950,6 +952,20 @@
         "specialOffer": {
             "label": "Describe the benefit",
             "help": "Describe the benefit briefly, for example, two drinks for the price of one."
+        },
+        "kit": {
+            "sectionTitle": "Your promotions",
+            "statusLabel": "Status",
+            "validityLabel": "Valid",
+            "validRange": "From {{from}} to {{until}}",
+            "validOpen": "From {{from}}, no end date",
+            "editNamed": "Edit “{{title}}”",
+            "deleteNamed": "Delete “{{title}}”",
+            "deleteTitle": "Delete “{{title}}”?",
+            "benefitSection": "The promotion",
+            "conditionsSection": "Conditions",
+            "loadFailedHint": "Go back to the list and try again.",
+            "backToList": "Back to my promotions"
         }
     },
     "dashboard": {

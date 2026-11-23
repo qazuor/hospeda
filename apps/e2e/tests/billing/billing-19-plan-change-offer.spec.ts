@@ -110,7 +110,7 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
         expect(synced[0]?.next_charge_at?.toISOString()).toBe(nextChargeAt);
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const article = page.locator(
-            `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+            `[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
         );
         await expect(article.getByRole('button', { name: /cambiar de plan/i })).toBeVisible();
         return { subscriptionId, article };

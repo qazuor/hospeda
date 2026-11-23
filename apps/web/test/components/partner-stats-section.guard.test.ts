@@ -175,10 +175,10 @@ describe('HOS-1063 AC-8 — stats and mentions are SIBLINGS, never merged', () =
         expect(read(MENTIONS_SECTION).length).toBeGreaterThan(0);
     });
 
-    it('the stats section renders its own <section> with its own heading', () => {
+    it('the stats section renders its own kit Section with its own title and help anchor', () => {
         const code = readCode(STATS_SECTION);
-        expect(code).toMatch(/<section class="partner-stats">/);
-        expect(code).toMatch(/<h2/);
+        expect(code).toMatch(/<Section\s+title=\{t\('account\.partnerStats\.title'\)\}/);
+        expect(code).toContain('helpId="section:partner.stats"');
     });
 
     it('the stats section uses ONLY account.partnerStats.* keys', () => {

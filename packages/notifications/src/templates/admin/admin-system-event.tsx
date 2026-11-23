@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -57,10 +57,10 @@ export function AdminSystemEvent({ recipientName, severity, eventDetails }: Admi
             </Section>
 
             {message && (
-                <Section style={styles.messageBox}>
+                <Callout tone="warning">
                     <Text style={styles.sectionTitle}>Mensaje</Text>
                     <Text style={styles.messageText}>{message}</Text>
-                </Section>
+                </Callout>
             )}
 
             <Section style={styles.detailsBox}>
@@ -186,13 +186,6 @@ const styles = {
         padding: '20px',
         margin: '16px 0'
     },
-    messageBox: {
-        backgroundColor: '#fffbeb',
-        borderRadius: '6px',
-        borderLeft: '4px solid #f59e0b',
-        padding: '20px',
-        margin: '16px 0'
-    },
     sectionTitle: {
         color: '#1e293b',
         fontSize: '14px',
@@ -202,7 +195,6 @@ const styles = {
         letterSpacing: '0.5px'
     },
     messageText: {
-        color: '#1e293b',
         fontSize: '14px',
         lineHeight: '20px',
         margin: '0'

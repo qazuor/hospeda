@@ -13,6 +13,18 @@ export type AddonPurchaseView =
     | 'CLOSED';
 
 /**
+ * HOS-2485: the Stepper position of each view (0 add-on, 1 target, 2 confirm).
+ * Views outside the three choosing steps (loading, processing, the outcome)
+ * show no Stepper.
+ */
+export const ADDON_PURCHASE_STEP_INDEX: Readonly<Partial<Record<AddonPurchaseView, number>>> = {
+    OFFERS: 0,
+    TARGETS: 1,
+    SUBSCRIPTIONS: 1,
+    SUMMARY: 2
+};
+
+/**
  * HOS-2441: the step a "Back" from `view` returns to, or `null` when there is none. A single
  * eligible subscription is auto-selected (no picker was shown), so the summary goes back to
  * the offers.

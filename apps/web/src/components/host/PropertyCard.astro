@@ -1,9 +1,15 @@
 ---
 /**
  * @file PropertyCard.astro
- * @description Reusable card displaying a host's property with status badge and actions.
- * Shows thumbnail image, name, status badge (with color coding), location, price per night,
- * and contextual action links (edit, view on site, publish, unpublish).
+ * @description One property of the host's list, on the kit `ListingCard`
+ * (HOS-2483): photo, name linked to the editor, a `StatusPill`, location and
+ * price, the listing notices, ONE primary action and a `PropertyCardMenu` with
+ * the rest, and the QR sheet as the card footer.
+ *
+ * Primary action: «Publicar» / «Publicar de nuevo» when the card offers it,
+ * «Editar» otherwise. Everything else (Editar when it is not primary, Ver en el
+ * sitio, Despublicar, Eliminar) lives in the menu; Despublicar and Eliminar
+ * open their unchanged confirmation islands in a dialog.
  *
  * Status badge mapping (HOS-1641: read from `publicationStatus`, one entry per
  * `PublicationStatusEnum` value, i18n key `host.properties.card.status.<STATE>`):
@@ -28,8 +34,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation, ListingNoticesItem } from '@repo/schemas';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { getMediaUrl } from '@repo/media';
-import accountSectionStyles from '@/components/account/AccountSection.module.css';
-import btn from '@/components/account/AccountButton.module.css';
+import { LinkButton, ListingCard, StatusPill, type StatusTone } from '@/components/account/ui';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { buildUnpublishConfirmNotes } from '@/lib/listing/listing-notices';
@@ -38,9 +43,8 @@ import {
     resolvePropertyCardActions,
     resolveRepublishOffer
 } from '@/lib/host/property-card-actions';
-import { DeleteButton } from './DeleteButton.client';
+import { PropertyCardMenu } from './PropertyCardMenu.client';
 import { PublishButton } from './PublishButton.client';
-import { UnpublishButton } from './UnpublishButton.client';
 
 /**
  * Props for the PropertyCard component.
@@ -100,16 +104,18 @@ const unpublishNotes = buildUnpublishConfirmNotes({ locale, t, tPlural, trialRun
  * ~6.8MB photo shipped to a 220px-tall card (measured: 465x the size of the
  * same photo through the `card` transform). `getMediaUrl` is the single
  * helper every other screen already uses to avoid exactly this (the public
- * detail page's gallery, `OwnerCard`, `@/lib/media`'s `extractFeaturedImage`)
+ * detail page's gallery, `ContactCard`, `@/lib/media`'s `extractFeaturedImage`)
  * — this card just never called it. The `card` preset is `w_400,h_300,...`;
  * `height: 220` overrides it to match this card's actual rendered box instead
  * of reusing the preset's own 400x300 crop verbatim.
  */
-const rawThumbnailUrl: string =
-    property.media?.gallery?.[0]?.url ??
-    property.media?.featuredImage?.url ??
-    '/assets/images/placeholder-accommodation.svg';
-const thumbnailUrl = getMediaUrl(rawThumbnailUrl, { preset: 'card', height: 220 });
+const rawThumbnailUrl: string | undefined =
+    property.media?.gallery?.[0]?.url ?? property.media?.featuredImage?.url;
+// HOS-2483: without a photo the kit card shows the vertical's icon tile
+// instead of a placeholder image.
+const thumbnailUrl = rawThumbnailUrl
+    ? getMediaUrl(rawThumbnailUrl, { preset: 'card', height: 220 })
+    : undefined;
 
 const thumbnailAlt: string =
     property.media?.gallery?.[0]?.caption ??
@@ -119,38 +125,38 @@ const thumbnailAlt: string =
 /** Status badge label and CSS modifier class (HOS-1641: `publicationStatus`). */
 const publicationStatus = property.publicationStatus;
 
-type BadgeVariant = 'amber' | 'green' | 'red' | 'inactive';
+type BadgeVariant = StatusTone;
 
 const STATUS_MAP: Record<PublicationStatusEnum, { label: string; variant: BadgeVariant }> = {
     [PublicationStatusEnum.DRAFT]: {
         label: t('host.properties.card.status.DRAFT', 'Borrador'),
-        variant: 'amber'
+        variant: 'warning'
     },
     [PublicationStatusEnum.PUBLISHED]: {
         label: t('host.properties.card.status.PUBLISHED', 'Publicada'),
-        variant: 'green'
+        variant: 'success'
     },
     [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: {
         label: t('host.properties.card.status.UNPUBLISHED_BY_BILLING', 'Sin publicar por tu plan'),
-        variant: 'inactive'
+        variant: 'neutral'
     },
     [PublicationStatusEnum.ARCHIVED]: {
         label: t('host.properties.card.status.ARCHIVED', 'Archivada'),
-        variant: 'inactive'
+        variant: 'neutral'
     },
     [PublicationStatusEnum.MODERATED]: {
         label: t('host.properties.card.status.MODERATED', 'Moderada'),
-        variant: 'red'
+        variant: 'danger'
     },
     [PublicationStatusEnum.PURGED]: {
         label: t('host.properties.card.status.PURGED', 'Eliminada'),
-        variant: 'red'
+        variant: 'danger'
     }
 };
 
 const statusInfo = STATUS_MAP[publicationStatus] ?? {
     label: publicationStatus,
-    variant: 'amber' as BadgeVariant
+    variant: 'neutral' as BadgeVariant
 };
 
 /**
@@ -232,354 +238,101 @@ const publishCopy = actions.republish
       };
 ---
 
-<article class="prop-card">
-    <!-- THUMBNAIL -->
-    <div class="prop-card__image-wrapper">
-        <img
-            src={thumbnailUrl}
-            alt={thumbnailAlt}
-            width="400"
-            height="220"
-            loading="lazy"
-            decoding="async"
-            class="prop-card__img"
+<ListingCard
+    title={property.name}
+    vertical="accommodation"
+    href={actions.edit ? editUrl : undefined}
+    image={thumbnailUrl ? { src: thumbnailUrl, alt: thumbnailAlt } : undefined}
+    meta={[
+        ...(locationText ? [locationText] : []),
+        priceText ? `${priceText} ${pricePerNightLabel}` : priceOnRequestLabel
+    ]}
+>
+    <StatusPill slot="status" tone={statusInfo.variant}>{statusInfo.label}</StatusPill>
+
+    <!-- HOS-1492: the listing's notices (rows 8/9, 18, 20, 24, 30, 31). -->
+    <ListingNotices locale={locale} vertical="accommodation" listingId={property.id} item={notices} />
+
+    <!-- The ONE primary action: Publish / "Publicar de nuevo" (HOS-110,
+         HOS-1977) when offered, Edit otherwise. A PURGED listing renders no
+         action at all (HOS-1641, Coord-351 F4). -->
+    {showPublish ? (
+        <PublishButton
+            slot="primaryAction"
+            client:load
+            listingId={property.id}
+            vertical="accommodation"
+            locale={locale}
+            label={publishCopy.label}
+            confirmTitle={publishCopy.confirmTitle}
+            confirmNote={publishCopy.confirmNote}
+            confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', publishAffordance.trialDays ?? 0, { trialDays: publishAffordance.trialDays ?? 0 })}
+            confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
+            confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
+            errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
+            subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar.')}
+            subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
+            missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', 'Para publicar falta completar: {{fields}}.')}
+            missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
+            affordance={publishAffordance}
+            checkFailedText={t('host.properties.card.publishCheckFailed')}
+            choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
         />
+    ) : actions.edit ? (
+        <LinkButton slot="primaryAction" href={editUrl} variant="secondary">
+            {t('host.properties.card.actions.edit', 'Editar')}
+        </LinkButton>
+    ) : null}
 
-        <!-- STATUS BADGE overlaid on the image (top-left) -->
-        <span
-            class={`prop-card__status-badge prop-card__status-badge--${statusInfo.variant}`}
-            aria-label={statusInfo.label}
-        >
-            {statusInfo.label}
-        </span>
-    </div>
+    {hasAnyAction && (
+        <PropertyCardMenu
+            slot="menu"
+            client:visible
+            locale={locale}
+            label={t('host.properties.card.moreActions', undefined, { name: property.name })}
+            edit={showPublish && actions.edit ? { href: editUrl, label: t('host.properties.card.actions.edit', 'Editar') } : undefined}
+            viewOnSite={actions.viewOnSite ? { href: viewOnSiteUrl, label: t('host.properties.card.actions.viewOnSite', 'Ver en el sitio') } : undefined}
+            unpublish={actions.unpublish ? {
+                accommodationId: property.id,
+                locale,
+                label: t('host.properties.card.actions.unpublish', 'Despublicar'),
+                confirmText: t('host.properties.card.actions.unpublishConfirm', '¿Despublicar esta propiedad? Dejará de aparecer en el sitio.'),
+                confirmYes: t('host.properties.card.actions.confirmYes', 'Sí, despublicar'),
+                confirmNo: t('host.properties.card.actions.confirmNo', 'Cancelar'),
+                errorText: t('host.properties.card.unpublishError', 'No se pudo despublicar. Intentá de nuevo.'),
+                trialNote: unpublishNotes.trialNote,
+                recurringNote: unpublishNotes.recurringNote,
+                recurringAddonNames: unpublishNotes.recurringAddonNames,
+                withdrawHref: unpublishNotes.withdrawHref,
+                withdrawLabel: t('host.properties.card.recurringWithdrawLink')
+            } : undefined}
+            remove={actions.delete ? {
+                listingId: property.id,
+                locale,
+                label: t('host.properties.card.actions.delete', 'Eliminar'),
+                confirmText: t('host.properties.card.actions.deleteConfirm', '¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.'),
+                confirmYes: t('host.properties.card.actions.deleteYes', 'Sí, eliminar'),
+                confirmNo: t('host.properties.card.actions.confirmNo', 'Cancelar'),
+                errorText: t('host.properties.card.deleteError', 'No se pudo eliminar. Intentá de nuevo.')
+            } : undefined}
+        />
+    )}
 
-    <!--
-      CONTENT — carries the brand accent bar (BETA-143c), not the outer
-      `.prop-card`: the thumbnail is full-bleed at the top with
-      `overflow: hidden`, so a top-of-card bar there would render UNDER (or
-      visually clash with) the photo. Placing `.branded` on the content block
-      instead draws a clean accent line right below the image, above the
-      title — same brand-identity treatment, no image overlap.
-    -->
-    <div class:list={['prop-card__content', accountSectionStyles.branded]}>
-        <h3 class="prop-card__name">{property.name}</h3>
-
-        {locationText && (
-            <p class="prop-card__location">
-                <span aria-hidden="true">📍</span>
-                {locationText}
-            </p>
-        )}
-
-        {priceText ? (
-            <p class="prop-card__price">
-                <span class="prop-card__price-value">{priceText}</span>
-                <span class="prop-card__price-label">{pricePerNightLabel}</span>
-            </p>
-        ) : (
-            <p class="prop-card__price">
-                <span class="prop-card__price-value">{priceOnRequestLabel}</span>
-            </p>
-        )}
-
-        <!-- HOS-1492: the listing's notices (rows 8/9, 18, 20, 24, 30, 31). -->
-        <ListingNotices locale={locale} vertical="accommodation" listingId={property.id} item={notices} />
-
-        <!-- ACTIONS: none at all for a PURGED listing (HOS-1641, Coord-351 F4) -->
-        {hasAnyAction && (
-        <div class="prop-card__actions" role="group" aria-label={property.name}>
-            <!-- Edit: every state but PURGED (routes to web editor) -->
-            {actions.edit && (
-                <a href={editUrl} class:list={['prop-card__action', btn.secondaryCompact]}>
-                    {t('host.properties.card.actions.edit', 'Editar')}
-                </a>
-            )}
-
-            <!-- View on site: only when PUBLISHED -->
-            {actions.viewOnSite && (
-                <a
-                    href={viewOnSiteUrl}
-                    class:list={['prop-card__action', btn.secondaryCompact]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    {t('host.properties.card.actions.viewOnSite', 'Ver en el sitio')}
-                </a>
-            )}
-
-            <!-- Unpublish: only when PUBLISHED (React island with inline confirmation) -->
-            {actions.unpublish && (
-                <UnpublishButton
-                    client:load
-                    accommodationId={property.id}
-                    locale={locale}
-                    label={t('host.properties.card.actions.unpublish', 'Despublicar')}
-                    confirmText={t('host.properties.card.actions.unpublishConfirm', '¿Despublicar esta propiedad? Dejará de aparecer en el sitio.')}
-                    confirmYes={t('host.properties.card.actions.confirmYes', 'Sí, despublicar')}
-                    confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
-                    errorText={t('host.properties.card.unpublishError', 'No se pudo despublicar. Intentá de nuevo.')}
-                    trialNote={unpublishNotes.trialNote}
-                    recurringNote={unpublishNotes.recurringNote}
-                    recurringAddonNames={unpublishNotes.recurringAddonNames}
-                    withdrawHref={unpublishNotes.withdrawHref}
-                    withdrawLabel={t('host.properties.card.recurringWithdrawLink')}
-                />
-            )}
-
-            <!-- Publish: DRAFT, or "Publicar de nuevo" for UNPUBLISHED_BY_BILLING (HOS-1977); (guided web-native action with trial
-                 messaging, React island with inline confirmation — HOS-110) -->
-            {showPublish && (
-                <PublishButton
-                    client:load
-                    listingId={property.id}
-                    vertical="accommodation"
-                    locale={locale}
-                    label={publishCopy.label}
-                    confirmTitle={publishCopy.confirmTitle}
-                    confirmNote={publishCopy.confirmNote}
-                    confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', publishAffordance.trialDays ?? 0, { trialDays: publishAffordance.trialDays ?? 0 })}
-                    confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
-                    confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
-                    errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
-                    subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar.')}
-                    subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
-                    missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', 'Para publicar falta completar: {{fields}}.')}
-                    missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
-                    affordance={publishAffordance}
-                    checkFailedText={t('host.properties.card.publishCheckFailed')}
-                    choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
-                />
-            )}
-
-            <!-- Delete: every state but PURGED (PB12 via the protected purge
-                 endpoint, the listing moves to PURGED, so a purged listing has
-                 nothing left to delete; React island with inline confirmation) -->
-            {actions.delete && (
-                <DeleteButton
-                    client:load
-                    listingId={property.id}
-                    locale={locale}
-                    label={t('host.properties.card.actions.delete', 'Eliminar')}
-                    confirmText={t('host.properties.card.actions.deleteConfirm', '¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.')}
-                    confirmYes={t('host.properties.card.actions.deleteYes', 'Sí, eliminar')}
-                    confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
-                    errorText={t('host.properties.card.deleteError', 'No se pudo eliminar. Intentá de nuevo.')}
-                />
-            )}
-        </div>
-        )}
-
-        <!-- HOS-982: the printable QR sheet. Its own block below the action row
-             rather than another chip inside it — it carries an explanatory line
-             and a status message, which the row of one-word actions has no shape
-             for. Rendered in every publication state but PURGED on purpose: a
-             draft's owner reads what publishing unlocks instead of finding
-             nothing at all, while a purged listing has nothing to print
-             (HOS-1641). Printable only when PUBLISHED (`canPrintQrSheet`).
-             `client:visible` (not `client:load` like the row's confirm-dialog
-             islands) because this is one card in a grid AND the panel fetches
-             its QR image on mount: hydrating eagerly would fire one request per
-             card in the whole grid on page load, most of them for cards nobody
-             scrolls to. Deferring to visibility is what keeps that proportional
-             to what is actually looked at. -->
-        {actions.qrBlock && (
-            <div class="prop-card__qr">
-                <ListingQrSheet
-                    client:visible
-                    vertical="accommodation"
-                    listingId={property.id}
-                    slug={property.slug}
-                    locale={locale}
-                    isPublished={actions.canPrintQrSheet}
-                />
-            </div>
-        )}
-    </div>
-</article>
-
-<style>
-    .prop-card {
-        background-color: var(--core-card, var(--core-card));
-        border: 1px solid var(--border);
-        border-radius: var(--radius-card, 24px);
-        box-shadow: var(--shadow-card);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        transition: box-shadow 200ms ease-out, transform 200ms ease-out;
-    }
-
-    .prop-card:hover {
-        box-shadow: var(--shadow-card-hover);
-        transform: translateY(-2px);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .prop-card,
-        .prop-card:hover {
-            transform: none;
-            transition: none;
-        }
-    }
-
-    /* IMAGE AREA */
-    .prop-card__image-wrapper {
-        position: relative;
-        height: clamp(160px, 28vw, 220px);
-        overflow: hidden;
-        background-color: var(--muted, oklch(0.96 0.01 60));
-    }
-
-    .prop-card__img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 200ms ease-out;
-        display: block;
-    }
-
-    .prop-card:hover .prop-card__img {
-        transform: scale(1.05);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .prop-card:hover .prop-card__img {
-            transform: none;
-        }
-    }
-
-    /* STATUS BADGE */
-    .prop-card__status-badge {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 10px;
-        border-radius: var(--radius-pill, 9999px);
-        font-family: var(--font-sans);
-        font-weight: 700;
-        font-size: 11px;
-        line-height: 1.4;
-        white-space: nowrap;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-        color: var(--primary-foreground, #ffffff);
-        /* Default backdrop in case variant classes don't apply */
-        background-color: oklch(0.6 0.15 60);
-    }
-
-    .prop-card__status-badge--amber {
-        background-color: oklch(0.72 0.17 65);
-        color: oklch(0.25 0.06 65);
-    }
-
-    .prop-card__status-badge--green {
-        background-color: oklch(0.55 0.18 145);
-        color: #ffffff;
-    }
-
-    .prop-card__status-badge--red {
-        background-color: oklch(0.55 0.22 25);
-        color: #ffffff;
-    }
-
-    .prop-card__status-badge--inactive {
-        background-color: oklch(0.75 0.04 250);
-        color: oklch(0.30 0.06 250);
-    }
-
-    /* CONTENT AREA */
-    .prop-card__content {
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        flex: 1;
-    }
-
-    /* NAME */
-    .prop-card__name {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: clamp(0.9375rem, 0.4vw + 0.875rem, 1.125rem);
-        line-height: 1.35;
-        color: var(--core-foreground, var(--core-foreground));
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    /* LOCATION */
-    .prop-card__location {
-        font-family: var(--font-sans);
-        font-size: 0.8125rem;
-        color: var(--core-muted-foreground, var(--core-muted-foreground));
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    /* PRICE */
-    .prop-card__price {
-        display: flex;
-        align-items: baseline;
-        gap: 4px;
-        margin: 0;
-    }
-
-    .prop-card__price-value {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: 1rem;
-        color: var(--brand-accent, var(--brand-accent));
-    }
-
-    .prop-card__price-label {
-        font-family: var(--font-sans);
-        font-size: 0.75rem;
-        color: var(--core-muted-foreground, var(--core-muted-foreground));
-    }
-
-    /* ACTIONS */
-    .prop-card__actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 4px;
-        padding-top: 12px;
-        border-top: 1px solid var(--border);
-    }
-
-    /* Layout hook only — colors/radius/spacing/font come from the shared
-       AccountButton compact variants (BETA-143e, see PropertyCard.astro
-       frontmatter `btn` import). Kept for the mobile full-width rule below;
-       the DeleteButton/UnpublishButton React islands render their own
-       equivalent classes since Astro-scoped styles don't reach islands. */
-
-    /* HOS-982: the printable QR sheet block, separated from the action row the
-       same way that row is separated from the card body. Astro-scoped styles do
-       not reach an island, so this rule owns only the outer spacing — the panel
-       itself is styled by `ListingQrSheet.module.css`. */
-    .prop-card__qr {
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid var(--border);
-    }
-
-    @media (max-width: 360px) {
-        .prop-card__actions {
-            flex-direction: column;
-        }
-
-        .prop-card__action {
-            width: 100%;
-        }
-    }
-</style>
+    <!-- HOS-982: the printable QR sheet, as the card footer. Rendered in every
+         publication state but PURGED on purpose: a draft's owner reads what
+         publishing unlocks instead of finding nothing at all, while a purged
+         listing has nothing to print (HOS-1641). Printable only when PUBLISHED
+         (`canPrintQrSheet`). `client:visible` because the panel fetches its QR
+         image on mount: hydrating eagerly would fire one request per card. -->
+    {actions.qrBlock && (
+        <ListingQrSheet
+            slot="footer"
+            client:visible
+            vertical="accommodation"
+            listingId={property.id}
+            slug={property.slug}
+            locale={locale}
+            isPublished={actions.canPrintQrSheet}
+        />
+    )}
+</ListingCard>

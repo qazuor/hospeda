@@ -23,7 +23,7 @@ import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 
 const MAIL_TIMEOUT_MS = 30_000;
 const articleFor = (page: Page, id: string) =>
-    page.locator(`article[data-testid="my-subscription"][data-subscription-id="${id}"]`);
+    page.locator(`[data-testid="my-subscription"][data-subscription-id="${id}"]`);
 
 type SubscriptionRow = {
     readonly id: string;

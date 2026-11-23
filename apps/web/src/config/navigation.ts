@@ -33,6 +33,7 @@ import {
     MegaphoneIcon,
     NewsletterIcon,
     OffersIcon,
+    PackageIcon,
     PostIcon,
     ReceiptIcon,
     SearchIcon,
@@ -171,6 +172,14 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 surfaces: CURATED_SURFACES
             },
             {
+                // HOS-2485 (AC-8): the add-ons page highlights its own item.
+                id: 'addons',
+                i18nKey: 'account.nav.addons',
+                href: 'mi-cuenta/complementos',
+                icon: PackageIcon,
+                surfaces: FULL_SURFACES
+            },
+            {
                 id: 'preferences',
                 i18nKey: 'account.nav.preferences',
                 href: 'mi-cuenta/preferencias',
@@ -283,7 +292,6 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.venueDashboard',
                 href: 'mi-cuenta/tablero-locales',
                 icon: DashboardIcon,
-                requiredPermission: PermissionEnum.VENUE_EDIT_OWN,
                 surfaces: FULL_SURFACES
             },
             {
@@ -307,7 +315,6 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.experienceDashboard',
                 href: 'mi-cuenta/tablero-experiencias',
                 icon: DashboardIcon,
-                requiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN,
                 surfaces: FULL_SURFACES
             },
             {

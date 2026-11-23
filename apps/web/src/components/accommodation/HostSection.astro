@@ -1,0 +1,161 @@
+---
+/**
+ * @file HostSection.astro
+ * @description «Tu anfitrión» section of the accommodation detail page (HOS-2530):
+ * avatar, name, «Anfitrión desde», the languages the host attends guests in (only
+ * when declared) and a «Consultar» button that opens the contact panel. It shows ONLY
+ * data that already exists: no response time and no badges.
+ */
+import { Image } from 'astro:assets';
+import type { AccommodationOwnerData } from '@/data/types';
+import { HostContactButton } from '@/components/accommodation/HostContactButton.client';
+import { getInitialsFromName } from '@/lib/avatar-utils';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { spokenLanguageLabel } from '@/lib/listing/listing-policies';
+import { isCloudinaryDeliveryUrl } from '@/lib/media';
+import { getMediaUrl } from '@repo/media';
+import type { AccommodationSpokenLanguage } from '@repo/schemas';
+
+interface Props {
+  readonly owner: AccommodationOwnerData;
+  readonly accommodationId: string;
+  readonly panelId: string;
+  /** Languages the host declared (`policies.spokenLanguages`); empty hides the row. */
+  readonly spokenLanguages?: readonly AccommodationSpokenLanguage[];
+  readonly lang: string;
+}
+
+const { owner, accommodationId, panelId, spokenLanguages = [], lang } = Astro.props;
+const { t } = createTranslations(lang as SupportedLocale);
+
+const initials = getInitialsFromName(owner.name);
+const joinedAt = owner.createdAt ? new Date(owner.createdAt) : null;
+// Never show a date the API did not send (AC-2.5): no join date, no «Anfitrión desde».
+const sinceDate =
+  joinedAt && !Number.isNaN(joinedAt.getTime())
+    ? joinedAt.toLocaleDateString(lang === 'pt' ? 'pt-BR' : lang === 'en' ? 'en-US' : 'es-AR', {
+        year: 'numeric',
+        month: 'long'
+      })
+    : null;
+const avatarUrl = owner.image ? getMediaUrl(owner.image, { preset: 'avatar' }) : null;
+const proxyAvatar = avatarUrl ? isCloudinaryDeliveryUrl(avatarUrl) : false;
+const languagesLabel =
+  spokenLanguages.length > 0
+    ? t('accommodations.detail.host.languages', undefined, {
+        languages: spokenLanguages.map((language) => spokenLanguageLabel({ t, language })).join(', ')
+      })
+    : null;
+---
+
+<section class="host-section" data-host-section aria-labelledby="host-section-title">
+  <h2 class="host-section__title" id="host-section-title">{t('accommodations.detail.host.title')}</h2>
+  <div class="host-section__card">
+    <div class="host-section__avatar">
+      <div class="host-section__avatar-fallback" aria-hidden={avatarUrl ? 'true' : undefined}>{initials}</div>
+      {avatarUrl && (
+        proxyAvatar ? (
+          <Image src={avatarUrl} alt={owner.name} class="host-section__avatar-img" width={64} height={64} format="webp" loading="lazy" decoding="async" data-hide-on-error />
+        ) : (
+          <img src={avatarUrl} alt={owner.name} class="host-section__avatar-img" width="64" height="64" loading="lazy" decoding="async" data-hide-on-error />
+        )
+      )}
+    </div>
+    <div class="host-section__info">
+      <span class="host-section__name">{owner.name}</span>
+      {sinceDate && <span class="host-section__since">{t('accommodations.detail.host.since', undefined, { date: sinceDate })}</span>}
+      {languagesLabel && <span class="host-section__languages" data-host-languages>{languagesLabel}</span>}
+    </div>
+    <div class="host-section__cta">
+      <HostContactButton client:idle listingId={accommodationId} locale={lang as SupportedLocale} panelId={panelId} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .host-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+  }
+  .host-section__title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+  }
+  .host-section__card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--space-3, 12px) var(--space-4, 16px);
+    padding: var(--space-5, 20px);
+    border-radius: var(--radius-card, 24px);
+    background-color: var(--core-card);
+    box-shadow: var(--shadow-card);
+  }
+  .host-section__avatar {
+    position: relative;
+    inline-size: 64px;
+    block-size: 64px;
+    flex-shrink: 0;
+  }
+  .host-section__avatar-fallback,
+  .host-section__avatar-img {
+    position: absolute;
+    inset: 0;
+    inline-size: 64px;
+    block-size: 64px;
+    border-radius: 50%;
+  }
+  .host-section__avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+  .host-section__avatar-img {
+    object-fit: cover;
+  }
+  .host-section__info {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+  .host-section__name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--core-foreground);
+  }
+  .host-section__since,
+  .host-section__languages {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--core-muted-foreground);
+  }
+  .host-section__cta {
+    grid-column: 1 / -1;
+    display: flex;
+  }
+  .host-section__cta :global(a) {
+    flex: 1;
+  }
+  @media (min-width: 768px) {
+    .host-section__card {
+      grid-template-columns: auto 1fr auto;
+    }
+    .host-section__cta {
+      grid-column: auto;
+    }
+    .host-section__cta :global(a) {
+      flex: none;
+    }
+  }
+</style>

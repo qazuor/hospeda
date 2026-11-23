@@ -29,6 +29,7 @@ import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { latestOutbox, signUpCardSubscriber } from '../../fixtures/cancellation-flow.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
 import { purgeOwnListing, renameListing } from '../../fixtures/listing-notices.ts';
+import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { describeSweepCandidates } from '../../fixtures/sweep-candidates.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -249,9 +250,9 @@ test.describe('TEST:B10:16 AC:B10:14 the addon end to end @p0 @billing @clock', 
             .getByRole('listitem')
             .filter({ hasText: listingName });
         await expect(card).toHaveCount(1);
-        await card.getByRole('button', { name: 'Eliminar', exact: true }).click();
-        await expect(card.getByTestId('purge-lost-addons')).toHaveAttribute('data-count', '1');
-        const lost = card.getByTestId('purge-lost-addon');
+        const confirm = await openPropertyCardConfirm({ page, card, action: 'Eliminar' });
+        await expect(confirm.getByTestId('purge-lost-addons')).toHaveAttribute('data-count', '1');
+        const lost = confirm.getByTestId('purge-lost-addon');
         await expect(lost).toHaveCount(1);
         await expect(lost).toContainText(ADDON_NAME);
         await expect(lost).toContainText(PURCHASE_PRICE);

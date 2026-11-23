@@ -218,6 +218,11 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
             'comercio-experience',
             'turista'
         ]);
+        const experiences = findGroup(groups, 'comercio-experience');
+        expect(experiences?.items.map((item) => item.id)).toEqual([
+            'experienceDashboard',
+            'experience-listings'
+        ]);
     });
 
     it('adds anfitrion, both listing areas and editorial for platform staff (ADMIN)', () => {

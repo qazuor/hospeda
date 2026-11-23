@@ -37,7 +37,7 @@
  */
 
 import { EditorAutoSaveChip } from '@/components/account/editor-shell/EditorAutoSaveChip.client';
-import HelpLink from '@/components/account/help/HelpLink.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { EditorSectionNav, EditorSwitcher, PageHeader } from '@/components/account/ui';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
@@ -119,7 +119,7 @@ const saveModel = isHub
 
 <AccountLayout locale={locale} title={title} description={description} activeSection={accountSection}>
 	<PageHeader title={title} description={subtitle} back={back} locale={locale}>
-		<HelpLink slot="help" anchor={helpAnchor} locale={locale} />
+		<PageHelpLink slot="help" anchor={helpAnchor} locale={locale} />
 		{saveModel === 'auto' && <EditorAutoSaveChip slot="actions" client:idle locale={locale} />}
 	</PageHeader>
 

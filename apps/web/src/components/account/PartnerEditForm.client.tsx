@@ -24,23 +24,46 @@
  * Validates with `PartnerOwnerUpdateSchema`, submits only the dirty fields
  * (baseline-diff, mirroring `HostTradeEditForm.client.tsx`), and PATCHes via
  * `partnersApi.updateMine`.
+ *
+ * Built on the account kit (HOS-2506): one flat `Section` per group, the logo
+ * through `ImageUploader` (upload to the media pipeline, preview before saving,
+ * the URL lands in `logoUrl`) with the old URL text field kept behind a
+ * «Pegar URL» `Disclosure`, and the explicit-save model (`StickySaveBar`).
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { PartnerOwnerUpdateSchema } from '@repo/schemas';
 import { useState } from 'react';
+import {
+    Alert,
+    Disclosure,
+    Field,
+    ImageUploader,
+    type SaveOutcome,
+    Section,
+    StickySaveBar,
+    Textarea,
+    TextInput,
+    useSaveBar
+} from '@/components/account/ui';
 import type { MyPartner } from '@/lib/api/endpoints-protected';
 import { partnersApi } from '@/lib/api/endpoints-protected';
-import { translateApiError } from '@/lib/api-errors';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
+import { uploadPartnerLogo } from '@/lib/media/upload-partner-logo';
 import {
     buildPartnerEditSnapshot,
     buildPartnerOwnerPatch,
     type PartnerEditSnapshot
 } from './PartnerEditForm.helpers';
 import styles from './PartnerEditForm.module.css';
+
+/** The form's id namespace (`pef-<key>`), shared with the save bar's «Ir al primer error». */
+const ID_PREFIX = 'pef';
+
+/** Largest logo, in bytes: the cap the upload endpoint enforces for entity images. */
+const LOGO_MAX_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
 
 /** Props for {@link PartnerEditForm}. */
 export interface PartnerEditFormProps {
@@ -66,29 +89,32 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
     const initialSnapshot = buildPartnerEditSnapshot(initialPartner);
     const [values, setValues] = useState<PartnerEditSnapshot>(initialSnapshot);
     const [baseline, setBaseline] = useState<PartnerEditSnapshot>(initialSnapshot);
-    const [submitting, setSubmitting] = useState(false);
 
-    const { formError, validate, handleApiError, setFormError } = useZodForm({
-        schema: PartnerOwnerUpdateSchema,
-        t
-    });
+    const { fieldErrors, formError, validate, handleApiError, setFormError, clearError, reset } =
+        useZodForm({ schema: PartnerOwnerUpdateSchema, t });
 
     const setField = (key: EditableKey, value: string): void => {
         setValues((prev) => ({ ...prev, [key]: value }));
+        clearError(key);
+        clearError(`contactInfo.${key}`);
+        clearError(`socialNetworks.${key}`);
     };
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-        e.preventDefault();
+    /** A field's error, wherever the schema nests it. */
+    const errorFor = (key: EditableKey): string | undefined =>
+        fieldErrors[key] ??
+        fieldErrors[`contactInfo.${key}`] ??
+        fieldErrors[`socialNetworks.${key}`];
+
+    const patch = buildPartnerOwnerPatch({ current: values, baseline });
+    const isDirty = Object.keys(patch).length > 0;
+
+    async function save(): Promise<SaveOutcome> {
         setFormError(null);
 
         const payload = buildPartnerOwnerPatch({ current: values, baseline });
-
         if (Object.keys(payload).length === 0) {
-            addToast({
-                type: 'info',
-                message: t('account.partner.form.noChanges', 'No hay cambios para guardar')
-            });
-            return;
+            return { ok: true };
         }
 
         // `validate()` is a GATE ONLY — its `parsed.data` is deliberately
@@ -98,203 +124,209 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
         // touched, turning a partial patch into a full overwrite.
         const parsed = validate(payload);
         if (!parsed.success) {
-            return;
+            const invalidFields = parsed.error.issues
+                .map((issue) => issue.path[issue.path.length - 1])
+                .filter((key): key is string => typeof key === 'string');
+            return { ok: false, invalidFields };
         }
 
-        setSubmitting(true);
+        const fallback = t(
+            'account.partner.form.errors.saveFailed',
+            'No se pudieron guardar los cambios'
+        );
         try {
             const result = await partnersApi.updateMine(payload);
-
             if (!result.ok) {
-                const fallback = t(
-                    'account.partner.form.errors.saveFailed',
-                    'No se pudieron guardar los cambios'
-                );
                 handleApiError(result.error, fallback);
-                addToast({
-                    type: 'error',
-                    message: translateApiError({ error: result.error, t, fallback })
-                });
-                return;
+                return { ok: false };
             }
-
             const nextPartner = result.data.partner;
             const nextSnapshot = buildPartnerEditSnapshot(nextPartner);
             setCurrentPartner(nextPartner);
             setBaseline(nextSnapshot);
             setValues(nextSnapshot);
-
-            addToast({
-                type: 'success',
-                message: t('account.partner.form.success', 'Cambios guardados')
-            });
+            return { ok: true };
         } catch (err) {
-            const msg =
-                err instanceof Error
-                    ? err.message
-                    : t(
-                          'account.partner.form.errors.saveFailed',
-                          'No se pudieron guardar los cambios'
-                      );
-            setFormError(msg);
-            addToast({ type: 'error', message: msg });
-        } finally {
-            setSubmitting(false);
+            setFormError(err instanceof Error ? err.message : fallback);
+            return { ok: false };
         }
     }
 
+    const saveBar = useSaveBar({
+        locale,
+        isDirty,
+        onSave: save,
+        onDiscard: () => {
+            setValues(baseline);
+            reset();
+        },
+        idPrefix: ID_PREFIX
+    });
+
     const isPending = currentPartner.contentReviewState === 'pending';
     const isRejected = currentPartner.contentReviewState === 'rejected';
+    const saving = saveBar.status === 'saving';
 
     /** One labelled text input bound to a snapshot key. */
     const field = (key: EditableKey, labelKey: string, fallback: string, type = 'text') => (
-        <div className={styles.field}>
-            <label
-                className={styles.label}
-                htmlFor={`pef-${key}`}
-            >
-                {t(labelKey, fallback)}
-            </label>
-            <input
-                id={`pef-${key}`}
+        <Field
+            label={t(labelKey, fallback)}
+            locale={locale}
+            idParts={{ prefix: ID_PREFIX, name: key }}
+            error={errorFor(key)}
+        >
+            <TextInput
                 type={type}
-                className={styles.input}
                 value={values[key]}
                 onChange={(e) => setField(key, e.target.value)}
-                disabled={submitting}
+                disabled={saving}
             />
-        </div>
+        </Field>
     );
 
     return (
         <form
             className={styles.form}
             onSubmit={(e) => {
-                void handleSubmit(e);
+                e.preventDefault();
+                void saveBar.save();
             }}
             noValidate
             aria-label={t('account.partner.form.title', 'Editar mi ficha de aliado')}
         >
             {/* Identity — admin-managed, display-only (never enters the payload) */}
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    {t('account.partner.form.identitySection', 'Datos administrados por Hospeda')}
-                </h2>
-                <p className={styles.hint}>
-                    {t(
-                        'account.partner.form.identityNote',
-                        'Estos datos los gestiona el equipo de Hospeda. Si necesitás corregirlos, contactanos.'
-                    )}
-                </p>
+            <Section
+                title={t('account.partner.form.identitySection', 'Datos administrados por Hospeda')}
+                description={t(
+                    'account.partner.form.identityNote',
+                    'Estos datos los gestiona el equipo de Hospeda. Si necesitás corregirlos, contactanos.'
+                )}
+                helpId="section:partner.identity"
+            >
                 <div className={styles.grid}>
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="pef-name"
-                        >
-                            {t('account.partner.form.fields.name', 'Nombre')}
-                        </label>
-                        <input
-                            id="pef-name"
-                            type="text"
-                            className={styles.input}
+                    <Field
+                        label={t('account.partner.form.fields.name', 'Nombre')}
+                        locale={locale}
+                        idParts={{ prefix: ID_PREFIX, name: 'name' }}
+                    >
+                        <TextInput
                             value={currentPartner.name}
                             disabled
                             readOnly
                         />
-                    </div>
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="pef-slug"
-                        >
-                            {t('account.partner.form.fields.slug', 'Identificador')}
-                        </label>
-                        <input
-                            id="pef-slug"
-                            type="text"
-                            className={styles.input}
+                    </Field>
+                    <Field
+                        label={t('account.partner.form.fields.slug', 'Identificador')}
+                        locale={locale}
+                        idParts={{ prefix: ID_PREFIX, name: 'slug' }}
+                    >
+                        <TextInput
                             value={currentPartner.slug}
                             disabled
                             readOnly
                         />
-                    </div>
+                    </Field>
                 </div>
-            </section>
+            </Section>
 
             {/* Content — goes to review, never live on save */}
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    {t('account.partner.form.contentSection', 'Logo y textos')}
-                </h2>
-                <p className={styles.hint}>
-                    {t(
-                        'account.partner.form.contentNote',
-                        'Los cambios en el logo, la descripción y el sitio pasan por revisión antes de publicarse. Lo que ya está publicado sigue visible mientras tanto.'
+            <Section
+                title={t('account.partner.form.contentSection', 'Logo y textos')}
+                description={t(
+                    'account.partner.form.contentNote',
+                    'Los cambios en el logo, la descripción y el sitio pasan por revisión antes de publicarse. Lo que ya está publicado sigue visible mientras tanto.'
+                )}
+                helpId="section:partner.edit-form"
+            >
+                <div className={styles.stack}>
+                    {isPending && (
+                        <Alert
+                            locale={locale}
+                            tone="info"
+                            title={t('account.partner.form.pendingLabel', 'En revisión')}
+                        >
+                            <p>
+                                {t(
+                                    'account.partner.form.pendingText',
+                                    'Ya enviaste cambios y estamos revisándolos. Podés seguir ajustándolos: se revisa la última versión que envíes.'
+                                )}
+                            </p>
+                        </Alert>
                     )}
-                </p>
 
-                {isPending && (
-                    <div className={styles.pendingBox}>
-                        <span className={styles.pendingBoxLabel}>
-                            {t('account.partner.form.pendingLabel', 'En revisión')}
-                        </span>
-                        <p className={styles.pendingBoxText}>
-                            {t(
-                                'account.partner.form.pendingText',
-                                'Ya enviaste cambios y estamos revisándolos. Podés seguir ajustándolos: se revisa la última versión que envíes.'
-                            )}
-                        </p>
-                    </div>
-                )}
+                    {isRejected && currentPartner.contentReviewNote && (
+                        <Alert
+                            locale={locale}
+                            tone="warning"
+                            title={t('account.partner.form.rejectedLabel', 'Cambios rechazados')}
+                        >
+                            <p>{currentPartner.contentReviewNote}</p>
+                        </Alert>
+                    )}
 
-                {isRejected && currentPartner.contentReviewNote && (
-                    <div className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}>
-                        <span className={styles.pendingBoxLabel}>
-                            {t('account.partner.form.rejectedLabel', 'Cambios rechazados')}
-                        </span>
-                        <p className={styles.pendingBoxText}>{currentPartner.contentReviewNote}</p>
-                    </div>
-                )}
+                    <ImageUploader
+                        label={t('account.partner.form.logo.label')}
+                        locale={locale}
+                        id={`${ID_PREFIX}-logoUrl`}
+                        value={values.logoUrl || null}
+                        onChange={(url) => setField('logoUrl', url)}
+                        upload={(file) => uploadPartnerLogo({ file, locale })}
+                        maxBytes={LOGO_MAX_BYTES}
+                        maxMb={DEFAULT_ENTITY_MAX_FILE_SIZE_MB}
+                        previewAlt={t('account.partner.form.logo.previewAlt')}
+                        error={errorFor('logoUrl')}
+                        disabled={saving}
+                    />
 
-                <div className={styles.grid}>
-                    {field('logoUrl', 'account.partner.form.fields.logoUrl', 'URL del logo', 'url')}
+                    <Disclosure summary={t('account.partner.form.logo.pasteUrl')}>
+                        <Field
+                            label={t('account.partner.form.fields.logoUrl', 'URL del logo')}
+                            locale={locale}
+                            idParts={{ prefix: ID_PREFIX, name: 'logoUrlText' }}
+                            hint={t('account.partner.form.logo.urlHint')}
+                        >
+                            <TextInput
+                                type="url"
+                                value={values.logoUrl}
+                                onChange={(e) => setField('logoUrl', e.target.value)}
+                                disabled={saving}
+                            />
+                        </Field>
+                    </Disclosure>
+
                     {field(
                         'websiteUrl',
                         'account.partner.form.fields.websiteUrl',
                         'Sitio web',
                         'url'
                     )}
-                </div>
-                <div className={styles.field}>
-                    <label
-                        className={styles.label}
-                        htmlFor="pef-description"
+
+                    <Field
+                        label={t('account.partner.form.fields.description', 'Descripción')}
+                        locale={locale}
+                        idParts={{ prefix: ID_PREFIX, name: 'description' }}
+                        error={errorFor('description')}
                     >
-                        {t('account.partner.form.fields.description', 'Descripción')}
-                    </label>
-                    <textarea
-                        id="pef-description"
-                        className={styles.textarea}
-                        value={values.description}
-                        onChange={(e) => setField('description', e.target.value)}
-                        disabled={submitting}
-                        rows={5}
-                    />
+                        <Textarea
+                            value={values.description}
+                            onChange={(e) => setField('description', e.target.value)}
+                            disabled={saving}
+                            rows={5}
+                            locale={locale}
+                        />
+                    </Field>
                 </div>
-            </section>
+            </Section>
 
             {/* Contact — applies immediately */}
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    {t('account.partner.form.contactSection', 'Contacto')}
-                </h2>
-                <p className={styles.hint}>
-                    {t(
-                        'account.partner.form.immediateNote',
-                        'Estos datos se actualizan al instante, sin revisión.'
-                    )}
-                </p>
+            <Section
+                title={t('account.partner.form.contactSection', 'Contacto')}
+                description={t(
+                    'account.partner.form.immediateNote',
+                    'Estos datos se actualizan al instante, sin revisión.'
+                )}
+                helpId="section:partner.contact"
+            >
                 <div className={styles.grid}>
                     {field(
                         'workEmail',
@@ -305,19 +337,17 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
                     {field('workPhone', 'account.partner.form.fields.workPhone', 'Teléfono', 'tel')}
                     {field('whatsapp', 'account.partner.form.fields.whatsapp', 'WhatsApp', 'tel')}
                 </div>
-            </section>
+            </Section>
 
             {/* Social — applies immediately */}
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    {t('account.partner.form.socialSection', 'Redes')}
-                </h2>
-                <p className={styles.hint}>
-                    {t(
-                        'account.partner.form.immediateNote',
-                        'Estos datos se actualizan al instante, sin revisión.'
-                    )}
-                </p>
+            <Section
+                title={t('account.partner.form.socialSection', 'Redes')}
+                description={t(
+                    'account.partner.form.immediateNote',
+                    'Estos datos se actualizan al instante, sin revisión.'
+                )}
+                helpId="section:partner.social"
+            >
                 <div className={styles.grid}>
                     {field('facebook', 'account.partner.form.fields.facebook', 'Facebook', 'url')}
                     {field(
@@ -331,28 +361,26 @@ export function PartnerEditForm({ locale, partner: initialPartner }: PartnerEdit
                     {field('tiktok', 'account.partner.form.fields.tiktok', 'TikTok', 'url')}
                     {field('youtube', 'account.partner.form.fields.youtube', 'YouTube', 'url')}
                 </div>
-            </section>
+            </Section>
 
             {formError && (
-                <p
-                    className={`${styles.feedbackBanner} ${styles.feedbackBannerError}`}
-                    role="alert"
+                <Alert
+                    locale={locale}
+                    tone="danger"
                 >
-                    {formError}
-                </p>
+                    <p>{formError}</p>
+                </Alert>
             )}
 
-            <div className={styles.submitRow}>
-                <button
-                    type="submit"
-                    className={styles.submitBtn}
-                    disabled={submitting}
-                >
-                    {submitting
-                        ? t('account.partner.form.saving', 'Guardando...')
-                        : t('account.partner.form.save', 'Guardar cambios')}
-                </button>
-            </div>
+            <StickySaveBar
+                status={saveBar.status}
+                locale={locale}
+                onSave={() => {
+                    void saveBar.save();
+                }}
+                onDiscard={saveBar.discard}
+                onGoToFirstError={saveBar.goToFirstError}
+            />
         </form>
     );
 }

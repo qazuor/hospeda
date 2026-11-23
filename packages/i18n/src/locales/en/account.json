@@ -176,7 +176,8 @@
         "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta",
         "help": "Help",
         "venueDashboard": "Venues dashboard",
-        "experienceDashboard": "Experiences dashboard"
+        "experienceDashboard": "Experiences dashboard",
+        "addons": "Add-ons"
     },
     "doors": {
         "sectionLabel": "Discover more",
@@ -560,7 +561,13 @@
                 "UNEXPECTED": "An unexpected error happened.",
                 "USER_DECLINED": "You didn’t confirm it.",
                 "USER_CANCELLED": "You cancelled the confirmation."
-            }
+            },
+            "sectionTitle": "Recorded actions"
+        },
+        "tabs": {
+            "label": "AI assistants sections",
+            "assistants": "Assistants",
+            "history": "History"
         }
     },
     "subscription": {
@@ -866,6 +873,11 @@
             "forever": "Your subscription price changes to {{amount}}, with no end date.",
             "trialExtension_one": "You added {{count}} trial day.",
             "trialExtension_other": "You added {{count}} trial days."
+        },
+        "tabs": {
+            "ariaLabel": "Subscription sections",
+            "plan": "Plan",
+            "addons": "Add-ons"
         }
     },
     "favorites": {
@@ -1034,7 +1046,14 @@
         },
         "errors": {
             "fetchFailed": "Error loading reviews"
-        }
+        },
+        "sectionTitle": "Reviews you wrote",
+        "ratingAria": "Rating: {{value}} out of {{max}}",
+        "loadError": {
+            "title": "We could not load your reviews",
+            "body": "Try again in a few seconds."
+        },
+        "listLabel": "Your reviews"
     },
     "pages": {
         "accountLabel": "My Account",
@@ -1056,9 +1075,9 @@
                 "mySubscriptionDesc": "Current plan and billing",
                 "myMessages": "My inquiries",
                 "myMessagesDesc": "Conversations with hosts",
-                "newsletter": "Newsletter",
+                "newsletter": "Email newsletter",
                 "newsletterDesc": "Manage your newsletter subscription",
-                "whatsNew": "What's New",
+                "whatsNew": "Hospeda updates",
                 "whatsNewDesc": "Platform updates and announcements",
                 "myProperties": "My properties",
                 "myPropertiesDesc": "Manage your published accommodations",
@@ -1228,7 +1247,8 @@
             "guidesDesc": "Editorial guides and curated itineraries.",
             "productNews": "Product news",
             "productNewsDesc": "New features and platform updates."
-        }
+        },
+        "sectionStatus": "Your subscription"
     },
     "profileCompletion": {
         "pageTitle": "Complete your profile",
@@ -1313,7 +1333,19 @@
             "occupationMin": "Occupation must be at least 2 characters.",
             "occupationMax": "Occupation cannot exceed 100 characters.",
             "submitFailed": "Could not complete profile. Please try again."
-        }
+        },
+        "sections": {
+            "basics": "Your details",
+            "preferences": "Contact and preferences",
+            "more": "About you",
+            "consent": "To finish"
+        },
+        "steps": {
+            "basics": "Your details",
+            "preferences": "Preferences",
+            "confirm": "Confirm"
+        },
+        "stepsLabel": "Your profile progress"
     },
     "setPassword": {
         "pageTitle": "Add password",
@@ -1364,7 +1396,8 @@
             "special": "At least 1 special character (for example ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
-        "showPassword": "Mostrar contraseña"
+        "showPassword": "Mostrar contraseña",
+        "sectionTitle": "Your password"
     },
     "searchHistory": {
         "loading": "Loading history...",
@@ -1408,7 +1441,13 @@
             "priceRange": "$ {{min}} – $ {{max}}",
             "filterCount_one": "{{count}} filter",
             "filterCount_other": "{{count}} filters"
-        }
+        },
+        "recordingTitle": "Saving searches",
+        "listTitle": "Your recent searches",
+        "deleteConfirmTitle": "Delete this search?",
+        "deleteConfirmBody": "“{{query}}” is removed from your history. This cannot be undone.",
+        "clearConfirmTitle": "Clear your whole history?",
+        "clearConfirmBody": "All your saved searches are removed. This cannot be undone."
     },
     "alerts": {
         "loading": "Loading alerts...",
@@ -1441,7 +1480,13 @@
         "closedNotice": "This alert was closed because that listing no longer exists.",
         "activeHeading": "Active alerts",
         "closedHeading": "Closed alerts",
-        "closedListLabel": "Your closed price alerts"
+        "closedListLabel": "Your closed price alerts",
+        "lock": {
+            "description": "Turn on alerts to find out when the price of a place you like drops."
+        },
+        "deleteConfirmTitle": "Delete this alert?",
+        "deleteConfirmBody": "You will stop getting price-drop notices for {{name}}.",
+        "closedStatus": "Closed"
     },
     "exclusiveDeals": {
         "loading": "Loading exclusive deals...",
@@ -1459,7 +1504,11 @@
         },
         "listLabel": "Your exclusive deals",
         "item": {
-            "vipBadge": "VIP only"
+            "vipBadge": "VIP only",
+            "viewListing": "View listing",
+            "viewListingError": "We could not open the listing. Please try again.",
+            "listingUnavailable": "This listing is no longer available.",
+            "validUntil": "Valid until {{date}}"
         }
     },
     "recommendations": {
@@ -1478,7 +1527,8 @@
         },
         "empty": {
             "title": "No recommendations right now",
-            "body": "Check back later or browse our full accommodation catalog."
+            "body": "Check back later or browse our full accommodation catalog.",
+            "cta": "Browse accommodations"
         },
         "upgrade": {
             "title": "Suggestions for you",
@@ -1721,6 +1771,25 @@
                     "startDateRequired": "The event needs a start date."
                 }
             }
+        },
+        "contentList": {
+            "editNamed": "Edit “{{title}}”",
+            "events": {
+                "create": "New event",
+                "sectionTitle": "Your events",
+                "locked": {
+                    "feature": "Managing events is an editor feature",
+                    "description": "Your account can't manage events yet. If you'd like to publish events on Hospeda, fill in the application to join as an editor."
+                }
+            },
+            "posts": {
+                "create": "New post",
+                "sectionTitle": "Your posts",
+                "locked": {
+                    "feature": "Writing posts is an editor feature",
+                    "description": "Your account can't manage posts yet. If you'd like to write on Hospeda, fill in the application to join as an editor."
+                }
+            }
         }
     },
     "alliances": {
@@ -1799,6 +1868,10 @@
         },
         "suspended": {
             "noReason": "We have temporarily suspended usage recording from your listing."
+        },
+        "kit": {
+            "pendingCount": "Usages waiting for your answer: {{count}}",
+            "reviewsCount": "Reviews received: {{count}}"
         }
     },
     "partner": {
@@ -1856,7 +1929,13 @@
                 "tiktok": "TikTok",
                 "youtube": "YouTube"
             },
-            "sectionTitle": "Your listing details"
+            "sectionTitle": "Your listing details",
+            "logo": {
+                "label": "Your brand logo",
+                "previewAlt": "Logo preview",
+                "pasteUrl": "Paste URL",
+                "urlHint": "If your logo is already online, paste its address instead of uploading it."
+            }
         },
         "presence": {
             "hidden": "Meanwhile, your page appears not to exist to the public.",
@@ -1948,7 +2027,12 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "subtitleVoluntary": "Choose a new password for your account. You will need your current one.",
-        "accountNotice": "You are about to change the password for this account:"
+        "accountNotice": "You are about to change the password for this account:",
+        "successTitle": "Password updated",
+        "successSection": "All set",
+        "continue": "Continue",
+        "back": "Back",
+        "sectionTitle": "Your new password"
     },
     "notFound": {
         "title": "We could not find what you were looking for",
@@ -2205,6 +2289,32 @@
             "addSlotAria": "Add slot to {{day}}",
             "copyToAll": "Copy to every day",
             "copyToAllAria": "Copy to every day the hours of {{day}}"
+        },
+        "stepper": {
+            "progress": "Step {{current}} of {{total}}",
+            "done": "completed"
+        },
+        "copyField": {
+            "copy": "Copy",
+            "copied": "Copied to the clipboard.",
+            "failed": "We could not copy. Select the text and copy it by hand."
+        },
+        "imageUploader": {
+            "choose": "Choose image",
+            "replace": "Change image",
+            "compressing": "Optimizing…",
+            "uploading": "Uploading…",
+            "dropHint": "or drag and drop the image here",
+            "hint": "Formats: {{types}}. Maximum {{maxSize}} MB.",
+            "errors": {
+                "invalidType": "That format is not allowed. Use a {{types}} image.",
+                "tooLarge": "The image is larger than {{maxSize}} MB even after optimizing it. Choose a lighter one.",
+                "tooLargeNoCompression": "We could not optimize this image in your browser and it is larger than {{maxSize}} MB. Try another format or a lighter image.",
+                "uploadFailed": "We could not upload the image. Please try again."
+            }
+        },
+        "contentCard": {
+            "statuses": "Statuses"
         }
     },
     "ownerDashboard": {

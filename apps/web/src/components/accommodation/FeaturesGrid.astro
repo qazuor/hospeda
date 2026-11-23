@@ -1,7 +1,14 @@
 ---
 /**
  * @file FeaturesGrid.astro
- * @description Features grid with icons. Hidden when empty.
+ * @description Features as pills with icon. Hidden when empty. HOS-2528: with more
+ * than {@link SUMMARY_COUNT} features only the first ones show, and «Ver las N
+ * características» opens a `sheet` dialog (island `ListingItemsSheet`) with the full list.
+ *
+ * SEO / no-JS: the sheet island renders nothing while closed, so the features past the
+ * summary also render in SSR as a visually-hidden list (`data-features-rest`), made
+ * visible by `<noscript>` (which also hides the dead sheet button). Grouped categories
+ * only matter in the sheet; the hidden list is flat.
  *
  * HOS-2060: the synthetic "smoking allowed" item is gone — smoking is a house
  * rule now (`policies.smokingAllowed`) and renders in `ListingHouseRules`.
@@ -14,6 +21,8 @@
 import type { AccommodationFeatureItem } from '@/data/types';
 import { groupFeaturesForDisplay } from '@/lib/catalog-attribute-badges';
 import { createTranslations } from '@/lib/i18n';
+import ListingPill from '@/components/listing/ListingPill.astro';
+import { ListingItemsSheet } from '@/components/listing/ListingItemsSheet.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveIcon } from '@repo/icons/resolver';
 import { isMissingTranslation } from '@repo/i18n/web';
@@ -24,9 +33,12 @@ interface Props {
 }
 
 const { features, lang } = Astro.props;
-const { t } = createTranslations(lang as SupportedLocale);
+const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 if (features.length === 0) return;
+
+/** More features than this collapse into a summary plus the full-list sheet. */
+const SUMMARY_COUNT = 6;
 
 /**
  * Translate feature label via i18n by slug, falling back to humanized slug.
@@ -54,43 +66,81 @@ const sections: readonly { readonly key: string; readonly label: string | null; 
   featureGroups === null
     ? [{ key: 'all', label: null, items: features }]
     : featureGroups.map((group) => ({ key: group.key, label: group.label, items: group.items }));
+
+/** Pill props of one feature. hostReWriteName (host-customized label) wins over i18n. */
+function toPill(feature: AccommodationFeatureItem) {
+  return {
+    label: feature.hostReWriteName ?? translateFeature(feature.name),
+    Icon: getIcon(feature.icon),
+    comments: feature.comments ?? null
+  };
+}
+
+const hasOverflow = features.length > SUMMARY_COUNT;
+const title = t('accommodations.detail.features.title');
+const summaryPills = features.slice(0, SUMMARY_COUNT).map(toPill);
+const restPills = features.slice(SUMMARY_COUNT).map(toPill);
 ---
 
 <section class="features-section">
-  <h2 class="features-section__title">{t('accommodations.detail.features.title')}</h2>
+  <h2 class="features-section__title">{title}</h2>
 
-  {sections.map((section) => (
-    <div class="features-group">
-      {section.label && <h3 class="features-group__title">{section.label}</h3>}
-      <div class="features-grid">
-        {section.items.map((feature) => {
-          const Icon = getIcon(feature.icon);
-          // hostReWriteName is a host-customized label (takes priority over i18n).
-          // Fall back to i18n lookup by slug (SPEC-266: feature.name holds the slug).
-          const displayName = feature.hostReWriteName ?? translateFeature(feature.name);
-          return (
-            <div class="feature-item">
-              {Icon ? (
-                <Icon size="sm" weight="duotone" aria-hidden="true" />
-              ) : (
-                <span class="feature-item__dot" aria-hidden="true">&#8226;</span>
-              )}
-              <div class="feature-item__content">
-                <span class="feature-item__name">{displayName}</span>
-                {feature.comments && (
-                  <span class="feature-item__comments">{feature.comments}</span>
-                )}
+  {hasOverflow ? (
+    <>
+      <div class="features-list" data-features-summary>
+        {summaryPills.map((pill) => <ListingPill {...pill} />)}
+      </div>
+      <div class="features-list features-list--rest" data-features-rest>
+        {restPills.map((pill) => <ListingPill {...pill} />)}
+      </div>
+      <div class="features-section__more">
+        <ListingItemsSheet
+          client:idle
+          sheetId="features-sheet"
+          triggerLabel={tPlural('accommodations.detail.features.viewAll', features.length)}
+          title={title}
+          closeLabel={t('accommodations.detail.features.close')}
+        >
+          {sections.map((section) => (
+            <div class="features-group">
+              {section.label && <h3 class="features-group__title">{section.label}</h3>}
+              <div class="features-list">
+                {section.items.map((feature) => <ListingPill {...toPill(feature)} />)}
               </div>
             </div>
-          );
-        })}
+          ))}
+        </ListingItemsSheet>
       </div>
-    </div>
-  ))}
-
+    </>
+  ) : (
+    sections.map((section) => (
+      <div class="features-group">
+        {section.label && <h3 class="features-group__title">{section.label}</h3>}
+        <div class="features-list">
+          {section.items.map((feature) => <ListingPill {...toPill(feature)} />)}
+        </div>
+      </div>
+    ))
+  )}
 </section>
+<noscript>
+  <style is:inline>
+    [data-features-rest] { position: static !important; inline-size: auto !important; block-size: auto !important; clip-path: none !important; overflow: visible !important; white-space: normal !important; }
+    .features-section__more { display: none !important; }
+  </style>
+</noscript>
 
 <style>
+  .features-section { position: relative; }
+  /* Visually hidden, still in the DOM and in the accessibility tree (see @file). */
+  .features-list--rest {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .features-section__title {
     font-family: var(--font-heading);
     font-size: 1.5rem;
@@ -108,41 +158,13 @@ const sections: readonly { readonly key: string; readonly label: string | null; 
     color: var(--core-foreground);
     margin: 0 0 var(--space-2, 8px);
   }
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-3, 12px);
-  }
-  @media (min-width: 768px) {
-    .features-grid { grid-template-columns: repeat(3, 1fr); }
-  }
-  @media (min-width: 1024px) {
-    .features-grid { grid-template-columns: repeat(4, 1fr); }
-  }
-  .feature-item {
+  .features-list {
     display: flex;
-    align-items: flex-start;
+    flex-wrap: wrap;
     gap: var(--space-2, 8px);
   }
-  .feature-item__dot {
-    color: var(--brand-accent);
-    font-size: 1.2rem;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-  .feature-item__content {
+  .features-section__more {
     display: flex;
-    flex-direction: column;
-  }
-  .feature-item__name {
-    font-family: var(--font-sans);
-    font-size: 0.95rem;
-    color: var(--core-foreground);
-  }
-  .feature-item__comments {
-    font-family: var(--font-sans);
-    font-size: 0.8rem;
-    color: var(--core-muted-foreground);
-    margin-top: 2px;
+    margin-top: var(--space-4, 16px);
   }
 </style>

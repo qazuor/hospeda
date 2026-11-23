@@ -41,6 +41,7 @@ import {
     seedPurgedByInactivity,
     seedSurplusUnpublish
 } from '../../fixtures/listing-notices.ts';
+import { openPropertyCardConfirm } from '../../fixtures/property-card-actions.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -179,15 +180,15 @@ test.describe('Listing notices of V8a @verticals', () => {
         const card = await openPropertyCard({ page, sessionCookie: owner.sessionCookie, name });
 
         // Act
-        await card.getByRole('button', { name: 'Despublicar', exact: true }).click();
+        const confirm = await openPropertyCardConfirm({ page, card, action: 'Despublicar' });
 
         // Assert
-        await expect(card.getByTestId('unpublish-trial-note')).toHaveText(
+        await expect(confirm.getByTestId('unpublish-trial-note')).toHaveText(
             'La prueba gratis sigue corriendo: despublicar no detiene el reloj del trial.'
         );
         // This owner has no add-ons, so there is no recurring line; row 25 lives in listing-notices-recurring.spec.ts.
-        await expect(card.getByTestId('unpublish-recurring-note')).toHaveCount(0);
-        await card.getByRole('button', { name: 'Cancelar', exact: true }).click();
+        await expect(confirm.getByTestId('unpublish-recurring-note')).toHaveCount(0);
+        await confirm.getByRole('button', { name: 'Cancelar', exact: true }).click();
         expect(await readPublicationStatus({ listingId })).toBe('PUBLISHED');
     });
 

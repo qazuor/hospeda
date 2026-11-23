@@ -1,0 +1,90 @@
+---
+/**
+ * @file ClampedText.astro
+ * @description Clamps its slot to 4 lines on narrow screens and 8 on desktop, with a
+ * «Leer más» toggle (`aria-expanded`). The full text is ALWAYS in the DOM (SEO): the
+ * clamp is pure CSS and the toggle only flips a data attribute. The toggle stays
+ * hidden unless the text actually overflows, so short text shows no button. Without
+ * JavaScript the text is shown in full (see the `<noscript>` rule). Session-blind:
+ * no per-user state is read.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Page locale, used for the toggle labels. */
+    readonly lang: SupportedLocale;
+}
+
+const { lang } = Astro.props;
+const { t } = createTranslations(lang);
+---
+
+<div class="clamped-text" data-clamped-text>
+    <div class="clamped-text__body" data-clamped-body>
+        <slot />
+    </div>
+    <button
+        type="button"
+        class="clamped-text__toggle"
+        aria-expanded="false"
+        hidden
+        data-clamped-toggle
+        data-label-more={t('accommodations.detail.descriptionToggle.more')}
+        data-label-less={t('accommodations.detail.descriptionToggle.less')}
+    >
+        {t('accommodations.detail.descriptionToggle.more')}
+    </button>
+</div>
+
+<noscript>
+    <style is:inline>
+        .clamped-text__body {
+            -webkit-line-clamp: unset !important;
+            line-clamp: unset !important;
+            display: block !important;
+        }
+    </style>
+</noscript>
+
+<style>
+    .clamped-text {
+        --clamp-lines: 4;
+    }
+    @media (min-width: 768px) {
+        .clamped-text {
+            --clamp-lines: 8;
+        }
+    }
+    .clamped-text__body {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: var(--clamp-lines);
+        line-clamp: var(--clamp-lines);
+        overflow: hidden;
+    }
+    .clamped-text[data-expanded='true'] .clamped-text__body {
+        display: block;
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+        overflow: visible;
+    }
+    .clamped-text__toggle {
+        margin-top: var(--space-2, 8px);
+        padding: 0;
+        background: none;
+        border: 0;
+        font: inherit;
+        font-weight: 600;
+        color: var(--brand-primary);
+        text-decoration: underline;
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    import { initClampedText } from '@/lib/clamped-text';
+
+    initClampedText({ root: document });
+    document.addEventListener('astro:page-load', () => initClampedText({ root: document }));
+</script>

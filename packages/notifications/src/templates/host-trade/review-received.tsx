@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -57,22 +56,20 @@ export function ReviewReceived({
                 <strong>{overallRating} de 5</strong>.
             </Text>
 
-            <Section style={styles.benefitBox}>
+            <Callout tone="info">
                 <Text style={styles.benefitText}>
                     {respectedBenefit
                         ? 'Confirmó que respetaste el beneficio acordado.'
                         : 'Marcó que no se respetó el beneficio acordado.'}
                 </Text>
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Podés leerla completa y responderla desde tu panel. Tu respuesta pasa por una
                 revisión rápida antes de publicarse.
             </Text>
 
-            <Section style={styles.actions}>
-                <Button href={actionUrl}>Ver la valoración</Button>
-            </Section>
+            <Button href={actionUrl}>Ver la valoración</Button>
         </EmailLayout>
     );
 }
@@ -90,20 +87,9 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    benefitBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #94a3b8',
-        padding: '16px 24px',
-        margin: '0 0 24px'
-    },
     benefitText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'
-    },
-    actions: {
-        margin: '0 0 24px'
     }
 };

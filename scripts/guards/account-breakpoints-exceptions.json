@@ -1,41 +1,8 @@
 {
-    "apps/web/src/components/account/AlertsList.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/DiscoveryDoorHub.astro": {
-        "media": 1
-    },
-    "apps/web/src/components/account/ExclusiveDealsList.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/HostTradeEditForm.module.css": {
         "media": 1
     },
-    "apps/web/src/components/account/PartnerEditForm.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/ProfileCompletion.module.css": {
-        "media": 3
-    },
-    "apps/web/src/components/account/RecommendationsFeed.module.css": {
-        "media": 2
-    },
-    "apps/web/src/components/account/SearchHistoryList.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/SetPassword.module.css": {
-        "media": 1
-    },
     "apps/web/src/components/account/WhatsNewModal.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/editor/content-editor-layout.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/host/PromotionForm.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/host/PropertyCard.astro": {
         "media": 1
     },
     "apps/web/src/components/host/editor/CalendarSyncPanel.module.css": {
@@ -44,25 +11,10 @@
     "apps/web/src/components/host/editor/amenity-catalog/AmenityDetailsDialog.module.css": {
         "media": 1
     },
-    "apps/web/src/components/host/host-trades/TradesDirectory.module.css": {
-        "media": 2
-    },
     "apps/web/src/components/newsletter/WhatsAppCTA.module.css": {
         "media": 1
     },
     "apps/web/src/layouts/AccountLayout.astro": {
         "media": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro": {
-        "media": 1
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro": {
-        "media": 2
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
-        "media": 4
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/publicaciones/index.astro": {
-        "media": 2
     }
 }

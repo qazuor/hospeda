@@ -152,6 +152,77 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4713
+    {
+        id: '2026-11-23-faster-mobile-home',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La página de inicio carga más rápido en el celular',
+            en: 'The home page loads faster on mobile',
+            pt: 'A página inicial carrega mais rápido no celular'
+        },
+        body: {
+            es: 'La portada muestra su contenido antes y la imagen principal aparece en menos de la mitad del tiempo. Además, mejoramos el contraste y las etiquetas de varios botones para que el sitio sea más fácil de usar con lectores de pantalla.',
+            en: 'The home page shows its content sooner and the main image appears in less than half the time. We also improved the contrast and labels of several buttons so the site is easier to use with screen readers.',
+            pt: 'A página inicial mostra seu conteúdo antes e a imagem principal aparece em menos da metade do tempo. Também melhoramos o contraste e os rótulos de vários botões para que o site seja mais fácil de usar com leitores de tela.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4708
+    {
+        id: '2026-11-23-addon-analytics-events',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Las métricas ahora cuentan los complementos',
+            en: 'Analytics now track add-ons',
+            pt: 'As métricas agora contam os complementos'
+        },
+        body: {
+            es: 'Las compras, cobros, rechazos y bajas de complementos ya se registran en las métricas de la plataforma como eventos propios, separados de los de la suscripción principal.',
+            en: "Add-on purchases, charges, declines and cancellations are now recorded in platform analytics as their own events, kept apart from the main subscription's.",
+            pt: 'Compras, cobranças, recusas e cancelamentos de complementos agora são registrados nas métricas da plataforma como eventos próprios, separados dos da assinatura principal.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4696
+    {
+        id: '2026-11-23-admin-late-manual-payment-preview',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Pago manual tardío: antes de registrarlo ves qué devuelve',
+            en: 'Late manual payment: see what it brings back before you record it',
+            pt: 'Pagamento manual atrasado: veja o que ele devolve antes de registrar'
+        },
+        body: {
+            es: 'En el detalle de una suscripción suspendida, la sección **Cuotas declaradas impagas** te deja registrar una transferencia que llegó tarde. Antes de confirmar te muestra qué período paga, qué vuelve a publicarse y qué no.',
+            en: "On a suspended subscription's detail, the **Unpaid installments** section lets you record a transfer that arrived late. Before you confirm, it shows which period it pays, what comes back online and what does not.",
+            pt: 'No detalhe de uma assinatura suspensa, a seção **Parcelas declaradas não pagas** permite registrar uma transferência que chegou atrasada. Antes de confirmar, mostra qual período ela paga, o que volta a ser publicado e o que não.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4693
+    {
+        id: '2026-11-22-admin-stuck-refunds-list',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Las devoluciones trabadas aparecen en una lista',
+            en: 'Stuck refunds now show up in a list',
+            pt: 'Os reembolsos travados agora aparecem em uma lista'
+        },
+        body: {
+            es: 'En **Facturación › Conciliación › Devoluciones propuestas** ahora ves las devoluciones confirmadas que quedaron esperando a Mercado Pago, cada una con la acción sugerida. Un clic la deja elegida en el formulario que corresponde: ya no hace falta pegar su ID.',
+            en: 'Under **Billing › Reconciliation › Proposed refunds** you now see confirmed refunds still waiting on Mercado Pago, each with its suggested action. One click picks it in the matching form, so you no longer paste its ID.',
+            pt: 'Em **Faturamento › Conciliação › Reembolsos propostos** agora você vê os reembolsos confirmados que ficaram esperando o Mercado Pago, cada um com a ação sugerida. Um clique o deixa escolhido no formulário certo: não é mais preciso colar o ID.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4684
     {
         id: '2026-11-22-refunds-runbook-points-to-remainder-settlement',

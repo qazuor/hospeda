@@ -44,6 +44,11 @@ import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { createSystemActor } from '../../utils/system-actor.js';
+import {
+    buildCampaignTestSendAttribution,
+    type CampaignEmailAttribution,
+    resolveCampaignEmailAttribution
+} from './newsletter-attribution.js';
 import { checkCanSendCampaign } from './newsletter-campaign.permissions.js';
 import type { INewsletterDeliveryService } from './newsletter-campaign.service.js';
 import { generateUnsubscribeToken } from './newsletter-token.helpers.js';
@@ -147,7 +152,24 @@ export type RenderCampaignEmailFn = (input: {
     bodyHtml: string;
     unsubscribeUrl: string;
     isTest?: boolean;
+    /**
+     * Campaign attribution (HOS-2359): UTMs on own-origin links and, when
+     * `pixelSlug` is set, the Umami open pixel. The production renderer applies it
+     * with `applyEmailAttribution` from `@repo/email`.
+     */
+    attribution: CampaignEmailAttribution;
 }) => string | Promise<string>;
+
+/**
+ * Injected function that applies campaign attribution to an HTML fragment
+ * (HOS-2359). Used for the batch's top-level `htmlContent`, so a fallback body is
+ * attributed like every per-recipient body. In production it is
+ * `applyEmailAttribution` from `@repo/email`; the default leaves the HTML as is.
+ */
+export type AttributeCampaignHtmlFn = (input: {
+    html: string;
+    attribution: CampaignEmailAttribution;
+}) => string;
 
 /**
  * Opaque react element type — avoids importing `react` into `@repo/service-core`.
@@ -183,6 +205,8 @@ export interface SingleEmailTransport {
         subject: string;
         react: OpaqueReactElement;
         from?: string;
+        /** Campaign attribution (HOS-2359). A test send never carries a pixel. */
+        attribution: CampaignEmailAttribution;
     }): Promise<{ messageId: string }>;
 }
 
@@ -234,6 +258,12 @@ export interface NewsletterDeliveryServiceOptions {
      * In tests: `vi.fn()`.
      */
     buildCampaignReactElementFn?: BuildCampaignReactElementFn;
+    /**
+     * Applies campaign attribution to the batch's top-level HTML (HOS-2359).
+     * In production: `({ html, attribution }) => applyEmailAttribution({ html, attribution }).html`.
+     * Defaults to identity.
+     */
+    attributeCampaignHtmlFn?: AttributeCampaignHtmlFn;
     /**
      * Brevo API key for the batch helper.
      * Falls back to `process.env.HOSPEDA_EMAIL_API_KEY`.
@@ -321,6 +351,7 @@ const SYSTEM_ACTOR: Actor = createSystemActor({
 const DEFAULT_RENDER_TIPTAP: RenderTiptapEmailFn = () => '';
 const DEFAULT_RENDER_CAMPAIGN: RenderCampaignEmailFn = ({ subject }) =>
     `<html><body><p>${subject}</p></body></html>`;
+const DEFAULT_ATTRIBUTE_CAMPAIGN_HTML: AttributeCampaignHtmlFn = ({ html }) => html;
 
 // ---------------------------------------------------------------------------
 // Service
@@ -378,6 +409,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
     private readonly renderTiptapEmailFn: RenderTiptapEmailFn;
     private readonly renderCampaignEmailFn: RenderCampaignEmailFn;
     private readonly buildCampaignReactElementFn: BuildCampaignReactElementFn | undefined;
+    private readonly attributeCampaignHtmlFn: AttributeCampaignHtmlFn;
     private readonly apiKey: string;
     private readonly senderEmail: string;
     private readonly senderName: string;
@@ -392,6 +424,8 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
         this.renderTiptapEmailFn = options.renderTiptapEmailFn ?? DEFAULT_RENDER_TIPTAP;
         this.renderCampaignEmailFn = options.renderCampaignEmailFn ?? DEFAULT_RENDER_CAMPAIGN;
         this.buildCampaignReactElementFn = options.buildCampaignReactElementFn;
+        this.attributeCampaignHtmlFn =
+            options.attributeCampaignHtmlFn ?? DEFAULT_ATTRIBUTE_CAMPAIGN_HTML;
         this.apiKey = options.apiKey ?? process.env.HOSPEDA_EMAIL_API_KEY ?? '';
         this.senderEmail =
             options.senderEmail ?? process.env.HOSPEDA_EMAIL_FROM_EMAIL ?? 'noreply@hospeda.com.ar';
@@ -612,6 +646,9 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                 // Step 4: Render campaign bodyJson to email HTML once per batch.
                 // ----------------------------------------------------------------
                 const bodyHtml = this.renderTiptapEmailFn({ content: campaign.bodyJson });
+                // HOS-2359: one attribution for the whole campaign (slugs stored at
+                // dispatch; a pre-HOS-2359 campaign recomputes the slug, no pixel).
+                const attribution = resolveCampaignEmailAttribution({ campaign });
 
                 // ----------------------------------------------------------------
                 // Step 5: Build per-recipient HTML with individual unsubscribe URL.
@@ -641,7 +678,8 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                         const recipientHtml = await this.renderCampaignEmailFn({
                             subject: campaign.subject,
                             bodyHtml,
-                            unsubscribeUrl
+                            unsubscribeUrl,
+                            attribution
                         });
 
                         return {
@@ -669,7 +707,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                 const batchPayload: DeliveryBatchPayload = {
                     sender: { email: this.senderEmail, name: this.senderName },
                     subject: campaign.subject,
-                    htmlContent: bodyHtml,
+                    htmlContent: this.attributeCampaignHtmlFn({ html: bodyHtml, attribution }),
                     trackOpens: true,
                     trackClicks: true,
                     tags: [`campaign:${validated.campaignId}`],
@@ -967,7 +1005,9 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                 await this.emailTransport.send({
                     to: validated.toEmail,
                     subject: `[PRUEBA] ${campaign.subject}`,
-                    react: emailElement
+                    react: emailElement,
+                    // HOS-2359: campaign UTMs, never a pixel (a test send is not an open).
+                    attribution: buildCampaignTestSendAttribution({ campaign })
                 });
 
                 return { sentTo: validated.toEmail };

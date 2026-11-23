@@ -20,9 +20,9 @@ vi.mock('../../../src/components/account/ProfileCompletion.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
-    return { createTranslations: () => ({ t }) };
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    return { createTranslations: () => ({ t: tFromCatalog }), createT: () => tFromCatalog };
 });
 
 vi.mock('../../../src/lib/auth-client', () => ({
@@ -31,7 +31,7 @@ vi.mock('../../../src/lib/auth-client', () => ({
 
 // Mirrors CompleteProfileBodySchema's shape/bounds (HOS-190 slice 3) without
 // pulling in the full `@repo/schemas` package for a component test.
-vi.mock('@repo/schemas', () => {
+vi.mock('@repo/schemas', async (importOriginal) => {
     const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
     const CompleteProfileBodySchema = z
         .object({
@@ -70,7 +70,10 @@ vi.mock('@repo/schemas', () => {
             acceptedTerms: z.literal(true)
         })
         .strict();
-    return { CompleteProfileBodySchema };
+    return {
+        ...(await importOriginal<typeof import('@repo/schemas')>()),
+        CompleteProfileBodySchema
+    };
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -487,5 +490,40 @@ describe('ProfileCompletion — HOS-1966: an untouched theme select never change
         const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
         expect(themeSelect.value).toBe('dark');
         expect(localStorage.getItem('theme')).toBe('dark');
+    });
+});
+
+describe('ProfileCompletion layout on the kit (HOS-2501)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('renders one h1 (the kit PageHeader) and one flat Section per group', () => {
+        renderForm();
+
+        expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+        const sections = document.querySelectorAll('[data-kit-section]');
+        expect(sections).toHaveLength(4);
+    });
+
+    it('follows the form progress in the stepper: names open the next step, terms close it', () => {
+        renderForm();
+        const steps = () =>
+            Array.from(document.querySelectorAll('li[data-state]')).map((li) =>
+                li.getAttribute('data-state')
+            );
+
+        expect(steps()).toEqual(['current', 'upcoming', 'upcoming']);
+
+        fireEvent.change(document.getElementById('pc-firstName') as HTMLInputElement, {
+            target: { value: 'Maria' }
+        });
+        fireEvent.change(document.getElementById('pc-lastName') as HTMLInputElement, {
+            target: { value: 'Fernanda' }
+        });
+        expect(steps()).toEqual(['done', 'done', 'current']);
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /acepto los/i }));
+        expect(steps()).toEqual(['done', 'done', 'done']);
     });
 });

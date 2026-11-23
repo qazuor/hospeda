@@ -31,7 +31,12 @@
  * Basic-plan owners. See the HOS-817 PR body.
  */
 
+import ClampedText from '@/components/listing/ClampedText.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+
 interface Props {
+    /** Page locale (toggle labels of the clamped body). */
+    readonly lang: SupportedLocale;
     readonly summary: string;
     /**
      * Sanitized HTML for the description body, produced by `renderContent` in
@@ -40,7 +45,7 @@ interface Props {
     readonly descriptionHtml: string;
 }
 
-const { summary, descriptionHtml } = Astro.props;
+const { lang, summary, descriptionHtml } = Astro.props;
 ---
 
 {summary && (
@@ -50,7 +55,9 @@ const { summary, descriptionHtml } = Astro.props;
 )}
 
 {descriptionHtml && (
-  <div class="description__body description__body--rich" set:html={descriptionHtml} />
+  <ClampedText lang={lang}>
+    <div class="description__body description__body--rich" set:html={descriptionHtml} />
+  </ClampedText>
 )}
 
 <style>

@@ -18,17 +18,18 @@
  * module doc for the full rationale (`organizerId` is a required UUID with no
  * other way to satisfy it from `/mi-cuenta`).
  *
+ * HOS-2505: kit `PageHeader` (back link + page «?») and the form inside a
+ * kit `Section`; without the role, a `LockedState` (`kind: 'permission'`).
+ *
  * @route     /[lang]/mi-cuenta/eventos/nuevo/
  * @rendering SSR (prerender = false — authenticated, editor-only)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { LockedState, PageHeader, Section } from '@/components/account/ui';
 import { EventCreateForm } from '@/components/event/editor/EventCreateForm.client';
 import { eventOrganizersApi } from '@/lib/api/endpoints';
-import { LockIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
@@ -73,34 +74,42 @@ const subtitle = t(
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="eventos">
-    <AccountPageHeader title={title} description={subtitle} />
+    <PageHeader
+        title={title}
+        description={subtitle}
+        locale={locale}
+        back={{
+            label: t('account.myContent.events.editor.backToList', 'Volver a mis eventos'),
+            href: buildUrl({ locale, path: 'mi-cuenta/eventos' })
+        }}
+    >
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
-    <AccountSectionCard>
-        {canCreateEvents ? (
+    {canCreateEvents ? (
+        <Section title={title} helpId="section:content.event-create">
             <EventCreateForm
                 client:load
                 locale={locale}
                 organizers={organizers}
                 organizersLoadFailed={organizersLoadFailed}
             />
-        ) : (
-            <AccountEmptyState
-                title={t(
+        </Section>
+    ) : (
+        <LockedState
+            locale={locale}
+            reason={{
+                kind: 'permission',
+                feature: t(
                     'account.myContent.events.create.noAccess.title',
                     'Crear eventos es una función de los editores'
-                )}
-                description={t(
+                ),
+                description: t(
                     'account.myContent.events.create.noAccess.description',
                     'Tu cuenta todavía no tiene permiso para crear eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.'
-                )}
-                ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
-                ctaLabel={t(
-                    'account.myContent.events.create.noAccess.cta',
-                    'Quiero ser editor'
-                )}
-            >
-                <LockIcon slot="icon" size={28} aria-hidden={true} />
-            </AccountEmptyState>
-        )}
-    </AccountSectionCard>
+                ),
+                helpHref: buildUrl({ locale, path: 'colaborar/editores' })
+            }}
+        />
+    )}
 </AccountLayout>

@@ -114,7 +114,9 @@ describe('TradeCard — stats line', () => {
         );
 
         expect(screen.getByText('4,6')).toBeInTheDocument();
-        expect(screen.getByText('★')).toBeInTheDocument();
+        // The kit RatingStars (HOS-2502): one image, no bare glyph
+        expect(screen.getByRole('img', { name: '4,6 de 5 estrellas' })).toBeInTheDocument();
+        expect(screen.queryByText('★')).not.toBeInTheDocument();
         expect(screen.getByText('3 valoraciones')).toBeInTheDocument();
     });
 
@@ -139,7 +141,7 @@ describe('TradeCard — stats line', () => {
             />
         );
 
-        expect(screen.getByText('4,6 de 5 estrellas')).toBeInTheDocument();
+        expect(screen.getByRole('img', { name: '4,6 de 5 estrellas' })).toBeInTheDocument();
     });
 
     it('should print both halves of the anti-collusion pair (AC-26)', () => {

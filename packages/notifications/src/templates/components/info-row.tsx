@@ -41,7 +41,7 @@ const styles = {
         verticalAlign: 'top' as const
     },
     label: {
-        color: '#64748b',
+        color: '#475569',
         fontSize: '14px',
         lineHeight: '20px',
         margin: '0'

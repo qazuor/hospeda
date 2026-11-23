@@ -66,14 +66,24 @@ Full reference: [`packages/email/CLAUDE.md`](../../../email/CLAUDE.md).
 
 Use `footerLink="preferences"` only when the recipient has an account AND the web preferences page actually controls that email. No template qualifies today: the page writes `settings.notifications.allowEmails`, which `PreferenceService` does not read, so REMINDER opt-outs are not driven by it (HOS-2519 OQ-2). The 13 REMINDER templates (trial ending, trial win-back, renewal reminder) and the anonymous-guest conversation token mails therefore set `footerLink="none"` explicitly. Never ship a `{{placeholder}}` href: nothing substitutes it.
 
-### Button (CTA)
+### Button (CTA) and Callout
+
+`Button` and `Callout` live in `@repo/email` (HOS-2565). Never hand-roll a callout box
+(`borderLeft`, hex `backgroundColor`) or import `Button` from `@react-email/components`: the
+`email-components.guard.test.ts` guard fails the build.
 
 ```tsx
-import { EmailButton } from '../components/button';
+import { Button, Callout } from '@repo/email';
 
-<EmailButton href="https://hospeda.com.ar/upgrade">
-  Upgrade Now
-</EmailButton>
+// Content width on desktop, full width below 480px. It wraps itself in a centered block
+// with vertical spacing, so do not add your own container.
+<Button href="https://hospeda.com.ar/upgrade">Ver planes</Button>
+<Button href={url} variant="secondary">Ver detalle</Button>
+
+// tone: 'info' | 'success' | 'warning' | 'danger'. Tinted background plus a 4px left border.
+<Callout tone="warning" title="Tu pago no se pudo procesar">
+  Actualizá tu medio de pago antes del 12/12.
+</Callout>
 ```
 
 ### InfoRow
@@ -115,9 +125,8 @@ Fallback subject: `Notificacion de Hospeda`
 ```tsx
 // src/templates/feature/feature-announcement.tsx
 import { Text, Link } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import { EmailHeading } from '../components/heading';
-import { EmailButton } from '../components/button';
 
 export interface FeatureAnnouncementProps {
   recipientName: string;
@@ -140,7 +149,7 @@ export function FeatureAnnouncement({
         Tenemos el placer de anunciarte: <strong>{featureName}</strong>
       </Text>
       <Text>{description}</Text>
-      <EmailButton href={learnMoreUrl}>Mas informacion</EmailButton>
+      <Button href={learnMoreUrl}>Mas informacion</Button>
     </EmailLayout>
   );
 }

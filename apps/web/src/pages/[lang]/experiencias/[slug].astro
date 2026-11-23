@@ -38,6 +38,13 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
+import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
+import { ListingChannelsPanel } from '@/components/listing/contact/ListingChannelsPanel.client';
+import {
+    buildExperienceChannels,
+    buildExperienceContactPrice
+} from '@/lib/listing-contact/listing-channels';
+import { EXPERIENCE_CONTACT_ANCHOR_ID } from '@/lib/experience-contact';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { DetailFaq } from '@/data/types';
 
@@ -205,6 +212,20 @@ const seoDescription =
  */
 const hasContactBlock = hasPublicContactChannel({ contactInfo: experience.contactInfo });
 
+// --- Mobile contact bar + panel (HOS-2532) ---
+// Channels only: no form and no WhatsApp (HOS-363). The bar and the panel exist
+// exactly when `ExperienceContactBlock` does, so the bar's no-JS fallback anchor
+// always has a target and no bar promises a channel that is not there.
+const contactChannels = hasContactBlock
+    ? buildExperienceChannels({ contactInfo: experience.contactInfo })
+    : [];
+const contactPrice = buildExperienceContactPrice({
+    priceFrom: experience.priceFrom,
+    priceUnit: experience.priceUnit,
+    isPriceOnRequest: experience.isPriceOnRequest
+});
+const panelId = 'listing-contact-panel';
+
 // --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
@@ -238,17 +259,18 @@ const breadcrumbItems = [
         image={experience.featuredImage.url}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
-    <Breadcrumbs
-        slot="breadcrumbs"
-        locale={locale}
-        items={[
-            {
-                label: t('experience.listing.title', 'Experiencias'),
-                path: 'experiencias/'
-            },
-            { label: experience.name }
-        ]}
-    />
+    <div slot="breadcrumbs" class="exp-detail-breadcrumbs">
+        <Breadcrumbs
+            locale={locale}
+            items={[
+                {
+                    label: t('experience.listing.title', 'Experiencias'),
+                    path: 'experiencias/'
+                },
+                { label: experience.name }
+            ]}
+        />
+    </div>
 
     <!-- Hero (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
@@ -256,6 +278,7 @@ const breadcrumbItems = [
             experience={experience}
             locale={locale}
             bookmarkCount={bookmarkCount}
+            hasMobileGalleryControls={galleryImages.length > 0}
         />
     </Fragment>
 
@@ -268,6 +291,15 @@ const breadcrumbItems = [
                     images={galleryImages}
                     locale={locale}
                     variant="detail"
+                    mobile={{
+                        backHref: buildUrl({ locale, path: 'experiencias' }),
+                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: experience.name, campaign: 'experience' },
+                        favorite: {
+                            entityId: experience.id,
+                            entityType: 'EXPERIENCE',
+                            variant: 'standalone'
+                        }
+                    }}
                 />
             </div>
         )}
@@ -379,6 +411,30 @@ const breadcrumbItems = [
         locale={locale}
         apiUrl={getApiUrl()}
     />
+    {contactChannels.length > 0 && (
+        <>
+            <ListingContactBar
+                client:idle
+                vertical="experience"
+                listingId={experience.id}
+                locale={locale}
+                price={contactPrice}
+                hasWhatsapp={false}
+                primaryLabelKey="accommodations.detail.listingContact.bar.contact"
+                panelId={panelId}
+                fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
+            />
+            <ListingChannelsPanel
+                client:idle
+                panelId={panelId}
+                listingId={experience.id}
+                vertical="experience"
+                locale={locale}
+                channels={contactChannels}
+                price={contactPrice}
+            />
+        </>
+    )}
 </DetailLayout>
 
 <script>
@@ -387,6 +443,25 @@ const breadcrumbItems = [
 </script>
 
 <style>
+    @media (max-width: 767px) {
+        :global(.wave-header__breadcrumbs:has(.exp-detail-breadcrumbs)) {
+            display: none;
+        }
+
+        /* The hidden breadcrumbs carried the band's top padding, so without this
+           the badges sit flush under the navbar. Expanded state only: the compact
+           state sets its own padding-top. */
+        :global(.wave-header:not(.wave-header--compact) .wave-header__bar:has(.exp-detail-breadcrumbs) .wave-header__content) {
+            padding-top: var(--space-6, 1.5rem);
+        }
+
+        /* The full-bleed mobile gallery meets the blue header directly: drop the
+           page-background strip DetailLayout leaves above the body. */
+        :global(.wave-header .detail-page:has(.exp-detail)) {
+            padding-top: 0;
+        }
+    }
+
     .exp-detail {
         max-width: var(--container-max, 1350px);
         margin: 0 auto;
@@ -399,5 +474,20 @@ const breadcrumbItems = [
     .exp-detail__gallery {
         border-radius: var(--radius-card, 24px);
         overflow: hidden;
+    }
+
+    /* The mobile gallery track runs edge to edge (HOS-2532): the layout container
+       already pads the page, so the body drops its own inset and the wrapper stops
+       clipping the track's negative margin. */
+    @media (max-width: 767px) {
+        .exp-detail {
+            padding-inline: 0;
+            padding-block-start: 0;
+        }
+
+        .exp-detail__gallery {
+            border-radius: 0;
+            overflow: visible;
+        }
     }
 </style>

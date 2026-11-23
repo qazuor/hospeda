@@ -1,13 +1,18 @@
 ---
 /**
  * @file AmenitiesGrid.astro
- * @description Amenities grid with icons, expandable overflow, and i18n names.
- * Renders all items in a single grid. The first 8 are visible by default;
- * the rest are hidden via CSS until the user clicks "Ver todas las N", which
- * lives ALWAYS at the bottom of the section (so it never ends up between
- * items after expansion). A tiny inline script toggles `data-expanded` on
- * the list (a div, where `aria-expanded` is not an allowed ARIA attribute) to
- * flip the CSS state, while `aria-expanded` lives on the controlling button.
+ * @description Summarized amenities (HOS-2528): pills with icon, 6 visible on mobile
+ * and 8 on desktop. «Ver las N comodidades» opens a `sheet` dialog (island
+ * `ListingItemsSheet`) with the complete list; there is no inline expand any more.
+ * Pills 7-8 are in the DOM but hidden below 768px by CSS, so the split between the
+ * two breakpoints costs no JavaScript.
+ *
+ * SEO / no-JS: the sheet island renders nothing while closed, so its children never
+ * reach the HTML. Every amenity past the visible pills therefore also renders here, in
+ * SSR, as a visually-hidden list (`data-amenities-rest`): crawlers and screen readers
+ * get the whole catalog and, read in order, it simply continues the visible pills.
+ * Without JavaScript (`<noscript>`) the list becomes visible and the dead sheet button
+ * is hidden.
  *
  * HOS-2058: an amenity whose relation DECLARES scope and/or availability shows
  * a badge per declared value (`resolveAmenityAttributeBadges`); an undeclared
@@ -17,6 +22,8 @@ import type { AccommodationAmenityItem } from '@/data/types';
 import { resolveAmenityAttributeBadges } from '@/lib/catalog-attribute-badges';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import ListingPill from '@/components/listing/ListingPill.astro';
+import { ListingItemsSheet } from '@/components/listing/ListingItemsSheet.client';
 import { resolveIcon } from '@repo/icons/resolver';
 import { isMissingTranslation } from '@repo/i18n/web';
 
@@ -30,7 +37,9 @@ const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 if (amenities.length === 0) return;
 
-const VISIBLE_COUNT = 8;
+/** Pills shown on mobile; desktop shows {@link DESKTOP_COUNT}. */
+const MOBILE_COUNT = 6;
+const DESKTOP_COUNT = 8;
 
 /** Translate amenity name via i18n, falling back to humanized raw name. */
 function translateAmenity(name: string): string {
@@ -44,91 +53,69 @@ function translateAmenity(name: string): string {
   return translated;
 }
 
-/** Resolve icon component from icon name. Returns null if not found. */
-function getIcon(iconName: string | null) {
-  if (!iconName) return null;
-  return resolveIcon({ iconName });
-}
-
-const hasOverflow = amenities.length > VISIBLE_COUNT;
 const additionalCostLabel = t('accommodations.detail.amenitiesDetail.additionalCost');
-const viewAllLabel = tPlural('accommodations.detail.amenitiesDetail.viewAll', amenities.length);
-const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver menos');
+const entries = amenities.map((amenity) => ({
+  label: translateAmenity(amenity.name),
+  Icon: amenity.icon ? resolveIcon({ iconName: amenity.icon }) : null,
+  costLabel: amenity.additionalCost != null ? additionalCostLabel : null,
+  badges: resolveAmenityAttributeBadges({
+    scope: amenity.scope,
+    availability: amenity.availability,
+    extraCharge: amenity.isOptional,
+    t
+  })
+}));
+
+const hasOverflow = entries.length > MOBILE_COUNT;
+const restEntries = entries.slice(DESKTOP_COUNT);
+const viewAllLabel = tPlural('accommodations.detail.amenitiesDetail.viewAll', entries.length);
+const title = t('accommodations.detail.amenitiesDetail.title');
 ---
 
 <section class="amenities-section">
-  <h2 class="amenities-section__title">{t('accommodations.detail.amenitiesDetail.title')}</h2>
+  <h2 class="amenities-section__title">{title}</h2>
 
-  <div
-    class="amenities-grid"
-    id="amenities-list"
-    data-amenities-list
-    data-expanded="false"
-  >
-    {amenities.map((amenity) => {
-      const Icon = getIcon(amenity.icon);
-      const label = translateAmenity(amenity.name);
-      const badges = resolveAmenityAttributeBadges({
-        scope: amenity.scope,
-        availability: amenity.availability,
-        extraCharge: amenity.isOptional,
-        t
-      });
-      return (
-        <div class="amenity-item">
-          {Icon ? (
-            <Icon size="sm" weight="duotone" aria-hidden="true" />
-          ) : (
-            <span class="amenity-item__dot" aria-hidden="true">&#8226;</span>
-          )}
-          <span class="amenity-item__name">{label}</span>
-          {amenity.additionalCost != null && (
-            <span class="amenity-item__cost">{additionalCostLabel}</span>
-          )}
-          {badges.map((badge) => (
-            <span class="amenity-item__badge">{badge}</span>
-          ))}
-        </div>
-      );
-    })}
+  <div class="amenities-list" data-amenities-list>
+    {entries.slice(0, DESKTOP_COUNT).map((entry, index) => (
+      <div class:list={['amenities-list__item', { 'amenities-list__item--desktop-only': index >= MOBILE_COUNT }]}>
+        <ListingPill {...entry} />
+      </div>
+    ))}
   </div>
 
+  {restEntries.length > 0 && (
+    <div class="amenities-list amenities-list--rest" data-amenities-rest>
+      {restEntries.map((entry) => <ListingPill {...entry} />)}
+    </div>
+  )}
+
   {hasOverflow && (
-    <button
-      type="button"
-      class="amenities-section__toggle"
-      data-amenities-toggle
-      data-label-more={viewAllLabel}
-      data-label-less={viewLessLabel}
-      aria-controls="amenities-list"
-      aria-expanded="false"
-    >
-      {viewAllLabel}
-    </button>
+    <div class:list={['amenities-section__more', { 'amenities-section__more--mobile-only': entries.length <= DESKTOP_COUNT }]}>
+      <ListingItemsSheet
+        client:idle
+        sheetId="amenities-sheet"
+        triggerLabel={viewAllLabel}
+        title={title}
+        closeLabel={t('accommodations.detail.amenitiesDetail.close')}
+      >
+        <div class="amenities-list amenities-list--full" data-amenities-full>
+          {entries.map((entry) => <ListingPill {...entry} />)}
+        </div>
+      </ListingItemsSheet>
+    </div>
   )}
 </section>
-
-<script>
-  // Toggle expanded state on the amenities list. The button lives outside the
-  // list (after it in DOM), so it always renders at the bottom — never in the
-  // middle, regardless of how many items are expanded.
-  document.querySelectorAll<HTMLButtonElement>('[data-amenities-toggle]').forEach((btn) => {
-    const list = btn
-      .closest('.amenities-section')
-      ?.querySelector<HTMLElement>('[data-amenities-list]');
-    if (!list) return;
-    btn.addEventListener('click', () => {
-      const isOpen = list.getAttribute('data-expanded') === 'true';
-      const next = isOpen ? 'false' : 'true';
-      list.setAttribute('data-expanded', next);
-      btn.setAttribute('aria-expanded', next);
-      btn.textContent = next === 'true' ? btn.dataset.labelLess ?? '' : btn.dataset.labelMore ?? '';
-    });
-  });
-</script>
+<noscript>
+  <style is:inline>
+    [data-amenities-rest] { position: static !important; inline-size: auto !important; block-size: auto !important; clip-path: none !important; overflow: visible !important; white-space: normal !important; }
+    .amenities-section__more { display: none !important; }
+    .amenities-list__item--desktop-only { display: contents !important; }
+  </style>
+</noscript>
 
 <style>
   .amenities-section {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--space-4, 16px);
@@ -140,66 +127,34 @@ const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver m
     color: var(--core-foreground);
     margin: 0;
   }
-  .amenities-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-3, 12px);
+  .amenities-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
   }
-  @media (min-width: 768px) {
-    .amenities-grid { grid-template-columns: repeat(3, 1fr); }
+  .amenities-list__item {
+    display: contents;
   }
-  @media (min-width: 1024px) {
-    .amenities-grid { grid-template-columns: repeat(4, 1fr); }
-  }
-  /* Collapsed: hide everything past the first 8 items.
-     Keep this :nth-child threshold in sync with VISIBLE_COUNT in the script. */
-  .amenities-grid[data-expanded="false"] > .amenity-item:nth-child(n+9) {
+  /* Pills 7 and 8 are desktop-only. */
+  .amenities-list__item--desktop-only {
     display: none;
   }
-  .amenity-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-    font-family: var(--font-sans);
-    font-size: 0.95rem;
-    color: var(--core-foreground);
+  /* Visually hidden, still in the DOM and in the accessibility tree (see @file). */
+  .amenities-list--rest {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
-  .amenity-item__dot {
-    color: var(--brand-accent);
-    font-size: 1.2rem;
-    flex-shrink: 0;
-  }
-  .amenity-item {
-    flex-wrap: wrap;
-  }
-  .amenity-item__badge {
-    font-size: 0.75rem;
-    line-height: 1.4;
-    padding: 0 var(--space-2, 8px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-pill);
-    color: var(--core-muted-foreground);
-  }
-  .amenity-item__cost {
-    font-size: 0.75rem;
-    color: var(--core-muted-foreground);
-    font-style: italic;
-  }
-  .amenities-section__toggle {
-    align-self: flex-start;
-    background: none;
-    border: none;
-    padding: 0;
-    font-family: var(--font-sans);
-    font-weight: 500;
-    font-size: 0.95rem;
-    color: var(--brand-primary);
-    cursor: pointer;
-  }
-  .amenities-section__toggle:hover { text-decoration: underline; }
-  .amenities-section__toggle:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
-    border-radius: 4px;
+  @media (min-width: 768px) {
+    .amenities-list__item--desktop-only {
+      display: contents;
+    }
+    /* With 8 items or fewer the desktop already shows everything. */
+    .amenities-section__more--mobile-only {
+      display: none;
+    }
   }
 </style>

@@ -90,7 +90,16 @@ describe('assistant history page (AC-C48)', () => {
     });
 
     it('is linked from the assistants page, and links back to it', () => {
-        expect(code(INDEX)).toContain("path: 'mi-cuenta/asistentes-ia/historial'");
+        // Both pages render the NavTabs component, which links the two (HOS-2502)
+        expect(code(INDEX)).toContain('<AiAssistantsTabs locale={locale} current="assistants" />');
+        expect(page).toContain('<AiAssistantsTabs locale={locale} current="history" />');
+        const tabs = readFileSync(
+            resolve(__dirname, '../../src/components/account/AiAssistantsTabs.tsx'),
+            'utf8'
+        );
+        expect(tabs).toContain("path: 'mi-cuenta/asistentes-ia/historial'");
+        expect(tabs).toContain("path: 'mi-cuenta/asistentes-ia'");
+        // The history page still passes the assistants URL to the empty state's connect link
         expect(page).toContain("path: 'mi-cuenta/asistentes-ia'");
     });
 });

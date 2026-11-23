@@ -81,27 +81,9 @@
     color: var(--core-muted-foreground);
 }
 
+/* HOS-2531: the link itself is a GradientButton; only its row placement lives here. */
 .summaryLink {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 4px);
     margin-left: auto;
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--brand-primary);
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.summaryLink:hover {
-    text-decoration: underline;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .summaryLink {
-        transition: none;
-    }
 }
 
 /* ── "También en:" pill row ──────────────────────────────────────────────── */
@@ -173,26 +155,4 @@
 .reviewsFooter {
     display: flex;
     justify-content: flex-end;
-}
-
-.seeAllLink {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1, 4px);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--brand-primary);
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.seeAllLink:hover {
-    text-decoration: underline;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .seeAllLink {
-        transition: none;
-    }
 }

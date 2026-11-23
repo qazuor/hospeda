@@ -1,7 +1,6 @@
 import { Hr, Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import type { AlertDigestPayload } from '../../types/alert.types.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { ALERT_DIGEST_SITE_BASE_URL } from './constants.js';
 import { PriceDropItem } from './PriceDropItem.js';
@@ -90,14 +89,12 @@ export function AlertDigestEmail({ priceDrop, promoOffers }: AlertDigestEmailPro
                 </Section>
             )}
 
-            <Section style={styles.buttonContainer}>
-                <Button
-                    href={`${ALERT_DIGEST_SITE_BASE_URL}/es/mi-cuenta/alertas`}
-                    variant="secondary"
-                >
-                    Administrar mis alertas
-                </Button>
-            </Section>
+            <Button
+                href={`${ALERT_DIGEST_SITE_BASE_URL}/es/mi-cuenta/alertas`}
+                variant="secondary"
+            >
+                Administrar mis alertas
+            </Button>
 
             <Text style={styles.footerNote}>
                 Recibís este resumen porque tenés alertas de precio activas en Hospeda.
@@ -126,10 +123,6 @@ const styles = {
     divider: {
         borderColor: '#e2e8f0',
         margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

@@ -1,0 +1,47 @@
+---
+/**
+ * @file go/[slug].astro
+ * @description Presentation short links (HOS-2359 §6.D.2, owner decision OD-5).
+ * `/go/aloj-wa/` 302s to `/es/presentacion/alojamientos/` with campaign UTMs, so a
+ * presentation sent by hand on WhatsApp, Facebook, X, Telegram or as a copied link
+ * shows up in Umami under its channel. The 30 slugs are code, not data:
+ * `lib/attribution/presentation-links.ts`.
+ *
+ * @route /go/{slug}/
+ * @rendering SSR (on-demand), never cached
+ *
+ * Modelled on `qr/[slug].astro`:
+ *
+ * - **Language-neutral.** `go` is two letters, so it needs its entry in
+ *   `LANGUAGE_NEUTRAL_PREFIXES` or the middleware would eat the segment and send
+ *   `/go/aloj-wa/` to `/es/aloj-wa/`, a 404.
+ * - **Never cached.** A cached redirect could not be evicted when a target
+ *   changes. `applyCacheHeaders` demotes the page, and the redirect itself is
+ *   `Cache-Control: no-store`.
+ * - **302, built by hand.** `Astro.redirect` would drop the headers written onto
+ *   `Astro.response.headers`; `buildPresentationShortLinkResponse` copies them.
+ * - **No API call, no session, no cookie.** The table is static; the page is
+ *   session-blind.
+ * - **Unknown slug:** a bare 404, which the middleware rewrites to the site 404.
+ *
+ * The canonical presentation pages are not touched: they never redirect and never
+ * carry UTMs (OD-5).
+ */
+
+import { buildPresentationShortLinkResponse } from '@/lib/attribution/presentation-links';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { CACHE_TAG_ALL } from '@repo/cache-tags';
+
+const slug = Astro.params.slug ?? '';
+
+// Never cacheable, so the tag list is inert (see `qr/[slug].astro`).
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: false,
+    cacheClass: 'detail',
+    tags: [CACHE_TAG_ALL]
+});
+
+return buildPresentationShortLinkResponse({ slug, baseHeaders: Astro.response.headers });
+---

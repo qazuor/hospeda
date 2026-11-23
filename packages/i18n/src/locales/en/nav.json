@@ -20,6 +20,7 @@
     "ownerCta": "List your property",
     "hostModeCta": "Host mode",
     "publishCta": "Publish",
+    "publishCtaAria": "Publish: choose what to publish",
     "userMenu": {
         "signIn": "Sign in",
         "myAccount": "My Account",

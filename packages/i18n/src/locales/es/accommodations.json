@@ -769,6 +769,19 @@
         "clearFilters": "Limpiar filtros"
     },
     "detail": {
+        "descriptionToggle": {
+            "more": "Leer más",
+            "less": "Leer menos"
+        },
+        "sectionTabs": {
+            "label": "Secciones del alojamiento",
+            "photos": "Fotos",
+            "details": "Detalles",
+            "amenities": "Comodidades",
+            "location": "Ubicación",
+            "reviews": "Reseñas",
+            "host": "Anfitrión"
+        },
         "listingContact": {
             "bar": {
                 "inquire": "Consultar",
@@ -781,7 +794,13 @@
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Llamar", "email": "Email" },
                 "trust": "Tu consulta va directo al anfitrión. Sin comisiones."
             },
+            "channels": {
+                "title": "Contactar",
+                "website": "Web",
+                "social": "Redes sociales"
+            },
             "fields": { "checkIn": "Llegada", "checkOut": "Salida", "guests": "Huéspedes" },
+            "card": { "direct": "O contactá directo" },
             "errors": {
                 "checkOutAfterCheckIn": "La salida tiene que ser después de la llegada",
                 "invalidDate": "Ingresá una fecha válida.",
@@ -798,7 +817,7 @@
                 "withGuests": "Hola, ¿está disponible {{guests}}?",
                 "withDatesAndGuests": "Hola, ¿está disponible {{dates}} {{guests}}?"
             },
-            "summary": { "title": "Precio y contacto", "hostSince": "Anfitrión desde {{date}}" },
+            "summary": { "title": "Precio y contacto" },
             "units": {
                 "perNight": "/noche",
                 "perDay": "/día",
@@ -865,6 +884,8 @@
         "gallery": {
             "viewAll": "Ver todas las fotos",
             "moreOverlay": "+{{count}} más",
+            "viewAllCount_one": "Ver la foto",
+            "viewAllCount_other": "Ver las {{count}} fotos",
             "viewFullscreen": "Ver foto {n} en pantalla completa",
             "backToAccommodation": "← Volver al alojamiento",
             "photosSubpage": "Fotos"
@@ -919,9 +940,11 @@
             }
         },
         "reviewsDetail": {
-            "noReviews": "No hay opiniones todavía",
-            "viewAll_one": "Ver la {{count}} opinión",
-            "viewAll_other": "Ver las {{count}} opiniones",
+            "anonymous": "Anónimo",
+            "stripLabel": "Reseñas destacadas",
+            "noReviews": "Todavía no hay reseñas",
+            "viewAll_one": "Ver la {{count}} reseña",
+            "viewAll_other": "Ver las {{count}} reseñas",
             "breakdownLabel": "Puntajes desglosados",
             "categories": {
                 "cleanliness": "Limpieza",
@@ -933,13 +956,18 @@
             },
             "outOf": "de 5",
             "modal": {
-                "title": "Opiniones",
+                "title": "Reseñas",
                 "close": "Cerrar",
                 "loadMore": "Cargar más",
-                "error": "No se pudieron cargar las opiniones",
+                "error": "No se pudieron cargar las reseñas",
                 "retry": "Reintentar",
                 "loading": "Cargando reseñas…"
             }
+        },
+        "host": {
+            "title": "Tu anfitrión",
+            "since": "Anfitrión desde {date}",
+            "languages": "Atiende en {languages}"
         },
         "owner": {
             "memberSince": "Miembro desde {date}",
@@ -953,12 +981,15 @@
         "amenitiesDetail": {
             "title": "Comodidades",
             "viewAll_one": "Ver la {{count}} comodidad",
-            "viewAll_other": "Ver todas las {{count}} comodidades",
-            "collapse": "Ver menos",
+            "viewAll_other": "Ver las {{count}} comodidades",
+            "close": "Cerrar",
             "additionalCost": "(costo adicional)"
         },
         "features": {
-            "title": "Características"
+            "title": "Características",
+            "viewAll_one": "Ver la {{count}} característica",
+            "viewAll_other": "Ver las {{count}} características",
+            "close": "Cerrar"
         },
         "faqsDetail": {
             "title": "Preguntas frecuentes",

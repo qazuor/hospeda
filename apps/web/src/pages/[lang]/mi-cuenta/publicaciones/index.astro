@@ -1,34 +1,30 @@
 ---
 /**
  * @file mi-cuenta/publicaciones/index.astro
- * @description Editor own-content listing — shows every post authored by the
- * authenticated user, in every moderation and lifecycle state (HOS-374
- * Phase 2 slice 2C-1). Read-only: no create/edit form ships in this slice,
- * only the listing and a link to the (not yet built) editor route.
+ * @description Editor own-content listing on the account kit (HOS-2505): every
+ * post authored by the user, in every moderation and lifecycle state, through
+ * the shared `MyContentList` template (`OwnContentListView`). Structural twin
+ * of `mi-cuenta/eventos`.
  *
- * Auth protection: both middleware AND this page check for a valid user
- * session, matching the `/mi-cuenta/propiedades` convention.
+ * Auth: middleware AND this page check for a session.
  *
- * Role gate: only users whose role grants `POST_CREATE` (EDITOR, ADMIN,
- * SUPER_ADMIN — see `hasPostsNavAccess` in `@/lib/nav-gating`) may reach this
- * page. Anyone else is redirected back to the account dashboard.
+ * Gate: only users whose role grants `POST_CREATE` (see `hasPostsNavAccess`
+ * in `@/lib/nav-gating`) manage posts. Anyone else sees a `LockedState`
+ * (`reason.kind = 'permission'`) with the editor application link, like
+ * events (spec HOS-2416 §8, D9 «sin acceso único»). It used to redirect
+ * silently to `/mi-cuenta`; it never does now, and the list is not even
+ * requested.
  *
- * Data: fetched server-side through `postEditApi.listOwn` (`lib/api/`), which
- * forwards the session cookie to `GET /api/v1/protected/posts`. Authorship is
- * resolved from the session server-side — no client-supplied identifier can
- * widen the scope past the caller's own content. Unlike `/mi-cuenta/propiedades`,
- * this page goes exclusively through `lib/api/` (that page's raw request-API
- * usage is a known, pre-existing violation of the `lib/api/` rule — not
- * repeated here).
+ * Data: `postEditApi.listOwn` (`lib/api/`) forwards the session cookie to
+ * `GET /api/v1/protected/posts`; authorship comes from the session, never
+ * from a query filter. Paginated with `?page=N` (HOS-2440): no silent cap.
  *
  * @route    /[lang]/mi-cuenta/publicaciones/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import { FileTextIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import {
     ACCOUNT_LIST_PAGE_SIZE,
@@ -42,12 +38,12 @@ import { postEditApi } from '@/lib/api/endpoints-protected';
 import { transformPostEditCardList } from '@/lib/api/transforms';
 import type { PostEditListItem } from '@/lib/api/types';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountPagination from '@/components/account/AccountPagination.astro';
-import EditableContentCard from '@/components/account/EditableContentCard.astro';
-import EmptyState from '@/components/shared/feedback/EmptyState.astro';
-import accountSectionStyles from '@/components/account/AccountSection.module.css';
-import btn from '@/components/account/AccountButton.module.css';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import {
+    OwnContentListView,
+    type OwnContentListStatus
+} from '@/components/account/my-content/OwnContentListView';
+import { ContentListReloadError } from '@/components/account/my-content/ContentListReloadError.client';
 
 export const prerender = false;
 
@@ -58,16 +54,8 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
 
-// Role gate: only editor-tier roles may see their own-content dashboard.
-if (!hasPostsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
-}
-
-// ---------------------------------------------------------------------------
-// Server-side fetch: the author's own posts, in every moderation/lifecycle
-// state. Session cookie is forwarded so the protected endpoint can identify
-// the caller — never sent as a query filter.
-// ---------------------------------------------------------------------------
+// Gate: only editor-tier roles see their own-content dashboard.
+const canManagePosts = hasPostsNavAccess({ roles: user.roles });
 
 let posts: readonly PostEditListItem[] = [];
 let fetchError = false;
@@ -78,49 +66,29 @@ let totalItems: number | null = null;
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
-const result = await postEditApi.listOwn({
-    cookieHeader,
-    page: requestedPage,
-    pageSize: ACCOUNT_LIST_PAGE_SIZE,
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
-});
+const result = canManagePosts
+    ? await postEditApi.listOwn({
+          cookieHeader,
+          page: requestedPage,
+          pageSize: ACCOUNT_LIST_PAGE_SIZE,
+          sortBy: 'createdAt',
+          sortOrder: 'desc'
+      })
+    : null;
 
-if (result.ok) {
-    posts = transformPostEditCardList({ items: result.data.items });
-    totalItems = result.data.pagination?.total ?? null;
-} else {
-    fetchError = true;
-    logger.error('[mi-cuenta/publicaciones] Failed to fetch own posts', result.error.message);
+if (result) {
+    if (result.ok) {
+        posts = transformPostEditCardList({ items: result.data.items });
+        totalItems = result.data.pagination?.total ?? null;
+    } else {
+        fetchError = true;
+        logger.error('[mi-cuenta/publicaciones] Failed to fetch own posts', result.error.message);
+    }
 }
 
-// ---------------------------------------------------------------------------
-// i18n
-// ---------------------------------------------------------------------------
-
 const { t } = createTranslations(locale);
-
-const title = t('account.myContent.posts.list.title', 'Mis publicaciones');
-const subtitle = t(
-    'account.myContent.posts.list.subtitle',
-    'Revisá el estado de tus artículos'
-);
-const emptyMessage = t(
-    'account.myContent.posts.list.empty',
-    'Todavía no escribiste ninguna publicación'
-);
-const fetchErrorMessage = t(
-    'account.myContent.posts.list.fetchError',
-    'No se pudo cargar la lista. Intentá recargar la página.'
-);
-const retryLabel = t('account.myContent.card.retry', 'Reintentar');
-const createCtaLabel = t('account.myContent.posts.list.createCta', '+ Nueva publicación');
-const emptyCtaLabel = t(
-    'account.myContent.posts.list.emptyCta',
-    'Escribir mi primera publicación'
-);
-
-const createUrl = buildUrl({ locale, path: 'mi-cuenta/publicaciones/nuevo' });
+const title = t('account.myContent.posts.list.title');
+const subtitle = t('account.myContent.posts.list.subtitle');
 
 const pageState = resolveAccountPageState({ requestedPage, total: totalItems });
 if (!fetchError && pageState.isPastEnd) {
@@ -130,124 +98,33 @@ if (!fetchError && pageState.isPastEnd) {
     );
 }
 
-const isEmpty = posts.length === 0;
+const status: OwnContentListStatus = !canManagePosts
+    ? 'locked'
+    : fetchError
+      ? 'error'
+      : posts.length === 0
+        ? 'empty'
+        : 'ready';
+
+const items = posts.map((post) => ({
+    id: post.id,
+    title: post.title,
+    moderationState: post.moderationState,
+    visibility: post.visibility,
+    lifecycleState: post.lifecycleState
+}));
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="publicaciones">
-    <div class="my-content-page__header">
-        <AccountPageHeader title={title} description={subtitle} />
-        <a
-            class:list={['my-content-page__create-btn', btn.primary]}
-            href={createUrl}
-        >
-            {createCtaLabel}
-        </a>
-    </div>
-
-    {fetchError ? (
-        <div class:list={['my-content-page__error', accountSectionStyles.branded]} role="alert">
-            <p class="my-content-page__error-title">{fetchErrorMessage}</p>
-            <a
-                href={Astro.url.pathname}
-                class:list={['my-content-page__retry-btn', btn.primary]}
-            >
-                {retryLabel}
-            </a>
-        </div>
-    ) : !isEmpty ? (
-        <>
-        <div class="my-content-page__grid" role="list" aria-label={title}>
-            {posts.map((post) => (
-                <div class="my-content-page__item" role="listitem" data-reveal="up">
-                    <EditableContentCard
-                        title={post.title}
-                        id={post.id}
-                        editBasePath="mi-cuenta/publicaciones"
-                        moderationState={post.moderationState}
-                        visibility={post.visibility}
-                        lifecycleState={post.lifecycleState}
-                        locale={locale}
-                    />
-                </div>
-            ))}
-        </div>
-        <AccountPagination
-            locale={locale}
-            path="mi-cuenta/publicaciones"
-            page={pageState.page}
-            totalPages={pageState.totalPages}
-        />
-        </>
-    ) : (
-        <EmptyState
-            locale={locale}
-            variant="empty"
-            message={emptyMessage}
-            actionUrl={createUrl}
-            actionLabel={emptyCtaLabel}
-            tone="warm"
-        >
-            <FileTextIcon size={56} weight="duotone" />
-        </EmptyState>
-    )}
+    <OwnContentListView
+        locale={locale}
+        kind="posts"
+        status={status}
+        items={items}
+        page={pageState.page}
+        pageCount={pageState.totalPages}
+    >
+        <PageHelpLink slot="help" locale={locale} />
+        {status === 'error' && <ContentListReloadError slot="errorRegion" client:visible locale={locale} />}
+    </OwnContentListView>
 </AccountLayout>
-
-<style>
-    .my-content-page__header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: var(--space-4, 1rem);
-        flex-wrap: wrap;
-    }
-
-    .my-content-page__create-btn {
-        flex-shrink: 0;
-        text-decoration: none;
-    }
-
-    .my-content-page__grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: var(--space-card-gap, 1.875rem);
-    }
-
-    @media (min-width: 640px) {
-        .my-content-page__grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .my-content-page__grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .my-content-page__item {
-        display: contents;
-    }
-
-    .my-content-page__error {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-4, 1rem);
-        padding: var(--space-12, 3rem) var(--space-8, 2rem);
-        background-color: var(--core-card);
-        border: 1px solid oklch(0.85 0.05 25 / 0.4);
-        border-radius: var(--radius-card, 24px);
-        text-align: center;
-    }
-
-    .my-content-page__error-title {
-        font-family: var(--font-sans);
-        font-size: var(--text-body, 1rem);
-        color: oklch(0.55 0.22 25);
-        margin: 0;
-    }
-
-    .my-content-page__retry-btn {
-        text-decoration: none;
-    }
-</style>

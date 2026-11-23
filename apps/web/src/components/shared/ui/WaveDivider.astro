@@ -1,0 +1,35 @@
+---
+/**
+ * @file WaveDivider.astro
+ * @description Decorative wave used as a section divider (HOS-2531, spec 7.6).
+ * It reuses the curve of the home hero wave so a detail page's related content
+ * starts with the same visual signature as the hero. Purely decorative: hidden
+ * from assistive technology and never focusable.
+ */
+---
+
+<div class="wave-divider" aria-hidden="true" data-wave-divider>
+  <svg viewBox="0 0 1440 160" preserveAspectRatio="none" focusable="false">
+    <path
+      d="M0,60 C180,120 360,160 540,130 C720,100 900,30 1080,20 C1200,14 1350,40 1440,60 L1440,160 L0,160 Z"
+      fill="currentColor"
+    ></path>
+  </svg>
+</div>
+
+<style>
+  .wave-divider {
+    color: var(--surface-warm);
+    height: clamp(40px, 5vw, 72px);
+    margin-block: var(--space-8, 32px) 0;
+    line-height: 0;
+  }
+  .wave-divider svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* The hero path fills below the curve; flip it so the crest faces the
+       content it introduces. */
+    transform: scaleY(-1);
+  }
+</style>

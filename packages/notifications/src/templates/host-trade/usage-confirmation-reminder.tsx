@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -48,9 +47,7 @@ export function UsageConfirmationReminder({
                 todavía no nos dijiste si estuvo bien.
             </Text>
 
-            <Section style={styles.actions}>
-                <Button href={actionUrl}>Confirmar o rechazar</Button>
-            </Section>
+            <Button href={actionUrl}>Confirmar o rechazar</Button>
 
             <Text style={styles.footnote}>
                 Es el único recordatorio que te mandamos. Si preferís no hacer nada, el registro
@@ -72,9 +69,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    actions: {
-        margin: '0 0 24px'
     },
     footnote: {
         color: '#64748b',

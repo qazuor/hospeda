@@ -195,17 +195,10 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'common.cancel',
     'common.close',
     'common.confirmations',
-    'common.deleting',
     'common.enums',
     'common.form',
     'common.loading',
-    'common.next',
-    'common.nextPage',
-    'common.noImage',
     'common.optional',
-    'common.pagination',
-    'common.prev',
-    'common.prevPage',
     // HOS-982 — `ListingQrSheet.client.tsx` (the printable QR sheet download,
     // shared by the three verticals) names this subtree. It also carries the
     // three keys the PDF itself prints (`headline` / `invite` / `brandTagline`,
@@ -357,6 +350,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'nav.mainNavigation',
     'nav.mobileMenu',
     'nav.publishCta',
+    'nav.publishCtaAria',
     'nav.signIn',
     'nav.theme',
     'nav.venue',
@@ -366,6 +360,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.errorPage',
     // Partner claim copy is read in the browser after consuming the link fragment.
     'partners.claim',
+    // Presentation index share row (HOS-2359): channel labels and copy feedback.
+    'presentations.share',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',
@@ -420,6 +416,36 @@ const ALL_CLIENT_PREFIXES: readonly string[] = [
 ];
 
 /**
+ * Keeps the keys of a flattened dictionary that some prefix covers. A prefix
+ * covers itself and every key beneath it (`nav.signIn` covers `nav.signIn` and
+ * `nav.signIn.aria`, never `nav.signInLater`).
+ *
+ * Shared by the client-asset narrowing below and by the critical/rest split of
+ * that asset (`./i18n-critical-prefixes`, HOS-2572), so both cut by the same
+ * rule.
+ *
+ * @param input.messages - A flattened `{ "namespace.key": value }` dictionary.
+ * @param input.prefixes - The prefixes to keep.
+ * @returns A new dictionary containing only the covered keys.
+ */
+export function pickKeysByPrefixes(input: {
+    readonly messages: Readonly<Record<string, string>>;
+    readonly prefixes: readonly string[];
+}): Record<string, string> {
+    const { messages, prefixes } = input;
+    const out: Record<string, string> = {};
+    for (const [key, value] of Object.entries(messages)) {
+        for (const prefix of prefixes) {
+            if (key === prefix || key.startsWith(`${prefix}.`)) {
+                out[key] = value;
+                break;
+            }
+        }
+    }
+    return out;
+}
+
+/**
  * Narrows a flattened `{ "namespace.key": value }` dictionary to the keys the
  * browser can actually name.
  *
@@ -429,14 +455,5 @@ const ALL_CLIENT_PREFIXES: readonly string[] = [
 export function pickClientNamespaces(
     messages: Readonly<Record<string, string>>
 ): Record<string, string> {
-    const out: Record<string, string> = {};
-    for (const [key, value] of Object.entries(messages)) {
-        for (const prefix of ALL_CLIENT_PREFIXES) {
-            if (key === prefix || key.startsWith(`${prefix}.`)) {
-                out[key] = value;
-                break;
-            }
-        }
-    }
-    return out;
+    return pickKeysByPrefixes({ messages, prefixes: ALL_CLIENT_PREFIXES });
 }

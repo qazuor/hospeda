@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { formatDate } from '../utils/index.js';
 import {
@@ -38,14 +37,12 @@ export function TrialEnding2Days({
                 En dos días termina tu prueba{planFragment}. Después, tu publicación deja de
                 aparecer en Hospeda hasta que elijas un plan.
             </Text>
-            <Section style={styles.warningBox}>
+            <Callout tone="warning">
                 <Text style={styles.paragraph}>
                     Tu prueba termina el {endDate}. Lo que cargaste queda guardado.
                 </Text>
-            </Section>
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Elegir mi plan</Button>
-            </Section>
+            </Callout>
+            <Button href={upgradeUrl}>Elegir mi plan</Button>
         </EmailLayout>
     );
 }

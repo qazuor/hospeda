@@ -1,0 +1,44 @@
+/* MyContentList.module.css — the list template for authored content (HOS-2505).
+   The card grid adapts to its own container: 1 column, 2 from 30rem, 3 from 64rem. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.gridWrap {
+    container-type: inline-size;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@container (width >= 30rem) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (width >= 64rem) {
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.pagination {
+    margin-block-start: var(--space-6);
+}

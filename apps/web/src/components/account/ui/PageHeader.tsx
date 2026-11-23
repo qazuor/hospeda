@@ -4,7 +4,8 @@
  * The title is the page's ONLY `h1`. Optional parts: breadcrumbs
  * (`<nav aria-label>`, `aria-current="page"` on the last item), a `back` link
  * (a real link with a translated label, NEVER `history.back()`), a `status`
- * (StatusPill), `actions` and `tabs`. Put at most ONE primary action in
+ * (StatusPill), a `help` slot (the page's «?», see `PageHelpLink.astro`),
+ * `actions` and `tabs`. Put at most ONE primary action in
  * `actions`; below 30rem of container width the actions stack and go full
  * width.
  *
@@ -40,6 +41,13 @@ export interface PageHeaderProps {
     readonly back?: { readonly label: string; readonly href: string };
     /** A StatusPill next to the title. */
     readonly status?: ReactNode;
+    /**
+     * The page's own «?» (HOS-2546), rendered right after the title. Since
+     * HOS-2546 the account layout renders no «?» row, so a page with its own
+     * article must put its «?» here. From Astro, pass
+     * `<PageHelpLink slot="help" locale={locale} />`.
+     */
+    readonly help?: ReactNode;
     /** Actions on the right. At most one primary. */
     readonly actions?: ReactNode;
     /** A Tabs or NavTabs under the header. */
@@ -48,13 +56,6 @@ export interface PageHeaderProps {
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
     readonly helpId?: HelpAnchor;
-    /**
-     * The page «?» (`HelpLink.astro`), rendered right after the title. From an
-     * Astro page pass it as a named slot: `<HelpLink slot="help" … />`. Since
-     * HOS-2546 the account layout renders no «?» row, so a page with its own
-     * article must put its «?» here.
-     */
-    readonly help?: ReactNode;
 }
 
 /**
@@ -70,11 +71,11 @@ export function PageHeader({
     breadcrumbs,
     back,
     status,
+    help,
     actions,
     tabs,
     className,
-    helpId,
-    help
+    helpId
 }: PageHeaderProps) {
     const t = createT(locale);
     return (

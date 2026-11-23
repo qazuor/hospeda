@@ -1,5 +1,5 @@
 import { Hr, Link, Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -61,11 +61,11 @@ export function NewsletterCampaign(props: NewsletterCampaignProps) {
     return (
         <EmailLayout previewText={previewText}>
             {isTest && (
-                <Section style={styles.testBanner}>
+                <Callout tone="warning">
                     <Text style={styles.testBannerText}>
                         [PRUEBA] Este es un envío de prueba. No fue enviado a la lista real.
                     </Text>
-                </Section>
+                </Callout>
             )}
 
             <Heading>{displaySubject}</Heading>
@@ -94,15 +94,7 @@ export function NewsletterCampaign(props: NewsletterCampaignProps) {
 }
 
 const styles = {
-    testBanner: {
-        backgroundColor: '#fef3c7',
-        border: '1px solid #f59e0b',
-        borderRadius: '6px',
-        padding: '12px 16px',
-        margin: '0 0 24px'
-    },
     testBannerText: {
-        color: '#92400e',
         fontSize: '14px',
         fontWeight: '600',
         margin: 0,

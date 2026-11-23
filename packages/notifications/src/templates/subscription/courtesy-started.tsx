@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -39,7 +38,7 @@ export function CourtesyStarted({
                 <strong>No vamos a hacerte ningún cargo hasta el {endsAt}.</strong>
             </Text>
 
-            <Section style={styles.giftBox}>
+            <Callout tone="success">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -52,16 +51,14 @@ export function CourtesyStarted({
                     label="Próximo cobro"
                     value={endsAt}
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 Tenés todo tu plan disponible, sin ninguna limitación. Cuando el regalo termine, la
                 facturación se reanuda sola con tu medio de pago actual.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
         </EmailLayout>
     );
 }
@@ -78,16 +75,5 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    giftBox: {
-        backgroundColor: '#f0fdf4',
-        borderRadius: '8px',
-        borderLeft: '4px solid #8CC63F',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     }
 };

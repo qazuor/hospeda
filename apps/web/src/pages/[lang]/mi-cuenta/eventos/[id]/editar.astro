@@ -12,15 +12,18 @@
  * only `getBySlug`; organizers expose nothing), so shipping a field that cannot
  * list its options would be worse than showing the current value.
  *
+ * HOS-2505: the page is the account-kit editor template: kit `PageHeader`
+ * with the back link and the page «?», the read-only context in an `Alert`,
+ * then the editor island (kit Sections + StickySaveBar). Without access it is
+ * a `LockedState` (`reason.kind='permission'`), never a redirect (D9).
+ *
  * @route     /[lang]/mi-cuenta/eventos/[id]/editar/
  * @rendering SSR (prerender = false — authenticated, author-scoped data)
  */
 
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
-import btn from '@/components/account/AccountButton.module.css';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { Alert, LockedState, PageHeader } from '@/components/account/ui';
 import { EventEditor } from '@/components/event/editor/EventEditor.client';
-import { LockIcon } from '@repo/icons';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { eventEditApi } from '@/lib/api/endpoints-protected';
 import { transformEventEditDetail } from '@/lib/api/transforms';
@@ -91,25 +94,31 @@ const locationLabel = t('account.myContent.events.editor.field.location', 'Lugar
 
 {event ? (
     <AccountLayout locale={locale} title={`${title}: ${event.name}`} activeSection="eventos">
-        <AccountPageHeader title={title} description={event.name} />
+        <PageHeader
+            title={title}
+            description={event.name}
+            locale={locale}
+            back={{ label: t('account.myContent.events.editor.backToList', 'Volver a mis eventos'), href: listUrl }}
+        >
+            <PageHelpLink slot="help" locale={locale} />
+        </PageHeader>
 
-        <p class="event-edit-page__meta">
-            <code>/{event.slug}</code>
-            {event.organizerName && <span>{organizerLabel}: {event.organizerName}</span>}
-            {event.locationName && <span>{locationLabel}: {event.locationName}</span>}
-        </p>
-        <p class="event-edit-page__note">
-            {
-                t(
-                    'account.myContent.events.editor.readOnlyNotice',
-                    'La URL, el organizador y el lugar se definen al crear el evento y no se editan desde acá.'
-                )
-            }
-        </p>
-
-        <a class:list={['event-edit-page__back', btn.secondary]} href={listUrl}>
-            {t('account.myContent.events.editor.backToList', 'Volver a mis eventos')}
-        </a>
+        <Alert
+            tone="info"
+            locale={locale}
+            title={t(
+                'account.myContent.events.editor.readOnlyNotice',
+                'La URL, el organizador y el lugar se definen al crear el evento y no se editan desde acá.'
+            )}
+        >
+            {[
+                `/${event.slug}`,
+                event.organizerName ? `${organizerLabel}: ${event.organizerName}` : null,
+                event.locationName ? `${locationLabel}: ${event.locationName}` : null
+            ]
+                .filter(Boolean)
+                .join(' · ')}
+        </Alert>
 
         <EventEditor
             client:load
@@ -122,43 +131,21 @@ const locationLabel = t('account.myContent.events.editor.field.location', 'Lugar
     </AccountLayout>
 ) : (
     <AccountLayout locale={locale} title={title} activeSection="eventos">
-        <AccountPageHeader title={title} />
+        <PageHeader title={title} locale={locale}>
+            <PageHelpLink slot="help" locale={locale} />
+        </PageHeader>
 
-        <AccountEmptyState
-            title={t(
-                'account.myContent.events.noAccess.title',
-                'Esta sección es para editores'
-            )}
-            description={t(
-                'account.myContent.events.noAccess.description',
-                'Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.'
-            )}
-            ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
-            ctaLabel={t('account.myContent.events.noAccess.cta', 'Quiero ser editor')}
-        >
-            <LockIcon slot="icon" size={28} aria-hidden={true} />
-        </AccountEmptyState>
+        <LockedState
+            locale={locale}
+            reason={{
+                kind: 'permission',
+                feature: t('account.myContent.events.noAccess.title', 'Esta sección es para editores'),
+                description: t(
+                    'account.myContent.events.noAccess.description',
+                    'Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.'
+                ),
+                helpHref: buildUrl({ locale, path: 'colaborar/editores' })
+            }}
+        />
     </AccountLayout>
 )}
-
-<style>
-    .event-edit-page__meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
-        margin: 0 0 var(--space-2, 0.5rem);
-        font-size: var(--text-caption, 0.75rem);
-        color: var(--core-muted-foreground);
-    }
-
-    .event-edit-page__note {
-        margin: 0 0 var(--space-3, 0.75rem);
-        font-size: var(--text-caption, 0.75rem);
-        color: var(--core-muted-foreground);
-    }
-
-    .event-edit-page__back {
-        text-decoration: none;
-    }
-</style>

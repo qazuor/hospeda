@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -53,9 +52,7 @@ export function UsageConfirmed({
                         Ahora podés contar cómo te fue. Lo que escribas se publica en la ficha y
                         ayuda al que viene atrás tuyo a decidir.
                     </Text>
-                    <Section style={styles.actions}>
-                        <Button href={reviewUrl}>Dejar una valoración</Button>
-                    </Section>
+                    <Button href={reviewUrl}>Dejar una valoración</Button>
                 </>
             ) : null}
         </EmailLayout>
@@ -74,8 +71,5 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    actions: {
-        margin: '0 0 24px'
     }
 };

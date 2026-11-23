@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { resolveRenewalReminderFooter } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatCurrency, formatDate } from '../utils/index.js';
@@ -68,7 +67,7 @@ export function RenewalReminder({
                 Tu suscripción a <strong>{planName}</strong> se renovará próximamente.
             </Text>
 
-            <Section style={styles.infoBox}>
+            <Callout tone="info">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -83,16 +82,14 @@ export function RenewalReminder({
                     label="Fecha de renovación"
                     value={formattedRenewalDate}
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 El cargo se realizará automáticamente usando tu método de pago registrado. Si deseas
                 realizar algún cambio, puedes gestionar tu suscripción desde tu cuenta.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Gestionar suscripción</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Gestionar suscripción</Button>
 
             <Text style={styles.footerNote}>{footerLine}</Text>
         </EmailLayout>
@@ -111,17 +108,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    infoBox: {
-        backgroundColor: '#f0f9ff',
-        borderRadius: '8px',
-        borderLeft: '4px solid #3b82f6',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

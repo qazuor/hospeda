@@ -61,6 +61,12 @@ export async function renderEmailCatalogScenario(
         throw new EmailCatalogScenarioNotFoundError({ key: entry.key, scenarioId });
     }
     const rendered = await entry.renderScenario({ scenarioId, deps });
-    const { html, text } = await renderEmailBodies({ react: rendered.react });
+    // HOS-2359: the preview carries the same UTMs an inbox receives but never the
+    // open pixel, so opening a preview never counts as an open. This is the one place
+    // a preview differs from a real send (HOS-2519 D4).
+    const { html, text } = await renderEmailBodies({
+        react: rendered.react,
+        attribution: { medium: 'transactional', templateKey: entry.key, includePixel: false }
+    });
     return { subject: rendered.subject, html, text, warnings: rendered.warnings };
 }

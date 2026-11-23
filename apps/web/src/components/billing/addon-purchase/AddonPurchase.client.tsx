@@ -1,6 +1,7 @@
 import type { AddonOffersResponse } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
+import { Stepper } from '@/components/account/ui/Stepper';
 import {
     billingSubscriptionApi,
     type PublishVerticalSlug,
@@ -31,7 +32,11 @@ import styles from './AddonPurchase.module.css';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
-import { type AddonPurchaseView, useAddonPurchaseBack } from './use-addon-purchase-back';
+import {
+    ADDON_PURCHASE_STEP_INDEX,
+    type AddonPurchaseView,
+    useAddonPurchaseBack
+} from './use-addon-purchase-back';
 import { useAddonPurchasePoll } from './use-addon-purchase-poll';
 
 type Offer = AddonOffersResponse['items'][number];
@@ -336,6 +341,13 @@ export function AddonPurchase(input: {
         }
     };
 
+    // HOS-2485: the purchase position (display only; Back moves between views).
+    const steps = (['offer', 'target', 'confirm'] as const).map((id) => ({
+        id,
+        label: t(`billing.addonPurchase.steps.${id}`)
+    }));
+    const stepIndex = ADDON_PURCHASE_STEP_INDEX[view] ?? null;
+
     return (
         <div className={styles.root}>
             {purchasesPaused && (
@@ -366,6 +378,14 @@ export function AddonPurchase(input: {
                 >
                     {t('billing.addonPurchase.back')}
                 </button>
+            )}
+            {stepIndex !== null && (
+                <Stepper
+                    steps={steps}
+                    current={stepIndex}
+                    label={t('billing.addonPurchase.steps.label')}
+                    locale={input.locale}
+                />
             )}
             {view === 'LOADING' && <p>{t('billing.addonPurchase.loading')}</p>}
             {view === 'OFFERS' && (

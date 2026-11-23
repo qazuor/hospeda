@@ -61,7 +61,9 @@ describe('PropertyCard.astro — SPEC-205 Phase 4 + SPEC-208 PR2', () => {
         // SPEC-208 PR2: unpublish uses a React island (UnpublishButton) rather than a plain anchor.
         // The component conditionally renders UnpublishButton only for ACTIVE properties and
         // passes the unpublish i18n label + the accommodationId prop.
-        expect(propertyCardSource).toContain('UnpublishButton');
+        // HOS-2483: Despublicar lives in the card menu, which mounts the
+        // UnpublishButton island on its confirmation step.
+        expect(propertyCardSource).toContain('<PropertyCardMenu');
         expect(propertyCardSource).toContain('host.properties.card.actions.unpublish');
     });
 });
@@ -74,9 +76,9 @@ describe('PropertyCard.astro — HOS-637 thumbnail transform', () => {
         // (dropping the getMediaUrl call, or re-inlining the raw chain into
         // thumbnailUrl) would break.
         expect(propertyCardSource).toContain(
-            "const thumbnailUrl = getMediaUrl(rawThumbnailUrl, { preset: 'card', height: 220 });"
+            "? getMediaUrl(rawThumbnailUrl, { preset: 'card', height: 220 })"
         );
-        expect(propertyCardSource).toContain('src={thumbnailUrl}');
+        expect(propertyCardSource).toContain('{ src: thumbnailUrl, alt: thumbnailAlt }');
         // Guard against the exact regression this issue reported: the <img>
         // binding directly to the untransformed chain.
         expect(propertyCardSource).not.toContain('src={rawThumbnailUrl}');
@@ -139,7 +141,7 @@ describe('PropertyCard.astro — HOS-982 printable QR sheet', () => {
 
     it('renders the QR block only when the state allows it (never for PURGED)', () => {
         expect(propertyCardSource).toMatch(
-            /\{actions\.qrBlock && \(\s*<div class="prop-card__qr">\s*<ListingQrSheet\b/
+            /\{actions\.qrBlock && \(\s*<ListingQrSheet\s+slot="footer"/
         );
     });
 });
@@ -151,10 +153,7 @@ describe('PropertyCard.astro — HOS-982 printable QR sheet', () => {
  * gates EVERY action on it, so no element can render outside its flag.
  */
 describe('PropertyCard.astro — actions per publication state (HOS-1641)', () => {
-    const actionsBlock =
-        /\{hasAnyAction && \(\s*<div class="prop-card__actions"[\s\S]*?<\/div>\s*\)\}/.exec(
-            propertyCardSource
-        )?.[0] ?? '';
+    const menuElement = /<PropertyCardMenu\b[\s\S]*?\/>\s*\)\}/.exec(propertyCardSource)?.[0] ?? '';
 
     it('reads publicationStatus, never the old columns', () => {
         expect(propertyCardSource).toContain(
@@ -169,29 +168,27 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
         expect(propertyCardSource).not.toContain('LifecycleStatusEnum');
     });
 
-    it('omits the whole action row when no action applies (PURGED)', () => {
-        expect(actionsBlock).not.toBe('');
+    it('omits the menu when no action applies (PURGED)', () => {
         expect(propertyCardSource).toContain(
             'const hasAnyAction = hasAnyPropertyCardAction({ actions });'
         );
+        expect(propertyCardSource).toMatch(/\{hasAnyAction && \(\s*<PropertyCardMenu/);
+    });
+
+    it('HOS-2483: ONE primary action — Publish when offered, else Edit, else nothing', () => {
+        expect(propertyCardSource).toMatch(
+            /\{showPublish \? \(\s*<PublishButton\s+slot="primaryAction"[\s\S]*?\) : actions\.edit \? \(\s*<LinkButton slot="primaryAction" href=\{editUrl\}/
+        );
+        expect(propertyCardSource.match(/slot="primaryAction"/g)).toHaveLength(2);
     });
 
     it.each([
-        ['edit', '<a href={editUrl}'],
-        ['viewOnSite', '<a\n                    href={viewOnSiteUrl}'],
-        ['unpublish', '<UnpublishButton'],
-        ['publish', '<PublishButton'],
-        ['delete', '<DeleteButton']
-    ])('gates the %s action on its own flag, inside the action row', (flag, element) => {
-        // HOS-1977: Publish and Republish share one island, gated by `showPublish`.
-        const gate = flag === 'publish' ? '{showPublish && (' : `{actions.${flag} && (`;
-        const gateAt = actionsBlock.indexOf(gate);
-        const elementAt = actionsBlock.indexOf(element);
-
-        expect(gateAt, `${flag}: gate not found`).toBeGreaterThan(-1);
-        expect(elementAt, `${flag}: element not found inside the action row`).toBeGreaterThan(-1);
-        // The element sits right after its own gate, with nothing but whitespace between.
-        expect(actionsBlock.slice(gateAt + gate.length, elementAt).trim()).toBe('');
+        ['edit', 'edit={showPublish && actions.edit ?'],
+        ['viewOnSite', 'viewOnSite={actions.viewOnSite ?'],
+        ['unpublish', 'unpublish={actions.unpublish ?'],
+        ['delete', 'remove={actions.delete ?']
+    ])('gates the %s menu entry on its own flag', (_flag, gate) => {
+        expect(menuElement).toContain(gate);
     });
 
     it('HOS-1977: the single PublishButton is gated by showPublish, which is draft publish OR the republish offer', () => {
@@ -209,12 +206,7 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
     });
 
     it('renders each action element exactly once in the whole card', () => {
-        for (const element of [
-            '<UnpublishButton',
-            '<PublishButton',
-            '<DeleteButton',
-            '<ListingQrSheet'
-        ]) {
+        for (const element of ['<PropertyCardMenu', '<PublishButton', '<ListingQrSheet']) {
             expect(propertyCardSource.split(element).length - 1, element).toBe(1);
         }
     });
@@ -252,7 +244,7 @@ describe('PropertyCard.astro — the publish affordance fails closed (HOS-1668)'
     // translated check-failed text.
     it('forwards the affordance and the check-failed text to PublishButton', () => {
         expect(propertyCardSource).toContain(
-            'listingId={property.id}\n                    vertical="accommodation"'
+            'listingId={property.id}\n            vertical="accommodation"'
         );
         expect(propertyCardSource).toContain('affordance={publishAffordance}');
         expect(propertyCardSource).toContain(
@@ -261,9 +253,7 @@ describe('PropertyCard.astro — the publish affordance fails closed (HOS-1668)'
     });
 
     it('keeps the accommodation-specific unpublish prop unchanged', () => {
-        expect(propertyCardSource).toContain(
-            '<UnpublishButton\n                    client:load\n                    accommodationId={property.id}'
-        );
+        expect(propertyCardSource).toContain('accommodationId: property.id,');
     });
 });
 
@@ -281,12 +271,12 @@ describe('PropertyCard.astro — the listing notices and the unpublish lines (HO
         expect(propertyCardSource).toContain(
             'const unpublishNotes = buildUnpublishConfirmNotes({ locale, t, tPlural, trialRunning, item: notices });'
         );
-        expect(propertyCardSource).toContain('trialNote={unpublishNotes.trialNote}');
-        expect(propertyCardSource).toContain('recurringNote={unpublishNotes.recurringNote}');
+        expect(propertyCardSource).toContain('trialNote: unpublishNotes.trialNote,');
+        expect(propertyCardSource).toContain('recurringNote: unpublishNotes.recurringNote,');
         expect(propertyCardSource).toContain(
-            'recurringAddonNames={unpublishNotes.recurringAddonNames}'
+            'recurringAddonNames: unpublishNotes.recurringAddonNames,'
         );
-        expect(propertyCardSource).toContain('withdrawHref={unpublishNotes.withdrawHref}');
+        expect(propertyCardSource).toContain('withdrawHref: unpublishNotes.withdrawHref,');
     });
 
     it('an unknown trial defaults to null (no trial line), not to a running trial', () => {

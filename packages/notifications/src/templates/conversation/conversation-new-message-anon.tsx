@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /** Maximum number of message excerpts shown in the email */
@@ -76,21 +75,19 @@ export function ConversationNewMessageAnon({
             </Text>
 
             {visibleMessages.map((msg) => (
-                <Section
+                <Callout
                     key={msg.timestamp}
-                    style={styles.excerptBox}
+                    tone="info"
                 >
                     <Text style={styles.timestamp}>{msg.timestamp}</Text>
                     <Text style={styles.excerptText}>{msg.excerpt}</Text>
-                </Section>
+                </Callout>
             ))}
 
-            <Section style={styles.buttonContainer}>
-                <Button href={ctaUrl}>Ver mi conversación</Button>
-            </Section>
+            <Button href={ctaUrl}>Ver mi conversación</Button>
 
             {/* Account-creation suggestion */}
-            <Section style={styles.accountBox}>
+            <Callout tone="success">
                 <Text style={styles.accountHeading}>¿Querés conservar tus conversaciones?</Text>
                 <Text style={styles.accountText}>
                     Creá una cuenta gratuita en Hospeda para acceder a todas tus consultas desde un
@@ -102,7 +99,7 @@ export function ConversationNewMessageAnon({
                 >
                     Crear cuenta gratis
                 </Button>
-            </Section>
+            </Callout>
 
             <Text style={styles.footerNote}>
                 Tu enlace de acceso es personal. No lo compartas con nadie.
@@ -118,49 +115,28 @@ const styles = {
         lineHeight: '24px',
         margin: '0 0 16px'
     },
-    excerptBox: {
-        backgroundColor: '#f8fafc',
-        borderRadius: '8px',
-        borderLeft: '4px solid #3b82f6',
-        padding: '16px 20px',
-        margin: '0 0 12px'
-    },
     timestamp: {
-        color: '#94a3b8',
         fontSize: '12px',
         lineHeight: '16px',
         margin: '0 0 6px'
     },
     excerptText: {
-        color: '#334155',
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0'
     },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
-    },
-    accountBox: {
-        backgroundColor: '#f0fdf4',
-        borderRadius: '8px',
-        borderLeft: '4px solid #22c55e',
-        padding: '20px 24px',
-        margin: '24px 0',
-        textAlign: 'center' as const
-    },
     accountHeading: {
-        color: '#15803d',
         fontSize: '15px',
         fontWeight: '600',
         lineHeight: '22px',
-        margin: '0 0 8px'
+        margin: '0 0 8px',
+        textAlign: 'center' as const
     },
     accountText: {
-        color: '#166534',
         fontSize: '14px',
         lineHeight: '20px',
-        margin: '0 0 16px'
+        margin: '0 0 16px',
+        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

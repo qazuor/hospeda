@@ -82,6 +82,10 @@ const SRC_ROOT = join(__dirname, '../../src');
  * instead.
  */
 const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
+    'components/listing/contact/ListingChannelsPanel.client.tsx#{channel.href}':
+        'built only by `buildExperienceChannels`/`buildVenueChannels` (`lib/listing-contact/listing-channels.ts`), which pass every website and social URL through `resolveSafeExternalUrl` and compose tel:/mailto: themselves',
+    'components/listing/contact/ListingContactActions.tsx#{primaryLink.href}':
+        'the venue menu link, produced by `resolveVenueContactMode`, which passes `menuUrl` through `resolveSafeExternalUrl` and yields no link when it returns undefined',
     'components/ImageGallery.client.tsx#{credit.url}':
         '`PhotoCreditParts.url`, produced by `formatPhotoCredit`, which calls the sanitizer itself',
     'components/shared/ImageAttribution.astro#{credit.url}':
@@ -91,7 +95,9 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
     'components/venue/VenueAddress.astro#{mapUrl}':
         '`buildVenueMapUrl` composes `https://www.openstreetmap.org/` from two `Number()`-parsed coordinates; non-finite values yield null, so the scheme and host are our literal',
     'components/ShareButtons.client.tsx#{link.href}':
-        'share intents composed in this file from literal provider bases (wa.me, facebook.com/sharer, t.me)',
+        'share intents composed by lib/share-intents.ts from literal provider bases (wa.me, facebook.com/sharer, twitter.com/intent, t.me)',
+    'components/presentacion/PresentationShareRow.client.tsx#{buildShareIntentUrl({ network: action.network, url: shortUrl(action.network), title: presentation.headline })}':
+        'HOS-2359: the same lib/share-intents.ts builder (literal provider bases), sharing a /go/ short link this app composed on its own site origin',
     'components/accommodation/ExternalReviews.client.tsx#{GOOGLE_ATTRIBUTION_HREF}':
         "module constant 'https://www.google.com/maps', required by the Google Places display policy",
     'components/accommodation/ExternalReputationSummaryRow.astro#{deepLinkHref}':
@@ -104,18 +110,14 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`buildWhatsAppLink` composes `https://wa.me/<digits>`; a non-dialable number yields null, not a URL',
     'components/venue/VenueWhatsAppButton.client.tsx#{url}':
         '`buildWhatsAppLink` composes `https://wa.me/<digits>` from the venue number (HOS-2256); a non-dialable number yields null, not a URL, and the number never reaches an href as a raw string',
-    'components/account/ProfileCompletionConsentFields.tsx#{`/${locale}/legal/terminos/`}':
-        'an internal path literal; it carries `rel="noopener"` only because it opens in a new tab',
     'components/shared/navigation/MobileMenu.client.tsx#{adminPanelItem.href}':
         '`buildAdminPanelItem` over the same admin origin',
     'components/shared/navigation/UserMenu.client.tsx#{adminPanelItem.href}':
         '`buildAdminPanelItem` over the same admin origin',
-    'components/host/PropertyCard.astro#{viewOnSiteUrl}':
-        '`buildUrl` — an internal accommodation page opened in a new tab',
+    'components/account/ui/Menu.tsx#{item.href}':
+        'caller-built by contract (MenuItem.href JSDoc): the only external item today is the property card «Ver en el sitio», a `buildUrl` internal accommodation page opened in a new tab (HOS-2483); a URL from user data must go through the sanitizer before it reaches a Menu',
     'lib/help/help-entry.ts#helpArticlePath({ id: entry.id':
         '`helpLinkAttributes` builds the "?" link with `helpArticlePath` (lib/help/help-tokens.ts), an internal `mi-cuenta/ayuda/<id>` path from `buildUrl`; outbound only because the "?" opens the article in a new tab outside the help center (HOS-2410, HOS-2552)',
-    'components/host/host-trades/TradeCard.tsx#{contactHref}':
-        '`resolveContactHref` in this same file: it asks the sanitizer first and degrades everything else to `tel:`',
     'components/destination/DestinationPOIFilter.client.tsx#{href}':
         'an internal POI facet URL from `buildMultiToggleParamHref`; outbound only because HOS-524 puts `rel="nofollow"` on facet chips',
     'components/destination/DestinationPOIFilter.client.tsx#{clearChip.href}':

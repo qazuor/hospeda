@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddonOfferList } from '@/components/billing/addon-purchase/AddonOfferList';
 import { RecurringAddonWithdrawal } from '@/components/billing/recurring-addons/RecurringAddonWithdrawal.client';
 import { createTranslations } from '@/lib/i18n';
-import { buildI18nAssetBody } from '@/lib/i18n-asset';
+import { buildI18nAssetBodies } from '@/lib/i18n-asset';
 
 const { listRecurringAddons, withdrawAddon } = vi.hoisted(() => ({
     listRecurringAddons: vi.fn(),
@@ -59,7 +59,12 @@ const recurringAddons = {
 beforeEach(() => {
     vi.clearAllMocks();
     window.__HOSPEDA_I18N__ = {};
-    new Function('window', buildI18nAssetBody({ locale: 'pt', messages: trans.pt }))(window);
+    // Both parts of the production asset (HOS-2572), in the order the page
+    // runs them. Only the merge is exercised: the critical part's hydration
+    // gate is inert here, since jsdom's document has finished loading.
+    const { critical, rest } = buildI18nAssetBodies({ locale: 'pt', messages: trans.pt });
+    new Function('window', critical)(window);
+    new Function('window', rest)(window);
     listRecurringAddons.mockResolvedValue(recurringAddons);
 });
 

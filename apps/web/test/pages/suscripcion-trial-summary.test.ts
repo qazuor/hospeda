@@ -38,7 +38,7 @@ describe('mi-cuenta/suscripcion — row 4 trial summary (HOS-1492)', () => {
         );
         // Below the header as one block; HOS-1617 mounts the own-subscriptions
         // list between them.
-        const header = source.indexOf('<AccountPageHeader title={title} />');
+        const header = source.indexOf('<PageHeader locale={locale} title={title}>');
         const summary = source.indexOf('<TrialSummary locale={locale} entries={trialSummaries}');
         expect(header).toBeGreaterThan(-1);
         expect(summary).toBeGreaterThan(header);

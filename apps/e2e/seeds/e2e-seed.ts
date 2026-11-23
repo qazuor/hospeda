@@ -31,6 +31,7 @@ import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { exit } from 'node:process';
 import { Pool } from 'pg';
+import { ensureListingContactFixtures } from '../fixtures/listing-contact-fixtures.ts';
 import { ensureListingOwnerTrial } from '../fixtures/listing-owner-trial.ts';
 
 /**
@@ -167,6 +168,8 @@ async function main(): Promise<void> {
     resetDb();
     initializeDb(fixturePool);
     try {
+        // E2E-only listings for the contact bar specs; never in @repo/seed (dual-write rule).
+        await ensureListingContactFixtures(fixturePool);
         await seedListingOwnerTrials(fixturePool);
     } finally {
         await fixturePool.end();

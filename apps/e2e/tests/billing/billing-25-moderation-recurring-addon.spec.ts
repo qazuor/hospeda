@@ -157,8 +157,11 @@ test.describe('TEST:B13b:1 AC:B13b:1 AC:B13b:4 moderating a listing with a live 
             const mail = world.mailCapture
                 .mailsTo({ to: owner.email })
                 .find((item) => item.html.includes(live.addonName));
-            expect(mail?.html).toContain(
-                `/es/mi-cuenta/complementos/?listing=${live.listingId}#recurring-addons`
+            // HOS-2359 appends attribution params after `listing`, before the fragment.
+            expect(mail?.html).toMatch(
+                new RegExp(
+                    `/es/mi-cuenta/complementos/\\?listing=${live.listingId}(&amp;[^"#]*)?#recurring-addons"`
+                )
             );
 
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);

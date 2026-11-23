@@ -1,6 +1,6 @@
 import { Section, Text } from '@react-email/components';
+import { Button } from '@repo/email';
 import type { PromoOfferMatch } from '../../types/alert.types.js';
-import { Button } from '../components/button.js';
 import { formatCurrency, formatDate } from '../utils/index.js';
 import { ALERT_DIGEST_SITE_BASE_URL } from './constants.js';
 
@@ -71,7 +71,10 @@ export function PromoOfferItem({ item }: PromoOfferItemProps) {
     const ctaUrl = `${ALERT_DIGEST_SITE_BASE_URL}/alojamientos/${item.accommodationSlug}`;
 
     return (
-        <Section style={styles.itemBox}>
+        <Section
+            style={styles.itemBox}
+            data-card="list"
+        >
             <Text style={styles.itemTitle}>{item.accommodationName}</Text>
             <Text style={styles.promotionTitle}>{item.promotionTitle}</Text>
             <Text style={styles.discountBadge}>{discountLabel}</Text>

@@ -4,7 +4,7 @@
  * delete flow (inline confirm → api call → refresh), and error state.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -91,26 +91,49 @@ function makeListResponse(items: (typeof mockPromo1)[]) {
 // ---------------------------------------------------------------------------
 
 describe('TEST:B13a:25 PromotionList effective-set gate', () => {
-    beforeEach(() =>
+    // Braces matter: a function returned from beforeEach runs as its teardown.
+    beforeEach(() => {
         mockGetEffectiveSet.mockResolvedValue({
             entitlements: { create_promotions: 1 },
             limits: {},
             failed: false
-        })
-    );
+        });
+    });
     it('shows the CTA with the key', async () => {
         mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
         render(<PromotionList locale="es" />);
         expect(await screen.findByRole('link', { name: 'Nueva promoción' })).toBeInTheDocument();
     });
-    it('fails closed on missing capability and failed read', async () => {
+    it('a failed entitlement read does not lock: the empty state and «Nueva» stay (like PromotionForm)', async () => {
         mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: true });
         mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
         render(<PromotionList locale="es" />);
-        expect(await screen.findByText('Tu plan no incluye promociones.')).toBeInTheDocument();
-        await waitFor(() =>
-            expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument()
+        expect(await screen.findByRole('link', { name: 'Nueva promoción' })).toBeInTheDocument();
+        expect(screen.getByText(/todavía no tenés ninguna promoción/i)).toBeInTheDocument();
+        expect(screen.queryByText('Tu plan no incluye promociones.')).not.toBeInTheDocument();
+        expect(document.querySelector('[data-reason="plan"]')).toBeNull();
+    });
+    it('while the entitlement read is pending, never flashes the LockedState', async () => {
+        let settle: (value: unknown) => void = () => {};
+        mockGetEffectiveSet.mockReturnValue(
+            new Promise((resolve) => {
+                settle = resolve;
+            })
         );
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        render(<PromotionList locale="es" />);
+        await waitFor(() => expect(mockOwnerPromotionList).toHaveBeenCalled());
+        // Let the list response settle while the entitlement read stays pending.
+        await act(async () => {
+            await Promise.resolve();
+        });
+        expect(screen.queryByText('Tu plan no incluye promociones.')).not.toBeInTheDocument();
+        expect(document.querySelector('[data-reason="plan"]')).toBeNull();
+        expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+        await act(async () => {
+            settle({ entitlements: {}, limits: {}, failed: false });
+        });
+        expect(await screen.findByText('Tu plan no incluye promociones.')).toBeInTheDocument();
     });
     it('shows the upgrade banner and omits the empty-state CTA without the key', async () => {
         mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
@@ -333,5 +356,93 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
             .filter((el) => el.getAttribute('href')?.includes('promociones/nueva'));
         expect(createLinks.length).toBe(1);
         expect(screen.queryByText(/tu plan no incluye promociones/i)).not.toBeInTheDocument();
+    });
+
+    // ---------------------------------------------------------------------------
+    // HOS-2440 / HOS-2505: the list used to ask for one default page and drop
+    // the rest. It now asks for an explicit page and links every page.
+    // ---------------------------------------------------------------------------
+
+    it('HOS-2440: requests explicit pages and paginates when there are more than 50 promotions', async () => {
+        const user = userEvent.setup();
+        mockOwnerPromotionList.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [mockPromo1],
+                pagination: {
+                    page: 1,
+                    pageSize: 20,
+                    total: 55,
+                    totalPages: 3,
+                    hasNextPage: true,
+                    hasPreviousPage: false
+                }
+            }
+        });
+
+        render(<PromotionList locale="es" />);
+
+        await screen.findByText('Descuento de verano');
+        expect(mockOwnerPromotionList).toHaveBeenCalledWith({ page: 1, pageSize: 20 });
+        const pageThree = screen.getByRole('button', { name: 'Página 3' });
+        await user.click(pageThree);
+        await waitFor(() =>
+            expect(mockOwnerPromotionList).toHaveBeenLastCalledWith({ page: 3, pageSize: 20 })
+        );
+    });
+
+    it('deleting the last item of the last page clamps to the new last page', async () => {
+        const user = userEvent.setup();
+        const paged = (items: (typeof mockPromo1)[], page: number, totalPages: number) => ({
+            ok: true as const,
+            data: {
+                items,
+                pagination: {
+                    page,
+                    pageSize: 20,
+                    total: items.length,
+                    totalPages,
+                    hasNextPage: page < totalPages,
+                    hasPreviousPage: page > 1
+                }
+            }
+        });
+        mockOwnerPromotionList.mockImplementation(({ page }: { page: number }) =>
+            Promise.resolve(page === 1 ? paged([mockPromo2], 1, 2) : paged([mockPromo1], 2, 2))
+        );
+        mockOwnerPromotionRemove.mockResolvedValue({ ok: true, data: { success: true } });
+
+        render(<PromotionList locale="es" />);
+        await screen.findByText('Noche extra gratis');
+        await user.click(screen.getByRole('button', { name: 'Página 2' }));
+        await screen.findByText('Descuento de verano');
+
+        // After the delete, page 2 no longer exists.
+        mockOwnerPromotionList.mockImplementation(({ page }: { page: number }) =>
+            Promise.resolve(page === 1 ? paged([mockPromo2], 1, 1) : paged([], 2, 1))
+        );
+        await user.click(screen.getByRole('button', { name: /eliminar «descuento de verano»/i }));
+        const confirmBtns = screen.getAllByRole('button', { name: /eliminar/i });
+        await user.click(confirmBtns[confirmBtns.length - 1]);
+
+        expect(await screen.findByText('Noche extra gratis')).toBeInTheDocument();
+        expect(mockOwnerPromotionList).toHaveBeenLastCalledWith({ page: 1, pageSize: 20 });
+        expect(screen.queryByText(/todavía no tenés ninguna promoción/i)).not.toBeInTheDocument();
+    });
+
+    it('HOS-2505: without the plan and with no promotions, shows a LockedState naming the catalog plans', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+
+        render(
+            <PromotionList
+                locale="es"
+                lockPlanNames={['Plan Catálogo']}
+            />
+        );
+
+        expect(await screen.findByText('Plan Catálogo')).toBeInTheDocument();
+        expect(document.querySelector('[data-reason="plan"]')).not.toBeNull();
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
     });
 });

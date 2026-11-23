@@ -32,6 +32,13 @@ type TargetLocale = (typeof TARGET_LOCALES)[number];
  */
 const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = {
     Email: ['en', 'pt'],
+    // Spelled the same in English / Brazilian Portuguese (HOS-2485 subscription tabs
+    // and the add-on purchase steps).
+    Plan: ['en'],
+    Complementos: ['pt'],
+    Complemento: ['pt'],
+    Destino: ['pt'],
+    Confirmar: ['pt'],
     WhatsApp: ['en', 'pt'],
     // Correct in both Spanish and Brazilian Portuguese (HOS-2521 contact copy).
     '/hora': ['pt'],
@@ -39,6 +46,9 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     // Bed/beds share the same spelling in Spanish and Brazilian Portuguese.
     '{{count}} cama': ['pt'],
     '{{count}} camas': ['pt'],
+    // Same words in Brazilian Portuguese (HOS-2527 listing section tab labels).
+    Fotos: ['pt'],
+    Comodidades: ['pt'],
     Facebook: ['en', 'pt'],
     Instagram: ['en', 'pt'],
     YouTube: ['en', 'pt'],

@@ -42,7 +42,8 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
     )
 }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`,
         tPlural: (key: string, count: number) => `[MISSING:${key}] ${count}`
@@ -138,7 +139,7 @@ describe('PostEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Título *'), {
             target: { value: 'Un título nuevo' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
         expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
@@ -154,7 +155,7 @@ describe('PostEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Contenido *'), {
             target: { value: 'y'.repeat(200) }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         await waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
         const body = mockUpdate.mock.calls[0]?.[0]?.data as Record<string, unknown>;
@@ -163,13 +164,11 @@ describe('PostEditor — saving', () => {
         expect(body).not.toHaveProperty('moderationState');
     });
 
-    it('does not call the API when nothing changed, and says so', () => {
+    it('offers no save control while nothing changed (D8: the bar shows only when dirty)', () => {
         renderEditor();
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
-
+        expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
         expect(mockUpdate).not.toHaveBeenCalled();
-        expect(addToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'info' }));
     });
 
     it('blocks the save and flags the field when the title exceeds the domain limit', () => {
@@ -182,7 +181,7 @@ describe('PostEditor — saving', () => {
         fireEvent.change(screen.getByLabelText('Título *'), {
             target: { value: 'a'.repeat(180) }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
         expect(mockUpdate).not.toHaveBeenCalled();
     });
@@ -323,7 +322,7 @@ describe('PostEditor — moderation edit lock (§7.6.3)', () => {
         renderEditor({ isEditLocked: true });
 
         expect(screen.getByTestId('post-editor-lock-notice')).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
     });
 
     it('disables the plain fields', () => {
@@ -346,6 +345,7 @@ describe('PostEditor — moderation edit lock (§7.6.3)', () => {
         renderEditor({ isEditLocked: false });
 
         expect(screen.queryByTestId('post-editor-lock-notice')).not.toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Guardar' })).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText('Título *'), { target: { value: 'Otro título' } });
+        expect(screen.getByRole('button', { name: /Guardar/ })).toBeInTheDocument();
     });
 });

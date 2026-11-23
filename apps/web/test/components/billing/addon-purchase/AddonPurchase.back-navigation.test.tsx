@@ -87,13 +87,19 @@ describe('HOS-2441 listing-scoped addon back navigation', () => {
         await pickOffer();
         fireEvent.click(await screen.findByTestId(`addon-target-${listingId}`));
         await screen.findByTestId('addon-purchase-summary');
+        // HOS-2485: the Stepper follows the flow, forward and back.
+        const currentStep = () =>
+            document.querySelector('[aria-current="step"]')?.textContent ?? '';
+        expect(currentStep()).toContain('Confirmar');
 
         fireEvent.click(screen.getByTestId('addon-purchase-back'));
         await screen.findByTestId(`addon-target-${listingId}`);
+        expect(currentStep()).toContain('Destino');
 
         fireEvent.click(screen.getByTestId('addon-purchase-back'));
         await screen.findByTestId(`addon-offer-${productId}`);
         expect(screen.queryByTestId('addon-purchase-back')).toBeNull();
+        expect(currentStep()).toContain('Complemento');
     });
 });
 

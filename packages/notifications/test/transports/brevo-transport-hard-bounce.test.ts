@@ -45,7 +45,16 @@ async function sendWith(response: Response | Error): Promise<unknown> {
     vi.stubGlobal('fetch', fetchMock);
     const transport = new BrevoEmailTransport(TEST_CLIENT, OPTIONS);
     try {
-        await transport.send({ to: 'bad@example', subject: 's', react: {} as ReactElement });
+        await transport.send({
+            to: 'bad@example',
+            subject: 's',
+            react: {} as ReactElement,
+            attribution: {
+                medium: 'transactional',
+                templateKey: 'notification.payment_success',
+                includePixel: true
+            }
+        });
     } catch (error) {
         return error;
     }

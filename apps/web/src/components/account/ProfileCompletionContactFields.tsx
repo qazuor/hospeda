@@ -5,26 +5,26 @@
  * Renders the contact fields: phone (country code + number), locale
  * preference, and theme preference (HOS-313 — optional, not applied live;
  * only takes effect once the parent island's submit succeeds). Newsletter
- * opt-in and terms acceptance were moved to
- * {@link ./ProfileCompletionConsentFields} so the consent block sits at
- * the END of the form (SPEC-113 polish).
+ * opt-in and terms acceptance live in {@link ./ProfileCompletionConsentFields}.
  *
- * All state lives in `ProfileCompletion.client.tsx`. This component is
- * a pure controlled presentation layer.
- *
- * Not a `.client.tsx` — mounts inside the already-hydrated parent island.
+ * All state lives in `ProfileCompletion.client.tsx`. This component is a pure
+ * controlled presentation layer built from kit fields (HOS-2501). Not a
+ * `.client.tsx`: it mounts inside the already-hydrated parent island.
  */
 
-import { FieldError } from '@/components/ui/FieldError';
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { COUNTRY_CODES, type SupportedTheme } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
+import { PcSelectField } from './ProfileCompletionFields';
+import { Field, Select, TextInput } from './ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /** Props for the contact-fields subcomponent. */
 export interface ProfileCompletionContactFieldsProps {
+    /** Active locale, for the kit fields' fixed copy. */
+    readonly locale: SupportedLocale;
     /** Selected phone country code (e.g. '+54'). */
     readonly phoneCode: string;
     /** Phone number (without country code). */
@@ -47,9 +47,8 @@ export interface ProfileCompletionContactFieldsProps {
     readonly onLocaleChange: (value: SupportedLocale) => void;
     /**
      * Handler for theme selection change. Only updates local form state — the
-     * theme is NOT applied live (HOS-313): changing it here must not
-     * re-render the page mid-fill. The parent applies it after a successful
-     * submit.
+     * theme is NOT applied live (HOS-313): changing it here must not re-render
+     * the page mid-fill. The parent applies it after a successful submit.
      */
     readonly onThemeChange: (value: SupportedTheme) => void;
 }
@@ -59,14 +58,10 @@ export interface ProfileCompletionContactFieldsProps {
 /**
  * Contact fields subcomponent.
  *
- * Renders phone (country code + number), locale preference, and theme
- * preference as controlled inputs. Error messages are rendered as passed-in strings
- * (the parent maps i18n keys to translated messages before passing them
- * down via `errors`).
- *
  * @param props - Component props (see {@link ProfileCompletionContactFieldsProps})
  */
 export function ProfileCompletionContactFields({
+    locale,
     phoneCode,
     phoneNumber,
     selectedLocale,
@@ -80,19 +75,22 @@ export function ProfileCompletionContactFields({
     onThemeChange
 }: ProfileCompletionContactFieldsProps) {
     return (
-        <>
+        <div className={styles.grid}>
             {/* ── Phone ──────────────────────────────────────────────── */}
-            <div className={styles.field}>
-                <label
-                    htmlFor="pc-phone"
-                    className={styles.label}
-                >
-                    {t('account.profileCompletion.fields.phone', 'Teléfono')}
-                </label>
+            <Field
+                label={t('account.profileCompletion.fields.phone', 'Teléfono')}
+                locale={locale}
+                idParts={{ prefix: 'pc', name: 'phone' }}
+                error={errors.phone}
+                hint={t(
+                    'account.profileCompletion.fields.phoneHint',
+                    'Opcional. Incluí el código de país.'
+                )}
+                className={styles.full}
+            >
                 <div className={styles.phoneRow}>
-                    <select
+                    <Select
                         id="pc-phoneCode"
-                        className={`${styles.select} ${styles.phoneCode}`}
                         value={phoneCode}
                         onChange={(e) => onPhoneCodeChange(e.target.value)}
                         disabled={submitting}
@@ -109,103 +107,72 @@ export function ProfileCompletionContactFields({
                                 {cc.label}
                             </option>
                         ))}
-                    </select>
-                    <input
-                        id="pc-phone"
+                    </Select>
+                    <TextInput
                         type="tel"
-                        className={
-                            errors.phone
-                                ? `${styles.input} ${styles.inputError} ${styles.phoneNumber}`
-                                : `${styles.input} ${styles.phoneNumber}`
-                        }
                         value={phoneNumber}
                         onChange={(e) => onPhoneNumberChange(e.target.value)}
                         placeholder={t(
                             'account.profileCompletion.fields.phonePlaceholder',
                             '9 11 1234-5678'
                         )}
-                        aria-describedby={errors.phone ? 'pc-phone-error' : 'pc-phone-hint'}
                         autoComplete="tel-national"
                         disabled={submitting}
                     />
                 </div>
-                {errors.phone ? (
-                    <FieldError
-                        id="pc-phone-error"
-                        message={errors.phone}
-                    />
-                ) : (
-                    <p
-                        id="pc-phone-hint"
-                        className={styles.hint}
-                    >
-                        {t(
-                            'account.profileCompletion.fields.phoneHint',
-                            'Opcional. Incluí el código de país.'
-                        )}
-                    </p>
-                )}
-            </div>
+            </Field>
 
             {/* ── Preferred locale ──────────────────────────────────── */}
-            <div className={styles.field}>
-                <label
-                    htmlFor="pc-locale"
-                    className={styles.label}
-                >
-                    {t('account.profileCompletion.fields.locale', 'Idioma preferido')}
-                </label>
-                <select
-                    id="pc-locale"
-                    className={styles.select}
-                    value={selectedLocale}
-                    onChange={(e) => onLocaleChange(e.target.value as SupportedLocale)}
-                    disabled={submitting}
-                >
-                    <option value="es">
-                        {t('account.profileCompletion.fields.localeEs', 'Español')}
-                    </option>
-                    <option value="en">
-                        {t('account.profileCompletion.fields.localeEn', 'English')}
-                    </option>
-                    <option value="pt">
-                        {t('account.profileCompletion.fields.localePt', 'Português')}
-                    </option>
-                </select>
-            </div>
+            <PcSelectField
+                name="locale"
+                label={t('account.profileCompletion.fields.locale', 'Idioma preferido')}
+                locale={locale}
+                value={selectedLocale}
+                onChange={(value) => onLocaleChange(value as SupportedLocale)}
+                disabled={submitting}
+                options={[
+                    {
+                        value: 'es',
+                        label: t('account.profileCompletion.fields.localeEs', 'Español')
+                    },
+                    {
+                        value: 'en',
+                        label: t('account.profileCompletion.fields.localeEn', 'English')
+                    },
+                    {
+                        value: 'pt',
+                        label: t('account.profileCompletion.fields.localePt', 'Português')
+                    }
+                ]}
+            />
 
             {/* ── Preferred theme ───────────────────────────────────── */}
-            <div className={styles.field}>
-                <label
-                    htmlFor="pc-theme"
-                    className={styles.label}
-                >
-                    {t('account.profileCompletion.fields.theme', 'Tema preferido')}
-                </label>
-                <select
-                    id="pc-theme"
-                    className={styles.select}
-                    value={selectedTheme}
-                    onChange={(e) => onThemeChange(e.target.value as SupportedTheme)}
-                    disabled={submitting}
-                >
-                    <option value="system">
-                        {t('account.profileCompletion.fields.themeSystem', 'Sistema')}
-                    </option>
-                    <option value="light">
-                        {t('account.profileCompletion.fields.themeLight', 'Claro')}
-                    </option>
-                    <option value="dark">
-                        {t('account.profileCompletion.fields.themeDark', 'Oscuro')}
-                    </option>
-                </select>
-                <p className={styles.hint}>
-                    {t(
-                        'account.profileCompletion.fields.themeHint',
-                        'Opcional. Se aplica al guardar el perfil.'
-                    )}
-                </p>
-            </div>
-        </>
+            <PcSelectField
+                name="theme"
+                label={t('account.profileCompletion.fields.theme', 'Tema preferido')}
+                locale={locale}
+                value={selectedTheme}
+                onChange={(value) => onThemeChange(value as SupportedTheme)}
+                disabled={submitting}
+                hint={t(
+                    'account.profileCompletion.fields.themeHint',
+                    'Opcional. Se aplica al guardar el perfil.'
+                )}
+                options={[
+                    {
+                        value: 'system',
+                        label: t('account.profileCompletion.fields.themeSystem', 'Sistema')
+                    },
+                    {
+                        value: 'light',
+                        label: t('account.profileCompletion.fields.themeLight', 'Claro')
+                    },
+                    {
+                        value: 'dark',
+                        label: t('account.profileCompletion.fields.themeDark', 'Oscuro')
+                    }
+                ]}
+            />
+        </div>
     );
 }

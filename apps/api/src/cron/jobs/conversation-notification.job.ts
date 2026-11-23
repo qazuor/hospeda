@@ -86,6 +86,7 @@ import { AccommodationModel, getDb, UserModel, withTransaction } from '@repo/db'
 import { createEmailClient } from '@repo/email';
 import { PermissionEnum } from '@repo/schemas';
 import { createSystemActor, NotificationScheduleService } from '@repo/service-core';
+import { buildTransactionalAttribution } from '../../utils/email-attribution';
 import { sendAppEmail } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -335,7 +336,10 @@ export const conversationNotificationJob: CronJobDefinition = {
                         client: emailClient,
                         to: item.recipientEmail,
                         subject: item.subject,
-                        react: item.emailTemplate
+                        react: item.emailTemplate,
+                        attribution: buildTransactionalAttribution({
+                            templateKey: item.templateKey
+                        })
                     });
 
                     if (!emailResult.success) {

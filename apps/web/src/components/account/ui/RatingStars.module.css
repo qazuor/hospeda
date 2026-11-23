@@ -1,0 +1,40 @@
+/* RatingStars.module.css — read-only star rating (HOS-2502). The filled layer
+   is clipped to the share of the star the value covers. */
+
+.root {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.stars {
+    display: inline-flex;
+    gap: var(--space-1);
+}
+
+.star {
+    position: relative;
+    display: inline-flex;
+}
+
+.empty {
+    color: var(--control-border);
+}
+
+.fill {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    display: inline-flex;
+    overflow: hidden;
+}
+
+.filled {
+    flex: none;
+    color: var(--rating-star);
+}
+
+.value {
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}

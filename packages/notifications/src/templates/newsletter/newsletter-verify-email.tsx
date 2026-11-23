@@ -1,6 +1,5 @@
-import { Link, Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Link, Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /**
@@ -35,11 +34,11 @@ export function NewsletterVerifyEmail({
     return (
         <EmailLayout previewText={previewText}>
             {isTest && (
-                <Section style={styles.testBanner}>
+                <Callout tone="warning">
                     <Text style={styles.testBannerText}>
                         [PRUEBA] Este es un envío de prueba. Ningún destinatario fue suscripto.
                     </Text>
-                </Section>
+                </Callout>
             )}
 
             <Heading>Confirmá tu suscripción</Heading>
@@ -54,9 +53,7 @@ export function NewsletterVerifyEmail({
                 haciendo clic en el botón:
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={verifyUrl}>Confirmar mi suscripción</Button>
-            </Section>
+            <Button href={verifyUrl}>Confirmar mi suscripción</Button>
 
             <Text style={styles.paragraph}>
                 Si el botón no funciona, copiá y pegá esta dirección en tu navegador:
@@ -80,15 +77,7 @@ export function NewsletterVerifyEmail({
 }
 
 const styles = {
-    testBanner: {
-        backgroundColor: '#fef3c7',
-        border: '1px solid #f59e0b',
-        borderRadius: '6px',
-        padding: '12px 16px',
-        margin: '0 0 24px'
-    },
     testBannerText: {
-        color: '#92400e',
         fontSize: '14px',
         fontWeight: '600',
         margin: 0,
@@ -105,10 +94,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     fallbackUrl: {
         color: '#64748b',

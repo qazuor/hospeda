@@ -122,7 +122,9 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
                     />
                 </Visual>
                 <Visual name="HoursEditor/week">
-                    <GalleryHours locale={locale} />
+                    <div className={styles.stack}>
+                        <GalleryHours locale={locale} />
+                    </div>
                 </Visual>
                 <Visual name="Repeater/rows">
                     <GalleryRepeater locale={locale} />
@@ -191,22 +193,26 @@ export function KitGalleryEditor({ locale }: GalleryGroupProps) {
     );
 }
 
-/** A week with two open days, one of them split, for the HoursEditor entry. */
+/**
+ * A week with one open, split day and the rest closed, for the HoursEditor
+ * entry. One open day keeps the block shorter than the mobile viewport, so the
+ * visual suite captures it without the sticky AccountBar over its top.
+ */
 const CLOSED_DAY = { closed: true, slots: [] } as const;
 
 const GALLERY_WEEK: HoursWeek = {
-    mon: { closed: false, slots: [{ open: '09:00', close: '18:00' }] },
-    tue: CLOSED_DAY,
-    wed: CLOSED_DAY,
-    thu: CLOSED_DAY,
-    fri: CLOSED_DAY,
-    sat: {
+    mon: {
         closed: false,
         slots: [
             { open: '10:00', close: '13:00' },
             { open: '17:00', close: '21:00' }
         ]
     },
+    tue: CLOSED_DAY,
+    wed: CLOSED_DAY,
+    thu: CLOSED_DAY,
+    fri: CLOSED_DAY,
+    sat: CLOSED_DAY,
     sun: CLOSED_DAY
 };
 

@@ -4,7 +4,8 @@
  *
  * Upserts every saved report first, then the boards that reference them by id,
  * then the segments and cohorts, then the WEB website's session recorder config
- * (HOS-2347, `recorder-definitions.ts`). Re-running changes nothing (second run reports
+ * (HOS-2347, `recorder-definitions.ts`), then one open pixel per email catalog
+ * template from the generated manifest (HOS-2359, `pixels-client.ts`). Re-running changes nothing (second run reports
  * everything as unchanged). Items that exist in Umami but are not defined here
  * are only listed ("unmanaged"), never modified or deleted.
  *
@@ -36,6 +37,14 @@ import {
     upsertReport
 } from './client.js';
 import { buildReportDefinitions } from './definitions.js';
+import {
+    listPixels,
+    loadEmailPixelDefinitions,
+    MANAGED_PIXEL_PREFIX,
+    type PixelDefinition,
+    type UmamiPixel,
+    upsertPixel
+} from './pixels-client.js';
 import { upsertRecorderConfig } from './recorder-client.js';
 import { buildRecorderDefinition } from './recorder-definitions.js';
 import { buildSegmentDefinitions, type SegmentType } from './segment-definitions.js';
@@ -53,7 +62,7 @@ export interface ActionCounts {
 
 /** A resource that exists in Umami but is not defined in the script. */
 export interface UnmanagedItem {
-    readonly kind: 'report' | 'board' | 'segment' | 'cohort' | 'recorder-config-key';
+    readonly kind: 'report' | 'board' | 'segment' | 'cohort' | 'recorder-config-key' | 'pixel';
     readonly name: string;
 }
 
@@ -67,6 +76,8 @@ export interface SetupOutcome {
     readonly cohorts: ActionCounts;
     /** The WEB website's recorder config: one item, `updated` or `unchanged`. */
     readonly recorder: ActionCounts;
+    /** Email template pixels (HOS-2359). */
+    readonly pixels: ActionCounts;
     /** Report-only: existing items not defined in the script. Left untouched. */
     readonly unmanaged: readonly UnmanagedItem[];
 }
@@ -80,6 +91,8 @@ export interface RunSetupInput {
         | { readonly kind: 'token'; readonly token: string }
         | { readonly kind: 'login'; readonly username: string; readonly password: string };
     readonly dryRun: boolean;
+    /** Email template pixels to upsert; defaults to the generated manifest (HOS-2359). */
+    readonly pixelDefinitions?: readonly PixelDefinition[];
     readonly fetchImpl?: typeof fetch;
     /** Stdout sink. Defaults to `console.log`. */
     readonly log?: (line: string) => void;
@@ -157,10 +170,20 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
     const segments: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const cohorts: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const recorder: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
+    const pixels: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const secrets: string[] = [];
     const fail = (message: string): SetupOutcome => {
         error(`FAILED: ${message}`);
-        return { exitCode: 1, reports, boards, segments, cohorts, recorder, unmanaged: [] };
+        return {
+            exitCode: 1,
+            reports,
+            boards,
+            segments,
+            cohorts,
+            recorder,
+            pixels,
+            unmanaged: []
+        };
     };
 
     let token: string;
@@ -272,6 +295,32 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
         return fail(`recorder config: ${describeError(cause, secrets)}`);
     }
 
+    let pixelDefinitions: readonly PixelDefinition[];
+    let storedPixels: readonly UmamiPixel[];
+    try {
+        pixelDefinitions = input.pixelDefinitions ?? loadEmailPixelDefinitions();
+        storedPixels = await listPixels({ config });
+    } catch (cause) {
+        return fail(`email pixels: ${describeError(cause, secrets)}`);
+    }
+    for (const definition of pixelDefinitions) {
+        try {
+            const result = await upsertPixel({ config, definition, existing: storedPixels });
+            pixels[result.action]++;
+            if (result.action !== 'unchanged') {
+                log(`- pixel ${result.action}: ${definition.slug}`);
+            }
+        } catch (cause) {
+            return fail(`pixel "${definition.slug}": ${describeError(cause, secrets)}`);
+        }
+    }
+    // Template pixels this script owns but the manifest no longer lists. Newsletter
+    // pixels (`newsletter-*`) belong to the api and are ignored.
+    const definedPixelSlugs = new Set(pixelDefinitions.map((d) => d.slug));
+    const pixelUnmanaged: UnmanagedItem[] = storedPixels
+        .filter((p) => p.slug.startsWith(MANAGED_PIXEL_PREFIX) && !definedPixelSlugs.has(p.slug))
+        .map((p) => ({ kind: 'pixel', name: p.slug }));
+
     const unmanaged: UnmanagedItem[] = [];
     try {
         unmanaged.push(
@@ -288,7 +337,7 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
         unmanaged.length = 0;
         log(`Warning: could not list unmanaged items: ${describeError(cause, secrets)}`);
     }
-    unmanaged.push(...recorderUnmanaged);
+    unmanaged.push(...recorderUnmanaged, ...pixelUnmanaged);
     if (unmanaged.length > 0) {
         log('');
         log('Unmanaged (left untouched):');
@@ -304,8 +353,9 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
     log(formatRow({ label: 'segments', counts: segments }));
     log(formatRow({ label: 'cohorts', counts: cohorts }));
     log(formatRow({ label: 'recorder', counts: recorder }));
+    log(formatRow({ label: 'pixels', counts: pixels }));
     log(input.dryRun ? 'Dry run completed; nothing was written.' : 'Umami setup completed.');
-    return { exitCode: 0, reports, boards, segments, cohorts, recorder, unmanaged };
+    return { exitCode: 0, reports, boards, segments, cohorts, recorder, pixels, unmanaged };
 }
 
 /** Result of {@link resolveSetupInput}. */

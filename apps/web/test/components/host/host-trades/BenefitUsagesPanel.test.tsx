@@ -234,10 +234,65 @@ describe('BenefitUsagesPanel — what each list shows', () => {
         expect(within(history()).getByText('Vencido')).toBeInTheDocument();
     });
 
-    it('surfaces a failed server read as an alert', () => {
+    it('surfaces a failed server read as an error with a retry, never as the empty state', () => {
         renderPanel({ pending: [], history: [], total: 0, loadFailed: true });
 
         expect(screen.getByRole('alert')).toHaveTextContent(/no pudimos cargar/i);
+        expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
+        // «No tenés usos pendientes» would be a false answer to a host whose lists did not load
+        expect(screen.queryByText(/no tenés usos pendientes/i)).not.toBeInTheDocument();
+    });
+
+    it('re-reads both lists on retry and leaves the error state once they load', async () => {
+        const user = userEvent.setup();
+        mockListPending.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [makeUsage()],
+                pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 }
+            }
+        });
+        renderPanel({ pending: [], history: [], total: 0, loadFailed: true });
+
+        await user.click(screen.getByRole('button', { name: /reintentar/i }));
+
+        expect(
+            await screen.findByRole('region', { name: /esperan tu confirmación/i })
+        ).toBeInTheDocument();
+        expect(mockListPending).toHaveBeenCalledTimes(1);
+        expect(mockListUsages).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the error state when the retry fails too', async () => {
+        const user = userEvent.setup();
+        mockListPending.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'INTERNAL_ERROR', message: 'boom' }
+        });
+        renderPanel({ pending: [], history: [], total: 0, loadFailed: true });
+
+        await user.click(screen.getByRole('button', { name: /reintentar/i }));
+
+        await waitFor(() => expect(mockListPending).toHaveBeenCalled());
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.queryByText(/no tenés usos pendientes/i)).not.toBeInTheDocument();
+    });
+
+    it('shows how many usages wait on the host as a count pill in the inbox', () => {
+        renderPanel({
+            pending: [makeUsage({ id: 'a' }), makeUsage({ id: 'b' })],
+            history: []
+        });
+
+        expect(
+            within(inbox()).getByRole('img', { name: /pendientes de confirmar: 2/i })
+        ).toBeInTheDocument();
+    });
+
+    it('shows no count pill when nothing is pending', () => {
+        renderPanel({ pending: [], history: [makeUsage()] });
+
+        expect(within(inbox()).queryByRole('img')).not.toBeInTheDocument();
     });
 });
 

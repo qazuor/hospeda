@@ -95,6 +95,28 @@ on its root through `helpAttr()`. `Section` requires one: a `Section` without
 checks the shape). Whether the
 anchor resolves to a help article is HOS-2410's guard.
 
+## Listing and billing pieces (HOS-2414 PR-5)
+
+- **`Menu`** — overflow «more actions» menu button (WAI-ARIA pattern). Props:
+  `label` (required trigger name, name the object: «Más acciones para X»),
+  `items: MenuItem[]`, `locale`, optional `triggerText`, `align`. An item is a
+  link (`href`, `external?`) or an action (`onSelect`); both take `tone:
+  'danger'` and `disabled`. `onSelect` runs after the menu closed and focus
+  went back to the trigger, so it can open a `ConfirmDialog`. Interactive:
+  render it inside an island.
+- **`ListingCard` / `ListingCardGrid`** — one listing an owner manages,
+  shared by every vertical (`vertical` prop picks the no-photo icon tile).
+  Slots: `status` (StatusPill), `meta` lines, `children` (notices, checklist),
+  ONE `primaryAction`, a `menu` (the `Menu` above) and a `footer`. The card
+  knows nothing about publishing: the caller builds the actions.
+- **`PlanSummary`** — a subscription: `name` and `price` already resolved
+  from the catalog (never a literal, G7), `status`, `scope`, `renewal`, and a
+  body for the details and actions of that state.
+- **`Stepper`** — display-only progress of a short flow (`steps`, `current`,
+  `label`); the flow owns moving between steps and the back step.
+- **`OptionCard` / `OptionCardGrid`** — one choice as a single native button
+  (`title`, `description`, `meta`, `badge`); `data-*` pass through.
+
 ## Guards
 
 Both guards scope the account area and give this folder zero tolerance: no

@@ -11,6 +11,10 @@
  * D-4 — no effective-permissions round-trip on SSR).
  *
  * Per option:
+ * HOS-2501: cards, pills and buttons are kit pieces (`StatusPill`, `LinkButton`,
+ * the `accent` button for the acquire CTA) and the styles use design tokens only.
+ * The props API is unchanged (`aliados` renders it too).
+ *
  * - `acquired`   -> check badge + "Gestionar" button. Links `option.manageHref`
  *   (locale-relative), except `managesInAdminPanel` options (HOS-134), which
  *   link the absolute admin-panel URL (`adminUrl` prop) instead.
@@ -25,7 +29,7 @@ import type { GatedNavNode } from '@/lib/nav-gating';
 import { isVisibleByRoles, resolveDoorOptionState } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
 import { CheckCircleIcon } from '@repo/icons';
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { LinkButton, StatusPill } from '@/components/account/ui';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -104,43 +108,39 @@ const optionRows = door.options.map((option) => {
                 <div class="door-hub__option-action">
                     {state === 'acquired' && (
                         <>
-                            <span class="door-hub__acquired-badge">
+                            <StatusPill tone="success">
                                 <CheckCircleIcon size={16} weight="fill" aria-hidden="true" />
                                 {t('account.doors.common.acquiredLabel')}
-                            </span>
+                            </StatusPill>
                             {manageHref && (
-                                <GradientButton
-                                    label={t('account.doors.common.manageCta')}
-                                    href={manageHref}
-                                    variant="outline-primary"
-                                    size="sm"
-                                    shape="rounded"
-                                />
+                                <LinkButton href={manageHref} variant="secondary" size="sm">
+                                    {t('account.doors.common.manageCta')}
+                                </LinkButton>
                             )}
                         </>
                     )}
                     {state === 'comingSoon' && (
                         <>
-                            <span class="door-hub__coming-soon-badge">
+                            <StatusPill tone="neutral">
                                 {t('account.doors.common.comingSoonBadge')}
-                            </span>
-                            <GradientButton
-                                label={t(option.ctaI18nKey)}
+                            </StatusPill>
+                            <LinkButton
                                 href={buildUrl({ locale, path: option.href })}
-                                variant="outline-accent"
+                                variant="secondary"
                                 size="sm"
-                                shape="rounded"
-                            />
+                            >
+                                {t(option.ctaI18nKey)}
+                            </LinkButton>
                         </>
                     )}
                     {state === 'unacquired' && (
-                        <GradientButton
-                            label={t(option.ctaI18nKey)}
+                        <LinkButton
                             href={buildUrl({ locale, path: option.href })}
                             variant="accent"
                             size="sm"
-                            shape="rounded"
-                        />
+                        >
+                            {t(option.ctaI18nKey)}
+                        </LinkButton>
                     )}
                 </div>
             </li>
@@ -152,10 +152,9 @@ const optionRows = door.options.map((option) => {
 <style>
     .door-hub__subtitle {
         margin: 0 0 var(--space-6);
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm, 0.9375rem);
         color: var(--core-muted-foreground);
-        max-width: 60ch;
+        font: var(--app-body);
+        max-inline-size: 60ch;
     }
 
     .door-hub__list {
@@ -164,50 +163,47 @@ const optionRows = door.options.map((option) => {
         padding: 0;
         display: grid;
         grid-template-columns: 1fr;
-        gap: var(--space-card-gap);
+        gap: var(--space-4);
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 48rem) {
         .door-hub__list {
             grid-template-columns: repeat(2, 1fr);
         }
     }
 
+    /* An option card: the kit card surface, with the option icon, text and action. */
     .door-hub__option {
         display: flex;
         flex-direction: column;
         gap: var(--space-3);
         background-color: var(--core-card);
-        border: 1px solid var(--core-foreground-a08);
+        border: 1px solid var(--border);
         border-radius: var(--radius-card);
         padding: var(--space-6);
-        box-shadow: 0 1px 2px var(--core-foreground-a05);
     }
 
     .door-hub__option-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 2.75rem;
-        height: 2.75rem;
+        inline-size: var(--space-10);
+        block-size: var(--space-10);
         border-radius: var(--radius-md);
-        background-color: var(--brand-accent-a08);
-        color: var(--brand-accent);
+        background-color: var(--upsell-bg);
+        color: var(--upsell-fg);
     }
 
     .door-hub__option-title {
         margin: 0 0 var(--space-1);
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: 1.125rem;
         color: var(--core-foreground);
+        font: var(--app-card-title);
     }
 
     .door-hub__option-description {
         margin: 0;
-        font-family: var(--font-sans);
-        font-size: 0.9375rem;
         color: var(--core-muted-foreground);
+        font: var(--app-ui);
     }
 
     .door-hub__option-action {
@@ -217,32 +213,5 @@ const optionRows = door.options.map((option) => {
         align-items: center;
         flex-wrap: wrap;
         gap: var(--space-3);
-    }
-
-    .door-hub__acquired-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-1);
-        font-family: var(--font-sans);
-        font-size: 0.8125rem;
-        font-weight: 600;
-        /* Use a foreground token, not the `--brand-tertiary` SURFACE token, which
-         * fails WCAG AA as text on the white/dark card (HOS-134 a11y fix). The
-         * CheckCircle icon keeps the green tint; the label stays legible. */
-        color: var(--core-muted-foreground);
-    }
-
-    .door-hub__coming-soon-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem var(--space-3);
-        font-family: var(--font-sans);
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-        color: var(--core-muted-foreground);
-        background-color: var(--surface-warm);
-        border-radius: var(--radius-pill);
     }
 </style>

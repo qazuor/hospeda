@@ -20,14 +20,14 @@ function readCss(fileName: string): string {
 const partnerCss = readCss('PartnerEditForm.module.css');
 const hostTradeCss = readCss('HostTradeEditForm.module.css');
 
-describe('PartnerEditForm.module.css field alignment', () => {
-    it('AC:1767:6 — removes the top margin from every field inside the grid', () => {
-        expect(partnerCss).toMatch(/\.grid\s*>\s*\.field\s*\{[^}]*margin-top:\s*0;/);
-        expect(partnerCss).not.toContain('.field:first-of-type');
+describe('PartnerEditForm.module.css layout (HOS-2506)', () => {
+    it('leaves field spacing to the grid gap: no margin on any cell', () => {
+        expect(partnerCss).toMatch(/\.grid\s*\{[^}]*gap:\s*var\(--space-4\);/);
+        expect(partnerCss).not.toMatch(/margin-top/);
     });
 
-    it('AC:1767:7 — keeps the base top margin for a field outside the grid', () => {
-        expect(partnerCss).toMatch(/\n\.field\s*\{[^}]*margin-top:\s*var\(--space-4, 16px\);/);
+    it('draws no surface of its own: no card recipe is composed any more', () => {
+        expect(partnerCss).not.toContain('composes');
     });
 });
 

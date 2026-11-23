@@ -2,8 +2,8 @@
  * @file ProfileCompletionBasicFields.tsx
  * @description Pure presentational subcomponent for the ProfileCompletion island.
  *
- * Renders: avatar preview, firstName, lastName, displayName (auto-derived +
- * editable), and birthDate fields. All state is owned by the parent island
+ * Renders (kit fields, HOS-2501): avatar preview, firstName, lastName,
+ * displayName (auto-derived + editable), and birthDate fields. All state is owned by the parent island
  * `ProfileCompletion.client.tsx`; this component receives only props.
  *
  * Not a `.client.tsx` — it mounts inside the already-hydrated parent island
@@ -15,13 +15,14 @@ import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import dayPickerCssUrl from 'react-day-picker/style.css?url';
-import { FieldError } from '@/components/ui/FieldError';
 import { ensureStylesheet } from '@/lib/ensure-stylesheet';
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { ddmmyyyyToDate } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionAvatarPicker } from './ProfileCompletionAvatarPicker';
+import { PcTextField } from './ProfileCompletionFields';
+import { Button, Field, TextInput } from './ui';
 
 // HOS-369 W3-5: attached at runtime rather than imported as a style
 // dependency. A bare `import 'react-day-picker/style.css'` here made Astro
@@ -117,7 +118,7 @@ export function ProfileCompletionBasicFields({
     derivedDisplayName
 }: ProfileCompletionBasicFieldsProps) {
     return (
-        <>
+        <div className={styles.stack}>
             {/* ── Avatar preview ─────────────────────────────────────── */}
             <div className={styles.avatarSection}>
                 <div className={styles.avatarPreview}>
@@ -136,7 +137,7 @@ export function ProfileCompletionBasicFields({
                         </span>
                     )}
                 </div>
-                <div>
+                <div className={styles.avatarActions}>
                     <p className={styles.avatarHint}>
                         {t('account.profileCompletion.avatar.hint', 'Tu foto de perfil')}
                     </p>
@@ -149,121 +150,59 @@ export function ProfileCompletionBasicFields({
                 </div>
             </div>
 
-            {/* ── First name + Last name (side by side) ────────────────── */}
-            <div className={styles.fieldRow}>
-                <div className={styles.field}>
-                    <label
-                        htmlFor="pc-firstName"
-                        className={styles.label}
-                    >
-                        {t('account.profileCompletion.fields.firstName', 'Nombre')}
-                        <span
-                            className={styles.required}
-                            aria-hidden="true"
-                        >
-                            {' *'}
-                        </span>
-                    </label>
-                    <input
-                        id="pc-firstName"
-                        type="text"
-                        className={
-                            errors.firstName ? `${styles.input} ${styles.inputError}` : styles.input
-                        }
-                        value={firstName}
-                        onChange={(e) => onFirstNameChange(e.target.value)}
-                        placeholder={t(
-                            'account.profileCompletion.fields.firstNamePlaceholder',
-                            'Tu nombre'
-                        )}
-                        aria-required="true"
-                        aria-describedby={errors.firstName ? 'pc-firstName-error' : undefined}
-                        autoComplete="given-name"
-                        disabled={submitting}
-                    />
-                    <FieldError
-                        id="pc-firstName-error"
-                        message={errors.firstName}
-                    />
-                </div>
-
-                <div className={styles.field}>
-                    <label
-                        htmlFor="pc-lastName"
-                        className={styles.label}
-                    >
-                        {t('account.profileCompletion.fields.lastName', 'Apellido')}
-                        <span
-                            className={styles.required}
-                            aria-hidden="true"
-                        >
-                            {' *'}
-                        </span>
-                    </label>
-                    <input
-                        id="pc-lastName"
-                        type="text"
-                        className={
-                            errors.lastName ? `${styles.input} ${styles.inputError}` : styles.input
-                        }
-                        value={lastName}
-                        onChange={(e) => onLastNameChange(e.target.value)}
-                        placeholder={t(
-                            'account.profileCompletion.fields.lastNamePlaceholder',
-                            'Tu apellido'
-                        )}
-                        aria-required="true"
-                        aria-describedby={errors.lastName ? 'pc-lastName-error' : undefined}
-                        autoComplete="family-name"
-                        disabled={submitting}
-                    />
-                    <FieldError
-                        id="pc-lastName-error"
-                        message={errors.lastName}
-                    />
-                </div>
+            {/* ── First name + Last name (side by side from 30rem) ───────── */}
+            <div className={styles.grid}>
+                <PcTextField
+                    name="firstName"
+                    label={t('account.profileCompletion.fields.firstName', 'Nombre')}
+                    locale={locale}
+                    value={firstName}
+                    onChange={onFirstNameChange}
+                    error={errors.firstName}
+                    required
+                    placeholder={t(
+                        'account.profileCompletion.fields.firstNamePlaceholder',
+                        'Tu nombre'
+                    )}
+                    autoComplete="given-name"
+                    disabled={submitting}
+                />
+                <PcTextField
+                    name="lastName"
+                    label={t('account.profileCompletion.fields.lastName', 'Apellido')}
+                    locale={locale}
+                    value={lastName}
+                    onChange={onLastNameChange}
+                    error={errors.lastName}
+                    required
+                    placeholder={t(
+                        'account.profileCompletion.fields.lastNamePlaceholder',
+                        'Tu apellido'
+                    )}
+                    autoComplete="family-name"
+                    disabled={submitting}
+                />
             </div>
 
             {/* ── Display name (auto-derived, editable) ────────────────── */}
-            <div className={styles.field}>
-                <label
-                    htmlFor="pc-displayName"
-                    className={styles.label}
-                >
-                    {t(
-                        'account.profileCompletion.fields.displayName',
-                        '¿Cómo querés que te llamemos?'
-                    )}
-                </label>
-                <input
-                    id="pc-displayName"
-                    type="text"
-                    className={
-                        errors.displayName ? `${styles.input} ${styles.inputError}` : styles.input
-                    }
-                    value={displayNameValue}
-                    onChange={(e) => onDisplayNameChange(e.target.value)}
-                    placeholder={derivedDisplayName || 'Nombre Apellido'}
-                    autoComplete="nickname"
-                    disabled={submitting}
-                    aria-describedby={
-                        errors.displayName ? 'pc-displayName-error' : 'pc-displayName-hint'
-                    }
-                />
-                <FieldError
-                    id="pc-displayName-error"
-                    message={errors.displayName}
-                />
-                <p
-                    id="pc-displayName-hint"
-                    className={styles.hint}
-                >
-                    {t(
-                        'account.profileCompletion.fields.displayNameHelper',
-                        'Auto-derivado de tu nombre y apellido, podés editarlo.'
-                    )}
-                </p>
-            </div>
+            <PcTextField
+                name="displayName"
+                label={t(
+                    'account.profileCompletion.fields.displayName',
+                    '¿Cómo querés que te llamemos?'
+                )}
+                locale={locale}
+                value={displayNameValue}
+                onChange={onDisplayNameChange}
+                error={errors.displayName}
+                hint={t(
+                    'account.profileCompletion.fields.displayNameHelper',
+                    'Auto-derivado de tu nombre y apellido, podés editarlo.'
+                )}
+                placeholder={derivedDisplayName || 'Nombre Apellido'}
+                autoComplete="nickname"
+                disabled={submitting}
+            />
 
             {/* ── Birth date ──────────────────────────────────────────────
              * Text input with auto-mask paired with a DayPicker popover.
@@ -279,7 +218,7 @@ export function ProfileCompletionBasicFields({
                 error={errors.birthDate}
                 t={t}
             />
-        </>
+        </div>
     );
 }
 
@@ -329,47 +268,42 @@ function BirthDateField({
     const selected = ddmmyyyyToDate(value);
 
     return (
-        <div className={styles.field}>
-            <label
-                htmlFor="pc-birthDate"
-                className={styles.label}
-            >
-                {t('account.profileCompletion.fields.birthDate', 'Fecha de nacimiento')}
-            </label>
+        <Field
+            label={t('account.profileCompletion.fields.birthDate', 'Fecha de nacimiento')}
+            locale={locale}
+            idParts={{ prefix: 'pc', name: 'birthDate' }}
+            error={error}
+            hint={t(
+                'account.profileCompletion.fields.birthDateHint',
+                'Opcional. Formato: dd/mm/yyyy.'
+            )}
+        >
             <div
                 ref={wrapperRef}
                 className={styles.birthDateWrapper}
             >
-                <input
-                    id="pc-birthDate"
-                    type="text"
+                <TextInput
                     inputMode="numeric"
-                    className={error ? `${styles.input} ${styles.inputError}` : styles.input}
                     value={value}
                     onChange={(e) => onChange(maskBirthDate(e.target.value))}
                     placeholder="dd/mm/yyyy"
                     maxLength={10}
                     autoComplete="bday"
                     disabled={disabled}
-                    aria-invalid={error ? 'true' : undefined}
-                    aria-describedby={
-                        error ? 'pc-birthDate-error pc-birthDate-hint' : 'pc-birthDate-hint'
-                    }
                 />
-                <button
-                    type="button"
-                    className={styles.birthDatePickerButton}
+                <Button
+                    iconOnly
+                    variant="secondary"
                     onClick={() => setPickerOpen((open) => !open)}
                     disabled={disabled}
                     aria-label={t('account.profileCompletion.fields.birthDateOpenPicker')}
                     aria-expanded={pickerOpen}
                 >
                     <CalendarIcon
-                        size={18}
-                        weight="regular"
+                        size="md"
                         aria-hidden="true"
                     />
-                </button>
+                </Button>
                 {pickerOpen && (
                     <div
                         // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal
@@ -397,20 +331,7 @@ function BirthDateField({
                     </div>
                 )}
             </div>
-            <FieldError
-                id="pc-birthDate-error"
-                message={error}
-            />
-            <p
-                id="pc-birthDate-hint"
-                className={styles.hint}
-            >
-                {t(
-                    'account.profileCompletion.fields.birthDateHint',
-                    'Opcional. Formato: dd/mm/yyyy.'
-                )}
-            </p>
-        </div>
+        </Field>
     );
 }
 

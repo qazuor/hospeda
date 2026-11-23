@@ -54,6 +54,7 @@ export {
 } from './CompletenessMeter';
 export { Composer, type ComposerProps } from './Composer';
 export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog';
+export { ContentCard, type ContentCardProps, type ContentCardStatus } from './ContentCard';
 export {
     ConversationThread,
     type ConversationThreadProps,
@@ -61,8 +62,11 @@ export {
     type ThreadMessage,
     type ThreadViewer
 } from './ConversationThread';
+// HOS-2502: tourist long tail pieces.
+export { COPY_FEEDBACK_MS, CopyField, type CopyFieldProps } from './CopyField';
 export { DataList, type DataListProps } from './DataList';
 export { Dialog, type DialogProps, type DialogSize } from './Dialog';
+export { Disclosure, type DisclosureProps } from './Disclosure';
 export { Drawer, type DrawerProps, type DrawerSide } from './Drawer';
 export { EditorSectionNav, type EditorSectionNavProps } from './EditorSectionNav';
 export { EditorSwitcher, type EditorSwitcherProps } from './EditorSwitcher';
@@ -76,6 +80,7 @@ export {
 } from './EntityCard';
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { Field, type FieldProps } from './Field';
+export { type FilterChipItem, FilterChips, type FilterChipsProps } from './FilterChips';
 export { type FieldContextValue, joinDescribedBy, useFieldControl } from './field-context';
 export {
     copyHoursDayToAll,
@@ -94,9 +99,23 @@ export {
     withHoursDay
 } from './HoursEditor';
 export { type HelpAnchor, type HelpAttr, helpAttr, isHelpAnchor } from './help-anchor';
+export {
+    DEFAULT_IMAGE_TYPES,
+    ImageUploader,
+    type ImageUploaderProps,
+    type ImageUploadResult
+} from './ImageUploader';
 export { InputGroup, type InputGroupProps } from './InputGroup';
 export { type KeyValueItem, KeyValueList, type KeyValueListProps } from './KeyValueList';
 export { LinkButton, type LinkButtonProps } from './LinkButton';
+export {
+    ListingCard,
+    ListingCardGrid,
+    type ListingCardGridProps,
+    type ListingCardImage,
+    type ListingCardProps,
+    type ListingCardVertical
+} from './ListingCard';
 export { ListRow, type ListRowActions, type ListRowProps } from './ListRow';
 export { LockedState, type LockedStateProps } from './LockedState';
 export type { LockReason, PlanRef } from './lock-reason';
@@ -110,17 +129,32 @@ export {
     PhotoTile,
     type PhotoTileProps
 } from './MediaManager';
+export { Menu, type MenuItem, type MenuProps } from './Menu';
 export {
     MessageBubble,
     type MessageBubbleProps,
     type MessageBubbleSide,
     type MessageDelivery
 } from './MessageBubble';
+export {
+    MyContentList,
+    type MyContentListPagination,
+    type MyContentListProps,
+    type MyContentListState
+} from './MyContentList';
+export {
+    OptionCard,
+    OptionCardGrid,
+    type OptionCardGridProps,
+    type OptionCardProps
+} from './OptionCard';
 export { type Breadcrumb, PageHeader, type PageHeaderProps } from './PageHeader';
 export { type LoadMoreResult, Pagination, type PaginationProps } from './Pagination';
 export { PhoneField, type PhoneFieldProps } from './PhoneField';
+export { PlanSummary, type PlanSummaryProps } from './PlanSummary';
 export { buildPageRange, type PageSlot } from './pagination-range';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './Radio';
+export { RatingStars, type RatingStarsProps, starFill } from './RatingStars';
 export {
     Repeater,
     type RepeaterMoves,
@@ -138,6 +172,7 @@ export {
     type StatValue
 } from './StatCard';
 export { CountPill, type CountPillProps, StatusPill, type StatusPillProps } from './StatusPill';
+export { Stepper, type StepperProps, type StepperStep } from './Stepper';
 export { StickySaveBar, type StickySaveBarProps } from './StickySaveBar';
 export {
     Switch,

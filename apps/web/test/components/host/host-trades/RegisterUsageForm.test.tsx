@@ -181,8 +181,13 @@ describe('RegisterUsageForm — outcomes', () => {
         const panel = await screen.findByRole('status');
         expect(panel).toHaveTextContent(new RegExp(PROVIDER_NAME));
 
-        const link = screen.getByRole('link');
+        const link = screen.getByRole('link', { name: /ver mis usos del beneficio/i });
         expect(link).toHaveAttribute('href', expect.stringContaining('usos-de-beneficio'));
+        // HOS-2502: the result state also offers the way back to the directory
+        expect(screen.getByRole('link', { name: /volver al directorio/i })).toHaveAttribute(
+            'href',
+            expect.stringContaining('directorio-proveedores')
+        );
     });
 
     it('replaces the form with the confirmation, so the usage cannot be sent twice', async () => {

@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import type { Major } from '../../types/money.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatMajorCurrency } from '../utils/index.js';
@@ -74,7 +73,7 @@ export function PaymentFailure({
                 Intentamos procesar tu pago pero no fue posible completar la transacción.
             </Text>
 
-            <Section style={styles.alertBox}>
+            <Callout tone="danger">
                 {!isCancelledCheckoutRetry && (
                     <InfoRow
                         label="Monto"
@@ -87,7 +86,7 @@ export function PaymentFailure({
                         value={failureReason}
                     />
                 )}
-            </Section>
+            </Callout>
 
             {isCancelledCheckoutRetry ? (
                 <Text style={styles.paragraph}>
@@ -101,15 +100,13 @@ export function PaymentFailure({
                 </Text>
             )}
 
-            <Section style={styles.buttonContainer}>
-                {isCancelledCheckoutRetry && retryUrl ? (
-                    <Button href={retryUrl}>Ir a mi cuenta</Button>
-                ) : (
-                    <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
-                        Actualizar método de pago
-                    </Button>
-                )}
-            </Section>
+            {isCancelledCheckoutRetry && retryUrl ? (
+                <Button href={retryUrl}>Ir a mi cuenta</Button>
+            ) : (
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>
+                    Actualizar método de pago
+                </Button>
+            )}
 
             <Text style={styles.footerNote}>
                 Si necesitas ayuda, nuestro equipo de soporte está disponible para asistirte.
@@ -130,17 +127,6 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    alertBox: {
-        backgroundColor: '#fef2f2',
-        borderRadius: '8px',
-        borderLeft: '4px solid #ef4444',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     },
     footerNote: {
         color: '#64748b',

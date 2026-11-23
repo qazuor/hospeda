@@ -41,12 +41,15 @@ interface Props {
     /** SSR-resolved bookmark id for toggling off without a re-check. */
     /** Total bookmark count from the public API. */
     readonly bookmarkCount?: number;
+    /** Whether the gallery already renders back and favorite controls on mobile. */
+    readonly hasMobileGalleryControls?: boolean;
 }
 
 const {
     experience,
     locale,
     bookmarkCount,
+    hasMobileGalleryControls = false
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
@@ -76,7 +79,7 @@ const isNew = experience.createdAt
     : false;
 ---
 
-<header class="exp-hero">
+<header class:list={['exp-hero', { 'exp-hero--mobile-gallery': hasMobileGalleryControls }]}>
     <div class="exp-hero__back-row wh-compact-hide">
         <HeaderBackButton href={`/${locale}/experiencias/`} locale={locale} />
     </div>
@@ -353,6 +356,40 @@ const isNew = experience.createdAt
      * ========================================================= */
     :global(.wave-header--compact) .exp-hero__badges {
         gap: 4px;
+    }
+
+
+    /* Mobile gallery pages (HOS-2532): the gallery overlay already carries back
+       and favorite, so the header drops them and keeps a compact title block. */
+    @media (max-width: 767px) {
+        .exp-hero--mobile-gallery .exp-hero__back-row,
+        .exp-hero--mobile-gallery .exp-hero__fav {
+            display: none;
+        }
+
+        .exp-hero--mobile-gallery .exp-hero__badges {
+            min-width: 0;
+            max-width: 100%;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+
+        .exp-hero--mobile-gallery .exp-hero__badges > * {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        .exp-hero--mobile-gallery .exp-hero__type-badge,
+        .exp-hero--mobile-gallery .exp-hero__new-badge,
+        .exp-hero--mobile-gallery .featured-badge {
+            font-size: 12px;
+        }
+
+        /* Long titles wrap to 5 lines at the desktop-derived size; use the h3 step. */
+        .exp-hero--mobile-gallery .exp-hero__name {
+            overflow-wrap: anywhere;
+            font-size: var(--text-h3, 1.25rem);
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {

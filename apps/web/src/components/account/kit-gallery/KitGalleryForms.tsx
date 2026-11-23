@@ -10,7 +10,9 @@ import {
     Button,
     Checkbox,
     CheckboxGroup,
+    Disclosure,
     Field,
+    ImageUploader,
     InputGroup,
     PhoneField,
     Radio,
@@ -236,6 +238,56 @@ export function KitGalleryForms({ locale }: GalleryGroupProps) {
                             label="Tarjeta"
                         />
                     </RadioGroup>
+                </Visual>
+                <Visual name="ImageUploader/empty">
+                    <ImageUploader
+                        label="Logo"
+                        locale={locale}
+                        value={null}
+                        onChange={() => undefined}
+                        upload={async () => ({ ok: false })}
+                        maxBytes={5 * 1024 * 1024}
+                        maxMb={5}
+                        previewAlt="Vista previa del logo"
+                    />
+                </Visual>
+                <Visual name="ImageUploader/withImage">
+                    <ImageUploader
+                        label="Logo"
+                        locale={locale}
+                        value="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Crect width='96' height='96' fill='%23888'/%3E%3C/svg%3E"
+                        onChange={() => undefined}
+                        upload={async () => ({ ok: false })}
+                        maxBytes={5 * 1024 * 1024}
+                        maxMb={5}
+                        previewAlt="Vista previa del logo"
+                    />
+                </Visual>
+                <Visual name="ImageUploader/error">
+                    <ImageUploader
+                        label="Logo"
+                        locale={locale}
+                        value={null}
+                        onChange={() => undefined}
+                        upload={async () => ({ ok: false })}
+                        maxBytes={5 * 1024 * 1024}
+                        maxMb={5}
+                        previewAlt="Vista previa del logo"
+                        error="Ese formato no está permitido. Usá una imagen PNG, JPG, WEBP."
+                    />
+                </Visual>
+                <Visual name="Disclosure/closed">
+                    <Disclosure summary="Pegar URL">
+                        <p>Contenido secundario.</p>
+                    </Disclosure>
+                </Visual>
+                <Visual name="Disclosure/open">
+                    <Disclosure
+                        summary="Pegar URL"
+                        defaultOpen
+                    >
+                        <p>Contenido secundario.</p>
+                    </Disclosure>
                 </Visual>
             </div>
         </section>

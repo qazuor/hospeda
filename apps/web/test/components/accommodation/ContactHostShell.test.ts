@@ -16,8 +16,10 @@ describe('ContactHostShell.astro (source-based)', () => {
     });
 
     it('swaps form for fallback inside <noscript>', () => {
-        expect(src).toMatch(/<noscript>[\s\S]*\[data-contact-form\] \{ display: none; \}/);
-        expect(src).toMatch(/\[data-contact-fallback\] \{ display: block; \}/);
+        expect(src).toMatch(
+            /<noscript>[\s\S]*\[data-contact-form\] \{ display: none !important; \}/
+        );
+        expect(src).toMatch(/\[data-contact-fallback\] \{ display: block !important; \}/);
     });
 
     it('renders phone, landline, email and website only; never WhatsApp', () => {
@@ -33,7 +35,9 @@ describe('ContactHostShell.astro (source-based)', () => {
         expect(src).not.toContain('href={contactInfo.website}');
     });
 
-    it('is wrapped around the sidebar ContactHost island on the page', () => {
-        expect(page).toMatch(/<ContactHostShell[^>]*>\s*<ContactHost\s+client:idle/);
+    it('is wrapped around the sidebar contact card island (it hosts ContactHost) on the page', () => {
+        expect(page).toMatch(
+            /<ContactHostShell[^>]*>\s*<ListingContactCard\s+client:media="\(min-width: 768px\)"/
+        );
     });
 });

@@ -35,16 +35,17 @@
  * HOS-2477 made this page the partner's dashboard on the account kit: a
  * PageHeader with the listing's StatusPill, the state banner as a «próxima
  * acción» Alert, the numbers `mineStats` computes (PartnerStatsGrid island) and
- * the edit form inside a Section. Test ids and copy the e2e suite reads are kept.
+ * the edit form, whose own Sections (identity, logo and texts, contact, social) are
+ * flat siblings on the page — the form is NOT wrapped in another Section (HOS-2506).
+ * Test ids and copy the e2e suite reads are kept.
  *
  * @route     /[lang]/mi-cuenta/partner/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import HelpLink from '@/components/account/help/HelpLink.astro';
-import { pageHelpAnchor } from '@/lib/help/help-entry';
 import { Alert, PageHeader, Section, StatusPill, type StatusTone } from '@/components/account/ui';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
 import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
 import { PartnerStatsGrid } from '@/components/account/dashboard/PartnerStatsGrid.client';
 import styles from '@/components/account/dashboard/Dashboard.module.css';
@@ -152,7 +153,7 @@ try {
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner" template="dashboard">
   <div class={styles.page}>
     <PageHeader locale={locale} title={title} description={subtitle} helpId="section:partner.dashboard">
-        <HelpLink slot="help" anchor={pageHelpAnchor({ routePattern: Astro.routePattern })} locale={locale} />
+        <PageHelpLink slot="help" locale={locale} />
         {partner !== null && (
             <StatusPill slot="status" tone={STATE_TONE[listingState]}>{t(`account.partner.statusPill.${listingState}`)}</StatusPill>
         )}
@@ -273,11 +274,7 @@ try {
                     </div>
                 )}
 
-                {!isRevoked && (
-                    <Section title={t('account.partner.form.sectionTitle')} helpId="section:partner.edit-form">
-                        <PartnerEditForm locale={locale} partner={partner} client:load />
-                    </Section>
-                )}
+                {!isRevoked && <PartnerEditForm locale={locale} partner={partner} client:load />}
             </>
         )
     }

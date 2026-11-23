@@ -11,18 +11,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AllianceClaimBanner } from '../../../src/components/account/AllianceClaimBanner.client';
 
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
-    })
-}));
-
-vi.mock('../../../src/components/account/AllianceClaimBanner.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
-}));
-
 const LEAD_ID = '00000000-0000-4000-a000-000000000002';
 
 function setUrl(search: string): void {
@@ -138,13 +126,17 @@ describe('AllianceClaimBanner', () => {
             expect(await screen.findByText(/no pudimos confirmar/i)).toBeInTheDocument();
         });
 
-        it('announces itself politely to assistive tech', async () => {
+        it('announces itself as a kit status alert, and a failure as an alert', async () => {
             vi.mocked(global.fetch).mockResolvedValue({ ok: true } as Response);
-
-            renderBanner();
-
+            const { unmount } = renderBanner();
             const status = await screen.findByRole('status');
-            expect(status).toHaveAttribute('aria-live', 'polite');
+            expect(status).toHaveAttribute('data-tone');
+            unmount();
+
+            setUrl(`?lead=${LEAD_ID}&claim=raw-token`);
+            vi.mocked(global.fetch).mockResolvedValue({ ok: false, status: 404 } as Response);
+            renderBanner();
+            expect(await screen.findByRole('alert')).toHaveAttribute('data-tone', 'danger');
         });
     });
 });

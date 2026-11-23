@@ -1,6 +1,5 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
-import { Button } from '../components/button.js';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -48,7 +47,7 @@ export function CompGranted({
                 Conservás todo lo que el plan incluye y no hay nada que renovar.
             </Text>
 
-            <Section style={styles.giftBox}>
+            <Callout tone="success">
                 <InfoRow
                     label="Plan"
                     value={planName}
@@ -61,7 +60,7 @@ export function CompGranted({
                     label="Vencimiento"
                     value="No vence"
                 />
-            </Section>
+            </Callout>
 
             {hadActiveBilling ? (
                 <Text style={styles.paragraph}>
@@ -75,9 +74,7 @@ export function CompGranted({
                 No tenés que hacer nada. Seguí usando tu cuenta como siempre.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
-            </Section>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
         </EmailLayout>
     );
 }
@@ -94,16 +91,5 @@ const styles = {
         fontSize: '16px',
         lineHeight: '24px',
         margin: '0 0 16px'
-    },
-    giftBox: {
-        backgroundColor: '#f0fdf4',
-        borderRadius: '8px',
-        borderLeft: '4px solid #8CC63F',
-        padding: '24px',
-        margin: '24px 0'
-    },
-    buttonContainer: {
-        margin: '32px 0',
-        textAlign: 'center' as const
     }
 };

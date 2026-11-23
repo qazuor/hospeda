@@ -1,0 +1,86 @@
+/* WhatsNewPageList.module.css — the «Novedades de Hospeda» entries (HOS-2501).
+   One flat row per entry, separated by a rule; the page template already caps
+   the width at the reading measure. Kit pieces carry every control. */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.skeletons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item + .item {
+    border-block-start: 1px solid var(--border);
+}
+
+.entry {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-block: var(--space-5);
+}
+
+/* An entry already read is quieter, never hidden. */
+.entry[data-seen="true"] {
+    color: var(--core-muted-foreground);
+}
+
+.image {
+    inline-size: 100%;
+    block-size: calc(var(--space-12) * 4);
+    object-fit: cover;
+    border-radius: var(--radius-md);
+}
+
+.meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.date {
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+}
+
+.title {
+    margin: 0;
+    color: var(--core-foreground);
+    font: var(--app-card-title);
+}
+
+.content {
+    color: inherit;
+    font: var(--app-body);
+}
+
+.content :where(a) {
+    color: var(--brand-primary-link);
+    text-decoration: underline;
+}
+
+.more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.count {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font: var(--app-ui);
+}

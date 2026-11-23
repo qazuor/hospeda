@@ -26,11 +26,16 @@
         }
     },
     "filter": {
-        "all": "All"
+        "all": "All",
+        "label": "Filter by category",
+        "clear": "Clear filters"
     },
     "emptyState": {
         "noAccommodations": "You need at least one registered accommodation to see this directory.",
-        "noTrades": "No providers available for your destinations yet."
+        "noTrades": "No providers available for your destinations yet.",
+        "filteredTitle": "No provider in those categories",
+        "titleNoTrades": "There are no providers yet",
+        "titleNoAccommodations": "Register a listing first"
     },
     "accessDenied": {
         "title": "This section is exclusive to hosts",
@@ -70,7 +75,8 @@
             },
             "submit": "Record the use",
             "submitting": "Recording…",
-            "footnote": "We'll ask {{name}} to confirm. Until they do, the record stays pending."
+            "footnote": "We'll ask {{name}} to confirm. Until they do, the record stays pending.",
+            "title": "Record the use"
         },
         "errors": {
             "dateRequired": "Pick the day of the service.",
@@ -101,7 +107,8 @@
         "subtitle": "Confirm the usages providers record, and review your history.",
         "pending": {
             "title": "Waiting for your confirmation",
-            "empty": "You have no usages waiting to be confirmed."
+            "empty": "You have no usages waiting to be confirmed.",
+            "countLabel": "Waiting for your confirmation: {{count}}"
         },
         "history": {
             "title": "History",

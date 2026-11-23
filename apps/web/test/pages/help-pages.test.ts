@@ -31,18 +31,21 @@ const SHELL = read('layouts/EditorShellLayout.astro');
 const HELP_LINK = read('components/account/help/HelpLink.astro');
 const LAYOUT = read('layouts/AccountLayout.astro');
 const ACCOUNT_HEADER = read('layouts/AccountHeader.astro');
+const PAGE_HELP_LINK = read('components/account/help/PageHelpLink.astro');
+const OWNER_DASHBOARD = read('components/account/dashboard/OwnerDashboardPage.astro');
 
 /**
  * What gives a page the «?» of ITS OWN article (HOS-2546): the title row of
- * `AccountPageHeader`, directly or through an editor layout, or a `HelpLink`
- * in the `help` slot of the kit `PageHeader`. Since `PageHelpRow` is gone, the
- * account layout alone is not enough.
+ * `AccountPageHeader`, directly or through an editor layout, or the kit
+ * `PageHeader` with `<PageHelpLink slot="help">` (or the owner dashboard
+ * template, which carries one). Since `PageHelpRow` is gone, the account layout
+ * alone is not enough.
  */
 const PAGE_HELP_PATH =
-    /<AccountPageHeader\b|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b|<HelpLink slot="help"/;
+    /<AccountPageHeader\b|<PageHelpLink\b[^>]*slot="help"|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
 
 /** What gives a page at least the general «?»: a page «?», or the account header's. */
-const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b`);
+const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b|<OwnerDashboardPage\\b`);
 
 /**
  * Onboarding gates the middleware sends a user to before the account itself:
@@ -197,7 +200,7 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
         expect(SHELL).toContain(
             'sectionHelpAnchor({ vertical: registry.id, slug: currentSectionSlug })'
         );
-        expect(SHELL).toContain('anchor={helpAnchor}');
+        expect(SHELL).toContain('<PageHelpLink slot="help" anchor={helpAnchor} locale={locale} />');
     });
 
     it('HelpLink renders nothing without an entry and puts helpLinkAttributes on its <a>', () => {
@@ -332,5 +335,16 @@ describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
             const route = `/[lang]/${anchor.replace(/^page:/, '')}`;
             expect(pageHelpAnchor({ routePattern: route })).toBeUndefined();
         }
+    });
+});
+
+describe('kit PageHeader «?» (HOS-2546 after the kit migration)', () => {
+    it('PageHelpLink derives the page anchor from the route and renders HelpLink', () => {
+        expect(PAGE_HELP_LINK).toContain('pageHelpAnchor({ routePattern: Astro.routePattern })');
+        expect(PAGE_HELP_LINK).toContain('<HelpLink anchor={resolved} locale={locale} />');
+    });
+
+    it('the owner dashboard template puts a PageHelpLink in its header', () => {
+        expect(OWNER_DASHBOARD).toMatch(/<PageHelpLink slot="help"/);
     });
 });

@@ -1,7 +1,6 @@
-import { Section, Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Text } from '@react-email/components';
+import { Button, Callout, EmailLayout } from '@repo/email';
 import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
-import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatDate } from '../utils/index.js';
@@ -57,7 +56,7 @@ export function TrialEnding5Days({
                 esa fecha, tu publicación deja de aparecer en Hospeda hasta que elijas un plan.
             </Text>
 
-            <Section style={styles.warningBox}>
+            <Callout tone="warning">
                 {plan ? (
                     <InfoRow
                         label="Plan de prueba"
@@ -72,16 +71,14 @@ export function TrialEnding5Days({
                     label="Qué pasa ese día"
                     value="Tu ficha deja de estar visible"
                 />
-            </Section>
+            </Callout>
 
             <Text style={styles.paragraph}>
                 No perdés nada de lo que cargaste. {copy.savedItemsLine} quedan guardados tal como
                 están; lo único que cambia es que dejan de verse mientras no haya un plan activo.
             </Text>
 
-            <Section style={styles.buttonContainer}>
-                <Button href={upgradeUrl}>Elegir mi plan</Button>
-            </Section>
+            <Button href={upgradeUrl}>Elegir mi plan</Button>
 
             <Text style={styles.footerNote}>
                 ¿Tenés dudas sobre cuál te conviene? Respondé este mail y lo vemos juntos.

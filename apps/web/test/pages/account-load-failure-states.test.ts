@@ -20,13 +20,15 @@ describe('mi-cuenta/comercio/index.astro — API failure (HOS-2421)', () => {
         expect(source).toContain('listingsLoadFailed = true');
     });
 
-    it('renders the error state BEFORE the empty state, with a retry link', () => {
+    it('renders the kit ErrorState (retry) BEFORE the empty state (HOS-2484)', () => {
         const errorAt = source.indexOf('listingsLoadFailed ? (');
         const emptyAt = source.indexOf('listings.length === 0 ? (');
         expect(errorAt).toBeGreaterThan(-1);
         expect(emptyAt).toBeGreaterThan(errorAt);
-        expect(source).toContain("t('listing.owner.list.loadError.retry'");
-        expect(source).toContain('ctaHref={Astro.url.pathname + Astro.url.search}');
+        const errorBranch = source.slice(errorAt, emptyAt);
+        expect(errorBranch).toContain('<PageLoadError');
+        expect(errorBranch).toContain("'listing.owner.list.loadError.title'");
+        expect(errorBranch).not.toContain('EmptyState');
     });
 
     it('keeps the real empty state', () => {

@@ -68,7 +68,7 @@ async function activeCardSubscription(
 
 async function redeem(page: import('@playwright/test').Page, subscriptionId: string, code: string) {
     const article = page.locator(
-        `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+        `[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
     );
     await redeemPromoCode({ scope: article, code });
     return { article, notice: article.getByTestId('promo-redeem-notice') };
@@ -193,10 +193,10 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
         await attachSession(page, subscriber.user.sessionCookie);
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const manual = page.locator(
-            `article[data-testid="my-subscription"][data-subscription-id="${manualId}"]`
+            `[data-testid="my-subscription"][data-subscription-id="${manualId}"]`
         );
         const cardArticle = page.locator(
-            `article[data-testid="my-subscription"][data-subscription-id="${card}"]`
+            `[data-testid="my-subscription"][data-subscription-id="${card}"]`
         );
         await expect(manual.getByTestId('promo-redeem')).toHaveCount(0);
         await expect(cardArticle.getByTestId('promo-redeem')).toBeVisible();
@@ -223,7 +223,7 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
         await attachSession(page, user.sessionCookie);
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
         const article = page.locator(
-            `article[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+            `[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
         );
         await redeemPromoCode({ scope: article, code: floorCode });
         await expect(article.getByTestId('promo-redeem-error')).toHaveText(

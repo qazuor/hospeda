@@ -1,11 +1,15 @@
 ---
 /**
  * @file mi-cuenta/promociones/nueva.astro
- * @description Create new owner promotion page — mounts the PromotionForm island
- * in create mode so the authenticated owner can add a new promotion.
+ * @description Create an owner promotion, on the account kit editor template
+ * (HOS-2505): kit `PageHeader` with a back link, then the `PromotionForm`
+ * island (kit field Sections + `StickySaveBar`). When the owner's plan does
+ * not include promotions the island shows a `LockedState` BEFORE the form
+ * (D9), naming the catalog plans read here.
  *
- * Auth protection: middleware redirects unauthenticated users. This page
- * is only reachable by users with an active session.
+ * The catalog reader is server-only, so this page reads the plan names (the
+ * exclusive-deals audience hint, HOS-2544, and the promotions lock) and hands
+ * them to the island.
  *
  * @route    /[lang]/mi-cuenta/promociones/nueva
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -16,8 +20,8 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import AccountLayout from '@/layouts/AccountLayout.astro';
-import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import PageHelpLink from '@/components/account/help/PageHelpLink.astro';
+import { PageHeader } from '@/components/account/ui';
 import { PromotionForm } from '@/components/host/PromotionForm.client';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { fetchPublicPlans, planNamesWithEntitlement } from '@/lib/billing/fetch-plans';
@@ -27,27 +31,49 @@ export const prerender = false;
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
-const title = t('host.promotions.createButton', 'Nueva promoción');
-const description = t('host.promotions.pageDescription', 'Gestioná tus promociones y descuentos');
-
-// HOS-2544: the audience hint names the catalog plans that carry exclusive deals. The
-// catalog reader is server-only, so the names are read here and handed to the island.
-const audiencePlanNames = planNamesWithEntitlement({
-    result: await fetchPublicPlans({ vertical: 'tourist' }),
-    entitlement: EntitlementKeyEnum.EXCLUSIVE_DEALS
-});
+const title = t('host.promotions.createButton');
+const description = t('host.promotions.pageDescription');
 
 // Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
 const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search }));
 }
+
+const [touristPlans, ownerPlans] = await Promise.all([
+    fetchPublicPlans({ vertical: 'tourist' }),
+    fetchPublicPlans({ vertical: 'accommodation' })
+]);
+// HOS-2544: the audience hint names the tourist plans that carry exclusive deals.
+const audiencePlanNames = planNamesWithEntitlement({
+    result: touristPlans,
+    entitlement: EntitlementKeyEnum.EXCLUSIVE_DEALS
+});
+// HOS-2505: the lock names the owner plans that include promotions.
+const lockPlanNames = planNamesWithEntitlement({
+    result: ownerPlans,
+    entitlement: EntitlementKeyEnum.CREATE_PROMOTIONS
+});
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
-    <AccountPageHeader title={title} description={description} />
+    <PageHeader
+        title={title}
+        description={description}
+        locale={locale}
+        back={{
+            label: t('host.promotions.kit.backToList'),
+            href: buildUrl({ locale, path: 'mi-cuenta/promociones' })
+        }}
+    >
+        <PageHelpLink slot="help" locale={locale} />
+    </PageHeader>
 
-    <AccountSectionCard>
-        <PromotionForm client:load locale={locale} mode="create" audiencePlanNames={audiencePlanNames} />
-    </AccountSectionCard>
+    <PromotionForm
+        client:load
+        locale={locale}
+        mode="create"
+        audiencePlanNames={audiencePlanNames}
+        lockPlanNames={lockPlanNames}
+    />
 </AccountLayout>

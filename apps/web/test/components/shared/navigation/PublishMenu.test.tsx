@@ -24,6 +24,16 @@ describe('PublishMenu', () => {
         expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
     });
 
+    it.each([
+        ['es', 'Publicar: elegí qué querés publicar'],
+        ['en', 'Publish: choose what to publish'],
+        ['pt', 'Publicar: escolha o que publicar']
+    ] as const)('gives the trigger an explicit accessible name for icon-only mobile layout in %s (HOS-2572)', (locale, expected) => {
+        render(<PublishMenu locale={locale} />);
+        const trigger = screen.getByRole('button', { name: expected });
+        expect(trigger).toHaveAttribute('aria-label', expected);
+    });
+
     it('opens a role="menu" panel when the trigger is clicked (HOS-691 AC-12)', () => {
         render(<PublishMenu locale="es" />);
         const trigger = open();
