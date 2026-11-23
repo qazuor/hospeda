@@ -16,10 +16,10 @@ vi.mock('../../../src/lib/i18n', () => {
     const t = (key: string, fallback?: string, params?: Record<string, unknown>): string =>
         // Plural keys carry no fallback: echo key + params so plan names stay assertable.
         fallback ?? `${key} ${JSON.stringify(params ?? {})}`;
-    return { createTranslations: () => ({ t, tPlural: (key: string) => key }) };
+    return { createTranslations: () => ({ t, tPlural: (key: string) => key }), createT: () => t };
 });
 
-for (const name of ['ExclusiveDealsList', 'RecommendationsFeed', 'SearchHistoryList']) {
+for (const name of ['RecommendationsFeed', 'SearchHistoryList']) {
     vi.doMock(`../../../src/components/account/${name}.module.css`, () => ({
         default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
     }));
