@@ -128,11 +128,13 @@ function isA5Origin(status: string): status is A5Origin {
  * @param ports - `políticaDeAddon` and `ficha`, for the coverage verticals (notas I-7). Part of
  *   the contract (Coord-377): every caller (`runOrphanhood`; `S12` with `WITHDRAWN`, HOS-1569;
  *   HOS-1546, HOS-1547, HOS-1570) passes them. The production `ficha` answers for
- *   an existing listing, including `PURGED`. A missing or soft-deleted listing throws
- *   `ListingNotFoundError` and rolls back the caller's act. `revokePermanentGrant` turns it into
- *   the typed 409 `PERMANENT_GRANT_LISTING_SOFT_DELETED` (HOS-2069).
+ *   an existing listing, including `PURGED`. A missing or soft-deleted listing is
+ *   turned into the typed 409 `ADDON_LISTING_SOFT_DELETED` (HOS-2128) and rolls back the caller's
+ *   act; `ListingNotFoundError` never escapes. `revokePermanentGrant` re-maps it to its own
+ *   `PERMANENT_GRANT_LISTING_SOFT_DELETED` (HOS-2069).
  * @returns The cancelled addon, or `NOT_APPLICABLE`
- * @throws ServiceError when the instance does not exist or left its state under the lock
+ * @throws ServiceError when the instance does not exist or left its state under the lock, or with
+ *   reason `ADDON_LISTING_SOFT_DELETED` (409) when a LISTING addon targets a deleted listing
  */
 export async function applyA5(
     input: {
@@ -309,6 +311,8 @@ async function closeComplement(input: {
  * @param input.now - The instant of the act
  * @param ports - Orphanhood ports
  * @returns `{ cancelled }`: the instances A5 cancelled as `ORPHANED`
+ * @throws ServiceError with reason `ADDON_LISTING_SOFT_DELETED` (409) when a LISTING addon
+ *   targets a deleted listing; the caller's transaction must roll back (HOS-2128)
  */
 export async function runOrphanhood(
     input: {
