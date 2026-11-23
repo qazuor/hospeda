@@ -17,7 +17,11 @@ const images = Array.from({ length: 10 }, (_, index) => ({
     url: `https://res.cloudinary.com/test/image/upload/photo-${index}.jpg`,
     alt: `Photo ${index + 1}`
 }));
-const share = { url: 'https://example.com/en/alojamientos/suite/', title: 'Suite' };
+const share = {
+    url: 'https://example.com/en/alojamientos/suite/',
+    title: 'Suite',
+    campaign: 'accommodation'
+} as const;
 const mobile = { backHref: '/en/alojamientos/' };
 
 afterEach(() => {

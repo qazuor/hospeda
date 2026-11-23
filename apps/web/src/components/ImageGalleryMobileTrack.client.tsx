@@ -1,3 +1,4 @@
+import type { ShareCampaign } from '@repo/analytics';
 import { ChevronLeftIcon } from '@repo/icons';
 import type { KeyboardEvent, MouseEvent, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -13,7 +14,12 @@ import { ShareButtons } from './ShareButtons.client';
 /** Caller-supplied navigation and public action metadata for the mobile gallery. */
 export interface MobileGalleryOptions {
     readonly backHref: string;
-    readonly share?: { readonly url: string; readonly title: string };
+    readonly share?: {
+        readonly url: string;
+        readonly title: string;
+        /** Entity type shared, used as `utm_campaign` (HOS-2359). */
+        readonly campaign: ShareCampaign;
+    };
     readonly favorite?: Pick<FavoriteButtonProps, 'entityId' | 'entityType' | 'variant'>;
 }
 

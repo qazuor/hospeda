@@ -1,7 +1,8 @@
 /**
  * @file ShareButtons.test.tsx
  * @description Unit tests for the ShareButtons React island.
- * Covers: render, popover open/close, copy-to-clipboard, WhatsApp href assertion.
+ * Covers: render, popover open/close, copy-to-clipboard, WhatsApp href assertion,
+ * and the per-action campaign UTMs (HOS-2359 AC-14).
  */
 
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -68,8 +69,18 @@ vi.mock('@repo/icons', () => ({
 const DEFAULT_PROPS = {
     url: 'https://hospeda.com.ar/es/alojamientos/cabana-del-rio/',
     title: 'Cabaña del Río',
-    locale: 'es' as const
+    locale: 'es' as const,
+    campaign: 'accommodation' as 'accommodation' | 'event' | 'post'
 };
+
+/**
+ * The URL each action shares (HOS-2359 AC-14): the canonical URL plus the share
+ * UTMs for that action's source. Written as a literal on purpose, so the test does
+ * not reuse the implementation's own helper.
+ */
+function sharedUrl(source: string, campaign: string = DEFAULT_PROPS.campaign): string {
+    return `${DEFAULT_PROPS.url}?utm_source=${source}&utm_medium=share&utm_campaign=${campaign}`;
+}
 
 function renderShareButtons(props: Partial<typeof DEFAULT_PROPS> = {}) {
     return render(
@@ -201,7 +212,7 @@ describe('ShareButtons', () => {
             const href = whatsappLink?.getAttribute('href') ?? '';
             expect(href).toContain('https://wa.me/?text=');
             expect(href).toContain(encodeURIComponent(DEFAULT_PROPS.title));
-            expect(href).toContain(encodeURIComponent(DEFAULT_PROPS.url));
+            expect(href).toContain(encodeURIComponent(sharedUrl('whatsapp')));
         });
 
         it('opens WhatsApp link in a new tab', () => {
@@ -221,7 +232,9 @@ describe('ShareButtons', () => {
 
             const fbLink = screen.getByText('Facebook').closest('a');
             expect(fbLink?.getAttribute('href')).toContain('facebook.com/sharer/sharer.php');
-            expect(fbLink?.getAttribute('href')).toContain(encodeURIComponent(DEFAULT_PROPS.url));
+            expect(fbLink?.getAttribute('href')).toContain(
+                encodeURIComponent(sharedUrl('facebook'))
+            );
         });
     });
 
@@ -235,7 +248,7 @@ describe('ShareButtons', () => {
             fireEvent.click(copyBtn);
 
             await waitFor(() => {
-                expect(navigator.clipboard.writeText).toHaveBeenCalledWith(DEFAULT_PROPS.url);
+                expect(navigator.clipboard.writeText).toHaveBeenCalledWith(sharedUrl('copy'));
             });
 
             await waitFor(() => {
@@ -287,7 +300,7 @@ describe('ShareButtons', () => {
             await user.keyboard('{Enter}');
 
             expect(share).toHaveBeenCalledWith({
-                url: DEFAULT_PROPS.url,
+                url: sharedUrl('share'),
                 title: DEFAULT_PROPS.title
             });
             if (opensFallback) {
@@ -393,19 +406,30 @@ describe('ShareButtons', () => {
         });
 
         it.each([
-            { label: 'X', iconId: 'x-icon', prefix: 'https://twitter.com/intent/tweet?' },
-            { label: 'Telegram', iconId: 'telegram-icon', prefix: 'https://t.me/share/url?' }
+            {
+                label: 'X',
+                iconId: 'x-icon',
+                prefix: 'https://twitter.com/intent/tweet?',
+                source: 'x'
+            },
+            {
+                label: 'Telegram',
+                iconId: 'telegram-icon',
+                prefix: 'https://t.me/share/url?',
+                source: 'telegram'
+            }
         ])('uses the library $label mark without changing its share URL', ({
             label,
             iconId,
-            prefix
+            prefix,
+            source
         }) => {
             const { trigger } = renderOverlay();
             fireEvent.click(trigger);
 
             const link = screen.getByText(label).closest('a');
             expect(link?.getAttribute('href')).toBe(
-                `${prefix}url=${encodeURIComponent(DEFAULT_PROPS.url)}&text=${encodeURIComponent(DEFAULT_PROPS.title)}`
+                `${prefix}url=${encodeURIComponent(sharedUrl(source))}&text=${encodeURIComponent(DEFAULT_PROPS.title)}`
             );
             expect(link).toContainElement(screen.getByTestId(iconId));
         });
@@ -431,13 +455,50 @@ describe('ShareButtons', () => {
 
             await waitFor(() => {
                 expect(mockShare).toHaveBeenCalledWith({
-                    url: DEFAULT_PROPS.url,
+                    url: sharedUrl('share'),
                     title: DEFAULT_PROPS.title
                 });
             });
 
             // Popover should NOT open
             expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Campaign UTMs per action (HOS-2359 AC-14)', () => {
+        it.each([
+            'accommodation',
+            'event',
+            'post'
+        ] as const)('tags every network link with its own source and campaign=%s', (campaign) => {
+            // Arrange
+            renderShareButtons({ campaign });
+
+            // Act
+            fireEvent.click(screen.getByRole('button', { name: /compartir/i }));
+
+            // Assert
+            const hrefs = screen
+                .getAllByRole('menuitem')
+                .map((item) => item.getAttribute('href'))
+                .filter((href): href is string => href !== null);
+            expect(hrefs).toHaveLength(4);
+            for (const [index, source] of ['whatsapp', 'facebook', 'x', 'telegram'].entries()) {
+                expect(hrefs[index]).toContain(encodeURIComponent(sharedUrl(source, campaign)));
+            }
+        });
+
+        it('copies the canonical URL tagged source=copy, never the bare URL', async () => {
+            renderShareButtons({ campaign: 'post' });
+            fireEvent.click(screen.getByRole('button', { name: /compartir/i }));
+
+            fireEvent.click(screen.getByRole('menuitem', { name: /copiar enlace/i }));
+
+            await waitFor(() => {
+                expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+                    sharedUrl('copy', 'post')
+                );
+            });
         });
     });
 });

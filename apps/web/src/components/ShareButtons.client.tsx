@@ -6,8 +6,15 @@
  * Otherwise: tap → popover with WhatsApp, Facebook, X, Telegram, Copy URL.
  *
  * Hydrate with `client:visible` (caller's responsibility).
+ *
+ * Every action shares the canonical URL tagged with campaign UTMs (HOS-2359 §6.C.1):
+ * `source` is the network (`whatsapp|facebook|x|telegram`), `share` for the native
+ * share sheet and `copy` for the clipboard; `medium=share`; `campaign` is the entity
+ * type the caller passes. The `url` prop itself stays canonical, so the page's
+ * canonical, OG and JSON-LD URLs never carry UTMs.
  */
 
+import { type ShareCampaign, type ShareUtmParams, withUtm } from '@repo/analytics';
 import {
     CloseIcon,
     CopyIcon,
@@ -20,6 +27,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildShareIntentUrl } from '@/lib/share-intents';
 import { addToast } from '@/store/toast-store';
 import styles from './ShareButtons.module.css';
 
@@ -27,8 +35,10 @@ import styles from './ShareButtons.module.css';
  * Props for the ShareButtons component.
  */
 interface ShareButtonsProps {
-    /** Canonical URL to share */
+    /** Canonical URL to share (UTMs are added per action, never here). */
     readonly url: string;
+    /** Entity type being shared, used as `utm_campaign`. */
+    readonly campaign: ShareCampaign;
     /** Page title for share metadata */
     readonly title: string;
     /** Locale for i18n strings */
@@ -38,6 +48,9 @@ interface ShareButtonsProps {
     /** Compact icon-only trigger for placement over a gallery photo. */
     readonly appearance?: 'icon-overlay';
 }
+
+/** A share action's `utm_source`. */
+type ShareSource = ShareUtmParams['source'];
 
 /** Checks whether the Web Share API is available on the device. */
 function hasWebShareApi(): boolean {
@@ -54,8 +67,17 @@ function isMobileViewport(): boolean {
  * On mobile with Web Share API support triggers native share sheet.
  * On desktop or unsupported mobile shows a popover with 5 share actions.
  */
-export function ShareButtons({ url, title, locale, className, appearance }: ShareButtonsProps) {
+export function ShareButtons({
+    url,
+    title,
+    locale,
+    campaign,
+    className,
+    appearance
+}: ShareButtonsProps) {
     const { t } = createTranslations(locale);
+    const sharedUrl = (source: ShareSource): string =>
+        withUtm({ url, source, medium: 'share', campaign });
     const isOverlay = appearance === 'icon-overlay';
     const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -119,7 +141,7 @@ export function ShareButtons({ url, title, locale, className, appearance }: Shar
                 return;
             }
             try {
-                await navigator.share({ url, title });
+                await navigator.share({ url: sharedUrl('share'), title });
             } catch (error) {
                 if (isOverlay && !(error instanceof DOMException && error.name === 'AbortError')) {
                     setIsOpen(true);
@@ -139,7 +161,7 @@ export function ShareButtons({ url, title, locale, className, appearance }: Shar
 
     async function handleCopyUrl(): Promise<void> {
         try {
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(sharedUrl('copy'));
             setCopied(true);
             addToast({
                 type: 'success',
@@ -155,13 +177,10 @@ export function ShareButtons({ url, title, locale, className, appearance }: Shar
         dismissPopover();
     }
 
-    const encodedUrl = encodeURIComponent(url);
-    const encodedTitle = encodeURIComponent(title);
-
     const shareLinks = [
         {
             label: 'WhatsApp',
-            href: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
+            href: buildShareIntentUrl({ network: 'whatsapp', url: sharedUrl('whatsapp'), title }),
             icon: (
                 <WhatsappIcon
                     size={20}
@@ -172,7 +191,7 @@ export function ShareButtons({ url, title, locale, className, appearance }: Shar
         },
         {
             label: 'Facebook',
-            href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+            href: buildShareIntentUrl({ network: 'facebook', url: sharedUrl('facebook'), title }),
             icon: (
                 <FacebookIcon
                     size={20}
@@ -183,7 +202,7 @@ export function ShareButtons({ url, title, locale, className, appearance }: Shar
         },
         {
             label: 'X',
-            href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
+            href: buildShareIntentUrl({ network: 'x', url: sharedUrl('x'), title }),
             icon: isOverlay ? (
                 <XIcon
                     size={20}
@@ -201,7 +220,7 @@ export function ShareButtons({ url, title, locale, className, appearance }: Shar
         },
         {
             label: 'Telegram',
-            href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+            href: buildShareIntentUrl({ network: 'telegram', url: sharedUrl('telegram'), title }),
             icon: (
                 <TelegramIcon
                     size={20}
