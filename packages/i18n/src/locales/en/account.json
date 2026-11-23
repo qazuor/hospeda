@@ -136,6 +136,18 @@
         "groupListings": "Business area",
         "groupEditorial": "Editorial area",
         "groupProvider": "Provider area",
+        "groupProfile": "My profile",
+        "groupTrips": "My trips",
+        "groupPartner": "Partner area",
+        "home": "Home",
+        "partner": "My partner listing",
+        "administration": "Management",
+        "manageAccommodations": "Manage accommodations",
+        "manageVenues": "Manage Food & nightlife",
+        "manageExperiences": "Manage experiences",
+        "manageEditorial": "Manage editorial content",
+        "managePartner": "Manage partner listing",
+        "manageProvider": "Manage provider listing",
         "dashboard": "My account",
         "editProfile": "Edit profile",
         "subscription": "Subscription",
@@ -2047,7 +2059,8 @@
         },
         "sidebar": {
             "lockedLabel": "Requires a higher plan",
-            "label": "My account navigation"
+            "label": "My account navigation",
+            "backToAccount": "My account"
         },
         "breadcrumbs": "Breadcrumb",
         "gallery": {

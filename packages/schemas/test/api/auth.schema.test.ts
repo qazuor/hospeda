@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AuthMeResponseSchema,
     type ResetPasswordCheckQuery,
     ResetPasswordCheckQuerySchema,
     type ResetPasswordCheckResponse,
@@ -78,5 +79,26 @@ describe('Reset-password check schemas (SPEC-118)', () => {
     it('exposes the inferred query type', () => {
         const q: ResetPasswordCheckQuery = { token: 't' };
         expect(q.token).toBe('t');
+    });
+});
+
+describe('AuthMeResponseSchema ownership flags (HOS-2551)', () => {
+    const base = {
+        actor: { id: '11111111-1111-4111-8111-111111111111', roles: ['USER'], permissions: [] },
+        isAuthenticated: true
+    };
+
+    it('accepts ownsPartner alongside ownsHostTradeListing', () => {
+        const parsed = AuthMeResponseSchema.parse({
+            ...base,
+            ownsHostTradeListing: false,
+            ownsPartner: true
+        });
+        expect(parsed.ownsPartner).toBe(true);
+    });
+
+    it('keeps ownsPartner optional, so an older server still parses', () => {
+        const parsed = AuthMeResponseSchema.parse(base);
+        expect(parsed.ownsPartner).toBeUndefined();
     });
 });

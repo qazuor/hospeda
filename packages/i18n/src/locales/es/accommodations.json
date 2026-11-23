@@ -788,6 +788,11 @@
                 "shortcuts": { "whatsapp": "WhatsApp", "phone": "Llamar", "email": "Email" },
                 "trust": "Tu consulta va directo al anfitrión. Sin comisiones."
             },
+            "channels": {
+                "title": "Contactar",
+                "website": "Web",
+                "social": "Redes sociales"
+            },
             "fields": { "checkIn": "Llegada", "checkOut": "Salida", "guests": "Huéspedes" },
             "errors": {
                 "checkOutAfterCheckIn": "La salida tiene que ser después de la llegada",

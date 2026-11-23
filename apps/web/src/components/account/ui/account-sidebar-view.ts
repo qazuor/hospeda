@@ -7,10 +7,14 @@
  * and the hydrated mobile `AccountDrawer`, and they list the same groups by
  * construction.
  *
+ * It renders the kit shell's zoned view (HOS-2551, `model.shell`): the
+ * personal zone, or the business zone under a «← Mi cuenta» link.
+ *
  * @module components/account/ui/account-sidebar-view
  */
 
-import type { AccountNavModel } from '@/lib/account-nav-model';
+import { DASHBOARD_NAV_ITEM_ID } from '@/config/navigation';
+import type { AccountNavMode, AccountNavModel } from '@/lib/account-nav-model';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
@@ -48,6 +52,10 @@ export interface SidebarGroupView {
 
 /** The whole sidebar view. */
 export interface SidebarView {
+    /** Which zone of the account it shows (HOS-2551). */
+    readonly mode: AccountNavMode;
+    /** The «← Mi cuenta» link to `/mi-cuenta/`, on top of the business zone only. */
+    readonly backLink: SidebarItemView | null;
     /** Nav groups, in order. */
     readonly groups: readonly SidebarGroupView[];
     /** Translated label of the discovery-doors block. */
@@ -74,8 +82,20 @@ export function buildSidebarView({
     readonly locale: SupportedLocale;
 }): SidebarView {
     const t = createT(locale);
+    const { shell } = model;
     return {
-        groups: model.groups.map((entry) => ({
+        mode: shell.mode,
+        backLink:
+            shell.mode === 'business'
+                ? {
+                      id: DASHBOARD_NAV_ITEM_ID,
+                      label: t('account.ui.sidebar.backToAccount'),
+                      href: buildUrl({ locale, path: 'mi-cuenta' }),
+                      active: false,
+                      hidden: false
+                  }
+                : null,
+        groups: shell.groups.map((entry) => ({
             id: entry.group.id,
             label: t(entry.group.i18nKey),
             suppressHeader: entry.suppressHeader,
@@ -91,7 +111,7 @@ export function buildSidebarView({
             }))
         })),
         doorsLabel: t('account.doors.sectionLabel'),
-        doors: model.doors.map((door) => ({
+        doors: shell.doors.map((door) => ({
             id: door.door.id,
             label: t(door.labelKey),
             href: buildUrl({ locale, path: door.door.href }),

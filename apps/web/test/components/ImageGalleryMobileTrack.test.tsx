@@ -400,3 +400,13 @@ it('swipes the lightbox horizontally while ignoring a vertical drag', () => {
 
     expect(within(dialog).getByText('2 / 2')).toBeInTheDocument();
 });
+
+it('sizes the overlay favorite like the 44px share/back buttons', () => {
+    const css = readFileSync('src/components/ImageGalleryMobileTrack.module.css', 'utf8');
+    const tsx = readFileSync('src/components/ImageGalleryMobileTrack.client.tsx', 'utf8');
+
+    expect(css).toMatch(
+        /\.actions \.favorite\s*\{\s*width:\s*2\.75rem;\s*height:\s*2\.75rem;\s*border:\s*0;\s*box-shadow:\s*var\(--shadow-card\)/
+    );
+    expect(tsx).toContain('className={styles.favorite}');
+});

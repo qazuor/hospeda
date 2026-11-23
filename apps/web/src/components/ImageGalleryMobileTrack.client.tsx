@@ -178,6 +178,7 @@ export function ImageGalleryMobileTrack({
                     {favorite && (
                         <FavoriteButton
                             {...favorite}
+                            className={styles.favorite}
                             locale={locale}
                             focusGuestPrompt
                             guestPromptFallbackRef={mosaicTriggerRef}

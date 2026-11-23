@@ -308,7 +308,7 @@ describe('getNavForSurface (selector)', () => {
     it('returns only the always-curated items (dashboard, favorites, subscription) for the avatar surface', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         // cuenta -> dashboard + subscription; turista -> favorites. hostDashboard
-        // and venue/experience are picked by priority via pickBusinessShortcut, NOT
+        // and venue/experience come from BUSINESS_SHORTCUTS (HOS-2551), NOT
         // surface membership, so anfitrion/comercio contribute nothing here.
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
         const cuenta = findGroup(groups, 'cuenta');
