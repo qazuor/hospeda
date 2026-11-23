@@ -23,6 +23,8 @@ describe('manual installment notice renderer', () => {
         expect(mail.subject).toBe(MANUAL_INSTALLMENT_UNPAID_SUBJECT);
         expect(html).toContain('septiembre');
         expect(html).toContain('subscription-1');
+        // The installment id identifies the row staff must act on (E2E billing-35 filters by it).
+        expect(html).toContain('manual-1');
         expect(html).toContain('Renovación');
         expect(html).toContain('Vertical');
         expect(html).not.toContain('class="hospeda-btn"');

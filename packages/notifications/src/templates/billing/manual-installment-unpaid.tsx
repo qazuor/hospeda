@@ -46,6 +46,7 @@ export function ManualInstallmentUnpaid(props: ManualInstallmentUnpaidProps) {
                         label: 'Cuota',
                         value: props.firstInstallment ? 'Primera cuota' : 'Renovación'
                     },
+                    { label: 'Id de la cuota', value: props.manualPaymentId },
                     {
                         label: 'Período desde',
                         value: formatDate({ dateString: props.periodStart })
