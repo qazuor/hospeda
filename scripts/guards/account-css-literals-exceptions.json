@@ -499,10 +499,5 @@
     },
     "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro": {
         "color": 13
-    },
-    "apps/web/src/pages/[lang]/mi-cuenta/proveedor/index.astro": {
-        "color": 1,
-        "font-size": 1,
-        "radius": 1
     }
 }
