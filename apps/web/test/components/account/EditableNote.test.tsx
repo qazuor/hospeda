@@ -16,10 +16,11 @@
  * - T-049d: Toast shown on PATCH failure; editor stays open
  * - T-049d: Save button disabled while saving (aria-busy)
  * - T-049d: Textarea has accessible aria-label
+ * - HOS-2445/HOS-2480: blur saves, reported by the kit AutoSaveChip
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditableNote } from '../../../src/components/account/EditableNote';
 import { addToast } from '../../../src/store/toast-store';
 
@@ -42,12 +43,7 @@ const DEFAULT_PROPS = {
     initialValue: null,
     onSaved: vi.fn(),
     apiBase: 'http://localhost:3001',
-    placeholder: 'Agregá una nota personal...',
-    saveLabel: 'Guardar nota',
-    cancelLabel: 'Cancelar',
-    textareaLabel: 'Nota personal',
-    editButtonLabel: 'Editar nota',
-    saveErrorMessage: 'No se pudo guardar la nota'
+    locale: 'es'
 } as const;
 
 function renderNote(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
@@ -102,9 +98,9 @@ describe('EditableNote', () => {
         expect(screen.getByText('Mi nota especial')).toBeInTheDocument();
     });
 
-    it('read-view button has the accessible editButtonLabel', () => {
+    it('read-view button is named «Editar nota» plus what it shows', () => {
         renderNote({ initialValue: null });
-        const btn = screen.getByRole('button', { name: 'Editar nota' });
+        const btn = screen.getByRole('button', { name: /^Editar nota/ });
         expect(btn).toBeInTheDocument();
     });
 
@@ -112,21 +108,21 @@ describe('EditableNote', () => {
 
     it('clicking the display button shows the textarea', () => {
         renderNote({ initialValue: 'Nota existente' });
-        const btn = screen.getByRole('button', { name: 'Editar nota' });
+        const btn = screen.getByRole('button', { name: /^Editar nota/ });
         fireEvent.click(btn);
         expect(screen.getByRole('textbox', { name: 'Nota personal' })).toBeInTheDocument();
     });
 
     it('textarea is pre-filled with the current note value when editing starts', () => {
         renderNote({ initialValue: 'Contenido previo' });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         expect(textarea).toHaveValue('Contenido previo');
     });
 
     it('textarea is empty when starting to edit an empty note', () => {
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         expect(textarea).toHaveValue('');
     });
@@ -135,7 +131,7 @@ describe('EditableNote', () => {
 
     it('Cancel button collapses the editor', () => {
         renderNote({ initialValue: 'Nota' });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         expect(screen.getByRole('textbox', { name: 'Nota personal' })).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
@@ -144,7 +140,7 @@ describe('EditableNote', () => {
 
     it('pressing Escape cancels editing', () => {
         renderNote({ initialValue: 'Nota' });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
 
         fireEvent.keyDown(textarea, { key: 'Escape' });
@@ -153,7 +149,7 @@ describe('EditableNote', () => {
 
     it('Cancel restores the original value (no draft leak)', () => {
         renderNote({ initialValue: 'Original' });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
 
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Cambio descartado' } });
@@ -169,13 +165,13 @@ describe('EditableNote', () => {
 
     it('character counter shows 0/300 for empty textarea', () => {
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         expect(screen.getByText('0/300')).toBeInTheDocument();
     });
 
     it('character counter updates as user types', () => {
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Hola' } });
         expect(screen.getByText('4/300')).toBeInTheDocument();
@@ -183,7 +179,7 @@ describe('EditableNote', () => {
 
     it('Save button is disabled when text exceeds 300 chars', () => {
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         const longText = 'a'.repeat(301);
         fireEvent.change(textarea, { target: { value: longText } });
@@ -194,7 +190,7 @@ describe('EditableNote', () => {
 
     it('Save button is enabled when text is within 300 chars', () => {
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'a'.repeat(300) } });
 
@@ -210,7 +206,7 @@ describe('EditableNote', () => {
 
         const onSaved = vi.fn();
         renderNote({ initialValue: null, onSaved });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
 
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Nota guardada' } });
@@ -232,7 +228,7 @@ describe('EditableNote', () => {
         globalThis.fetch = vi.fn().mockResolvedValue(makeOkResponse('Nueva nota'));
         const onSaved = vi.fn();
         renderNote({ initialValue: null, onSaved });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
 
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Nueva nota' } });
@@ -246,7 +242,7 @@ describe('EditableNote', () => {
     it('editor collapses after successful save', async () => {
         globalThis.fetch = vi.fn().mockResolvedValue(makeOkResponse('Guardado'));
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Guardado' } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
@@ -262,7 +258,7 @@ describe('EditableNote', () => {
         globalThis.fetch = vi.fn().mockResolvedValue(makeErrorResponse());
 
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Algo' } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
@@ -276,7 +272,7 @@ describe('EditableNote', () => {
         globalThis.fetch = vi.fn().mockResolvedValue(makeErrorResponse());
 
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Algo' } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
@@ -292,7 +288,7 @@ describe('EditableNote', () => {
         globalThis.fetch = vi.fn().mockReturnValue(new Promise(() => undefined));
 
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Guardando...' } });
 
@@ -308,13 +304,13 @@ describe('EditableNote', () => {
 
     it('textarea has the provided aria-label', () => {
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         expect(screen.getByRole('textbox', { name: 'Nota personal' })).toBeInTheDocument();
     });
 
     it('Save and Cancel buttons are in tab order and have visible labels', () => {
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
 
         const saveBtn = screen.getByRole('button', { name: 'Guardar nota' });
         const cancelBtn = screen.getByRole('button', { name: 'Cancelar' });
@@ -331,8 +327,8 @@ describe('EditableNote', () => {
     it('saves the note on blur and shows the saved status (HOS-2445)', async () => {
         const fetchMock = vi.fn().mockResolvedValue(makeOkResponse('Mi nota'));
         globalThis.fetch = fetchMock;
-        const { props } = renderNote({ initialValue: null, savedLabel: 'Nota guardada' } as never);
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        const { props } = renderNote({ initialValue: null });
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
 
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Mi nota' } });
@@ -341,14 +337,15 @@ describe('EditableNote', () => {
         await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
         expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ method: 'PATCH' });
         await waitFor(() => expect(props.onSaved).toHaveBeenCalledWith('Mi nota'));
-        expect(await screen.findByTestId('note-saved-status')).toHaveTextContent('Nota guardada');
+        // HOS-2480: the kit AutoSaveChip reports the save (role=status).
+        expect(await screen.findByRole('status')).toHaveTextContent(/Guardado/);
     });
 
     it('does not save on blur when the draft is unchanged', async () => {
         const fetchMock = vi.fn();
         globalThis.fetch = fetchMock;
         renderNote({ initialValue: 'Igual' });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         fireEvent.blur(screen.getByRole('textbox', { name: 'Nota personal' }));
 
         await waitFor(() => expect(screen.queryByRole('textbox')).not.toBeInTheDocument());
@@ -359,7 +356,7 @@ describe('EditableNote', () => {
         const fetchMock = vi.fn();
         globalThis.fetch = fetchMock;
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Descartar' } });
         fireEvent.blur(textarea, {
@@ -373,7 +370,7 @@ describe('EditableNote', () => {
         const fetchMock = vi.fn().mockResolvedValue(makeOkResponse('x'));
         globalThis.fetch = fetchMock;
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Descartar' } });
         const cancel = screen.getByRole('button', { name: 'Cancelar' });
@@ -389,7 +386,7 @@ describe('EditableNote', () => {
         const fetchMock = vi.fn();
         globalThis.fetch = fetchMock;
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Descartar' } });
         fireEvent.keyDown(textarea, { key: 'Escape' });
@@ -402,7 +399,7 @@ describe('EditableNote', () => {
         const fetchMock = vi.fn().mockResolvedValue(makeErrorResponse());
         globalThis.fetch = fetchMock;
         renderNote({ initialValue: null });
-        fireEvent.click(screen.getByRole('button', { name: 'Editar nota' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
         const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
         fireEvent.change(textarea, { target: { value: 'Mi nota' } });
         fireEvent.blur(textarea);
@@ -413,5 +410,25 @@ describe('EditableNote', () => {
         await new Promise((r) => setTimeout(r, 20));
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(addToast).toHaveBeenCalledTimes(1);
+    });
+
+    it('a failed save shows the AutoSaveChip error with a working retry (HOS-2480)', async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(makeErrorResponse())
+            .mockResolvedValueOnce(makeOkResponse('Mi nota'));
+        globalThis.fetch = fetchMock;
+        const { props } = renderNote({ initialValue: null });
+        fireEvent.click(screen.getByRole('button', { name: /^Editar nota/ }));
+        const textarea = screen.getByRole('textbox', { name: 'Nota personal' });
+        fireEvent.change(textarea, { target: { value: 'Mi nota' } });
+        fireEvent.blur(textarea);
+
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('No se guardó');
+        fireEvent.click(screen.getByRole('button', { name: /Reintentar/ }));
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(props.onSaved).toHaveBeenCalledWith('Mi nota'));
     });
 });
