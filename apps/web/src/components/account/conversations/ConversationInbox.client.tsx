@@ -54,7 +54,8 @@ export interface InboxRow {
     readonly meta?: string;
     readonly excerpt: string | null;
     readonly unreadCount: number;
-    readonly lastActivityAt: string;
+    /** Last activity instant; `null` while the conversation has no message. */
+    readonly lastActivityAt: string | null;
 }
 
 /** A loaded page of the inbox. */
@@ -136,20 +137,26 @@ export async function loadInboxPage({
 /**
  * Formats the last-activity date of a row.
  *
+ * A missing instant yields `null`, never a date: `new Date(null)` is the epoch,
+ * which used to print «31 de dic de 1969» for a conversation without messages
+ * (HOS-2600). An unparseable string yields `null` too, so a row never shows a
+ * raw value or an invented date.
+ *
  * @param input - Options object.
- * @param input.iso - ISO instant.
+ * @param input.iso - ISO instant, or `null` when there is no activity yet.
  * @param input.locale - App locale.
- * @returns A short date, or the raw value when it is not a date.
+ * @returns A short date, or `null` when there is no valid instant.
  */
-function formatRowDate({
+export function formatRowDate({
     iso,
     locale
 }: {
-    readonly iso: string;
+    readonly iso: string | null | undefined;
     readonly locale: SupportedLocale;
-}) {
+}): string | null {
+    if (!iso) return null;
     const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) return iso;
+    if (Number.isNaN(date.getTime())) return null;
     return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
         day: '2-digit',
         month: 'short',
@@ -257,38 +264,50 @@ export function ConversationInbox({ locale, viewer, page }: ConversationInboxPro
                                     : 'conversations.inbox.ownerListLabel'
                             )}
                         >
-                            {data.rows.map((row) => (
-                                <ListRow
-                                    key={row.id}
-                                    href={threadHref(row.id)}
-                                    title={row.title}
-                                    meta={row.meta}
-                                    description={
-                                        row.excerpt ? row.excerpt.slice(0, 200) : undefined
-                                    }
-                                    emphasis={row.unreadCount > 0}
-                                    trailing={
-                                        <>
-                                            <time dateTime={row.lastActivityAt}>
-                                                {formatRowDate({ iso: row.lastActivityAt, locale })}
-                                            </time>
-                                            {row.unreadCount > 0 && (
-                                                <CountPill
-                                                    count={row.unreadCount}
-                                                    variant="solid"
-                                                    label={t(
-                                                        'conversations.inbox.unreadCount',
-                                                        undefined,
-                                                        {
-                                                            count: row.unreadCount
-                                                        }
-                                                    )}
-                                                />
-                                            )}
-                                        </>
-                                    }
-                                />
-                            ))}
+                            {data.rows.map((row) => {
+                                const rowDate = formatRowDate({
+                                    iso: row.lastActivityAt,
+                                    locale
+                                });
+                                return (
+                                    <ListRow
+                                        key={row.id}
+                                        href={threadHref(row.id)}
+                                        title={row.title}
+                                        meta={row.meta}
+                                        description={
+                                            row.excerpt ? row.excerpt.slice(0, 200) : undefined
+                                        }
+                                        emphasis={row.unreadCount > 0}
+                                        trailing={
+                                            <>
+                                                {rowDate !== null && row.lastActivityAt ? (
+                                                    <time dateTime={row.lastActivityAt}>
+                                                        {rowDate}
+                                                    </time>
+                                                ) : (
+                                                    <span>
+                                                        {t('conversations.inbox.noActivity')}
+                                                    </span>
+                                                )}
+                                                {row.unreadCount > 0 && (
+                                                    <CountPill
+                                                        count={row.unreadCount}
+                                                        variant="solid"
+                                                        label={t(
+                                                            'conversations.inbox.unreadCount',
+                                                            undefined,
+                                                            {
+                                                                count: row.unreadCount
+                                                            }
+                                                        )}
+                                                    />
+                                                )}
+                                            </>
+                                        }
+                                    />
+                                );
+                            })}
                         </DataList>
                         {(data.totalPages > 1 || data.rows.length === 0) && (
                             <Pagination

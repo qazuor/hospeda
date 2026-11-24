@@ -2,6 +2,8 @@
  * Tests for the kit ListingCard and ListingCardGrid (HOS-2483).
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
@@ -132,5 +134,67 @@ describe('ListingCard (kit)', () => {
         expect(within(heading).queryByRole('link')).not.toBeInTheDocument();
         expect(heading.closest('article')).toHaveAttribute('data-help', 'section:venue.listado');
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+});
+
+/**
+ * HOS-2600: the cards stretched to the tallest card of their row, and the
+ * stretch was spread over empty bands (an action row and a footer with nothing
+ * in them, divided by borders). The «more actions» menu was clipped by the
+ * card's `overflow: hidden`.
+ */
+describe('ListingCard layout (HOS-2600)', () => {
+    const css = readFileSync(
+        resolve(__dirname, '../../../../src/components/account/ui/ListingCard.module.css'),
+        'utf8'
+    );
+    /** Body of the first `selector { ... }` rule in the stylesheet. */
+    const ruleOf = (selector: string): string => {
+        const start = css.indexOf(`${selector} {`);
+        expect(start).toBeGreaterThanOrEqual(0);
+        return css.slice(start, css.indexOf('}', start));
+    };
+
+    it('keeps each card at its own height instead of stretching it to the row', () => {
+        expect(ruleOf('.grid')).toMatch(/align-items:\s*start;/);
+    });
+
+    it('does not clip the menu: the card has no overflow hidden, the photo rounds itself', () => {
+        expect(ruleOf('.card')).not.toMatch(/overflow:\s*hidden/);
+        expect(ruleOf('.media')).toMatch(/overflow:\s*hidden/);
+        expect(ruleOf('.media')).toMatch(/border-start-start-radius:\s*inherit/);
+        expect(ruleOf('.media')).toMatch(/border-start-end-radius:\s*inherit/);
+    });
+
+    it('hides an action row and a footer whose slots rendered nothing', () => {
+        expect(css).toMatch(/\.footer:empty\s*\{\s*display:\s*none;/);
+        expect(css).toMatch(
+            /\.actions:has\(> \.primary:empty:only-child\)\s*\{\s*display:\s*none;/
+        );
+    });
+
+    it('an Astro slot that renders nothing leaves exactly the empty shape the CSS hides', () => {
+        // Arrange: Astro hands a React island one element per declared slot,
+        // even when the slot's conditional rendered nothing.
+        const Nothing = () => null;
+
+        // Act
+        const { container } = render(
+            <ListingCard
+                as="article"
+                vertical="accommodation"
+                title="Casa borrada"
+                primaryAction={<Nothing />}
+                menu={<Nothing />}
+                footer={<Nothing />}
+            />
+        );
+
+        // Assert
+        const actions = container.querySelector('.actions');
+        expect(actions?.children).toHaveLength(1);
+        expect(actions?.firstElementChild).toHaveClass('primary');
+        expect(actions?.firstElementChild?.childNodes).toHaveLength(0);
+        expect(container.querySelector('.footer')?.childNodes).toHaveLength(0);
     });
 });

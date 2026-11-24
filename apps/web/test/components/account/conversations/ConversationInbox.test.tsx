@@ -178,3 +178,55 @@ describe('ConversationInbox rows', () => {
         await waitFor(() => expect(screen.queryByRole('img')).not.toBeInTheDocument());
     });
 });
+
+/**
+ * HOS-2600 regression: a conversation whose guest has not verified their email
+ * yet (`PENDING_VERIFICATION`, HOS-2568) has no message, and the API sends its
+ * `lastActivityAt` as `null` (the column is nullable). `new Date(null)` is the
+ * epoch, which printed «31 de dic de 1969» in Buenos Aires.
+ */
+describe('ConversationInbox — conversation without activity (HOS-2600)', () => {
+    it.each([
+        ['guest', guestList, guestItem],
+        ['owner', ownerList, ownerItem]
+    ] as const)('viewer=%s: a null lastActivityAt never prints 1969 and says there are no messages yet', async (viewer, list, item) => {
+        // Arrange
+        list.mockResolvedValue(page([{ ...item, lastActivityAt: null, lastMessageExcerpt: null }]));
+
+        // Act
+        const { container } = render(
+            <ConversationInbox
+                locale="es"
+                viewer={viewer}
+                page={1}
+            />
+        );
+        await screen.findByRole('list');
+
+        // Assert
+        expect(container.textContent).not.toMatch(/1969|1970/);
+        expect(container.querySelector('time')).toBeNull();
+        expect(screen.getByText('Sin mensajes todavía')).toBeInTheDocument();
+    });
+
+    it('a real date still renders as a <time> with its instant', async () => {
+        // Arrange
+        ownerList.mockResolvedValue(page([ownerItem]));
+
+        // Act
+        const { container } = render(
+            <ConversationInbox
+                locale="es"
+                viewer="owner"
+                page={1}
+            />
+        );
+        await screen.findByRole('list');
+
+        // Assert
+        const time = container.querySelector('time');
+        expect(time).toHaveAttribute('dateTime', '2026-11-19T10:00:00Z');
+        expect(time?.textContent).toMatch(/2026/);
+        expect(screen.queryByText('Sin mensajes todavía')).not.toBeInTheDocument();
+    });
+});

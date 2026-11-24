@@ -125,6 +125,61 @@ describe('ConversationPanel — one thread, two viewers', () => {
         expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
         expect(screen.getByTestId('listing-gone-notice')).toBeInTheDocument();
     });
+
+    it.each([
+        'guest',
+        'owner'
+    ] as const)('viewer=%s: a thread without messages shows the kit EmptyState, never an empty band (HOS-2600)', (viewer) => {
+        // Arrange & Act
+        render(
+            <ConversationPanel
+                locale="es"
+                viewer={viewer}
+                conversationId="c1"
+                initialMessages={[]}
+                canReply
+            />
+        );
+
+        // Assert
+        expect(screen.getByText('Todavía no hay mensajes')).toBeInTheDocument();
+        expect(
+            screen.getByText('Cuando haya mensajes en esta conversación, los vas a ver acá.')
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('list')).not.toBeInTheDocument();
+        expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('the first message sent from an empty thread replaces the EmptyState', async () => {
+        // Arrange
+        sendMessage.mockResolvedValue({
+            ok: true,
+            data: {
+                id: 'srv-1',
+                body: 'Primera',
+                senderType: 'guest',
+                createdAt: '2026-11-20T16:00:00Z'
+            }
+        });
+        const user = userEvent.setup();
+        render(
+            <ConversationPanel
+                locale="es"
+                viewer="guest"
+                conversationId="c1"
+                initialMessages={[]}
+                canReply
+            />
+        );
+
+        // Act
+        await user.type(screen.getByRole('textbox'), 'Primera');
+        await user.click(screen.getByRole('button', { name: 'Enviar' }));
+
+        // Assert
+        await waitFor(() => expect(screen.getByText('Primera').closest('li')).not.toBeNull());
+        expect(screen.queryByText('Todavía no hay mensajes')).not.toBeInTheDocument();
+    });
 });
 
 describe('ConversationPanel — optimistic send without reload (HOS-2439)', () => {
