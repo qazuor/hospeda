@@ -19,7 +19,8 @@ export {
     BRAND_SOCIAL_PROFILES,
     BRAND_WHATSAPP_URL,
     type BrandSocialPlatform,
-    buildBrandWhatsAppUrl
+    buildBrandWhatsAppUrl,
+    toBrandWhatsAppDigits
 } from './brand-contact.js';
 export {
     commonEnvMappings,

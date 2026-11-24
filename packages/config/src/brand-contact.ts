@@ -41,9 +41,23 @@ export const BRAND_PHONE_DISPLAY = '+54 3442 470650';
 const AR_COUNTRY_CODE = '54';
 
 /**
- * Builds the `wa.me` link of a brand phone in call/display form. Inserts the AR
- * mobile `9` after `54` when missing, which WhatsApp needs to reach a mobile line
- * (the same rule as `apps/web/src/lib/brand-phone.ts`).
+ * Digits of a brand phone in the form WhatsApp needs: no `+`, no spaces, and the AR
+ * mobile `9` inserted after `54` when missing. The ONE implementation of that rule:
+ * `apps/web/src/lib/brand-phone.ts` and {@link buildBrandWhatsAppUrl} both call it.
+ *
+ * @param input - The phone in call/display form, e.g. `'+54 3442 470650'`.
+ * @returns The digits, e.g. `'5493442470650'`.
+ */
+export function toBrandWhatsAppDigits(input: { readonly phone: string }): string {
+    const digits = input.phone.replace(/\D/g, '');
+    return digits.startsWith(AR_COUNTRY_CODE) && !digits.startsWith(`${AR_COUNTRY_CODE}9`)
+        ? `${AR_COUNTRY_CODE}9${digits.slice(AR_COUNTRY_CODE.length)}`
+        : digits;
+}
+
+/**
+ * Builds the `wa.me` link of a brand phone in call/display form (see
+ * {@link toBrandWhatsAppDigits} for the mobile `9` rule).
  *
  * @param input - The phone, e.g. `'+54 3442 470650'`.
  * @returns The `wa.me` URL, e.g. `'https://wa.me/5493442470650'`.
@@ -54,12 +68,7 @@ const AR_COUNTRY_CODE = '54';
  * ```
  */
 export function buildBrandWhatsAppUrl(input: { readonly phone: string }): string {
-    const digits = input.phone.replace(/\D/g, '');
-    const withMobilePrefix =
-        digits.startsWith(AR_COUNTRY_CODE) && !digits.startsWith(`${AR_COUNTRY_CODE}9`)
-            ? `${AR_COUNTRY_CODE}9${digits.slice(AR_COUNTRY_CODE.length)}`
-            : digits;
-    return `https://wa.me/${withMobilePrefix}`;
+    return `https://wa.me/${toBrandWhatsAppDigits(input)}`;
 }
 
 /** `wa.me` link of the production brand phone. */

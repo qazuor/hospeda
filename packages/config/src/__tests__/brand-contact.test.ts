@@ -4,7 +4,8 @@ import {
     BRAND_PHONE_DISPLAY,
     BRAND_SOCIAL_PROFILES,
     BRAND_WHATSAPP_URL,
-    buildBrandWhatsAppUrl
+    buildBrandWhatsAppUrl,
+    toBrandWhatsAppDigits
 } from '../brand-contact.js';
 import { HOSPEDA_ENV_VARS } from '../env-registry.hospeda.js';
 
@@ -48,5 +49,18 @@ describe('brand contact (HOS-2565 D12)', () => {
 
         // Assert
         expect(url).toBe('https://wa.me/5493442470650');
+    });
+
+    it.each([
+        ['+54 3442 470650', '5493442470650'],
+        ['+54 9 3442 470650', '5493442470650'],
+        ['5493442470650', '5493442470650'],
+        ['+1 555 0100', '15550100']
+    ])('derives the WhatsApp digits of %s as %s', (phone, digits) => {
+        // Act
+        const result = toBrandWhatsAppDigits({ phone });
+
+        // Assert
+        expect(result).toBe(digits);
     });
 });
