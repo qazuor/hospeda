@@ -32,6 +32,12 @@ type TargetLocale = (typeof TARGET_LOCALES)[number];
  */
 const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = {
     Email: ['en', 'pt'],
+    // HOS-2589 promotion labels: loanwords and same-spelling Portuguese.
+    VIP: ['en', 'pt'],
+    Promo: ['en', 'pt'],
+    'Para todos': ['pt'],
+    'Ver {{name}}': ['pt'],
+    'Página {{page}} de {{total}}': ['pt'],
     // Spelled the same in English / Brazilian Portuguese (HOS-2485 subscription tabs
     // and the add-on purchase steps).
     Plan: ['en'],
