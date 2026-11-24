@@ -1498,6 +1498,9 @@
         "closedStatus": "Closed"
     },
     "exclusiveDeals": {
+        "lock": {
+            "description": "Get discounts and perks that hosts save for travelers on this plan."
+        },
         "loading": "Loading exclusive deals...",
         "errorFetch": "Could not load your exclusive deals",
         "empty": {

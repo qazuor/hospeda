@@ -1498,6 +1498,9 @@
         "closedStatus": "Cerrada"
     },
     "exclusiveDeals": {
+        "lock": {
+            "description": "Accedé a descuentos y beneficios que los anfitriones reservan para los viajeros de este plan."
+        },
         "loading": "Cargando ofertas exclusivas...",
         "errorFetch": "No se pudieron cargar tus ofertas exclusivas",
         "empty": {

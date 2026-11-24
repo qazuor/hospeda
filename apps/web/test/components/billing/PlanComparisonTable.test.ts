@@ -274,3 +274,20 @@ describe('PlanComparisonTable.astro — mobile layout (HOS-1753)', () => {
         expect(mobileBlock).not.toContain('--tourist');
     });
 });
+
+describe('PlanComparisonTable.astro — phone width (HOS-2599)', () => {
+    it('drops the 600px floor and the swipe hint when the plans fit a phone', () => {
+        expect(src).toContain('comparisonScrollsOnMobile({ planCount: activePlans.length })');
+        expect(src).toContain("'comparison-table--fits-mobile': !scrollsOnMobile");
+        expect(src).toContain('{scrollsOnMobile && <p class="comparison-table__scroll-hint"');
+        expect(src).toMatch(/\.comparison-table--fits-mobile\s*\{\s*min-width:\s*0;/);
+    });
+
+    it('scrolls only above two plan columns, so Gratis + VIP never hides VIP', async () => {
+        const { comparisonScrollsOnMobile } = await import(
+            '../../../src/components/billing/plan-comparison-table.helpers'
+        );
+        expect(comparisonScrollsOnMobile({ planCount: 2 })).toBe(false);
+        expect(comparisonScrollsOnMobile({ planCount: 3 })).toBe(true);
+    });
+});
