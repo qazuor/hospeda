@@ -179,6 +179,22 @@ const contactPath = helpDestinationPath({ destination: { kind: 'contact' }, loca
 		border-bottom: 1px solid var(--core-foreground-a08);
 	}
 
+	/* HOS-2610 F-24: fade the edge that still hides tabs (flags set by `initHelpTabs`). */
+	.help-tabs__list {
+		--tabs-fade-start: 0px;
+		--tabs-fade-end: 0px;
+		-webkit-mask-image: linear-gradient(to right, transparent, #000 var(--tabs-fade-start), #000 calc(100% - var(--tabs-fade-end)), transparent);
+		mask-image: linear-gradient(to right, transparent, #000 var(--tabs-fade-start), #000 calc(100% - var(--tabs-fade-end)), transparent);
+	}
+
+	.help-tabs__list[data-fade-start='true'] {
+		--tabs-fade-start: var(--space-8);
+	}
+
+	.help-tabs__list[data-fade-end='true'] {
+		--tabs-fade-end: var(--space-8);
+	}
+
 	.help-tabs__list::-webkit-scrollbar {
 		display: none;
 	}

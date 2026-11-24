@@ -2,6 +2,7 @@
    horizontally INSIDE its own container so the page never overflows. */
 
 .bar {
+    position: relative;
     display: flex;
     gap: var(--space-1);
     overflow-x: auto;
@@ -12,6 +13,35 @@
 
 .bar::-webkit-scrollbar {
     display: none;
+}
+
+/* HOS-2610 F-24: fade the edge that still hides tabs. The flags come from
+   `useTabScrollAffordance`; with both off the mask is fully opaque. */
+.bar {
+    --tabs-fade-start: 0px;
+    --tabs-fade-end: 0px;
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--tabs-fade-start),
+        #000 calc(100% - var(--tabs-fade-end)),
+        transparent
+    );
+    mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--tabs-fade-start),
+        #000 calc(100% - var(--tabs-fade-end)),
+        transparent
+    );
+}
+
+.bar[data-fade-start="true"] {
+    --tabs-fade-start: var(--space-8);
+}
+
+.bar[data-fade-end="true"] {
+    --tabs-fade-end: var(--space-8);
 }
 
 .tab {
