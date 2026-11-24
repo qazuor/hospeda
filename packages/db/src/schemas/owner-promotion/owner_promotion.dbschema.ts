@@ -78,6 +78,13 @@ export const ownerPromotions = pgTable(
         // 'vip' tourists see 'plus' + 'vip' rows, 'plus' tourists see 'plus'
         // only.
         touristAudience: TouristAudiencePgEnum('tourist_audience').notNull().default('plus'),
+        // HOS-2589 §7.7: when the promotion FIRST became ACTIVE. Written once by the
+        // service, never on later edits, so the weekly VIP digest can tell a new
+        // promotion from an edited one. Null for a promotion that never went live.
+        firstActivatedAt: timestamp('first_activated_at', { withTimezone: true }),
+        // HOS-2589 D-8: set when a «Solo VIP» promotion was paused because the owner's
+        // plan stopped granting `vip_only_promotions`; cleared when it is resumed.
+        vipPausedAt: timestamp('vip_paused_at', { withTimezone: true }),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

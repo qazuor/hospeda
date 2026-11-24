@@ -32,7 +32,10 @@ const ROWS: readonly KeyRow[] = [
     ['max_ai_support_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_translate_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
     ['max_ai_accommodation_import_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
-    ['max_ai_faq_draft_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL']
+    ['max_ai_faq_draft_per_month', 'vertical', 'SUM', 'DISABLE', 'COMMERCIAL'],
+    // HOS-2589 M-4: how many «para todos» promotions a non-VIP tourist sees in full
+    // per page. A value on the TOURIST floor plan, never a code constant.
+    ['max_free_visible_promotions', 'vertical', 'MAX', 'NONE', 'COMMERCIAL']
 ];
 
 /** Every limit (numeric) key the new design keeps. */

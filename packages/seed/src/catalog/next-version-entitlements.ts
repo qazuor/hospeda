@@ -122,3 +122,30 @@ export const PRODUCTION_PLAN_NEXT_VERSION_TOURIST_KEY_REMOVALS = [
 /** One owner plan published without the tourist keys (HOS-2398, migration 0188). */
 export type NextVersionTouristKeyRemoval =
     (typeof PRODUCTION_PLAN_NEXT_VERSION_TOURIST_KEY_REMOVALS)[number];
+
+/**
+ * HOS-2589 D-4 (owner decision, 2026-11-24): every sellable accommodation and venue
+ * owner plan may publish «Solo VIP» promotions on day one. Read by data-migration
+ * 0191, which grants the key to EVERY version of these plans through the bounded
+ * additive-grant lane, so live subscribers (pinned to their version) receive it too.
+ * Restricting it later is a catalog edit: publish a version without the key.
+ */
+export const PRODUCTION_PLAN_VIP_ONLY_PROMOTIONS_GRANTS = [
+    { vertical: 'accommodation', slug: 'owner-basico' },
+    { vertical: 'accommodation', slug: 'owner-pro' },
+    { vertical: 'accommodation', slug: 'owner-premium' },
+    { vertical: 'venue', slug: 'venue-basico' },
+    { vertical: 'venue', slug: 'venue-pro' },
+    { vertical: 'venue', slug: 'venue-premium' }
+] as const;
+
+/**
+ * HOS-2589 M-4 (owner decision, 2026-11-24): how many «para todos» promotions a
+ * non-VIP tourist sees in full per page. A limit row on the TOURIST floor plan, read
+ * by data-migration 0191; code reads it from the effective set, never from here.
+ */
+export const PRODUCTION_PLAN_FREE_VISIBLE_PROMOTIONS_LIMIT = {
+    vertical: 'tourist',
+    slug: 'floor',
+    limit: { key: 'max_free_visible_promotions', value: 3 }
+} as const;
