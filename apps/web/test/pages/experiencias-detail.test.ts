@@ -78,14 +78,15 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('ExperienceInfo');
         });
 
-        it('renders ExperienceContactBlock with the provider channels', () => {
-            expect(src).toContain('ExperienceContactBlock');
+        it('renders the shared ListingContactBlock with the provider channels (HOS-2579)', () => {
+            expect(src).toContain('buildExperienceContactBlock({');
+            expect(src).toContain('<ListingContactBlock {...contactBlock} />');
         });
 
         it('no longer renders the dormant WhatsApp CTA (HOS-363)', () => {
             // It read `contactInfo.whatsapp`, which the public payload never
-            // carries, so it never rendered. What remains is
-            // `ExperienceContactBlock`, and HOS-924 made one of the channels it
+            // carries, so it never rendered. What remains is the shared
+            // `ListingContactBlock`, and HOS-924 made one of the channels it
             // shows a publish requirement.
             expect(src).not.toContain('ExperienceContactCTA');
         });
@@ -136,7 +137,7 @@ describe('experiencias/[slug].astro', () => {
 
         it('wires the private-groups block with the contact-block guard (HOS-1056)', () => {
             // `hasContactBlock` is the load-bearing prop: the CTA anchors into
-            // `ExperienceContactBlock`, which self-hides when the listing
+            // the shared `ListingContactBlock`, which self-hides when the listing
             // publishes no usable channel. Passing the flag is what lets the CTA
             // degrade to plain text instead of linking to an element that is not
             // on the page — the HOS-363 failure mode, silent by construction.

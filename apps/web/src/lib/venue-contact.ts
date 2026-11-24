@@ -3,7 +3,7 @@
  * @description Single source of truth for whether a venue's public page has
  * anything to show in its contact block (HOS-2042).
  *
- * The venue contact block (`VenueContactBlock.astro`) renders the narrowed
+ * The venue contact block (`ListingContactBlock.astro`) renders the narrowed
  * business channels of `contactInfo` (mobile phone, optional landline, email,
  * site), the social profiles and the menu link. The "accepts events" CTA is an
  * in-page anchor INTO that block, so the block's render decision, the page's
@@ -45,7 +45,7 @@ export function hasVenueContactInfoChannel({
 }
 
 /**
- * Whether `VenueContactBlock` will render anything at all.
+ * Whether the venue `ListingContactBlock` will render anything at all.
  *
  * @param params.contactInfo - The narrowed public contact object, or `null`.
  * @param params.socialNetworks - The venue's social profiles, or `null`.

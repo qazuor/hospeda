@@ -16,30 +16,41 @@ describe('rendered contact-link contracts (Astro source)', () => {
         ],
         ['experience', 'Experience', 'experiencias', 'experience', 'phone email website'],
         ['venue', 'Venue', 'comer-y-salir', 'venue', 'phone email website']
-    ])('annotates each %s contact channel with its kind and listing context', (directory, component, route, vertical, kinds) => {
-        const block = readSource(`components/${directory}/${component}ContactBlock.astro`);
+    ])('annotates each %s contact channel with its kind and listing context', (_directory, component, route, vertical, kinds) => {
+        const builders = readSource('lib/listing-contact/listing-contact-block.ts');
+        const builderName = `build${component}ContactBlock`;
+        const start = builders.indexOf(`export function ${builderName}`);
+        const next = builders.indexOf('\nexport function', start + 1);
+        const body = builders.slice(start, next === -1 ? undefined : next);
         const page = pageSource(route);
 
-        // The wrapper owns the channel kinds and the tracking context...
-        const declared = [...block.matchAll(/kind: '(phone|email|website)'/g)].map(
+        // The builder owns the channel kinds and the tracking context...
+        const declared = [...body.matchAll(/kind: '(phone|email|website)'/g)].map(
             ([, kind]) => kind
         );
         expect(new Set(declared)).toEqual(new Set(kinds.split(' ')));
-        expect(block).toContain('<ListingContactChannels');
-        expect(block).toContain('trackingData={trackingData}');
-        expect(block).toContain(`vertical: '${vertical}'`);
-        expect(block).toContain("'listing-id': listingId");
-        expect(block).toContain("'contact-origin': contactOrigin");
-        expect(block).toContain("contactOrigin: ContactOrigin = 'contact_block'");
-        expect(page).toMatch(new RegExp(`listingId(?:=\\{|: )${vertical}\\.id`));
+        expect(body).toContain(
+            `trackingDataFor({ listingId: input.listingId, vertical: '${vertical}' })`
+        );
+        expect(builders).toContain("const origin: ContactOrigin = 'contact_block';");
+        expect(builders).toContain("'listing-id': input.listingId");
+        expect(builders).toContain("'contact-origin': origin");
+        // ...and the page hands it the listing id and renders the shared block.
+        expect(page).toContain(`${builderName}({`);
+        expect(page).toMatch(new RegExp(`listingId: ${vertical}\\.id`));
+        expect(page).toContain('ListingContactBlock');
     });
 
     it('stamps every shared channel and social link with the wrapper tracking data', () => {
-        const shared = readSource('components/listing/contact/ListingContactChannels.astro');
+        const shared = readSource('components/listing/contact/ListingContactBlock.astro');
+        const social = readSource('components/listing/contact/ListingSocialLinks.astro');
 
         expect(shared).toContain('...trackingData');
         expect(shared).toContain("'contact-channel': kind");
-        expect(shared).toContain("'contact-channel': 'social'");
+        expect(shared).toContain("'contact-channel': 'menu'");
+        expect(shared).toContain('trackingData={trackingData}');
+        expect(social).toContain('...trackingData');
+        expect(social).toContain("'contact-channel': 'social'");
     });
 
     it('renders partner phone and email using the resolver, preserving text for other fields', () => {

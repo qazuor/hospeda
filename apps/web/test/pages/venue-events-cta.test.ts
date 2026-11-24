@@ -18,7 +18,7 @@
  * handful of owner-optional social links plus a menu URL, and picking "the
  * first one that resolves" would sometimes point an "accepts events" CTA at a
  * restaurant's YouTube channel. So the CTA is an in-page anchor
- * (`#venue-contact`) to `VenueContactBlock` instead: no channel to pick,
+ * (`#venue-contact`) to the venue `ListingContactBlock` instead: no channel to pick,
  * and no outbound href for the HOS-592/F-02 sanitization guard to apply to.
  */
 import { readFileSync } from 'node:fs';
@@ -50,7 +50,8 @@ const read = (relativePath: string): string =>
 
 const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const EVENTS_CTA = read('components/venue/VenueEventsCta.astro');
-const CONTACT_BLOCK = read('components/venue/VenueContactBlock.astro');
+const CONTACT_BUILDERS = read('lib/listing-contact/listing-contact-block.ts');
+const CONTACT_BLOCK = read('components/listing/contact/ListingContactBlock.astro');
 const VENUE_CONTACT_SRC = read('lib/venue-contact.ts');
 
 describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
@@ -63,7 +64,7 @@ describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     it('never reads socialNetworks.whatsapp (HOS-1076: the field is gone, it never carried real data) or contactInfo', () => {
         expect(VENUE_PAGE).not.toContain('.whatsapp');
         // `contactInfo` is not part of VenuePublicSchema (see
-        // VenueContactBlock's header) — reaching for it would repeat the
+        // the old VenueContactBlock's header) — reaching for it would repeat the
         // HOS-363/HOS-924 bug.
         // HOS-2042 changed that: the public schema now exposes a NARROWED
         // `contactInfo` (business channels only), which the page forwards to the
@@ -79,7 +80,7 @@ describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
             'const acceptsEvents = venue.policies?.eventsAllowed === true;'
         );
         expect(VENUE_PAGE).not.toContain('private_events');
-        // Mirrors VenueContactBlock's own render gate, duplicated on
+        // Mirrors the contact block's own render gate, duplicated on
         // purpose rather than imported (see the frontmatter comment) — a CTA
         // anchored to an empty contact block would be worse than no CTA.
         // HOS-2042: the predicate is shared through `@/lib/venue-contact`, so the
@@ -107,7 +108,7 @@ describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     it('mounts the CTA after the amenity grids and before the contact block it anchors into', () => {
         const amenitiesIdx = VENUE_PAGE.indexOf('Component: AmenitiesGrid');
         const ctaIdx = VENUE_PAGE.indexOf('Component: VenueEventsCta');
-        const contactIdx = VENUE_PAGE.indexOf('Component: VenueContactBlock');
+        const contactIdx = VENUE_PAGE.indexOf('Component: ListingContactBlock');
 
         expect(amenitiesIdx).toBeGreaterThan(-1);
         expect(ctaIdx).toBeGreaterThan(amenitiesIdx);
@@ -140,11 +141,16 @@ describe('VenueEventsCta.astro (HOS-1055)', () => {
     });
 });
 
-describe('VenueContactBlock.astro — the CTA anchor target (HOS-1055)', () => {
+describe('the venue contact block — the CTA anchor target (HOS-1055)', () => {
     it('carries the stable id the events CTA anchors into', () => {
         // The id comes from the shared constant (HOS-2042) so the block, the page
-        // gate and the CTA anchor are written from one place.
-        expect(CONTACT_BLOCK).toContain('id={VENUE_CONTACT_ANCHOR_ID}');
+        // gate and the CTA anchor are written from one place. The builder sets
+        // it and the shared block renders it on its root.
+        expect(CONTACT_BUILDERS).toContain('id: VENUE_CONTACT_ANCHOR_ID');
+        expect(CONTACT_BUILDERS).toContain(
+            'if (!hasVenuePublicContact({ contactInfo, socialNetworks, menuUrl })) return null;'
+        );
+        expect(CONTACT_BLOCK).toContain('id={id}');
         expect(VENUE_CONTACT_SRC).toContain("VENUE_CONTACT_ANCHOR_ID = 'venue-contact'");
     });
 });

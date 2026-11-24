@@ -12,64 +12,68 @@ import { describe, expect, it } from 'vitest';
 
 const read = (file: string) => readFileSync(resolve(__dirname, '../../../src', file), 'utf8');
 
-const contact = read('components/venue/VenueContactBlock.astro');
+const contact = read('lib/listing-contact/listing-contact-block.ts');
+const venueBuilder = contact.slice(contact.indexOf('export function buildVenueContactBlock'));
+const block = read('components/listing/contact/ListingContactBlock.astro');
 const address = read('components/venue/VenueAddress.astro');
 const page = read('pages/[lang]/comer-y-salir/[slug].astro');
 
 describe('venue interaction attributes (HOS-2256)', () => {
     it('marks both phones as PHONE_CLICK', () => {
-        expect(contact).toMatch(/href: toTelHref\(value\)[\s\S]*?interactionKind: 'PHONE_CLICK'/);
+        expect(venueBuilder).toMatch(
+            /href: toTelHref\(value\)[\s\S]*?interactionKind: 'PHONE_CLICK'/
+        );
     });
 
     it('keeps the venue-contact__menu-btn hook on the menu link (E2E LISTING-OWNER-01 selector)', () => {
-        const menuAnchor = contact.slice(
-            contact.indexOf('href={menuHref}'),
-            contact.indexOf("'contact-channel': 'menu'")
+        const menuAnchor = block.slice(
+            block.indexOf('href={menuLink.href}'),
+            block.indexOf("'contact-channel': 'menu'")
         );
         expect(menuAnchor).toContain('class="venue-contact__menu-btn"');
     });
 
     it('marks the contactInfo website as WEBSITE_CLICK', () => {
-        expect(contact).toMatch(/href: websiteHref[\s\S]*?interactionKind: 'WEBSITE_CLICK'/);
+        expect(venueBuilder).toMatch(/href: websiteHref[\s\S]*?interactionKind: 'WEBSITE_CLICK'/);
     });
 
     it('maps only website and instagram of the social links, and not the menu or email', () => {
-        expect(contact).toContain('interactionKind');
         expect(contact).toMatch(/website: 'WEBSITE_CLICK'/);
         expect(contact).toMatch(/instagram: 'INSTAGRAM_CLICK'/);
         expect(contact).not.toMatch(/facebook: '[A-Z_]+_CLICK'/);
-        const menuAnchor = contact.slice(
-            contact.indexOf('href={menuHref}'),
-            contact.indexOf('menuLabel} ↗')
+        const menuAnchor = block.slice(
+            block.indexOf('{menuLink && ('),
+            block.indexOf('<ListingSocialLinks')
         );
         expect(menuAnchor).not.toContain('interaction-kind');
-        const emailChannel = contact.slice(
-            contact.indexOf("kind: 'email'"),
-            contact.indexOf("kind: 'website'")
+        const emailChannel = venueBuilder.slice(
+            venueBuilder.indexOf("kind: 'email'"),
+            venueBuilder.indexOf("kind: 'website'")
         );
         expect(emailChannel).not.toContain('interactionKind');
     });
 
-    it('renders through the shared ListingContactChannels (GradientButton + IconButton, HOS-2533/HOS-2520)', () => {
-        expect(contact).toContain('<ListingContactChannels');
-        expect(contact).not.toContain('<IconButton');
-        const shared = read('components/listing/contact/ListingContactChannels.astro');
-        expect(shared).toContain('<GradientButton');
-        expect(shared).toContain('<IconButton');
-        expect(shared).toContain('variant="outline-primary"');
-        expect(shared).toContain("'interaction-kind': interactionKind");
+    it('renders through the shared ListingContactBlock (GradientButton + IconButton, HOS-2533/HOS-2520/HOS-2579)', () => {
+        const social = read('components/listing/contact/ListingSocialLinks.astro');
+        expect(page).toContain('Component: ListingContactBlock, props: { ...venueContactBlock }');
+        expect(block).toContain('<GradientButton');
+        expect(block).toContain('variant="outline-primary"');
+        expect(block).toContain("'interaction-kind': interactionKind");
+        expect(social).toContain('<IconButton');
+        expect(social).toContain("'interaction-kind': interactionKind");
     });
 
-    it('uses brand logos from @repo/icons for every social network', () => {
+    it('uses brand logos from @repo/icons for every social network (X, not the old bird)', () => {
         for (const icon of [
             'InstagramIcon',
             'FacebookIcon',
-            'TwitterIcon',
+            'XIcon',
             'YoutubeIcon',
             'TiktokIcon'
         ]) {
             expect(contact).toContain(`Icon: ${icon}`);
         }
+        expect(contact).not.toContain('TwitterIcon');
         expect(contact).toContain("from '@repo/icons'");
     });
 
@@ -82,7 +86,7 @@ describe('venue interaction attributes (HOS-2256)', () => {
     });
 
     it('keeps the .astro components session-blind: they do not read the session', () => {
-        for (const src of [contact, address]) {
+        for (const src of [block, address]) {
             expect(src).not.toContain('Astro.locals.user');
             expect(src).not.toContain('Astro.locals.session');
         }

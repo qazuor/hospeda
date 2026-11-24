@@ -22,13 +22,14 @@ import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.as
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildExperienceHeader } from '@/lib/listing-header/build-listing-header';
+import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceMeetingPoint from '@/components/experience/ExperienceMeetingPoint.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
 import ExperienceSummary from '@/components/experience/ExperienceSummary.astro';
 import ExperienceCancellationPolicy from '@/components/experience/ExperienceCancellationPolicy.astro';
 import ExperiencePrivateGroups from '@/components/experience/ExperiencePrivateGroups.astro';
-import ExperienceContactBlock from '@/components/experience/ExperienceContactBlock.astro';
+import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
@@ -204,7 +205,7 @@ const seoDescription =
     t('experience.listing.subtitle', 'Experiencias y servicios en el Litoral Entrerriano');
 
 /**
- * HOS-1056: whether `ExperienceContactBlock` will render anything at all.
+ * HOS-1056: whether the experience `ListingContactBlock` will render anything at all.
  *
  * Computed HERE, from the same predicate the block itself uses, because the
  * private-groups CTA is an anchor into that block: if the block self-hides for
@@ -217,7 +218,7 @@ const hasContactBlock = hasPublicContactChannel({ contactInfo: experience.contac
 
 // --- Mobile contact bar + panel (HOS-2532) ---
 // Channels only: no form and no WhatsApp (HOS-363). The bar and the panel exist
-// exactly when `ExperienceContactBlock` does, so the bar's no-JS fallback anchor
+// exactly when the experience `ListingContactBlock` does, so the bar's no-JS fallback anchor
 // always has a target and no bar promises a channel that is not there.
 const contactChannels = hasContactBlock
     ? buildExperienceChannels({ contactInfo: experience.contactInfo })
@@ -241,6 +242,19 @@ const breadcrumbItems = [
 ];
 
 // --- Header (HOS-2579): the shared frame, built from the detail data ---
+/**
+ * HOS-2579 §6.4: the shared contact block, now also carrying the social
+ * profiles that used to render as emoji pills inside `ExperienceInfo`. It
+ * exists whenever `hasContactBlock` is true (and also for a socials-only
+ * listing), so the private-groups anchor never points at a missing element.
+ */
+const contactBlock = buildExperienceContactBlock({
+    listingId: experience.id,
+    contactInfo: experience.contactInfo,
+    socialNetworks: experience.socialNetworks,
+    locale
+});
+
 const headerProps = buildExperienceHeader({
     experience,
     locale,
@@ -379,11 +393,7 @@ const headerProps = buildExperienceHeader({
              contact affordance was the site-wide WhatsApp button pointing at
              HOSPEDA's number — not the provider's. The published subset is
              narrowed by `ExperiencePublicContactInfoSchema`. -->
-        <ExperienceContactBlock
-            listingId={experience.id}
-            contactInfo={experience.contactInfo}
-            locale={locale}
-        />
+        {contactBlock && <ListingContactBlock {...contactBlock} />}
 
         <!-- Reviews (interactive island) -->
         <ExperienceReviews

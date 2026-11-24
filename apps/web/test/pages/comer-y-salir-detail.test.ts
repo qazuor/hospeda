@@ -93,8 +93,11 @@ describe('comer-y-salir/[slug].astro', () => {
             expect(src).toContain('venue.openingHours');
         });
 
-        it('renders VenueContactBlock for menu + social', () => {
-            expect(src).toContain('VenueContactBlock');
+        it('renders the shared ListingContactBlock for menu + social (HOS-2579)', () => {
+            expect(src).toContain('buildVenueContactBlock({');
+            expect(src).toContain(
+                'Component: ListingContactBlock, props: { ...venueContactBlock }'
+            );
         });
 
         it('reuses FaqAccordion from accommodation components', () => {

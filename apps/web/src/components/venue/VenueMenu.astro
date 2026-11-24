@@ -8,7 +8,7 @@
  *
  * A venue may set THREE independent things: a structured carta (sections and
  * dishes), an uploaded photo/PDF, and an external link (rendered separately by
- * `VenueContactBlock.astro`, unaffected by this component). None is
+ * `ListingContactBlock.astro`, unaffected by this component). None is
  * required and none excludes the others — PR1's own schema doc says so
  * explicitly ("All three may be set at once and none is required").
  *
@@ -21,7 +21,7 @@
  * would silently drop content the owner chose to publish. The external link
  * stays the last resort by construction: it is the only shape that predates
  * HOS-895 and the only one still free on every tier (see the entitlement
- * gate note below), and `VenueContactBlock` already renders it as a
+ * gate note below), and the venue `ListingContactBlock` already renders it as a
  * plain CTA regardless of what this component shows.
  *
  * ## The gate
@@ -32,7 +32,7 @@
  * `manage_venue_menu` (HOS-895 PR2, owner decision 2026-09-02). This
  * component has no gate of its own to apply — an owner without the
  * entitlement simply never has non-empty props to render, the same way
- * `VenueContactBlock` cannot tell a "no menuUrl" venue from a redacted
+ * the venue `ListingContactBlock` cannot tell a "no menuUrl" venue from a redacted
  * one.
  *
  * A PDF and an image are NOT rendered the same way: `fileKind` decides
@@ -133,14 +133,14 @@ const safeFileUrl = resolveSafeExternalUrl(fileUrl);
 const hasFile = Boolean(safeFileUrl && fileKind);
 
 if (!hasStructuredMenu && !hasFile) {
-    // Nothing to render — VenueContactBlock's external link (if any) is
+    // Nothing to render — ListingContactBlock's external link (if any) is
     // this listing's only menu content.
     return;
 }
 
 // Nested under `menuCarta`, NOT `menu` — `venue.detail.menu` is already a
 // leaf string ("Ver menú", the external-link CTA label in
-// VenueContactBlock.astro), and a JSON key cannot be both a string and
+// ListingContactBlock), and a JSON key cannot be both a string and
 // an object subtree.
 const title = t('venue.detail.menuCarta.title', 'Carta');
 const attachmentImageTitle = t('venue.detail.menuCarta.attachmentImage', 'Carta en imagen');

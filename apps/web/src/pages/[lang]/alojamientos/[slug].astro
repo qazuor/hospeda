@@ -19,11 +19,12 @@ import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import { formatPhotoCredit } from '@/lib/photo-credit';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildAccommodationHeader } from '@/lib/listing-header/build-listing-header';
+import { buildAccommodationContactBlock } from '@/lib/listing-contact/listing-contact-block';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import MobileBookingSummary from '@/components/accommodation/MobileBookingSummary.astro';
 import Description from '@/components/accommodation/Description.astro';
 import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
-import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
+import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
@@ -499,7 +500,7 @@ const lodgingGeo = buildLodgingGeo({
     approximateLocation: accommodation.approximateLocation
 });
 
-// HOS-585 P-4: the same number `AccommodationContactBlock` already renders as a
+// HOS-585 P-4: the same number the accommodation `ListingContactBlock` already renders as a
 // `tel:` link, so this publishes nothing the page does not.
 const lodgingTelephone = buildLodgingTelephone({ contactInfo: accommodation.contactInfo });
 
@@ -563,6 +564,14 @@ const sectionTabs = buildListingSectionTabs({
 });
 
 // --- Header (HOS-2579): the shared frame, built from the detail data ---
+/** HOS-2579 §6.4: the shared contact block, `null` when nothing is publishable (H-118). */
+const contactBlock = buildAccommodationContactBlock({
+    listingId: accommodation.id,
+    contactInfo: accommodation.contactInfo,
+    socialNetworks: accommodation.socialNetworks,
+    locale
+});
+
 const headerProps = buildAccommodationHeader({
     accommodation,
     locale,
@@ -710,12 +719,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
              the host filled in via the editor's contact form, previously captured
              but never shown on the public page). The existing WhatsApp button
              (sidebar, ContactCard) is untouched — this block never carries that number. -->
-        <AccommodationContactBlock
-            listingId={accommodation.id}
-            contactInfo={accommodation.contactInfo}
-            socialNetworks={accommodation.socialNetworks}
-            locale={locale}
-        />
+        {contactBlock && <ListingContactBlock {...contactBlock} />}
 
         {hasAmenitiesSection && (
             <div id={LISTING_SECTION_IDS.amenities} class="acc-anchor acc-anchor--stack">

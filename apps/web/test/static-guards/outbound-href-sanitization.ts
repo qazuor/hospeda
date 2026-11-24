@@ -352,7 +352,7 @@ export function isOutbound(site: LinkSite): boolean {
  * 1. The expression calls it inline — `href={resolveSafeExternalUrl(x)}`.
  * 2. The expression is a bare identifier that this same file binds to a
  *    sanitizer call — the `const websiteHref = resolveSafeExternalUrl(…)` shape
- *    `AccommodationContactBlock.astro` established.
+ *    the old `AccommodationContactBlock.astro` established.
  *
  * A member expression (`credit.url`, `link.href`) is deliberately NOT resolved:
  * its origin is in another file, or in a prop, and a scan that guessed would be

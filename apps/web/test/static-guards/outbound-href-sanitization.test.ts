@@ -82,8 +82,12 @@ const SRC_ROOT = join(__dirname, '../../src');
  * instead.
  */
 const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
-    'components/listing/contact/ListingContactChannels.astro#{href}':
-        'presentation-only: the accommodation, venue and experience contact wrappers pass every website and social URL through `resolveSafeExternalUrl` before building the props (pinned by the migrated entries in outbound-href-migration.test.ts) and compose tel:/mailto: themselves',
+    'components/listing/contact/ListingContactBlock.astro#{href}':
+        'presentation-only: the channel hrefs come from the builders in `lib/listing-contact/listing-contact-block.ts`, which pass every website URL through `resolveSafeExternalUrl` (pinned by the migrated entry in outbound-href-migration.test.ts) and compose tel:/mailto: themselves',
+    'components/listing/contact/ListingContactBlock.astro#{menuLink.href}':
+        'the venue menu link, set by `buildVenueContactBlock` only from `resolveSafeExternalUrl(menuUrl)`; an unsafe value yields no `menuLink` at all',
+    'components/listing/contact/ListingSocialLinks.astro#{href}':
+        'presentation-only: the social hrefs come from the same builders, each one `resolveSafeExternalUrl`-ed before it reaches the props',
     'components/listing/contact/ListingChannelsPanel.client.tsx#{channel.href}':
         'built only by `buildExperienceChannels`/`buildVenueChannels` (`lib/listing-contact/listing-channels.ts`), which pass every website and social URL through `resolveSafeExternalUrl` and compose tel:/mailto: themselves',
     'components/listing/contact/ListingContactActions.tsx#{primaryLink.href}':

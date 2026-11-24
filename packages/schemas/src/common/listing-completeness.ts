@@ -183,7 +183,7 @@ type ReachableContactChannel =
  * - `experience` — exactly the phone/email keys
  *   `ExperiencePublicContactInfoSchema` publishes
  *   (`packages/schemas/src/entities/experience/experience.access.schema.ts`),
- *   which is what `ExperienceContactBlock.astro` renders. The three keys that
+ *   which is what `ListingContactBlock.astro` renders. The three keys that
  *   used to satisfy this gate and never reached the page are deliberately out:
  *   `whatsapp` (gated by the VIEWER's plan on a separate protected endpoint —
  *   HOS-19 — and this payload is shared-cached with no auth in the cache key),

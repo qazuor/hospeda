@@ -28,9 +28,16 @@ import { resolve } from 'node:path';
 import { ExperiencePublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
+import { EXPERIENCE_CONTACT_ANCHOR_ID, hasPublicContactChannel } from '@/lib/experience-contact';
+import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
 
+/**
+ * HOS-2579 §6.4: the experience block is the shared `ListingContactBlock`, fed
+ * by `buildExperienceContactBlock`. The builder module is what decides the
+ * channels, so the wiring assertions read it and call it.
+ */
 const COMPONENT_SRC = readFileSync(
-    resolve(__dirname, '../../src/components/experience/ExperienceContactBlock.astro'),
+    resolve(__dirname, '../../src/lib/listing-contact/listing-contact-block.ts'),
     'utf8'
 );
 
@@ -177,41 +184,50 @@ describe('HOS-815 privacy — the public payload strips the non-published keys',
 // ============================================================================
 
 describe('HOS-815 wiring — the page renders the contact block', () => {
-    it('imports and renders ExperienceContactBlock', () => {
+    it('builds the shared block from the transformed contactInfo and renders it', () => {
         expect(PAGE_CODE).toMatch(
-            /import\s+ExperienceContactBlock\s+from\s+['"]@\/components\/experience\/ExperienceContactBlock\.astro['"]/
+            /buildExperienceContactBlock\(\{[\s\S]*?contactInfo: experience\.contactInfo/
         );
-        expect(PAGE_CODE).toMatch(/<ExperienceContactBlock/);
-    });
-
-    it('feeds it the transformed contactInfo', () => {
-        expect(PAGE_CODE).toMatch(/contactInfo=\{experience\.contactInfo\}/);
+        expect(PAGE_CODE).toContain('{contactBlock && <ListingContactBlock {...contactBlock} />}');
     });
 });
 
-describe('HOS-815 wiring — the component follows the site conventions', () => {
-    it('renders a tel: link and a mailto: link', () => {
-        expect(COMPONENT_CODE).toContain('tel:');
-        expect(COMPONENT_CODE).toContain('mailto:');
-    });
+describe('HOS-815 wiring — the builder follows the site conventions', () => {
+    const build = (contactInfo: Parameters<typeof buildExperienceContactBlock>[0]['contactInfo']) =>
+        buildExperienceContactBlock({
+            listingId: 'exp-1',
+            contactInfo,
+            socialNetworks: null,
+            locale: 'es'
+        });
 
-    it('strips separators out of the tel: href but keeps them in the label', () => {
-        expect(COMPONENT_CODE).toMatch(/replace\(\/\[\^\\d\+\]\/g,\s*''\)/);
+    it('renders a tel: link without separators and a mailto: link, label kept as typed', () => {
+        const block = build({ mobilePhone: '+54 3447 412233', workEmail: 'hola@kayak.ar' });
+        expect(block?.channels).toEqual([
+            expect.objectContaining({
+                kind: 'phone',
+                href: 'tel:+543447412233',
+                label: '+54 3447 412233'
+            }),
+            expect.objectContaining({ kind: 'email', href: 'mailto:hola@kayak.ar' })
+        ]);
     });
 
     it('routes the provider website through the safe-URL allow-list', () => {
-        // `z.string().url()` accepts `javascript:`; this allow-list is the
-        // control that keeps a payload out of the href (HOS-592 / F-02).
-        expect(COMPONENT_CODE).toMatch(
-            /import\s*\{\s*resolveSafeExternalUrl\s*\}\s*from\s*['"]@\/lib\/safe-external-url['"]/
-        );
-        expect(COMPONENT_CODE).toMatch(/resolveSafeExternalUrl\(contactInfo\?\.website/);
+        expect(
+            build({ website: 'javascript:alert(1)', workEmail: 'a@b.ar' })?.channels
+        ).toHaveLength(1);
+        expect(build({ website: 'https://kayak.ar' })?.channels[0]).toMatchObject({
+            kind: 'website',
+            href: 'https://kayak.ar',
+            label: 'kayak.ar'
+        });
     });
 
     it('marks the outbound site link noopener noreferrer, not sponsored', () => {
         // target/rel live in the shared component, which only gives them to the website kind.
         const shared = readFileSync(
-            resolve(__dirname, '../../src/components/listing/contact/ListingContactChannels.astro'),
+            resolve(__dirname, '../../src/components/listing/contact/ListingContactBlock.astro'),
             'utf8'
         );
         expect(shared).toContain("target: '_blank', rel: 'noopener noreferrer'");
@@ -225,38 +241,31 @@ describe('HOS-815 wiring — the component follows the site conventions', () => 
 
     it('does not invent a WhatsApp deep link from the mobile number', () => {
         // Deliberate: the repo keeps WhatsApp a separate, entitlement-gated
-        // channel sourced only from `contactInfo.whatsapp`. Deriving one from a
-        // mobile line would invent a channel the provider never opted into.
+        // channel. Deriving one from a mobile line would invent a channel the
+        // provider never opted into.
         expect(COMPONENT_CODE).not.toContain('wa.me');
         expect(COMPONENT_CODE).not.toContain('buildWhatsAppLink');
     });
 
-    it('uses no HTML injection sink', () => {
-        expect(COMPONENT_CODE).not.toContain('set:html');
-    });
-
-    it('renders nothing when there is no publishable channel', () => {
+    it('renders nothing when there is no publishable channel nor social profile', () => {
         // The three seeded experience listings have an empty `contact_info`;
         // an empty contact card would be worse than none.
-        //
-        // HOS-1056 moved the predicate out of this file — the assertion follows
-        // it rather than being dropped. It used to pin the literal
-        // `if (phones.length === 0 && !workEmail && !websiteHref)`, which stopped
-        // matching the moment the same decision had to be shared. It is shared
-        // because the private-groups CTA is an ANCHOR into this block: the block's
-        // render decision and the CTA's link decision must be ONE answer, or the
-        // CTA points at an element that is not on the page.
-        expect(COMPONENT_CODE).toMatch(
-            /if\s*\(!hasPublicContactChannel\(\{\s*contactInfo\s*\}\)\)/
-        );
-        expect(COMPONENT_CODE).toContain("from '@/lib/experience-contact'");
+        expect(build(null)).toBeNull();
+        expect(build({ workPhone: '   ', website: 'javascript:alert(1)' })).toBeNull();
     });
 
-    it('exposes the anchor the private-groups CTA targets (HOS-1056)', () => {
-        // The id comes from the shared constant, not a literal on either side:
-        // a hard-coded `href="#..."` here and a hard-coded `id` there is a pair
-        // that can be renamed apart, and a dead anchor reports nothing at all.
-        expect(COMPONENT_CODE).toContain('id={EXPERIENCE_CONTACT_ANCHOR_ID}');
+    it('exists whenever the private-groups CTA anchors into it (HOS-1056)', () => {
+        // The CTA's link decision is `hasPublicContactChannel`; the block must
+        // exist in every one of those cases, or the anchor points at nothing.
+        for (const contactInfo of [
+            { workPhone: '+543442452345' },
+            { mobilePhone: '+5493442452345' },
+            { workEmail: 'a@b.ar' },
+            { website: 'https://kayak.ar' }
+        ]) {
+            expect(hasPublicContactChannel({ contactInfo })).toBe(true);
+            expect(build(contactInfo)?.id).toBe(EXPERIENCE_CONTACT_ANCHOR_ID);
+        }
     });
 });
 
@@ -325,24 +334,36 @@ describe('HOS-363 — the dormant WhatsApp CTA no longer exists', () => {
     });
 });
 
-describe('ExperienceContactBlock looks like the accommodation block (HOS-2520 item 19)', () => {
-    const accommodationSrc = readFileSync(
-        resolve(__dirname, '../../src/components/accommodation/AccommodationContactBlock.astro'),
-        'utf8'
-    );
-
-    it('renders through the same shared component as accommodation, card shell included', () => {
-        expect(COMPONENT_SRC).toContain('<ListingContactChannels');
-        expect(accommodationSrc).toContain('<ListingContactChannels');
-        // Neither wrapper overrides the default `card` shell, so the visuals match.
-        expect(COMPONENT_SRC).not.toContain('shell=');
-        expect(accommodationSrc).not.toContain('shell=');
+describe('the experience block looks like the accommodation block (HOS-2520 item 19)', () => {
+    it('uses the same card shell as accommodation', () => {
+        const experience = buildExperienceContactBlock({
+            listingId: 'exp-1',
+            contactInfo: { workEmail: 'a@b.ar' },
+            socialNetworks: null,
+            locale: 'es'
+        });
+        expect(experience?.shell).toBe('card');
+        expect(experience?.channels[0]?.srHint.startsWith(', ')).toBe(true);
+        expect(experience?.trackingData).toEqual({
+            'listing-id': 'exp-1',
+            vertical: 'experience',
+            'contact-origin': 'contact_block'
+        });
     });
 
-    it('keeps its own rules: only present channels, no social row, srHint context, tracking data', () => {
-        expect(COMPONENT_SRC).toContain('socialLinks={[]}');
-        expect(COMPONENT_SRC).toContain('srHint:');
-        expect(COMPONENT_SRC).toContain('trackingData={trackingData}');
-        expect(COMPONENT_SRC).not.toContain('<GradientButton');
+    it('carries the social profiles that used to be emoji pills in ExperienceInfo (HOS-2579)', () => {
+        const experience = buildExperienceContactBlock({
+            listingId: 'exp-1',
+            contactInfo: null,
+            socialNetworks: {
+                instagram: 'https://instagram.com/kayak',
+                whatsapp: '+5493442452345',
+                twitter: 'javascript:alert(1)'
+            },
+            locale: 'es'
+        });
+        expect(experience?.socialLinks.map((link) => link.href)).toEqual([
+            'https://instagram.com/kayak'
+        ]);
     });
 });

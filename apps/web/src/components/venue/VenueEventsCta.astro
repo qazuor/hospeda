@@ -17,12 +17,12 @@
  * not a plausible way to ask about a birthday party.
  *
  * So this button does not carry an external `href` at all: it is a same-page
- * anchor (`#venue-contact`) to `VenueContactBlock`, which already
+ * anchor (`#venue-contact`) to the venue `ListingContactBlock`, which already
  * renders every channel the owner actually set. That also means the outbound
  * href-sanitization guard (HOS-592/F-02) does not apply here — there is no
  * outbound link to sanitize, not an exemption from having to.
  *
- * The page only mounts this component when `VenueContactBlock` will
+ * The page only mounts this component when the venue `ListingContactBlock` will
  * itself have something to show (see `[slug].astro`'s `showEventsCta`) — a
  * button anchored to an empty contact block would be worse than no button.
  */
@@ -93,7 +93,7 @@ const { t } = createTranslations(locale);
         margin: 0;
     }
 
-    /* Same button recipe as VenueContactBlock's menu CTA (SPEC-308: dark
+    /* Same button recipe as ListingContactBlock's menu CTA (SPEC-308: dark
        ink on the vibrant orange fill — white fails AA). */
     .venue-events-cta__button {
         display: inline-flex;

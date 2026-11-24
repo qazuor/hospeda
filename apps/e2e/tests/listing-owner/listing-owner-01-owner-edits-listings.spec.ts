@@ -323,7 +323,7 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
 
         // ── Step 3 assertion: public venue ficha reflects new menuUrl ─────
 
-        // VenueContactBlock.astro renders menuUrl as an anchor with class
+        // ListingContactBlock.astro (fed by buildVenueContactBlock) renders menuUrl as an anchor with class
         // venue-contact__menu-btn. The page is SSR on-demand (prerender=false) so
         // a fresh navigation serves the current DB value.
         await page.goto(`${WEB_URL}/es/comer-y-salir/${VENUE_SLUG}/`, {

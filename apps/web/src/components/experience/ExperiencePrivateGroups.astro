@@ -13,7 +13,7 @@
  *
  * ## The CTA degrades instead of pointing at nothing
  *
- * This is the part worth reading before changing anything. `ExperienceContactBlock`
+ * This is the part worth reading before changing anything. the experience `ListingContactBlock`
  * renders NOTHING when the listing publishes no usable channel, and this CTA is
  * an anchor into that block. So the page passes `hasContactBlock`, computed from
  * the same `hasPublicContactChannel` predicate the block itself uses, and when it
@@ -41,7 +41,7 @@ interface Props {
      */
     readonly privateGroups: boolean | undefined;
     /**
-     * Whether `ExperienceContactBlock` will actually render on this page.
+     * Whether the experience `ListingContactBlock` will actually render on this page.
      * Decides whether the CTA is a link or a plain sentence — see the file
      * docstring.
      */

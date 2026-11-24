@@ -54,8 +54,8 @@ describe('session-replay-privacy.md (HOS-2347 AC-D1)', () => {
     it.each([
         'ContactHost',
         'WhatsAppContact',
-        'VenueContactBlock',
-        'ExperienceContactBlock',
+        'buildVenueContactBlock',
+        'buildExperienceContactBlock',
         'CookieConsentBanner',
         'FeedbackHeadlessHost'
     ])('lists the blocked surface %s', (surface) => {
