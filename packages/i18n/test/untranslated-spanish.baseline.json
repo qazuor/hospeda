@@ -3611,7 +3611,6 @@
         "listing.json:owner.editor.media.featuredFailed",
         "listing.json:owner.editor.media.persistFailed",
         "listing.json:owner.editor.media.removeFailed",
-        "listing.json:owner.editor.nightInfo.entryNoteLabel",
         "listing.json:owner.editor.priceRangeOption.HIGH",
         "listing.json:owner.editor.priceRangeOption.MID",
         "listing.json:owner.editor.priceUnitOption.per_group",
