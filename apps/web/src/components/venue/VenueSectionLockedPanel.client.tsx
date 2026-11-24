@@ -20,6 +20,7 @@
 
 import { LockIcon } from '@repo/icons';
 import type { JSX, ReactNode } from 'react';
+import { LockedState } from '@/components/account/ui/LockedState';
 import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.client';
 import type { ListingPlanGate } from '@/hooks/useListingPlanGate';
 import type { SectionVaciarState } from '@/hooks/useSectionVaciar';
@@ -107,43 +108,69 @@ export function VenueSectionLockedPanel({
 }: VenueSectionLockedPanelProps): JSX.Element {
     const { t } = createTranslations(locale);
 
+    const message =
+        gate === 'preTrial'
+            ? t(preTrialMessageKey, preTrialMessageFallback)
+            : planName
+              ? t(messageKey, messageFallback, { plan: planName })
+              : noPlanMessageFallback
+                ? t(`${messageKey}NoPlan`, noPlanMessageFallback)
+                : t(messageKey, messageFallback);
+
     return (
         <div className={styles.locked}>
-            <div
-                id={id}
-                className={styles.notice}
-                role="status"
-                data-testid={testId}
-            >
-                <LockIcon
-                    size={16}
-                    className={styles.icon}
-                    aria-hidden="true"
-                />
-                <p className={styles.text}>
-                    {gate === 'preTrial'
-                        ? t(preTrialMessageKey, preTrialMessageFallback)
-                        : planName
-                          ? t(messageKey, messageFallback, { plan: planName })
-                          : noPlanMessageFallback
-                            ? t(`${messageKey}NoPlan`, noPlanMessageFallback)
-                            : t(messageKey, messageFallback)}
-                    {gate === 'plan' ? (
-                        <>
-                            {' '}
-                            <a
-                                className={styles.link}
-                                href={buildUrl({
-                                    locale,
-                                    path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
-                                })}
-                            >
-                                {t('venue.owner.editor.menuManager.seePlans', 'Ver planes')}
-                            </a>
-                        </>
-                    ) : null}
-                </p>
-            </div>
+            {/* HOS-2612 F-15: a plan lock with a catalog plan uses the kit LockedState. */}
+            {gate === 'plan' && planName ? (
+                <div
+                    id={id}
+                    role="status"
+                    data-testid={testId}
+                >
+                    <LockedState
+                        locale={locale}
+                        reason={{
+                            kind: 'plan',
+                            feature: sectionLabel,
+                            description: message,
+                            plans: [{ name: planName }],
+                            plansHref: buildUrl({
+                                locale,
+                                path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
+                            })
+                        }}
+                    />
+                </div>
+            ) : (
+                <div
+                    id={id}
+                    className={styles.notice}
+                    role="status"
+                    data-testid={testId}
+                >
+                    <LockIcon
+                        size={16}
+                        className={styles.icon}
+                        aria-hidden="true"
+                    />
+                    <p className={styles.text}>
+                        {message}
+                        {gate === 'plan' ? (
+                            <>
+                                {' '}
+                                <a
+                                    className={styles.link}
+                                    href={buildUrl({
+                                        locale,
+                                        path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
+                                    })}
+                                >
+                                    {t('venue.owner.editor.menuManager.seePlans', 'Ver planes')}
+                                </a>
+                            </>
+                        ) : null}
+                    </p>
+                </div>
+            )}
 
             <div className={styles.readOnly}>{children}</div>
 
