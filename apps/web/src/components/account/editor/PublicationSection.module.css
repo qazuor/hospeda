@@ -42,7 +42,7 @@
     justify-content: center;
     min-height: 44px;
     padding: 0.5rem 1.25rem;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.9375rem;
@@ -55,7 +55,7 @@
 .publishButton {
     border: none;
     background-color: var(--brand-primary);
-    color: var(--primary-foreground, #ffffff);
+    color: var(--primary-foreground);
 }
 
 /* HOS-1942: the lifted-in-dark text twin of --destructive, so the label clears

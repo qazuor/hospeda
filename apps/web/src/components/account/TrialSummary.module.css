@@ -19,7 +19,7 @@
     padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
     background-color: var(--core-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-card, 16px);
+    border-radius: var(--radius-card);
     font-family: var(--font-sans);
 }
 

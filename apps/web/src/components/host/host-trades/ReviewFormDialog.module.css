@@ -16,7 +16,7 @@
     color: var(--core-foreground);
     background-color: var(--core-card);
     border: 1px solid var(--core-foreground-a08);
-    border-radius: var(--radius-card, 24px);
+    border-radius: var(--radius-card);
 }
 
 .dialog::backdrop {
@@ -138,7 +138,7 @@
     padding: var(--space-3, 0.75rem);
     background-color: var(--core-background);
     border: 1px solid var(--core-foreground-a08);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
 }
 
 .breakdownSummary {
@@ -182,7 +182,7 @@
     color: var(--core-foreground);
     background-color: var(--core-background);
     border: 1px solid var(--core-foreground-a08);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     resize: vertical;
 }
 
@@ -212,13 +212,13 @@
     font-weight: 600;
     font-size: 0.9375rem;
     border: 1px solid transparent;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     cursor: pointer;
     transition: opacity var(--duration-normal, 0.4s) ease-out;
 }
 
 .primaryAction {
-    color: var(--accent-foreground, #ffffff);
+    color: var(--accent-foreground);
     background-color: var(--brand-accent);
 }
 
@@ -250,7 +250,7 @@
 .successBody {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     color: var(--core-muted-foreground);
 }
 
@@ -265,5 +265,5 @@
     color: oklch(0.55 0.22 25);
     background-color: oklch(0.55 0.22 25 / 0.08);
     border: 1px solid oklch(0.85 0.05 25 / 0.4);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
 }

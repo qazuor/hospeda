@@ -39,6 +39,6 @@
     .panel.panel.panel {
         --dialog-max-height: 85dvh;
         max-width: 100%;
-        border-radius: var(--radius-card, 24px) var(--radius-card, 24px) 0 0;
+        border-radius: var(--radius-card) var(--radius-card) 0 0;
     }
 }

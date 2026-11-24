@@ -31,7 +31,7 @@
     color: var(--core-foreground);
     background-color: var(--core-background);
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     width: 100%;
     resize: vertical;
@@ -47,7 +47,7 @@
 }
 
 .textareaError {
-    border-color: var(--destructive, #e74c3c);
+    border-color: var(--destructive);
 }
 
 .charCount {
@@ -58,7 +58,7 @@
 }
 
 .charCountOver {
-    color: var(--destructive, #e74c3c);
+    color: var(--destructive);
     font-weight: 600;
 }
 
@@ -70,10 +70,10 @@
 .error {
     font-family: var(--font-sans);
     font-size: 0.85rem;
-    color: var(--destructive, #e74c3c);
+    color: var(--destructive);
     background-color: var(--destructive-a08);
     border: 1px solid var(--destructive-a25);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     margin: 0;
 }
@@ -84,7 +84,7 @@
     color: var(--core-foreground);
     background-color: var(--brand-primary-a10);
     border: 1px solid var(--brand-primary-a30);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     padding: var(--space-2, 8px) var(--space-3, 12px);
     margin: 0;
 }

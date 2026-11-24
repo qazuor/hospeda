@@ -50,7 +50,7 @@
     background-color: var(--surface-warm);
     border: 1px solid var(--border);
     border-left: 4px solid var(--destructive);
-    border-radius: var(--radius-md, 12px);
+    border-radius: var(--radius-md);
     color: var(--core-foreground);
 }
 .panel p,
@@ -79,5 +79,5 @@
     color: var(--core-foreground);
     background-color: var(--surface-warm);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 12px);
+    border-radius: var(--radius-md);
 }

@@ -56,7 +56,7 @@
     padding-bottom: var(--space-2);
     border-bottom: 1px solid var(--border);
     font-family: var(--font-heading, var(--font-sans));
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     font-weight: 600;
     color: var(--core-foreground);
 }
@@ -65,11 +65,11 @@
 .input {
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.625rem);
+    border-radius: var(--radius-md);
     background: var(--core-card, var(--core-background));
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     transition:
         border-color 150ms ease,
         box-shadow 150ms ease;
@@ -90,7 +90,7 @@
     outline: 2px solid var(--brand-primary, var(--core-foreground));
     outline-offset: 2px;
     border-color: var(--brand-primary, var(--core-foreground));
-    box-shadow: 0 0 0 3px var(--brand-primary-a15, rgba(99, 102, 241, 0.18));
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 /* Amenity / feature chips, the opening-hours "closed" toggle, and the
@@ -101,9 +101,9 @@
     gap: var(--space-2);
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.625rem);
+    border-radius: var(--radius-md);
     background: var(--core-card, var(--core-background));
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-foreground);
     cursor: pointer;
     transition:
@@ -127,16 +127,16 @@
 .error {
     margin: 0;
     padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-md, 0.625rem);
+    border-radius: var(--radius-md);
     border: 1px solid transparent;
-    font-size: var(--text-body-sm, 0.9375rem);
-    background: var(--destructive-a15, rgba(185, 28, 28, 0.12));
-    border-color: var(--destructive-a35, rgba(185, 28, 28, 0.28));
-    color: var(--destructive, #b91c1c);
+    font-size: var(--text-body-sm);
+    background: var(--destructive-a15);
+    border-color: var(--destructive-a35);
+    color: var(--destructive);
 }
 
 .hint {
     margin: 0;
     color: var(--core-muted-foreground);
-    font-size: var(--text-body-xs, 0.8125rem);
+    font-size: var(--text-body-xs);
 }

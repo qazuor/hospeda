@@ -29,7 +29,7 @@
     flex-direction: column;
     gap: var(--space-2, 0.5rem);
     padding: var(--space-3, 1rem);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: var(--surface-warm);
     border: 1px solid var(--border);
 }
@@ -61,10 +61,10 @@
 
 .error {
     padding: 0.625rem 0.875rem;
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
+    border-radius: var(--radius-md);
+    background-color: var(--destructive-a10);
     color: var(--destructive);
-    border: 1px solid var(--destructive-a25, oklch(0.88 0.06 25));
+    border: 1px solid var(--destructive-a25);
     font-family: var(--font-sans);
     font-size: 0.875rem;
     margin: 0;
@@ -77,7 +77,7 @@
 .question {
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-foreground);
     margin: 0 0 var(--space-1, 0.25rem);
     word-break: break-word;
@@ -96,7 +96,7 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.125rem 0.5rem;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     background: var(--surface-warm);
     border: 1px solid var(--border);
     color: var(--core-muted-foreground);
@@ -107,7 +107,7 @@
 
 .answer {
     font-family: var(--font-sans);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-muted-foreground);
     margin: 0;
     display: -webkit-box;
@@ -124,7 +124,7 @@
     gap: 0.375rem;
     padding: 0.25rem 0.625rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm, 0.25rem);
+    border-radius: var(--radius-sm);
     background: var(--core-background);
     color: var(--core-foreground);
     font-family: var(--font-sans);
@@ -163,11 +163,11 @@
     width: 100%;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: var(--core-background);
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     resize: vertical;
     box-sizing: border-box;
 }
@@ -217,9 +217,9 @@
 .saveBtn {
     padding: var(--space-2) var(--space-4);
     border: none;
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: var(--brand-primary);
-    color: var(--primary-foreground, #fff);
+    color: var(--primary-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.9375rem;
@@ -234,7 +234,7 @@
 .cancelBtn {
     padding: var(--space-2) var(--space-4);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--core-foreground);
     font-family: var(--font-sans);
@@ -249,7 +249,7 @@
 .aiDraftButton {
     margin-block: var(--space-2);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     padding: var(--space-2) var(--space-3);
     background: var(--surface-warm);
     color: var(--brand-primary);

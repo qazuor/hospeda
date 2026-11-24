@@ -16,5 +16,5 @@
     text-align: center;
     background-color: var(--surface-warm);
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
 }

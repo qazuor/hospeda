@@ -25,8 +25,8 @@
     flex-direction: column;
     gap: var(--space-2, 0.5rem);
     padding: var(--space-3, 1rem);
-    border-radius: var(--radius-md, 0.5rem);
-    background: var(--surface-warm, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-md);
+    background: var(--surface-warm);
     border: 1px solid var(--border);
 }
 
@@ -68,10 +68,10 @@
 .error {
     font-family: var(--font-sans);
     font-size: 0.875rem;
-    color: var(--destructive, #b91c1c);
+    color: var(--destructive);
     margin: 0;
     padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-md, 0.5rem);
+    border-radius: var(--radius-md);
     background-color: oklch(0.96 0.02 25);
     border: 1px solid oklch(0.88 0.06 25);
 }
@@ -89,8 +89,8 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.125rem 0.5rem;
-    border-radius: var(--radius-pill, 9999px);
-    background: var(--surface-warm, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-pill);
+    background: var(--surface-warm);
     border: 1px solid var(--border);
     color: var(--core-muted-foreground);
     font-family: var(--font-sans);
@@ -100,7 +100,7 @@
 
 .answer {
     font-family: var(--font-sans);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-muted-foreground);
     margin: 0;
     display: -webkit-box;
@@ -128,11 +128,11 @@
     width: 100%;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.5rem);
+    border-radius: var(--radius-md);
     background: var(--core-background);
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     resize: vertical;
     box-sizing: border-box;
 }
@@ -145,13 +145,13 @@
 /* HOS-811: the box the owner has to fix, and the message telling them so. The
    silent early return these replace marked nothing and said nothing. */
 .textarea[aria-invalid="true"] {
-    border-color: var(--destructive, #b91c1c);
+    border-color: var(--destructive);
 }
 
 .fieldError {
     font-family: var(--font-sans);
     font-size: 0.8125rem;
-    color: var(--destructive, #b91c1c);
+    color: var(--destructive);
     margin: 0;
 }
 

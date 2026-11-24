@@ -14,7 +14,7 @@
     background-color: var(--surface-warm);
     border: 1px solid var(--border);
     border-left: 4px solid var(--brand-accent);
-    border-radius: var(--radius-md, 12px);
+    border-radius: var(--radius-md);
     font-family: var(--font-sans);
 }
 

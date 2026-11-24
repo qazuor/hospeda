@@ -4,7 +4,7 @@
     gap: var(--space-3, 0.75rem);
     padding: var(--space-4, 1rem);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.5rem);
+    border-radius: var(--radius-md);
     background: var(--core-card, var(--core-background));
 }
 
@@ -19,7 +19,7 @@
 .title {
     margin: 0;
     color: var(--core-foreground);
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     font-weight: 600;
 }
 
@@ -29,14 +29,14 @@
     gap: var(--space-2, 0.5rem);
     margin-top: var(--space-2, 0.5rem);
     color: var(--core-muted-foreground);
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
 }
 
 .selectorLabel select {
     max-width: 20rem;
     min-height: 2.25rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm, 0.25rem);
+    border-radius: var(--radius-sm);
     padding: 0 var(--space-2, 0.5rem);
     color: var(--core-foreground);
     background: var(--core-card, var(--core-background));
@@ -48,26 +48,26 @@
     margin: 0;
     min-width: 0;
     border: 0;
-    border-radius: var(--radius-pill, 999px);
+    border-radius: var(--radius-pill);
     padding: 0.125rem;
-    background: var(--surface-warm, rgba(0, 0, 0, 0.04));
+    background: var(--surface-warm);
 }
 
 .toggleButton,
 .toggleActive {
     border: 0;
-    border-radius: var(--radius-pill, 999px);
+    border-radius: var(--radius-pill);
     padding: 0.25rem 0.75rem;
     color: var(--core-muted-foreground);
     background: transparent;
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
     font-weight: 600;
     cursor: pointer;
 }
 
 .toggleActive {
     color: var(--core-foreground);
-    background: var(--core-card, #fff);
+    background: var(--core-card);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
@@ -82,12 +82,12 @@
     flex-direction: column;
     gap: 0.125rem;
     color: var(--core-muted-foreground);
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
 }
 
 .summary strong {
     color: var(--core-foreground);
-    font-size: var(--text-body-lg, 1.5rem);
+    font-size: var(--text-body-lg);
 }
 
 .summary small {
@@ -115,7 +115,7 @@
 .seriesDate,
 .seriesValue {
     color: var(--core-muted-foreground);
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
     font-variant-numeric: tabular-nums;
 }
 
@@ -126,8 +126,8 @@
 .seriesTrack {
     height: 0.5rem;
     overflow: hidden;
-    border-radius: var(--radius-pill, 999px);
-    background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+    border-radius: var(--radius-pill);
+    background: var(--surface-warm);
 }
 
 .seriesBar {
@@ -150,7 +150,7 @@
     border-top: 1px solid var(--border);
     padding-top: var(--space-2, 0.5rem);
     color: var(--core-muted-foreground);
-    font-size: var(--text-body-sm, 0.875rem);
+    font-size: var(--text-body-sm);
 }
 
 .channels strong {
@@ -163,7 +163,7 @@
 .error {
     margin: 0;
     color: var(--core-muted-foreground);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
 }
 
 .locked a {

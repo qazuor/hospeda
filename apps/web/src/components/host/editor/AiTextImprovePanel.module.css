@@ -17,7 +17,7 @@
     min-height: 36px;
     padding: 0.5rem 0.875rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     background-color: transparent;
     color: var(--core-foreground);
     font-family: var(--font-sans);
@@ -30,7 +30,7 @@
 }
 
 .trigger:hover:not(:disabled) {
-    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+    background-color: var(--surface-warm);
 }
 
 .trigger:focus-visible {
@@ -53,11 +53,11 @@
 
 .panel {
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background-color: var(--core-card);
     color: var(--core-foreground);
     padding: 1rem;
-    box-shadow: 0 1px 2px var(--core-foreground-a05, rgb(0 0 0 / 5%));
+    box-shadow: 0 1px 2px var(--core-foreground-a05);
 }
 
 .panel:focus-visible {
@@ -75,7 +75,7 @@
 
 .skeletonLine {
     height: 0.875rem;
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: linear-gradient(
         90deg,
         var(--core-foreground-a05) 25%,
@@ -158,9 +158,9 @@
     min-height: 36px;
     padding: 0.5rem 1.25rem;
     border: none;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     background-color: var(--brand-accent);
-    color: var(--accent-foreground, #ffffff);
+    color: var(--accent-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
     font-size: 0.8125rem;
@@ -184,7 +184,7 @@
     min-height: 36px;
     padding: 0.5rem 1.25rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     background-color: transparent;
     color: var(--core-foreground);
     font-family: var(--font-sans);
@@ -195,7 +195,7 @@
 }
 
 .discardButton:hover {
-    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+    background-color: var(--surface-warm);
 }
 
 .discardButton:focus-visible {
