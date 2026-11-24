@@ -12,12 +12,11 @@
  * confirm step (`resume_delete_or_upgrade`'s "Borrar borrador").
  *
  * Reuses the same visual language as the pre-BETA-197 static "AtLimit"
- * panel (accent-bordered card, kit `LinkButton` primary CTA, text-link
+ * panel (accent-bordered card, `btn-gradient` primary CTA, text-link
  * secondary) so `upgrade_only` looks identical to before.
  */
 
 import { AlertCircleIcon, ArrowRightIcon } from '@repo/icons';
-import { LinkButton } from '@/components/account/ui/LinkButton';
 import { DeleteButton } from '@/components/host/DeleteButton.client';
 import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -140,13 +139,16 @@ const deleteErrorText = t(
         {content.actions.map((action) =>
             action.kind === 'link' ? (
                 action.variant === 'primary' ? (
-                    <LinkButton
+                    <a
                         href={action.href}
+                        class="precheck-panel__primary-cta btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
                         data-testid={`precheck-action-${action.labelKey}`}
                     >
-                        {t(action.labelKey, action.labelFallback)}
-                        <ArrowRightIcon size={16} weight="bold" aria-hidden="true" />
-                    </LinkButton>
+                        <span class="gradient-btn__label">{t(action.labelKey, action.labelFallback)}</span>
+                        <span aria-hidden="true">
+                            <ArrowRightIcon size={16} weight="bold" />
+                        </span>
+                    </a>
                 ) : (
                     <a
                         href={action.href}
@@ -240,6 +242,13 @@ const deleteErrorText = t(
         flex-direction: column;
         align-items: center;
         gap: var(--space-3);
+    }
+
+    .precheck-panel__primary-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        text-decoration: none;
     }
 
     .precheck-panel__secondary-link {

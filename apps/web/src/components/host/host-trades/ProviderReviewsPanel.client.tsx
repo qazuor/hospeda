@@ -18,7 +18,6 @@
  */
 
 import { useState } from 'react';
-import { Button } from '@/components/account/ui/Button';
 import type {
     OwnerReviewReply,
     OwnerReviewRow,
@@ -226,8 +225,8 @@ export function ProviderReviewsPanel({
                                     reviewId={review.id}
                                 />
                             ) : (
-                                <Button
-                                    variant="secondary"
+                                <button
+                                    className={styles.secondaryAction}
                                     onClick={() => setOpenReviewId(review.id)}
                                     type="button"
                                 >
@@ -237,7 +236,7 @@ export function ProviderReviewsPanel({
                                               'Editar tu respuesta'
                                           )
                                         : t('host-trades.provider.reviews.reply.open', 'Responder')}
-                                </Button>
+                                </button>
                             )}
                         </li>
                     );
