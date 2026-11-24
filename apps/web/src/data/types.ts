@@ -224,6 +224,10 @@ export interface AccommodationCardData {
      * API response did not enrich it.
      */
     readonly hasAiChat?: boolean;
+    /** HOS-2589 D-6: at least one active «Para todos» promotion («Promo» badge). */
+    readonly hasFreePromotion?: boolean;
+    /** HOS-2589 D-6: at least one active «Solo VIP» promotion («VIP» badge). */
+    readonly hasVipPromotion?: boolean;
 }
 
 /**

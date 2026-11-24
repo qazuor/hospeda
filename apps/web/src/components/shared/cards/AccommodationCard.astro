@@ -206,6 +206,14 @@ const compareGatePlanNames = await getGatePlanNames({
 				</div>
 			</div>
 
+			<!-- HOS-2589 D-6: «Promo» for a «Para todos» promotion, «VIP» for a «Solo VIP» one, both when both exist. -->
+			{(data.hasFreePromotion || data.hasVipPromotion) && (
+				<div class="acc-card__promo-badges" data-testid="accommodation-promo-badges">
+					{data.hasFreePromotion && <span class="acc-card__promo-badge">{t('common.promotions.badges.promo')}</span>}
+					{data.hasVipPromotion && <span class="acc-card__promo-badge acc-card__promo-badge--vip">{t('common.promotions.badges.vip')}</span>}
+				</div>
+			)}
+
 			<!-- Name -->
 			<h3 class="acc-card__name">{data.name}</h3>
 
@@ -407,6 +415,31 @@ const compareGatePlanNames = await getGatePlanNames({
 	 * bottom-left mobile; this: bottom-left desktop / bottom-right mobile).
 	 * Its own `--brand-primary` surface reads apart from the accent featured
 	 * badge. Same pill metrics as the shared `.featured-badge`. */
+	.acc-card__promo-badges {
+		display: flex;
+		gap: 6px;
+		margin-top: 6px;
+	}
+
+	.acc-card__promo-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 2px 10px;
+		border: 1px solid var(--brand-accent);
+		border-radius: var(--radius-pill);
+		color: var(--core-foreground);
+		font-family: var(--font-sans);
+		font-size: 11px;
+		font-weight: 600;
+		line-height: 1.4;
+		white-space: nowrap;
+	}
+
+	.acc-card__promo-badge--vip {
+		background: var(--brand-accent);
+		color: var(--accent-foreground);
+	}
+
 	.acc-card__ai-badge {
 		position: absolute;
 		bottom: 48px;
