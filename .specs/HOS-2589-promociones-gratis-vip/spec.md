@@ -186,7 +186,7 @@ uncached, fail-closed) consumed by the island `WhatsAppContact.client.tsx`.
 ## 6. Decided model (owner, 2026-11-24)
 
 Encoded as stated. Nothing here is up for redesign. The answers to the former open
-questions are in §12 (D-1 to D-7) and are already folded into M-1 to M-6.
+questions are in §12 (D-1 to D-8) and are already folded into M-1 to M-6.
 
 - **M-1 Host choice.** Per promotion: «Para todos» or «Solo VIP». Explanations:
   - Para todos: «Todos los turistas VIP la ven. Los turistas gratis ven hasta {X}
@@ -381,7 +381,7 @@ Length similarity is an accepted, minor signal.
   - **Locked state.** If the owner's plan lacks `vip_only_promotions`, «Solo VIP» is
     rendered disabled with a lock icon, a short text («Disponible en planes
     superiores») and a link to the owner plans page, and the radio cannot be
-    selected. An existing `vip` promotion on such an owner keeps its value; see OQ-8.
+    selected. An existing `vip` promotion on such an owner keeps its value; see D-8.
 - **Reading X and the plan name in host and upsell texts.** A small public,
   session-blind catalog read that exposes the floor plan's
   `max_free_visible_promotions` value and the `tourist-vip` plan name. It reuses the
@@ -588,6 +588,29 @@ that** I can open the ones that interest me.
   shows (the X quota does not apply to badges), and the badges appear in the cacheable
   list responses (no session dependency) and carry no promotion content.
 
+### US-8 Owner loses the VIP-only entitlement
+
+**As an** owner whose plan no longer grants `vip_only_promotions`, **I want** my «Solo
+VIP» promotions paused and told why, **so that** I can decide how to keep them running.
+
+- **AC-35** Given an owner with an active «Solo VIP» promotion who loses
+  `vip_only_promotions`, when the loss is applied, then that promotion is paused: no
+  tourist is served it, and it is neither deleted nor converted to «Para todos» (D-8).
+  Given an owner who keeps the key, then nothing is paused.
+- **AC-36** Given a pause, then the owner gets an in-app notice on the Mi cuenta
+  promotions page and an email, both in the owner's language, listing each paused
+  promotion by title and the reason (the plan no longer includes «Solo VIP»). Neither
+  message contains tourist data.
+- **AC-37** Given a paused promotion, when the owner resumes it as «Para todos», then it
+  is served again under the normal rules. Resuming it as «Solo VIP» is allowed only
+  while the owner holds the key (AC-38).
+- **AC-38** Given an owner without `vip_only_promotions`, then «Solo VIP» cannot be
+  chosen on create, on edit or by a direct API submit (AC-25, AC-26), so no new «Solo
+  VIP» promotion can exist without the key.
+- **AC-39** Given the loss event is delivered twice or the pause runs twice, then each
+  promotion is paused once and the owner is notified once per pause. The test asserts
+  that the second run changes nothing and sends nothing.
+
 ## 9. UX notes
 
 - Locked card: same size as a visible card, the discount value and promotion type
@@ -682,6 +705,12 @@ now part of the model (§6) and folded into design, stories and tasks.
   and the detail page).
 - **D-7 (was OQ-7) Stability.** The random pick is stable for the browser session
   (`sessionStorage` or equivalent, per page/context) and renewed in a new session.
+- **D-8 (was OQ-8) Owner loses `vip_only_promotions`.** Existing «Solo VIP» promotions
+  are paused: not converted, not deleted. The owner is notified (in-app notice on the
+  Mi cuenta promotions page and email) with the list of paused promotions and the
+  reason. Each paused promotion can be resumed as «Para todos», or as «Solo VIP» again
+  if the key comes back. Without the key, no new «Solo VIP» promotion can be created.
+  Acceptance criteria AC-35 to AC-39; the pause runs once (idempotent).
 
 Earlier decisions that stand: X = 3 as a single catalog limit for the promotions page
 and detail pages; weekly VIP digest only when there are new promotions that week, link
@@ -690,17 +719,8 @@ HOS-2590 (the live leak) is a separate bug that can ship first.
 
 ## 13. Open questions for the owner
 
-No question from the previous round remains open. Editing surfaced one genuinely new
-point, listed here and **not decided**:
-
-- **OQ-8 An owner loses `vip_only_promotions` while having VIP-only promotions.** Once
-  the catalog restricts the key (a plan change, or the owner moves to a plan without
-  it), what happens to the owner's existing «Solo VIP» promotions? Options: (a) they
-  keep working as VIP-only, the owner just cannot create or switch to new ones
-  (this spec's working assumption, nothing is destroyed); (b) they are converted to
-  «Para todos»; (c) they stop being served until the key returns. Not a launch issue
-  (every plan has the key at launch), but it must be settled before anyone restricts
-  the key.
+No open questions remain. OQ-8 (an owner losing `vip_only_promotions` while holding
+«Solo VIP» promotions) was decided on 2026-11-24 and is recorded as D-8 in §12.
 
 ## 14. Suggested task breakdown
 
@@ -727,6 +747,11 @@ point, listed here and **not decided**:
    template es/en/pt, preference flag and toggle (AC-14..20).
 8. **Cleanup** — follow-up issue to retire `exclusive_deals` (plan rows + key), close
    HOS-2564 as superseded and HOS-2273 as absorbed.
+9. **Pause on entitlement loss** — pause of «Solo VIP» promotions, owner notice (in-app
+   and email, es/en/pt), resume actions, idempotent pause (AC-35 to AC-39). The pause
+   runs on the entitlement-loss path (the plan change or key removal that drops
+   `vip_only_promotions`) or from an existing billing cron; which one is to be located
+   during implementation. No file path is decided here.
 
 Phase 3's leak fix can ship first and alone, and HOS-2590 already tracks exactly that
 standalone fix.
@@ -743,3 +768,6 @@ owner's answers of 2026-11-24 recorded in §12. Related bug: HOS-2590.
   acceptance criteria (new AC-25 to AC-34), API and data changes, UX notes and task
   breakdown rewritten accordingly. New key `vip_only_promotions` (absorbs HOS-2273).
   One new open question (OQ-8).
+- 2026-11-24 Owner decided OQ-8 (D-8): «Solo VIP» promotions are paused on loss of
+  `vip_only_promotions`, the owner is notified, and each one can be resumed as «Para
+  todos». Added US-8 (AC-35 to AC-39) and task 9. No open questions remain.
