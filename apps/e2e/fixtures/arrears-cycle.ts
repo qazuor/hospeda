@@ -249,6 +249,23 @@ export async function createApiCardSubscription(args: {
     return { subscriptionId, authorizationId };
 }
 
+/** Marker the user email layout puts on its footer cell (HOS-2565 PR-4). */
+const USER_FOOTER_MARKER = 'data-layout-footer="user"';
+
+/**
+ * The part of a captured email the TEMPLATE wrote: the HTML up to the user layout
+ * footer (the whole document for a staff mail, which has none). The footer carries
+ * its own copy, such as "tarjeta" in its security card, so an assertion about what
+ * a template does NOT say reads this slice.
+ *
+ * @param html - The captured email HTML.
+ * @returns The HTML before the user footer.
+ */
+export function mailBodyHtml(html: string): string {
+    const footer = html.indexOf(USER_FOOTER_MARKER);
+    return footer === -1 ? html : html.slice(0, footer);
+}
+
 /** Decode HTML character references before checking visible email content. */
 export function decodeHtmlEntities(value: string): string {
     return value
