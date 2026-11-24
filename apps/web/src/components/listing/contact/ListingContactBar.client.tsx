@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DockPortal } from '@/components/shared/dock/DockPortal';
+import { createTranslations } from '@/lib/i18n';
 import {
     getListingContactPrice,
     listingContactPriceSchema
@@ -45,8 +46,17 @@ export function ListingContactBar(props: ListingContactBarProps) {
             >
                 {display && (
                     <p className={styles.price}>
-                        <strong>{display.amount}</strong>{' '}
-                        {display.unit && <span>{display.unit}</span>}
+                        {display.unit && (
+                            <span className={styles.prefix}>
+                                {createTranslations(actions.locale).t(
+                                    'accommodations.detail.pricing.from'
+                                )}
+                            </span>
+                        )}
+                        <span className={styles.line}>
+                            <strong className={styles.amount}>{display.amount}</strong>
+                            {display.unit && <span className={styles.unit}>{display.unit}</span>}
+                        </span>
                     </p>
                 )}
                 <ListingContactActions
