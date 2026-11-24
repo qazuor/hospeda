@@ -52,6 +52,37 @@ describe('AccountBar', () => {
         expect(toggle).toHaveAttribute('aria-expanded', 'false');
     });
 
+    it('names the page when no menu entry does, and never repeats «Mi cuenta» (HOS-2610 F-36)', () => {
+        const noEntryView = buildSidebarView({
+            model: buildAccountNavModel({
+                roles: ['HOST'],
+                ownsHostTradeListing: false,
+                mcpEnabled: false,
+                activeSection: 'no-such-section'
+            }),
+            locale: 'es'
+        });
+        const { unmount } = render(
+            <AccountBar
+                view={noEntryView}
+                locale="es"
+                pageTitle="Publicá tu alojamiento"
+            />
+        );
+        expect(screen.getByRole('button', { name: /Mi cuenta/ })).toHaveTextContent(
+            '/ Publicá tu alojamiento'
+        );
+        unmount();
+        render(
+            <AccountBar
+                view={noEntryView}
+                locale="es"
+                pageTitle="Mi cuenta"
+            />
+        );
+        expect(screen.getByRole('button', { name: /Mi cuenta/ })).not.toHaveTextContent('/');
+    });
+
     it('opens the drawer, closes on Escape and returns focus to the button', async () => {
         const user = userEvent.setup();
         render(
