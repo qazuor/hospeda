@@ -52,6 +52,7 @@
  * says "decorative", and a photo of the dish being described is not.
  */
 
+import { ExternalLinkIcon } from '@repo/icons';
 import type { VenueMenuItem, VenueMenuSection } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -262,7 +263,8 @@ const switchLanguageLabel = t('venue.detail.menuCarta.switchLanguage', 'Ver la c
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        {viewPdfLabel} ↗
+                        {viewPdfLabel}
+                        <ExternalLinkIcon size={14} aria-hidden="true" />
                     </a>
                 </>
             )}

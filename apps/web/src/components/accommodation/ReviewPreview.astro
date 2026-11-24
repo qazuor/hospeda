@@ -6,6 +6,7 @@
  * the modal with the full list. The strip is a scroll-snap track so it costs no
  * JavaScript. With no reviews the empty state stays; no placeholder is ever shown.
  */
+import { StarIcon } from '@repo/icons';
 import type { AccommodationDetailData } from '@/data/types';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import { createTranslations } from '@/lib/i18n';
@@ -90,7 +91,7 @@ const strip = reviews.map((review) => {
                   {review.dateLabel && <time class="review-preview__date" datetime={review.createdAt ?? undefined}>{review.dateLabel}</time>}
                 </span>
                 {review.rating != null && (
-                  <span class="review-preview__rating"><span aria-hidden="true">&#9733;</span> {review.rating.toFixed(1)}</span>
+                  <span class="review-preview__rating"><StarIcon size={14} weight="fill" color="var(--rating-star)" aria-hidden="true" /> {review.rating.toFixed(1)}</span>
                 )}
               </div>
               <p class="review-preview__text">{review.content}</p>

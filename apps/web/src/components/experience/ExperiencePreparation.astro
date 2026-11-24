@@ -25,6 +25,8 @@
  * check here, and there must not be one.
  */
 
+// BriefcaseIcon stands in for BackpackIcon until HOS-2593 adds it to @repo/icons.
+import { BriefcaseIcon, CheckCircleIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -53,7 +55,9 @@ const hasRequirements = requirements.length > 0;
                 <ul class="exp-prep__list">
                     {whatToBring.map((item) => (
                         <li class="exp-prep__item">
-                            <span class="exp-prep__bullet" aria-hidden="true">🎒</span>
+                            <span class="exp-prep__bullet" aria-hidden="true">
+                                <BriefcaseIcon size={16} />
+                            </span>
                             <span>{item}</span>
                         </li>
                     ))}
@@ -69,7 +73,9 @@ const hasRequirements = requirements.length > 0;
                 <ul class="exp-prep__list">
                     {requirements.map((item) => (
                         <li class="exp-prep__item">
-                            <span class="exp-prep__bullet" aria-hidden="true">✅</span>
+                            <span class="exp-prep__bullet" aria-hidden="true">
+                                <CheckCircleIcon size={16} weight="fill" />
+                            </span>
                             <span>{item}</span>
                         </li>
                     ))}

@@ -15,6 +15,7 @@
  * Hydration: caller MUST use `client:visible`.
  */
 
+import { StarIcon } from '@repo/icons';
 import { useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
@@ -47,7 +48,7 @@ export interface ExperienceReviewsProps {
 /** Fixed star positions (1-5); stable keys avoid array-index keying. */
 const STAR_POSITIONS = [1, 2, 3, 4, 5] as const;
 
-/** Renders filled/empty star icons as Unicode characters. */
+/** Renders filled/empty stars with `StarIcon` (HOS-2579 §6.7: no text glyphs). */
 function StarRow({ rating, size = 16 }: { readonly rating: number; readonly size?: number }) {
     const full = Math.floor(rating);
     return (
@@ -56,20 +57,14 @@ function StarRow({ rating, size = 16 }: { readonly rating: number; readonly size
             style={{ display: 'inline-flex', gap: '2px', alignItems: 'center' }}
         >
             {STAR_POSITIONS.map((position) => (
-                <span
+                <StarIcon
                     key={position}
-                    style={{
-                        color:
-                            position <= full
-                                ? 'var(--rating-star)'
-                                : 'var(--core-muted-foreground)',
-                        opacity: position <= full ? 1 : 0.4,
-                        fontSize: `${size}px`,
-                        lineHeight: 1
-                    }}
-                >
-                    ★
-                </span>
+                    size={size}
+                    weight="fill"
+                    color={position <= full ? 'var(--rating-star)' : 'var(--core-muted-foreground)'}
+                    style={{ opacity: position <= full ? 1 : 0.4 }}
+                    aria-hidden="true"
+                />
             ))}
         </span>
     );
