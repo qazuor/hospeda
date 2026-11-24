@@ -1,7 +1,8 @@
 ---
 /**
  * @file mi-cuenta/comercio/nuevo/index.astro
- * @description Permanent redirect to `/{lang}/publicar/` (HOS-1156 D-6).
+ * @description Permanent redirect to `/{lang}/mi-cuenta/publica/`, the
+ * in-account publish hub (HOS-1156 D-6, retargeted by HOS-2602).
  *
  * ## What was here
  *
@@ -16,15 +17,24 @@
  * A signed-in venue/experience owner who presses "+ Nuevo comercio" on
  * `/mi-cuenta/comercio/` is NOT sent here — that button goes to
  * `/mi-cuenta/publica/`, the hub that lists all three verticals and knows which
- * ones the account already holds. This 301 is for old inbound links, and its
- * target is the one D-6 settled on.
+ * ones the account already holds. This 301 is for old inbound links.
+ *
+ * ## Why the hub and not `/publicar/` (HOS-2602)
+ *
+ * D-6 first pointed this URL at `/publicar/`, the ACCOMMODATION publish page. But
+ * this URL names no vertical, and "comercio" is a venue or an experience — never
+ * an accommodation — so a venue owner following an old link landed on «Nombre del
+ * alojamiento». The URL cannot say which of the two it meant, so it goes where
+ * "+ Nuevo comercio" goes: the hub that offers each vertical's own form. The
+ * per-vertical child (`[vertical].astro`) already lands on the matching publish
+ * page and is unchanged.
  *
  * @route     /{lang}/mi-cuenta/comercio/nuevo/
  * @rendering SSR (prerender=false) — emits a 301 and no body.
  */
 
 import { buildPricingRedirectTarget } from '@/lib/pricing-redirect';
-import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
+import { ACCOUNT_PUBLISH_HUB_PATH } from '@/lib/publish/publish-page-paths';
 
 export const prerender = false;
 
@@ -33,7 +43,7 @@ const locale = Astro.locals.locale;
 return Astro.redirect(
     buildPricingRedirectTarget({
         locale,
-        path: PUBLISH_PAGE_PATH_BY_VERTICAL.accommodation,
+        path: ACCOUNT_PUBLISH_HUB_PATH,
         search: Astro.url.search
     }),
     301

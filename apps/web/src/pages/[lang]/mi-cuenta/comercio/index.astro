@@ -78,6 +78,7 @@ import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
 import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { ACCOUNT_PUBLISH_HUB_PATH } from '@/lib/publish/publish-page-paths';
 import { VenueIcon } from '@repo/icons';
 import { PublicationStatusEnum } from '@repo/schemas';
 
@@ -236,10 +237,9 @@ const venueStatsUnlockingPlanName =
 // which lists all three verticals with their own CTAs and already knows which
 // ones this account has acquired — the picker's job, done by a page that exists.
 //
-// The retired URL's own 301 goes to `/publicar/` per D-6; that is the right
-// landing for an old inbound link and the wrong one for this button, which a
-// venue/experience owner presses expecting to choose a vertical.
-const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
+// HOS-2602 points the retired URL's own 301 at this same hub, so an old link and
+// this button can no longer land on different pages.
+const createUrl = buildUrl({ locale, path: ACCOUNT_PUBLISH_HUB_PATH });
 const editUrl = (listing: OwnerListingSummaryWithState): string =>
     buildUrl({ locale, path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar` });
 const listHelpId = 'section:comercio.listado' as const;

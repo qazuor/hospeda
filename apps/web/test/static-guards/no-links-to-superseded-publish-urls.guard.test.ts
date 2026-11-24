@@ -43,6 +43,7 @@ const SRC_DIR = resolve(__dirname, '../../src');
  */
 const SUPERSEDED_PATHS: ReadonlyArray<{ readonly path: string; readonly replacement: string }> = [
     { path: 'publicar/nueva', replacement: 'publicar' },
+    // The bare picker itself 301s to the mi-cuenta/publica hub (HOS-2602).
     { path: 'mi-cuenta/comercio/nuevo', replacement: 'publicar/{vertical page}' },
     { path: 'publicar-restaurante', replacement: 'publicar/comer-y-salir' },
     { path: 'publicar/gastronomia', replacement: 'publicar/comer-y-salir' },

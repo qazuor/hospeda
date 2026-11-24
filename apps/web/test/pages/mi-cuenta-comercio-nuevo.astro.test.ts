@@ -28,6 +28,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import {
+    ACCOUNT_PUBLISH_HUB_PATH,
+    PUBLISH_PAGE_PATH_BY_VERTICAL
+} from '../../src/lib/publish/publish-page-paths';
 
 const PAGES_ROOT = resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/comercio');
 
@@ -97,7 +101,23 @@ describe('mi-cuenta/comercio/nuevo — both URLs are now 301s (HOS-1156 D-6)', (
         expect(pickerRedirectSource).not.toContain('buildLoginRedirect');
     });
 
+    it('regression HOS-2602: the vertical-less picker never lands on the accommodation form', () => {
+        // "Comercio" is a venue or an experience. The old target,
+        // `PUBLISH_PAGE_PATH_BY_VERTICAL.accommodation` (`/publicar/`), put a
+        // venue owner on «Nombre del alojamiento».
+        expect(pickerRedirectSource).not.toContain('PUBLISH_PAGE_PATH_BY_VERTICAL');
+        expect(pickerRedirectSource).not.toContain('accommodation');
+        // It goes where "+ Nuevo comercio" goes: the in-account hub that offers
+        // each vertical's own form.
+        expect(pickerRedirectSource).toMatch(/path:\s*ACCOUNT_PUBLISH_HUB_PATH/);
+        expect(listingIndexSource).toContain('path: ACCOUNT_PUBLISH_HUB_PATH');
+        expect(ACCOUNT_PUBLISH_HUB_PATH).toBe('mi-cuenta/publica');
+    });
+
     it('sends each vertical to ITS OWN publish page, and 404s an unknown one', () => {
+        // A venue owner lands on the venue form, never the accommodation one.
+        expect(PUBLISH_PAGE_PATH_BY_VERTICAL.venue).toBe('publicar/comer-y-salir');
+        expect(PUBLISH_PAGE_PATH_BY_VERTICAL.experience).toBe('publicar/experiencias');
         expect(createRedirectSource).toContain('PUBLISH_PAGE_PATH_BY_VERTICAL[verticalParam]');
         // A typo'd segment must not become a 301 to a page it never named.
         expect(createRedirectSource).toMatch(/status:\s*404/);
