@@ -21,6 +21,7 @@ import {
     createEmailPreviewService,
     EMAIL_PREVIEW_RENDER_FAILED_MESSAGE
 } from '../../../src/services/email-preview/email-preview.service.js';
+import { buildEmailPreviewDeps } from '../../../src/services/email-preview/email-preview-deps.js';
 import { buildEmailEnvDecoration } from '../../../src/utils/email-sender.js';
 
 const FAKE_DEPS = { siteUrl: 'https://hospeda.com.ar' } as unknown as EmailCatalogRenderDeps;
@@ -38,14 +39,33 @@ if (!FIRST) {
 const FIRST_SCENARIO = FIRST.scenarios[0]?.id ?? '';
 
 describe('createEmailPreviewService', () => {
-    it('lists every entry in catalog order with its scenarios and no renderer', () => {
+    it('lists every entry in catalog order with its scenarios and no renderer', async () => {
+        // Arrange: one entry whose subjects come from a stub, one that throws.
+        const working = {
+            ...FIRST,
+            renderScenario: vi.fn(async ({ scenarioId }: { scenarioId: string }) => ({
+                subject: `Asunto ${scenarioId}`,
+                react: null as never,
+                warnings: []
+            }))
+        };
+        const broken = {
+            ...FIRST,
+            key: `${FIRST.key}.broken` as typeof FIRST.key,
+            renderScenario: vi.fn(async () => {
+                throw new Error('sample failed');
+            })
+        };
+        const buildDeps = vi.fn(() => FAKE_DEPS);
+        const service = createEmailPreviewService({ catalog: [working, broken], buildDeps });
+
         // Act
-        const { entries, total } = createEmailPreviewService().listEntries();
+        const first = await service.listEntries();
+        const second = await service.listEntries();
 
         // Assert
-        expect(total).toBe(EMAIL_CATALOG.length);
-        expect(entries.map((entry) => entry.key)).toEqual(EMAIL_CATALOG.map((entry) => entry.key));
-        expect(entries[0]).toEqual({
+        expect(first.total).toBe(2);
+        expect(first.entries[0]).toEqual({
             key: FIRST.key,
             id: FIRST.id,
             sendPath: FIRST.sendPath,
@@ -53,8 +73,49 @@ describe('createEmailPreviewService', () => {
             domain: FIRST.domain,
             audience: FIRST.audience,
             wired: FIRST.wired,
-            scenarios: FIRST.scenarios.map(({ id, label, locale }) => ({ id, label, locale }))
+            // HOS-2580 §H: the subject of each sample, for the previewer search.
+            scenarios: FIRST.scenarios.map(({ id, label, locale }) => ({
+                id,
+                label,
+                locale,
+                subject: `Asunto ${id}`
+            }))
         });
+        // A sample that throws yields a null subject, never a failed list.
+        expect(first.entries[1]?.scenarios.every((scenario) => scenario.subject === null)).toBe(
+            true
+        );
+        // Computed once: the second call reuses the first.
+        expect(second).toBe(first);
+        expect(working.renderScenario).toHaveBeenCalledTimes(FIRST.scenarios.length);
+        expect(buildDeps).toHaveBeenCalledTimes(1);
+    });
+
+    it('HOS-2580 §H lists the real subject of every catalog scenario', async () => {
+        // Act: the production catalog with the preview fakes.
+        const { entries, total } = await createEmailPreviewService({
+            buildDeps: () =>
+                buildEmailPreviewDeps({
+                    siteUrl: 'https://hospeda.com.ar',
+                    adminUrl: 'https://admin.example.com'
+                })
+        }).listEntries();
+
+        // Assert
+        expect(total).toBe(EMAIL_CATALOG.length);
+        expect(entries.map((entry) => entry.key)).toEqual(EMAIL_CATALOG.map((entry) => entry.key));
+        const subjects = entries.flatMap((entry) => entry.scenarios.map((s) => s.subject));
+        expect(subjects.every((subject) => typeof subject === 'string' && subject !== '')).toBe(
+            true
+        );
+        expect(subjects).toContain('Tu acceso termina mañana');
+        // The owner's case: the subject reads differently from the entry name.
+        const downgrade = entries.find(
+            (entry) => entry.name === 'Aviso de límite por cambio a un plan menor'
+        );
+        expect(
+            downgrade?.scenarios.some((s) => s.subject?.startsWith('Límite reducido en tu plan'))
+        ).toBe(true);
     });
 
     it.each([

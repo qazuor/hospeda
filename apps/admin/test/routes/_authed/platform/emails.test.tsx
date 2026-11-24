@@ -62,8 +62,8 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         audience: 'user',
         wired: true,
         scenarios: [
-            { id: 'monthly', label: 'Mensual', locale: 'es' },
-            { id: 'annual', label: 'Anual', locale: 'es' }
+            { id: 'monthly', label: 'Mensual', locale: 'es', subject: 'Tu plan se renueva pronto' },
+            { id: 'annual', label: 'Anual', locale: 'es', subject: 'Tu plan se renueva pronto' }
         ]
     },
     {
@@ -74,7 +74,14 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         domain: 'auth',
         audience: 'user',
         wired: true,
-        scenarios: [{ id: 'with-name', label: 'Con nombre', locale: 'es' }]
+        scenarios: [
+            {
+                id: 'with-name',
+                label: 'Con nombre',
+                locale: 'es',
+                subject: 'Restablece tu contraseña de Hospeda'
+            }
+        ]
     },
     {
         key: 'newsletter.verify',
@@ -84,7 +91,7 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
         domain: 'newsletter',
         audience: 'staff',
         wired: false,
-        scenarios: [{ id: 'default', label: 'Por defecto', locale: 'es' }]
+        scenarios: [{ id: 'default', label: 'Por defecto', locale: 'es', subject: null }]
     }
 ];
 

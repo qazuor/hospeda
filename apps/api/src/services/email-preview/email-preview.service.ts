@@ -49,8 +49,11 @@ export interface CreateEmailPreviewServiceInput {
 
 /** The admin email preview service. */
 export interface EmailPreviewService {
-    /** The whole catalog summary, in catalog order. */
-    readonly listEntries: () => EmailPreviewListResponse;
+    /**
+     * The whole catalog summary, in catalog order, with the subject of every scenario
+     * (HOS-2580 §H). Computed once per service and reused.
+     */
+    readonly listEntries: () => Promise<EmailPreviewListResponse>;
     /**
      * Renders one scenario of one entry.
      *
@@ -78,13 +81,52 @@ function buildDepsFromEnv(): EmailCatalogRenderDeps {
 }
 
 /**
+ * The subject one scenario renders, through the production subject code only (no HTML
+ * body is built). A sample that throws yields `null` and a warning, never a failed list.
+ *
+ * @param input - The entry, the scenario id and the render dependencies.
+ * @returns The subject, or `null`.
+ */
+async function readScenarioSubject(input: {
+    readonly entry: EmailCatalogEntry;
+    readonly scenarioId: string;
+    readonly deps: EmailCatalogRenderDeps;
+}): Promise<string | null> {
+    try {
+        const rendered = await input.entry.renderScenario({
+            scenarioId: input.scenarioId,
+            deps: input.deps
+        });
+        return rendered.subject;
+    } catch (error) {
+        apiLogger.warn(
+            {
+                key: input.entry.key,
+                scenarioId: input.scenarioId,
+                error: error instanceof Error ? error : new Error(String(error))
+            },
+            'Email preview subject could not be rendered for the list'
+        );
+        return null;
+    }
+}
+
+/**
  * Projects a catalog entry to its API summary (drops the renderer).
  *
- * @param input - The entry to project.
+ * @param input - The entry to project and the render dependencies for its subjects.
  * @returns The summary the list endpoint serializes.
  */
-function toSummary(input: { readonly entry: EmailCatalogEntry }): EmailPreviewEntrySummary {
-    const { entry } = input;
+async function toSummary(input: {
+    readonly entry: EmailCatalogEntry;
+    readonly deps: EmailCatalogRenderDeps;
+}): Promise<EmailPreviewEntrySummary> {
+    const { entry, deps } = input;
+    const subjects = await Promise.all(
+        entry.scenarios.map((scenario) =>
+            readScenarioSubject({ entry, scenarioId: scenario.id, deps })
+        )
+    );
     return {
         key: entry.key,
         id: entry.id,
@@ -93,10 +135,11 @@ function toSummary(input: { readonly entry: EmailCatalogEntry }): EmailPreviewEn
         domain: entry.domain,
         audience: entry.audience,
         wired: entry.wired,
-        scenarios: entry.scenarios.map((scenario) => ({
+        scenarios: entry.scenarios.map((scenario, index) => ({
             id: scenario.id,
             label: scenario.label,
-            locale: scenario.locale
+            locale: scenario.locale,
+            subject: subjects[index] ?? null
         }))
     };
 }
@@ -110,7 +153,7 @@ function toSummary(input: { readonly entry: EmailCatalogEntry }): EmailPreviewEn
  * @example
  * ```ts
  * const service = createEmailPreviewService();
- * const { entries, total } = service.listEntries();
+ * const { entries, total } = await service.listEntries();
  * const preview = await service.render({ key: entries[0].key, scenarioId: entries[0].scenarios[0].id });
  * ```
  */
@@ -122,10 +165,19 @@ export function createEmailPreviewService(
     const renderScenario = input.renderScenario ?? renderEmailCatalogScenario;
     const getSubjectPrefix = input.getSubjectPrefix ?? (() => getEmailSender().subjectPrefix);
     let deps: EmailCatalogRenderDeps | undefined;
+    let listing: Promise<EmailPreviewListResponse> | undefined;
 
-    const listEntries = (): EmailPreviewListResponse => {
-        const entries = catalog.map((entry) => toSummary({ entry }));
-        return { entries, total: entries.length };
+    const listEntries = (): Promise<EmailPreviewListResponse> => {
+        // The catalog and the fakes are static: the subjects are computed once.
+        listing ??= (async () => {
+            deps ??= buildDeps();
+            const resolvedDeps = deps;
+            const entries = await Promise.all(
+                catalog.map((entry) => toSummary({ entry, deps: resolvedDeps }))
+            );
+            return { entries, total: entries.length };
+        })();
+        return listing;
     };
 
     const render = async ({
