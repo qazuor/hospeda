@@ -28,15 +28,22 @@
     padding: var(--space-4);
 }
 
-.content[data-template="form"] > :first-child,
-.content[data-template="form"] {
+/* No auto inline margin on .content itself (HOS-2601). From 64rem it is a grid
+   item, and an auto margin turns a grid item's width into fit-content; with
+   inline-size containment its content counts as zero wide, so the column
+   collapsed to its padding. Without the margin it stretches to the track and
+   max-inline-size caps it at the start edge, the same result as in block flow. */
+.content[data-template="form"] > :first-child {
     max-inline-size: var(--form-max);
     margin-inline-end: auto;
 }
 
+.content[data-template="form"] {
+    max-inline-size: var(--form-max);
+}
+
 .content[data-template="reading"] {
     max-inline-size: var(--reading-max);
-    margin-inline-end: auto;
 }
 
 @media (min-width: 48rem) {

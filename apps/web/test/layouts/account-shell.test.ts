@@ -83,6 +83,17 @@ describe('AccountShell.astro', () => {
         expect(shellCss).toContain('var(--form-max)');
         expect(shellCss).toContain('var(--reading-max)');
     });
+
+    it('never puts an auto inline margin on the content column itself (HOS-2601)', () => {
+        // From 64rem .content is a grid item with inline-size containment: an
+        // auto inline margin makes it fit-content, and contained content counts
+        // as zero wide, so the column collapses to its padding (measured: 48px).
+        const contentRules = shellCss.match(/\.content(?:\[[^\]]*\])?\s*{[^}]*}/g) ?? [];
+        expect(contentRules.length).toBeGreaterThan(0);
+        for (const rule of contentRules) {
+            expect(rule).not.toMatch(/margin-inline(?:-start|-end)?:[^;]*auto/);
+        }
+    });
 });
 
 describe('AccountLayout frame (OD-1, legacy retired by HOS-2508)', () => {
