@@ -7,7 +7,10 @@
  * 500-line limit while its body follows the catalog order. Reviews are not a
  * catalog section: they render after the last section, next to the review form.
  *
- * Self-hides when the venue has no reviews, exactly as the inline block did.
+ * Always renders its `<h2>`, with an empty state when the venue has no reviews
+ * yet (HOS-2604): the reviews slot must open with an `<h2>` on every listing
+ * page (HOS-2579 AC-25), as the accommodation and experience slots already do.
+ * Without it the slot opened with the review form's `<h3>`.
  */
 
 import { StarIcon } from '@repo/icons';
@@ -20,7 +23,6 @@ import type { ResolvedDimensionAverage } from '@/lib/venue/review-dimensions-vie
 interface Props {
     readonly reviews: readonly VenueReviewPublicItem[];
     readonly totalReviews: number;
-    readonly reviewsCount: number;
     readonly locale: SupportedLocale;
     /**
      * Dimensions with at least one vote, from `resolveDimensionAverages`.
@@ -29,10 +31,8 @@ interface Props {
     readonly dimensionRatings: readonly ResolvedDimensionAverage[];
 }
 
-const { reviews, totalReviews, reviewsCount, locale, dimensionRatings } = Astro.props;
+const { reviews, totalReviews, locale, dimensionRatings } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
-
-if (reviewsCount <= 0) return;
 ---
 
 <section class="venue-detail__reviews">
