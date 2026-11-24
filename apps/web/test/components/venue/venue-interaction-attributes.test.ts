@@ -21,6 +21,14 @@ describe('venue interaction attributes (HOS-2256)', () => {
         expect(contact).toMatch(/href: toTelHref\(value\)[\s\S]*?interactionKind: 'PHONE_CLICK'/);
     });
 
+    it('keeps the venue-contact__menu-btn hook on the menu link (E2E LISTING-OWNER-01 selector)', () => {
+        const menuAnchor = contact.slice(
+            contact.indexOf('href={menuHref}'),
+            contact.indexOf("'contact-channel': 'menu'")
+        );
+        expect(menuAnchor).toContain('class="venue-contact__menu-btn"');
+    });
+
     it('marks the contactInfo website as WEBSITE_CLICK', () => {
         expect(contact).toMatch(/href: websiteHref[\s\S]*?interactionKind: 'WEBSITE_CLICK'/);
     });
