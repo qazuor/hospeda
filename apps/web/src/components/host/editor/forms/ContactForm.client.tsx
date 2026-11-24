@@ -7,26 +7,32 @@
  * its own.
  *
  * The form names the social fields `<network>Url` while the API expects the bare
- * platform name. That translation happens in exactly two places, both wired
- * here: `SOCIAL_KEY_MAP` renames them on the way out, and the same map tells the
- * hook which error key to clear on edit. The contact channels render through
- * the shared `ListingContactSection` (HOS-2497). `SocialNetworksSection` reads its
- * errors under the form-local names, so they are mapped back for it.
+ * platform name. `SOCIAL_KEY_MAP` renames them on the way out and tells the hook
+ * which error key to clear on edit; the errors themselves arrive under the HTTP
+ * key, which is also the key the DOM id is built from.
+ *
+ * HOS-2508 (owner decision 11): the page state binds STRAIGHT to the shared kit
+ * sections in `components/account/editor-fields/` — `ListingContactSection`
+ * for the channels and `EditorSocialLinksSection` for the networks — with no
+ * accommodation-only section in between. The handle ⇄ URL conversion lives in
+ * `./social-handle`.
  */
 
+import { EditorSocialLinksSection } from '@/components/account/editor-fields/EditorSocialLinksSection';
 import {
     type ContactChannel,
     ListingContactSection
 } from '@/components/account/editor-fields/ListingContactSection';
 import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
 import type { AccommodationEditData } from '@/lib/api/types';
-import type { SupportedLocale } from '@/lib/i18n';
+import { buildFieldId } from '@/lib/forms/build-field-id';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 import { AccommodationContactSchema } from '../accommodation-edit-form.schema';
 import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from '../field-ids';
-import { SocialNetworksSection } from '../SocialNetworksSection.client';
 import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import { nullifyClearedSocials } from './contact-payload';
 import styles from './SectionForm.module.css';
+import { ACCOMMODATION_SOCIAL_FIELDS, composeSocialUrl, parseSocialHandle } from './social-handle';
 
 /** The fields this page owns. Nothing else can reach the PATCH body. */
 const OWN_FIELDS = [
@@ -44,14 +50,9 @@ const OWN_FIELDS = [
 ] as const;
 
 /** Form-local field name → the HTTP key the API validates and stores. */
-const SOCIAL_KEY_MAP = {
-    facebookUrl: 'facebook',
-    instagramUrl: 'instagram',
-    twitterUrl: 'twitter',
-    linkedinUrl: 'linkedin',
-    tiktokUrl: 'tiktok',
-    youtubeUrl: 'youtube'
-} as const;
+const SOCIAL_KEY_MAP: Readonly<Record<string, string>> = Object.fromEntries(
+    ACCOMMODATION_SOCIAL_FIELDS.map(({ field, schemaKey }) => [field, schemaKey])
+);
 
 interface ContactFormProps {
     readonly locale: SupportedLocale;
@@ -65,6 +66,7 @@ interface ContactFormProps {
  * @param props - Locale, id, and the loaded entity.
  */
 export function ContactForm({ locale, accommodationId, initialData }: ContactFormProps) {
+    const t = createT(locale);
     const form = useAccommodationSectionForm({
         locale,
         accommodationId,
@@ -76,18 +78,6 @@ export function ContactForm({ locale, accommodationId, initialData }: ContactFor
         // omitting (or `''`) would leave the stored link in place (HOS-1262).
         extendPayload: nullifyClearedSocials
     });
-
-    // The schema reports social errors under the HTTP key; the section renders
-    // them under the form-local name. Without this the error slots stay empty
-    // and an invalid URL is rejected with no visible reason.
-    const socialErrors = {
-        facebookUrl: form.fieldErrors.facebook,
-        instagramUrl: form.fieldErrors.instagram,
-        twitterUrl: form.fieldErrors.twitter,
-        linkedinUrl: form.fieldErrors.linkedin,
-        tiktokUrl: form.fieldErrors.tiktok,
-        youtubeUrl: form.fieldErrors.youtube
-    };
 
     /** One contact channel of the shared section, bound to this form. */
     const contactChannel = (
@@ -118,11 +108,21 @@ export function ContactForm({ locale, accommodationId, initialData }: ContactFor
                 website={contactChannel('website')}
             />
 
-            <SocialNetworksSection
+            <EditorSocialLinksSection
                 locale={locale}
-                data={form.values}
-                errors={socialErrors}
-                onFieldChange={(field, value) => form.setValue(field, value)}
+                helpId="section:accommodation.contacto"
+                links={ACCOMMODATION_SOCIAL_FIELDS.map(
+                    ({ field, schemaKey, domain, labelKey, fallbackLabel }) => ({
+                        id: buildFieldId({ prefix: ACCOMMODATION_FIELD_PREFIX, name: schemaKey }),
+                        label: t(labelKey, fallbackLabel),
+                        prefix: domain,
+                        value: parseSocialHandle({ url: form.values[field], domain }).handle,
+                        onChange: (value: string) =>
+                            form.setValue(field, composeSocialUrl({ handle: value, domain }).url),
+                        // Errors arrive under the HTTP key, the same key the id uses.
+                        error: form.fieldErrors[schemaKey]
+                    })
+                )}
             />
 
             <EditorSaveBar

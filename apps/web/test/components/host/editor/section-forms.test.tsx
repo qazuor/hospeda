@@ -567,6 +567,59 @@ describe('social fields', () => {
         expect(body).not.toHaveProperty('facebook');
         expect(body).not.toHaveProperty('instagram');
     });
+
+    // HOS-2508 (owner decision 11): the page binds straight to the shared kit
+    // `EditorSocialLinksSection`; these cover what the retired
+    // accommodation-only `SocialNetworksSection` used to.
+    it('renders the shared social section with the contact help anchor and six addons', () => {
+        render(<ContactForm {...COMMON} />);
+
+        expect(screen.getByRole('region', { name: 'Redes sociales' })).toHaveAttribute(
+            'data-help',
+            'section:accommodation.contacto'
+        );
+        for (const addon of [
+            'facebook.com/',
+            'instagram.com/',
+            'x.com/',
+            'linkedin.com/in/',
+            'tiktok.com/@',
+            'youtube.com/@'
+        ]) {
+            expect(screen.getByText(addon)).toBeInTheDocument();
+        }
+    });
+
+    it('shows a stored URL as its handle and sends the composed URL', async () => {
+        const user = userEvent.setup();
+        render(
+            <ContactForm
+                {...COMMON}
+                initialData={{ ...INITIAL, facebookUrl: 'https://www.facebook.com/hotel' }}
+            />
+        );
+
+        const facebook = document.getElementById('acc-facebook') as HTMLInputElement;
+        expect(facebook).toHaveValue('hotel');
+
+        await user.type(facebook, '-test');
+        submitFrom(facebook);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+        expect(firstPatchBody()).toHaveProperty('facebook', 'https://facebook.com/hotel-test');
+    });
+
+    it('shows a social validation error on its own field', async () => {
+        const user = userEvent.setup();
+        render(<ContactForm {...COMMON} />);
+
+        const facebook = document.getElementById('acc-facebook') as HTMLInputElement;
+        await user.type(facebook, 'http://');
+        submitFrom(facebook);
+
+        await waitFor(() => expect(facebook).toHaveAttribute('aria-invalid', 'true'));
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
 });
 
 // ---------------------------------------------------------------------------
