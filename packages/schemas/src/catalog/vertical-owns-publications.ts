@@ -29,7 +29,8 @@ export type EmailAccountLink = 'publications' | 'account';
  * alone, no vertical, or a value this map does not know.
  *
  * @param input - RO-RO input.
- * @param input.verticals - The recipient's verticals; empty or absent when unknown.
+ * @param input.verticals - The recipient's verticals (`VerticalEnum` values); empty or
+ *   absent when unknown. Plain strings on purpose: an unknown value counts as "no".
  * @returns `{ accountLink }`.
  *
  * @example
@@ -38,9 +39,9 @@ export type EmailAccountLink = 'publications' | 'account';
  * resolveEmailAccountLink({ verticals: ['tourist'] }); // { accountLink: 'account' }
  * ```
  */
-export function resolveEmailAccountLink(input: {
-    readonly verticals?: readonly (VerticalEnum | `${VerticalEnum}`)[];
-}): { readonly accountLink: EmailAccountLink } {
+export function resolveEmailAccountLink(input: { readonly verticals?: readonly string[] }): {
+    readonly accountLink: EmailAccountLink;
+} {
     const ownsPublications = (input.verticals ?? []).some(
         (vertical) => VERTICAL_OWNS_PUBLICATIONS[vertical as VerticalEnum] === true
     );

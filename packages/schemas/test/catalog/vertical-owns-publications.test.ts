@@ -61,8 +61,6 @@ describe('resolveEmailAccountLink (HOS-2565 D16)', () => {
         ).toBe('account');
         expect(resolveEmailAccountLink({ verticals: [] }).accountLink).toBe('account');
         expect(resolveEmailAccountLink({}).accountLink).toBe('account');
-        expect(
-            resolveEmailAccountLink({ verticals: ['unknown' as VerticalEnum] }).accountLink
-        ).toBe('account');
+        expect(resolveEmailAccountLink({ verticals: ['unknown'] }).accountLink).toBe('account');
     });
 });
