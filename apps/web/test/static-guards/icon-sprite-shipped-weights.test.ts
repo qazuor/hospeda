@@ -125,6 +125,11 @@ describe('what this guard cannot see', () => {
         expect(
             dynamic,
             "the number of unresolvable `weight={…}` call sites changed — re-read them and update this guard's docstring, which currently claims they are all fill/regular ternaries"
-        ).toBe(16); // +1: the summary-row stars in ExternalReputationSummaryRow.astro (fill/regular ternary)
+        ).toBe(14);
+        // 14, recounted call site by call site on HOS-2579 PR 2: the rating stars of
+        // ExperienceHero.astro and VenueDetailHeader.astro left with those files
+        // (the shared ListingHeader uses a literal weight="fill"); the summary-row
+        // stars in ExternalReputationSummaryRow.astro are still counted. All 14
+        // are fill/regular ternaries.
     });
 });
