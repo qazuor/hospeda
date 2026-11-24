@@ -17,6 +17,8 @@ import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
 import { resolveTouristAudienceScope } from '../audience-scope';
+import { keepOnlyFreelyVisible } from '../tourist-promotion-access';
+import { markPerActorResponse } from './promotion-visibility';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 
@@ -28,6 +30,9 @@ const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
  * whose TOURIST effective set grants `vip_promotions_access`. The answer varies
  * per actor, so this path must never join `PUBLIC_CACHE_ENDPOINTS` nor carry a
  * public `Cache-Control`.
+ *
+ * HOS-2589 AC-10: a non-VIP reader (free tourist or guest) gets at most the
+ * catalog's `max_free_visible_promotions` items in full.
  */
 export const publicListOwnerPromotionsRoute = createPublicListRoute({
     method: 'get',
@@ -39,6 +44,7 @@ export const publicListOwnerPromotionsRoute = createPublicListRoute({
     responseSchema: OwnerPromotionPublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        markPerActorResponse({ ctx });
         const { page, pageSize } = extractPaginationParams(query || {});
 
         const audienceScope = await resolveTouristAudienceScope({ actor });
@@ -53,8 +59,12 @@ export const publicListOwnerPromotionsRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
+        // HOS-2589 AC-10: a non-VIP reader gets only what the free policy shows in
+        // full. The pagination still counts the matching promotions, so a client
+        // can tell more exist; their content stays behind the per-actor reads.
+        const items = await keepOnlyFreelyVisible({ actor, items: result.data?.items ?? [] });
         return {
-            items: result.data?.items ?? [],
+            items,
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },
