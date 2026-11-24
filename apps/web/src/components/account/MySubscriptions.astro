@@ -79,24 +79,27 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
                     ? <p class={styles.line} data-testid="my-subscription-replaced">{t('account.subscription.mine.replacedBy', undefined, { plan: successorSummary.title })}</p>
                     : <>
                 {(row.status === 'PENDING_AUTHORIZATION' || row.status === 'CHARGE_DECLINED') && <p class={styles.line} data-testid="my-subscription-todo">{t(MY_SUBSCRIPTION_TODO_KEY[row.status])}</p>}
-                {(row.status === 'ACTIVE' || (row.status === 'PAUSED' && row.pause?.reason === 'COURTESY')) && <PauseOffer client:visible subscriptionId={row.id} locale={locale} />}
                 {row.status === 'ACTIVE' && row.scheduledChange && <p class={styles.line} data-testid="my-subscription-scheduled-change">{t('account.subscription.mine.planChange.downgrade', undefined, { date: date(row.scheduledChange.effectiveAt) })}</p>}
-                {row.status === 'ACTIVE' && row.succession?.checkoutOpen ? <p class={styles.line} data-testid="my-subscription-plan-change-checkout">{t('account.subscription.mine.planChange.reason.succession')}</p> : row.status === 'ACTIVE' && <PlanChangeOffer client:visible subscriptionId={row.id} vertical={row.vertical as PricingSituationVertical} locale={locale} promo={row.promo !== null} courtesyMonths={totalCourtesyMonths({ row, deferredCourtesies: result.deferredCourtesies })} />}
+                {row.status === 'ACTIVE' && row.succession?.checkoutOpen && <p class={styles.line} data-testid="my-subscription-plan-change-checkout">{t('account.subscription.mine.planChange.reason.succession')}</p>}
                 {row.succession?.checkoutDeadline && <p class={styles.line} data-testid="my-subscription-plan-change-deadline">{t('account.subscription.mine.planChange.checkoutDeadline', undefined, { date: date(row.succession.checkoutDeadline) })}</p>}
                 {row.status === 'SUSPENDED' && row.succession?.checkoutOpen && <p class={styles.line} data-testid="my-subscription-plan-change-coverage">{t('account.subscription.mine.planChange.reason.successionCoverage')}</p>}
-                {row.succession?.checkoutOpen && row.succession.successorId && <PlanChangeCheckoutPending client:visible successorId={row.succession.successorId} checkoutUrl={row.succession.checkoutUrl ?? null} locale={locale} />}
                 {row.status === 'PAUSED' && row.pause?.expectedEndAt && <p class={styles.line}>{t('account.subscription.mine.pause.expectedEnd', undefined, { date: date(row.pause.expectedEndAt) })}</p>}
-                {row.status === 'PAUSED' && row.pause?.reason === 'CUSTOMER_REQUEST' && <ResumeOffer client:visible subscriptionId={row.id} locale={locale} />}
                 {row.status === 'PAUSED' && <p class={styles.line} data-testid="my-subscription-plan-change-paused">{t('account.subscription.mine.planChange.reason.paused')}</p>}
-                {row.status === 'PAUSED' && <PausedCancel client:visible subscriptionId={row.id} locale={locale} planName={summary.title} verticalLabel={t(summary.verticalLabelKey)} />}
                 {row.status === 'GRACE_PERIOD' && <p class={styles.line} data-testid="my-subscription-plan-change-grace">{t(GRACE_PLAN_CHANGE_KEY[row.paymentMethod])}</p>}
                 {row.status === 'CANCEL_SCHEDULED' && row.serviceEndsAt && <>
                     <p class={styles.line}>{t(resolveScheduledRenewal({ row }).lineKey, undefined, { date: date(row.serviceEndsAt) })}</p>
                     {resolveScheduledRenewal({ row }).addonsLineKey && <p class={styles.line}>{t(resolveScheduledRenewal({ row }).addonsLineKey as 'account.subscription.mine.paidAfterCancellationAddons', undefined, { date: date(row.serviceEndsAt) })}</p>}
                 </>}
                 {row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt && <p class={styles.line} data-testid="my-subscription-grace">{t('account.subscription.mine.grace', undefined, { date: date(row.graceEndsAt) })}</p>}
-                {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} planName={summary.title} verticalLabel={t(summary.verticalLabelKey)} />}
-                {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />}
+                <div class={styles.actions} data-testid="my-subscription-actions">
+                    {(row.status === 'ACTIVE' || (row.status === 'PAUSED' && row.pause?.reason === 'COURTESY')) && <PauseOffer client:visible subscriptionId={row.id} locale={locale} />}
+                    {!row.succession?.checkoutOpen && row.status === 'ACTIVE' && <PlanChangeOffer client:visible subscriptionId={row.id} vertical={row.vertical as PricingSituationVertical} locale={locale} promo={row.promo !== null} courtesyMonths={totalCourtesyMonths({ row, deferredCourtesies: result.deferredCourtesies })} />}
+                    {row.succession?.checkoutOpen && row.succession.successorId && <PlanChangeCheckoutPending client:visible successorId={row.succession.successorId} checkoutUrl={row.succession.checkoutUrl ?? null} locale={locale} />}
+                    {row.status === 'PAUSED' && row.pause?.reason === 'CUSTOMER_REQUEST' && <ResumeOffer client:visible subscriptionId={row.id} locale={locale} />}
+                    {row.status === 'PAUSED' && <PausedCancel client:visible subscriptionId={row.id} locale={locale} planName={summary.title} verticalLabel={t(summary.verticalLabelKey)} />}
+                    {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} planName={summary.title} verticalLabel={t(summary.verticalLabelKey)} />}
+                </div>
+                {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <div class={styles.promo}><PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" /></div>}
                     </>}
             </PlanSummary>
             </div>

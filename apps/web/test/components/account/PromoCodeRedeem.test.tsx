@@ -123,4 +123,18 @@ describe('AC:B9b:12 HOS-1591 TEST:B9b:12 (support) — promo redemption island',
             )
         );
     });
+
+    it('HOS-2599 labels the code input through the kit Field and keeps its id', () => {
+        render(
+            <PromoCodeRedeem
+                vertical="accommodation"
+                locale="es"
+                offer="SUBSCRIPTION"
+            />
+        );
+        const input = screen.getByLabelText(/código/i);
+        expect(input.id).toBe('promo-code-accommodation-SUBSCRIPTION');
+        expect(input).toHaveAttribute('name', 'code');
+        expect(screen.getByRole('button', { name: /canjear/i })).toHaveAttribute('type', 'submit');
+    });
 });

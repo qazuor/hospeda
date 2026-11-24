@@ -1,6 +1,7 @@
 import type { ListingNoticesItem } from '@repo/schemas';
 import { OptionCard, OptionCardGrid } from '@/components/account/ui/OptionCard';
 import { StatusPill } from '@/components/account/ui/StatusPill';
+import { publicationStatusTone } from '@/lib/billing/addon-account-verticals';
 import type { createTranslations } from '@/lib/i18n';
 import styles from './AddonPurchase.module.css';
 
@@ -8,7 +9,10 @@ import styles from './AddonPurchase.module.css';
 export type AddonTarget = ListingNoticesItem & { readonly vertical: string };
 type Translate = ReturnType<typeof createTranslations>['t'];
 
-/** Select one listing without interpreting its publication state locally. */
+/**
+ * Select one listing without interpreting its publication state locally. The state is shown
+ * as a kit StatusPill (HOS-2599), next to «Activo» when the add-on is already on it.
+ */
 export function AddonTargetPicker(input: {
     readonly items: readonly AddonTarget[];
     readonly isActive?: (item: AddonTarget) => boolean;
@@ -31,13 +35,23 @@ export function AddonTargetPicker(input: {
                         disabled={input.isActive?.(item) === true}
                         onClick={() => input.onSelect(item)}
                         title={item.name}
-                        meta={input.t(`billing.addonPurchase.status.${item.publicationStatus}`)}
-                        badge={
-                            input.isActive?.(item) ? (
-                                <StatusPill tone="success">
-                                    {input.t('billing.addonPurchase.active')}
+                        meta={
+                            <span className={styles.pills}>
+                                <StatusPill
+                                    tone={publicationStatusTone({
+                                        status: item.publicationStatus
+                                    })}
+                                >
+                                    {input.t(
+                                        `billing.addonPurchase.status.${item.publicationStatus}`
+                                    )}
                                 </StatusPill>
-                            ) : undefined
+                                {input.isActive?.(item) ? (
+                                    <StatusPill tone="success">
+                                        {input.t('billing.addonPurchase.active')}
+                                    </StatusPill>
+                                ) : null}
+                            </span>
                         }
                     />
                 ))}

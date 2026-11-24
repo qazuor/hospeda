@@ -20,11 +20,11 @@
  * same-origin protected island.
  *
  * KNOWN API LIMITATIONS (see inline comments below for detail):
- *  - `GET /api/v1/protected/price-alerts` is NOT entitlement-gated today (its
- *    route doc explicitly says "Ungated"), so the upgrade-CTA branch below is
- *    defensive/forward-compatible rather than reachable with the current API.
- *    A free-plan user with zero alerts is today indistinguishable from a
- *    Plus/VIP user with zero alerts — both just see the empty state.
+ *  - `GET /api/v1/protected/price-alerts` is NOT entitlement-gated (its route
+ *    doc says "Ungated"). HOS-2599: the island reads the tourist effective set
+ *    beside it, so a Free tourist with zero alerts gets the LockedState instead
+ *    of an empty state that invites a feature the plan refuses
+ *    (`showPriceAlertsLock`). The 403 branch stays for a future gated list.
  *  - The response has no `accommodationSlug` or current-price field, only the
  *    subscription-time snapshot (`basePriceSnapshot`). The accommodation name
  *    is rendered as plain text (not a link) until a follow-up adds the slug.
@@ -39,10 +39,12 @@ import { BellIcon } from '@repo/icons';
 import type { PriceAlertListItem } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { visibleApiMessage } from '@/lib/api-errors';
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { showPriceAlertsLock } from '@/lib/price-alert-gate';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
@@ -154,9 +156,12 @@ export function AlertsList({
         if (!isMountedRef.current) return;
         setStatus({ kind: 'loading' });
         try {
-            const res = await fetch(`${base}/api/v1/protected/price-alerts`, {
-                credentials: 'include'
-            });
+            // HOS-2599: the list is not gated, so the tourist effective set is read beside it
+            // to tell an empty list from a plan that does not include alerts.
+            const [res, effectiveSet] = await Promise.all([
+                fetch(`${base}/api/v1/protected/price-alerts`, { credentials: 'include' }),
+                getEntitlementsCached({ vertical: 'tourist' })
+            ]);
 
             if (!res.ok) {
                 // Plan-gate detection: the API signals "feature not included in
@@ -187,7 +192,12 @@ export function AlertsList({
 
             const body = (await res.json()) as ListSuccessResponse;
             if (!isMountedRef.current) return;
-            setAlerts(body.data?.items ?? []);
+            const items = body.data?.items ?? [];
+            if (showPriceAlertsLock({ alertCount: items.length, effectiveSet })) {
+                setStatus({ kind: 'upgrade' });
+                return;
+            }
+            setAlerts(items);
             setStatus({ kind: 'ready' });
         } catch (err) {
             webLogger.error('[AlertsList] failed to fetch price alerts', err);

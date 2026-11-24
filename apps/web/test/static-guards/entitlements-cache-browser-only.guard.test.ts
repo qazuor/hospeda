@@ -43,6 +43,8 @@ describe('TEST:1769:4 entitlements cache is browser-only', () => {
             .map((relativePath) => relativePath.split(path.sep).join('/'))
             .sort();
         expect(expected).toEqual([
+            // HOS-2599: the price-alerts island tells an empty list from a missing entitlement.
+            'components/account/AlertsList.client.tsx',
             'components/host/AnalyticsSection.client.tsx',
             'components/host/PromotionForm.client.tsx',
             'components/host/PromotionList.client.tsx',

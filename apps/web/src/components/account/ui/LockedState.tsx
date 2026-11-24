@@ -66,17 +66,20 @@ export function LockedState({ reason, locale, className, helpId }: LockedStatePr
 
             {reason.kind === 'plan' ? (
                 <>
-                    <div className={styles.plans}>
-                        <p className={styles.why}>{t('account.ui.locked.planWhy')}</p>
-                        {reason.plans.map((plan) => (
-                            <StatusPill
-                                key={plan.name}
-                                tone="plan"
-                            >
-                                {plan.name}
-                            </StatusPill>
-                        ))}
-                    </div>
+                    {/* HOS-2599: «Está incluida en:» only when it names a plan. */}
+                    {reason.plans.length > 0 ? (
+                        <div className={styles.plans}>
+                            <p className={styles.why}>{t('account.ui.locked.planWhy')}</p>
+                            {reason.plans.map((plan) => (
+                                <StatusPill
+                                    key={plan.name}
+                                    tone="plan"
+                                >
+                                    {plan.name}
+                                </StatusPill>
+                            ))}
+                        </div>
+                    ) : null}
                     <div className={styles.actions}>
                         <LinkButton
                             href={reason.plansHref}

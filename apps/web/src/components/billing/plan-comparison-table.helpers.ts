@@ -118,3 +118,20 @@ export function formatPriceArs(input: {
         return `$${pesos.toLocaleString('es-AR')}`;
     }
 }
+
+/**
+ * HOS-2599: how many plan columns fit a 390px phone next to the sticky label column without
+ * scrolling sideways. 366px of content (390 - 2 * 12px gutter) minus the 150px label leaves
+ * 216px, two 108px plan columns. Up to this count the table drops its 600px floor and the
+ * «swipe to see every plan» hint, so the tourist table (Gratis + VIP) never hides VIP.
+ */
+export const MOBILE_FIT_PLAN_COLUMNS = 2;
+
+/**
+ * Whether the comparison needs to scroll sideways on a phone.
+ * @param input - The number of plan columns.
+ * @returns `true` when the columns cannot fit a phone and the table scrolls.
+ */
+export function comparisonScrollsOnMobile(input: { readonly planCount: number }): boolean {
+    return input.planCount > MOBILE_FIT_PLAN_COLUMNS;
+}

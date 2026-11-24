@@ -5,6 +5,7 @@ import { scheduleSubscriptionRefresh } from '@/lib/billing/refresh-subscription-
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './PlanChangeOffer.module.css';
+import { Button } from './ui';
 
 /** Props for the customer resume flow. */
 export interface ResumeOfferProps {
@@ -40,26 +41,31 @@ export function ResumeOffer({ subscriptionId, locale }: ResumeOfferProps) {
         <section
             className={styles.root}
             data-testid="resume-offer"
+            data-expanded={state === 'idle' ? undefined : 'true'}
         >
             {state === 'idle' && (
-                <button
-                    type="button"
-                    className={styles.primary}
+                <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setState('confirm')}
                 >
                     {t('account.subscription.mine.resume.open')}
-                </button>
+                </Button>
             )}
             {state === 'confirm' && (
-                <div data-testid="resume-confirmation">
+                <div
+                    className={styles.panel}
+                    data-testid="resume-confirmation"
+                >
                     <p>{t('account.subscription.mine.resume.confirmation')}</p>
-                    <button
-                        type="button"
-                        className={styles.primary}
-                        onClick={() => void applyResume()}
-                    >
-                        {t('account.subscription.mine.resume.confirm')}
-                    </button>
+                    <div className={styles.actions}>
+                        <Button
+                            size="sm"
+                            onClick={() => void applyResume()}
+                        >
+                            {t('account.subscription.mine.resume.confirm')}
+                        </Button>
+                    </div>
                 </div>
             )}
             {state === 'pending' && (

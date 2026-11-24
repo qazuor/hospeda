@@ -162,7 +162,7 @@ describe('TEST:B8b:25 PauseOffer', () => {
             within(panel).getByText('Cuenta sigue activo porque queda otra vertical compatible.')
         ).toBeInTheDocument();
         expect(panel.textContent).toBe(
-            'Si confirmás, tu suscripción queda pausada hasta el 5 de enero de 2027.Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:GaleríaDestacado se pausa porque no queda otra vertical compatible activa.Cuenta sigue activo porque queda otra vertical compatible.Confirmar pausa'
+            'Información: Si confirmás, tu suscripción queda pausada hasta el 5 de enero de 2027.Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:GaleríaDestacado se pausa porque no queda otra vertical compatible activa.Cuenta sigue activo porque queda otra vertical compatible.Confirmar pausa'
         );
         fireEvent.click(screen.getByRole('button', { name: 'Confirmar pausa' }));
         await waitFor(() =>
@@ -281,5 +281,23 @@ describe('TEST:B8b:25 PauseOffer', () => {
             await vi.advanceTimersByTimeAsync(2500);
         });
         expect(reload).not.toHaveBeenCalled();
+    });
+    it('HOS-2599 marks its root expanded only once the panel opens and uses the kit Field and Select', async () => {
+        render(
+            <PauseOffer
+                subscriptionId={id}
+                locale="es"
+            />
+        );
+        const root = screen.getByTestId('pause-offer');
+        expect(root).not.toHaveAttribute('data-expanded');
+        fireEvent.click(screen.getByRole('button', { name: 'Pausar suscripción' }));
+        await screen.findByTestId('pause-confirmation');
+        expect(root).toHaveAttribute('data-expanded', 'true');
+        const select = screen.getByLabelText('Meses de pausa');
+        expect(select.tagName).toBe('SELECT');
+        expect(select.id).toBe(`pause-months-${id}`);
+        expect(root.querySelector(`label[for="${select.id}"]`)).not.toBeNull();
+        expect(within(root).getByRole('status')).toHaveTextContent('Si confirmás');
     });
 });

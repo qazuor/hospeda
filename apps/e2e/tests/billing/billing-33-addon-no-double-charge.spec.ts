@@ -64,7 +64,9 @@ type PrincipalProviderView = {
 
 async function inspectSummary(summary: Locator): Promise<void> {
     await expect(summary).toBeVisible();
-    await expect(summary.getByRole('heading')).toHaveText(esBilling.addonPurchase.summary);
+    await expect(summary.getByRole('heading', { level: 2 })).toHaveText(
+        esBilling.addonPurchase.summary
+    );
     await expect(summary).toContainText(ADDON_NAME);
     await expect(summary).toContainText(esBilling.addonPurchase.cycle.monthly);
     await expect(summary).toContainText(PURCHASE_PRICE);
