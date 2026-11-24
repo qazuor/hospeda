@@ -2347,7 +2347,10 @@
             "onboardingDescription": "Add your first experience so travellers can find it.",
             "trafficLockedFeature": "Visits to your experiences"
         },
-        "listingsHint": "{{published}} published · {{draft}} drafts",
+        "listingsPublished_one": "{{count}} published",
+        "listingsPublished_other": "{{count}} published",
+        "listingsDraft_one": "{{count}} draft",
+        "listingsDraft_other": "{{count}} drafts",
         "manage": "Manage",
         "quickActions": "Quick actions",
         "trafficLabel": "Visits",

@@ -2347,7 +2347,10 @@
             "onboardingDescription": "Cadastre sua primeira experiência para que os viajantes a encontrem.",
             "trafficLockedFeature": "Visitas às suas experiências"
         },
-        "listingsHint": "{{published}} publicados · {{draft}} rascunhos",
+        "listingsPublished_one": "{{count}} publicado",
+        "listingsPublished_other": "{{count}} publicados",
+        "listingsDraft_one": "{{count}} rascunho",
+        "listingsDraft_other": "{{count}} rascunhos",
         "manage": "Gerenciar",
         "quickActions": "Ações rápidas",
         "trafficLabel": "Visualizações",
