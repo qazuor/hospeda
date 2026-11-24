@@ -92,6 +92,13 @@
             "subject": "subscription"
         },
         {
+            "file": "packages/service-core/src/services/billing/subscription/access-ending-notice.ts",
+            "symbol": "sendAccessEndingNotices",
+            "row": null,
+            "why": "HOS-2580: excluye del aviso de fin de acceso al principal CANCEL_SCHEDULED con un sucesor PRINCIPAL vivo (succeedsId), porque el titular volvió a contratar y S17 cancela el viejo recién cuando el nuevo está ACTIVE.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
             "symbol": "processProviderNotice",
             "row": null,
