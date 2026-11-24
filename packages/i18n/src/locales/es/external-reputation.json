@@ -28,7 +28,8 @@
         "reviewsCount_other": "{{count}} reseñas",
         "reviewsCountOn_one": "{{count}} reseña en {{platform}}",
         "reviewsCountOn_other": "{{count}} reseñas en {{platform}}",
-        "noData": "Sin datos disponibles"
+        "noData": "Sin datos disponibles",
+        "noDataDescription": "Agregá el enlace de una plataforma para ver acá tu puntaje y tus reseñas."
     },
     "snippets": {
         "ttlExpired": "Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje",

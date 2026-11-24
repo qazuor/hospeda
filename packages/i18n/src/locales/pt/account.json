@@ -822,7 +822,8 @@
                 "venue": "Comer e sair"
             },
             "price": "{{amount}} {{cycle}}",
-            "nextCharge": "Próxima cobrança: {{date}}, no valor de {{amount}}."
+            "nextCharge": "Próxima cobrança: {{date}}, no valor de {{amount}}.",
+            "emptyDescription": "Escolha um plano para publicar e gerenciar seus anúncios."
         },
         "cancel": {
             "open": "Cancelar assinatura",

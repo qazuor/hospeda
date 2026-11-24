@@ -108,13 +108,15 @@
         "pending": {
             "title": "Esperan tu confirmación",
             "empty": "No tenés usos pendientes de confirmar.",
-            "countLabel": "Pendientes de confirmar: {{count}}"
+            "countLabel": "Pendientes de confirmar: {{count}}",
+            "emptyDescription": "Cuando un proveedor registre un servicio para tu ficha, vas a poder confirmarlo desde acá."
         },
         "history": {
             "title": "Historial",
             "empty": "Todavía no hay usos registrados.",
             "loadMore": "Ver más",
-            "filterLabel": "Filtrar por estado"
+            "filterLabel": "Filtrar por estado",
+            "emptyDescription": "Los usos que confirmes o rechaces quedan registrados en este historial."
         },
         "filters": {
             "ALL": "Todos",

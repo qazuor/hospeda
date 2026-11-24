@@ -297,7 +297,8 @@
                 "visibleOnListingLabel": "Visível na página do local",
                 "usableByAiLabel": "Utilizável pela IA",
                 "notVisibleBadge": "Não visível na página",
-                "notAiUsableBadge": "Não utilizável pela IA"
+                "notAiUsableBadge": "Não utilizável pela IA",
+                "emptyDescription": "Responder às dúvidas mais comuns ajuda seus hóspedes e o assistente do anúncio."
             },
             "noChanges": "Não há alterações para salvar",
             "success": "Alterações salvas.",
@@ -542,7 +543,8 @@
             },
             "empty": "Ainda não há dados",
             "visitors_one": "{{count}} visitante",
-            "visitors_other": "{{count}} visitantes"
+            "visitors_other": "{{count}} visitantes",
+            "emptyDescription": "As visitas aos seus anúncios aparecem aqui assim que começarem a chegar."
         },
         "locationException": {
             "requestButton": "Pedir uma exceção",

@@ -480,7 +480,8 @@
                     "body3": "Desmarque \"Utilizável pela IA\" para conteúdo que você prefere mostrar exatamente como escrito, sem que o assistente o reformule — texto legal ou condições exatas de cancelamento, por exemplo.",
                     "body4": "Importante: uma pergunta não visível na página, mas utilizável pela IA, não é privada. O assistente pode dizê-la a qualquer pessoa que perguntar pelo chat; ela só não aparece publicada na página."
                 },
-                "rowFallback": "Pergunta {{n}}"
+                "rowFallback": "Pergunta {{n}}",
+                "emptyDescription": "Responder às dúvidas mais comuns ajuda seus hóspedes e o assistente do anúncio."
             },
             "action": {
                 "save": "Salvar",
@@ -780,7 +781,8 @@
                 "aiDraftNotEligible": "O assistente já respondeu a esta pergunta.",
                 "unansweredCountLabel": "{{count}} sem resposta",
                 "dismissedCountLabel": "{{count}} descartadas",
-                "dismissedToggle": "Ver as descartadas"
+                "dismissedToggle": "Ver as descartadas",
+                "emptyDescription": "Quando um visitante usar o assistente do seu anúncio, as perguntas dele aparecerão aqui."
             },
             "catalog": {
                 "searchLabel": "Buscar em todo o catálogo",

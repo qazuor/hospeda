@@ -21,6 +21,7 @@
  * Hydration: mount with `client:visible`, below the fold of the owner page.
  */
 
+import { BarChartIcon } from '@repo/icons';
 import {
     LISTING_TRAFFIC_DIRECT_REFERRER,
     LISTING_TRAFFIC_INTERNAL_REFERRER,
@@ -33,6 +34,7 @@ import {
 } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
+import { EmptyState } from '@/components/account/ui/EmptyState';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -273,12 +275,19 @@ export function TrafficStatsCards({
         funnel === null
     ) {
         return (
-            <p
-                className={styles.empty}
-                data-testid="traffic-stats-empty"
-            >
-                {emptyLabel}
-            </p>
+            <div data-testid="traffic-stats-empty">
+                <EmptyState
+                    variant="compact"
+                    icon={
+                        <BarChartIcon
+                            size={28}
+                            aria-hidden={true}
+                        />
+                    }
+                    title={emptyLabel}
+                    description={t('listing.owner.traffic.emptyDescription')}
+                />
+            </div>
         );
     }
 

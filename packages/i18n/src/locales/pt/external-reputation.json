@@ -28,7 +28,8 @@
         "reviewsCount_other": "{{count}} avaliações",
         "reviewsCountOn_one": "{{count}} avaliação em {{platform}}",
         "reviewsCountOn_other": "{{count}} avaliações em {{platform}}",
-        "noData": "Sem dados disponíveis"
+        "noData": "Sem dados disponíveis",
+        "noDataDescription": "Adicione o link de uma plataforma para ver aqui sua nota e suas avaliações."
     },
     "snippets": {
         "ttlExpired": "As avaliações de texto estão temporariamente indisponíveis; exibindo apenas a pontuação",

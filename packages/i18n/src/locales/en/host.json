@@ -480,7 +480,8 @@
                     "body3": "Uncheck \"Usable by AI\" for content you want shown exactly as written, without the assistant rephrasing it — legal text or exact cancellation terms, for example.",
                     "body4": "Important: a question that isn't visible on the listing but is usable by AI is not private. The assistant can still say it to anyone who asks in chat; it just won't be published on the page."
                 },
-                "rowFallback": "Question {{n}}"
+                "rowFallback": "Question {{n}}",
+                "emptyDescription": "Answering the most common questions helps your guests and the listing assistant."
             },
             "action": {
                 "save": "Save",
@@ -780,7 +781,8 @@
                 "aiDraftNotEligible": "The assistant has already answered this question.",
                 "unansweredCountLabel": "{{count}} unanswered",
                 "dismissedCountLabel": "{{count}} dismissed",
-                "dismissedToggle": "Show dismissed questions"
+                "dismissedToggle": "Show dismissed questions",
+                "emptyDescription": "When a visitor uses your listing assistant, their questions will show up here."
             },
             "catalog": {
                 "searchLabel": "Search the whole catalog",
