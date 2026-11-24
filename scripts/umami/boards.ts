@@ -228,9 +228,9 @@ export const BOARD_SPECS: readonly BoardSpec[] = [
     {
         // HOS-2359 (OD-10). Named literally as the owner wrote it, unlike the
         // numbered boards above. Built from `MetricsTable` because the 3.5.0
-        // registry has no attribution or pixel component (M-3); first-click
+        // registry has no attribution component (M-3); first-click
         // attribution lives in the saved reports of `attribution-definitions.ts`,
-        // and email opens are read per pixel in Umami → Pixels.
+        // and email opens are the `email-open` event (HOS-2583).
         name: 'Attribution',
         description:
             'De dónde vienen las visitas: UTM de emails, botones de compartir, QR y presentaciones, y sus conversiones.',

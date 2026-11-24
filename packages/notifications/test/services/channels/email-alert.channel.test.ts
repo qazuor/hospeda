@@ -77,8 +77,7 @@ describe('EmailAlertChannel', () => {
             // HOS-2359: attributed to its catalog key, which exists.
             expect(transport.sentEmails[0]?.attribution).toEqual({
                 medium: 'transactional',
-                templateKey: 'alert-digest.alerts-digest',
-                includePixel: true
+                templateKey: 'alert-digest.alerts-digest'
             });
             expect(findEmailCatalogEntry({ key: 'alert-digest.alerts-digest' })).toBeDefined();
         });

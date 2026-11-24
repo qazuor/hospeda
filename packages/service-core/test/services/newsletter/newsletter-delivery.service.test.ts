@@ -549,12 +549,7 @@ describe('processBatch', () => {
         // Arrange
         const email1 = `user-${DELIVERY_ID_1.slice(0, 8)}@example.com`;
         queryBuilderResponses = [
-            [
-                makeCampaignRow({
-                    attributionSlug: 'otono-aaaaaaaa',
-                    umamiPixelSlug: 'newsletter-otono-aaaaaaaa'
-                })
-            ],
+            [makeCampaignRow({ attributionSlug: 'otono-aaaaaaaa' })],
             [makeDeliveryRow(DELIVERY_ID_1, SUBSCRIBER_ID_1)],
             [makeSubscriberRow(SUBSCRIBER_ID_1, { email: email1 })],
             [{ id: DELIVERY_ID_1 }]
@@ -569,8 +564,7 @@ describe('processBatch', () => {
         const svc = makeService({ sendBatchFn, renderCampaignEmailFn, attributeCampaignHtmlFn });
         const expected = {
             medium: 'campaign',
-            campaignSlug: 'otono-aaaaaaaa',
-            pixelSlug: 'newsletter-otono-aaaaaaaa'
+            campaignSlug: 'otono-aaaaaaaa'
         };
 
         // Act
@@ -589,10 +583,10 @@ describe('processBatch', () => {
         );
     });
 
-    it('recomputes the slug and renders no pixel for a campaign dispatched without them (HOS-2359)', async () => {
+    it('recomputes the slug and for a campaign dispatched without one (HOS-2359)', async () => {
         const email1 = `user-${DELIVERY_ID_1.slice(0, 8)}@example.com`;
         queryBuilderResponses = [
-            [makeCampaignRow({ attributionSlug: null, umamiPixelSlug: null })],
+            [makeCampaignRow({ attributionSlug: null })],
             [makeDeliveryRow(DELIVERY_ID_1, SUBSCRIBER_ID_1)],
             [makeSubscriberRow(SUBSCRIBER_ID_1, { email: email1 })],
             [{ id: DELIVERY_ID_1 }]
@@ -609,8 +603,7 @@ describe('processBatch', () => {
             expect.objectContaining({
                 attribution: {
                     medium: 'campaign',
-                    campaignSlug: 'test-campaign-aaaaaaaa',
-                    pixelSlug: null
+                    campaignSlug: 'test-campaign-aaaaaaaa'
                 }
             })
         );
@@ -743,11 +736,10 @@ describe('sendTestEmail', () => {
         expect(sendCall?.to).toBe('admin@example.com');
         expect(sendCall?.subject).toContain('[PRUEBA]');
         expect(sendCall?.subject).toContain('Test Subject');
-        // HOS-2359 AC-13: campaign UTMs, never a pixel.
+        // HOS-2359 AC-13: campaign UTMs.
         expect(sendCall?.attribution).toEqual({
             medium: 'campaign',
-            campaignSlug: 'test-campaign-aaaaaaaa',
-            pixelSlug: null
+            campaignSlug: 'test-campaign-aaaaaaaa'
         });
     });
 

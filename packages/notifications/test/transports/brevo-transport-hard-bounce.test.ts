@@ -51,8 +51,7 @@ async function sendWith(response: Response | Error): Promise<unknown> {
             react: {} as ReactElement,
             attribution: {
                 medium: 'transactional',
-                templateKey: 'notification.payment_success',
-                includePixel: true
+                templateKey: 'notification.payment_success'
             }
         });
     } catch (error) {

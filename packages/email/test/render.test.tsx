@@ -5,8 +5,7 @@ import { renderEmailBodies } from '../src/render.js';
 
 const TEST_ATTRIBUTION = {
     medium: 'transactional',
-    templateKey: 'test.render',
-    includePixel: false
+    templateKey: 'test.render'
 } as const;
 
 describe('renderEmailBodies', () => {
@@ -36,11 +35,10 @@ describe('renderEmailBodies', () => {
             resetEmailAssets();
         });
 
-        it('applies UTMs to HTML and text links and inserts the pixel in HTML only', async () => {
+        it('applies UTMs to HTML and text links and renders no pixel', async () => {
             // Arrange
             configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
+                siteUrl: 'https://hospeda.com.ar'
             });
             const react = (
                 <Html lang="es">
@@ -55,8 +53,7 @@ describe('renderEmailBodies', () => {
                 react,
                 attribution: {
                     medium: 'transactional',
-                    templateKey: 'notification.payment_success',
-                    includePixel: true
+                    templateKey: 'notification.payment_success'
                 }
             });
 
@@ -64,9 +61,7 @@ describe('renderEmailBodies', () => {
             expect(html).toContain(
                 'href="https://hospeda.com.ar/es/alojamientos/?utm_source=email&amp;utm_medium=transactional&amp;utm_campaign=notification-payment-success&amp;utm_content=body-link"'
             );
-            expect(html).toContain(
-                '<img src="https://pulso.hospeda.com.ar/p/email-notification-payment-success"'
-            );
+            expect(html).not.toContain('/p/email-');
             expect(text).toContain(
                 'https://hospeda.com.ar/es/alojamientos/?utm_source=email&utm_medium=transactional&utm_campaign=notification-payment-success&utm_content=body-link'
             );

@@ -56,8 +56,8 @@ export interface SendEmailInput {
     readonly react: ReactElement;
 
     /**
-     * Who the email is attributed to: UTMs on links to our web domain and the open
-     * pixel (HOS-2359). Transactional sends pass their email catalog key
+     * Who the email is attributed to: UTMs on links to our web domain
+     * (HOS-2359). Transactional sends pass their email catalog key
      * (`auth.reset-password`, `conversation.<id>`, ...).
      */
     readonly attribution: EmailAttribution;
@@ -131,7 +131,7 @@ export interface SendEmailResult {
  *   to: 'user@example.com',
  *   subject: 'Verify your email',
  *   react: VerifyEmailTemplate({ name, verificationUrl }),
- *   attribution: { medium: 'transactional', templateKey: 'auth.verify-email', includePixel: true }
+ *   attribution: { medium: 'transactional', templateKey: 'auth.verify-email' }
  * });
  *
  * if (!result.success) {

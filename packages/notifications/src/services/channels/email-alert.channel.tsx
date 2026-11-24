@@ -10,8 +10,7 @@ import type { NotificationChannel } from '../alert-delivery.service.js';
  */
 export const ALERT_DIGEST_ATTRIBUTION = {
     medium: 'transactional',
-    templateKey: 'alert-digest.alerts-digest',
-    includePixel: true
+    templateKey: 'alert-digest.alerts-digest'
 } as const;
 
 /**
