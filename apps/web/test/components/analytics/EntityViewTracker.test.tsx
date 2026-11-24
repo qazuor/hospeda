@@ -13,6 +13,9 @@
  *  - Both beacon and Umami event fire together on the same mount.
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { AnalyticsEventSchemas } from '@repo/analytics';
 import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -371,5 +374,138 @@ describe('EntityViewTracker — VENUE / EXPERIENCE / PARTNER (HOS-734, HOS-2119)
             entityType: 'VENUE',
             entityId: newId
         });
+    });
+});
+
+// ─── ACCOMMODATION (HOS-2579 §6.9, AC-26) ─────────────────────────────────────
+//
+// Ported from the deleted AccommodationViewTracker.test.tsx. The payload is
+// asserted with `toStrictEqual` and as a literal (not built from the props) so a
+// missing, renamed or extra field turns the test red: the owner stats read
+// these exact fields.
+
+describe('EntityViewTracker — ACCOMMODATION (HOS-2579 AC-26)', () => {
+    const ACCOMMODATION_PROPS = {
+        entityType: 'ACCOMMODATION' as const,
+        slug: 'cabana-del-rio',
+        entityId: '550e8400-e29b-41d4-a716-446655440000',
+        locale: 'es' as const,
+        accommodationType: 'CABIN',
+        isFeatured: true,
+        destinationId: 'dest-colon'
+    };
+
+    beforeEach(() => {
+        trackEventMock.mockClear();
+        sendViewBeaconMock.mockClear();
+    });
+
+    it('renders null (no DOM output)', () => {
+        // Arrange / Act
+        const { container } = render(<EntityViewTracker {...ACCOMMODATION_PROPS} />);
+
+        // Assert
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it('emits accommodation_viewed with a payload deep-equal to the old tracker', () => {
+        // Arrange / Act
+        render(<EntityViewTracker {...ACCOMMODATION_PROPS} />);
+
+        // Assert
+        expect(trackEventMock).toHaveBeenCalledTimes(1);
+        expect(trackEventMock.mock.calls[0]).toStrictEqual([
+            'accommodation_viewed',
+            {
+                accommodation_id: '550e8400-e29b-41d4-a716-446655440000',
+                entity_id: '550e8400-e29b-41d4-a716-446655440000',
+                entity_type: 'ACCOMMODATION',
+                accommodation_slug: 'cabana-del-rio',
+                locale: 'es',
+                accommodation_type: 'CABIN',
+                is_featured: true,
+                destination_id: 'dest-colon',
+                source_page: 'accommodation_detail'
+            }
+        ]);
+    });
+
+    it('emits a payload that passes the accommodation_viewed catalog schema', () => {
+        // Arrange / Act
+        render(<EntityViewTracker {...ACCOMMODATION_PROPS} />);
+
+        // Assert
+        const payload = trackEventMock.mock.calls[0]?.[1];
+        expect(AnalyticsEventSchemas.accommodation_viewed.safeParse(payload).success).toBe(true);
+    });
+
+    it('sends exactly one view beacon with entityType ACCOMMODATION', () => {
+        // Arrange / Act
+        render(<EntityViewTracker {...ACCOMMODATION_PROPS} />);
+
+        // Assert
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
+        expect(sendViewBeaconMock.mock.calls[0]).toStrictEqual([
+            { entityType: 'ACCOMMODATION', entityId: ACCOMMODATION_PROPS.entityId }
+        ]);
+    });
+
+    it('does not re-fire when the component re-renders with identical props', () => {
+        // Arrange
+        const { rerender } = render(<EntityViewTracker {...ACCOMMODATION_PROPS} />);
+
+        // Act
+        act(() => {
+            rerender(<EntityViewTracker {...ACCOMMODATION_PROPS} />);
+        });
+
+        // Assert
+        expect(trackEventMock).toHaveBeenCalledTimes(1);
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires again when the accommodation changes (View Transitions navigation)', () => {
+        // Arrange
+        const { rerender } = render(<EntityViewTracker {...ACCOMMODATION_PROPS} />);
+        const newId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+        // Act
+        act(() => {
+            rerender(
+                <EntityViewTracker
+                    {...ACCOMMODATION_PROPS}
+                    entityId={newId}
+                    slug="nueva-cabana"
+                />
+            );
+        });
+
+        // Assert
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(2);
+        expect(sendViewBeaconMock).toHaveBeenLastCalledWith({
+            entityType: 'ACCOMMODATION',
+            entityId: newId
+        });
+        expect(trackEventMock).toHaveBeenCalledTimes(2);
+    });
+});
+
+describe('AccommodationViewTracker removal (HOS-2579 AC-26)', () => {
+    it('no longer exists and the accommodation page mounts EntityViewTracker', () => {
+        // Arrange
+        const webRoot = resolve(__dirname, '../../..');
+        const page = readFileSync(
+            resolve(webRoot, 'src/pages/[lang]/alojamientos/[slug].astro'),
+            'utf8'
+        );
+
+        // Assert
+        expect(
+            existsSync(
+                resolve(webRoot, 'src/components/analytics/AccommodationViewTracker.client.tsx')
+            )
+        ).toBe(false);
+        expect(page).not.toContain('AccommodationViewTracker');
+        expect(page).toMatch(/<EntityViewTracker\s[^>]*entityType="ACCOMMODATION"/);
     });
 });
