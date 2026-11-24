@@ -350,11 +350,10 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = INIT_CWD (system category, platform-injected by pnpm) - read by the
  * @repo/help export CLI (HOS-2410). 292 + 1 = 293.
  *
- * +1 = HOSPEDA_UMAMI_PIXEL_API_KEY (monitoring category, api only, secret) - the
- * `user`-role Umami key that creates one pixel per newsletter campaign
- * (HOS-2359). 293 + 1 = 294.
+ * HOS-2359 added HOSPEDA_UMAMI_PIXEL_API_KEY (293 + 1 = 294) and HOS-2583 removed
+ * it with the campaign pixels (294 - 1 = 293).
  */
-const EXPECTED_VAR_COUNT = 294;
+const EXPECTED_VAR_COUNT = 293;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -826,22 +825,15 @@ describe('ENV_REGISTRY', () => {
         });
     });
 
-    describe('HOSPEDA_UMAMI_PIXEL_API_KEY (HOS-2359)', () => {
-        it('is registered as an optional api-only secret in monitoring', () => {
-            const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_UMAMI_PIXEL_API_KEY');
-
-            expect(entry, 'HOSPEDA_UMAMI_PIXEL_API_KEY not found in registry').toBeDefined();
-            expect(entry?.secret).toBe(true);
-            expect(entry?.required).toBe(false);
-            expect(entry?.apps).toEqual(['api']);
-            expect(entry?.category).toBe('monitoring');
+    describe('HOSPEDA_UMAMI_PIXEL_API_KEY (removed by HOS-2583)', () => {
+        it('is no longer registered', () => {
+            expect(REGISTRY.find((e) => e.name === 'HOSPEDA_UMAMI_PIXEL_API_KEY')).toBeUndefined();
         });
 
-        it('no longer claims the api holds no Umami API write key', () => {
+        it('the Umami database URL entry no longer mentions it', () => {
             const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_UMAMI_DATABASE_URL');
 
-            expect(entry?.howToObtain).not.toContain('never holds a Umami API write key');
-            expect(entry?.howToObtain).toContain('HOSPEDA_UMAMI_PIXEL_API_KEY');
+            expect(entry?.howToObtain).not.toContain('HOSPEDA_UMAMI_PIXEL_API_KEY');
         });
     });
 

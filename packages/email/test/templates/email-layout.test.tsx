@@ -13,8 +13,7 @@ import {
 
 const TEST_ATTRIBUTION = {
     medium: 'transactional',
-    templateKey: 'test.layout',
-    includePixel: false
+    templateKey: 'test.layout'
 } as const;
 
 const FOOTER_BRAND_LINE = 'Hospeda - Turismo en el Litoral';

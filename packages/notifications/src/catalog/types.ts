@@ -19,7 +19,7 @@ export type EmailSendPath =
 /**
  * Key of an email catalog entry: `<sendPath>.<id>` (e.g. `auth.reset-password`).
  * Also the `templateKey` of a transactional email's attribution (HOS-2359), which
- * derives the template's `utm_campaign` and Umami pixel slug.
+ * derives the template's `utm_campaign` and its Brevo `template:` open tag.
  */
 export type EmailCatalogKey = `${EmailSendPath}.${string}`;
 

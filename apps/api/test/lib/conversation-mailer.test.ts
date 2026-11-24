@@ -176,8 +176,7 @@ describe('createConversationMailer', () => {
             expect(mockSendEmail.mock.calls[0]?.[0]).toMatchObject({
                 attribution: {
                     medium: 'transactional',
-                    templateKey: 'conversation.verify',
-                    includePixel: true
+                    templateKey: 'conversation.verify'
                 }
             });
         });
@@ -276,8 +275,7 @@ describe('createConversationMailer', () => {
             expect(mockSendEmail.mock.calls.at(-1)?.[0]).toMatchObject({
                 attribution: {
                     medium: 'transactional',
-                    templateKey: 'conversation.access-link',
-                    includePixel: true
+                    templateKey: 'conversation.access-link'
                 }
             });
         });

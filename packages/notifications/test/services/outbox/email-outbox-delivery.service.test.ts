@@ -163,8 +163,7 @@ describe('TEST:U2:8 one attempt record, in notification_log only', () => {
         const [input] = h.send.mock.calls[0] as [{ attribution: unknown }];
         expect(input.attribution).toEqual({
             medium: 'transactional',
-            templateKey: `outbox.${COMMERCIAL}`,
-            includePixel: true
+            templateKey: `outbox.${COMMERCIAL}`
         });
         expect(findEmailCatalogEntry({ key: `outbox.${COMMERCIAL}` })).toBeDefined();
     });

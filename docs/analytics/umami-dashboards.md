@@ -148,28 +148,24 @@ selector `[data-umami-block]`. The privacy rules around it are in
   `/platform/critical`; while it is off, the web never loads `recorder.js`.
 - Umami has no retention setting for recordings and never deletes them. See the privacy doc.
 
-## Email open pixels
+## Email opens
 
-`pnpm umami:setup` also creates one Umami pixel per email catalog template (HOS-2359).
-The list is `packages/notifications/generated/email-pixel-manifest.json`, generated from
-`EMAIL_CATALOG` by `pnpm --filter @repo/notifications email:pixel-manifest` and guarded
-against drift in CI. Each entry gives the pixel slug (`email-<sendPath>-<id>`) and its name
-(`Email · <template name>`). Every real send embeds `<HOSPEDA_UMAMI_URL>/p/<slug>`, so a
-template whose pixel does not exist yet records nothing until the script runs.
+Email opens are **not** measured with a pixel (HOS-2583). Brevo proxies every image through
+its image cache (`img-cache.net`), fetches a pixel once with its own User-Agent (Umami drops
+it as a bot) and caches it for 48 hours ignoring `no-store`, so no open ever reached Umami.
 
-- Pixels are matched by `slug`, which Umami keeps unique instance-wide. A drifted name is
-  renamed in place (same id). A pixel the manifest no longer lists (`email-*`) shows up as
-  unmanaged and is never deleted.
-- Newsletter pixels (`newsletter-*`) are created by the api at dispatch with
-  `HOSPEDA_UMAMI_PIXEL_API_KEY` (a dedicated `user`-role account) and the script ignores
-  them. That key lists only its own pixels, so they never show up here.
-- Pixel stats live under `GET /api/websites/<pixelId>/stats` (the pixel id is a website
-  id for the stats API; `/api/pixels/:id/stats` does not exist).
-- **Limitation (measured on Umami 3.5.0):** Umami drops pixel hits whose user agent it
-  classifies as a bot. That includes Gmail's image proxy (`GoogleImageProxy`) and plain
-  `curl`. Opens fetched through Gmail's proxy are therefore not counted: the pixel figure
-  is a lower bound, mostly of non-Gmail clients. Do not work around it. Clicks (UTMs on
-  links) are the reliable signal.
+Opens come from Brevo's `opened` webhook instead (`apps/api/src/routes/webhooks/brevo.ts`):
+
+- The Brevo transport tags every transactional send with `template:<email catalog key>`.
+  Brevo echoes the `tags` array of the send in every transactional webhook event.
+- On `opened`, the api sends a server-side `email-open` event to Umami with `kind`
+  (`transactional` or `newsletter`) and `template_key` (transactional) or `campaign` (the
+  campaign slug, newsletter). See `docs/analytics/event-catalog.md`.
+- An open with no `template:` tag, or naming a key that is not in the email catalog, is
+  logged and not reported; it never fails the webhook batch.
+- The Brevo webhook must have the **opened** event enabled in the Brevo dashboard.
+- `pnpm umami:setup` creates no pixels. The pixels HOS-2359 created (`email-*`,
+  `newsletter-*`) stay in Umami until someone deletes them there by hand.
 
 ## Re-running the script
 
@@ -186,7 +182,7 @@ template whose pixel does not exist yet records nothing until the script runs.
 ## Creating and updating them
 
 ```bash
-pnpm umami:setup            # create or update funnels, goals, boards, segments, cohorts, the recorder config and email pixels
+pnpm umami:setup            # create or update funnels, goals, boards, segments, cohorts, the recorder config
 pnpm umami:setup --dry-run  # print what would change, write nothing
 ```
 
@@ -197,7 +193,6 @@ Behavior:
 - Run it against staging first, then production, with the Umami credentials of that environment (login token or an `umami_...` API key, sent as a bearer credential).
 - Segments and cohorts run after boards (boards do not reference them). They are matched by `websiteId` + `type` + `name`.
 - The recorder config runs after segments. It reads the WEB website and posts only on a difference.
-- Email pixels run last (see "Email open pixels"). They do not depend on the website id.
 - Renaming a board, report, segment or cohort creates a new one; the old one has to be deleted by hand (see "Re-running the script").
 
 ## PostHog → Umami gap list

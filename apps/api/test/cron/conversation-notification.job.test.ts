@@ -610,8 +610,7 @@ describe('Conversation Notification Cron Job', () => {
                 // HOS-2359: a registered recipient gets the `new-message` key
                 attribution: {
                     medium: 'transactional',
-                    templateKey: 'conversation.new-message',
-                    includePixel: true
+                    templateKey: 'conversation.new-message'
                 }
             });
             expect(result.processed).toBe(1);

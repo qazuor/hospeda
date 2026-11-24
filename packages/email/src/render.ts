@@ -44,10 +44,8 @@ export interface RenderedEmailBodies {
  * `sendEmail`, the notifications transport and the admin email preview all
  * call it, so a preview shows the bytes an inbox receives (HOS-2519 D4).
  *
- * Attribution (UTMs on links to our web domain, and the open pixel) is applied
- * here through {@link applyEmailAttribution} (HOS-2359). The admin preview passes
- * `includePixel: false`, so opening a preview never counts as an open; that is the
- * one difference between a preview and what an inbox receives.
+ * Attribution (UTMs on links to our web domain) is applied here through
+ * {@link applyEmailAttribution} (HOS-2359). There is no open pixel (HOS-2583).
  *
  * @param input - The element to render.
  * @returns The HTML and plain-text bodies.
@@ -56,7 +54,7 @@ export interface RenderedEmailBodies {
  * ```ts
  * const { html, text } = await renderEmailBodies({
  *     react: VerifyEmailTemplate({ name, verificationUrl }),
- *     attribution: { medium: 'transactional', templateKey: 'auth.verify-email', includePixel: true }
+ *     attribution: { medium: 'transactional', templateKey: 'auth.verify-email' }
  * });
  * ```
  */

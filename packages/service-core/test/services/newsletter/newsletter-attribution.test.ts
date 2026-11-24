@@ -3,10 +3,10 @@
  *
  * Unit tests for the newsletter campaign attribution helpers (HOS-2359 §6.B.3).
  */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
     buildCampaignTestSendAttribution,
-    provisionCampaignAttribution,
+    computeCampaignAttributionSlug,
     resolveCampaignEmailAttribution
 } from '../../../src/services/newsletter/newsletter-attribution.js';
 
@@ -16,100 +16,35 @@ const CAMPAIGN = {
 } as const;
 const SLUG = 'novedades-de-otono-aaaaaaaa';
 
-function makeLogger() {
-    return { warn: vi.fn() };
-}
-
-describe('provisionCampaignAttribution', () => {
-    it('asks the provisioner for newsletter-<slug> and stores both slugs (AC-10)', async () => {
-        // Arrange
-        const provisioner = vi.fn(async ({ slug }: { slug: string }) => ({ slug }));
-        const logger = makeLogger();
-
-        // Act
-        const result = await provisionCampaignAttribution({
-            campaign: CAMPAIGN,
-            provisioner,
-            logger
-        });
-
-        // Assert
-        expect(provisioner).toHaveBeenCalledWith({
-            slug: `newsletter-${SLUG}`,
-            name: 'Newsletter · Novedades de Otoño'
-        });
-        expect(result).toEqual({ attributionSlug: SLUG, umamiPixelSlug: `newsletter-${SLUG}` });
-        expect(logger.warn).not.toHaveBeenCalled();
-    });
-
-    it('stores a NULL pixel when the provisioner answers null (AC-11)', async () => {
-        const result = await provisionCampaignAttribution({
-            campaign: CAMPAIGN,
-            provisioner: vi.fn(async () => null),
-            logger: makeLogger()
-        });
-
-        expect(result).toEqual({ attributionSlug: SLUG, umamiPixelSlug: null });
-    });
-
-    it('treats a rejection as null and logs one warn (AC-11)', async () => {
-        const logger = makeLogger();
-
-        const result = await provisionCampaignAttribution({
-            campaign: CAMPAIGN,
-            provisioner: vi.fn(async () => {
-                throw new Error('boom');
-            }),
-            logger
-        });
-
-        expect(result.umamiPixelSlug).toBeNull();
-        expect(logger.warn).toHaveBeenCalledTimes(1);
-    });
-
-    it('stores a NULL pixel without a provisioner', async () => {
-        const result = await provisionCampaignAttribution({
-            campaign: CAMPAIGN,
-            provisioner: undefined,
-            logger: makeLogger()
-        });
-
-        expect(result).toEqual({ attributionSlug: SLUG, umamiPixelSlug: null });
+describe('computeCampaignAttributionSlug', () => {
+    it('derives the utm_campaign slug from the title and id', () => {
+        expect(computeCampaignAttributionSlug({ campaign: CAMPAIGN })).toBe(SLUG);
     });
 });
 
 describe('resolveCampaignEmailAttribution', () => {
-    it('uses the stored slugs', () => {
+    it('uses the stored slug', () => {
         expect(
             resolveCampaignEmailAttribution({
-                campaign: {
-                    ...CAMPAIGN,
-                    attributionSlug: 'stored-1',
-                    umamiPixelSlug: 'newsletter-stored-1'
-                }
+                campaign: { ...CAMPAIGN, attributionSlug: 'stored-1' }
             })
-        ).toEqual({
-            medium: 'campaign',
-            campaignSlug: 'stored-1',
-            pixelSlug: 'newsletter-stored-1'
-        });
+        ).toEqual({ medium: 'campaign', campaignSlug: 'stored-1' });
     });
 
-    it('recomputes the slug and renders no pixel for a campaign without them', () => {
+    it('recomputes the slug for a campaign without one', () => {
         expect(
             resolveCampaignEmailAttribution({
-                campaign: { ...CAMPAIGN, attributionSlug: null, umamiPixelSlug: null }
+                campaign: { ...CAMPAIGN, attributionSlug: null }
             })
-        ).toEqual({ medium: 'campaign', campaignSlug: SLUG, pixelSlug: null });
+        ).toEqual({ medium: 'campaign', campaignSlug: SLUG });
     });
 });
 
 describe('buildCampaignTestSendAttribution', () => {
-    it('never carries a pixel (AC-13)', () => {
+    it('carries the campaign slug and nothing else (no pixel, HOS-2583)', () => {
         expect(buildCampaignTestSendAttribution({ campaign: CAMPAIGN })).toEqual({
             medium: 'campaign',
-            campaignSlug: SLUG,
-            pixelSlug: null
+            campaignSlug: SLUG
         });
     });
 });

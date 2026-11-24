@@ -2,19 +2,13 @@
  * @file email-catalog-attribution.guard.test.ts
  * @description HOS-2359 AC-1, AC-2: EVERY email catalog entry (all send paths, outbox
  * included) rendered through the production preview dependencies and attributed as a
- * real send (`includePixel: true`): own-origin links carry the UTMs, every other link
- * is byte-identical to the unattributed render, the HTML holds exactly one pixel
- * before `</body>` and the text none. `packages/notifications` guards the manifest
- * and the non-outbox renders; the outbox renderer registry is composed here, so this
- * is the only place the whole catalog renders.
+ * real send: own-origin links carry the UTMs, every other link is byte-identical to
+ * the unattributed render and neither the HTML nor the text holds a pixel (HOS-2583).
+ * `packages/notifications` guards the non-outbox renders; the outbox renderer registry
+ * is composed here, so this is the only place the whole catalog renders.
  */
 import { render } from '@react-email/render';
-import {
-    buildEmailTemplateCampaign,
-    buildEmailTemplatePixelSlug,
-    buildOwnWebOrigins,
-    isOwnWebUrl
-} from '@repo/analytics';
+import { buildEmailTemplateCampaign, buildOwnWebOrigins, isOwnWebUrl } from '@repo/analytics';
 import { configureEmailAssets, renderEmailBodies, resetEmailAssets } from '@repo/email';
 import { EMAIL_CATALOG, type EmailCatalogRenderDeps } from '@repo/notifications';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -50,7 +44,6 @@ vi.mock(
 );
 
 const SITE_URL = 'https://hospeda.com.ar';
-const PIXEL_BASE_URL = 'https://pulso.hospeda.com.ar';
 const OWN_ORIGINS = buildOwnWebOrigins({ siteUrl: SITE_URL });
 
 const deps: EmailCatalogRenderDeps = buildEmailPreviewDeps({
@@ -66,7 +59,7 @@ function hrefsOf(html: string): readonly string[] {
     );
 }
 
-/** `src` of every Umami pixel in an HTML document. */
+/** `src` of every image that points at a pixel path (`/p/<slug>`). */
 function pixelsOf(html: string): readonly string[] {
     return [...html.matchAll(/<img src="([^"]*\/p\/[^"]*)"/g)].map((m) => m[1] ?? '');
 }
@@ -76,7 +69,7 @@ const ownLinksBySendPath = new Map<string, number>();
 
 describe('email catalog attribution: every entry, every send path (HOS-2359)', () => {
     beforeAll(() => {
-        configureEmailAssets({ siteUrl: SITE_URL, pixelBaseUrl: PIXEL_BASE_URL });
+        configureEmailAssets({ siteUrl: SITE_URL });
     });
 
     afterAll(() => {
@@ -97,7 +90,7 @@ describe('email catalog attribution: every entry, every send path (HOS-2359)', (
         // Act
         const { html, text } = await renderEmailBodies({
             react: rendered.react,
-            attribution: { medium: 'transactional', templateKey: key, includePixel: true }
+            attribution: { medium: 'transactional', templateKey: key }
         });
 
         // Assert: own links carry the UTMs, foreign links are untouched
@@ -121,10 +114,8 @@ describe('email catalog attribution: every entry, every send path (HOS-2359)', (
             (ownLinksBySendPath.get(entry.sendPath) ?? 0) + own.length
         );
 
-        // Assert: exactly one pixel, before </body>; none in the text part
-        const pixelSlug = buildEmailTemplatePixelSlug({ key });
-        expect(pixelsOf(html)).toEqual([`${PIXEL_BASE_URL}/p/${pixelSlug}`]);
-        expect(html.indexOf(`/p/${pixelSlug}`)).toBeLessThan(html.lastIndexOf('</body>'));
+        // Assert: no open pixel in the HTML nor the text part (HOS-2583)
+        expect(pixelsOf(html)).toEqual([]);
         expect(text).not.toContain('/p/email-');
         expect(calledIoSpies(), 'the render performed I/O').toEqual([]);
     });

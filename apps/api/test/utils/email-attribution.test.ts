@@ -1,8 +1,7 @@
 /**
  * @file email-attribution.test.ts
  * @description Pins every email catalog key `apps/api` sends with to a real
- * `EMAIL_CATALOG` entry (HOS-2359 AC-7): an unknown key renders a pixel that no
- * `umami:setup` run creates.
+ * `EMAIL_CATALOG` entry (HOS-2359 AC-7): an unknown key tags a template nothing else knows.
  */
 import { EMAIL_CATALOG, findEmailCatalogEntry } from '@repo/notifications';
 import { describe, expect, it } from 'vitest';
@@ -30,9 +29,9 @@ describe('apps/api email attribution keys', () => {
         expect(findEmailCatalogEntry({ key })).toBeDefined();
     });
 
-    it('builds a transactional attribution with the pixel', () => {
+    it('builds a transactional attribution', () => {
         expect(buildTransactionalAttribution({ templateKey: AUTH_EMAIL_KEYS.verifyEmail })).toEqual(
-            { medium: 'transactional', templateKey: 'auth.verify-email', includePixel: true }
+            { medium: 'transactional', templateKey: 'auth.verify-email' }
         );
     });
 

@@ -35,8 +35,7 @@ import {
 
 const ATTRIBUTION = {
     medium: 'transactional',
-    templateKey: 'test.layout',
-    includePixel: false
+    templateKey: 'test.layout'
 } as const;
 
 /** Renders the user layout around a fixed body. */

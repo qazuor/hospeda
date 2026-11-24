@@ -45,8 +45,7 @@ type CampaignRenderInput = Parameters<RenderCampaignEmailFn>[0];
 
 /**
  * Renders the newsletter campaign template and applies the campaign attribution
- * (HOS-2359): campaign UTMs on own-origin links and, when `attribution.pixelSlug`
- * is set, the campaign's Umami pixel. A test send arrives with `pixelSlug: null`.
+ * (HOS-2359): campaign UTMs on own-origin links. There is no open pixel (HOS-2583).
  *
  * @param input - Subject, TipTap body HTML, unsubscribe URL, test flag and attribution
  * @returns The attributed HTML
@@ -171,7 +170,7 @@ export function getNewsletterDeliveryService(): NewsletterDeliveryService | null
         {
             queue,
             // HOS-2359: the test-send transport forwards the campaign attribution
-            // (always `pixelSlug: null`) to `renderEmailBodies`.
+            // to `renderEmailBodies`.
             emailTransport: {
                 send: (input) =>
                     emailTransport.send({
