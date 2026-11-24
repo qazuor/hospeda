@@ -95,7 +95,13 @@ export function buildTouristAttractionJsonLd(
 
     const hasPrice = !isPriceOnRequest && isFiniteNumber(priceFrom) && priceFrom > 0;
     const hasGeo = isFiniteNumber(latitude) && isFiniteNumber(longitude);
-    const hasRating = isFiniteNumber(reviewCount) && reviewCount > 0 && isFiniteNumber(ratingValue);
+    // Both fields are checked: a stale denormalized count can pair reviewCount > 0
+    // with ratingValue 0, which is outside schema.org's default 1..5 range.
+    const hasRating =
+        isFiniteNumber(reviewCount) &&
+        reviewCount > 0 &&
+        isFiniteNumber(ratingValue) &&
+        ratingValue > 0;
     const city = destinationName?.trim();
 
     const data: Record<string, unknown> = {

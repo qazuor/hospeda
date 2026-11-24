@@ -78,6 +78,14 @@ describe('buildTouristAttractionJsonLd (HOS-2579 AC-23)', () => {
         expect(data).not.toHaveProperty('aggregateRating');
     });
 
+    it('emits no aggregateRating when the count is stale and the rating is 0', () => {
+        // Act
+        const { data } = buildTouristAttractionJsonLd({ ...AC23, ratingValue: 0, reviewCount: 3 });
+
+        // Assert
+        expect(data).not.toHaveProperty('aggregateRating');
+    });
+
     it('emits no geo when the meeting point is not pinned', () => {
         // Act
         const { data } = buildTouristAttractionJsonLd({ ...AC23, latitude: null, longitude: -58 });
