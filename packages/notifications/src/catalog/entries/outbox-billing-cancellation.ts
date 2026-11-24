@@ -3,7 +3,8 @@
  * (`createBillingSignupRenderers`, cancellation family).
  *
  * Most renderers only require `subscriptionId`; the scheduled cancellation
- * additionally reads an optional `serviceEndsAt` instant.
+ * additionally reads optional `serviceEndsAt`, `planName` and `vertical`, and the
+ * access-ending reminder (HOS-2580) requires all three plus `daysRemaining`.
  *
  * @module catalog/entries/outbox-billing-cancellation
  */
@@ -95,18 +96,66 @@ export const OUTBOX_BILLING_CANCELLATION_ENTRIES: readonly EmailCatalogEntry[] =
         scenarios: [
             {
                 id: 'with-end-date',
-                label: 'Con fecha de fin del servicio',
+                label: 'Con fecha de fin del servicio y plan (alojamiento)',
                 input: {
                     payload: {
                         subscriptionId: SUBSCRIPTION_ID,
-                        serviceEndsAt: '2026-12-15T15:00:00.000Z'
+                        serviceEndsAt: '2026-12-15T15:00:00.000Z',
+                        planName: 'Plan Profesional',
+                        vertical: 'accommodation'
+                    }
+                }
+            },
+            {
+                id: 'tourist',
+                label: 'Vertical sin avisos (turista)',
+                input: {
+                    payload: {
+                        subscriptionId: SUBSCRIPTION_ID,
+                        serviceEndsAt: '2026-12-15T15:00:00.000Z',
+                        planName: 'Turista VIP',
+                        vertical: 'tourist'
                     }
                 }
             },
             {
                 id: 'without-end-date',
-                label: 'Sin fecha de fin del servicio',
+                label: 'Fila previa a HOS-2580, sin fecha ni plan',
                 input: { payload: { subscriptionId: SUBSCRIPTION_ID } }
+            }
+        ]
+    }),
+    defineOutboxEntry({
+        template: 'billing.access-ending',
+        name: 'Aviso de fin de acceso por baja programada',
+        domain: 'billing',
+        audience: 'user',
+        scenarios: [
+            {
+                id: 'five-days',
+                label: 'Faltan 5 días (alojamiento)',
+                input: {
+                    payload: {
+                        subscriptionId: SUBSCRIPTION_ID,
+                        vertical: 'accommodation',
+                        planName: 'Plan Profesional',
+                        serviceEndsAt: '2026-12-15T15:00:00.000Z',
+                        daysRemaining: 5
+                    }
+                }
+            },
+            {
+                id: 'one-day',
+                label: 'Falta 1 día (turista)',
+                input: {
+                    payload: {
+                        subscriptionId: SUBSCRIPTION_ID,
+                        vertical: 'tourist',
+                        planName: 'Turista VIP',
+                        serviceEndsAt: '2026-12-15T15:00:00.000Z',
+                        daysRemaining: 1
+                    }
+                }
             }
         ]
     })

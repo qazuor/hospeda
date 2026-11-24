@@ -49,6 +49,11 @@ describe('TEST:1617:6 scheduled cancellation carries its committed service end',
             subscriptionId: seeded.subscriptionId,
             serviceEndsAt: serviceEndsAt.toISOString()
         });
+        // HOS-2580: the notice names the plan and its vertical.
+        const scheduledPayload = scheduled?.payload as Record<string, unknown> | undefined;
+        expect(typeof scheduledPayload?.planName).toBe('string');
+        expect(String(scheduledPayload?.planName).trim()).not.toBe('');
+        expect(typeof scheduledPayload?.vertical).toBe('string');
 
         await beforeCancelNotice.beforeCancel({
             subscriptionId: seeded.subscriptionId,

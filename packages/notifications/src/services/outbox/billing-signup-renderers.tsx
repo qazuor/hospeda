@@ -28,8 +28,6 @@ import {
     PermanentGrantCancel,
     REVOCATION_CANCEL_SUBJECT,
     RevocationCancel,
-    SCHEDULED_CANCELLATION_SUBJECT,
-    ScheduledCancellation,
     SIGNUP_DECLINED_SUBJECT,
     SignupBeforeCancel,
     SignupConfirmed,
@@ -45,6 +43,7 @@ import {
 import { formatCurrency, formatDate } from '../../templates/utils/index.js';
 import { SUBSCRIPTION_PATH } from './account-listing-paths.js';
 import { createBillingAddonRenderers } from './billing-addon-renderers.js';
+import { createBillingCancellationNoticeRenderers } from './billing-cancellation-notice-renderers.js';
 import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 import { parseGraceScheduledChange } from './grace-scheduled-change.js';
@@ -217,32 +216,6 @@ function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
     return {
         subject: CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
         react: <ClosedSubscriptionAuthorizationCancel />
-    };
-}
-
-function scheduledCancellation(row: EmailOutboxRow) {
-    const data = objectPayload(row);
-    if (typeof data.subscriptionId !== 'string')
-        throw new TypeError(
-            'Faltan datos requeridos del aviso de cancelación del cobro automático'
-        );
-    const serviceEndsAt = data.serviceEndsAt;
-    let serviceEndDate: string | null = null;
-    if (serviceEndsAt !== undefined && serviceEndsAt !== null) {
-        if (typeof serviceEndsAt !== 'string' || !ISO_INSTANT.test(serviceEndsAt))
-            throw new TypeError(
-                'La fecha de fin del servicio del aviso de cancelación no es válida'
-            );
-        const instant = new Date(serviceEndsAt);
-        if (Number.isNaN(instant.getTime()))
-            throw new TypeError(
-                'La fecha de fin del servicio del aviso de cancelación no es válida'
-            );
-        serviceEndDate = formatDate({ dateString: getLocalDateString({ instant }) });
-    }
-    return {
-        subject: SCHEDULED_CANCELLATION_SUBJECT,
-        react: <ScheduledCancellation serviceEndDate={serviceEndDate} />
     };
 }
 
@@ -470,6 +443,7 @@ export function createBillingSignupRenderers(input: {
     return {
         ...createBillingAddonRenderers(),
         ...createBillingChargebackRenderers({ subscriptionUrl }),
+        ...createBillingCancellationNoticeRenderers({ subscriptionUrl }),
         'billing.signup-declined': ({ row }) => signupDeclined(row, subscriptionUrl),
         'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
         'billing.paid-after-cancellation': ({ row }) => paidAfterCancellation(row, subscriptionUrl),
@@ -489,7 +463,6 @@ export function createBillingSignupRenderers(input: {
         'billing.permanent-grant-addon-cancel': ({ row }) => permanentGrantAddonCancel(row),
         'billing.closed-subscription-authorization-cancel': ({ row }) =>
             closedSubscriptionAuthorizationCancel(row),
-        'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row),
         'billing.direct-cancellation': ({ row }) => directCancellation(row),
         'billing.succession-predecessor-cancel': ({ row }) => successionPredecessorCancel(row),
         'billing.successor-cut-cancel': ({ row }) => successorCutCancel(row)

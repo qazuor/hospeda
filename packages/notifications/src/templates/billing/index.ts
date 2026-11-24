@@ -2,6 +2,7 @@
  * Billing email templates
  */
 
+export * from './access-ending.js';
 export * from './addon-authorization-expired.js';
 export * from './addon-cancelled.js';
 export * from './addon-listing-purged.js';

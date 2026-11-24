@@ -150,6 +150,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/subscription/renewal-notice.ts': [
         'billing.renewal-upcoming'
     ],
+    'packages/service-core/src/services/billing/subscription/access-ending-notice.ts': [
+        'billing.access-ending'
+    ],
     'packages/service-core/src/services/billing/subscription/grace-reminder-notice.ts': [
         'billing.grace-reminder'
     ],
