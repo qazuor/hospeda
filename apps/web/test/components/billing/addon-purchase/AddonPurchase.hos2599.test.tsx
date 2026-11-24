@@ -217,7 +217,7 @@ describe('HOS-2599 finding 7: destination and confirmation use the kit', () => {
         expect(card).toHaveTextContent('Cada mes');
         const email = within(summary).getByLabelText(/Correo del pagador/);
         expect(email).toHaveValue('owner@example.test');
-        expect(email).toHaveAccessibleDescription(/cuenta de Mercado Pago/);
-        expect(summary.textContent).not.toContain('el proveedor no lo confirma');
+        // The hint copy itself is owner-fixed by HOS-2308 (payer-email-hint-i18n.test.ts).
+        expect(email).toHaveAccessibleDescription(/correo con el que vas a pagar en Mercado Pago/);
     });
 });

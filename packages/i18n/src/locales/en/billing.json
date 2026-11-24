@@ -898,7 +898,7 @@
         "chooseFree": "Choose for free",
         "payerEmailLabel": "Payer email",
         "payerEmailInvalid": "Enter a valid payer email.",
-        "payerEmailHint": "The email of the Mercado Pago account you will pay with. If it is a different one, change it here.",
+        "payerEmailHint": "It is the email you will pay with on Mercado Pago. You declare it; the provider does not confirm it.",
         "confirmPurchase": "Confirm purchase",
         "oneTimeSummary": "One-time payment: charged once and never renewed.",
         "instantMethodsOnly": "You pay on Mercado Pago with a credit or debit card or your account balance. Cash payments are not accepted.",

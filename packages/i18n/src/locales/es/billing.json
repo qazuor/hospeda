@@ -898,7 +898,7 @@
         "chooseFree": "Elegir gratis",
         "payerEmailLabel": "Correo del pagador",
         "payerEmailInvalid": "Ingresá un correo válido del pagador.",
-        "payerEmailHint": "Es el correo de la cuenta de Mercado Pago con la que vas a pagar. Si es otro, cambialo acá.",
+        "payerEmailHint": "Es el correo con el que vas a pagar en Mercado Pago. Lo declarás vos; el proveedor no lo confirma.",
         "confirmPurchase": "Confirmar compra",
         "oneTimeSummary": "Pago único: se cobra una sola vez y no se renueva.",
         "instantMethodsOnly": "Pagás en Mercado Pago con tarjeta de crédito, débito o dinero en cuenta. No se aceptan pagos en efectivo.",
