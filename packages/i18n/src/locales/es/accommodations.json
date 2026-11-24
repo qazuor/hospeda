@@ -882,7 +882,7 @@
             "nights_other": "{{count}} noches"
         },
         "gallery": {
-            "viewAll": "Ver todas las fotos",
+            "viewAll": "Ver las fotos en una página",
             "moreOverlay": "+{{count}} más",
             "viewAllCount_one": "Ver la foto",
             "viewAllCount_other": "Ver las {{count}} fotos",

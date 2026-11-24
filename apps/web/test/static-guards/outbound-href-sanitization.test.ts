@@ -82,6 +82,8 @@ const SRC_ROOT = join(__dirname, '../../src');
  * instead.
  */
 const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
+    'components/listing/contact/ListingContactChannels.astro#{href}':
+        'presentation-only: the accommodation, venue and experience contact wrappers pass every website and social URL through `resolveSafeExternalUrl` before building the props (pinned by the migrated entries in outbound-href-migration.test.ts) and compose tel:/mailto: themselves',
     'components/listing/contact/ListingChannelsPanel.client.tsx#{channel.href}':
         'built only by `buildExperienceChannels`/`buildVenueChannels` (`lib/listing-contact/listing-channels.ts`), which pass every website and social URL through `resolveSafeExternalUrl` and compose tel:/mailto: themselves',
     'components/listing/contact/ListingContactActions.tsx#{primaryLink.href}':
@@ -127,7 +129,7 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
     'components/newsletter/WhatsAppCTA.astro#{channelUrl}':
         'PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL — our own channel, set by us in the deployment env',
     'components/shared/SocialLinks.astro#profile.url':
-        "SOCIAL_PROFILES in `lib/constants` — Hospeda's own accounts, hardcoded",
+        "SOCIAL_PROFILES in `lib/constants` — Hospeda's own accounts, from BRAND_SOCIAL_PROFILES in @repo/config (HOS-2565) plus the brand WhatsApp link",
     'components/shared/SocialLinks.astro#{href}':
         'the same SOCIAL_PROFILES list, destructured one line later',
     'pages/[lang]/autores/[slug]/index.astro#{url}':

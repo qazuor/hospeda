@@ -13,6 +13,7 @@
             "**",
             "!**/node_modules",
             "!**/.turbo",
+            "!**/__fixtures__/**/*.html",
             "!**/dist",
             "!**/build",
             "!**/coverage",

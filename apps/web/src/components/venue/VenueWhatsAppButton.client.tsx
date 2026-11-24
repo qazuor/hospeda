@@ -23,6 +23,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { protectedVenuesApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -47,6 +48,9 @@ function WhatsAppGlyph({ size }: { readonly size: number }) {
         </svg>
     );
 }
+
+/** GradientButton geometry with the WhatsApp brand colours from the module. */
+const WHATSAPP_CLASS = `btn-gradient btn-gradient--md ${styles.whatsapp}`;
 
 /** What the page payload says about the button. Mirrors `VenueWhatsappState`. */
 export type VenueWhatsAppButtonMode =
@@ -124,13 +128,18 @@ export function VenueWhatsAppButton({
         return (
             <a
                 href={url}
-                className={styles.button}
+                className={WHATSAPP_CLASS}
                 target="_blank"
                 rel="noopener noreferrer"
                 data-interaction-kind="WHATSAPP_CLICK"
             >
-                <WhatsAppGlyph size={20} />
-                <span>{cta}</span>
+                <span
+                    className="gradient-btn__icon gradient-btn__icon--leading"
+                    aria-hidden="true"
+                >
+                    <WhatsAppGlyph size={20} />
+                </span>
+                <span className="gradient-btn__label">{cta}</span>
             </a>
         );
     };
@@ -138,30 +147,37 @@ export function VenueWhatsAppButton({
     if (whatsapp.mode === 'PUBLIC') return renderLink(whatsapp.number);
 
     if (!user) {
+        // Not a contact attempt: no `data-interaction-kind`, so it is not counted.
         return (
-            <a
+            <GradientButton
+                as="a"
                 href={signInHref}
-                className={styles.button}
-            >
-                <WhatsAppGlyph size={20} />
-                <span>
-                    {t(
-                        'venue.detail.whatsapp.signInCta',
-                        'Iniciá sesión para escribir por WhatsApp'
-                    )}
-                </span>
-            </a>
+                variant="outline-primary"
+                size="md"
+                leadingIcon={<WhatsAppGlyph size={20} />}
+                label={t(
+                    'venue.detail.whatsapp.signInCta',
+                    'Iniciá sesión para escribir por WhatsApp'
+                )}
+            />
         );
     }
     if (lookup.status === 'loading') {
         return (
             <span
-                className={styles.button}
+                className={WHATSAPP_CLASS}
                 aria-disabled="true"
                 role="status"
             >
-                <WhatsAppGlyph size={20} />
-                <span>{t('venue.detail.whatsapp.loading', 'Cargando WhatsApp')}</span>
+                <span
+                    className="gradient-btn__icon gradient-btn__icon--leading"
+                    aria-hidden="true"
+                >
+                    <WhatsAppGlyph size={20} />
+                </span>
+                <span className="gradient-btn__label">
+                    {t('venue.detail.whatsapp.loading', 'Cargando WhatsApp')}
+                </span>
             </span>
         );
     }

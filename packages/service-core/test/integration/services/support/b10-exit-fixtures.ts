@@ -18,6 +18,7 @@ import { payingPrincipal } from './addon-a2-fixtures';
 import { createA6Fixture, retireA6Fixtures } from './addon-a6-fixtures';
 import { purchaseFixture, retirePurchaseFixtures } from './addon-purchase-fixtures';
 import { addonPolicyFromTx } from './coverage-fixtures';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 import { noTouristVip } from './tourist-vip';
 
 /** Creates a recurring LISTING instance through A1 and, when requested, A2. */
@@ -184,7 +185,7 @@ export async function authorizedUnpaidExitPrincipal({
             .values({
                 planId: plan.id,
                 vertical: 'venue',
-                rank: Math.floor(Math.random() * 1_000_000_000),
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,

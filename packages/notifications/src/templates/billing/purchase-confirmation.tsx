@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { Button, EmailLayout, emailPalette } from '@repo/email';
+import { Button, EMAIL_TINTED_BOX_CLASS, EmailLayout, emailPalette } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { formatBillingCycleLabel, formatCurrency, formatDate } from '../utils/index.js';
@@ -49,7 +49,10 @@ export function PurchaseConfirmation({
                 de tu adquisición:
             </Text>
 
-            <Section style={styles.receiptBox}>
+            <Section
+                className={EMAIL_TINTED_BOX_CLASS}
+                style={styles.receiptBox}
+            >
                 <InfoRow
                     label="Plan/Complemento"
                     value={planName}

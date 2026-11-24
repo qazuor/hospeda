@@ -133,7 +133,8 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             const html = renderToStaticMarkup(SubscriptionCancelConfirmed(validProps));
 
             // Assert
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
     });

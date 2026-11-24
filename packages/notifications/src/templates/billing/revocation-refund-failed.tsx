@@ -50,7 +50,10 @@ export function RevocationRefundFailed(props: RevocationRefundFailedProps) {
         : `${formatCurrency({ amount: props.amountMinor, currency: '' })} (moneda no registrada)`;
 
     return (
-        <EmailLayout previewText={REVOCATION_REFUND_FAILED_SUBJECT}>
+        <EmailLayout
+            variant="staff"
+            previewText={REVOCATION_REFUND_FAILED_SUBJECT}
+        >
             <Heading>{REVOCATION_REFUND_FAILED_SUBJECT}</Heading>
             <Text>
                 Un reembolso pedido por una revocación quedó fallido y la plata no volvió a la

@@ -59,6 +59,11 @@ export interface EmailScenario<TInput> {
      * carries a `locale` must declare the same one: the Spanish-only test relies on it.
      */
     readonly locale?: EmailScenarioLocale;
+    /**
+     * The recipient's verticals (`VerticalEnum` values) this sample stands for. Drives
+     * only the user footer account link (HOS-2565 D16). Absent: no vertical known.
+     */
+    readonly recipientVerticals?: readonly string[];
 }
 
 /** Runtime collaborators injected by the host app. */
@@ -87,6 +92,8 @@ export interface EmailCatalogScenarioSummary {
     readonly label: string;
     /** Locale of the rendered copy, resolved: never undefined. */
     readonly locale: EmailScenarioLocale;
+    /** The recipient's verticals the sample stands for (HOS-2565 D16), if declared. */
+    readonly recipientVerticals?: readonly string[];
 }
 
 /** Input of {@link EmailCatalogEntry.renderScenario}. */

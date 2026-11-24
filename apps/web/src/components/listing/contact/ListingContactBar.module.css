@@ -17,16 +17,40 @@
 }
 
 .price {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 0 1 auto;
     min-inline-size: 0;
     margin: 0;
-    font-size: var(--text-sm);
-    line-height: 1.15;
-    overflow-wrap: anywhere;
+    line-height: 1.1;
     color: var(--core-foreground);
 }
 
-.price span {
-    display: inline-block;
+/* Small muted label above the amount ("Desde"). */
+.prefix {
+    font-size: var(--text-caption);
+    line-height: 1.1;
+    color: var(--core-muted-foreground);
+}
+
+/* Amount and unit share one baseline and never wrap. */
+.line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    white-space: nowrap;
+}
+
+.amount {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.unit {
+    font-size: var(--text-caption);
     color: var(--core-muted-foreground);
 }
 

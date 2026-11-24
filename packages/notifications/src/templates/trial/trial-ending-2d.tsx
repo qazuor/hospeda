@@ -22,10 +22,7 @@ export function TrialEnding2Days({
     const planFragment = plan ? ` del plan ${plan}` : '';
     const endDate = formatDate({ dateString: trialEndDate });
     return (
-        <EmailLayout
-            previewText="Quedan 2 días de tu prueba gratis"
-            footerLink="none"
-        >
+        <EmailLayout previewText="Quedan 2 días de tu prueba gratis">
             <Heading>Te quedan 2 días de prueba</Heading>
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (

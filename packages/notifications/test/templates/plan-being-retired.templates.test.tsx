@@ -145,7 +145,8 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
     });

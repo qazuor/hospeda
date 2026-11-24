@@ -16,7 +16,7 @@ vi.mock('../../src/lib/i18n', () => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
             if (params && fallback) {
                 return Object.entries(params).reduce(
-                    (acc, [k, v]) => acc.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v)),
+                    (acc, [k, v]) => acc.replace(new RegExp(`\\{\\{?${k}\\}\\}?`, 'g'), String(v)),
                     fallback
                 );
             }
@@ -177,7 +177,7 @@ describe('ImageGallery', () => {
             expect(screen.getByRole('dialog')).toBeInTheDocument();
         });
 
-        it('shows "1 / 4" counter in lightbox after opening first image', () => {
+        it('shows "1/4" counter in lightbox after opening first image', () => {
             render(
                 <ImageGallery
                     images={IMAGES}
@@ -190,7 +190,7 @@ describe('ImageGallery', () => {
             });
             fireEvent.click(featuredBtn as HTMLElement);
 
-            expect(screen.getByText('1 / 4')).toBeInTheDocument();
+            expect(screen.getByText('1/4')).toBeInTheDocument();
         });
 
         it('does not render prev/next buttons for a single image', () => {
@@ -292,12 +292,12 @@ describe('ImageGallery', () => {
 
         it('navigates to the next image when the right arrow button is clicked', () => {
             openLightbox();
-            expect(screen.getByText('1 / 4')).toBeInTheDocument();
+            expect(screen.getByText('1/4')).toBeInTheDocument();
 
             const nextBtn = screen.getByRole('button', { name: /imagen siguiente/i });
             fireEvent.click(nextBtn);
 
-            expect(screen.getByText('2 / 4')).toBeInTheDocument();
+            expect(screen.getByText('2/4')).toBeInTheDocument();
         });
 
         it('navigates to the previous image when the left arrow button is clicked', () => {
@@ -305,29 +305,29 @@ describe('ImageGallery', () => {
             // Go to image 2 first
             const nextBtn = screen.getByRole('button', { name: /imagen siguiente/i });
             fireEvent.click(nextBtn);
-            expect(screen.getByText('2 / 4')).toBeInTheDocument();
+            expect(screen.getByText('2/4')).toBeInTheDocument();
 
             // Go back to image 1
             const prevBtn = screen.getByRole('button', { name: /imagen anterior/i });
             fireEvent.click(prevBtn);
-            expect(screen.getByText('1 / 4')).toBeInTheDocument();
+            expect(screen.getByText('1/4')).toBeInTheDocument();
         });
 
         it('navigates using ArrowRight keyboard event', () => {
             openLightbox();
-            expect(screen.getByText('1 / 4')).toBeInTheDocument();
+            expect(screen.getByText('1/4')).toBeInTheDocument();
 
             fireEvent.keyDown(document, { key: 'ArrowRight' });
-            expect(screen.getByText('2 / 4')).toBeInTheDocument();
+            expect(screen.getByText('2/4')).toBeInTheDocument();
         });
 
         it('navigates using ArrowLeft keyboard event', () => {
             openLightbox();
             fireEvent.keyDown(document, { key: 'ArrowRight' });
-            expect(screen.getByText('2 / 4')).toBeInTheDocument();
+            expect(screen.getByText('2/4')).toBeInTheDocument();
 
             fireEvent.keyDown(document, { key: 'ArrowLeft' });
-            expect(screen.getByText('1 / 4')).toBeInTheDocument();
+            expect(screen.getByText('1/4')).toBeInTheDocument();
         });
 
         it('wraps from last image to first on ArrowRight', () => {
@@ -336,11 +336,11 @@ describe('ImageGallery', () => {
             fireEvent.keyDown(document, { key: 'ArrowRight' });
             fireEvent.keyDown(document, { key: 'ArrowRight' });
             fireEvent.keyDown(document, { key: 'ArrowRight' });
-            expect(screen.getByText('4 / 4')).toBeInTheDocument();
+            expect(screen.getByText('4/4')).toBeInTheDocument();
 
             // One more → wraps to first
             fireEvent.keyDown(document, { key: 'ArrowRight' });
-            expect(screen.getByText('1 / 4')).toBeInTheDocument();
+            expect(screen.getByText('1/4')).toBeInTheDocument();
         });
 
         it('renders a thumbnail strip in the lightbox', () => {
@@ -353,7 +353,7 @@ describe('ImageGallery', () => {
 
         it('navigates to a specific image via thumbnail click', () => {
             openLightbox();
-            expect(screen.getByText('1 / 4')).toBeInTheDocument();
+            expect(screen.getByText('1/4')).toBeInTheDocument();
 
             const dialog = screen.getByRole('dialog');
             const thumbItems = within(dialog).getAllByRole('listitem');
@@ -361,7 +361,7 @@ describe('ImageGallery', () => {
             const thirdThumbBtn = thumbItems[2]?.querySelector('button');
             expect(thirdThumbBtn).toBeDefined();
             fireEvent.click(thirdThumbBtn as HTMLElement);
-            expect(screen.getByText('3 / 4')).toBeInTheDocument();
+            expect(screen.getByText('3/4')).toBeInTheDocument();
         });
 
         it('renders the caption in the lightbox', () => {

@@ -8,6 +8,7 @@
     "openAddressInGoogleMaps": "Ver {{address}} en Google Maps",
     "ariaLabelAccommodation": "Mapa con ubicación aproximada del alojamiento",
     "ariaLabelDestination": "Mapa con ubicación del destino",
+    "ariaLabelVenue": "Mapa con la ubicación del local",
     "ariaLabelPointsOfInterest": "Mapa de puntos de interés",
     "loadingMap": "Cargando mapa…",
     "markerLabel": "Ubicación",

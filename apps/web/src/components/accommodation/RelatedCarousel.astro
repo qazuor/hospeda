@@ -178,6 +178,9 @@ const nextLabel = t('accommodations.detail.related.nextSlide');
   }
   /* .related-carousel__arrow aesthetics handled by .btn-icon--outline from components.css */
   .related-carousel__track {
+    /* HOS-2533 (owner smoke, HOS-2520): related cards take the page's card
+       corner; AccommodationCard reads it, the other cards already use it. */
+    --acc-card-radius: var(--radius-card);
     display: flex;
     gap: var(--space-card-gap, 30px);
     overflow-x: auto;

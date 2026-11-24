@@ -140,6 +140,7 @@ export function ReconciliationSummary(props: ReconciliationSummaryProps) {
 
     return (
         <EmailLayout
+            variant="staff"
             previewText={`${environmentLabel ? `[${environmentLabel}] ` : ''}${totals.events} novedades de conciliación en los últimos ${windowMinutes} minutos`}
         >
             <Heading>{title}</Heading>

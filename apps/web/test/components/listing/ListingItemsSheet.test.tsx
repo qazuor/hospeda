@@ -53,4 +53,21 @@ describe('ListingItemsSheet', () => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         expect(trigger).toHaveFocus();
     });
+
+    it('renders the trigger as the shared outline GradientButton (HOS-2533)', () => {
+        renderSheet();
+        const trigger = screen.getByRole('button', { name: 'Ver las 12 comodidades' });
+
+        expect(trigger).toHaveClass(
+            'btn-gradient',
+            'btn-gradient--outline-primary',
+            'btn-gradient--sm'
+        );
+        expect(trigger).toHaveAttribute('type', 'button');
+        expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+        fireEvent.click(trigger);
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    });
 });

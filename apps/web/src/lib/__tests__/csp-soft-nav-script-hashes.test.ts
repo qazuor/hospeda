@@ -62,7 +62,6 @@ describe('buildCspHeader soft-nav union (HOS-807)', () => {
         // Act
         const csp = buildCspHeader({
             scriptHashes: [],
-            styleHashes: [],
             softNavScriptHashes: [otherPageScript]
         });
 
@@ -77,7 +76,6 @@ describe('buildCspHeader soft-nav union (HOS-807)', () => {
         // Act
         const csp = buildCspHeader({
             scriptHashes: [own],
-            styleHashes: [],
             softNavScriptHashes: [own]
         });
 
@@ -87,7 +85,7 @@ describe('buildCspHeader soft-nav union (HOS-807)', () => {
 
     it('defaults to the module union', () => {
         // Act
-        const csp = buildCspHeader({ scriptHashes: [], styleHashes: [] });
+        const csp = buildCspHeader({ scriptHashes: [] });
 
         // Assert
         for (const hash of SOFT_NAV_SCRIPT_HASHES) {

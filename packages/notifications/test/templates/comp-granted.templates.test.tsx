@@ -21,6 +21,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { CompGranted, type CompGrantedProps } from '../../src/templates/subscription/comp-granted';
+import { mailBodyOf } from './helpers/mail-body.js';
 
 const BASE_PROPS: CompGrantedProps = {
     recipientName: 'Laura Fernández',
@@ -46,7 +47,10 @@ describe('CompGranted', () => {
     });
 
     it('says nothing about a card to someone who never gave us one', () => {
-        const html = renderToStaticMarkup(CompGranted({ ...BASE_PROPS, hadActiveBilling: false }));
+        // The user layout footer's security card mentions "tarjeta"; the body must not.
+        const html = mailBodyOf({
+            html: renderToStaticMarkup(CompGranted({ ...BASE_PROPS, hadActiveBilling: false }))
+        });
 
         expect(html).not.toContain('tarjeta');
         expect(html).not.toContain('débito automático');

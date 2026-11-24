@@ -18,6 +18,7 @@ import { createPlanCatalogInverse } from '@repo/verticals';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { seedScheduledChange } from './support/scheduled-change-fixtures';
 
 const DAY_MS = 86_400_000;
@@ -66,7 +67,7 @@ async function seed(
         .values({
             planId: plan.id,
             vertical: 'partner',
-            rank: Math.floor(Math.random() * 100000000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

@@ -29,10 +29,7 @@ export function TrialWinBack60Days({
     verticals
 }: TrialSeriesEmailProps) {
     return (
-        <EmailLayout
-            previewText="Último mail por tu prueba: tu ficha queda guardada igual"
-            footerLink="none"
-        >
+        <EmailLayout previewText="Último mail por tu prueba: tu ficha queda guardada igual">
             <Heading>Tu ficha sigue disponible cuando quieras</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

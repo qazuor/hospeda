@@ -22,6 +22,7 @@ import { enqueueManualInstallmentOpenedNotice } from '../../../src/services/bill
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { startManualSubscription } from '../../../src/services/billing/subscription/start-manual-subscription.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { seedScheduledChange } from './support/scheduled-change-fixtures';
 import { noTouristVip } from './support/tourist-vip';
 
@@ -56,7 +57,7 @@ async function seed(vertical: 'partner' | 'accommodation' = 'partner') {
         .values({
             planId: plan.id,
             vertical,
-            rank: Math.floor(Math.random() * 100000000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,
@@ -286,7 +287,7 @@ describe('HOS-2130 manual installment opened integration', () => {
             .values({
                 planId: destinationPlan.id,
                 vertical: 'partner',
-                rank: Math.floor(Math.random() * 100000000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,

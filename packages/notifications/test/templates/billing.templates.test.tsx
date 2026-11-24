@@ -291,7 +291,8 @@ describe('Billing Email Templates', () => {
             // REMINDER category, but the web preferences page does not drive
             // REMINDER opt-outs today, so the footer carries no preferences link
             // and never the old unresolved {{unsubscribe_url}} placeholder.
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
 

@@ -92,8 +92,10 @@ describe('VerifyEmailTemplate', () => {
         expect(html.match(/<html[^>]*lang="es"/g)).toHaveLength(1);
         expect(html).toContain('aria-label="Hospeda"');
         expect(html).toContain('>hospeda</span>');
-        expect(html).toContain('Hospeda - Turismo en el Litoral');
-        expect(html).not.toContain('Administrar preferencias de notificaciones');
+        expect(html).toContain('data-layout-variant="user"');
+        // HOS-2565 §8.3: the reader has no account yet, so no preferences or account link.
+        expect(html).not.toContain('data-layout-link="preferences"');
+        expect(html).not.toContain('data-layout-link="account"');
     });
 
     it('should not crash when name is empty string', async () => {
@@ -158,14 +160,12 @@ describe('VerifyEmailTemplate', () => {
             );
 
             // Assert
-            // The layout footer adds its own site-home link (HOS-2519), marked
-            // data-layout-link="home"; it is the only anchor excluded.
+            // The user layout footer adds its own links (HOS-2565 PR-4), each marked
+            // data-layout-link; those are the only anchors excluded.
             const anchors = html.match(/<a\b[^>]*>[\s\S]*?<\/a>/g) ?? [];
-            const layoutAnchors = anchors.filter((anchor) =>
-                anchor.includes('data-layout-link="home"')
-            );
+            const layoutAnchors = anchors.filter((anchor) => anchor.includes('data-layout-link='));
             const bodyAnchors = anchors.filter((anchor) => !layoutAnchors.includes(anchor));
-            expect(layoutAnchors).toHaveLength(1);
+            expect(layoutAnchors.length).toBeGreaterThan(0);
             expect(bodyAnchors).toHaveLength(1);
             expect(bodyAnchors[0]).toContain(`href="${url}"`);
             expect(bodyAnchors[0]).not.toContain(`>${url}`);

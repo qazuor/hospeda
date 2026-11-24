@@ -27,6 +27,7 @@ import { suspendForArrears } from '../../../src/services/billing/subscription/su
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { graceWithFailedCycle } from './support/grace-fixtures.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { touristVipInheritanceFromDb } from './support/tourist-vip.js';
 
 afterAll(closeServiceTestPool);
@@ -111,7 +112,7 @@ async function seedPaidVip(fixture: Fixture) {
         .values({
             planId: plan.id,
             vertical: 'tourist',
-            rank: Math.floor(Math.random() * 100_000_000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

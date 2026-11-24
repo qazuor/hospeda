@@ -11,6 +11,7 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import type { MirrorDelegates } from '../../../../src/services/billing/notice/provider-notice-ports';
 import { getServiceTestDb, getServiceTestPool } from '../helpers';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 import { noTouristVip } from './tourist-vip';
 
 export const successionClock = { now: () => new Date('2026-10-11T13:00:00.000Z') };
@@ -65,19 +66,14 @@ export async function seedSuccessionChoice(options: { readonly targetSellable?: 
     const planVersionId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, true, true, 0, false) RETURNING id',
-            [predecessorPlanId, 'accommodation', Math.floor(Math.random() * 100000000) + 1]
+            [predecessorPlanId, 'accommodation', nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('Could not seed succession plan version');
     const targetPlanVersionId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, $4, true, 0, false) RETURNING id',
-            [
-                targetPlanId,
-                'accommodation',
-                Math.floor(Math.random() * 100000000) + 1,
-                options.targetSellable ?? true
-            ]
+            [targetPlanId, 'accommodation', nextPlanVersionRank(), options.targetSellable ?? true]
         )
     ).rows[0]?.id;
     if (!targetPlanVersionId) throw new Error('Could not seed succession target plan version');

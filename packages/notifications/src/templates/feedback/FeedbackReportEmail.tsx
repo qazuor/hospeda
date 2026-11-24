@@ -149,7 +149,10 @@ export function FeedbackReportEmail({
     const hasErrorInfo = Boolean(environment.errorInfo);
 
     return (
-        <EmailLayout previewText={`[${reportType}] ${title}`}>
+        <EmailLayout
+            variant="staff"
+            previewText={`[${reportType}] ${title}`}
+        >
             {/* Report type badge */}
             <Section style={styles.badgeRow}>
                 <Text style={styles.typeBadge}>{reportType}</Text>

@@ -23,6 +23,7 @@ import { type BillingCycle, PublicationStatusEnum, VerticalEnum } from '@repo/sc
 import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { getServiceTestDb, getServiceTestPool, seedAccommodation } from '../helpers.js';
 import { seedCoveragePlanVersion } from './coverage-fixtures.js';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 import {
     seedPredecessor,
     seedSuccessionChoice,
@@ -57,7 +58,7 @@ export async function seedPlanChangeTargetWithLimit(input: {
             .values({
                 planId: sourceRow.plan_id,
                 vertical: sourceRow.vertical,
-                rank: 1_500_000_000 + Math.floor(Math.random() * 100_000_000),
+                rank: nextPlanVersionRank(),
                 sellable: false,
                 current: false,
                 trialDays: 0,

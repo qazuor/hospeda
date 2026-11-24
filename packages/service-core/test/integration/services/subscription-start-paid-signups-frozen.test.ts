@@ -14,6 +14,7 @@ import type { StartSubscriptionPorts } from '../../../src/services/billing/subsc
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { namespaceFake } from './support/payment-provider';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
@@ -60,7 +61,7 @@ async function seedChoice(sellable = true) {
     const planVersionId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, $4, true, 0, false) RETURNING id',
-            [planId, 'accommodation', Math.floor(Math.random() * 100000000) + 1000, sellable]
+            [planId, 'accommodation', nextPlanVersionRank(), sellable]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('No version');

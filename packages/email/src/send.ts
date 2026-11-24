@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import type { EmailAttribution } from './attribution.js';
 import type { EmailClient } from './client.js';
 import { renderEmailBodies } from './render.js';
+import type { EmailLayoutContextValue } from './templates/email-layout-context.js';
 
 const logger = createLogger('email');
 
@@ -60,6 +61,12 @@ export interface SendEmailInput {
      * (`auth.reset-password`, `conversation.<id>`, ...).
      */
     readonly attribution: EmailAttribution;
+
+    /**
+     * Per-send data for the user layout (HOS-2565 PR-4): illustration, related help
+     * articles and the recipient's verticals. Omitted: an empty context.
+     */
+    readonly layout?: EmailLayoutContextValue;
 
     /**
      * Sender email address. Must be on a domain authenticated in the email
@@ -139,6 +146,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         subject,
         react,
         attribution,
+        layout,
         fromEmail = DEFAULT_FROM_EMAIL,
         fromName = DEFAULT_FROM_NAME,
         replyTo
@@ -150,7 +158,8 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         // unreadable in text clients; Brevo takes the plain part as `textContent`.
         const { html: htmlContent, text: textContent } = await renderEmailBodies({
             react,
-            attribution
+            attribution,
+            ...(layout ? { layout } : {})
         });
 
         const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));

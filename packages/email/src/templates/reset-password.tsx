@@ -1,6 +1,7 @@
-import { Heading, Text } from '@react-email/components';
+import { Text } from '@react-email/components';
 import { Button } from '../components/button.js';
 import { Callout } from '../components/callout.js';
+import { EmailTitle } from '../components/email-title.js';
 import { EmailLayout } from './email-layout.js';
 import { resolveGreeting } from './greeting.js';
 
@@ -46,8 +47,8 @@ export interface ResetPasswordTemplateProps {
  */
 export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateProps) {
     return (
-        <EmailLayout>
-            <Heading style={h1}>Restablece tu contraseña</Heading>
+        <EmailLayout footerLink="none">
+            <EmailTitle style={h1}>Restablece tu contraseña</EmailTitle>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>
 

@@ -2,7 +2,8 @@
  * Environment-aware origin for the email assets that must exist on the
  * deployment sending the email (HOS-2540).
  *
- * Only the isotipo follows it. `EMAIL_PUBLIC_SITE_URL`, the footer link and
+ * The isotipo and the user-layout images (HOS-2565 PR-4, {@link resolveEmailAssetUrl})
+ * follow it. `EMAIL_PUBLIC_SITE_URL`, the footer links and
  * `EMAIL_PREFERENCES_URL` keep pointing at production by design (HOS-2519 §5.1).
  *
  * The state is module-level and set once by the host app at startup, so the
@@ -13,6 +14,15 @@
 
 /** Production origin: the default asset origin and the footer/preferences origin. */
 export const EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar';
+
+/**
+ * Absolute URL of the logged-in notification preferences page. The one constant
+ * both layout variants link to (HOS-2519 OQ-2, HOS-2565 §8.3).
+ */
+export const EMAIL_PREFERENCES_URL = `${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/preferencias/`;
+
+/** Public FAQ page, readable without an account (the help center needs a login). */
+export const EMAIL_PUBLIC_FAQ_URL = `${EMAIL_PUBLIC_SITE_URL}/es/preguntas-frecuentes/`;
 
 /**
  * Path of the hosted isotipo PNG (transparent background, 89x96), relative to the
@@ -131,7 +141,28 @@ export function resolveEmailPixelBaseUrl(): string | null {
  * @returns The isotipo URL, e.g. `https://hospeda.com.ar/email/hospeda-isotipo@2x.png`.
  */
 export function resolveEmailIsotipoUrl(): string {
-    return `${assetOrigin}${EMAIL_ISOTIPO_PATH}`;
+    return resolveEmailAssetUrl({ path: EMAIL_ISOTIPO_PATH });
+}
+
+/** A path under the site's `/email/` folder (`apps/web/public/email/`). */
+export type EmailAssetPath = `/email/${string}`;
+
+/**
+ * Absolute URL of any hosted email asset for the configured origin (HOS-2565 §9.3).
+ * Defaults to production until {@link configureEmailAssets} is called, so staging
+ * emails load their images from staging.
+ *
+ * @param input - The asset path, always under `/email/`.
+ * @returns The absolute asset URL.
+ *
+ * @example
+ * ```ts
+ * resolveEmailAssetUrl({ path: '/email/user/header-wave@2x.png' });
+ * // 'https://hospeda.com.ar/email/user/header-wave@2x.png'
+ * ```
+ */
+export function resolveEmailAssetUrl(input: { readonly path: EmailAssetPath }): string {
+    return `${assetOrigin}${input.path}`;
 }
 
 /**

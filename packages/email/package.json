@@ -29,8 +29,11 @@
         "@react-email/components": "^1.0.12",
         "@react-email/render": "^2.1.0",
         "@repo/analytics": "workspace:*",
+        "@repo/config": "workspace:*",
         "@repo/design-tokens": "workspace:*",
+        "@repo/help": "workspace:*",
         "@repo/logger": "workspace:*",
+        "@repo/schemas": "workspace:*",
         "zod": "^4.0.8"
     },
     "peerDependencies": {

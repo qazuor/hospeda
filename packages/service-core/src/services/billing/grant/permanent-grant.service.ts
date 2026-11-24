@@ -25,6 +25,7 @@ import {
 import type { PermanentGrantPorts } from './permanent-grant-ports.js';
 import {
     cancelS13AtProvider,
+    emitS13CancelledFacts,
     emitS13CoverageNotices,
     runS13InTransaction,
     type S13CancelCall
@@ -176,6 +177,11 @@ export async function grantPermanentGrant(
             beforeFacts: providerHalves
         });
     else await providerHalves();
+    emitS13CancelledFacts({
+        rows: committed.result.cancelled,
+        now,
+        billingFacts: ports.billingFacts
+    });
     await emitS20GrantedFreeFacts({
         rows: committed.s20.rows,
         now,
@@ -366,6 +372,11 @@ export async function anchorPermanentGrantVertical(
             beforeFacts: providerHalves
         });
     else await providerHalves();
+    emitS13CancelledFacts({
+        rows: committed.result.cancelled,
+        now,
+        billingFacts: ports.billingFacts
+    });
     await emitS20GrantedFreeFacts({
         rows: committed.s20.rows,
         now,

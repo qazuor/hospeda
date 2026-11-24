@@ -27,6 +27,7 @@ import {
     withSeededPendingCreations
 } from './reconciliation-sweep-fixtures.js';
 import { namespaceFake } from './support/payment-provider';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 const clock = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
@@ -71,7 +72,7 @@ async function seedChoice() {
         .values({
             planId: plan!.id,
             vertical: 'accommodation',
-            rank: Math.floor(Math.random() * 100000000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

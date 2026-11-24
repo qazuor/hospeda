@@ -34,6 +34,7 @@ import {
 } from '@repo/icons';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { BRAND_SOCIAL_PROFILES, type BrandSocialPlatform } from '@repo/config';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -132,11 +133,16 @@ const hours = [
 	}
 ];
 
+/** URL of one brand profile, from {@link BRAND_SOCIAL_PROFILES}. */
+const brandProfileUrl = (platform: BrandSocialPlatform): string =>
+	BRAND_SOCIAL_PROFILES.find((profile) => profile.platform === platform)?.url ?? '';
+
 // The WhatsApp icon is dropped entirely when there is no link to give it: an
 // icon-only social entry has no text to degrade to.
 const socialLinks = [
-	{ key: 'instagram', label: 'Instagram', href: 'https://instagram.com/hospeda.com.ar', Icon: InstagramIcon },
-	{ key: 'facebook', label: 'Facebook', href: 'https://facebook.com/hospeda', Icon: FacebookIcon },
+	// HOS-2565 PR-4: profile URLs come from the one brand source in @repo/config.
+	{ key: 'instagram', label: 'Instagram', href: brandProfileUrl('instagram'), Icon: InstagramIcon },
+	{ key: 'facebook', label: 'Facebook', href: brandProfileUrl('facebook'), Icon: FacebookIcon },
 	...(whatsappHref
 		? [{ key: 'whatsapp', label: 'WhatsApp', href: whatsappHref, Icon: WhatsappIcon }]
 		: [])

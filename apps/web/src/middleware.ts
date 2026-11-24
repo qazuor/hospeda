@@ -140,6 +140,9 @@ const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
  */
 const CSP_HEADER_NAME = 'Content-Security-Policy';
 
+/** `Cache-Control` for every 404 this app emits (HOS-2578). */
+const NO_STORE_CONTROL = 'no-store';
+
 /**
  * Startup self-check for the SSR internal-request rate-limit bypass
  * (HOS-155, incident follow-up to HOS-103).
@@ -248,6 +251,11 @@ async function runMiddlewarePipeline(
         // (HOS-160 lever C). All other static routes pass through untouched.
         if (isImageEndpointRoute({ path })) {
             const response = await next();
+            if (response.status === 404) {
+                // HOS-2578: a bad `href` may be a file generated later.
+                response.headers.set('Cache-Control', NO_STORE_CONTROL);
+                return response;
+            }
             // Only cache SUCCESSFUL transforms as immutable. A transient Sharp
             // failure (500) or a bad `href` (404) must NOT be pinned for a year
             // by the browser/CDN, which would keep serving a broken hero long
@@ -257,7 +265,21 @@ async function runMiddlewarePipeline(
             }
             return response;
         }
-        return next();
+        // HOS-2578: a 404 on this branch is never cacheable. It covers the
+        // content-addressed assets (`/_astro/<hash>.*`, `/icons/<hash>.svg`,
+        // `/i18n/<hash>.js`) and the `/_image` endpoint. During a rollout the OLD
+        // container answers the NEW hash with a 404 carrying no Cache-Control;
+        // Cloudflare stores it and hands the browser its zone default
+        // (`max-age=14400`), so a shared chunk (`react.<hash>.js`) leaves every
+        // island un-hydrated for 4h. A 404 is a statement about "right now": an
+        // asset generated after the rollout must not stay missing in a cache.
+        // Same mechanism as HOS-2080. Only the 404 is touched; a 200 keeps the
+        // adapter's own header.
+        const response = await next();
+        if (response.status === 404) {
+            response.headers.set('Cache-Control', NO_STORE_CONTROL);
+        }
+        return response;
     }
 
     // Step 2: Server Island requests skip locale validation (Astro routes them
@@ -625,7 +647,6 @@ async function runMiddlewarePipeline(
         // body there would consume the static file's stream, and a build-time
         // hash could not describe a body served straight off disk anyway.
         let scriptHashes: readonly string[] = [];
-        let styleHashes: readonly string[] = [];
 
         if (!context.isPrerendered) {
             // SSR pages: read the rendered body, hash its inline blocks, and
@@ -636,7 +657,6 @@ async function runMiddlewarePipeline(
             const originalBody = await response.text();
             const collected = await collectCspHashes({ html: originalBody });
             scriptHashes = collected.scriptHashes;
-            styleHashes = collected.styleHashes;
 
             const newHeaders = new Headers(response.headers);
             newHeaders.delete('content-length');
@@ -648,7 +668,6 @@ async function runMiddlewarePipeline(
 
         const directives = buildCspHeader({
             scriptHashes,
-            styleHashes,
             apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
             sentryReportUri,
             // Drop the external *.sentry.io connect-src when the first-party
@@ -657,10 +676,11 @@ async function runMiddlewarePipeline(
             // HOS-2119: Umami lives on its own subdomain; allow its origin.
             umamiScriptUrl:
                 (import.meta.env.PUBLIC_UMAMI_SCRIPT_URL as string | undefined) ?? undefined,
-            // Dev-only CSP relaxations, both caused by Astro's ClientRouter
-            // behaving differently under `astro dev` (see buildCspHeader JSDoc):
-            // HOS-91's style-src, plus frame-src 'self' for the hidden
-            // same-origin iframe it uses to prepare `client:only` islands.
+            // Dev-only CSP relaxations caused by Astro's ClientRouter behaving
+            // differently under `astro dev` (see buildCspHeader JSDoc):
+            // frame-src 'self' for the hidden same-origin iframe it uses to
+            // prepare `client:only` islands. (style-src is shared with prod
+            // since HOS-2576.)
             isDev: isDevelopment()
         });
 
@@ -725,6 +745,16 @@ async function runMiddlewarePipeline(
     // branch for the same reason Step 11 is — that branch REPLACES `response`.
     if (isResponseDegraded({ locals: context.locals })) {
         response.headers.set('Cache-Control', LISTING_PRIVATE_CONTROL);
+    }
+
+    // Step 11b: A page 404 is never cacheable (HOS-2578). It is a statement
+    // about "right now": a listing published a minute later must not stay a
+    // cached 404 in the browser for the zone's 4h Browser Cache TTL. The error
+    // page carries no Cache-Control of its own, so Cloudflare would otherwise
+    // apply its default. Runs before the tag emission so a 404 is never tagged
+    // (`no-store` is not edge-cacheable). 410 keeps its own semantics (HOS-562).
+    if (response.status === 404) {
+        response.headers.set('Cache-Control', NO_STORE_CONTROL);
     }
 
     if (context.locals.cacheTags.size > 0) {

@@ -19,11 +19,17 @@ verificación, reset de password o previews de correo.
 
 - Toda plantilla va dentro de `EmailLayout` de `@repo/email` (el único layout;
   `BaseLayout` y el layout de `@repo/notifications` ya no existen). Props:
-  `previewText?`, `children`, `footerLink?: 'preferences' | 'none'` (default
-  `'none'`).
-- `footerLink="preferences"` sólo si el destinatario tiene cuenta Y la página
-  de preferencias web controla ese correo de verdad (hoy ninguno: HOS-2519
-  OQ-2). Nunca un href `{{placeholder}}`: nadie lo sustituye.
+  `previewText?`, `children`, `variant?: 'user' | 'staff'` (default `'user'`,
+  HOS-2565) y `footerLink?: 'preferences' | 'none'` (default `'preferences'` en
+  user, `'none'` en staff).
+- Los correos internos pasan `variant="staff"`. Los lectores que pueden no tener
+  cuenta (auth, conversación anónima, newsletter, alianza/aliado sin cuenta)
+  pasan `footerLink="none"`; el set está congelado en
+  `email-catalog-layout.test.ts`. Nunca un href `{{placeholder}}`.
+- La ilustración y los artículos de ayuda del pie se declaran en
+  `packages/notifications/src/catalog/layout-declarations.ts`, nunca en la
+  plantilla. El link de cuenta (D16) sale de `VERTICAL_OWNS_PUBLICATIONS`: nunca
+  compares un `VerticalEnum` en el layout.
 - Estilos inline y colores de `emailPalette` (`@repo/design-tokens`); nada de
   flexbox, grid, variables CSS, `oklch()`, fuentes web ni SVG.
 - Renderizá con `renderEmailBodies` (HTML + texto); el envío es Brevo.

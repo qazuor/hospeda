@@ -25,6 +25,7 @@ import {
     withSeededPendingCreations
 } from './reconciliation-sweep-fixtures.js';
 import { namespaceFake } from './support/payment-provider';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
@@ -65,7 +66,7 @@ async function seed() {
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
             "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 100000000) + 1000]
+            [planId, nextPlanVersionRank()]
         )
     ).rows[0]!.id;
     const optionIds = await Promise.all(

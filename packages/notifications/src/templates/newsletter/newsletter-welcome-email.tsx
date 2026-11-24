@@ -35,7 +35,10 @@ export function NewsletterWelcomeEmail({
     const greetingName = firstName?.trim() ? firstName.trim() : null;
 
     return (
-        <EmailLayout previewText={previewText}>
+        <EmailLayout
+            footerLink="none"
+            previewText={previewText}
+        >
             {isTest && (
                 <Callout tone="warning">
                     <Text style={styles.testBannerText}>

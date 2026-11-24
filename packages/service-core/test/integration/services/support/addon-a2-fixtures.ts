@@ -5,6 +5,7 @@ import { creditPayment } from '../../../../src/services/billing/payment/credit-p
 import { startSubscription } from '../../../../src/services/billing/subscription/start-subscription.service';
 import { getServiceTestDb } from '../helpers';
 import type { purchaseFixture } from './addon-purchase-fixtures';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 import { noTouristVip } from './tourist-vip';
 
 type AwaitedPurchaseFixture = Awaited<ReturnType<typeof purchaseFixture>>;
@@ -32,7 +33,7 @@ export async function payingPrincipal(f: AwaitedPurchaseFixture): Promise<{
             .values({
                 planId: catalog.id,
                 vertical: 'accommodation',
-                rank: Math.floor(Math.random() * 1_000_000_000),
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,

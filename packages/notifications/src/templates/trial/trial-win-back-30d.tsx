@@ -35,10 +35,7 @@ export function TrialWinBack30Days({
     verticals
 }: TrialSeriesEmailProps) {
     return (
-        <EmailLayout
-            previewText="Pasó un mes: ¿es buen momento para volver a publicar?"
-            footerLink="none"
-        >
+        <EmailLayout previewText="Pasó un mes: ¿es buen momento para volver a publicar?">
             <Heading>¿Retomamos tu publicación?</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

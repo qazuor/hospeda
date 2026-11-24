@@ -1,7 +1,11 @@
 import { render } from '@react-email/render';
 import { emailPalette } from '@repo/design-tokens';
 import { describe, expect, it } from 'vitest';
-import { Button, EMAIL_BUTTON_CLASS } from '../../src/components/button.js';
+import {
+    Button,
+    EMAIL_BUTTON_CLASS,
+    EMAIL_BUTTON_SECONDARY_CLASS
+} from '../../src/components/button.js';
 
 /** Returns the opening tag of the first `<a>` of a rendered fragment. */
 function anchorOf(html: string): string {
@@ -53,10 +57,14 @@ describe('Button (HOS-2565 US-2)', () => {
             );
 
             // Assert
+            // HOS-2565 PR-4: light blue fill, cyan border, dark cyan text.
             expect(anchor).toContain(`border:2px solid ${emailPalette.buttonSecondaryBorder}`);
-            expect(anchor).toContain(`color:${emailPalette.buttonSecondaryBorder}`);
+            expect(anchor).toContain(`background-color:${emailPalette.buttonSecondaryBackground}`);
+            expect(anchor).toContain(`color:${emailPalette.buttonSecondaryText}`);
             expect(anchor).not.toContain(`background-color:${emailPalette.buttonPrimary}`);
-            expect(anchor).toContain(`class="${EMAIL_BUTTON_CLASS}"`);
+            expect(anchor).toContain(
+                `class="${EMAIL_BUTTON_CLASS} ${EMAIL_BUTTON_SECONDARY_CLASS}"`
+            );
             expect(anchor).toContain('display:inline-block');
         });
     });

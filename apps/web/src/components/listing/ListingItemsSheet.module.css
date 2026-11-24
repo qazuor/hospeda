@@ -1,22 +1,5 @@
+/* The look comes from the shared `.btn-gradient` classes (GradientButton); this only
+   keeps the trigger at its content width inside the section's flex column. */
 .trigger {
     align-self: flex-start;
-    min-block-size: 44px;
-    padding: 0 var(--space-5, 20px);
-    border: 1px solid var(--brand-primary);
-    border-radius: var(--radius-pill);
-    background: transparent;
-    color: var(--brand-primary);
-    font-family: var(--font-sans);
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.trigger:hover {
-    background: var(--brand-primary-a25, transparent);
-}
-
-.trigger:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
 }

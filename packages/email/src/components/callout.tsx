@@ -1,6 +1,9 @@
 import { Text } from '@react-email/components';
 import { emailPalette } from '@repo/design-tokens';
 import type { ReactElement, ReactNode } from 'react';
+import { resolveEmailAssetUrl } from '../email-assets.js';
+import { EMAIL_USER_ASSET_PATHS } from '../templates/user-layout/user-assets.js';
+import { EMAIL_USER_CLASSES } from '../templates/user-layout/user-styles.js';
 
 /** Visual tone of a {@link Callout}. */
 export type CalloutTone = 'info' | 'success' | 'warning' | 'danger';
@@ -29,6 +32,28 @@ interface ToneColors {
     readonly text: string;
 }
 
+/** Line icon of each tone (ⓘ ✓ ⚠ ✕), drawn in the tone's border color, and its dark-mode class. */
+const TONE_DECOR: Readonly<
+    Record<CalloutTone, { readonly icon: `/email/${string}`; readonly className: string }>
+> = {
+    info: { icon: EMAIL_USER_ASSET_PATHS.calloutInfo, className: EMAIL_USER_CLASSES.calloutInfo },
+    success: {
+        icon: EMAIL_USER_ASSET_PATHS.calloutSuccess,
+        className: EMAIL_USER_CLASSES.calloutSuccess
+    },
+    warning: {
+        icon: EMAIL_USER_ASSET_PATHS.calloutWarning,
+        className: EMAIL_USER_CLASSES.calloutWarning
+    },
+    danger: {
+        icon: EMAIL_USER_ASSET_PATHS.calloutDanger,
+        className: EMAIL_USER_CLASSES.calloutDanger
+    }
+};
+
+/** Rendered icon size in CSS pixels (the PNG is 2x). */
+const ICON_SIZE = 20;
+
 const TONE_COLORS: Readonly<Record<CalloutTone, ToneColors>> = {
     info: {
         background: emailPalette.calloutInfoBackground,
@@ -55,8 +80,9 @@ const TONE_COLORS: Readonly<Record<CalloutTone, ToneColors>> = {
 /**
  * Shared callout box for every Hospeda email (HOS-2565 D3).
  *
- * Always a visible tinted background plus a 4px left border, from the
- * `emailPalette` callout roles. Every visual style sits on the single `<td>` (Outlook
+ * Always a visible tinted background plus a 6px left border, from the
+ * `emailPalette` callout roles, and a small line icon in the tone's border color
+ * (HOS-2565 PR-4; the icon cell is skipped in the text part). Every visual style sits on the single `<td>` (Outlook
  * desktop ignores most table-level styling and `border-radius`, which then
  * degrades to square corners); the vertical spacing sits in a wrapper cell's padding
  * because Outlook ignores table margins. The `<td>` carries `data-callout-tone` so tests
@@ -74,14 +100,15 @@ const TONE_COLORS: Readonly<Record<CalloutTone, ToneColors>> = {
  */
 export function Callout({ tone, title, children }: CalloutProps): ReactElement {
     const colors = TONE_COLORS[tone];
+    const decor = TONE_DECOR[tone];
     const cellStyle = {
         backgroundColor: colors.background,
-        borderLeft: `4px solid ${colors.border}`,
+        borderLeft: `6px solid ${colors.border}`,
         borderRadius: '8px',
         color: colors.text,
         fontSize: '14px',
         lineHeight: '22px',
-        padding: '16px 20px'
+        padding: '16px 20px 16px 16px'
     };
 
     return (
@@ -107,14 +134,53 @@ export function Callout({ tone, title, children }: CalloutProps): ReactElement {
                                 <tr>
                                     <td
                                         data-callout-tone={tone}
+                                        className={decor.className}
                                         style={cellStyle}
                                     >
-                                        {title ? <Text style={titleStyle}>{title}</Text> : null}
-                                        {typeof children === 'string' ? (
-                                            <Text style={textStyle}>{children}</Text>
-                                        ) : (
-                                            children
-                                        )}
+                                        <table
+                                            role="presentation"
+                                            width="100%"
+                                            cellPadding={0}
+                                            cellSpacing={0}
+                                            border={0}
+                                        >
+                                            <tbody>
+                                                <tr>
+                                                    <td
+                                                        width={ICON_SIZE}
+                                                        data-skip-in-text="true"
+                                                        style={iconCellStyle}
+                                                    >
+                                                        <img
+                                                            src={resolveEmailAssetUrl({
+                                                                path: decor.icon
+                                                            })}
+                                                            width={ICON_SIZE}
+                                                            height={ICON_SIZE}
+                                                            alt=""
+                                                            style={iconStyle}
+                                                        />
+                                                    </td>
+                                                    <td
+                                                        style={{
+                                                            ...contentCellStyle,
+                                                            color: colors.text
+                                                        }}
+                                                    >
+                                                        {title ? (
+                                                            <Text style={titleStyle}>{title}</Text>
+                                                        ) : null}
+                                                        {typeof children === 'string' ? (
+                                                            <Text style={textStyle}>
+                                                                {children}
+                                                            </Text>
+                                                        ) : (
+                                                            children
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </td>
                                 </tr>
                             </tbody>
@@ -137,6 +203,21 @@ const spacerCellStyle = {
 
 const tableStyle = {
     borderCollapse: 'separate' as const
+};
+
+const iconCellStyle = {
+    padding: '1px 12px 0 0',
+    verticalAlign: 'top' as const,
+    width: `${ICON_SIZE}px`
+};
+
+const iconStyle = {
+    border: '0',
+    display: 'block'
+};
+
+const contentCellStyle = {
+    verticalAlign: 'top' as const
 };
 
 const titleStyle = {

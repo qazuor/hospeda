@@ -73,4 +73,10 @@ describe('QuickFacts mobile summary', () => {
 
         expect(t('accommodations.detail.quickFacts.scrollLabel')).toBe(expected);
     });
+
+    it('no longer shows the stay length: it lives only next to the price (owner smoke, HOS-2520)', () => {
+        const code = source.replace(/\/\*[\s\S]*?\*\//g, '');
+        expect(code).not.toMatch(/minNights|maxNights|stayMin|stayMax|MoonIcon/);
+        expect(code).not.toContain('policies');
+    });
 });

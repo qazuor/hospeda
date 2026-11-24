@@ -66,7 +66,10 @@ export function ConversationNewMessageAnon({
     }));
 
     return (
-        <EmailLayout previewText={`Nueva respuesta sobre ${accommodationName} — Hospeda`}>
+        <EmailLayout
+            footerLink="none"
+            previewText={`Nueva respuesta sobre ${accommodationName} — Hospeda`}
+        >
             <Heading>Hay una nueva respuesta a tu consulta</Heading>
 
             <Text style={styles.paragraph}>

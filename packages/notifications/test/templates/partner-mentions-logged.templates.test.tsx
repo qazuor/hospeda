@@ -43,9 +43,9 @@ const single: PartnerMentionsLoggedProps = {
  * chrome, not a channel link. Only that marked anchor is excluded.
  */
 function bodyAnchors({ html }: { readonly html: string }): readonly string[] {
+    // Every anchor the user layout adds carries `data-layout-link` (HOS-2565 PR-4).
     const anchors = html.match(/<a\s[^>]*>/g) ?? [];
-    const layoutAnchors = anchors.filter((anchor) => anchor.includes('data-layout-link="home"'));
-    expect(layoutAnchors).toHaveLength(1);
+    expect(anchors.some((anchor) => anchor.includes('data-layout-link='))).toBe(true);
     return anchors.filter((anchor) => !anchor.includes('data-layout-link='));
 }
 
@@ -146,7 +146,8 @@ describe('PartnerMentionsLogged — transactional behaviour', () => {
     it('does not render an unsubscribe link', () => {
         const html = renderToStaticMarkup(PartnerMentionsLogged(batch));
 
-        expect(html).not.toContain('Administrar preferencias de notificaciones');
+        // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+        expect(html).toContain('data-layout-link="preferences"');
         expect(html).not.toContain('unsubscribe_url');
     });
 

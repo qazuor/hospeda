@@ -35,10 +35,7 @@ export function TrialEnding10Days({
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
-        <EmailLayout
-            previewText="¿Te está sirviendo tu publicación? Contanos cómo va"
-            footerLink="none"
-        >
+        <EmailLayout previewText="¿Te está sirviendo tu publicación? Contanos cómo va">
             <Heading>¿Cómo venís con tu publicación?</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

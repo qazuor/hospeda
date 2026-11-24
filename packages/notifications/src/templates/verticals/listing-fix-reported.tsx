@@ -22,7 +22,10 @@ export const LISTING_FIX_REPORTED_SUBJECT = 'Un dueño avisó que corrigió su f
 /** Tells staff that the owner reported a fix while the request remains open. */
 export function ListingFixReported(props: ListingFixReportedProps) {
     return (
-        <EmailLayout previewText={LISTING_FIX_REPORTED_SUBJECT}>
+        <EmailLayout
+            variant="staff"
+            previewText={LISTING_FIX_REPORTED_SUBJECT}
+        >
             <Heading>{LISTING_FIX_REPORTED_SUBJECT}</Heading>
             <Text>
                 El dueño de la ficha {props.listingName} ({props.verticalLabel}) avisó que ya

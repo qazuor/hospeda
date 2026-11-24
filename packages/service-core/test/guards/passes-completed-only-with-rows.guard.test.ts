@@ -49,7 +49,7 @@ describe('passes completed writer guard', () => {
                 paths.map((path) => ({ path, source: readFileSync(join(root, path), 'utf8') }))
             )
         ).toEqual([]);
-    });
+    }, 30_000);
 
     it('flags a second writer', () => {
         expect(

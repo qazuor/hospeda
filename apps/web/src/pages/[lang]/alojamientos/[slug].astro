@@ -637,7 +637,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
             locale={locale}
             viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
             mobile={{
-                backHref: buildUrl({ locale, path: 'alojamientos' }),
                 share: { url: `${siteOrigin}${Astro.url.pathname}`, title: accommodation.name, campaign: 'accommodation' },
                 favorite: { entityId: accommodation.id, entityType: 'ACCOMMODATION', variant: 'standalone' }
             }}
@@ -655,7 +654,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
             galleryId={LISTING_SECTION_IDS.photos}
         />
-        <QuickFacts extraInfo={accommodation.extraInfo} policies={accommodation.policies} lang={locale} />
+        <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
         <MobileBookingSummary
             listingId={accommodation.id}
             panelId={panelId}
@@ -665,6 +664,17 @@ const faqSections = accommodation.faqs.map((faq) => ({
             maxNights={accommodation.policies?.maxNights}
             hasWhatsapp={accommodation.hasWhatsapp}
         />
+        <!-- Promotions sit right under the price summary in the single-column
+             layout (owner smoke, HOS-2520): a discount is a booking argument, so it
+             belongs next to the price, not after the description, amenities and
+             rules. Rendered twice on purpose: this copy shows up to 1024px (where
+             MobileBookingSummary shows), the one below the house rules above it,
+             so DOM order and visual order match at every width. -->
+        {activePromos.length > 0 && (
+            <div class="acc-promos acc-promos--summary">
+                <PromotionBanner promos={activePromos} locale={locale} />
+            </div>
+        )}
         {hasDescriptionSection && (
         <div id={LISTING_SECTION_IDS.details} class="acc-anchor">
         {accommodation.richDescription ? (
@@ -709,7 +719,11 @@ const faqSections = accommodation.faqs.map((faq) => ({
         )}
         <ListingHouseRules policies={accommodation.policies} locale={locale} />
 
-        <PromotionBanner promos={activePromos} locale={locale} />
+        {activePromos.length > 0 && (
+            <div class="acc-promos acc-promos--content">
+                <PromotionBanner promos={activePromos} locale={locale} />
+            </div>
+        )}
 
         <div id={LISTING_SECTION_IDS.reviews} class="acc-anchor">
         <ReviewPreview accommodation={accommodation} ratingBreakdown={ratingBreakdown} reviews={toReviewStripItems({ items: reviewItems })} lang={locale}>
@@ -954,6 +968,18 @@ const faqSections = accommodation.faqs.map((faq) => ({
         display: flex;
         flex-direction: column;
         gap: var(--space-8, 32px);
+    }
+    /* See the comment on the summary copy: one promotions block per width. */
+    .acc-promos--summary {
+        display: none;
+    }
+    @media (max-width: 1024px) {
+        .acc-promos--summary {
+            display: block;
+        }
+        .acc-promos--content {
+            display: none;
+        }
     }
     .acc-sidebar {
         display: flex;

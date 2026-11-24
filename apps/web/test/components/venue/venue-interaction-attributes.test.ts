@@ -18,32 +18,59 @@ const page = read('pages/[lang]/comer-y-salir/[slug].astro');
 
 describe('venue interaction attributes (HOS-2256)', () => {
     it('marks both phones as PHONE_CLICK', () => {
-        expect(contact).toMatch(
-            /href=\{toTelHref\(value\)\}[^>]*data-interaction-kind="PHONE_CLICK"/
+        expect(contact).toMatch(/href: toTelHref\(value\)[\s\S]*?interactionKind: 'PHONE_CLICK'/);
+    });
+
+    it('keeps the venue-contact__menu-btn hook on the menu link (E2E LISTING-OWNER-01 selector)', () => {
+        const menuAnchor = contact.slice(
+            contact.indexOf('href={menuHref}'),
+            contact.indexOf("'contact-channel': 'menu'")
         );
+        expect(menuAnchor).toContain('class="venue-contact__menu-btn"');
     });
 
     it('marks the contactInfo website as WEBSITE_CLICK', () => {
-        expect(contact).toMatch(
-            /href=\{websiteHref\}[\s\S]*?data-interaction-kind="WEBSITE_CLICK"/
-        );
+        expect(contact).toMatch(/href: websiteHref[\s\S]*?interactionKind: 'WEBSITE_CLICK'/);
     });
 
     it('maps only website and instagram of the social links, and not the menu or email', () => {
-        expect(contact).toContain('data-interaction-kind={SOCIAL_INTERACTION_KINDS[key]}');
+        expect(contact).toContain('interactionKind');
         expect(contact).toMatch(/website: 'WEBSITE_CLICK'/);
         expect(contact).toMatch(/instagram: 'INSTAGRAM_CLICK'/);
         expect(contact).not.toMatch(/facebook: '[A-Z_]+_CLICK'/);
         const menuAnchor = contact.slice(
             contact.indexOf('href={menuHref}'),
-            contact.indexOf('{menuLabel}')
+            contact.indexOf('menuLabel} ↗')
         );
-        expect(menuAnchor).not.toContain('data-interaction-kind');
-        const emailAnchor = contact.slice(
-            contact.indexOf('href={`mailto:'),
-            contact.indexOf('<EmailIcon')
+        expect(menuAnchor).not.toContain('interaction-kind');
+        const emailChannel = contact.slice(
+            contact.indexOf("kind: 'email'"),
+            contact.indexOf("kind: 'website'")
         );
-        expect(emailAnchor).not.toContain('data-interaction-kind');
+        expect(emailChannel).not.toContain('interactionKind');
+    });
+
+    it('renders through the shared ListingContactChannels (GradientButton + IconButton, HOS-2533/HOS-2520)', () => {
+        expect(contact).toContain('<ListingContactChannels');
+        expect(contact).not.toContain('<IconButton');
+        const shared = read('components/listing/contact/ListingContactChannels.astro');
+        expect(shared).toContain('<GradientButton');
+        expect(shared).toContain('<IconButton');
+        expect(shared).toContain('variant="outline-primary"');
+        expect(shared).toContain("'interaction-kind': interactionKind");
+    });
+
+    it('uses brand logos from @repo/icons for every social network', () => {
+        for (const icon of [
+            'InstagramIcon',
+            'FacebookIcon',
+            'TwitterIcon',
+            'YoutubeIcon',
+            'TiktokIcon'
+        ]) {
+            expect(contact).toContain(`Icon: ${icon}`);
+        }
+        expect(contact).toContain("from '@repo/icons'");
     });
 
     it('marks "Ver en el mapa" as MAP_CLICK', () => {

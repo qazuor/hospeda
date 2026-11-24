@@ -6,15 +6,11 @@
  *
  * ## Why this guard exists
  *
- * The CSP carries no nonce — `middleware.ts` hashes every inline `<style>` by
- * CONTENT (`collectCspHashes`) and allows it in `style-src` for that response
- * only. Astro's `<ClientRouter />` does soft-navigation, but the CSP that
- * stays enforced in the browser is the one stamped for the FIRST page load.
- * A soft-navigated page's inline `<style>` only keeps rendering if its hash
- * was ALREADY present in that first page's CSP — which only holds if EVERY
- * layout emits byte-identical content for the critical CSS block (see
- * HOS-91: a differently-hashed inline `<style>` after a soft-nav leaves the
- * whole page unstyled).
+ * The CSP carries no nonce, and since HOS-2576 `style-src` is
+ * `'unsafe-inline'` with no hash: inline `<style>` blocks are no longer
+ * hash-gated, so a soft-navigated page can never be left unstyled by a CSP
+ * mismatch (HOS-91). Byte-identical critical CSS across layouts is still
+ * worth locking: it keeps one source of truth and no drift between shells.
  *
  * Four layouts each render their own `<head>`
  * (`BaseLayout`/`StandaloneLayout`/`AuthLayout`/`ErrorLayout`). "Keep the
@@ -92,7 +88,7 @@ describe('CriticalStyles.astro — the single source of the inline block', () =>
         expect(CRITICAL_STYLES_SOURCE).not.toMatch(/global\.css\?raw/);
     });
 
-    it('renders the CSS via `is:inline` + `set:html` (required for astro.config.mjs inlineStylesheets: "never", and for the CSP hasher to see raw, unmodified text)', () => {
+    it('renders the CSS via `is:inline` + `set:html` (so Astro never extracts or re-processes the block whatever `inlineStylesheets` is, and every layout emits raw, unmodified text)', () => {
         expect(CRITICAL_STYLES_SOURCE).toMatch(
             /<style\s+is:inline\s+set:html=\{globalCss\}\s*><\/style>/
         );

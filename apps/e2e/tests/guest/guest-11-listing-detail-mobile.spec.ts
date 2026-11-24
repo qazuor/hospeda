@@ -204,7 +204,7 @@ test.describe('GUEST-11: mobile listing detail @p0 @guest @discovery @messaging'
             exact: true
         });
         await expect(lightbox).toBeVisible();
-        await expect(lightbox.getByText(`2 / ${total}`, { exact: true })).toBeVisible();
+        await expect(lightbox.getByText(`2/${total}`, { exact: true })).toBeVisible();
     });
 
     test('public contact block links carry the accommodation tracking attributes', async ({

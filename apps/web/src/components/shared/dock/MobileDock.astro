@@ -105,6 +105,22 @@ const { locale } = Astro.props;
 			backdrop-filter: none;
 		}
 
+		/* Owner smoke (HOS-2520): when the only thing in the row is a floating
+		   control (scroll-to-top), it floats like the desktop button instead of
+		   sitting on a full-width frosted band. Seen with dead islands (HOS-2578),
+		   where the contact bar and the chat FAB never reach the dock. The padding
+		   stays, so the button does not jump when the band comes back. */
+		.mobile-dock[data-row-floating] .mobile-dock__row {
+			border-block-start: 0;
+			background: none;
+			backdrop-filter: none;
+			pointer-events: none;
+		}
+
+		.mobile-dock[data-row-floating] .mobile-dock__row :global([data-dock-item]) {
+			pointer-events: auto;
+		}
+
 		.mobile-dock__start,
 		.mobile-dock__end {
 			display: flex;

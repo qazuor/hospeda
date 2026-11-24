@@ -34,6 +34,7 @@ import {
 import { payingPrincipal } from './support/addon-a2-fixtures';
 import { purchaseFixture, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import { billingDeadlineValues } from './support/payment-fixtures';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip';
 
 afterEach(retirePurchaseFixtures);
@@ -83,7 +84,7 @@ async function approvedPendingPrincipal() {
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
             "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 1_000_000_000)]
+            [planId, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     if (!versionId) throw new Error('version missing');

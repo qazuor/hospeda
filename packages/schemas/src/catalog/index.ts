@@ -19,3 +19,4 @@ export * from './sections-touched.js';
 export * from './unlimited-limit.js';
 export * from './vertical-activation-event.js';
 export * from './vertical-deadlines.schema.js';
+export * from './vertical-owns-publications.js';

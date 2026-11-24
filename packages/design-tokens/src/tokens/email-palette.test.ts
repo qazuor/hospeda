@@ -7,7 +7,22 @@
 
 import { describe, expect, it } from 'vitest';
 import { formatSRGB } from '../generators/srgb.js';
-import { danger, info, neutral, type OKLCH, river, success, warning } from './colors.js';
+import {
+    accent,
+    brandSecondary,
+    brandTertiary,
+    cyan,
+    danger,
+    forest,
+    info,
+    neutral,
+    type OKLCH,
+    river,
+    sky,
+    success,
+    teal,
+    warning
+} from './colors.js';
 import { type EmailPaletteRole, emailPalette } from './email-palette.js';
 
 /**
@@ -44,9 +59,23 @@ const SOURCE_TOKENS: Readonly<Record<EmailPaletteRole, OKLCH>> = {
     calloutDangerBackground: danger[100],
     calloutDangerBorder: danger[500],
     calloutDangerText: danger[800],
-    buttonPrimary: river[600],
+    buttonPrimary: forest[500],
     buttonPrimaryText: { l: 1, c: 0, h: 0 },
-    buttonSecondaryBorder: river[600]
+    buttonSecondaryBackground: cyan[100],
+    buttonSecondaryBorder: cyan[500],
+    buttonSecondaryText: cyan[700],
+    accentTeal: teal[500],
+    accentOrange: accent[500],
+    userPageBackground: brandSecondary,
+    userFooterBackground: sky[100],
+    userFooterMutedText: neutral[600],
+    userFooterRule: sky[300],
+    optionSuccessStripe: success[500],
+    optionSuccessBand: brandTertiary,
+    optionSuccessBandText: success[600],
+    optionInfoStripe: cyan[500],
+    optionInfoBand: cyan[100],
+    optionInfoBandText: cyan[700]
 };
 
 describe('emailPalette', () => {

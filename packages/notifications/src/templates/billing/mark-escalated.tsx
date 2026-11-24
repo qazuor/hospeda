@@ -39,7 +39,10 @@ export function MarkEscalated(props: MarkEscalatedProps) {
         subjectId: props.subjectId
     });
     return (
-        <EmailLayout previewText={MARK_ESCALATED_SUBJECT}>
+        <EmailLayout
+            variant="staff"
+            previewText={MARK_ESCALATED_SUBJECT}
+        >
             <Heading>{MARK_ESCALATED_SUBJECT}</Heading>
             <Text>
                 Una marca de conciliación de billing pasó su plazo sin que nadie la resolviera.

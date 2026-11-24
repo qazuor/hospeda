@@ -8,8 +8,9 @@
  *
  *   1. each callout's text on its background is ≥ 4.5:1 (WCAG AA, normal text);
  *   2. the primary button's text on its background is ≥ 4.5:1;
- *   3. the secondary (outlined) button's text, which reuses its border color,
- *      is ≥ 4.5:1 on the white card;
+ *   3. the secondary button's text is ≥ 4.5:1 on its light background, and the
+ *      user layout's text pairs (option-card labels, footer text and links) are
+ *      ≥ 4.5:1 on what they sit on (HOS-2565 PR-4);
  *   4. each callout background stays VISIBLY tinted against the white card
  *      (≥ 1.1:1). A `[50]` shade of this scale (for example `#fafcff`) passes
  *      every text check and is still invisible, which is the exact failure the
@@ -84,9 +85,28 @@ describe('emailPalette contrast (HOS-2565)', () => {
         expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL);
     });
 
-    it('secondary button text (its border color) on the surface is at least 4.5:1', () => {
+    it('secondary button text on its background is at least 4.5:1', () => {
         // Act
-        const ratio = contrast({ a: emailPalette.buttonSecondaryBorder, b: emailPalette.surface });
+        const ratio = contrast({
+            a: emailPalette.buttonSecondaryText,
+            b: emailPalette.buttonSecondaryBackground
+        });
+
+        // Assert
+        expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL);
+    });
+
+    it.each([
+        ['option success label', 'optionSuccessBandText', 'optionSuccessBand'],
+        ['option info label', 'optionInfoBandText', 'optionInfoBand'],
+        ['user footer muted text', 'userFooterMutedText', 'userFooterBackground'],
+        ['user footer text', 'text', 'userFooterBackground'],
+        ['user footer small-print link', 'brandStrong', 'userFooterBackground'],
+        ['channel card link', 'buttonPrimary', 'surface'],
+        ['channel card text', 'userFooterMutedText', 'surface']
+    ] as const)('%s is at least 4.5:1 (HOS-2565 PR-4)', (_label, text, background) => {
+        // Act
+        const ratio = contrast({ a: emailPalette[text], b: emailPalette[background] });
 
         // Assert
         expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL);
