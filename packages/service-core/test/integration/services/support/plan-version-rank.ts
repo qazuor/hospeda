@@ -24,8 +24,10 @@
  *   to its own private `mkdtempSync` directory.
  * - **counter** — a monotonic per-file counter, so a fixture that seeds several versions never
  *   draws the same value twice; later rows keep ranking above earlier ones inside a file.
+ * - **step** — consecutive draws are {@linkcode RANK_STEP} apart, so a row seeded at
+ *   `drawn + 1..15` never meets the next draw.
  *
- * The result spans `[1_000_000_000, 1_008_389_631]` — far above every small rank a fixture writes,
+ * The result spans `[1_000_000_000, 1_134_217_727]` (relative `+1..+15` rows included) — far above every small rank a fixture writes,
  * strictly below the smallest fixed rank any fixture writes at or above the base (the
  * `1_900_000_000..1_900_000_002` trio of `plan-catalog-admin-read.test.ts`, whose sellable+current
  * member is the highest fixed rank in the tree), far below the `integer` column max
@@ -40,10 +42,18 @@ const RANK_BASE = 1_000_000_000;
 /** Rank blocks available per run, one claimed per test file; runs use a fraction of it. */
 const MAX_BLOCKS = 8_192; // 2^13
 const COUNTER_CAP = 1_024; // 2^10; max observed use: 5 per file
+/**
+ * Gap between two consecutive ranks the helper hands out. Several fixtures seed a second version
+ * RELATIVE to one drawn here (`rank: version.rank + 1`, see `plan-migration-fixtures.ts`,
+ * `b10-exit-fixtures.ts`, `paused-increase-fixtures.ts`, `plan-migration-preview.test.ts`). With a
+ * step of 1 that relative row took the very value the next draw returned, and the next seed failed
+ * with `23505`. A step of 16 leaves `+1..+15` free for relative rows inside each draw's own slot.
+ */
+const RANK_STEP = 16;
 
 /** Highest rank the helper can ever return; pinned below every fixed fixture rank above the base
  * by the claim unit test. */
-export const PLAN_VERSION_RANK_MAX = RANK_BASE + MAX_BLOCKS * COUNTER_CAP + (COUNTER_CAP - 1);
+export const PLAN_VERSION_RANK_MAX = RANK_BASE + MAX_BLOCKS * COUNTER_CAP * RANK_STEP - 1;
 
 /**
  * Claims the next free rank block index in a run directory by exclusively creating
@@ -94,7 +104,7 @@ export function nextPlanVersionRank(): number {
     if (counter >= COUNTER_CAP) {
         throw new Error('plan-version-rank fixture counter exceeded its per-block cap');
     }
-    const rank = RANK_BASE + block * COUNTER_CAP + counter;
+    const rank = RANK_BASE + (block * COUNTER_CAP + counter) * RANK_STEP;
     counter += 1;
     return rank;
 }

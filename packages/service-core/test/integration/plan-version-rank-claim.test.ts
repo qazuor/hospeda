@@ -8,7 +8,11 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { claimRankBlock, PLAN_VERSION_RANK_MAX } from './services/support/plan-version-rank.js';
+import {
+    claimRankBlock,
+    nextPlanVersionRank,
+    PLAN_VERSION_RANK_MAX
+} from './services/support/plan-version-rank.js';
 
 describe('plan-version-rank block claim', () => {
     const runDir = mkdtempSync(join(tmpdir(), 'plan-version-rank-claim-'));
@@ -27,5 +31,14 @@ describe('plan-version-rank block claim', () => {
         const INTEGER_MAX = 2_147_483_647; // `plan_version.rank` is an int32 column
         expect(PLAN_VERSION_RANK_MAX).toBeLessThan(SMALLEST_FIXED_RANK_ABOVE_BASE);
         expect(PLAN_VERSION_RANK_MAX).toBeLessThanOrEqual(INTEGER_MAX);
+    });
+
+    it('leaves room for a fixture row seeded at drawn + 1 before the next draw', () => {
+        // Fixtures seed `rank: version.rank + 1` next to a drawn rank (plan-migration-fixtures.ts,
+        // b10-exit-fixtures.ts, paused-increase-fixtures.ts); with a step of 1 that row took the
+        // next draw and the next seed failed with 23505 in CI (PR #4736, 33 tests).
+        const first = nextPlanVersionRank();
+        const second = nextPlanVersionRank();
+        expect(second - first).toBeGreaterThan(1);
     });
 });
