@@ -1,6 +1,11 @@
 /**
  * GUEST-12: mobile contact bar on experience and venue detail pages at 390x844
- * (HOS-2532, spec HOS-2520 section 10: AC-2.8, AC-2.9, AC-2.10).
+ * (HOS-2532, spec HOS-2520 section 10: AC-2.8, AC-2.9, AC-2.10), as the
+ * icon-only action bar of HOS-2579 §6.10 (AC-28, AC-29, AC-31, AC-32). The bar
+ * now renders on every listing page (Favorito and Compartir always exist), its
+ * controls are icons named by `aria-label`, so they are selected by role + name,
+ * and a venue's WhatsApp reaches the bar itself (PUBLIC: a wa.me link;
+ * LOGGED_IN_ONLY: the panel on its WhatsApp row).
  * Preconditions: the E2E suite seed includes the published venues
  * `la-parrilla-del-puerto` (menuUrl + Instagram/Facebook) and
  * `cafe-del-palacio-colon` (no menuUrl, Instagram/Facebook), the published
@@ -59,6 +64,18 @@ async function expectNoWhatsApp({ page }: { readonly page: Page }) {
     await expect(page.locator(CONTACT_BAR).getByRole('link', { name: /whatsapp/i })).toHaveCount(0);
 }
 
+/** The bar of a listing with nothing to contact: Favorito and Compartir only (HOS-2579 AC-31). */
+async function expectBareBar({ page }: { readonly page: Page }) {
+    const bar = page.locator(CONTACT_BAR);
+    await expect(bar).toBeInViewport({ timeout: 15_000 });
+    await expect(bar.locator('[data-action]')).toHaveCount(2);
+    await expect(bar.locator('[data-action="favorite"]')).toHaveCount(1);
+    await expect(bar.getByRole('button', { name: 'Compartir', exact: true })).toBeVisible();
+    await expect(bar.getByRole('link', { name: 'Consultar', exact: true })).toHaveCount(0);
+    await expect(bar.getByRole('link', { name: 'Llamar', exact: true })).toHaveCount(0);
+    await expect(bar.locator('[disabled], [aria-disabled="true"]')).toHaveCount(0);
+}
+
 test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery @messaging', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
@@ -82,11 +99,17 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
         await expect(menu).toHaveAttribute('data-contact-origin', 'bar');
         // Venues have no price: the bar holds the menu link and nothing else.
         await expect(bar.locator('p')).toHaveCount(0);
-        await expect(bar.getByRole('link', { name: 'Contactar', exact: true })).toHaveCount(0);
+        await expect(bar.getByRole('link', { name: 'Consultar', exact: true })).toHaveCount(0);
+        // AC-32: «Ver carta» is position 1 and primary.
+        await expect(bar.locator('[data-action]').first()).toHaveAttribute(
+            'data-action',
+            'primary'
+        );
+        await expect(menu).toHaveClass(/btn-gradient--accent/);
         await expectNoWhatsApp({ page });
     });
 
-    test('AC-2.9: a venue without menuUrl shows "Contactar", which opens a panel with its social links', async ({
+    test('AC-2.9: a venue without menuUrl shows "Consultar", which opens a panel with its social links', async ({
         page
     }) => {
         await page.goto(venueUrl(VENUE_WITHOUT_MENU), { waitUntil: 'domcontentloaded' });
@@ -95,7 +118,7 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
         await expect(bar).toBeInViewport({ timeout: 15_000 });
         await expect(bar.getByRole('link', { name: 'Ver carta', exact: true })).toHaveCount(0);
         await expect(bar.locator('p')).toHaveCount(0);
-        const trigger = bar.getByRole('link', { name: 'Contactar', exact: true });
+        const trigger = bar.getByRole('link', { name: 'Consultar', exact: true });
         const panel = page.getByRole('dialog', { name: 'Contactar', exact: true });
         // The link jumps to the in-page contact block until the island is ready.
         await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog', { timeout: 15_000 });
@@ -120,7 +143,7 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
         await expect(trigger).toBeFocused();
     });
 
-    test('AC-2.8: an experience with no public channel renders no contact bar and no panel', async ({
+    test('AC-2.8 / AC-31: an experience with no public channel renders a bar with Favorito and Compartir only, and no panel', async ({
         page
     }) => {
         await page.goto(experienceUrl({ slug: EXPERIENCE_WITHOUT_CHANNELS }), {
@@ -130,12 +153,11 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 });
         // Let the idle islands hydrate before asserting an absence.
         await page.waitForLoadState('load');
-        await expect(page.locator(CONTACT_BAR)).toHaveCount(0);
-        await expect(page.getByRole('link', { name: 'Contactar', exact: true })).toHaveCount(0);
+        await expectBareBar({ page });
         await expect(page.getByRole('dialog')).toHaveCount(0);
     });
 
-    test('AC-2.8: an experience with public channels shows its price and «Contactar», which opens Call / Email / Web', async ({
+    test('AC-2.8 / AC-28: an experience with public channels shows its price, Llamar and «Consultar», which opens Call / Email / Web', async ({
         page
     }) => {
         await page.goto(experienceUrl({ slug: FIXTURES.experienceWithChannels }), {
@@ -148,7 +170,14 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
         await expect(bar.locator('p')).toContainText(/8\.500/);
         await expect(bar.locator('p')).toContainText('/persona');
         await expect(bar.locator('p')).not.toContainText('Consultar precio');
-        const trigger = bar.getByRole('link', { name: 'Contactar', exact: true });
+        // AC-28: Consultar, Llamar, Favorito, Compartir; never WhatsApp or Comparar.
+        await expect(bar.locator('[data-action]')).toHaveCount(4);
+        const call = bar.getByRole('link', { name: 'Llamar', exact: true });
+        await expect(call).toHaveAttribute('href', 'tel:+5493442555111');
+        await expect(call).toHaveAttribute('data-contact-channel', 'phone');
+        await expect(call).toHaveAttribute('data-contact-origin', 'bar');
+        await expect(bar.locator('[data-action="compare"]')).toHaveCount(0);
+        const trigger = bar.getByRole('link', { name: 'Consultar', exact: true });
         const panel = page.getByRole('dialog', { name: 'Contactar', exact: true });
         await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog', { timeout: 15_000 });
         await trigger.tap();
@@ -189,10 +218,10 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
         await expect(bar).toBeInViewport({ timeout: 15_000 });
         await expect(bar.locator('p')).toHaveText(/Consultar precio/);
         await expect(bar.locator('p')).not.toContainText('$');
-        await expect(bar.getByRole('link', { name: 'Contactar', exact: true })).toBeVisible();
+        await expect(bar.getByRole('link', { name: 'Consultar', exact: true })).toBeVisible();
     });
 
-    test('AC-2.9: a venue with neither menuUrl, socials nor WhatsApp renders no bar and no panel', async ({
+    test('AC-2.9 / AC-31: a venue with neither menuUrl, socials nor WhatsApp renders a bar with Favorito and Compartir only, and no panel', async ({
         page
     }) => {
         await page.goto(venueUrl({ slug: FIXTURES.venueWithoutContact }), {
@@ -201,26 +230,29 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
 
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 });
         await page.waitForLoadState('load');
-        await expect(page.locator(CONTACT_BAR)).toHaveCount(0);
-        await expect(page.getByRole('link', { name: 'Contactar', exact: true })).toHaveCount(0);
+        await expectBareBar({ page });
         await expect(page.getByRole('dialog')).toHaveCount(0);
         await expectNoWhatsApp({ page });
     });
 
-    test('AC-2.10 (HOS-2256): a venue whose owner shares WhatsApp publicly shows it in the page and in the panel', async ({
+    test('AC-2.10 (HOS-2256) / AC-29: a venue whose owner shares WhatsApp publicly shows it in the bar, the page and the panel', async ({
         page
     }) => {
         await page.goto(venueUrl({ slug: FIXTURES.venueWhatsappPublic }), {
             waitUntil: 'domcontentloaded'
         });
 
-        // WhatsApp alone is enough to make the bar a «Contactar» panel opener.
+        // WhatsApp alone is enough to make the bar a «Consultar» panel opener.
         const bar = page.locator(CONTACT_BAR);
         await expect(bar).toBeInViewport({ timeout: 15_000 });
         await expect(bar.locator('p')).toHaveCount(0);
-        // The bar never carries the WhatsApp link itself: it is in the panel and the page.
-        await expect(bar.locator(WHATSAPP_LINK)).toHaveCount(0);
-        const trigger = bar.getByRole('link', { name: 'Contactar', exact: true });
+        // AC-29: PUBLIC is a direct wa.me anchor in the bar, reported by the delegated listener.
+        const barLink = bar.getByRole('link', { name: 'Escribir por WhatsApp', exact: true });
+        await expect(barLink).toHaveAttribute('href', new RegExp(`wa\\.me/\\+?${WA_DIGITS}`));
+        await expect(barLink).toHaveAttribute('target', '_blank');
+        await expect(barLink).toHaveAttribute('data-contact-channel', 'whatsapp');
+        await expect(barLink).toHaveAttribute('data-contact-origin', 'bar');
+        const trigger = bar.getByRole('link', { name: 'Consultar', exact: true });
         const panel = page.getByRole('dialog', { name: 'Contactar', exact: true });
         await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog', { timeout: 15_000 });
 
@@ -235,7 +267,7 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
         await expect(panelLink).toHaveAttribute('target', '_blank');
     });
 
-    test('AC-2.10 (HOS-2256): a venue whose owner shares WhatsApp with signed-in visitors only sends a guest to sign in, with no number in the HTML', async ({
+    test('AC-2.10 (HOS-2256) / AC-29: a venue whose owner shares WhatsApp with signed-in visitors only sends a guest to sign in, with no number in the HTML', async ({
         page
     }) => {
         const response = await page.goto(venueUrl({ slug: FIXTURES.venueWhatsappLoggedIn }), {
@@ -247,23 +279,27 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
 
         const bar = page.locator(CONTACT_BAR);
         await expect(bar).toBeInViewport({ timeout: 15_000 });
-        const trigger = bar.getByRole('link', { name: 'Contactar', exact: true });
+        const trigger = bar.getByRole('link', { name: 'Consultar', exact: true });
         const panel = page.getByRole('dialog', { name: 'Contactar', exact: true });
         await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog', { timeout: 15_000 });
-        await trigger.tap();
+        // AC-29: the bar's own WhatsApp opens the panel focused on the WhatsApp row.
+        const barWhatsapp = bar.getByRole('link', { name: 'Escribir por WhatsApp', exact: true });
+        await expect(barWhatsapp).not.toHaveAttribute('href', /wa\.me/);
+        await barWhatsapp.tap();
 
         await expect(panel).toBeVisible();
         const signIn = panel.getByRole('link', {
             name: /Iniciá sesión para escribir por WhatsApp/
         });
         await expect(signIn).toBeVisible();
+        await expect(signIn).toBeFocused();
         await expect(signIn).not.toHaveAttribute('data-interaction-kind', 'WHATSAPP_CLICK');
         // The footer carries Hospeda's own WhatsApp link, so scope to the listing.
         await expect(page.locator('main').locator(WHATSAPP_LINK)).toHaveCount(0);
         await expect(panel.locator(WHATSAPP_LINK)).toHaveCount(0);
     });
 
-    test('AC-2.10 (HOS-2256): a venue that stores a number but whose owner never chose a visibility shows no WhatsApp and no bar', async ({
+    test('AC-2.10 (HOS-2256): a venue that stores a number but whose owner never chose a visibility shows no WhatsApp and a bare bar', async ({
         page
     }) => {
         const response = await page.goto(venueUrl({ slug: FIXTURES.venueWhatsappUndecided }), {
@@ -273,7 +309,7 @@ test.describe('GUEST-12: experience and venue contact bar @p1 @guest @discovery 
 
         await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15_000 });
         await page.waitForLoadState('load');
-        await expect(page.locator(CONTACT_BAR)).toHaveCount(0);
+        await expectBareBar({ page });
         await expectNoWhatsApp({ page });
     });
 
