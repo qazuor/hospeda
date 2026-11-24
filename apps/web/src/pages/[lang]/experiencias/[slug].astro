@@ -24,6 +24,8 @@ import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildExperienceHeader } from '@/lib/listing-header/build-listing-header';
 import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
 import { buildExperienceLocation } from '@/lib/listing-location/build-location-section';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
@@ -145,6 +147,12 @@ const faqs: readonly DetailFaq[] =
                 category: faq.category ? String(faq.category) : null
             }))
           : [];
+
+// --- FAQPage JSON-LD when FAQs exist (HOS-2579 §6.6, same helper as accommodation) ---
+const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
+    faqs,
+    locale
+});
 
 // --- Gallery images ---
 const galleryImages = (() => {
@@ -291,8 +299,18 @@ const headerProps = buildExperienceHeader({
         description={seoDescription}
         url={canonicalPath}
         image={experience.featuredImage.url}
+        latitude={experience.meetingPointLat}
+        longitude={experience.meetingPointLong}
+        ratingValue={experience.averageRating}
+        reviewCount={experience.reviewsCount}
+        priceFrom={experience.priceFrom}
+        isPriceOnRequest={experience.isPriceOnRequest}
+        destinationName={experience.destinationName}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+    {faqSections.length > 0 && (
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
+    )}
     <div slot="breadcrumbs" class="exp-detail-breadcrumbs">
         <Breadcrumbs
             locale={locale}

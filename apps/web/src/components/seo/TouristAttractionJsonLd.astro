@@ -5,44 +5,21 @@
  * Generates schema.org TouristAttraction structured data.
  *
  * SPEC-268 F2/F3: new component for experience and attraction detail pages.
+ * HOS-2579 §6.6: optional `geo`, `aggregateRating`, `isAccessibleForFree`,
+ * `containedInPlace` and `offers` (multi-typed with `TouristTrip`, D-2). The
+ * object is built by `buildTouristAttractionJsonLd`, which emits each property
+ * only when its data exists.
  */
 
+import {
+	buildTouristAttractionJsonLd,
+	type TouristAttractionJsonLdInput,
+} from '@/lib/seo/tourist-attraction-jsonld';
 import JsonLd from './JsonLd.astro';
 
-interface Props {
-	readonly name: string;
-	readonly description?: string;
-	readonly url: string;
-	readonly image?: string;
-	readonly telephone?: string;
-}
+type Props = TouristAttractionJsonLdInput;
 
-const {
-	name,
-	description,
-	url,
-	image,
-	telephone,
-} = Astro.props;
-
-const structuredData: Record<string, unknown> = {
-	'@context': 'https://schema.org',
-	'@type': 'TouristAttraction',
-	name,
-	url,
-};
-
-if (description) {
-	structuredData.description = description;
-}
-
-if (image) {
-	structuredData.image = image;
-}
-
-if (telephone) {
-	structuredData.telephone = telephone;
-}
+const { data: structuredData } = buildTouristAttractionJsonLd(Astro.props);
 ---
 
 <JsonLd data={structuredData} />
