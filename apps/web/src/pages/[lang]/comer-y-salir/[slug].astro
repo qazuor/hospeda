@@ -21,6 +21,8 @@ import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
 import VenueJsonLd from '@/components/seo/VenueJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
 import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
 import VenueDescription from '@/components/venue/VenueDescription.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
@@ -179,6 +181,12 @@ const faqs: readonly DetailFaq[] =
                 category: faq.category ? String(faq.category) : null
             }))
           : [];
+
+// --- FAQPage JSON-LD when FAQs exist (HOS-2579 §6.6, same helper as accommodation) ---
+const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
+    faqs,
+    locale
+});
 
 // --- Gallery images ---
 const galleryImages = (() => {
@@ -472,6 +480,9 @@ const breadcrumbItems = [
         } : undefined}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+    {faqSections.length > 0 && (
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
+    )}
     <div slot="breadcrumbs" class="venue-detail-breadcrumbs">
         <Breadcrumbs
             locale={locale}

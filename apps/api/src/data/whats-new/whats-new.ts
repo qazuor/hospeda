@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4719, #4723
+    {
+        id: '2026-11-23-campaign-attribution-umami',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Ahora se ve de dónde vienen las visitas: mails, compartidos, QR y presentaciones',
+            en: 'You can now see where visits come from: emails, shares, QR codes and presentations',
+            pt: 'Agora dá para ver de onde vêm as visitas: e-mails, compartilhamentos, QR e apresentações'
+        },
+        body: {
+            es: 'Los links de los mails, los botones de compartir, los QR impresos (incluido el del certificado de experiencias) y los links cortos de las presentaciones llevan su origen. En Umami, el tablero «Attribution» muestra las visitas por fuente, medio y campaña, y cuántas terminan en registro o contacto.',
+            en: 'Links in emails, share buttons, printed QR codes (including the experience certificate) and the short presentation links now carry their origin. In Umami, the "Attribution" board shows visits by source, medium and campaign, and how many end in a sign-up or a contact.',
+            pt: 'Os links dos e-mails, os botões de compartilhar, os QR impressos (incluindo o do certificado de experiências) e os links curtos das apresentações agora levam sua origem. No Umami, o painel «Attribution» mostra as visitas por fonte, meio e campanha, e quantas terminam em cadastro ou contato.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4714, #4715, #4718, #4720, #4735, #4737, #4739, #4747
     {
         id: '2026-11-23-listing-pages-easier-to-browse',

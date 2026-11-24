@@ -1,5 +1,5 @@
 {
-  "contentHash": "66cfb6fd8a495d7db64ff2ba9f920f03f91bde1b74f76ea4075e46274bc73717",
+  "contentHash": "6b3e875accc32e61041356250b9cdd1ef3acbc0057c4f487de8ba9cb9b0a3efb",
   "locales": {
     "es": [
       {
@@ -192,7 +192,7 @@
           "publish-requirements",
           "ai-assistants"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
           "canDo": "Tildar los servicios que ofrecés en {{link:section:accommodation:servicios|Servicios y comodidades}} (alojamientos) o en {{link:section:venue:servicios|Servicios del comercio}} y {{link:section:experience:servicios|Servicios de la experiencia}}.",
           "expect": "- En alojamientos el catálogo está agrupado por categorías y cada comodidad tiene su detalle.\n- Un asistente agrega o quita servicios de una categoría por vez (mirá {{article:ai-assistants|cómo conectarlo}}).",
@@ -1009,7 +1009,7 @@
           "create-listing",
           "change-plan"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
           "canDo": "Cargar la foto principal y sumar fotos a la galería desde la sección «Fotos» del editor:\n{{link:section:accommodation:fotos|Fotos de tu alojamiento}}, {{link:section:venue:fotos|Fotos de tu comercio}} o {{link:section:experience:fotos|Fotos de tu experiencia}}.\n\nEn alojamientos también podés reordenar la galería y elegir la portada.",
           "expect": "- Cada cambio se guarda al instante, sin un botón de guardar.\n- La foto principal es obligatoria para publicar: sin ella, {{article:publish-requirements|los requisitos para publicar}} no se cumplen.\n- Fotos que entran en la galería de un alojamiento: {{limit:max_photos_per_accommodation:accommodation}}. El editor te avisa cuántas te quedan.",

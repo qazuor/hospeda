@@ -21,7 +21,7 @@
 
 .label {
     font-family: var(--font-heading, var(--font-sans));
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     font-weight: 600;
     color: var(--core-foreground);
 }
@@ -30,11 +30,11 @@
 .textarea {
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.625rem);
+    border-radius: var(--radius-md);
     background: var(--core-card, var(--core-background));
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     padding: var(--space-2) var(--space-3);
     transition:
         border-color 150ms ease,
@@ -54,7 +54,7 @@
 
 .hint {
     font-family: var(--font-sans);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-muted-foreground);
     margin: 0;
 }
@@ -66,7 +66,7 @@
     gap: var(--space-2);
     padding: var(--space-3);
     border: 1px dashed var(--border);
-    border-radius: var(--radius-md, 0.625rem);
+    border-radius: var(--radius-md);
     background: var(--surface-warm);
 }
 
@@ -79,12 +79,12 @@
 .organizerCreateSubmit {
     padding: var(--space-2) var(--space-4);
     border: none;
-    border-radius: var(--radius-button, 0.5rem);
+    border-radius: var(--radius-button);
     background: var(--brand-primary);
     color: var(--primary-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     cursor: pointer;
     transition: opacity 150ms ease;
 }
@@ -106,7 +106,7 @@
     padding: 0;
     color: var(--brand-primary);
     font-family: var(--font-sans);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -117,12 +117,12 @@
     align-self: flex-start;
     padding: var(--space-3) var(--space-8);
     border: none;
-    border-radius: var(--radius-button, 0.5rem);
+    border-radius: var(--radius-button);
     background: var(--brand-accent);
     color: var(--accent-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: var(--text-body-lg, 1.0625rem);
+    font-size: var(--text-body-lg);
     cursor: pointer;
     transition: opacity 150ms ease;
 }
@@ -138,6 +138,6 @@
 
 .error {
     margin: 0;
-    font-size: var(--text-body-sm, 0.9375rem);
-    color: var(--destructive, #b91c1c);
+    font-size: var(--text-body-sm);
+    color: var(--destructive);
 }
