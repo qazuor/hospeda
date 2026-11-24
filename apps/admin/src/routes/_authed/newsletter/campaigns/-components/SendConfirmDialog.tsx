@@ -10,7 +10,7 @@
  */
 
 import { LoaderIcon } from '@repo/icons';
-import type { NewsletterCampaign, NewsletterCampaignStatusEnum } from '@repo/schemas';
+import type { NewsletterCampaign } from '@repo/schemas';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ import {
     DialogTitle
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { useCampaignMetrics, useSendCampaign } from '@/hooks/newsletter';
+import { useCampaignAudienceCount, useSendCampaign } from '@/hooks/newsletter';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 
@@ -61,17 +61,20 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
     const [ignoreSoftCap, setIgnoreSoftCap] = useState(false);
     const [inlineError, setInlineError] = useState<string | null>(null);
 
-    // Fetch metrics for audience count (available once the campaign is in sending/sent state,
-    // or as a pre-flight for the confirm dialog from the campaigns hook).
-    const { data: metrics } = useCampaignMetrics(
-        campaign.id,
-        campaign.status as NewsletterCampaignStatusEnum
-    );
+    // Real audience estimate, computed server-side with the exact filter the send
+    // uses (language + content segmentation + frequency limit). Only fetched while
+    // the dialog is open; follows the ignoreSoftCap toggle so the number matches
+    // what the send would enqueue.
+    const { data: audience } = useCampaignAudienceCount({
+        id: campaign.id,
+        ignoreSoftCap,
+        enabled: open
+    });
 
     const sendMutation = useSendCampaign(campaign.id);
 
-    const audienceCount = metrics?.totalRecipients ?? campaign.totalRecipients ?? null;
-    const softcappedCount = metrics?.totalSoftcapped ?? campaign.totalSoftcapped ?? 0;
+    const audienceCount = audience?.eligible ?? null;
+    const softcappedCount = audience?.softCapped ?? 0;
 
     const localeLabel =
         campaign.localeFilter === 'all'
@@ -145,7 +148,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                             <p className="text-sm">
                                 {audienceCount === null
                                     ? t('admin-newsletter.campaigns.confirmSendAudience_other', {
-                                          count: '...',
+                                          count: '…',
                                           locale: localeLabel
                                       })
                                     : tPlural(

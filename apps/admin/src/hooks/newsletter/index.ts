@@ -16,8 +16,10 @@ export {
 } from './use-campaign-metrics';
 
 export {
+    type CampaignAudienceCount,
     type NewsletterCampaignListFilters,
     newsletterCampaignQueryKeys,
+    useCampaignAudienceCount,
     useCancelCampaign,
     useCreateCampaign,
     useDeleteCampaign,

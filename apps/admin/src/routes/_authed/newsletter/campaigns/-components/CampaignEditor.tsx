@@ -40,10 +40,12 @@ import {
     useTestSendCampaign,
     useUpdateCampaign
 } from '@/hooks/newsletter';
+import { useAuthContext } from '@/hooks/use-auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { CampaignPreview } from './CampaignPreview';
 import { SendConfirmDialog } from './SendConfirmDialog';
+import { resolveTestSendRecipient, TestSendDialog } from './TestSendDialog';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -192,6 +194,8 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
     const { t } = useTranslations();
     const { addToast } = useToast();
     const navigate = useNavigate();
+    const { user } = useAuthContext();
+    const actorEmail = user?.email ?? '';
 
     const isReadOnly = mode === 'readonly';
     const isCreate = mode === 'create';
@@ -205,6 +209,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
 
     // ── Local state ──────────────────────────────────────────────────────────
     const [sendDialogOpen, setSendDialogOpen] = useState(false);
+    const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
     const [cancelSendDialogOpen, setCancelSendDialogOpen] = useState(false);
     const [showPreviewMobile, setShowPreviewMobile] = useState(false);
     const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>('idle');
@@ -358,11 +363,18 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
         }
     }
 
-    async function handleTestSend() {
+    /**
+     * Sends the test email. When the address is unchanged from the logged-in
+     * user's own email, `toEmail` is omitted so the API resolves the actor's
+     * email itself (canonical source); otherwise the typed address is sent.
+     */
+    async function handleTestSend({ email }: { readonly email: string }) {
         if (!campaign?.id) return;
         try {
-            // Pass undefined explicitly — toEmail is optional in the API
-            const result = await testSendMutation.mutateAsync(undefined);
+            const result = await testSendMutation.mutateAsync(
+                resolveTestSendRecipient({ email, actorEmail })
+            );
+            setTestSendDialogOpen(false);
             addToast({
                 message: t('admin-newsletter.campaigns.testSentToast').replace(
                     '{email}',
@@ -752,7 +764,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={handleTestSend}
+                            onClick={() => setTestSendDialogOpen(true)}
                             disabled={isSending}
                             data-testid="test-send-btn"
                         >
@@ -793,6 +805,15 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                     </Button>
                 )}
             </div>
+
+            {/* Test-send recipient dialog */}
+            <TestSendDialog
+                open={testSendDialogOpen}
+                onOpenChange={setTestSendDialogOpen}
+                defaultEmail={actorEmail}
+                isPending={testSendMutation.isPending}
+                onSubmit={handleTestSend}
+            />
 
             {/* Send confirmation dialog */}
             {campaign && (
