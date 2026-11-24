@@ -16,16 +16,23 @@ export const SIGNUP_DECLINED_SUBJECT = 'No pudimos cobrar el primer pago de tu s
  */
 export function SignupDeclined({
     vertical,
+    planName,
     subscriptionUrl,
     cause,
     retry
 }: {
     readonly vertical: string;
+    /** Display name of the plan the signup tried to buy; null for mails queued before HOS-2193. */
+    readonly planName: string | null;
     readonly subscriptionUrl: string;
     readonly cause: SignupDeclinedCause;
     readonly retry: SignupDeclinedRetry;
 }) {
     const verticalName = formatTrialVerticals({ verticals: [vertical] });
+    // The tourist plan is named by its vertical label ("Turista VIP"): the vertical is not repeated.
+    const subscriptionName = planName
+        ? `${planName}${vertical === 'tourist' ? '' : ` (${verticalName})`}`
+        : verticalName;
     const causeText: Record<SignupDeclinedCause, string | null> = {
         PROVIDER_RISK:
             'Mercado Pago lo rechazó por sus controles de seguridad, no por tu tarjeta: tu tarjeta está bien. Probá de nuevo más tarde, desde el dispositivo que solés usar para comprar en internet, o escribinos.',
@@ -43,8 +50,8 @@ export function SignupDeclined({
         <EmailLayout previewText={SIGNUP_DECLINED_SUBJECT}>
             <Heading>{SIGNUP_DECLINED_SUBJECT}</Heading>
             <Text>
-                El primer cobro de tu suscripción de {verticalName} fue rechazado, así que el alta
-                no quedó hecha. No se te cobró nada.
+                El primer cobro de tu suscripción {planName ? 'al plan' : 'de'} {subscriptionName}{' '}
+                fue rechazado, así que el alta no quedó hecha. No se te cobró nada.
             </Text>
             {causeParagraph && <Text>{causeParagraph}</Text>}
             <Text>{retryText[retry]}</Text>

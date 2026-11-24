@@ -325,7 +325,11 @@ function signupDeclined(row: EmailOutboxRow, subscriptionUrl: string) {
         typeof data.vertical !== 'string' ||
         data.vertical.trim() === '' ||
         (data.declineReason !== null && typeof data.declineReason !== 'string') ||
-        typeof data.successionPredecessor !== 'boolean'
+        typeof data.successionPredecessor !== 'boolean' ||
+        // Rows queued before HOS-2193 carry no plan name (absent or null): they name the vertical.
+        (data.planName !== undefined &&
+            data.planName !== null &&
+            (typeof data.planName !== 'string' || data.planName.trim() === ''))
     )
         throw new TypeError('Faltan datos requeridos del aviso de alta rechazada');
     const { cause, retry } = resolveSignupDeclinedMessage({
@@ -337,6 +341,7 @@ function signupDeclined(row: EmailOutboxRow, subscriptionUrl: string) {
         react: (
             <SignupDeclined
                 vertical={data.vertical}
+                planName={typeof data.planName === 'string' ? data.planName : null}
                 subscriptionUrl={subscriptionUrl}
                 cause={cause}
                 retry={retry}
