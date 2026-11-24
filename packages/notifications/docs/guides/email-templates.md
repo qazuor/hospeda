@@ -34,7 +34,7 @@ src/templates/
 
 All templates use `EmailLayout` from **`@repo/email`** (HOS-2519). It is the single layout for every Hospeda email, auth mails included; there is no layout inside this package anymore. It has two variants (HOS-2565 PR-4):
 
-- **`variant="user"`** (default) .. The owner-approved design: wave header with the live "hospeda" wordmark and the "Descubrí el Litoral" tagline, a section bar plus the declared illustration above the body, and the rich footer (help, FAQ, channels, trust strip, social, small print with "Elegí qué correos recibís" and the D16 account link). Supports dark mode through one media block
+- **`variant="user"`** (default) .. The owner-approved design: wave header with the live "hospeda" wordmark and the "Descubrí el Litoral" tagline, the first title (the shared `Heading`, rendered through `EmailTitle`) with a section bar above it and the declared illustration to its right, and the rich footer (help, FAQ only for account holders, channels, trust strip, social, small print with "Elegí qué correos recibís" and the D16 account link). Supports dark mode through one media block in its own `<style>`; tag a light tinted box with `EMAIL_TINTED_BOX_CLASS` so it darkens too
 - **`variant="staff"`** .. The HOS-2519 layout, frozen. The 13 staff templates (admin, contact/feedback, AI cost alert, billing ops, `listing-fix-reported`) pass it
 - **Email-client-safe** .. `<html lang="es">`, inline styles with `emailPalette` hex colors, no flexbox/grid/CSS variables/SVG
 
