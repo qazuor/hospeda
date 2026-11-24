@@ -20,6 +20,8 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
 import ExperienceHero from '@/components/experience/ExperienceHero.astro';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceMeetingPoint from '@/components/experience/ExperienceMeetingPoint.astro';
@@ -142,6 +144,12 @@ const faqs: readonly DetailFaq[] =
             }))
           : [];
 
+// --- FAQPage JSON-LD when FAQs exist (HOS-2579 §6.6, same helper as accommodation) ---
+const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
+    faqs,
+    locale
+});
+
 // --- Gallery images ---
 const galleryImages = (() => {
     const mediaObj = raw.media as
@@ -258,8 +266,18 @@ const breadcrumbItems = [
         description={seoDescription}
         url={canonicalPath}
         image={experience.featuredImage.url}
+        latitude={experience.meetingPointLat}
+        longitude={experience.meetingPointLong}
+        ratingValue={experience.averageRating}
+        reviewCount={experience.reviewsCount}
+        priceFrom={experience.priceFrom}
+        isPriceOnRequest={experience.isPriceOnRequest}
+        destinationName={experience.destinationName}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+    {faqSections.length > 0 && (
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
+    )}
     <div slot="breadcrumbs" class="exp-detail-breadcrumbs">
         <Breadcrumbs
             locale={locale}

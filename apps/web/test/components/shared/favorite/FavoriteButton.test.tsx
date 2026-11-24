@@ -30,6 +30,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { AnalyticsEventSchemas } from '@repo/analytics';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FavoriteButtonProps } from '../../../../src/components/shared/favorite/FavoriteButton.client';
@@ -1224,6 +1225,78 @@ describe('FavoriteButton — favorite_toggled analytics event', () => {
 
         // Assert
         expect(trackEventSpy).not.toHaveBeenCalled();
+    });
+
+    // HOS-2579 §6.10.4: the optional `origin` prop is forwarded as-is, and its
+    // absence leaves the payload identical to the pre-HOS-2579 one.
+    it('forwards origin on favorite_added and the payload passes the catalog schema', async () => {
+        // Arrange
+        mockToggle.mockResolvedValue({
+            ok: true,
+            data: { toggled: true, bookmark: { id: 'bm-origin-1' } }
+        });
+        await renderButton(
+            arrangeUser({ entityId: 'entity-origin-1', entityType: 'VENUE', origin: 'bar' })
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        await waitFor(() => expect(trackEventSpy).toHaveBeenCalledTimes(1));
+        const [name, payload] = trackEventSpy.mock.calls[0] ?? [];
+        expect(name).toBe('favorite_added');
+        expect(payload).toStrictEqual({
+            entity_type: 'VENUE',
+            entity_id: 'entity-origin-1',
+            assigned_collection: false,
+            origin: 'bar'
+        });
+        expect(AnalyticsEventSchemas.favorite_added.safeParse(payload).success).toBe(true);
+    });
+
+    it('forwards origin on favorite_removed', async () => {
+        // Arrange
+        mockToggle.mockResolvedValue({ ok: true, data: { toggled: false, bookmark: null } });
+        await renderButton(
+            arrangeFavoritedUser({
+                entityId: 'entity-origin-2',
+                entityType: 'EXPERIENCE',
+                origin: 'gallery'
+            })
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        await waitFor(() => expect(trackEventSpy).toHaveBeenCalledTimes(1));
+        const [name, payload] = trackEventSpy.mock.calls[0] ?? [];
+        expect(name).toBe('favorite_removed');
+        expect(payload).toStrictEqual({
+            entity_type: 'EXPERIENCE',
+            entity_id: 'entity-origin-2',
+            assigned_collection: false,
+            origin: 'gallery'
+        });
+        expect(AnalyticsEventSchemas.favorite_removed.safeParse(payload).success).toBe(true);
+    });
+
+    it('omits the origin key entirely when no origin prop is passed', async () => {
+        // Arrange
+        mockToggle.mockResolvedValue({
+            ok: true,
+            data: { toggled: true, bookmark: { id: 'bm-origin-3' } }
+        });
+        await renderButton(arrangeUser({ entityId: 'entity-origin-3' }));
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert
+        await waitFor(() => expect(trackEventSpy).toHaveBeenCalledTimes(1));
+        const payload = trackEventSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+        expect(Object.hasOwn(payload, 'origin')).toBe(false);
     });
 });
 
