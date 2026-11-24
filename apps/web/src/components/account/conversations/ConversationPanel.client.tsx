@@ -10,15 +10,21 @@
  * `failed` with a retry and the reason shown above the composer. The page
  * hands in the first page of messages it already read on the server.
  *
+ * A thread without messages (an anonymous inquiry still awaiting email
+ * verification, HOS-2568) shows the kit `EmptyState` instead of an empty
+ * message list (HOS-2600); the first message sent replaces it.
+ *
  * The thread lives in a `Section`; the composer sits AFTER it, outside the
  * box, so it can stick to the bottom of the viewport (a Section clips its
  * overflow, which would keep a sticky child from sticking).
  */
 
+import { ChatIcon } from '@repo/icons';
 import { type ReactNode, useRef, useState } from 'react';
 import {
     Composer,
     ConversationThread,
+    EmptyState,
     formatMessageTime,
     Section,
     TextLink,
@@ -246,31 +252,45 @@ export function ConversationPanel({
                 title={t('conversations.thread.sectionTitle')}
                 helpId={THREAD_HELP_ID[viewer]}
             >
-                <ConversationThread
-                    viewer={viewer}
-                    messages={messages}
-                    locale={locale}
-                    onRetry={handleRetry}
-                    before={
-                        olderHref ? (
-                            <p className={styles.older}>
-                                <TextLink href={olderHref}>
-                                    {t('conversations.thread.older')}
-                                </TextLink>
-                            </p>
-                        ) : undefined
-                    }
-                    after={
-                        showReadReceipt ? (
-                            <p className={styles.receipt}>
-                                {t('conversations.thread.readByOwner')}{' '}
-                                <time dateTime={readAt}>
-                                    {formatMessageTime({ iso: readAt, locale })}
-                                </time>
-                            </p>
-                        ) : undefined
-                    }
-                />
+                {messages.length === 0 ? (
+                    <EmptyState
+                        variant="compact"
+                        icon={
+                            <ChatIcon
+                                size={28}
+                                aria-hidden={true}
+                            />
+                        }
+                        title={t('conversations.thread.empty.title')}
+                        description={t('conversations.thread.empty.body')}
+                    />
+                ) : (
+                    <ConversationThread
+                        viewer={viewer}
+                        messages={messages}
+                        locale={locale}
+                        onRetry={handleRetry}
+                        before={
+                            olderHref ? (
+                                <p className={styles.older}>
+                                    <TextLink href={olderHref}>
+                                        {t('conversations.thread.older')}
+                                    </TextLink>
+                                </p>
+                            ) : undefined
+                        }
+                        after={
+                            showReadReceipt ? (
+                                <p className={styles.receipt}>
+                                    {t('conversations.thread.readByOwner')}{' '}
+                                    <time dateTime={readAt}>
+                                        {formatMessageTime({ iso: readAt, locale })}
+                                    </time>
+                                </p>
+                            ) : undefined
+                        }
+                    />
+                )}
                 {children}
             </Section>
             {canReply && (
