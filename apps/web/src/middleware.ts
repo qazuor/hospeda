@@ -214,12 +214,10 @@ async function runMiddlewarePipeline(
     // handler, before the static-asset early return, so that whatever request
     // reaches this container first starts the clock.
     //
-    // Note what that is today: `health_check_enabled` is FALSE on the web
-    // resources and the Dockerfile declares no HEALTHCHECK, so there is no
-    // probe — the first request is the first real one to reach the origin.
-    // Enabling Coolify's healthcheck (configured, just off) is what would make
-    // it a probe and the timing deterministic; see the module for why that
-    // matters more once HOS-426 raises the TTLs.
+    // Coolify's healthcheck is enabled on both environments, so the first
+    // request is normally the `/api/health/` probe and the timing is
+    // deterministic. The module purges twice from here (120 s and 300 s, HOS-2577)
+    // so the old container's drain window is covered; see its header.
     //
     // No-ops on every subsequent call, never awaits, and never throws.
     void schedulePurgeOnDeploy();

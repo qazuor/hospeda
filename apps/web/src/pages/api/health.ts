@@ -3,11 +3,12 @@
  * @description Container liveness probe for Coolify's rolling deploy.
  *
  * Coolify deploys this app with a rolling update: it starts the new container,
- * then removes the old one. With no healthcheck configured it makes that second
+ * then removes the old one. Without a healthcheck it would make that second
  * move as soon as the new container has *started* — not once it can actually
- * serve — so the old container can be torn down while the Node server is still
- * binding its port. This endpoint is what lets Coolify wait for "can serve"
- * instead of "process launched".
+ * serve — so the old container could be torn down while the Node server is still
+ * binding its port. This endpoint (healthcheck enabled on both environments) is
+ * what lets Coolify wait for "can serve" instead of "process launched". Its first
+ * probe is also the request that starts the deploy-purge clock.
  *
  * WHY THIS HAS NO DEPENDENCIES, AND MUST KEEP NONE. It answers exactly one
  * question: is this Node process listening and routing? It deliberately does
