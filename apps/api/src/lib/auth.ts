@@ -42,7 +42,11 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
 import { admin } from 'better-auth/plugins';
 import { claimPartnerOnEmailVerification } from '../services/partner-application/partner-claim.service';
-import { AUTH_EMAIL_KEYS, buildTransactionalAttribution } from '../utils/email-attribution';
+import {
+    AUTH_EMAIL_KEYS,
+    buildAppEmailLayout,
+    buildTransactionalAttribution
+} from '../utils/email-attribution';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
 import { captureServerAnalyticsEvent } from './analytics-client';
@@ -338,6 +342,9 @@ function buildAuth() {
                             }),
                             attribution: buildTransactionalAttribution({
                                 templateKey: AUTH_EMAIL_KEYS.resetPassword
+                            }),
+                            layout: buildAppEmailLayout({
+                                templateKey: AUTH_EMAIL_KEYS.resetPassword
                             })
                         });
                         if (result.success) {
@@ -424,6 +431,9 @@ function buildAuth() {
                                 verificationUrl
                             }),
                             attribution: buildTransactionalAttribution({
+                                templateKey: AUTH_EMAIL_KEYS.verifyEmail
+                            }),
+                            layout: buildAppEmailLayout({
                                 templateKey: AUTH_EMAIL_KEYS.verifyEmail
                             })
                         });

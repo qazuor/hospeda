@@ -17,6 +17,7 @@ export {
     type OutboxScenarioInput,
     readInputLocale
 } from './define-entry.js';
+export { buildEmailCatalogLayout } from './layout-declarations.js';
 export {
     buildEmailPixelManifest,
     EMAIL_PIXEL_MANIFEST_COMMAND,

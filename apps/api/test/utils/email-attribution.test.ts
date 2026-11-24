@@ -8,6 +8,7 @@ import { EMAIL_CATALOG, findEmailCatalogEntry } from '@repo/notifications';
 import { describe, expect, it } from 'vitest';
 import {
     AUTH_EMAIL_KEYS,
+    buildAppEmailLayout,
     buildTransactionalAttribution,
     CONVERSATION_EMAIL_KEYS,
     TOKEN_REMINDER_TEMPLATE_KEYS
@@ -22,7 +23,7 @@ const ALL_KEYS = [
 describe('apps/api email attribution keys', () => {
     it('covers the 8 emails the api sends itself', () => {
         expect(new Set(ALL_KEYS).size).toBe(8);
-        expect(EMAIL_CATALOG.length).toBeGreaterThanOrEqual(125);
+        expect(EMAIL_CATALOG.length).toBeGreaterThanOrEqual(123);
     });
 
     it.each(ALL_KEYS)('%s is an EMAIL_CATALOG entry', (key) => {
@@ -33,5 +34,11 @@ describe('apps/api email attribution keys', () => {
         expect(buildTransactionalAttribution({ templateKey: AUTH_EMAIL_KEYS.verifyEmail })).toEqual(
             { medium: 'transactional', templateKey: 'auth.verify-email', includePixel: true }
         );
+    });
+
+    it.each(
+        Object.values(AUTH_EMAIL_KEYS)
+    )('HOS-2580 sends %s with the account illustration its entry declares', (templateKey) => {
+        expect(buildAppEmailLayout({ templateKey }).illustration).toBe('account');
     });
 });

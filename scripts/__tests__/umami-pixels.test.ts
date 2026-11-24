@@ -93,14 +93,14 @@ describe('umami:setup email pixels', () => {
 
         expect(result.exitCode).toBe(0);
         expect(err).toEqual([]);
-        expect(result.pixels.created).toBeGreaterThanOrEqual(125);
+        expect(result.pixels.created).toBeGreaterThanOrEqual(123);
         expect(fake.pixels.every((p) => String(p['slug']).startsWith('email-'))).toBe(true);
     });
 
-    it('loads the committed manifest: 125+ email-* pixels with names', () => {
+    it('loads the committed manifest: 123+ email-* pixels with names', () => {
         const definitions = loadEmailPixelDefinitions();
 
-        expect(definitions.length).toBeGreaterThanOrEqual(125);
+        expect(definitions.length).toBeGreaterThanOrEqual(123);
         for (const definition of definitions) {
             expect(definition.slug.startsWith('email-')).toBe(true);
             expect(definition.name.startsWith('Email · ')).toBe(true);

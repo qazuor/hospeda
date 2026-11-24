@@ -4,7 +4,7 @@
  *
  * Two halves:
  *
- * - **Manifest (all 125 entries, no rendering):** the committed
+ * - **Manifest (all 123 entries, no rendering):** the committed
  *   `generated/email-pixel-manifest.json` that `pnpm umami:setup` reads must equal
  *   what the catalog derives, so a template can never ship without its pixel being
  *   created. Slugs are unique, ≤ 90 chars and inside Umami's measured slug limit
