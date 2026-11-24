@@ -83,6 +83,7 @@ export const AnalyticsEvents = {
     searchPerformed: 'search_performed',
     listingInternalEntry: 'listing_internal_entry',
     listingContactClicked: 'listing_contact_clicked',
+    listingShared: 'listing_shared',
     contactOwnerStarted: 'contact_owner_started',
     contactOwnerCompleted: 'contact_owner_completed',
     contactOwnerFailed: 'contact_owner_failed',
@@ -217,6 +218,17 @@ export const AnalyticsEventSchemas = {
         is_whatsapp_entitled: z.boolean().optional(),
         locale: localeSchema
     }),
+    /*
+     * A visitor shared a listing detail page (HOS-2579 §6.10.4). `method` is how:
+     * the native share sheet, the copy-link action or a network intent link.
+     */
+    [AnalyticsEvents.listingShared]: z.object({
+        listing_id: idSchema,
+        vertical: z.enum(['accommodation', 'experience', 'venue']),
+        origin: ContactOriginSchema,
+        method: z.enum(['native', 'copy', 'network']),
+        locale: localeSchema
+    }),
     [AnalyticsEvents.contactOwnerStarted]: z
         .object({
             accommodation_id: idSchema,
@@ -315,12 +327,16 @@ export const AnalyticsEventSchemas = {
     [AnalyticsEvents.favoriteAdded]: z.object({
         assigned_collection: z.boolean().optional(),
         entity_id: idSchema,
-        entity_type: z.string().min(1)
+        entity_type: z.string().min(1),
+        /** Surface the toggle was tapped on (HOS-2579, additive). */
+        origin: ContactOriginSchema.optional()
     }),
     [AnalyticsEvents.favoriteRemoved]: z.object({
         assigned_collection: z.boolean().optional(),
         entity_id: idSchema,
-        entity_type: z.string().min(1)
+        entity_type: z.string().min(1),
+        /** Surface the toggle was tapped on (HOS-2579, additive). */
+        origin: ContactOriginSchema.optional()
     }),
     [AnalyticsEvents.reviewSubmitted]: z.object({
         accommodation_id: idSchema,

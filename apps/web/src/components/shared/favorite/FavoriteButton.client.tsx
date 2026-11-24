@@ -30,6 +30,7 @@ import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import type { ContactOrigin } from '@/lib/listing-contact/listing-contact-events';
 import { clearPendingAction, savePendingAction } from '@/lib/pending-action';
 import { setFavoriteStatus, useFavoriteStatus } from '@/store/favorites-store';
 import { addToast } from '@/store/toast-store';
@@ -115,6 +116,8 @@ export interface FavoriteButtonProps {
     readonly focusGuestPrompt?: boolean;
     /** Focus target when a responsive layout hides the guest prompt's trigger. */
     readonly guestPromptFallbackRef?: RefObject<HTMLElement | null>;
+    /** Surface this heart lives on, forwarded as `origin` on the favorite events (HOS-2579). */
+    readonly origin?: ContactOrigin;
 }
 
 /**
@@ -167,7 +170,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     count,
     showCount = false,
     focusGuestPrompt = false,
-    guestPromptFallbackRef
+    guestPromptFallbackRef,
+    origin
 }) => {
     const t = createT(locale);
 
@@ -363,7 +367,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 trackEvent(WebEvents.FavoriteToggledAdd, {
                     entity_type: entityType,
                     entity_id: entityId,
-                    assigned_collection: Boolean(assignedCollectionId)
+                    assigned_collection: Boolean(assignedCollectionId),
+                    ...(origin ? { origin } : {})
                 });
 
                 // Open the inline collection picker on the next render if the
@@ -379,7 +384,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 trackEvent(WebEvents.FavoriteToggledRemove, {
                     entity_type: entityType,
                     entity_id: entityId,
-                    assigned_collection: false
+                    assigned_collection: false,
+                    ...(origin ? { origin } : {})
                 });
             }
             // Reset the per-click assignment ref so the next save starts fresh.

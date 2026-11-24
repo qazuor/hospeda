@@ -24,6 +24,8 @@ import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildExperienceHeader } from '@/lib/listing-header/build-listing-header';
 import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
 import { buildExperienceLocation } from '@/lib/listing-location/build-location-section';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
@@ -38,6 +40,7 @@ import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracke
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
 import { buildExperienceGalleryImages } from '@/lib/experience/experience-gallery-images';
+import { fetchExperienceSecondaryData } from '@/lib/experience/experience-secondary-data';
 import { EXPERIENCE_CONTACT_ANCHOR_ID, hasPublicContactChannel } from '@/lib/experience-contact';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -50,8 +53,6 @@ import {
     buildExperienceChannels,
     buildExperienceContactPrice
 } from '@/lib/listing-contact/listing-channels';
-import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
-import type { DetailFaq } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
@@ -117,34 +118,18 @@ applyCacheHeaders({
 // edge cache so the failure is not frozen in as "this owner did not pay".
 markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
-// --- Parallel secondary fetches ---
-const [reviewsSettled, faqsSettled] = await Promise.allSettled([
-    experiencesApi.getReviews({ id: experience.id, page: 1, pageSize: 5 }),
-    experiencesApi.getFaqs({ id: experience.id })
-]);
+// --- Parallel secondary fetches (reviews + FAQs, inline FAQs first) ---
+const { reviews, totalReviews, faqs } = await fetchExperienceSecondaryData({
+    experienceId: experience.id,
+    inlineFaqs: experience.faqs,
+    fallbackTotalReviews: experience.reviewsCount
+});
 
-const reviewsResult =
-    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
-const faqsResult =
-    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
-
-const reviews: readonly ExperienceReviewPublicItem[] =
-    reviewsResult?.ok ? reviewsResult.data.items : [];
-const totalReviews: number =
-    reviewsResult?.ok ? reviewsResult.data.pagination.total : experience.reviewsCount;
-
-// FAQs: prefer inline entity FAQs, fall back to standalone endpoint
-const faqs: readonly DetailFaq[] =
-    experience.faqs.length > 0
-        ? experience.faqs
-        : faqsResult?.ok && Array.isArray(faqsResult.data)
-          ? (faqsResult.data as Array<Record<string, unknown>>).map((faq) => ({
-                id: String(faq.id || ''),
-                question: String(faq.question || ''),
-                answer: String(faq.answer || ''),
-                category: faq.category ? String(faq.category) : null
-            }))
-          : [];
+// --- FAQPage JSON-LD when FAQs exist (HOS-2579 §6.6, same helper as accommodation) ---
+const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
+    faqs,
+    locale
+});
 
 // --- Gallery images (media.gallery on the raw payload, featured image fallback) ---
 const { images: galleryImages } = buildExperienceGalleryImages({
@@ -265,8 +250,18 @@ const headerProps = buildExperienceHeader({
         description={seoDescription}
         url={canonicalPath}
         image={experience.featuredImage.url}
+        latitude={experience.meetingPointLat}
+        longitude={experience.meetingPointLong}
+        ratingValue={experience.averageRating}
+        reviewCount={experience.reviewsCount}
+        priceFrom={experience.priceFrom}
+        isPriceOnRequest={experience.isPriceOnRequest}
+        destinationName={experience.destinationName}
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+    {faqSections.length > 0 && (
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
+    )}
     <div slot="breadcrumbs" class="exp-detail-breadcrumbs">
         <Breadcrumbs
             locale={locale}
