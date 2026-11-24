@@ -1,0 +1,114 @@
+---
+/**
+ * @file VenueSummary.astro
+ * @description Slot 2 («summary») of the venue detail page (HOS-2579 §6.1.1):
+ * the price-range label and the primary contact action, right under the
+ * gallery.
+ *
+ * The price range used to be a badge of `VenueDetailHeader`. The header is now
+ * one frame for the three verticals (`ListingHeader`), so the venue's price
+ * moved here, next to the action it argues for, exactly like the accommodation
+ * price sits in `MobileBookingSummary` and the experience price in
+ * `ExperienceSummary`.
+ *
+ * The action is the same `ListingContactActions` the mobile bar uses, with
+ * origin `summary`:
+ * - a venue with a published menu gets «Ver carta» as a plain outbound link
+ *   (HOS-2520 §7.8, owner decision D-1), reported by the page's delegated
+ *   `[data-contact-channel]` listener;
+ * - otherwise «Consultar» opens the channels panel, falling back to the
+ *   in-page contact block before the panel hydrates;
+ * - with no channel at all there is no button.
+ *
+ * Renders nothing when there is neither a price range nor an action. Public
+ * listing data only, so the cached page stays session-blind.
+ */
+import { ListingContactActions } from '@/components/listing/contact/ListingContactActions';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { VenueContactMode } from '@/lib/listing-contact/listing-channels';
+
+interface Props {
+    readonly listingId: string;
+    readonly locale: SupportedLocale;
+    /** Price tier enum value (`BUDGET` | `MID` | `HIGH` | `PREMIUM`), or `null`. */
+    readonly priceRange: string | null;
+    /** The page's contact decision (`resolveVenueContactMode`). */
+    readonly contactMode: VenueContactMode;
+    readonly panelId: string;
+    /** In-page anchor of the contact block (no-JS / pre-hydration fallback). */
+    readonly fallbackHref: string;
+}
+
+const { listingId, locale, priceRange, contactMode, panelId, fallbackHref } = Astro.props;
+const { t } = createTranslations(locale);
+
+const priceRangeLabel = priceRange ? t(`venue.card.priceRange.${priceRange}`, priceRange) : null;
+const hasAction = contactMode.kind !== 'none';
+---
+
+{(priceRangeLabel || hasAction) && (
+    <section
+        class="venue-summary"
+        aria-label={t('accommodations.detail.listingContact.summary.title')}
+    >
+        {priceRangeLabel && (
+            <p class="venue-summary__price">
+                <span class="venue-summary__price-label">
+                    {t('venue.detail.priceRangeLabel', 'Rango de precios')}
+                </span>
+                <strong class="venue-summary__price-value">{priceRangeLabel}</strong>
+            </p>
+        )}
+        {hasAction && (
+            <ListingContactActions
+                client:idle
+                listingId={listingId}
+                vertical="venue"
+                locale={locale}
+                hasWhatsapp={false}
+                panelId={panelId}
+                primaryLabelKey={
+                    contactMode.kind === 'menu'
+                        ? 'accommodations.detail.listingContact.bar.viewMenu'
+                        : 'accommodations.detail.listingContact.bar.contact'
+                }
+                origin="summary"
+                fallbackHref={fallbackHref}
+                primaryLink={contactMode.kind === 'menu' ? { href: contactMode.href, channel: 'menu' } : undefined}
+            />
+        )}
+    </section>
+)}
+
+<style>
+    .venue-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3, 12px);
+        padding: var(--space-4, 16px);
+        background: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+    }
+
+    .venue-summary__price {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+        margin: 0;
+        font-family: var(--font-sans);
+    }
+
+    .venue-summary__price-label {
+        font-size: var(--text-caption, 0.8rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .venue-summary__price-value {
+        font-size: var(--text-lg, 1.125rem);
+        color: var(--core-foreground);
+    }
+</style>

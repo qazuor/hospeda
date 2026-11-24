@@ -25,6 +25,7 @@ import { buildExperienceHeader } from '@/lib/listing-header/build-listing-header
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceMeetingPoint from '@/components/experience/ExperienceMeetingPoint.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
+import ExperienceSummary from '@/components/experience/ExperienceSummary.astro';
 import ExperienceCancellationPolicy from '@/components/experience/ExperienceCancellationPolicy.astro';
 import ExperiencePrivateGroups from '@/components/experience/ExperiencePrivateGroups.astro';
 import ExperienceContactBlock from '@/components/experience/ExperienceContactBlock.astro';
@@ -309,6 +310,20 @@ const headerProps = buildExperienceHeader({
                 <GalleryTapBridge />
             </div>
         )}
+
+        <!-- Slot 2 «summary» (HOS-2579): price and duration (moved out of the
+             header) and «Consultar». -->
+        <ExperienceSummary
+            listingId={experience.id}
+            locale={locale}
+            priceFrom={experience.priceFrom}
+            priceUnit={experience.priceUnit}
+            isPriceOnRequest={experience.isPriceOnRequest}
+            durationMinutes={experience.durationMinutes}
+            hasContactChannel={contactChannels.length > 0}
+            panelId={panelId}
+            fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
+        />
 
         <!-- Description, opening hours, social networks -->
         <ExperienceInfo experience={experience} locale={locale} />

@@ -24,6 +24,7 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildVenueHeader } from '@/lib/listing-header/build-listing-header';
 import VenueDescription from '@/components/venue/VenueDescription.astro';
+import VenueSummary from '@/components/venue/VenueSummary.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
@@ -531,6 +532,17 @@ const headerProps = buildVenueHeader({
                 <ListingVideoSection videos={venue.videos} locale={locale} scope="venue" />
             </div>
         )}
+
+        <!-- Slot 2 «summary» (HOS-2579): the price range (moved out of the
+             header) and «Ver carta» / «Consultar». -->
+        <VenueSummary
+            listingId={venue.id}
+            locale={locale}
+            priceRange={venue.priceRange}
+            contactMode={contactMode}
+            panelId={contactPanelId}
+            fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
+        />
 
         <!-- Body: every catalog section in catalog order (sub-spec 6 § «Ficha»).
              Each id resolves its blocks by lookup in the frontmatter registry;
