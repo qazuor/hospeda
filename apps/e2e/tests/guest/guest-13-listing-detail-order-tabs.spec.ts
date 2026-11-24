@@ -8,16 +8,16 @@
  * `la-parrilla-del-puerto` (opening hours, menuUrl, socials, FAQs) and the
  * E2E-only experience `e2e-experiencia-con-canales` of
  * `fixtures/listing-contact-fixtures.ts` (phone, email and web, so slot 10
- * renders). Uses HOSPEDA_E2E_WEB_URL or the default E2E web port. Actor:
- * anonymous guest. Read-only: nothing is created, so there is nothing to clean
- * up.
+ * renders), plus the E2E-only venue `e2e-venue-con-horarios-y-carta` (spec §11
+ * `venueWithHoursAndMenu`: opening hours, a carta and a weekly agenda event),
+ * which the AC-2b and «Lo que ofrece» / «Horarios» cases assert against
+ * unconditionally. Uses HOSPEDA_E2E_WEB_URL or the default E2E web port.
+ * Actor: anonymous guest. Read-only: nothing is created, so there is nothing to
+ * clean up.
  *
- * What it cannot see: whether a block sits in the RIGHT slot when the seed
- * does not carry that block (for example venue events). The slot each venue
- * section lands in is pinned by the unit tests of `venue-detail-sections.ts`
- * (AC-2, AC-2b); here the agenda check only runs its positive half when the
- * seeded venue publishes an agenda, while «nothing of the agenda inside slot
- * 6» is asserted unconditionally.
+ * What it cannot see: the slot of a venue block the fixtures do not carry
+ * (daily specials, night info). Those are pinned by the unit tests of
+ * `venue-detail-sections.ts` (AC-2, AC-2b).
  *
  * The width and tap-target cases of the mobile action bar (AC-33, AC-34) are
  * HOS-2579 PR 4's and live with that work.
@@ -49,6 +49,12 @@ const SLOT_ORDER = [
 
 /** The venue agenda (`VenueEvents`) and its CTA (`VenueEventsCta`). */
 const AGENDA = '#venue-venue-events, .venue-events-cta';
+
+/** The venue with hours, carta and agenda (`venueWithHoursAndMenu`). */
+const VENUE_WITH_HOURS_AND_MENU = {
+    url: `${WEB_URL}/es/comer-y-salir/${FIXTURES.venueWithHoursAndMenu}/`,
+    navName: 'Secciones del comercio'
+} as const;
 
 const PAGES = [
     {
@@ -202,16 +208,14 @@ test.describe('GUEST-13: listing detail order and tabs @p1 @guest @discovery', (
     test('AC-6: the venue tabs label slot 4 «Lo que ofrece» and «Horarios» scrolls below the sticky band', async ({
         page
     }) => {
-        await page.goto(PAGES[1].url, { waitUntil: 'domcontentloaded' });
+        await page.goto(VENUE_WITH_HOURS_AND_MENU.url, { waitUntil: 'domcontentloaded' });
 
-        const nav = page.getByRole('navigation', { name: PAGES[1].navName });
+        const nav = page.getByRole('navigation', { name: VENUE_WITH_HOURS_AND_MENU.navName });
         await expect(nav).toBeVisible({ timeout: 15_000 });
         await expect(nav.getByRole('link', { name: 'Comodidades', exact: true })).toHaveCount(0);
-        if ((await page.locator('#listing-amenities').count()) > 0) {
-            await expect(
-                nav.getByRole('link', { name: 'Lo que ofrece', exact: true })
-            ).toBeAttached();
-        }
+        const offersTab = nav.getByRole('link', { name: 'Lo que ofrece', exact: true });
+        await expect(offersTab).toHaveAttribute('href', '#listing-amenities');
+        await expect(page.locator('#listing-offers #listing-amenities')).toBeAttached();
 
         const hoursTab = nav.getByRole('link', { name: 'Horarios', exact: true });
         await expect(hoursTab).toHaveAttribute('href', '#listing-hours');
@@ -237,19 +241,31 @@ test.describe('GUEST-13: listing detail order and tabs @p1 @guest @discovery', (
         const target = await page.locator('#listing-hours').boundingBox();
         // Right below the band, not somewhere further down the page.
         expect((target?.y ?? 0) - ((band?.y ?? 0) + (band?.height ?? 0))).toBeLessThan(64);
-        await expect(hoursTab).toHaveAttribute('aria-current', 'location');
+
+        // The scroll-spy settles once the smooth scroll ends. Park the section
+        // under the band explicitly (scroll-margin keeps it below the tabs), so a
+        // short hours block cannot hand the band to the next section mid-scroll.
+        await page
+            .locator('#listing-hours')
+            .evaluate((element) => element.scrollIntoView({ block: 'start', behavior: 'instant' }));
+        await expect(hoursTab).toHaveAttribute('aria-current', 'location', { timeout: 10_000 });
     });
 
-    test('AC-2b: nothing of the venue agenda renders in slot 6; when published, it is in «Lo que ofrece»', async ({
+    test('AC-2b: the venue agenda renders inside «Lo que ofrece» and nothing of it in slot 6', async ({
         page
     }) => {
-        await page.goto(PAGES[1].url, { waitUntil: 'domcontentloaded' });
+        await page.goto(VENUE_WITH_HOURS_AND_MENU.url, { waitUntil: 'domcontentloaded' });
         await expect(page.locator('[data-listing-slot="reviews"]')).toBeAttached({
             timeout: 15_000
         });
 
-        const total = await page.locator(AGENDA).count();
+        const agenda = page.locator('#venue-venue-events');
+        await expect(agenda).toHaveCount(1);
+        await expect(agenda).toContainText('Noche de jazz');
+        await expect(page.locator('#listing-offers #venue-venue-events')).toHaveCount(1);
         await expect(page.locator('#listing-promotions').locator(AGENDA)).toHaveCount(0);
-        await expect(page.locator('#listing-offers').locator(AGENDA)).toHaveCount(total);
+        // The carta is in the same slot, before the agenda (catalog order 8 < 10).
+        await expect(page.locator('#listing-offers #venue-menu')).toHaveCount(1);
+        expect(await precedes({ page, a: '#venue-menu', b: '#venue-venue-events' })).toBe(true);
     });
 });
