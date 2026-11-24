@@ -44,6 +44,12 @@ export interface StepperProps {
     readonly className?: string;
     /** Optional help anchor rendered as `data-help`. */
     readonly helpId?: HelpAnchor;
+    /**
+     * Optional control on the progress line, after «Step 2 of 3» (e.g. the
+     * flow's «Back» button), so moving back sits with the steps instead of
+     * floating above them. The flow owns what it does.
+     */
+    readonly action?: ReactNode;
 }
 
 /**
@@ -52,7 +58,15 @@ export interface StepperProps {
  * @param props - See {@link StepperProps}.
  * @returns A labelled `<nav>`, or `null` with no steps.
  */
-export function Stepper({ steps, current, label, locale, className, helpId }: StepperProps) {
+export function Stepper({
+    steps,
+    current,
+    label,
+    locale,
+    className,
+    helpId,
+    action
+}: StepperProps) {
     if (steps.length === 0) return null;
     const t = createT(locale);
     const at = Math.min(Math.max(current, 0), steps.length);
@@ -62,12 +76,17 @@ export function Stepper({ steps, current, label, locale, className, helpId }: St
             aria-label={label}
             className={cx(styles.root, className)}
         >
-            <p className={styles.progress}>
-                {t('account.ui.stepper.progress', undefined, {
-                    current: Math.min(at + 1, steps.length),
-                    total: steps.length
-                })}
-            </p>
+            <div className={styles.top}>
+                <p className={styles.progress}>
+                    {t('account.ui.stepper.progress', undefined, {
+                        current: Math.min(at + 1, steps.length),
+                        total: steps.length
+                    })}
+                </p>
+                {action === undefined || action === null ? null : (
+                    <div className={styles.action}>{action}</div>
+                )}
+            </div>
             <ol className={styles.list}>
                 {steps.map((step, index) => {
                     const state = index < at ? 'done' : index === at ? 'current' : 'upcoming';

@@ -120,6 +120,25 @@ export function KitGalleryListings({ locale }: GalleryGroupProps) {
                         />
                     </div>
                 </Visual>
+                <Visual name="Stepper/with-back">
+                    <div className={styles.stack}>
+                        <Stepper
+                            steps={STEPS}
+                            current={2}
+                            label="Compra de complemento"
+                            locale={locale}
+                            action={
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={noop}
+                                >
+                                    Volver
+                                </Button>
+                            }
+                        />
+                    </div>
+                </Visual>
                 <Visual name="OptionCard/states">
                     <div className={styles.stack}>
                         <OptionCardGrid>

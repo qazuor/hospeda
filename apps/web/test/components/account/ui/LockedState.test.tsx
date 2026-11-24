@@ -121,4 +121,21 @@ describe('LockedState', () => {
         );
         expect(source).not.toMatch(/\b(Básico|Basico|Premium|Pro)\b|\$\s?\d|ARS/);
     });
+
+    it('plan: with no catalog plan it leaves out the «Está incluida en:» line (HOS-2599)', () => {
+        render(
+            <LockedState
+                locale="es"
+                reason={{
+                    kind: 'plan',
+                    feature: 'Ofertas exclusivas',
+                    description: 'No están incluidas en tu plan actual.',
+                    plans: [],
+                    plansHref: '/planes/'
+                }}
+            />
+        );
+        expect(screen.queryByText('Está incluida en:')).toBeNull();
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
+    });
 });
