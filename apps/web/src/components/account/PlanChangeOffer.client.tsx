@@ -8,6 +8,7 @@ import {
 } from '@/lib/billing/plan-change-offer';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './PlanChangeOffer.module.css';
+import { Alert, Button, Field, OptionCard, OptionCardGrid, TextInput } from './ui';
 
 /** Props for the owner-facing plan-change offer. */
 export interface PlanChangeOfferProps {
@@ -75,110 +76,126 @@ export function PlanChangeOffer({
         <section
             className={styles.root}
             data-testid="plan-change-offer"
+            data-expanded={state === 'closed' ? undefined : 'true'}
         >
             {state === 'closed' && (
-                <button
-                    type="button"
-                    className={styles.primary}
+                <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => void open()}
                 >
                     {t('account.subscription.mine.planChange.open')}
-                </button>
+                </Button>
             )}
             {state === 'loading' && (
                 <p aria-live="polite">{t('account.subscription.mine.planChange.loading')}</p>
             )}
             {state === 'choices' && (
-                <>
+                <div className={styles.panel}>
                     <h4>{t('account.subscription.mine.planChange.heading')}</h4>
-                    <ul
+                    <div
                         data-testid="plan-change-options"
-                        className={styles.list}
+                        className={styles.choices}
                     >
-                        {choices.map((choice) => (
-                            <li
-                                key={choice.id}
-                                data-billing-option-id={choice.id}
-                            >
-                                <button
-                                    type="button"
-                                    className={styles.choice}
+                        <OptionCardGrid>
+                            {choices.map((choice) => (
+                                <OptionCard
+                                    key={choice.id}
+                                    title={choice.label}
+                                    data-billing-option-id={choice.id}
                                     onClick={() => {
                                         setSelected(choice);
                                         setState('confirm');
                                     }}
-                                >
-                                    {choice.label}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                    <button
-                        type="button"
-                        className={styles.secondary}
-                        onClick={() => setState('closed')}
-                    >
-                        {t('account.subscription.mine.planChange.back')}
-                    </button>
-                </>
+                                />
+                            ))}
+                        </OptionCardGrid>
+                    </div>
+                    <div className={styles.actions}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setState('closed')}
+                        >
+                            {t('account.subscription.mine.planChange.back')}
+                        </Button>
+                    </div>
+                </div>
             )}
             {state === 'confirm' && selected && (
-                <>
+                <div className={styles.panel}>
                     <h4>{t('account.subscription.mine.planChange.confirmHeading')}</h4>
                     <p>{selected.label}</p>
-                    <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
-                    <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
-                    <label className={styles.field}>
-                        <span>{t('account.subscription.mine.planChange.payerEmailLabel')}</span>
-                        <input
+                    <Alert
+                        tone="info"
+                        locale={locale}
+                    >
+                        <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
+                        <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
+                    </Alert>
+                    <Field
+                        label={t('account.subscription.mine.planChange.payerEmailLabel')}
+                        locale={locale}
+                        hint={t('account.subscription.mine.planChange.payerEmailHint')}
+                        error={
+                            payerEmailError ? (
+                                <span data-testid="plan-change-payer-email-error">
+                                    {t('account.subscription.mine.planChange.payerEmailInvalid')}
+                                </span>
+                            ) : undefined
+                        }
+                        className={styles.field}
+                        required
+                    >
+                        <TextInput
                             type="email"
                             name="payerEmail"
                             autoComplete="email"
-                            required
                             value={payerEmail}
-                            aria-invalid={payerEmailError}
                             data-testid="plan-change-payer-email"
                             onChange={(event) => setPayerEmail(event.target.value)}
                         />
-                        <small>{t('account.subscription.mine.planChange.payerEmailHint')}</small>
-                    </label>
-                    {payerEmailError && (
-                        <p
-                            role="alert"
-                            data-testid="plan-change-payer-email-error"
-                        >
-                            {t('account.subscription.mine.planChange.payerEmailInvalid')}
-                        </p>
-                    )}
+                    </Field>
                     {promo && (
-                        <p data-testid="plan-change-promo-warning">
-                            {t('account.subscription.mine.planChange.promoLost')}
-                        </p>
+                        <Alert
+                            tone="warning"
+                            locale={locale}
+                        >
+                            <p data-testid="plan-change-promo-warning">
+                                {t('account.subscription.mine.planChange.promoLost')}
+                            </p>
+                        </Alert>
                     )}
                     {selected.cycle !== 'monthly' && courtesyMonths > 0 && (
-                        <p data-testid="plan-change-courtesy-warning">
-                            {tPlural(
-                                'account.subscription.mine.planChange.courtesyLost',
-                                courtesyMonths,
-                                { count: courtesyMonths }
-                            )}
-                        </p>
+                        <Alert
+                            tone="warning"
+                            locale={locale}
+                        >
+                            <p data-testid="plan-change-courtesy-warning">
+                                {tPlural(
+                                    'account.subscription.mine.planChange.courtesyLost',
+                                    courtesyMonths,
+                                    { count: courtesyMonths }
+                                )}
+                            </p>
+                        </Alert>
                     )}
-                    <button
-                        type="button"
-                        className={styles.primary}
-                        onClick={() => void submitSelectedPlanChange()}
-                    >
-                        {t('account.subscription.mine.planChange.confirm')}
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.secondary}
-                        onClick={() => setState('choices')}
-                    >
-                        {t('account.subscription.mine.planChange.back')}
-                    </button>
-                </>
+                    <div className={styles.actions}>
+                        <Button
+                            size="sm"
+                            onClick={() => void submitSelectedPlanChange()}
+                        >
+                            {t('account.subscription.mine.planChange.confirm')}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setState('choices')}
+                        >
+                            {t('account.subscription.mine.planChange.back')}
+                        </Button>
+                    </div>
+                </div>
             )}
             {state === 'pending' && (
                 <p aria-live="polite">{t('account.subscription.mine.planChange.pending')}</p>

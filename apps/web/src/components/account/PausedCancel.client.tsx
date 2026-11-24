@@ -3,7 +3,8 @@ import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import { scheduleSubscriptionRefresh } from '@/lib/billing/refresh-subscription-card';
 import { formatSelfCancelDate, parseCancellationPreview } from '@/lib/billing/self-cancel';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
-import styles from './SubscriptionCancel.module.css';
+import styles from './PlanChangeOffer.module.css';
+import { Alert, Button } from './ui';
 
 type PausedPreview = Extract<
     NonNullable<ReturnType<typeof parseCancellationPreview>>,
@@ -68,17 +69,18 @@ export function PausedCancel({
     }
     return (
         <section
-            className={styles.panel}
+            className={styles.root}
             data-testid="paused-cancel"
+            data-expanded={state === 'idle' ? undefined : 'true'}
         >
             {state === 'idle' && (
-                <button
-                    type="button"
-                    className={styles.open}
+                <Button
+                    variant="danger-ghost"
+                    size="sm"
                     onClick={() => void open()}
                 >
                     {t('account.subscription.cancel.open')}
-                </button>
+                </Button>
             )}
             {(state === 'loading' || state === 'pending') && (
                 <p aria-live="polite">{t('account.subscription.cancel.pending')}</p>
@@ -87,37 +89,44 @@ export function PausedCancel({
                 <p role="alert">{t('account.subscription.mine.pausedCancel.error')}</p>
             )}
             {state === 'ready' && preview && (
-                <>
+                <div className={styles.panel}>
                     <h4>
                         {t('account.subscription.cancel.heading', undefined, {
                             plan: planName,
                             vertical: verticalLabel
                         })}
                     </h4>
-                    <p data-testid="paused-cancel-end">
-                        {preview.basis === 'CREDIT'
-                            ? t('account.subscription.mine.pausedCancel.creditEnd', undefined, {
-                                  date: date(preview.serviceEndsAt)
-                              })
-                            : t('account.subscription.mine.pausedCancel.today')}
-                    </p>
-                    {preview.courtesyMonthsLost > 0 && (
-                        <p>
-                            {tPlural(
-                                'account.subscription.mine.pausedCancel.courtesyLost',
-                                preview.courtesyMonthsLost,
-                                { count: preview.courtesyMonthsLost }
-                            )}
-                        </p>
-                    )}
-                    <button
-                        type="button"
-                        className={styles.confirm}
-                        onClick={() => void applyCancellation()}
+                    <Alert
+                        tone="warning"
+                        locale={locale}
                     >
-                        {t('account.subscription.mine.pausedCancel.confirm')}
-                    </button>
-                </>
+                        <p data-testid="paused-cancel-end">
+                            {preview.basis === 'CREDIT'
+                                ? t('account.subscription.mine.pausedCancel.creditEnd', undefined, {
+                                      date: date(preview.serviceEndsAt)
+                                  })
+                                : t('account.subscription.mine.pausedCancel.today')}
+                        </p>
+                        {preview.courtesyMonthsLost > 0 && (
+                            <p>
+                                {tPlural(
+                                    'account.subscription.mine.pausedCancel.courtesyLost',
+                                    preview.courtesyMonthsLost,
+                                    { count: preview.courtesyMonthsLost }
+                                )}
+                            </p>
+                        )}
+                    </Alert>
+                    <div className={styles.actions}>
+                        <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => void applyCancellation()}
+                        >
+                            {t('account.subscription.mine.pausedCancel.confirm')}
+                        </Button>
+                    </div>
+                </div>
             )}
             {state === 'done' && preview && (
                 <p role="status">

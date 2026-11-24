@@ -47,7 +47,6 @@ import {
     Skeleton,
     StatusPill
 } from '@/components/account/ui';
-import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -203,16 +202,14 @@ export function ExclusiveDealsList({
                     reason: {
                         kind: 'plan',
                         feature: t('account.exclusiveDeals.upgrade.title', 'Ofertas exclusivas'),
-                        description: resolvePlanGateMessage({
-                            keyBase: 'account.exclusiveDeals.upgrade.message',
-                            locale,
-                            noPlansFallback:
-                                'Las ofertas exclusivas no están incluidas en tu plan actual. Actualizá tu plan para acceder.',
-                            planNames: gatePlanNames,
-                            t
-                        }),
-                        // The description already names the catalog plans.
-                        plans: [],
+                        // HOS-2599: the plans are named by the LockedState pills (catalog names,
+                        // like Alertas de precio), so «Está incluida en:» is never left empty.
+                        // Without catalog names the description says the plan lacks it.
+                        description:
+                            gatePlanNames.length > 0
+                                ? t('account.exclusiveDeals.lock.description')
+                                : t('account.exclusiveDeals.upgrade.messageNoPlans'),
+                        plans: gatePlanNames.map((name) => ({ name })),
                         plansHref: upgradeHref
                     }
                 }

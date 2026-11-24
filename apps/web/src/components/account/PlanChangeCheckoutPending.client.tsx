@@ -5,6 +5,7 @@ import { isDisplayableCheckoutUrl } from '@/lib/billing/signup-checkout';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './PlanChangeOffer.module.css';
+import { Button, LinkButton } from './ui';
 
 /** Props for the open plan-change checkout actions. */
 export interface PlanChangeCheckoutPendingProps {
@@ -53,6 +54,7 @@ export function PlanChangeCheckoutPending({
             <p
                 className={styles.root}
                 aria-live="polite"
+                data-expanded="true"
                 data-testid="my-subscription-plan-change-cancelled"
             >
                 {t('account.subscription.mine.planChange.checkoutCancelled')}
@@ -63,27 +65,30 @@ export function PlanChangeCheckoutPending({
         <section
             className={styles.root}
             data-testid="my-subscription-plan-change-pending"
+            data-expanded={state === 'error' ? 'true' : undefined}
         >
-            {resumeHref && (
-                <a
-                    className={styles.primary}
-                    data-testid="my-subscription-plan-change-resume"
-                    href={resumeHref}
-                    rel="noopener noreferrer"
+            <div className={styles.actions}>
+                {resumeHref && (
+                    <LinkButton
+                        size="sm"
+                        data-testid="my-subscription-plan-change-resume"
+                        href={resumeHref}
+                    >
+                        {t('account.subscription.mine.planChange.resumeCheckout')}
+                    </LinkButton>
+                )}
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid="my-subscription-plan-change-cancel"
+                    disabled={state === 'pending'}
+                    onClick={() => void cancel()}
                 >
-                    {t('account.subscription.mine.planChange.resumeCheckout')}
-                </a>
-            )}
-            <button
-                type="button"
-                data-testid="my-subscription-plan-change-cancel"
-                disabled={state === 'pending'}
-                onClick={() => void cancel()}
-            >
-                {state === 'pending'
-                    ? t('account.subscription.mine.planChange.cancellingCheckout')
-                    : t('account.subscription.mine.planChange.cancelCheckout')}
-            </button>
+                    {state === 'pending'
+                        ? t('account.subscription.mine.planChange.cancellingCheckout')
+                        : t('account.subscription.mine.planChange.cancelCheckout')}
+                </Button>
+            </div>
             {state === 'error' && (
                 <p
                     role="alert"

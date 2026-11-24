@@ -271,3 +271,43 @@ describe('MySubscriptions cancellation confirmation — TEST:1762:5', () => {
         }
     });
 });
+
+describe('MySubscriptions action row — HOS-2599', () => {
+    const article = source.slice(
+        source.indexOf('<PlanSummary name={summary.title}>'),
+        source.indexOf('</PlanSummary>')
+    );
+    const actions = article.slice(
+        article.indexOf('<div class={styles.actions} data-testid="my-subscription-actions">'),
+        article.indexOf('</div>', article.indexOf('<SubscriptionCancel'))
+    );
+
+    it('wraps the pause, plan-change and cancel islands in one actions container', () => {
+        expect(actions).not.toBe('');
+        expect(actions).toContain('<PauseOffer client:visible');
+        expect(actions).toContain('<PlanChangeOffer client:visible');
+        expect(actions).toContain('<SubscriptionCancel client:visible');
+        expect(actions).not.toContain('<PromoCodeRedeem');
+    });
+
+    it('keeps the informational lines outside the actions container', () => {
+        expect(actions).not.toContain('<p ');
+    });
+
+    it('sets the promo redemption apart in its own block after the actions', () => {
+        expect(article.indexOf('class={styles.promo}')).toBeGreaterThan(
+            article.indexOf('<SubscriptionCancel')
+        );
+    });
+
+    it('lets an expanded island take the full row below the triggers', () => {
+        const css = readFileSync(
+            resolve(__dirname, '../../../src/components/account/MySubscriptions.module.css'),
+            'utf8'
+        );
+        expect(css).toMatch(
+            /\.actions \[data-expanded=["']true["']\] \{[^}]*flex: 1 1 100%;[^}]*order: 1;/u
+        );
+        expect(css).toMatch(/\.actions \{[^}]*flex-wrap: wrap;/u);
+    });
+});

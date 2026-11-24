@@ -43,7 +43,9 @@ const PURCHASE_PRICE = /\$\s?3\.000(?:,00)?(?!\d)/;
 
 /** Assert the recurring boost's purchase summary uses the Spanish catalog copy. */
 async function inspectSummary(summary: Locator): Promise<void> {
-    await expect(summary.getByRole('heading')).toHaveText(esBilling.addonPurchase.summary);
+    await expect(summary.getByRole('heading', { level: 2 })).toHaveText(
+        esBilling.addonPurchase.summary
+    );
     await expect(summary).toContainText('E2E HOS-2138 boost recurring accommodation');
     await expect(summary).toContainText(esBilling.addonPurchase.cycle.monthly);
     await expect(summary).toContainText(PURCHASE_PRICE);

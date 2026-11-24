@@ -143,7 +143,7 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
             }
         );
         await article.getByRole('button', { name: /cambiar de plan/i }).click();
-        const option = article.locator(`li[data-billing-option-id="${premiumOptionId}"] button`);
+        const option = article.locator(`button[data-billing-option-id="${premiumOptionId}"]`);
         await expect(option).toBeVisible();
         await option.click();
         await article.getByRole('button', { name: 'Confirmar cambio' }).click();
@@ -177,7 +177,7 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
             }
         );
         await article.getByRole('button', { name: /cambiar de plan/i }).click();
-        const option = article.locator(`li[data-billing-option-id="${basicOptionId}"] button`);
+        const option = article.locator(`button[data-billing-option-id="${basicOptionId}"]`);
         await expect(option).toBeVisible();
         await option.click();
         await article.getByRole('button', { name: 'Confirmar cambio' }).click();
@@ -209,7 +209,7 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
             }
         );
         await article.getByRole('button', { name: /cambiar de plan/i }).click();
-        await article.locator(`li[data-billing-option-id="${premiumOptionId}"] button`).click();
+        await article.locator(`button[data-billing-option-id="${premiumOptionId}"]`).click();
         await article.getByRole('button', { name: 'Confirmar cambio' }).click();
         await expect(article.getByTestId('plan-change-result')).toContainText(
             'Mercado Pago no pudo aplicar el cambio. Tu plan actual sigue vigente.'

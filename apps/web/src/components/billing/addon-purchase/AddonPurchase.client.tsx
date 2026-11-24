@@ -1,6 +1,7 @@
 import type { AddonOffersResponse } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
+import { Button } from '@/components/account/ui/Button';
 import { Stepper } from '@/components/account/ui/Stepper';
 import {
     billingSubscriptionApi,
@@ -9,6 +10,10 @@ import {
 } from '@/lib/api/endpoints-protected';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import { type ApiErrorShape, translateApiError, visibleApiMessage } from '@/lib/api-errors';
+import {
+    noSubscriptionReason,
+    offersForAccountVerticals
+} from '@/lib/billing/addon-account-verticals';
 import {
     type ActiveAddonInstance,
     type AddonSubscriptionTarget,
@@ -29,6 +34,7 @@ import { buildUrl } from '@/lib/urls';
 import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
 import styles from './AddonPurchase.module.css';
+import { AddonPurchaseOutcome } from './AddonPurchaseOutcome';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
@@ -54,7 +60,10 @@ export function AddonPurchase(input: {
     readonly returnOrderRequestId: string | null;
     readonly accountEmail: string;
     readonly navigateToCheckout?: (url: string) => void;
+    /** HOS-2599: the account's subscription verticals; only compatible add-ons are offered. */
+    readonly accountVerticals?: readonly string[] | null;
 }) {
+    const accountVerticals = input.accountVerticals ?? null;
     const { t } = useMemo(() => createTranslations(input.locale), [input.locale]);
     const [offers, setOffers] = useState<readonly Offer[]>([]);
     const [offer, setOffer] = useState<Offer | null>(null);
@@ -66,6 +75,7 @@ export function AddonPurchase(input: {
     const [subscriptionTarget, setSubscriptionTarget] = useState<AddonSubscriptionTarget | null>(
         null
     );
+    const [emptyReason, setEmptyReason] = useState<'INACTIVE' | 'NONE'>('NONE');
     const [orderRequestId, setOrderRequestId] = useState<string | null>(null);
     const [view, setView] = useState<View>(input.returnOrderRequestId ? 'PROCESSING' : 'LOADING');
     const [busy, setBusy] = useState(false);
@@ -98,7 +108,12 @@ export function AddonPurchase(input: {
             .then((result) => {
                 if (!alive) return;
                 if (result.ok) {
-                    setOffers(purchasableOffers(result.data.items));
+                    setOffers(
+                        offersForAccountVerticals({
+                            offers: purchasableOffers(result.data.items),
+                            accountVerticals
+                        })
+                    );
                     if (!input.returnOrderRequestId) setView('OFFERS');
                 } else
                     setError(
@@ -117,7 +132,7 @@ export function AddonPurchase(input: {
         return () => {
             alive = false;
         };
-    }, [input.returnOrderRequestId, t]);
+    }, [input.returnOrderRequestId, t, accountVerticals]);
 
     // HOS-2362: what the account already holds, so a bought addon shows as active instead of
     // inviting a purchase the API refuses. Best effort: if the read fails the screen simply
@@ -180,6 +195,12 @@ export function AddonPurchase(input: {
                     compatibleVerticals: selected.compatibleVerticals
                 });
                 setSubscriptionTargets(items);
+                setEmptyReason(
+                    noSubscriptionReason({
+                        subscriptions: result.data.subscriptions,
+                        compatibleVerticals: selected.compatibleVerticals
+                    })
+                );
                 const [only] = items;
                 if (
                     items.length === 1 &&
@@ -263,15 +284,12 @@ export function AddonPurchase(input: {
     });
 
     /** Known refusal codes and reasons get their localized copy; anything else keeps the API text. */
-    const purchaseErrorMessage = (params: { readonly error: ApiErrorShape }): string => {
-        const { error } = params;
-        const generic = t('billing.addonPurchase.loadError');
-        return translateApiError({
+    const purchaseErrorMessage = ({ error }: { readonly error: ApiErrorShape }): string =>
+        translateApiError({
             error,
             t,
-            fallback: visibleApiMessage({ error }) ?? generic
+            fallback: visibleApiMessage({ error }) ?? t('billing.addonPurchase.loadError')
         });
-    };
 
     const confirmPurchase = async () => {
         if (!offer || !orderRequestId || busy) return;
@@ -368,23 +386,25 @@ export function AddonPurchase(input: {
                     {error}
                 </p>
             )}
-            {backView && (
-                <button
-                    type="button"
-                    className={styles.back}
-                    data-testid="addon-purchase-back"
-                    disabled={busy}
-                    onClick={goBack}
-                >
-                    {t('billing.addonPurchase.back')}
-                </button>
-            )}
             {stepIndex !== null && (
                 <Stepper
                     steps={steps}
                     current={stepIndex}
                     label={t('billing.addonPurchase.steps.label')}
                     locale={input.locale}
+                    action={
+                        backView ? (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                data-testid="addon-purchase-back"
+                                disabled={busy}
+                                onClick={goBack}
+                            >
+                                {t('billing.addonPurchase.back')}
+                            </Button>
+                        ) : undefined
+                    }
                 />
             )}
             {view === 'LOADING' && <p>{t('billing.addonPurchase.loading')}</p>}
@@ -431,6 +451,8 @@ export function AddonPurchase(input: {
                         })
                     }
                     onSelect={selectSubscription}
+                    emptyReason={emptyReason}
+                    locale={input.locale}
                     plansHref={buildUrl({
                         locale: input.locale,
                         path: addonPlansPath({
@@ -444,6 +466,7 @@ export function AddonPurchase(input: {
                 <AddonPurchaseSummary
                     offer={offer}
                     target={target}
+                    subscriptionTarget={subscriptionTarget}
                     payerEmail={payerEmail}
                     onPayerEmailChange={setPayerEmail}
                     free={free}
@@ -455,45 +478,22 @@ export function AddonPurchase(input: {
                     t={t}
                 />
             )}
-            {view === 'PROCESSING' && (
-                <p
-                    data-testid="addon-purchase-processing"
-                    data-exhausted={waitEnded ? 'true' : 'false'}
-                    role="status"
-                >
-                    {t(
+            {(view === 'PROCESSING' || view === 'ACTIVE' || view === 'CLOSED') && (
+                <AddonPurchaseOutcome
+                    view={view}
+                    processingKey={
                         waitingElsewhere
                             ? 'billing.addonPurchase.waitingPaymentLong'
                             : processingCopyKey({
                                   chargeKind: waitingKind,
                                   exhausted: poll.exhausted
                               })
-                    )}
-                </p>
-            )}
-            {view === 'PROCESSING' && poll.error && (
-                <p
-                    role="alert"
-                    className={styles.error}
-                >
-                    {poll.error}
-                </p>
-            )}
-            {view === 'ACTIVE' && (
-                <p
-                    data-testid="addon-purchase-active"
-                    role="status"
-                >
-                    {t('billing.addonPurchase.active')}
-                </p>
-            )}
-            {view === 'CLOSED' && (
-                <p
-                    data-testid="addon-purchase-closed"
-                    role="status"
-                >
-                    {t(closedCopyKey({ read: poll.read }))}
-                </p>
+                    }
+                    waitEnded={waitEnded}
+                    pollError={poll.error}
+                    closedKey={closedCopyKey({ read: poll.read })}
+                    t={t}
+                />
             )}
         </div>
     );

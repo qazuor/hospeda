@@ -1,59 +1,43 @@
+/* PlanChangeOffer.module.css — shared layout of the subscription action
+   islands (pause, plan change, resume, checkout pending). Buttons, fields and
+   notices are kit components; this file only stacks them. Tokens only. */
+
 .root {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    min-inline-size: 0;
 }
+
 .root h4,
 .root p {
     margin: 0;
 }
-.list {
+
+.panel {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    inline-size: 100%;
+}
+
+.panel ul {
     margin: 0;
-    padding: 0;
-    list-style: none;
+    padding-inline-start: var(--space-5);
 }
-.primary,
-.secondary,
-.choice {
-    min-height: 44px;
-    padding: var(--space-2) var(--space-4);
-    border: 1px solid var(--brand-primary);
-    border-radius: var(--radius-button);
-    cursor: pointer;
-}
-.primary {
-    background: var(--brand-primary);
-    color: var(--core-card);
-}
-.secondary,
-.choice {
-    background: transparent;
-    color: var(--brand-primary-link);
-}
-.primary:focus-visible,
-.secondary:focus-visible,
-.choice:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 3px;
-}
+
 .field {
+    inline-size: 100%;
+    max-inline-size: 28rem;
+}
+
+.actions {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    width: 100%;
-    max-width: 28rem;
+    flex-wrap: wrap;
+    gap: var(--space-2);
 }
-.field input {
-    min-height: 44px;
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-button);
-}
-.field input:focus-visible {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 2px;
+
+.choices {
+    inline-size: 100%;
 }

@@ -22,3 +22,28 @@
     margin: 0;
     color: var(--core-muted-foreground);
 }
+
+/* The action islands of one subscription sit in one wrapping row. Each island
+   root is a flex item (astro-island is display: contents). A root that opened
+   its panel (data-expanded) takes the full row and moves below the triggers. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.actions:not(:has(*)) {
+    display: none;
+}
+
+.actions [data-expanded="true"] {
+    flex: 1 1 100%;
+    order: 1;
+}
+
+/* Promo redemption: its own block, set apart from the action row. */
+.promo {
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--border);
+}

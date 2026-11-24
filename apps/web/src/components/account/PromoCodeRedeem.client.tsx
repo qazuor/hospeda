@@ -7,6 +7,7 @@ import {
 } from '@/lib/billing/promo-redeem';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './PromoCodeRedeem.module.css';
+import { Button, Field, TextInput } from './ui';
 
 export interface PromoCodeRedeemProps {
     readonly vertical: PublishVerticalSlug;
@@ -74,22 +75,27 @@ export function PromoCodeRedeem({ vertical, locale, offer }: PromoCodeRedeemProp
             data-testid="promo-redeem"
             data-vertical={vertical}
         >
-            <h3>{t(titleKey)}</h3>
-            <form onSubmit={(event) => void submit(event)}>
-                <label htmlFor={`promo-code-${vertical}-${offer}`}>
-                    {t('account.subscription.promoRedeem.label')}
-                </label>
-                <input
+            <h3 className={styles.title}>{t(titleKey)}</h3>
+            <form
+                className={styles.form}
+                onSubmit={(event) => void submit(event)}
+            >
+                <Field
+                    label={t('account.subscription.promoRedeem.label')}
+                    locale={locale}
                     id={`promo-code-${vertical}-${offer}`}
-                    name="code"
-                    autoComplete="off"
-                    value={code}
-                    onChange={(event) => setCode(event.currentTarget.value)}
-                    required
-                    maxLength={64}
-                />
-                <button
-                    className={styles.submit}
+                    className={styles.field}
+                >
+                    <TextInput
+                        name="code"
+                        autoComplete="off"
+                        value={code}
+                        onChange={(event) => setCode(event.currentTarget.value)}
+                        required
+                        maxLength={64}
+                    />
+                </Field>
+                <Button
                     type="submit"
                     disabled={state === 'pending'}
                 >
@@ -98,7 +104,7 @@ export function PromoCodeRedeem({ vertical, locale, offer }: PromoCodeRedeemProp
                             ? 'account.subscription.promoRedeem.pending'
                             : 'account.subscription.promoRedeem.submit'
                     )}
-                </button>
+                </Button>
             </form>
             <div
                 className={styles.result}
