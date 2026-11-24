@@ -29,7 +29,7 @@
  *     fires, and typing clears the per-field error (HOS-794 AC-1/AC-2).
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationFaqItem } from '@/components/host/editor/FaqSection.client';
 import { FaqSection } from '@/components/host/editor/FaqSection.client';
@@ -63,21 +63,8 @@ vi.mock('@/components/host/editor/FaqSection.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-vi.mock('@/components/shared/ui/ConfirmDeleteDialog.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
-
-vi.mock('@/components/shared/ui/Dialog.client', () => ({
-    Dialog: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
-        isOpen ? <div role="presentation">{children}</div> : null,
-    DialogHeader: ({ children, titleId }: { children: React.ReactNode; titleId: string }) => (
-        <div id={titleId}>{children}</div>
-    ),
-    DialogBody: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-    DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-}));
-
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw = fallback ?? key;
@@ -396,13 +383,12 @@ describe('FaqSection', () => {
         mockRemove.mockResolvedValueOnce({ ok: true, data: { success: true } });
 
         renderSection([FAQ_1, FAQ_2]);
-        fireEvent.click(
-            screen.getByRole('button', { name: /^Eliminar "¿Cuándo es el check-in\?"/ })
-        );
+        fireEvent.click(screen.getByRole('button', { name: /^Quitar ¿Cuándo es el check-in\?/ }));
 
         // The dialog opens and echoes what is about to be deleted — the API is
-        // NOT called until the user confirms (HOS-794). The question text now
-        // appears twice: once in the row and once in the dialog body.
+        // NOT called until the user confirms (HOS-794). The question text
+        // appears twice: once as the row label and once in the dialog body.
+        expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
         expect(mockRemove).not.toHaveBeenCalled();
         expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
         expect(screen.getAllByText('¿Cuándo es el check-in?')).toHaveLength(2);
@@ -418,23 +404,27 @@ describe('FaqSection', () => {
         });
     });
 
-    it('does NOT call .remove when the delete dialog is cancelled', () => {
+    it('asks for confirmation before removing and Cancel keeps the row (AC-10)', async () => {
         renderSection([FAQ_1]);
-        fireEvent.click(screen.getByRole('button', { name: /^Eliminar "/ }));
+        fireEvent.click(screen.getByRole('button', { name: /^Quitar / }));
 
-        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+        const dialog = await screen.findByRole('alertdialog');
+        expect(within(dialog).getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
 
+        await waitFor(() => {
+            expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+        });
         expect(mockRemove).not.toHaveBeenCalled();
-        expect(screen.queryByText('¿Eliminás esta pregunta?')).not.toBeInTheDocument();
+        expect(screen.getByText('¿Cuándo es el check-in?')).toBeInTheDocument();
     });
 
-    it('keeps the FAQ and the dialog open when the DELETE fails (HOS-794)', async () => {
+    it('keeps the FAQ and reports the error when the DELETE fails (HOS-794)', async () => {
         mockRemove.mockResolvedValueOnce({ ok: false, error: 'boom' });
 
         renderSection([FAQ_1]);
-        fireEvent.click(screen.getByRole('button', { name: /^Eliminar "/ }));
-        fireEvent.click(screen.getByRole('button', { name: 'Eliminar pregunta' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Quitar / }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Eliminar pregunta' }));
 
         await waitFor(() => {
             expect(vi.mocked(addToast)).toHaveBeenCalledWith({
@@ -443,11 +433,12 @@ describe('FaqSection', () => {
             });
         });
 
-        // Nothing is lost and the user can retry: the row survives and the
-        // dialog is still up with its CTAs live again (busyId back to null).
-        expect(screen.getByRole('button', { name: /^Eliminar "/ })).toBeInTheDocument();
-        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Eliminar pregunta' })).toBeEnabled();
+        // Nothing is lost and the user can retry: the row survives and its
+        // actions are live again (busyId back to null).
+        expect(screen.getByText('¿Cuándo es el check-in?')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /^Quitar / })).toBeEnabled();
+        });
     });
 
     it('locks every row action while a request is in flight (HOS-794)', async () => {
@@ -462,15 +453,13 @@ describe('FaqSection', () => {
         );
 
         renderSection([FAQ_1, FAQ_2]);
-        fireEvent.click(
-            screen.getByRole('button', { name: /^Eliminar "¿Cuándo es el check-in\?"/ })
-        );
-        fireEvent.click(screen.getByRole('button', { name: 'Eliminar pregunta' }));
+        fireEvent.click(screen.getByRole('button', { name: /^Quitar ¿Cuándo es el check-in\?/ }));
+        fireEvent.click(await screen.findByRole('button', { name: 'Eliminar pregunta' }));
 
         // The OTHER row's actions are locked too, not just the deleted one's.
         await waitFor(() => {
             expect(
-                screen.getByRole('button', { name: /^Eliminar "¿Aceptan mascotas\?"/ })
+                screen.getByRole('button', { name: /^Quitar ¿Aceptan mascotas\?/ })
             ).toBeDisabled();
         });
         expect(
@@ -485,14 +474,14 @@ describe('FaqSection', () => {
         });
     });
 
-    it('does not use the browser-native window.confirm for deletion (HOS-794)', () => {
+    it('does not use the browser-native window.confirm for deletion (HOS-794)', async () => {
         const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
         renderSection([FAQ_1]);
-        fireEvent.click(screen.getByRole('button', { name: /^Eliminar "/ }));
+        fireEvent.click(screen.getByRole('button', { name: /^Quitar / }));
 
-        // The maquetated dialog opened instead of the browser's native confirm.
-        expect(screen.getByText('¿Eliminás esta pregunta?')).toBeInTheDocument();
+        // The kit dialog opened instead of the browser's native confirm.
+        expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
         expect(confirmSpy).not.toHaveBeenCalled();
         confirmSpy.mockRestore();
     });
@@ -501,7 +490,7 @@ describe('FaqSection', () => {
         mockReorder.mockResolvedValueOnce({ ok: true, data: { success: true } });
 
         renderSection([FAQ_1, FAQ_2]);
-        fireEvent.click(screen.getByRole('button', { name: /^Bajar "¿Cuándo es el check-in\?"/ }));
+        fireEvent.click(screen.getByRole('button', { name: /^Bajar ¿Cuándo es el check-in\?/ }));
 
         await waitFor(() => {
             expect(mockReorder).toHaveBeenCalledWith({
@@ -517,28 +506,25 @@ describe('FaqSection', () => {
     it('rolls back the optimistic reorder when the API call fails', async () => {
         mockReorder.mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'boom' } });
 
-        const { container } = renderSection([FAQ_1, FAQ_2]);
-        fireEvent.click(screen.getByRole('button', { name: /^Bajar "¿Cuándo es el check-in\?"/ }));
+        renderSection([FAQ_1, FAQ_2]);
+        fireEvent.click(screen.getByRole('button', { name: /^Bajar ¿Cuándo es el check-in\?/ }));
 
         await waitFor(() => {
             expect(screen.getByText('No se pudo reordenar.')).toBeInTheDocument();
         });
 
-        // FAQ_1 is still first in DOM order after rollback. Scoped to `.question`
-        // elements (not a bare "¿" text match) so the explanatory copy block
-        // above the list — which also starts with "¿" — cannot collide.
-        const questions = Array.from(container.querySelectorAll('.question')).map(
-            (el) => el.textContent
-        );
-        expect(questions[0]).toBe('¿Cuándo es el check-in?');
+        // FAQ_1 is still first in DOM order after rollback: the rows are named
+        // by their visible label (the question).
+        const rows = screen.getAllByRole('listitem');
+        expect(rows[0]).toHaveAccessibleName('¿Cuándo es el check-in?');
     });
 
     it('disables the up button for the first FAQ and the down button for the last', () => {
         renderSection([FAQ_1, FAQ_2]);
         expect(
-            screen.getByRole('button', { name: /^Subir "¿Cuándo es el check-in\?"/ })
+            screen.getByRole('button', { name: /^Subir ¿Cuándo es el check-in\?/ })
         ).toBeDisabled();
-        expect(screen.getByRole('button', { name: /^Bajar "¿Aceptan mascotas\?"/ })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /^Bajar ¿Aceptan mascotas\?/ })).toBeDisabled();
     });
 
     it('gives each row unique accessible names for its action buttons (a11y regression)', () => {
@@ -549,12 +535,12 @@ describe('FaqSection', () => {
         renderSection([FAQ_1, FAQ_2]);
 
         const editButtons = screen.getAllByRole('button', { name: /^Editar "/ });
-        const deleteButtons = screen.getAllByRole('button', { name: /^Eliminar "/ });
+        const removeButtons = screen.getAllByRole('button', { name: /^Quitar / });
         const editNames = editButtons.map((btn) => btn.getAttribute('aria-label'));
-        const deleteNames = deleteButtons.map((btn) => btn.getAttribute('aria-label'));
+        const removeNames = removeButtons.map((btn) => btn.getAttribute('aria-label'));
 
         expect(new Set(editNames).size).toBe(editNames.length);
-        expect(new Set(deleteNames).size).toBe(deleteNames.length);
+        expect(new Set(removeNames).size).toBe(removeNames.length);
     });
 
     it('hides the add form after cancel is clicked', () => {

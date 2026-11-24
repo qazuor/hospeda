@@ -8,7 +8,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueEventsManager } from '../../../src/components/venue/VenueEventsManager.client';
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         tPlural: (key: string) => key
@@ -71,8 +72,10 @@ describe('VenueEventsManager: ticket link (HOS-2255)', () => {
         const input = await renderWithEvent('https://www.passline.com/e/x');
         expect(input.value).toBe('https://www.passline.com/e/x');
 
-        // Act
-        fireEvent.click(screen.getByText('Guardar agenda'));
+        // Act — the save bar shows on a dirty draft; the title's trailing
+        // space is trimmed by the payload.
+        fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Jueves de jazz ' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert
         await waitFor(() => expect(mockPut).toHaveBeenCalledTimes(1));
@@ -85,7 +88,8 @@ describe('VenueEventsManager: ticket link (HOS-2255)', () => {
         await renderWithEvent(null);
 
         // Act
-        fireEvent.click(screen.getByText('Guardar agenda'));
+        fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Jueves de jazz ' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert
         await waitFor(() => expect(mockPut).toHaveBeenCalledTimes(1));
@@ -103,7 +107,7 @@ describe('VenueEventsManager: ticket link (HOS-2255)', () => {
 
         // Act
         fireEvent.change(input, { target: { value: bad } });
-        fireEvent.click(screen.getByText('Guardar agenda'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert
         expect(input.getAttribute('aria-invalid')).toBe('true');

@@ -9,15 +9,13 @@
  *  - Plan-gate state (`LockedState`) when the API reports the actor lacks the
  *    `EXCLUSIVE_DEALS` entitlement (403 ENTITLEMENT_REQUIRED)
  *  - A VIP-only pill on deals scoped to `touristAudience === 'vip'`
- *  - Rows that are no longer inert, using only data the payload already has:
- *    the validity date, and a «Ver alojamiento» action for a deal tied to one
- *    accommodation (`accommodationId`). The listing page is addressed by slug,
- *    which the payload does not carry, so the action resolves it on click
- *    through the existing public `accommodations/:id` read (no real link is
- *    possible without a new API field). When that read says the listing is
- *    gone (404) the row says so inline and drops the action; any other
- *    failure says so inline and keeps the action for a retry. Owner-wide
- *    deals (`accommodationId` null) point nowhere and stay informational.
+ *  - Rows that are no longer inert: the validity date, and a «Ver alojamiento»
+ *    link for a deal tied to one accommodation. Owner decision 17 (Mi cuenta
+ *    UI epic): the API now carries `accommodationSlug`, so the action is a
+ *    real `<a href>` (open in a new tab, copy the link) instead of a per-click
+ *    slug lookup. A deal whose accommodation is no longer public comes with a
+ *    `null` slug: the row says so inline and offers no link. Owner-wide deals
+ *    (no accommodation) point nowhere and stay informational.
  *
  * All API calls go to `/api/v1/protected/owner-promotions/exclusive-deals`,
  * mirroring the fetch pattern used by `AlertsList.client.tsx`: plain `fetch`
@@ -33,23 +31,22 @@
  */
 
 import { OffersIcon } from '@repo/icons';
-import type { OwnerPromotionListItem } from '@repo/schemas';
+import type { ExclusiveDealListItem } from '@repo/schemas';
 import { TouristAudienceEnum } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Alert,
     AsyncRegion,
     type AsyncResult,
-    Button,
     DataList,
     EmptyState,
     ErrorState,
+    LinkButton,
     ListRow,
     LockedState,
     Skeleton,
     StatusPill
 } from '@/components/account/ui';
-import { accommodationsApi } from '@/lib/api/endpoints';
 import { resolvePlanGateMessage } from '@/lib/billing/plan-name-list';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -65,7 +62,7 @@ import { buildUrl } from '@/lib/urls';
 interface ListSuccessResponse {
     readonly success: true;
     readonly data?: {
-        readonly items?: OwnerPromotionListItem[];
+        readonly items?: ExclusiveDealListItem[];
     };
 }
 
@@ -84,9 +81,6 @@ type ListStatus =
     | { readonly kind: 'ready' }
     | { readonly kind: 'upgrade' }
     | { readonly kind: 'error'; readonly message: string };
-
-/** Why a deal's listing could not be opened: gone for good, or a failed read. */
-type ListingIssue = 'unavailable' | 'failed';
 
 /** Props for the ExclusiveDealsList island. */
 export interface ExclusiveDealsListProps {
@@ -127,11 +121,7 @@ export function ExclusiveDealsList({
 
     // ── State ─────────────────────────────────────────────────────────────────
     const [status, setStatus] = useState<ListStatus>({ kind: 'loading' });
-    const [deals, setDeals] = useState<OwnerPromotionListItem[]>([]);
-    /** The deal whose listing link is being resolved, if any. */
-    const [openingId, setOpeningId] = useState<string | null>(null);
-    /** Per-deal inline message after a failed open, keyed by deal id. */
-    const [listingIssues, setListingIssues] = useState<Readonly<Record<string, ListingIssue>>>({});
+    const [deals, setDeals] = useState<ExclusiveDealListItem[]>([]);
 
     const isMountedRef = useRef(true);
 
@@ -198,48 +188,13 @@ export function ExclusiveDealsList({
         void fetchDeals();
     }, [fetchDeals]);
 
-    // ── Row actions ───────────────────────────────────────────────────────────
-
-    /**
-     * Opens the listing a deal belongs to. The listing page is addressed by
-     * slug and the deal carries only the accommodation id, so the slug is read
-     * on click from the existing public `accommodations/:id` endpoint.
-     */
-    async function openListing(deal: OwnerPromotionListItem): Promise<void> {
-        if (!deal.accommodationId || openingId !== null) return;
-        setOpeningId(deal.id);
-        const flag = (issue: ListingIssue | null): void => {
-            if (!isMountedRef.current) return;
-            setListingIssues((current) => {
-                const { [deal.id]: _previous, ...rest } = current;
-                return issue === null ? rest : { ...rest, [deal.id]: issue };
-            });
-        };
-        try {
-            const result = await accommodationsApi.getById({ id: deal.accommodationId });
-            if (!result.ok && result.error.status === 404) {
-                flag('unavailable');
-                return;
-            }
-            const slug = result.ok ? result.data.slug : undefined;
-            if (!slug) throw new Error('listing slug unavailable');
-            flag(null);
-            window.location.assign(buildUrl({ locale, path: `alojamientos/${slug}` }));
-        } catch (err) {
-            webLogger.error('[ExclusiveDealsList] failed to resolve the listing', err);
-            flag('failed');
-        } finally {
-            if (isMountedRef.current) setOpeningId(null);
-        }
-    }
-
     // ── Render ────────────────────────────────────────────────────────────────
 
     // Tourist-only Área Turista feature — the CTA must point at the tourist
     // pricing page, not the owner one (BETA-174).
     const upgradeHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
-    const state: AsyncResult<readonly OwnerPromotionListItem[]> =
+    const state: AsyncResult<readonly ExclusiveDealListItem[]> =
         status.kind === 'loading'
             ? { status: 'loading' }
             : status.kind === 'upgrade'
@@ -305,7 +260,9 @@ export function ExclusiveDealsList({
             ready={(items) => (
                 <DataList label={t('account.exclusiveDeals.listLabel', 'Tus ofertas exclusivas')}>
                     {items.map((deal) => {
-                        const issue = listingIssues[deal.id];
+                        // A deal tied to an accommodation that is no longer public.
+                        const unavailable =
+                            Boolean(deal.accommodationId) && deal.accommodationSlug === null;
                         return (
                             <ListRow
                                 key={deal.id}
@@ -331,32 +288,30 @@ export function ExclusiveDealsList({
                                     ) : undefined
                                 }
                                 extra={
-                                    issue ? (
+                                    unavailable ? (
                                         <Alert
-                                            tone={issue === 'unavailable' ? 'warning' : 'danger'}
+                                            tone="warning"
                                             variant="inline"
                                             locale={locale}
                                         >
-                                            {issue === 'unavailable'
-                                                ? t(
-                                                      'account.exclusiveDeals.item.listingUnavailable'
-                                                  )
-                                                : t('account.exclusiveDeals.item.viewListingError')}
+                                            {t('account.exclusiveDeals.item.listingUnavailable')}
                                         </Alert>
                                     ) : undefined
                                 }
                                 actions={
-                                    deal.accommodationId && issue !== 'unavailable'
+                                    deal.accommodationSlug
                                         ? [
-                                              <Button
+                                              <LinkButton
                                                   key="open"
                                                   variant="secondary"
                                                   size="sm"
-                                                  loading={openingId === deal.id}
-                                                  onClick={() => void openListing(deal)}
+                                                  href={buildUrl({
+                                                      locale,
+                                                      path: `alojamientos/${deal.accommodationSlug}`
+                                                  })}
                                               >
                                                   {t('account.exclusiveDeals.item.viewListing')}
-                                              </Button>
+                                              </LinkButton>
                                           ]
                                         : []
                                 }

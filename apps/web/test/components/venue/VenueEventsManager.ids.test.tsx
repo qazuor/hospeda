@@ -9,7 +9,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueEventsManager } from '../../../src/components/venue/VenueEventsManager.client';
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         tPlural: (key: string) => key
@@ -63,9 +64,11 @@ describe('VenueEventsManager: stable event ids (HOS-2291)', () => {
             />
         );
 
-        // Act
-        const save = await screen.findByText('Guardar agenda');
-        fireEvent.click(save);
+        // Act — the save bar shows on a dirty draft; the trailing space on the
+        // title is trimmed by the payload.
+        const title = (await screen.findByLabelText('Título')) as HTMLInputElement;
+        fireEvent.change(title, { target: { value: `${title.value} ` } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert
         await waitFor(() => expect(mockPut).toHaveBeenCalledTimes(1));

@@ -11,7 +11,8 @@ import {
     __resetEditorAutoSave,
     getEditorAutoSave,
     reportEditorAutoSave,
-    runEditorAutoSave
+    runEditorAutoSave,
+    runRetryableEditorAutoSave
 } from '../../../../src/components/account/editor-shell/editor-auto-save-signal';
 import { __resetLeaveWarningRegistry } from '../../../../src/lib/forms/leave-warning-registry';
 
@@ -141,5 +142,42 @@ describe('EditorAutoSaveChip', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: /Reintentar/ }));
         expect(retry).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('runRetryableEditorAutoSave (HOS-2489)', () => {
+    it('returns ok and leaves the chip saved on success', async () => {
+        // Arrange
+        const save = vi.fn().mockResolvedValue(true);
+
+        // Act
+        const result = await runRetryableEditorAutoSave({ save });
+
+        // Assert
+        expect(result).toEqual({ ok: true });
+        expect(getEditorAutoSave().status).toBe('saved');
+        expect(save).toHaveBeenCalledTimes(1);
+    });
+
+    it('offers a chip retry that runs the same save again', async () => {
+        // Arrange
+        const save = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+        // Act
+        const result = await runRetryableEditorAutoSave({ save });
+        const failed = getEditorAutoSave();
+
+        // Assert
+        expect(result).toEqual({ ok: false });
+        expect(failed.status).toBe('error');
+        const retry = failed.status === 'error' ? failed.retry : undefined;
+        expect(retry).toBeTypeOf('function');
+
+        await act(async () => {
+            retry?.();
+            await Promise.resolve();
+        });
+        expect(save).toHaveBeenCalledTimes(2);
+        expect(getEditorAutoSave().status).toBe('saved');
     });
 });

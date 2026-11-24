@@ -691,6 +691,11 @@
             "title": "Suas assinaturas",
             "replacedBy": "Substituída por {{plan}}; será cancelada na próxima hora.",
             "empty": "Você não tem assinaturas vigentes.",
+            "expiredDeclined": {
+                "title": "Não conseguimos cobrar sua assinatura",
+                "body": "Sua assinatura do plano {{plan}} ({{vertical}}) não pôde ser cobrada e o prazo para tentar novamente terminou. Nada foi cobrado de você. Você pode começar de novo quando quiser.",
+                "cta": "Começar de novo"
+            },
             "pause": {
                 "open": "Pausar assinatura",
                 "pending": "Processando a pausa...",
@@ -1118,6 +1123,11 @@
                 "multipleSubscriptions_other": "{{count}} assinaturas ativas",
                 "subscriptionsCount_one": "{{count}} assinatura",
                 "subscriptionsCount_other": "{{count}} assinaturas",
+                "activeSubscriptionsPart_one": "{{count}} ativa",
+                "activeSubscriptionsPart_other": "{{count}} ativas",
+                "pendingSubscriptionsPart_one": "{{count}} pendente",
+                "pendingSubscriptionsPart_other": "{{count}} pendentes",
+                "subscriptionsSummary": "{{active}} · {{pending}}",
                 "properties": "Meus imóveis",
                 "propertiesDesc": "Acomodações publicadas",
                 "messages": "Mensagens não lidas",
@@ -1506,7 +1516,6 @@
         "item": {
             "vipBadge": "Somente VIP",
             "viewListing": "Ver acomodação",
-            "viewListingError": "Não conseguimos abrir a acomodação. Tente novamente.",
             "listingUnavailable": "Esta acomodação não está mais disponível.",
             "validUntil": "Válida até {{date}}"
         }
@@ -2266,6 +2275,16 @@
             "backToHub": "Voltar ao editor",
             "backToList": "Voltar à lista"
         },
+        "repeater": {
+            "add": "Adicionar",
+            "moveUp": "Mover {{item}} para cima",
+            "moveDown": "Mover {{item}} para baixo",
+            "remove": "Remover {{item}}",
+            "removeShort": "Remover",
+            "confirmTitle": "Remover “{{item}}”?",
+            "confirmDescription": "A linha sai da lista.",
+            "confirmLabel": "Remover"
+        },
         "hoursEditor": {
             "title": "Horário de funcionamento",
             "hint": "Ative os dias em que você abre e cadastre os horários. Com «Copiar para todos os dias» você repete o horário de um dia na semana inteira.",
@@ -2385,7 +2404,11 @@
             "mapLoading": "Carregando o mapa…",
             "touchToActivate": "Toque para mover o pin",
             "pinHint": "Arraste o pin ou toque no mapa para ajustar o ponto exato.",
-            "noPinHint": "Ainda não há pin. Toque no mapa onde fica o lugar para marcá-lo.",
+            "noPinNotice": {
+                "title": "Você ainda não marcou o lugar no mapa",
+                "body": "Sem o pino, sua ficha não mostra no mapa onde fica. Toque no mapa ou arraste o pino até o ponto exato.",
+                "action": "Ir para o mapa"
+            },
             "coordinates": "Coordenadas",
             "latitude": "Latitude",
             "longitude": "Longitude"

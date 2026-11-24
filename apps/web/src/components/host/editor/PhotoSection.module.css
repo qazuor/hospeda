@@ -1,573 +1,60 @@
 /**
  * @file PhotoSection.module.css
- * @description Styles for the PhotoSection component.
+ * @description What the accommodation photo editor adds around the kit
+ * MediaManager skin (HOS-2489): section heading, slot labels and the
+ * per-photo text editor (`PhotoMetadataEditor`, shared by every gallery).
+ * Tokens only; no viewport breakpoint.
  */
 
 .section {
-    padding: var(--space-4, 1.5rem) 0;
-    border-bottom: 1px solid var(--border, #e5e7eb);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-block: var(--space-4);
 }
 
 .sectionTitle {
-    font-family: var(--font-heading);
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--core-foreground, #1a1a1a);
-    margin: 0 0 0.25rem 0;
+    margin: 0;
+    font: var(--app-card-title);
+    color: var(--core-foreground);
 }
 
 .sectionDescription {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground, #6b7280);
-    margin: 0 0 1rem 0;
+    margin: 0;
+    font: var(--app-body);
+    color: var(--core-muted-foreground);
 }
 
-.uploadArea {
+.slot {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 2rem 1rem;
-    border: 2px dashed var(--border, #d1d5db);
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--core-card, #fafafa);
-    cursor: pointer;
-    transition:
-        border-color 150ms ease-out,
-        background-color 150ms ease-out;
-    text-align: center;
+    gap: var(--space-2);
 }
 
-.uploadArea:hover {
-    border-color: var(--brand-primary, #3b82f6);
-    background-color: var(--core-background, #ffffff);
-}
-
-.uploadAreaDisabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.uploadIcon {
-    font-size: 2rem;
-    color: var(--core-muted-foreground, #9ca3af);
-}
-
-.uploadText {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground, #6b7280);
-}
-
-.uploadTextStrong {
-    color: var(--brand-primary, #3b82f6);
-    font-weight: 600;
-}
-
-.uploadHint {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: var(--core-muted-foreground, #9ca3af);
+.slotLabel {
+    font: var(--app-ui);
+    font-weight: var(--app-card-title-weight);
+    color: var(--core-foreground);
 }
 
 .fileInput {
     display: none;
 }
 
-.preview {
-    position: relative;
-    width: 100%;
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.previewImage {
-    width: 100%;
-    height: auto;
-    max-height: 300px;
-    object-fit: cover;
-    border-radius: var(--radius-md, 10px);
-    border: 1px solid var(--border, #e5e7eb);
-}
-
-.previewActions {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    display: flex;
-    gap: 0.5rem;
-}
-
-.previewButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: none;
-    border-radius: var(--radius-pill, 9999px);
-    background-color: rgba(15, 23, 42, 0.92);
-    box-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.22);
-    color: #ffffff;
-    cursor: pointer;
-    transition:
-        background-color 150ms ease-out,
-        transform 150ms ease-out;
-    font-size: 1rem;
-    font-weight: 700;
-}
-
-.previewButton:hover {
-    background-color: rgba(15, 23, 42, 1);
-    transform: translateY(-1px);
-}
-
-.progressBar {
-    width: 100%;
-    height: 4px;
-    border-radius: 2px;
-    background-color: var(--border, #e5e7eb);
-    overflow: hidden;
-    margin-top: 0.5rem;
-}
-
-.progressBarFill {
-    height: 100%;
-    border-radius: 2px;
-    background-color: var(--brand-primary, #3b82f6);
-    transition: width 300ms ease-out;
-}
-
-.error {
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius-md, 10px);
-    background-color: oklch(0.96 0.02 25);
-    color: oklch(0.45 0.2 25);
-    border: 1px solid oklch(0.88 0.06 25);
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-}
-
-/* Sober, single-line upsell link (HOS-1024) shown inline within the
- * gallery-cap-reached message — deliberately just a link, not a banner. */
-.upsellLink {
-    color: inherit;
-    font-weight: 600;
-    text-decoration: underline;
-}
-
 .plansLink {
-    color: var(--brand-primary);
-    font-weight: 600;
+    color: var(--brand-primary-link);
+    font-weight: var(--app-card-title-weight);
     text-decoration: underline;
 }
 
 .plansLink:focus-visible {
-    outline: 2px solid currentColor;
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
-.gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.galleryItem {
-    position: relative;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    border-radius: var(--radius-md, 10px);
-    border: 1px solid var(--border, #e5e7eb);
-}
-
-.galleryItemImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.galleryItemActions {
-    position: absolute;
-    top: 0.25rem;
-    right: 0.25rem;
-    display: flex;
-    gap: 0.25rem;
-}
-
-.galleryAddButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 4 / 3;
-    border: 2px dashed var(--border, #d1d5db);
-    border-radius: var(--radius-md, 10px);
-    background-color: transparent;
-    cursor: pointer;
-    color: var(--core-muted-foreground, #9ca3af);
-    font-size: 1.5rem;
-    transition:
-        border-color 150ms ease-out,
-        color 150ms ease-out;
-}
-
-.galleryAddButton:hover {
-    border-color: var(--brand-primary, #3b82f6);
-    color: var(--brand-primary, #3b82f6);
-}
-
-/* Drag-and-drop visual feedback (HOS-122) */
-.uploadAreaDragOver {
-    border-color: var(--brand-primary, #3b82f6);
-    background-color: var(--core-background, #ffffff);
-}
-
-.galleryDragOver {
-    border-color: var(--brand-primary, #3b82f6);
-    color: var(--brand-primary, #3b82f6);
-    background-color: oklch(0.96 0.02 250);
-}
-
-.uploadBatchStatus {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground, #6b7280);
-    margin-top: 0.375rem;
-}
-
-/* Per-photo reorder / promote toolbar (HOS-122). Always visible (not
- * hover-only) so keyboard and screen-reader users can find the actions
- * without first hovering the thumbnail.
- *
- * HOS-1023: moved out of `.galleryItem` into normal flow (a sibling in
- * `.galleryItemWrapper`, between the thumbnail and the metadata toggle) —
- * it used to be an absolutely-positioned overlay on the bottom of the
- * photo, covering ~39.5% of it. No background of its own is needed here:
- * each button below keeps its own opaque `rgba(15, 23, 42, 0.9)` fill from
- * HOS-790, which is what carries the AA contrast, not this container.
- *
- * All three buttons are now identical 44x44 fixed-size icon buttons
- * (`.toolbarButton` — the "Portada" text button was replaced by a StarIcon,
- * which is what let `.toolbarButtonPromote` be deleted; see
- * PhotoGalleryItem.client.tsx's docblock), so there's no text-width budget
- * to defend and no button needs to shrink or grow. `flex-wrap: wrap` stays
- * as a safety net, not the primary defense: three 44px buttons plus two
- * 0.5rem gaps is 148px, and the gallery grid's column floor
- * (`.gallery`'s `minmax(150px, 1fr)`) is 150px — a 2px margin is too thin
- * to trust blindly, so if that column ever renders narrower than its own
- * declared minimum (a nested `minmax` edge case, a browser rounding
- * difference, a future column-width change), this wraps instead of
- * overflowing. */
-.galleryItemToolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.toolbarButton {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: var(--radius-md, 6px);
-    background-color: rgba(15, 23, 42, 0.9);
-    color: #ffffff;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 700;
-    transition:
-        background-color 150ms ease-out,
-        transform 150ms ease-out;
-}
-
-.toolbarButton:hover:not(:disabled) {
-    background-color: rgba(15, 23, 42, 1);
-    transform: translateY(-1px);
-}
-
-.toolbarButton:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-/* Per-photo text metadata editor (HOS-125). The gallery thumbnail box
- * (.galleryItem) clips overflow to keep its fixed aspect-ratio, so the
- * expandable panel lives in a plain-flow wrapper alongside it instead of
- * inside it — expanding the panel grows this wrapper (and its grid row),
- * never the thumbnail. Since HOS-1023, the reorder/promote toolbar
- * (`.galleryItemToolbar`) lives here too, between the thumbnail and the
- * metadata toggle, for the same reason: it needs real layout space the
- * fixed-aspect-ratio thumbnail can't give it without covering the photo. */
-.galleryItemWrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.metadataBlock {
-    display: flex;
-    flex-direction: column;
-}
-
-.metadataBlockCompact {
-    position: relative;
-    overflow: visible;
-}
-
-.metadataToggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    min-height: 44px;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--core-foreground, #1a1a1a);
-    border-radius: var(--radius-md, 8px);
-    background-color: var(--core-background, #ffffff);
-    color: var(--core-foreground, #1a1a1a);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    transition:
-        border-color 150ms ease-out,
-        background-color 150ms ease-out;
-}
-
-.metadataToggleCompact {
-    width: 100%;
-}
-
-.metadataToggle:hover:not(:disabled) {
-    border-color: var(--brand-primary, #3b82f6);
-    background-color: var(--core-card, #fafafa);
-}
-
-.metadataToggle:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.metadataPanel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-    padding: 0.75rem;
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--core-card, #fafafa);
-}
-
-.metadataPanelFloating {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    left: 0;
-    z-index: 3;
-    width: min(24rem, calc(100vw - 2rem));
-    min-width: min(20rem, calc(100vw - 2rem));
-    margin-top: 0;
-    box-shadow: 0 1rem 3rem rgba(15, 23, 42, 0.18);
-}
-.formGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.formLabel {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--core-foreground, #1a1a1a);
-}
-
-/* The alt field is the PRIMARY field in this form (screen readers + search
- * engines read it) — visually stronger than caption/description labels. */
-.formLabelStrong {
-    composes: formLabel;
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: var(--brand-primary, #3b82f6);
-}
-
-.formHint {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: var(--core-muted-foreground, #6b7280);
-    margin: 0;
-}
-
-.formInput,
-.formTextarea {
-    width: 100%;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--border, #d1d5db);
-    border-radius: var(--radius-md, 8px);
-    background-color: var(--core-background, #ffffff);
-    color: var(--core-foreground, #1a1a1a);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    resize: vertical;
-}
-
-.formInput:focus,
-.formTextarea:focus {
-    outline: none;
-    border-color: var(--brand-primary, #3b82f6);
-}
-
-.fieldError {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: oklch(0.45 0.2 25);
-    margin: 0;
-}
-
-/* Credit block (H-125). Grouped in a fieldset because the two fields only mean
- * something together, and separated by a rule so a host scanning the form can
- * see at a glance that this part is about somebody else's photo, not theirs. */
-.metadataCreditGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0.75rem 0 0;
-    border: 0;
-    border-top: 1px solid var(--border, #e5e7eb);
-}
-
-.metadataActions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.metadataSaveButton {
-    padding: 0.4375rem 0.875rem;
-    border: none;
-    border-radius: var(--radius-md, 8px);
-    background-color: var(--brand-primary, #3b82f6);
-    color: #ffffff;
-    cursor: pointer;
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 600;
-}
-
-.metadataSaveButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.metadataCancelButton {
-    padding: 0.4375rem 0.875rem;
-    border: 1px solid var(--border, #d1d5db);
-    border-radius: var(--radius-md, 8px);
-    background-color: transparent;
-    color: var(--core-foreground, #1a1a1a);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-}
-
-.metadataCancelButton:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.metadataSavedBadge {
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: oklch(0.5 0.15 145);
-}
-
-.videoRow {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--core-card, #fafafa);
-}
-
-.videoFieldGrid {
-    display: grid;
-    gap: 0.75rem;
-}
-
-.videoRowActions {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.videoRemoveButton {
-    composes: previewButton;
-    position: static;
-}
-
-.videoSectionActions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-.videoAddButton {
-    composes: metadataCancelButton;
-    min-height: 44px;
-    padding: 0.625rem 1rem;
-    background-color: var(--core-background, #ffffff);
-    font-weight: 600;
-}
-
-.videoSaveButton {
-    composes: metadataSaveButton;
-    min-height: 44px;
-    padding: 0.625rem 1rem;
-}
-
-@media (min-width: 48rem) {
-    .videoFieldGrid {
-        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-        align-items: start;
-    }
-}
-
-/* Narrow screens have no room for an overlay wider than the thumbnail
- * column — the wrapper takes the whole grid row while its panel is open,
- * so the form gets the full grid width instead of ~150px. */
-@media (max-width: 48rem) {
-    .galleryItemWrapper:has(.metadataPanelFloating) {
-        grid-column: 1 / -1;
-    }
-
-    .galleryItemWrapper:has(.metadataPanelFloating) .galleryItem {
-        max-width: 16rem;
-    }
-
-    .metadataPanelFloating {
-        position: static;
-        width: 100%;
-        min-width: 0;
-        box-shadow: none;
-    }
-}
-
-/* HOS-2126: drag-and-drop reorder handle. Same 44x44 box as the other
- * toolbar buttons; `touch-action: none` lets the touch sensor own the gesture
- * once the press-and-hold activates, while the page still scrolls normally
- * everywhere else on the card. */
+/* HOS-2126: drag-and-drop reorder handle. `touch-action: none` lets the
+ * touch sensor own the gesture once the press-and-hold activates, while the
+ * page still scrolls normally everywhere else on the card. */
 .dragHandle {
     cursor: grab;
     touch-action: none;
@@ -577,17 +64,185 @@
     cursor: grabbing;
 }
 
-.dragHandle:focus-visible {
-    outline: 2px solid var(--brand-primary, #3b82f6);
+/* Per-photo text metadata editor (HOS-125). The panel sits in normal flow
+ * under its photo; an open panel widens its kit tile to the whole grid row
+ * (`data-tile-expanded`, MediaManager.module.css). */
+.metadataBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.metadataBlockCompact {
+    min-inline-size: 0;
+}
+
+.metadataToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-control);
+    background: var(--control-bg);
+    color: var(--core-foreground);
+    font: var(--app-ui);
+    cursor: pointer;
+    transition:
+        border-color var(--duration-fast) ease-out,
+        background-color var(--duration-fast) ease-out;
+}
+
+.metadataToggleCompact {
+    inline-size: 100%;
+}
+
+.metadataToggle:hover:not(:disabled) {
+    border-color: var(--action-primary);
+    background: var(--muted);
+}
+
+.metadataToggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
-/* The photo being dragged: lifted above its neighbours and dimmed, so the
- * gap it leaves and the spot it is heading to both read at a glance. */
-.galleryItemDragging {
-    position: relative;
-    z-index: 2;
-    opacity: 0.85;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
-    border-radius: var(--radius-md, 10px);
+.metadataToggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.metadataPanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-surface);
+    background: var(--core-card);
+}
+
+.metadataPanelFloating {
+    inline-size: 100%;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.formLabel {
+    font: var(--app-ui);
+    color: var(--core-foreground);
+}
+
+/* The alt field is the PRIMARY field in this form (screen readers + search
+ * engines read it) — visually stronger than caption/description labels. */
+.formLabelStrong {
+    composes: formLabel;
+    font-weight: var(--app-card-title-weight);
+    color: var(--brand-primary-link);
+}
+
+.formHint {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--core-muted-foreground);
+}
+
+.formInput,
+.formTextarea {
+    inline-size: 100%;
+    min-block-size: var(--control-h-lg);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius-control);
+    background: var(--control-bg);
+    color: var(--core-foreground);
+    font: var(--app-control);
+    resize: vertical;
+}
+
+.formInput:focus-visible,
+.formTextarea:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.fieldError {
+    margin: 0;
+    font: var(--app-meta);
+    color: var(--status-danger-fg);
+}
+
+/* Credit block (H-125): the two fields only mean something together, and the
+ * rule shows at a glance that this part is about somebody else's photo. */
+.metadataCreditGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3) 0 0;
+    border: 0;
+    border-block-start: 1px solid var(--border);
+}
+
+.metadataActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.metadataSaveButton,
+.metadataCancelButton {
+    min-block-size: var(--control-h-lg);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-control);
+    font: var(--app-ui);
+    font-weight: var(--app-card-title-weight);
+    cursor: pointer;
+}
+
+.metadataSaveButton {
+    border: 0;
+    background: var(--action-primary);
+    color: var(--on-action-primary);
+}
+
+.metadataSaveButton:hover:not(:disabled) {
+    background: var(--action-primary-hover);
+}
+
+.metadataCancelButton {
+    border: 1px solid var(--control-border);
+    background: transparent;
+    color: var(--core-foreground);
+}
+
+.metadataSaveButton:focus-visible,
+.metadataCancelButton:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.metadataSaveButton:disabled,
+.metadataCancelButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.metadataSavedBadge {
+    font: var(--app-meta);
+    font-weight: var(--app-card-title-weight);
+    color: var(--status-success-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .metadataToggle {
+        transition: none;
+    }
 }

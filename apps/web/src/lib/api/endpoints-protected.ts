@@ -24,6 +24,7 @@ import type {
     HostTradeBenefitTypeEnum,
     HostTradeCategoryRef,
     HostTradeOwnerUpdate,
+    HostTradeProviderTabCounts,
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
     ListingNoticesResponse,
@@ -1768,6 +1769,25 @@ export const hostTradesApi = {
         return apiClient.getListProtected({
             path: `${PROTECTED}/host-trades/mine/reviews`,
             params: { page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * The count pills of the provider's own tabs in ONE read (owner decision
+     * 22, Mi cuenta UI epic): PENDING usages a host declared, and reviews.
+     * Each is `null` when its own read failed on the server.
+     *
+     * @param params - `cookieHeader` when calling from SSR.
+     * @returns `{ pendingUsages, reviews }`.
+     */
+    tabCounts({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<HostTradeProviderTabCounts>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine/tab-counts`,
             cookieHeader
         });
     },
@@ -4591,6 +4611,21 @@ export const ownerPromotionApi = {
         return apiClient.put({
             path: `${PROTECTED}/owner-promotions/${id}`,
             body
+        });
+    },
+
+    /**
+     * Pause an owner promotion: a PATCH whose body is ONLY a non-ACTIVE
+     * `lifecycleState`, which the API accepts without `create_promotions`
+     * (owner decision 18, Mi cuenta UI epic).
+     *
+     * @param params - Promotion ID to pause
+     * @returns The updated promotion record
+     */
+    pause({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/owner-promotions/${id}`,
+            body: { lifecycleState: 'INACTIVE' }
         });
     },
 

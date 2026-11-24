@@ -44,6 +44,44 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
         expect(html).not.toContain('tu tarjeta está bien');
     });
 
+    it('HOS-2193 names the plan the signup tried to buy next to its vertical', async () => {
+        const { html } = await render('billing.signup-declined', {
+            subscriptionId,
+            vertical: 'accommodation',
+            planName: 'Pro',
+            declineReason: null,
+            successionPredecessor: false
+        });
+        expect(html).toContain('suscripción al plan Pro (Alojamiento) fue');
+    });
+
+    it('HOS-2193 does not repeat the vertical when the plan name already carries it', async () => {
+        const { html } = await render('billing.signup-declined', {
+            subscriptionId,
+            vertical: 'tourist',
+            planName: 'Turista VIP',
+            declineReason: null,
+            successionPredecessor: false
+        });
+        expect(html).toContain('suscripción al plan Turista VIP fue');
+        expect(html).not.toContain('Turista VIP (');
+    });
+
+    it.each([
+        ['absent', undefined],
+        ['null', null]
+    ])('HOS-2193 keeps naming only the vertical for mails queued with %s plan name', async (_case, planName) => {
+        const { html } = await render('billing.signup-declined', {
+            subscriptionId,
+            vertical: 'accommodation',
+            ...(planName === undefined ? {} : { planName }),
+            declineReason: null,
+            successionPredecessor: false
+        });
+        expect(html).toContain('suscripción de Alojamiento fue');
+        expect(html).not.toContain('al plan');
+    });
+
     it('renders grace end on the market day', async () => {
         const { subject, html } = await render('billing.grace-started', {
             subscriptionId,
@@ -114,6 +152,17 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
             {
                 subscriptionId,
                 vertical: 42,
+                declineReason: null,
+                successionPredecessor: false
+            }
+        ],
+        [
+            'blank signup plan name',
+            'billing.signup-declined',
+            {
+                subscriptionId,
+                vertical: 'accommodation',
+                planName: '  ',
                 declineReason: null,
                 successionPredecessor: false
             }

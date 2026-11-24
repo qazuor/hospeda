@@ -36,14 +36,25 @@
  * That half lives in `TranslationFieldRow.client.tsx`; this file is the run, the
  * buttons and the messages around it. Showing is the whole delivery: the panel
  * stays read-only by owner decision, and editing a translation is a later one.
+ *
+ * HOS-2492 — same look as the venue/experience panel: kit `Tabs` per language
+ * (each tab counts its untranslated fields), a `StatusPill` per field, kit
+ * `Alert` for the missing-translations notice and the run messages, kit
+ * `Button`s. The data model and the run logic are untouched.
  */
 
 import { useCallback, useState } from 'react';
+import { Alert, Button, Tabs } from '@/components/account/ui';
 import type { AccommodationTranslationData } from '@/lib/api/types';
 import { visibleApiMessage } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { TranslationFieldRow } from './TranslationFieldRow.client';
+import {
+    buildTranslationRows,
+    countMissingInLocale,
+    LOCALE_LABELS,
+    TranslationFieldRow
+} from './TranslationFieldRow.client';
 import styles from './TranslationPanel.module.css';
 import type { GenerationOutcomes, TranslationResultItem } from './translation-status';
 import {
@@ -83,6 +94,9 @@ export interface TranslationPanelProps {
  * real choice and belongs in the UI. Until then it is a fact about the data.
  */
 const CONTENT_SOURCE_LOCALE: SupportedLocale = 'es';
+
+/** The tabs, source first. */
+const PANEL_LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
 
 /** Shape of the translate endpoint's `data` payload. */
 interface TranslateResponse {
@@ -326,8 +340,50 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      */
     const canRefresh = (hasPersistedAnything || mayBeStale) && !isGenerating;
 
+    const rows = buildTranslationRows({ translations: effectiveTranslations, t });
+    const statuses = rows.map((row) => row.status);
+    const missingByLocale = PANEL_LOCALES.map((panelLocale) => ({
+        locale: panelLocale,
+        count: countMissingInLocale({
+            statuses,
+            sourceLocale: CONTENT_SOURCE_LOCALE,
+            locale: panelLocale
+        })
+    }));
+    const missingLocales = missingByLocale
+        .filter((entry) => entry.count > 0)
+        .map((entry) => LOCALE_LABELS[entry.locale]);
+
+    const tabs = missingByLocale.map(({ locale: panelLocale, count }) => ({
+        id: panelLocale,
+        label: LOCALE_LABELS[panelLocale],
+        ...(count > 0
+            ? {
+                  count,
+                  countLabel: t('host.properties.editor.translation.missingCount', undefined, {
+                      count
+                  })
+              }
+            : {}),
+        panel: (
+            <ul className={styles.fieldList}>
+                {rows.map((row) => (
+                    <TranslationFieldRow
+                        key={row.field}
+                        status={row.status}
+                        sourceLocale={CONTENT_SOURCE_LOCALE}
+                        displayLocale={panelLocale}
+                        fieldLabel={row.label}
+                        outcome={outcomes?.[row.field]}
+                        t={t}
+                    />
+                ))}
+            </ul>
+        )
+    }));
+
     return (
-        <fieldset className={styles.section}>
+        <fieldset className={`${styles.section} ${styles.bare}`}>
             <legend className={styles.sectionTitle}>
                 {t('host.properties.editor.translation.sectionTitle', 'Traducciones')}
             </legend>
@@ -339,113 +395,85 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                 )}
             </p>
 
-            {/* The per-field notes below change while the host waits, so the
-                region that holds them is the one that has to be live.
-                
-                Read this before trusting it: `aria-busy="true"` tells assistive
-                tech to DEFER exposing changes until it clears, so what this
-                actually delivers is a clean announcement of the FINAL state, not
-                progress during the run. It is an improvement over announcing
-                nothing, and it is not the whole feature — the notes also do not
-                carry their field's name, so "Traducido" arrives without saying
-                what was translated. Both are tracked as follow-ups; neither is
-                claimed to work here.
+            {missingLocales.length > 0 && (
+                <Alert
+                    tone="info"
+                    locale={locale}
+                >
+                    {t('host.properties.editor.translation.missingNotice', undefined, {
+                        locales: missingLocales.join(', ')
+                    })}
+                </Alert>
+            )}
 
-                HOS-797 put the translated text inside this same region, and it
-                stays inside deliberately. A live region announces what CHANGED,
-                and React only mutates the nodes a run actually filled — so what
-                reaches a screen reader is the new text and nothing else, which
-                is the result itself rather than a claim about it. Suppressing it
-                would tell a screen-reader user "Traducido" and withhold the one
-                thing they would need in order to disagree. */}
+            {/* The per-field notes change while the host waits, so the region
+                that holds them is the one that has to be live. `aria-busy`
+                defers the announcement to the FINAL state (HOS-317), and the
+                translated text stays inside on purpose (HOS-797): a live region
+                announces what changed, which is the result itself. */}
             <div
-                className={styles.grid}
+                className={styles.region}
                 aria-live="polite"
                 aria-busy={isGenerating}
             >
-                <TranslationFieldRow
-                    status={effectiveTranslations.name}
-                    sourceLocale={CONTENT_SOURCE_LOCALE}
-                    fieldLabel={t('host.properties.editor.field.name', 'Nombre')}
-                    outcome={outcomes?.name}
-                    t={t}
+                <Tabs
+                    items={tabs}
+                    ariaLabel={t('host.properties.editor.translation.sectionTitle', 'Traducciones')}
+                    defaultValue={CONTENT_SOURCE_LOCALE}
                 />
-                <TranslationFieldRow
-                    status={effectiveTranslations.summary}
-                    sourceLocale={CONTENT_SOURCE_LOCALE}
-                    fieldLabel={t('host.properties.editor.field.summary', 'Resumen')}
-                    outcome={outcomes?.summary}
-                    t={t}
-                />
-                <TranslationFieldRow
-                    status={effectiveTranslations.description}
-                    sourceLocale={CONTENT_SOURCE_LOCALE}
-                    fieldLabel={t('host.properties.editor.field.description', 'Descripción')}
-                    outcome={outcomes?.description}
-                    t={t}
-                />
-                {/* BETA-199: absent when the owner's plan has no rich description.
-                    The API omits the premium pair entirely in that case, and a row
-                    that can never fill in is what kept the generate button alive
-                    forever. */}
-                {effectiveTranslations.richDescription !== null && (
-                    <TranslationFieldRow
-                        status={effectiveTranslations.richDescription}
-                        sourceLocale={CONTENT_SOURCE_LOCALE}
-                        fieldLabel={t(
-                            'host.properties.editor.translation.fieldRichDescription',
-                            'Descripción enriquecida'
-                        )}
-                        outcome={outcomes?.richDescription}
-                        t={t}
-                    />
+            </div>
+
+            <div className={styles.actions}>
+                {canGenerate && (
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleGenerate}
+                        // `aria-disabled`, not `disabled`: disabling the control
+                        // the host just activated drops focus to <body>. This
+                        // stays focusable; `handleGenerate` returns early instead.
+                        aria-disabled={isGenerating}
+                    >
+                        {isGenerating
+                            ? t(
+                                  'host.properties.editor.translation.generating',
+                                  'Generando traducciones...'
+                              )
+                            : t(
+                                  'host.properties.editor.translation.generateButton',
+                                  'Generar traducciones faltantes'
+                              )}
+                    </Button>
+                )}
+
+                {canRefresh && (
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        onClick={handleRefresh}
+                    >
+                        {t('host.properties.editor.translation.refresh', 'Actualizar la página')}
+                    </Button>
                 )}
             </div>
 
-            {canGenerate && (
-                <button
-                    type="button"
-                    className={styles.generateButton}
-                    onClick={handleGenerate}
-                    // `aria-disabled`, not `disabled`. Disabling the control the
-                    // host just activated makes the browser drop focus to
-                    // <body> — leaving a keyboard or screen-reader user nowhere
-                    // for the length of the run. This stays focusable and
-                    // announces its state; `handleGenerate` returns early instead.
-                    aria-disabled={isGenerating}
-                >
-                    {isGenerating
-                        ? t(
-                              'host.properties.editor.translation.generating',
-                              'Generando traducciones...'
-                          )
-                        : t(
-                              'host.properties.editor.translation.generateButton',
-                              'Generar traducciones faltantes'
-                          )}
-                </button>
-            )}
-
             {errorMessage && (
-                <div
-                    className={styles.feedbackError}
-                    role="alert"
+                <Alert
+                    tone="danger"
+                    locale={locale}
                 >
                     {errorMessage}
-                </div>
+                </Alert>
             )}
 
-            {canRefresh && (
-                <button
-                    type="button"
-                    className={styles.refreshButton}
-                    onClick={handleRefresh}
+            {successMessage && (
+                <Alert
+                    tone="success"
+                    locale={locale}
                 >
-                    {t('host.properties.editor.translation.refresh', 'Actualizar la página')}
-                </button>
+                    {successMessage}
+                </Alert>
             )}
-
-            {successMessage && <output className={styles.feedbackSuccess}>{successMessage}</output>}
         </fieldset>
     );
 }

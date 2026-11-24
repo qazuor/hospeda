@@ -412,15 +412,6 @@ export function PostEditor({
                 />
             </Section>
 
-            {formError && (
-                <Alert
-                    tone="danger"
-                    locale={locale}
-                >
-                    {formError}
-                </Alert>
-            )}
-
             {/*
              * Absent — not disabled — while the moderation lock holds: nothing
              * the author can do makes saving work (HOS-374 OQ-3). The page's
@@ -430,6 +421,7 @@ export function PostEditor({
                 <StickySaveBar
                     locale={locale}
                     status={saveBar.status}
+                    errorMessage={formError}
                     onSave={() => void saveBar.save()}
                     onDiscard={saveBar.discard}
                     onGoToFirstError={() => {

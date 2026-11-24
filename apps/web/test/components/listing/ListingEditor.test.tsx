@@ -186,16 +186,19 @@ function renderEditor(
 }
 
 /**
- * The form-level error banner: a `role="alert"` outside the save bar, whose own
- * failure line (HOS-2487) is a separate signal.
+ * The save failure's banner: the save bar's own `role="alert"` line. Owner
+ * decision 7 (Mi cuenta UI epic) removed the duplicate form-level notice, so
+ * this also asserts no alert stands outside the bar and the fields.
  *
  * @returns The banner; throws until it renders (for `waitFor`).
  */
 function formBanner(): HTMLElement {
-    const banner = Array.from(document.querySelectorAll<HTMLElement>('[role="alert"]')).find(
-        (el) => !el.closest('[data-editor-save-signal]')
-    );
-    if (!banner) throw new Error('no form banner yet');
+    const strays = Array.from(
+        document.querySelectorAll<HTMLElement>('[role="alert"]:not([id])')
+    ).filter((el) => !el.closest('[data-editor-save-signal]'));
+    if (strays.length > 0) throw new Error('a form-level alert duplicates the save bar');
+    const banner = document.querySelector<HTMLElement>('[data-editor-save-signal] [role="alert"]');
+    if (!banner) throw new Error('no save-bar banner yet');
     return banner;
 }
 

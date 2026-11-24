@@ -6,9 +6,12 @@ const { getProtected } = vi.hoisted(() => ({ getProtected: vi.fn() }));
 vi.mock('../../../../src/components/listing/ai-questions/AiQuestionsPanel.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_target, key) => String(key) })
 }));
-vi.mock('../../../../src/lib/i18n', async () => {
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => {
     const { tFromCatalog } = await import('../../../helpers/i18n-catalog');
-    return { createTranslations: () => ({ t: tFromCatalog }) };
+    return {
+        ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
+        createTranslations: () => ({ t: tFromCatalog })
+    };
 });
 vi.mock('../../../../src/lib/api/client', () => ({
     apiClient: { getProtected, postProtected: vi.fn() }

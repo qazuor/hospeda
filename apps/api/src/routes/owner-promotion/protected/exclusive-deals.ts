@@ -3,12 +3,13 @@
  *
  * Tourist-facing listing of owner promotions scoped by touristAudience tier.
  * Reuses `OwnerPromotionService.findExclusiveDeals` — not the public search path.
+ * Each deal carries its accommodation's public slug (owner decision 17).
  *
  * Mounted at `/exclusive-deals` before `/{id}` in `protected/index.ts` so the
  * literal path is not swallowed by the parameter route.
  */
 
-import { OwnerPromotionListItemSchema, TouristAudienceEnum, VerticalEnum } from '@repo/schemas';
+import { ExclusiveDealListItemSchema, TouristAudienceEnum, VerticalEnum } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -32,7 +33,8 @@ export const protectedListExclusiveDealsRoute = createProtectedListRoute({
     requestQuery: {
         accommodationId: z.string().uuid().optional()
     },
-    responseSchema: OwnerPromotionListItemSchema,
+    // Each row carries `accommodationSlug` (owner decision 17).
+    responseSchema: ExclusiveDealListItemSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

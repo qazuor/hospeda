@@ -306,16 +306,18 @@ test.describe('LISTING-OWNER-01: venue or experience owner edits listings — bo
         // InputEvent with inputType:'insertText' so React 19's onChange fires.
         await setReactInputValue(menuUrlInput, newMenuUrl);
 
-        // The link saves independently of the carta document: its button sends
-        // the one-key PATCH of the listing. Waiting on the response (rather than
-        // on a transient message) is what makes the assertion about the wire.
+        // The link is still stored by its own one-key PATCH of the listing,
+        // never inside the carta document; since owner decision 14 the carta's
+        // save bar sends it («Guardar cambios», no separate «Guardar enlace»).
+        // Waiting on the response (rather than on a transient message) is what
+        // makes the assertion about the wire.
         const menuPatch = page.waitForResponse(
             (response) =>
                 response.url().includes(`/protected/venues/${venueId}`) &&
                 response.request().method() === 'PATCH',
             { timeout: 15_000 }
         );
-        await page.getByTestId('venue-menu-link-save').click();
+        await page.getByRole('button', { name: 'Guardar cambios' }).click();
         const gastroSaved = await menuPatch;
         expect(gastroSaved.ok()).toBe(true);
 

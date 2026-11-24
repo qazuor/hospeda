@@ -71,7 +71,8 @@ vi.mock('../../../../src/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string | number>): string => {
             const raw = fallback ?? key;

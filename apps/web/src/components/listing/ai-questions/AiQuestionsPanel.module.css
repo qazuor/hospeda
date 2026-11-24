@@ -1,117 +1,94 @@
-/* AiQuestionsPanel.module.css — HOS-2101 */
+/* AiQuestionsPanel.module.css — HOS-2101, on the kit since HOS-2503.
+ *
+ * The sections, lists, buttons, fields and async states are kit pieces. What
+ * is styled here is the question row (a DataList row that must show the whole
+ * question and the markdown answer, which a kit ListRow clamps), the filters
+ * row and the dismissed disclosure. Tokens only. */
 
-.panel {
+.stack {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4, 1.5rem);
+    gap: var(--space-4);
 }
 
-.intro,
-.status,
-.blockHint {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
+.note {
+    margin: 0;
+    font: var(--app-meta);
     color: var(--core-muted-foreground);
-    margin: 0;
 }
 
-.error {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--destructive, var(--core-foreground));
-    margin: 0;
+/* --- Date filters --- */
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
 }
 
-.block {
+.filterField {
+    flex: 0 1 12rem;
+}
+
+/* --- Question row (kit row recipe: separator, padding, up to two actions) --- */
+
+.row {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-}
-
-.blockTitle {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 0.5rem);
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1.125rem;
-    color: var(--core-foreground);
-    margin: 0;
-}
-
-.counter {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.75rem;
-    padding: 0 var(--space-2, 0.5rem);
-    border-radius: 999px;
-    background: var(--brand-primary, var(--core-foreground));
-    color: var(--core-background, #fff);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1.6;
-}
-
-.list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3, 1rem);
-}
-
-.item {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2, 0.5rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-block-end: 1px solid var(--border);
     background-color: var(--core-card);
-    padding: var(--space-3, 1rem);
 }
 
-.itemUnanswered {
-    border-left: 4px solid var(--brand-primary, var(--border));
+.row:last-child {
+    border-block-end: 0;
+}
+
+/* Accent rail, as a kit ListRow with `emphasis`: the row needs an answer. */
+.rowUnanswered::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--space-1);
+    background-color: var(--brand-accent);
 }
 
 .question {
-    font-family: var(--font-sans);
-    font-weight: 600;
-    font-size: 0.9375rem;
-    color: var(--core-foreground);
     margin: 0;
+    font: var(--app-ui);
+    font-weight: var(--app-card-title-weight);
+    color: var(--core-foreground);
     overflow-wrap: anywhere;
 }
 
 .answer {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-foreground);
     margin: 0;
+    font: var(--app-ui);
+    color: var(--core-foreground);
     overflow-wrap: anywhere;
+}
+
+.answerLabel {
+    color: var(--core-muted-foreground);
 }
 
 /* The assistant answer is sanitized markdown (renderChatMarkdown). */
 .answerBody p,
 .answerBody ul,
 .answerBody ol {
-    margin: var(--space-1, 0.25rem) 0 0;
+    margin: var(--space-1) 0 0;
 }
 
 .answerBody ul,
 .answerBody ol {
-    padding-inline-start: 1.25rem;
+    padding-inline-start: var(--space-5);
 }
 
 .answerBody strong {
     font-weight: 600;
-}
-
-.answerLabel {
-    color: var(--core-muted-foreground);
 }
 
 .meta {
@@ -119,42 +96,41 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-2, 0.5rem);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    gap: var(--space-2);
+}
+
+.date {
+    font: var(--app-meta);
     color: var(--core-muted-foreground);
 }
 
-.addFaq {
-    padding: var(--space-1, 0.25rem) var(--space-3, 1rem);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-md, 0.5rem);
-    color: var(--brand-primary, var(--core-foreground));
-    font-weight: 500;
-    text-decoration: none;
-}
-
-.addFaq:hover,
-.addFaq:focus-visible {
-    background: oklch(0.96 0.02 240 / 0.15);
-}
-
-.redactionNote {
-    margin: 0;
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground, #6b7280);
-}
-
-.filters {
+.actions {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 12px;
+    gap: var(--space-2);
 }
 
-.filterField {
+/* --- Dismissed disclosure --- */
+
+.disclosure {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    font-size: 0.8125rem;
+    gap: var(--space-3);
+}
+
+.summary {
+    cursor: pointer;
+    font: var(--app-ui);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.summary:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-control);
+}
+
+.disclosure[open] .summary {
+    margin-block-end: var(--space-3);
 }

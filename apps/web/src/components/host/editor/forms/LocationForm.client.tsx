@@ -137,15 +137,6 @@ export function LocationForm({ locale, accommodationId, initialData }: LocationF
                 }}
             />
 
-            {form.formError && (
-                <div
-                    className={styles.error}
-                    role="alert"
-                >
-                    {form.formError}
-                </div>
-            )}
-
             {refusedTarget && (
                 <LocationExceptionRequestTrigger
                     locale={locale}
@@ -157,6 +148,7 @@ export function LocationForm({ locale, accommodationId, initialData }: LocationF
 
             <EditorSaveBar
                 locale={locale}
+                errorMessage={form.formError}
                 isDirty={form.isDirty}
                 onSave={form.save}
                 onDiscard={form.discard}

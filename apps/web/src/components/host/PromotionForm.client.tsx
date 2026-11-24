@@ -11,7 +11,10 @@
  *   `LockedState` with the catalog plan names (`lockPlanNames`, read by the
  *   page) replaces the form. «Tu plan no incluye promociones» is no longer
  *   something the owner discovers on save. A failed read does not lock: the
- *   API still decides on save, and its 403 keeps its own banner.
+ *   API still decides on save, and its 403 keeps its own banner. Owner
+ *   decision 18 (Mi cuenta UI epic): edit mode is gated too, since the API
+ *   refuses an edit without the key; the lock points back to the list, where
+ *   the promotion can still be paused.
  * - **Explicit save (D8).** Kit fields in two Sections and a `StickySaveBar`
  *   driven by `useSaveBar`; «Cancelar» is a kit `LinkButton` of its own, so it
  *   can never sit on top of the save action (HOS-2451).
@@ -119,7 +122,7 @@ export function PromotionForm({
         onDiscard: form.discard,
         idPrefix: PROMOTION_FIELD_PREFIX
     });
-    const gate = usePromotionPlanGate({ enabled: mode === 'create' });
+    const gate = usePromotionPlanGate({ enabled: true });
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
     const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
@@ -130,14 +133,20 @@ export function PromotionForm({
                 locale={locale}
                 reason={{
                     kind: 'plan',
-                    feature: t(
-                        'host.promotions.errors.entitlementRequired',
-                        'Tu plan no incluye promociones.'
-                    ),
-                    description: t(
-                        'host.promotions.errors.entitlementRequiredHint',
-                        'Mejorá tu plan para crear promociones.'
-                    ),
+                    feature:
+                        mode === 'create'
+                            ? t(
+                                  'host.promotions.errors.entitlementRequired',
+                                  'Tu plan no incluye promociones.'
+                              )
+                            : t('host.promotions.errors.editLocked'),
+                    description:
+                        mode === 'create'
+                            ? t(
+                                  'host.promotions.errors.entitlementRequiredHint',
+                                  'Mejorá tu plan para crear promociones.'
+                              )
+                            : t('host.promotions.errors.editLockedHint'),
                     plans: lockPlanNames.map((name) => ({ name })),
                     plansHref: upgradeUrl
                 }}
@@ -212,11 +221,12 @@ export function PromotionForm({
                 onVipOnlyChange={form.onVipOnlyChange}
             />
 
-            {failure ? (
+            {/* A generic failure is told by the save bar alone (owner decision 7);
+                a limit or entitlement refusal keeps this notice for its plans CTA. */}
+            {failure && failure.kind !== 'generic' ? (
                 <Alert
-                    tone={failure.kind === 'generic' ? 'danger' : 'warning'}
+                    tone="warning"
                     locale={locale}
-                    title={failure.message}
                     action={
                         failure.kind === 'entitlement' ? (
                             <LinkButton
@@ -255,6 +265,7 @@ export function PromotionForm({
             <StickySaveBar
                 locale={locale}
                 status={saveBar.status}
+                errorMessage={failure?.message}
                 onSave={() => void saveBar.save()}
                 onDiscard={saveBar.discard}
                 onGoToFirstError={() => {

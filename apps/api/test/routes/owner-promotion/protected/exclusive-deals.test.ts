@@ -1,4 +1,11 @@
-import { RoleEnum, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    OwnerPromotionDiscountTypeEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    TouristAudienceEnum,
+    type VerticalEnum
+} from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -54,6 +61,31 @@ function makeHeaders(): Record<string, string> {
         'x-mock-actor-id': ACTOR_ID,
         'x-mock-actor-role': RoleEnum.USER,
         'x-mock-actor-permissions': JSON.stringify([])
+    };
+}
+
+const DEAL_A = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const DEAL_WIDE = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+/** A complete exclusive-deal row (the response schema is enforced). */
+function dealRow(overrides: { readonly id: string; readonly accommodationSlug: string | null }) {
+    const now = new Date('2026-11-01T00:00:00.000Z');
+    return {
+        slug: `deal-${overrides.id.slice(0, 4)}`,
+        ownerId: ACTOR_ID,
+        accommodationId: null,
+        title: 'Noche gratis',
+        discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
+        discountValue: 10,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        validFrom: now,
+        validUntil: null,
+        currentRedemptions: 0,
+        maxRedemptions: null,
+        touristAudience: TouristAudienceEnum.PLUS,
+        createdAt: now,
+        updatedAt: now,
+        ...overrides
     };
 }
 
@@ -136,5 +168,31 @@ describe('TEST:V5:32 GET /api/v1/protected/owner-promotions/exclusive-deals', ()
         });
         expect(res.status).toBe(400);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+
+    it("carries each deal's accommodation slug (owner decision 17)", async () => {
+        // Arrange
+        mocks.findExclusiveDeals.mockResolvedValueOnce({
+            data: {
+                items: [
+                    dealRow({ id: DEAL_A, accommodationSlug: 'casa-a' }),
+                    dealRow({ id: DEAL_WIDE, accommodationSlug: null })
+                ],
+                total: 2
+            },
+            error: undefined
+        });
+
+        // Act
+        const res = await app.request(BASE, { headers: makeHeaders() });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(
+            body.data.items.map(
+                (item: { accommodationSlug: string | null }) => item.accommodationSlug
+            )
+        ).toEqual(['casa-a', null]);
     });
 });

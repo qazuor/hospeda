@@ -53,6 +53,8 @@ export interface EditorSaveBarProps {
     readonly idPrefix?: string;
     /** The editor's sub-control suffix map, if any. */
     readonly suffixes?: Readonly<Record<string, string>>;
+    /** The failed save's own reason, shown by the bar on error (see `StickySaveBar`). */
+    readonly errorMessage?: string | null;
 }
 
 /**
@@ -67,7 +69,8 @@ export function EditorSaveBar({
     onSave,
     onDiscard,
     idPrefix,
-    suffixes
+    suffixes,
+    errorMessage
 }: EditorSaveBarProps) {
     const bar = useSaveBar({ locale, isDirty, onSave, onDiscard, idPrefix, suffixes });
 
@@ -80,6 +83,7 @@ export function EditorSaveBar({
                 }}
                 onDiscard={bar.discard}
                 onGoToFirstError={idPrefix ? () => void bar.goToFirstError() : undefined}
+                errorMessage={errorMessage ?? bar.errorMessage}
                 locale={locale}
             />
         </div>

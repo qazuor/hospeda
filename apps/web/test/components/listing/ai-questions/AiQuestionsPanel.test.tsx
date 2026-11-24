@@ -162,8 +162,11 @@ describe('AiQuestionsPanel', () => {
         );
         expect(answeredFaqUrl.searchParams.get('respuesta')).toBe('Hay wifi');
 
+        // HOS-2503: flat kit Sections, the overview first, then unanswered before the rest.
         const regions = screen.getAllByRole('region');
-        expect(regions[0]).toBe(unanswered);
+        expect(regions[0]).toHaveAccessibleName('Preguntas a la IA');
+        expect(regions.indexOf(unanswered)).toBeLessThan(regions.indexOf(others));
+        expect(regions.indexOf(unanswered)).toBe(1);
     });
 
     it('renders the assistant answer markdown instead of showing the raw markers', async () => {
@@ -305,10 +308,11 @@ describe('AiQuestionsPanel', () => {
         renderPanel();
         await screen.findByText('¿Mascotas?');
         fireEvent.click(screen.getByRole('button', { name: 'Ya lo vi' }));
-        await waitFor(() =>
-            expect(document.querySelector('details')?.textContent).toContain('Descartadas')
-        );
-        expect(screen.getByText('¿Mascotas?')).toBeTruthy();
+        // HOS-2503: the dismissed list is its own kit Section, collapsed in a <details>.
+        const dismissedSection = await screen.findByRole('region', { name: /descartadas/i });
+        const disclosure = dismissedSection.querySelector('details');
+        expect(disclosure?.textContent).toContain('Ver las descartadas');
+        expect(within(dismissedSection).getByText('¿Mascotas?')).toBeTruthy();
         expect(mockPostProtected).toHaveBeenCalledWith({
             path: `${AI_LISTING_QUESTIONS_PATH}/22222222-2222-4222-8222-222222222222/dismiss`
         });

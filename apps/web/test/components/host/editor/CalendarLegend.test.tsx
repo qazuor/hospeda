@@ -20,6 +20,10 @@ vi.mock('../../../../src/components/host/editor/CalendarSection.module.css', () 
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
+vi.mock('../../../../src/components/host/editor/CalendarLegend.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
 /** Passthrough translator: returns the fallback the component supplies. */
 const t = ((_key: string, fallback?: string) => fallback ?? _key) as never;
 

@@ -6,10 +6,12 @@
  * Structurally the twin of `VenueMenuManager`, simplified: a FLAT list of
  * entries, not sections-with-items, because an agenda has no course grouping.
  * Same persistence shape too — this panel owns its own endpoints
- * (`GET`/`PUT .../events`) and saves by an explicit button, in ONE `PUT` of
- * the whole document (reordering three entries while deleting a fourth is one
- * thought, and as one document it is one transaction). Nothing here reaches
- * the parent editor's PATCH or its dirty tracking (HOS-811).
+ * (`GET`/`PUT .../events`) and the editor save bar commits the local draft in
+ * ONE `PUT` of the whole document (HOS-2487; reordering three entries while
+ * deleting a fourth is one thought, and as one document it is one
+ * transaction). Leaving with a dirty draft warns. Nothing here reaches the
+ * parent editor's PATCH or its dirty tracking (HOS-811). The live entries are
+ * the kit `Repeater` (HOS-2490): removing one asks first.
  *
  * ## The 403 is a real state, not an error
  *
@@ -36,6 +38,9 @@
 import { VENUE_EVENTS_MAX_ENTRIES } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
+import { EditorSaveBar } from '@/components/account/editor-shell/EditorSaveBar';
+import { Repeater } from '@/components/account/ui/Repeater';
+import type { SaveOutcome } from '@/components/account/ui/use-save-bar';
 import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
@@ -43,6 +48,7 @@ import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
+    buildAgendaPayload,
     countCurrent,
     describeAgendaSaveError,
     draftFromRow,
@@ -115,6 +121,7 @@ export function VenueEventsManager({
     const { t, tPlural } = createTranslations(locale);
 
     const [entries, setEntries] = useState<EventDraft[]>([]);
+    const [savedEntries, setSavedEntries] = useState<readonly EventDraft[]>([]);
     const [state, setState] = useState<PanelState>('loading');
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
@@ -147,7 +154,9 @@ export function VenueEventsManager({
                 return;
             }
             if (result.ok) {
-                setEntries(result.data.events.map(draftFromRow));
+                const loaded = result.data.events.map(draftFromRow);
+                setEntries(loaded);
+                setSavedEntries(loaded);
             }
             setState('idle');
         })();
@@ -254,7 +263,14 @@ export function VenueEventsManager({
         [patchEntry]
     );
 
-    const saveEvents = useCallback(async () => {
+    const isDirty = JSON.stringify(entries) !== JSON.stringify(savedEntries);
+
+    const discard = useCallback(() => {
+        setEntries([...savedEntries]);
+        setMessage(null);
+    }, [savedEntries]);
+
+    const saveEvents = useCallback(async (): Promise<SaveOutcome> => {
         // A malformed ticket link blocks the save (HOS-2255); the card shows
         // the field-level message, this one says why nothing was sent.
         if (entries.some((entry) => !entry.isPast && !isTicketUrlValid(entry.ticketUrl))) {
@@ -264,53 +280,20 @@ export function VenueEventsManager({
                     'El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.'
                 )
             );
-            return;
+            return { ok: false };
         }
         setState('saving');
         setMessage(null);
 
-        // An entry without a title, or without a start time, is DROPPED
-        // rather than rejected — the same treatment `VenueMenuManager`
-        // gives a nameless dish: an abandoned "add entry" click should not
-        // fail the whole save.
-        //
-        // A `once` entry with no date joins them, and that third clause is not
-        // cosmetic: the server's refinement REFUSES such an entry, so sending
-        // it would fail the WHOLE document and lose the other entries the owner
-        // did finish. A weekly entry needs no equivalent clause — `weekday`
-        // carries a real default (see `EMPTY_DRAFT`), so it is never absent.
-        const payload = {
-            events: entries
-                .filter(
-                    (entry) =>
-                        entry.title.trim().length > 0 &&
-                        entry.startTime.length > 0 &&
-                        (entry.recurrence !== 'once' || entry.date.length > 0)
-                )
-                .map((entry) => ({
-                    // Stored events send their id back so they keep it (HOS-2291).
-                    ...(entry.id ? { id: entry.id } : {}),
-                    title: entry.title.trim(),
-                    description: entry.description.trim() || null,
-                    recurrence: entry.recurrence,
-                    // Exactly one of date/weekday, matching the recurrence —
-                    // the server schema REJECTS a payload carrying both.
-                    ...(entry.recurrence === 'once'
-                        ? { date: entry.date || null }
-                        : { weekday: entry.weekday }),
-                    startTime: entry.startTime,
-                    endTime: entry.endTime || null,
-                    ticketUrl: entry.ticketUrl.trim() || null,
-                    isActive: entry.isActive
-                }))
-        };
+        const payload = buildAgendaPayload(entries);
 
         const result = await apiClient.put<EventsEnvelope>({ path: basePath, body: payload });
         setState('idle');
 
         if (result.ok) {
+            setSavedEntries(entries);
             setMessage(t('venue.owner.editor.venueEventsManager.saved', 'Agenda guardada.'));
-            return;
+            return { ok: true };
         }
 
         // A refusal here is the plan speaking, not a failure. `status` is the
@@ -321,22 +304,20 @@ export function VenueEventsManager({
             setMessage(
                 translateUpsell({ t, planName: upsellPlanName, ...VENUE_EVENTS_UPSELL_COPY })
             );
-            return;
+            return { ok: false };
         }
 
-        // A 400 carrying one of our stable keys is explained specifically
-        // (which new event is dated in the past, which ceiling was hit).
+        // A 400 carrying one of our stable keys is explained specifically (an
+        // event dated in the past, a ceiling hit). Only the bar says it (decision 7).
         const specific =
             result.error.status === 400
                 ? describeAgendaSaveError({ message: result.error.message, entries, t })
                 : null;
-        setMessage(
-            specific ??
-                t(
-                    'venue.owner.editor.venueEventsManager.saveError',
-                    'No se pudo guardar la agenda.'
-                )
+        const fallback = t(
+            'venue.owner.editor.venueEventsManager.saveError',
+            'No se pudo guardar la agenda.'
         );
+        return { ok: false, message: specific ?? fallback };
     }, [basePath, entries, t, upsellPlanName]);
 
     /**
@@ -362,13 +343,15 @@ export function VenueEventsManager({
         }
 
         setEntries([]);
+        setSavedEntries([]);
         setMessage(t('venue.owner.editor.lockedSection.vaciarSuccess', 'Se vació la sección.'));
         return true;
     }, [basePath, t]);
 
     const vaciar = useSectionVaciar({ clear: clearEvents });
 
-    const busy = state !== 'idle';
+    const liveIndexes = entries.flatMap((entry, i) => (entry.isPast ? [] : [i]));
+    const newEntry = t('venue.owner.editor.venueEventsManager.newEntry', 'Nuevo evento');
     // The ceiling counts the entries that are not past (HOS-2254).
     const atMax = countCurrent(entries) >= VENUE_EVENTS_MAX_ENTRIES;
     const pastIndexes = entries.flatMap((entry, i) => (entry.isPast ? [i] : []));
@@ -423,33 +406,48 @@ export function VenueEventsManager({
                 </VenueSectionLockedPanel>
             ) : (
                 <>
-                    {entries.map((entry, index) =>
-                        entry.isPast ? null : (
-                            <VenueEventEntryCard
-                                // Index-keyed on purpose: a draft row has no id, and the
-                                // whole list is re-submitted as a document.
-                                // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
-                                key={`event-${index}`}
-                                entry={entry}
-                                index={index}
-                                t={t}
-                                weekdayLabels={weekdayLabels}
-                                onPatch={patchEntry}
-                                onMove={moveEntry}
-                                onRemove={removeEntry}
-                                onSetRecurrence={setRecurrence}
-                            />
-                        )
-                    )}
-
-                    <button
-                        type="button"
-                        className={styles.secondaryButton}
-                        disabled={atMax}
-                        onClick={addEntry}
-                    >
-                        {t('venue.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
-                    </button>
+                    <Repeater
+                        locale={locale}
+                        label={t('venue.owner.editor.venueEventsManager.title', 'Agenda del local')}
+                        items={liveIndexes}
+                        // Index-keyed on purpose: a draft row has no id, and the
+                        // whole list is re-submitted as a document.
+                        getKey={(entryIndex) => `event-${entryIndex}`}
+                        getItemLabel={(entryIndex) => entries[entryIndex]?.title || newEntry}
+                        disabled={isLocked || state === 'loading'}
+                        onMove={(position, delta) => {
+                            const entryIndex = liveIndexes[position];
+                            if (entryIndex !== undefined) {
+                                moveEntry(entryIndex, delta);
+                            }
+                        }}
+                        onRemove={(position) => {
+                            const entryIndex = liveIndexes[position];
+                            if (entryIndex !== undefined) {
+                                removeEntry(entryIndex);
+                            }
+                        }}
+                        onAdd={addEntry}
+                        canAdd={!atMax}
+                        addLabel={t(
+                            'venue.owner.editor.venueEventsManager.addEntry',
+                            'Agregar evento'
+                        )}
+                        renderItem={(entryIndex) => {
+                            const entry = entries[entryIndex];
+                            return entry ? (
+                                <VenueEventEntryCard
+                                    entry={entry}
+                                    index={entryIndex}
+                                    locale={locale}
+                                    t={t}
+                                    weekdayLabels={weekdayLabels}
+                                    onPatch={patchEntry}
+                                    onSetRecurrence={setRecurrence}
+                                />
+                            ) : null;
+                        }}
+                    />
 
                     {atMax ? (
                         <p className={styles.intro}>
@@ -479,23 +477,12 @@ export function VenueEventsManager({
                         onRemoveAll={removeAllPast}
                     />
 
-                    {/*
-                     * `type="button"`, like every control here: this panel lives
-                     * INSIDE the editor's <form>, and a submit button would save the
-                     * listing instead of the agenda.
-                     */}
-                    <button
-                        type="button"
-                        className={styles.primaryButton}
-                        disabled={busy || isLocked}
-                        onClick={() => {
-                            void saveEvents();
-                        }}
-                    >
-                        {state === 'saving'
-                            ? t('venue.owner.editor.venueEventsManager.saving', 'Guardando…')
-                            : t('venue.owner.editor.venueEventsManager.save', 'Guardar agenda')}
-                    </button>
+                    <EditorSaveBar
+                        locale={locale}
+                        isDirty={isDirty}
+                        onSave={saveEvents}
+                        onDiscard={discard}
+                    />
                 </>
             )}
 

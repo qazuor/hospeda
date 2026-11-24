@@ -116,7 +116,7 @@ describe('per-section saving does not leak fields across pages (AC-6)', () => {
         const user = userEvent.setup();
         render(<CapacityPricingForm {...COMMON} />);
 
-        const price = screen.getByLabelText(/precio/i) as HTMLInputElement;
+        const price = screen.getByLabelText(/precio por noche/i) as HTMLInputElement;
         await user.clear(price);
         await user.type(price, '30000');
         submitFrom(price);
@@ -185,7 +185,7 @@ describe('save feedback', () => {
         // Never save silently (HOS-190): Save must always visibly do something.
         render(<CapacityPricingForm {...COMMON} />);
 
-        const price = screen.getByLabelText(/precio/i) as HTMLInputElement;
+        const price = screen.getByLabelText(/precio por noche/i) as HTMLInputElement;
         submitFrom(price);
 
         await waitFor(() =>

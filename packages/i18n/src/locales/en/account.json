@@ -691,6 +691,11 @@
             "title": "Your subscriptions",
             "replacedBy": "Replaced by {{plan}}; it will be canceled within the next hour.",
             "empty": "You have no current subscriptions.",
+            "expiredDeclined": {
+                "title": "We couldn't charge your subscription",
+                "body": "Your subscription to the {{plan}} plan ({{vertical}}) could not be charged and the time to retry has ended. You were not charged. You can start again whenever you like.",
+                "cta": "Start again"
+            },
             "pause": {
                 "open": "Pause subscription",
                 "pending": "Processing pause...",
@@ -1118,6 +1123,11 @@
                 "multipleSubscriptions_other": "{{count}} active subscriptions",
                 "subscriptionsCount_one": "{{count}} subscription",
                 "subscriptionsCount_other": "{{count}} subscriptions",
+                "activeSubscriptionsPart_one": "{{count}} active",
+                "activeSubscriptionsPart_other": "{{count}} active",
+                "pendingSubscriptionsPart_one": "{{count}} pending",
+                "pendingSubscriptionsPart_other": "{{count}} pending",
+                "subscriptionsSummary": "{{active}} · {{pending}}",
                 "properties": "My properties",
                 "propertiesDesc": "Published accommodations",
                 "messages": "Unread messages",
@@ -1506,7 +1516,6 @@
         "item": {
             "vipBadge": "VIP only",
             "viewListing": "View listing",
-            "viewListingError": "We could not open the listing. Please try again.",
             "listingUnavailable": "This listing is no longer available.",
             "validUntil": "Valid until {{date}}"
         }
@@ -2266,6 +2275,16 @@
             "backToHub": "Back to the editor",
             "backToList": "Back to the list"
         },
+        "repeater": {
+            "add": "Add",
+            "moveUp": "Move {{item}} up",
+            "moveDown": "Move {{item}} down",
+            "remove": "Remove {{item}}",
+            "removeShort": "Remove",
+            "confirmTitle": "Remove “{{item}}”?",
+            "confirmDescription": "The row leaves the list.",
+            "confirmLabel": "Remove"
+        },
         "hoursEditor": {
             "title": "Opening hours",
             "hint": "Turn on the days you open and add their time slots. «Copy to every day» repeats one day's hours across the week.",
@@ -2385,7 +2404,11 @@
             "mapLoading": "Loading the map…",
             "touchToActivate": "Tap to move the pin",
             "pinHint": "Drag the pin or tap the map to set the exact spot.",
-            "noPinHint": "No pin yet. Tap the map where the place is to set it.",
+            "noPinNotice": {
+                "title": "You have not marked the place on the map yet",
+                "body": "Without a pin, your listing does not show where it is on the map. Tap the map or drag the pin to the exact spot.",
+                "action": "Go to the map"
+            },
             "coordinates": "Coordinates",
             "latitude": "Latitude",
             "longitude": "Longitude"

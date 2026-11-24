@@ -163,7 +163,7 @@ export interface SubscriptionStatRow {
 
 /** Text the subscription StatCard shows once the reads answered. */
 export interface SubscriptionStatText {
-    /** Main value (plan name, «Gratuito», «En prueba», «2 suscripciones activas»). */
+    /** Main value (plan name, «Gratuito», «En prueba», «2 activas · 1 pendiente»). */
     readonly value: string;
     /** Status line, or `null`. */
     readonly hint: string | null;
@@ -225,15 +225,54 @@ export function resolveSubscriptionStatText({
             { count }
         );
     // The listed rows may include unsettled ones (declined, awaiting authorization),
-    // so their total is not "active": a neutral count heads the list.
-    const listCountText = (count: number): string =>
-        t(
-            count === 1
+    // so the head splits the settled ("active") ones from the ones awaiting
+    // authorization; a zero part is left out, and a list with neither falls back
+    // to the neutral count.
+    const listCountText = ({
+        total,
+        activeCount,
+        pendingCount
+    }: {
+        readonly total: number;
+        readonly activeCount: number;
+        readonly pendingCount: number;
+    }): string => {
+        const active =
+            activeCount > 0
+                ? t(
+                      activeCount === 1
+                          ? 'account.pages.dashboard.stats.activeSubscriptionsPart_one'
+                          : 'account.pages.dashboard.stats.activeSubscriptionsPart_other',
+                      undefined,
+                      { count: activeCount }
+                  )
+                : null;
+        const pending =
+            pendingCount > 0
+                ? t(
+                      pendingCount === 1
+                          ? 'account.pages.dashboard.stats.pendingSubscriptionsPart_one'
+                          : 'account.pages.dashboard.stats.pendingSubscriptionsPart_other',
+                      undefined,
+                      { count: pendingCount }
+                  )
+                : null;
+        if (active && pending) {
+            return t('account.pages.dashboard.stats.subscriptionsSummary', undefined, {
+                active,
+                pending
+            });
+        }
+        const onlyPart = active ?? pending;
+        if (onlyPart) return onlyPart;
+        return t(
+            total === 1
                 ? 'account.pages.dashboard.stats.subscriptionsCount_one'
                 : 'account.pages.dashboard.stats.subscriptionsCount_other',
             undefined,
-            { count }
+            { count: total }
         );
+    };
     switch (planStat.kind) {
         case 'single':
             return {
@@ -248,7 +287,7 @@ export function resolveSubscriptionStatText({
                 .map((row) => actionFor(row.statusKey))
                 .find((text) => text !== null);
             return {
-                value: listCountText(planStat.total),
+                value: listCountText(planStat),
                 hint: null,
                 rows: planStat.rows.map((row) => ({
                     plan: row.label,

@@ -45,7 +45,8 @@ function lookup({ tree, key }: { readonly tree: Json; readonly key: string }): s
 
 const { mockLocale } = vi.hoisted(() => ({ mockLocale: { current: 'es' } }));
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string) =>
             lookup({ tree: loadVenueLocale(mockLocale.current), key }) ?? fallback ?? key,

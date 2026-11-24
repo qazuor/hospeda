@@ -9,23 +9,13 @@
  *  - Empty state
  *  - Populated list: title + discount label per discountType
  *  - VIP-only badge shown for touristAudience='vip', hidden for 'plus'
- *  - Kit rows (HOS-2507): validity date, and the «Ver alojamiento» action that
- *    resolves the listing slug from the accommodation id (no new API fields)
+ *  - Kit rows (HOS-2507): validity date, and the «Ver alojamiento» action —
+ *    a real link built from `accommodationSlug` (owner decision 17)
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExclusiveDealsList } from '../../../src/components/account/ExclusiveDealsList.client';
-
-// ─── Module mocks ─────────────────────────────────────────────────────────────
-
-const { getByIdMock } = vi.hoisted(() => ({
-    getByIdMock: vi.fn()
-}));
-
-vi.mock('../../../src/lib/api/endpoints', () => ({
-    accommodationsApi: { getById: getByIdMock }
-}));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -38,6 +28,7 @@ const PLUS_DEAL = {
     slug: 'descuento-fin-de-semana',
     ownerId: 'owner-001',
     accommodationId: 'acc-001',
+    accommodationSlug: 'cabanas-del-rio',
     title: 'Descuento fin de semana',
     discountType: 'percentage',
     discountValue: 15,
@@ -184,65 +175,40 @@ describe('ExclusiveDealsList', () => {
         expect(screen.getAllByText(/Válida hasta el/)).toHaveLength(1);
     });
 
-    it('opens the listing the deal belongs to, resolving its slug from the id', async () => {
-        const assign = vi.fn();
-        Object.defineProperty(window, 'location', {
-            configurable: true,
-            value: { ...window.location, assign }
-        });
-        getByIdMock.mockResolvedValue({ ok: true, data: { slug: 'cabanas-del-rio' } });
+    it('links to the listing the deal belongs to with a real href, no lookup', async () => {
         vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
         renderComponent();
 
-        fireEvent.click(await screen.findByRole('button', { name: /ver alojamiento/i }));
+        const link = await screen.findByRole('link', { name: /ver alojamiento/i });
 
-        await waitFor(() =>
-            expect(assign).toHaveBeenCalledWith('/es/alojamientos/cabanas-del-rio/')
-        );
-        expect(getByIdMock).toHaveBeenCalledWith({ id: 'acc-001' });
+        expect(link).toHaveAttribute('href', '/es/alojamientos/cabanas-del-rio/');
+        // Only the list read: the slug comes in the payload.
+        expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it('says inline, in the row, that a gone listing is no longer available and drops the action', async () => {
-        getByIdMock.mockResolvedValue({
-            ok: false,
-            error: { status: 404, code: 'NOT_FOUND', message: 'Not found' }
-        });
-        vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
-        renderComponent();
-
-        fireEvent.click(await screen.findByRole('button', { name: /ver alojamiento/i }));
-
-        const row = document.querySelector('[data-row="promo-001"]') as HTMLElement;
-        await waitFor(() =>
-            expect(row).toHaveTextContent('Este alojamiento ya no está disponible.')
+    it('says inline that a listing no longer public is unavailable, and offers no link', async () => {
+        vi.mocked(global.fetch).mockResolvedValueOnce(
+            makeListResponse([{ ...PLUS_DEAL, accommodationSlug: null }])
         );
-        expect(screen.queryByRole('button', { name: /ver alojamiento/i })).not.toBeInTheDocument();
-    });
-
-    it('says inline when the listing read fails for another reason, and keeps the action to retry', async () => {
-        getByIdMock.mockResolvedValue({
-            ok: false,
-            error: { status: 500, code: 'INTERNAL_ERROR', message: 'boom' }
-        });
-        vi.mocked(global.fetch).mockResolvedValueOnce(makeListResponse([PLUS_DEAL]));
         renderComponent();
 
-        fireEvent.click(await screen.findByRole('button', { name: /ver alojamiento/i }));
-
-        expect(
-            await screen.findByText('No pudimos abrir el alojamiento. Probá de nuevo.')
-        ).toBeInTheDocument();
-        expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /ver alojamiento/i })).toBeInTheDocument();
+        const row = await screen.findByText('Descuento fin de semana');
+        expect(row.closest('[data-row="promo-001"]')).toHaveTextContent(
+            'Este alojamiento ya no está disponible.'
+        );
+        expect(screen.queryByRole('link', { name: /ver alojamiento/i })).not.toBeInTheDocument();
     });
 
     it('offers no listing action for an owner-wide deal (no accommodation id)', async () => {
         vi.mocked(global.fetch).mockResolvedValueOnce(
-            makeListResponse([{ ...PLUS_DEAL, accommodationId: null }])
+            makeListResponse([{ ...PLUS_DEAL, accommodationId: null, accommodationSlug: null }])
         );
         renderComponent();
 
         expect(await screen.findByText('Descuento fin de semana')).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /ver alojamiento/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /ver alojamiento/i })).not.toBeInTheDocument();
+        expect(
+            screen.queryByText('Este alojamiento ya no está disponible.')
+        ).not.toBeInTheDocument();
     });
 });

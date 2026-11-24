@@ -40,6 +40,13 @@ const audiencePlanNames = planNamesWithEntitlement({
     entitlement: EntitlementKeyEnum.EXCLUSIVE_DEALS
 });
 
+// Owner decision 18: without create_promotions the edit is locked, and the
+// lock names the catalog plans that include promotions.
+const lockPlanNames = planNamesWithEntitlement({
+    result: await fetchPublicPlans({ vertical: 'accommodation' }),
+    entitlement: EntitlementKeyEnum.CREATE_PROMOTIONS
+});
+
 // Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
 const user = Astro.locals.user;
 if (!user) {
@@ -69,5 +76,6 @@ if (!promotionId) {
         mode="edit"
         promotionId={promotionId}
         audiencePlanNames={audiencePlanNames}
+        lockPlanNames={lockPlanNames}
     />
 </AccountLayout>

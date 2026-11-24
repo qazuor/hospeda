@@ -15,6 +15,11 @@
  * (`lockPlanNames`, read by the page), and one who still has some keeps the
  * list with an upgrade notice above it.
  *
+ * Owner decision 18 (Mi cuenta UI epic): locked promotions are view + pause
+ * only. «Editar» is shown disabled (the notice says why), an active promotion
+ * offers «Pausar» (the API accepts a pause without the plan key), and
+ * re-activating stays out, as the API refuses it without the key.
+ *
  * @example
  * ```astro
  * <PromotionList client:load locale={locale} lockPlanNames={names}>
@@ -60,6 +65,7 @@ function formatValidity(value: string | Date | null | undefined, locale: string)
 /** Lifecycle tone of an owner promotion. */
 const LIFECYCLE_TONES: Readonly<Record<string, StatusTone>> = {
     ACTIVE: 'success',
+    INACTIVE: 'warning',
     DRAFT: 'neutral',
     ARCHIVED: 'neutral'
 };
@@ -102,6 +108,7 @@ export function PromotionList({
     const [page, setPage] = useState(1);
     const [state, setState] = useState<ListState>({ status: 'loading' });
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [pausingId, setPausingId] = useState<string | null>(null);
     const [gate, setGate] = useState<PlanGate>('checking');
 
     const fetchPromotions = useCallback(async (target: number) => {
@@ -176,6 +183,26 @@ export function PromotionList({
         [requestConfirm, fetchPromotions, page, t]
     );
 
+    const handlePause = useCallback(
+        async (promo: OwnerPromotionData) => {
+            setDeleteError(null);
+            setPausingId(promo.id);
+            try {
+                const result = await ownerPromotionApi.pause({ id: promo.id });
+                if (!result.ok) {
+                    setDeleteError(t('host.promotions.errors.pauseFailed'));
+                    return;
+                }
+                void fetchPromotions(page);
+            } catch {
+                setDeleteError(t('host.promotions.errors.pauseFailed'));
+            } finally {
+                setPausingId(null);
+            }
+        },
+        [fetchPromotions, page, t]
+    );
+
     const plansHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
     const createHref = buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' });
     const items = state.status === 'ready' ? state.items : [];
@@ -222,7 +249,7 @@ export function PromotionList({
                         </LinkButton>
                     }
                 >
-                    {t('host.promotions.errors.entitlementRequiredHint')}
+                    {t('host.promotions.errors.lockedListHint')}
                 </Alert>
             ) : null}
             {deleteError ? (
@@ -304,19 +331,51 @@ export function PromotionList({
                             ]}
                             actions={
                                 <>
-                                    <LinkButton
-                                        href={buildUrl({
-                                            locale,
-                                            path: `mi-cuenta/promociones/${promo.id}/editar`
-                                        })}
-                                        variant="secondary"
-                                        size="sm"
-                                        aria-label={t('host.promotions.kit.editNamed', undefined, {
-                                            title: promo.title
-                                        })}
-                                    >
-                                        {t('host.promotions.actions.edit')}
-                                    </LinkButton>
+                                    {gate === 'locked' ? (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            disabled
+                                            aria-label={t(
+                                                'host.promotions.kit.editNamed',
+                                                undefined,
+                                                { title: promo.title }
+                                            )}
+                                        >
+                                            {t('host.promotions.actions.edit')}
+                                        </Button>
+                                    ) : (
+                                        <LinkButton
+                                            href={buildUrl({
+                                                locale,
+                                                path: `mi-cuenta/promociones/${promo.id}/editar`
+                                            })}
+                                            variant="secondary"
+                                            size="sm"
+                                            aria-label={t(
+                                                'host.promotions.kit.editNamed',
+                                                undefined,
+                                                { title: promo.title }
+                                            )}
+                                        >
+                                            {t('host.promotions.actions.edit')}
+                                        </LinkButton>
+                                    )}
+                                    {gate === 'locked' && promo.lifecycleState === 'ACTIVE' ? (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            loading={pausingId === promo.id}
+                                            aria-label={t(
+                                                'host.promotions.kit.pauseNamed',
+                                                undefined,
+                                                { title: promo.title }
+                                            )}
+                                            onClick={() => void handlePause(promo)}
+                                        >
+                                            {t('host.promotions.actions.pause')}
+                                        </Button>
+                                    ) : null}
                                     <Button
                                         variant="danger-ghost"
                                         size="sm"

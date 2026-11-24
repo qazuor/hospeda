@@ -37,7 +37,8 @@ import type { SeoSectionProps } from '@/components/host/editor/SeoSection.client
 import { SeoSection } from '@/components/host/editor/SeoSection.client';
 import type { AccommodationEditData } from '@/lib/api/types';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, string>) => {
             let text = fallback ?? key;

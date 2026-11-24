@@ -194,6 +194,8 @@ describe('HOS-2553 subscription card with every subscription', () => {
         expect(stat).toEqual({
             kind: 'list',
             total: 3,
+            activeCount: 1,
+            pendingCount: 1,
             hasMore: false,
             rows: [
                 { label: 'Básico', statusKey: 'active' },
@@ -210,7 +212,13 @@ describe('HOS-2553 subscription card with every subscription', () => {
             subscriptions: ['a', 'b', 'c', 'd'].map((slug) => sub(slug, 'ACTIVE')) as never,
             planNames: {}
         });
-        expect(stat).toMatchObject({ kind: 'list', total: 4, hasMore: true });
+        expect(stat).toMatchObject({
+            kind: 'list',
+            total: 4,
+            activeCount: 4,
+            pendingCount: 0,
+            hasMore: true
+        });
         expect(stat.kind === 'list' && stat.rows).toHaveLength(3);
     });
 

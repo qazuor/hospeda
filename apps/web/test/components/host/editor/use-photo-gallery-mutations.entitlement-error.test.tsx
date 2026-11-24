@@ -39,7 +39,8 @@ function mount() {
             setGalleryItems: vi.fn(),
             setError,
             setOpLoading: vi.fn(),
-            reportUploadError: vi.fn()
+            reportUploadError: vi.fn(),
+            confirmRemoval: vi.fn().mockResolvedValue(true)
         })
     );
     return { result, setError };

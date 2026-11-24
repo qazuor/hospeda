@@ -1,6 +1,12 @@
 /**
  * Protected patch owner promotion endpoint
  * Requires authentication
+ *
+ * Owner decision 18 (Mi cuenta UI epic): a body that is exactly «pause this
+ * promotion» (`{ lifecycleState }`, not ACTIVE) skips the `create_promotions`
+ * gate, like the venue door (`isPauseBody`, HOS-2270 AC-6): an owner without
+ * the plan key can still put a promotion away. Editing and re-activating keep
+ * the gate.
  */
 
 import {
@@ -17,6 +23,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { isPauseBody } from '../../venue/protected/promotion-access';
 import { assertAccommodationPromotion } from './accommodation-door';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
@@ -30,7 +37,7 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
     path: '/{id}',
     summary: 'Patch owner promotion',
     description:
-        'Partially updates an existing owner promotion. Requires OWNER_PROMOTION_UPDATE_OWN permission.',
+        'Partially updates an existing owner promotion. Requires OWNER_PROMOTION_UPDATE_OWN permission. Editing or re-activating needs create_promotions; a body that is only a non-ACTIVE lifecycleState pauses it without that key.',
     tags: ['Owner Promotions'],
     // Hosts hold the `_OWN` variant (mirrors get/list which use VIEW_OWN). The
     // generic OWNER_PROMOTION_UPDATE permission is not granted to any host role,
@@ -53,11 +60,13 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
         }
         // HOS-2270: a venue promotion is not reachable through the accommodation door.
         assertAccommodationPromotion(existing.data);
-        await enforceUserGate({
-            userId: actor.id,
-            vertical: VerticalEnum.ACCOMMODATION,
-            keys: ['create_promotions']
-        });
+        if (!isPauseBody({ body })) {
+            await enforceUserGate({
+                userId: actor.id,
+                vertical: VerticalEnum.ACCOMMODATION,
+                keys: ['create_promotions']
+            });
+        }
         // Strip ownerId from the patch body so a client cannot reassign ownership.
         // The service layer does not guard against this field, so we drop it at the
         // route boundary before it reaches the service.

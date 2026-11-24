@@ -7,7 +7,8 @@ const { patchMock } = vi.hoisted(() => ({ patchMock: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({ apiClient: { patch: patchMock } }));
 vi.mock('@/lib/forms/use-unsaved-changes-guard', () => ({ useUnsavedChangesGuard: vi.fn() }));
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) =>
             Object.entries(params ?? {}).reduce(
@@ -29,8 +30,10 @@ const mount = () =>
 
 async function addAndSubmit(url: string) {
     fireEvent.click(screen.getByRole('button', { name: 'Agregar video' }));
-    fireEvent.change(screen.getByLabelText('Enlace del video'), { target: { value: url } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar videos' }));
+    const input = screen.getByLabelText('Enlace del video');
+    fireEvent.change(input, { target: { value: url } });
+    // HOS-2489: no Save button; leaving the field commits the list.
+    fireEvent.blur(input);
 }
 
 describe('ListingVideoWidget (HOS-2258)', () => {

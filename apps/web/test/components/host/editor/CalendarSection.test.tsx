@@ -40,7 +40,8 @@ const { mockList, mockBatchToggle, mockUpdateEvent } = vi.hoisted(() => ({
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw = fallback ?? key;

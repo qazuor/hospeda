@@ -1,91 +1,23 @@
-/* SeoSection.module.css — G7 smoke (H-121) */
+/* SeoSection.module.css — kit fields since HOS-2503. Labels, controls, hints
+   and errors come from the kit `Field`; only the stack and the default preview
+   live here. */
 
-.section {
-    border: none;
-    padding: 0;
-    margin: 0 0 var(--space-5, 2rem);
-}
-
-.sectionTitle {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 1.125rem;
-    color: var(--core-foreground);
-    margin-bottom: var(--space-4, 1.5rem);
-    padding-bottom: var(--space-2, 0.5rem);
-    border-bottom: 1px solid var(--border);
-}
-
-.sectionDescription {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground);
-    margin: 0 0 var(--space-4, 1.5rem);
-}
-
-.field {
+.stack {
     display: flex;
     flex-direction: column;
-    margin-bottom: var(--space-4, 1.5rem);
-}
-
-.fieldLabel {
-    font-family: var(--font-sans);
-    font-weight: 500;
-    font-size: 0.875rem;
-    color: var(--core-foreground);
-    margin-bottom: var(--space-1, 0.25rem);
-}
-
-.fieldInput {
-    display: block;
-    width: 100%;
-    padding: 0.625rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--core-card);
-    color: var(--core-foreground);
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    transition: border-color 150ms ease-out;
-    box-sizing: border-box;
-}
-
-.fieldInput:focus {
-    outline: 2px solid var(--brand-primary);
-    outline-offset: 1px;
-    border-color: var(--brand-primary);
-}
-
-.fieldInput[aria-invalid="true"] {
-    border-color: oklch(0.55 0.22 25);
-}
-
-.fieldHint {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground);
-    margin: var(--space-1, 0.25rem) 0 0;
+    gap: var(--space-5);
 }
 
 /*
- * The value that gets published while the field is empty (HOS-792). Reads as a
- * quote rather than as a hint: it is the host's own text being echoed back, so
- * it is set apart with a rule and italics instead of blending into the grey
- * hint line directly under it.
- *
- * The `used/total` readout that used to live here is gone — the field renders
- * the shared `CharacterCounter` through `TextField` now, which is where the
- * minimum-length readout lands (HOS-793) and where the warning threshold is
- * already defined once.
+ * HOS-792: the line naming what an empty field publishes. It is the one piece
+ * of copy here describing a value rather than an instruction, so it is set
+ * apart with a rule and italics instead of blending into the hint.
  */
 .defaultPreview {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    margin: 0;
+    padding-inline-start: var(--space-2);
+    border-inline-start: 2px solid var(--border);
+    font: var(--app-ui);
     font-style: italic;
     color: var(--core-muted-foreground);
-    border-left: 2px solid var(--border);
-    padding-left: var(--space-2, 0.5rem);
-    margin: var(--space-1, 0.25rem) 0 0;
 }

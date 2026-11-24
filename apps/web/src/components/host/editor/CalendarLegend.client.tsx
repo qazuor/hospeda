@@ -22,6 +22,7 @@ import { OccupancySourceEnum } from '@repo/schemas';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { TranslationFn } from '@/lib/i18n';
+import legendStyles from './CalendarLegend.module.css';
 import styles from './CalendarSection.module.css';
 
 /** Props for CalendarLegend. */
@@ -44,31 +45,31 @@ export function CalendarLegend({ t, presentSources }: CalendarLegendProps) {
 
     return (
         <div
-            className={styles.legend}
+            className={legendStyles.legend}
             data-expanded={isExpanded ? 'true' : 'false'}
         >
             <button
                 type="button"
-                className={styles.legendToggle}
+                className={legendStyles.legendToggle}
                 onClick={() => setIsExpanded((prev) => !prev)}
                 aria-expanded={isExpanded}
             >
                 {title}
                 <ChevronDownIcon
                     size={14}
-                    className={styles.legendToggleIcon}
+                    className={legendStyles.legendToggleIcon}
                     aria-hidden="true"
                 />
             </button>
-            <span className={styles.legendTitle}>{title}</span>
-            <div className={styles.legendItems}>
-                <span className={styles.legendItem}>
-                    <span className={cn(styles.legendDot, styles.dotFree)} />
+            <span className={legendStyles.legendTitle}>{title}</span>
+            <div className={legendStyles.legendItems}>
+                <span className={legendStyles.legendItem}>
+                    <span className={cn(legendStyles.legendDot, styles.dotFree)} />
                     {t('host.properties.editor.calendar.legend.free', 'Libre')}
                 </span>
                 {has(OccupancySourceEnum.MANUAL) && (
-                    <span className={styles.legendItem}>
-                        <span className={cn(styles.legendDot, styles.dotManual)} />
+                    <span className={legendStyles.legendItem}>
+                        <span className={cn(legendStyles.legendDot, styles.dotManual)} />
                         {t(
                             'host.properties.editor.calendar.legend.manual',
                             'Bloqueado manualmente'
@@ -76,7 +77,7 @@ export function CalendarLegend({ t, presentSources }: CalendarLegendProps) {
                     </span>
                 )}
                 {has(OccupancySourceEnum.GOOGLE_CALENDAR) && (
-                    <span className={styles.legendItem}>
+                    <span className={legendStyles.legendItem}>
                         <GoogleIcon
                             size={12}
                             weight="regular"
@@ -89,8 +90,8 @@ export function CalendarLegend({ t, presentSources }: CalendarLegendProps) {
                     </span>
                 )}
                 {has(OccupancySourceEnum.AIRBNB) && (
-                    <span className={styles.legendItem}>
-                        <span className={cn(styles.legendDot, styles.dotAirbnb)} />
+                    <span className={legendStyles.legendItem}>
+                        <span className={cn(legendStyles.legendDot, styles.dotAirbnb)} />
                         {t(
                             'host.properties.editor.calendar.legend.airbnb',
                             'Sincronizado — Airbnb'
@@ -98,8 +99,8 @@ export function CalendarLegend({ t, presentSources }: CalendarLegendProps) {
                     </span>
                 )}
                 {has(OccupancySourceEnum.BOOKING) && (
-                    <span className={styles.legendItem}>
-                        <span className={cn(styles.legendDot, styles.dotBooking)} />
+                    <span className={legendStyles.legendItem}>
+                        <span className={cn(legendStyles.legendDot, styles.dotBooking)} />
                         {t(
                             'host.properties.editor.calendar.legend.booking',
                             'Sincronizado — Booking.com'
@@ -107,8 +108,8 @@ export function CalendarLegend({ t, presentSources }: CalendarLegendProps) {
                     </span>
                 )}
                 {has(OccupancySourceEnum.OTHER) && (
-                    <span className={styles.legendItem}>
-                        <span className={cn(styles.legendDot, styles.dotOther)} />
+                    <span className={legendStyles.legendItem}>
+                        <span className={cn(legendStyles.legendDot, styles.dotOther)} />
                         {t(
                             'host.properties.editor.calendar.legend.other',
                             'Sincronizado — Otro calendario'

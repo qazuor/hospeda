@@ -252,6 +252,16 @@ const PLANS_PATH_BY_VERTICAL: Readonly<Record<string, string>> = {
 };
 
 /**
+ * HOS-2193: the plans page of one vertical, as a locale-agnostic path for `buildUrl`. A vertical
+ * with no pricing page of its own (partner, unknown) gets the neutral plans index.
+ */
+export function plansPathForVertical(input: { readonly vertical: string }): string {
+    return Object.hasOwn(PLANS_PATH_BY_VERTICAL, input.vertical)
+        ? (PLANS_PATH_BY_VERTICAL[input.vertical] ?? NEUTRAL_PLANS_PATH)
+        : NEUTRAL_PLANS_PATH;
+}
+
+/**
  * HOS-2426: where to send an owner with no eligible subscription. An addon compatible with
  * exactly one vertical links to that vertical's pricing page; any other case (several
  * verticals, or one with no pricing page) links to the neutral plans index, never to a

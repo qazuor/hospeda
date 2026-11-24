@@ -10,10 +10,12 @@ const useVideoSectionMock = vi.hoisted(() => ({
     addRow: vi.fn(),
     removeRow: vi.fn(),
     setRowField: vi.fn(),
+    commit: vi.fn(),
     handleSubmit: vi.fn((e?: { preventDefault?: () => void }) => e?.preventDefault?.())
 }));
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw = fallback ?? key;
@@ -43,7 +45,7 @@ vi.mock('@/components/listing/editor/use-video-section', () => ({
 }));
 
 describe('VideoSection (shared widget)', () => {
-    it('uses dedicated button classes instead of the photo upload styles', () => {
+    it('has no save button: the «Fotos» page auto-saves (HOS-2489)', () => {
         render(
             <VideoSection
                 locale="es"
@@ -53,15 +55,12 @@ describe('VideoSection (shared widget)', () => {
             />
         );
 
-        expect(screen.getByRole('button', { name: 'Agregar video' }).className).toContain(
-            'videoAddButton'
-        );
-        expect(screen.getByRole('button', { name: 'Guardar videos' }).className).toContain(
-            'videoSaveButton'
-        );
+        expect(screen.getByRole('button', { name: 'Agregar video' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Guardar videos' })).toBeNull();
     });
 
-    it('renders the video fields with the shared form input styling', () => {
+    it('commits the list when a field loses focus', () => {
+        useVideoSectionMock.commit.mockClear();
         render(
             <VideoSection
                 locale="es"
@@ -71,8 +70,24 @@ describe('VideoSection (shared widget)', () => {
             />
         );
 
-        expect(screen.getByLabelText('Enlace del video').className).toContain('formInput');
-        expect(screen.getByLabelText('Título (opcional)').className).toContain('formInput');
+        fireEvent.blur(screen.getByLabelText('Enlace del video'));
+        fireEvent.blur(screen.getByLabelText('Título (opcional)'));
+
+        expect(useVideoSectionMock.commit).toHaveBeenCalledTimes(2);
+    });
+
+    it('renders the video fields with the kit inputs, ids keyed by scope', () => {
+        render(
+            <VideoSection
+                locale="es"
+                initialVideos={[]}
+                save={vi.fn()}
+                copyScope="accommodation"
+            />
+        );
+
+        expect(screen.getByLabelText('Enlace del video').id).toContain('acc');
+        expect(screen.getByLabelText('Título (opcional)').id).toContain('acc');
     });
 
     it('wires add and remove actions through the video-specific controls', () => {
@@ -90,6 +105,21 @@ describe('VideoSection (shared widget)', () => {
 
         expect(useVideoSectionMock.addRow).toHaveBeenCalledTimes(1);
         expect(useVideoSectionMock.removeRow).toHaveBeenCalledWith(0);
+    });
+
+    it('shows a save failure as a kit alert', () => {
+        useVideoSectionMock.formError = 'No se pudieron guardar los videos.';
+        render(
+            <VideoSection
+                locale="es"
+                initialVideos={[]}
+                save={vi.fn()}
+                copyScope="accommodation"
+            />
+        );
+
+        expect(screen.getByRole('alert')).toHaveTextContent('No se pudieron guardar los videos.');
+        useVideoSectionMock.formError = null;
     });
 
     it('disables the add button once the cap is reached and keeps listing copy', () => {

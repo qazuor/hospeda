@@ -10,13 +10,20 @@
  * endpoint: the caller hands it a `save` function and the copy scope.
  * `PhotoSection.client.tsx` already establishes the precedent that a
  * self-contained widget with its own persistence is normal in this editor.
+ *
+ * HOS-2489: the «Fotos» page is an `auto` section (spec HOS-2415 §6.2), so the
+ * widget has no Save button of its own any more. A complete, changed list is
+ * saved when a field loses focus, on Enter, and right after a row is removed,
+ * and every save reports to the shell's auto-save chip. A row whose link is
+ * still empty is a draft: nothing is sent and nothing is flagged until the
+ * owner fills it, and the unsaved-changes guard still covers it.
  */
 
 import { useCallback, useState } from 'react';
+import { runEditorAutoSave } from '@/components/account/editor-shell/editor-auto-save-signal';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { addToast } from '@/store/toast-store';
 import { getVideoSectionCopy, type VideoCopyScope } from './video-section-copy';
 
 const CAPTION_MIN = 3;
@@ -55,9 +62,13 @@ export interface UseVideoSectionResult {
     readonly isSaving: boolean;
     readonly formError: string | null;
     readonly addRow: () => void;
+    /** Drops a row and saves the remaining list at once. */
     readonly removeRow: (index: number) => void;
     readonly setRowField: (index: number, field: 'url' | 'caption', value: string) => void;
-    readonly handleSubmit: (event: React.FormEvent) => Promise<void>;
+    /** Saves the current rows when they changed and are complete (field blur). */
+    readonly commit: () => void;
+    /** Enter inside a field: same as {@link UseVideoSectionResult.commit}. */
+    readonly handleSubmit: (event: React.FormEvent) => void;
 }
 
 /** Converts the read-only entity videos into editable rows. */
@@ -133,77 +144,100 @@ export function useVideoSection({
         message: t(copy.unsavedChanges.key, copy.unsavedChanges.fallback)
     });
 
+    const commitRows = useCallback(
+        async (next: readonly VideoRow[]): Promise<void> => {
+            if (JSON.stringify(next) === JSON.stringify(baseline)) return;
+            // A row still waiting for its link is a draft, not an error.
+            if (next.some((row) => row.url.trim() === '')) return;
+
+            if (maxVideos !== undefined && next.length > maxVideos) {
+                setFormError(t(copy.tooMany.key, copy.tooMany.fallback));
+                return;
+            }
+            for (const row of next) {
+                const invalidField = validateRow(row);
+                if (invalidField !== null) {
+                    setFormError(
+                        invalidField === 'url'
+                            ? t(copy.urlInvalid.key, copy.urlInvalid.fallback)
+                            : t(copy.captionInvalid.key, copy.captionInvalid.fallback)
+                    );
+                    return;
+                }
+            }
+
+            setFormError(null);
+            setIsSaving(true);
+            await runEditorAutoSave({
+                save: async () => {
+                    try {
+                        const result = await save(
+                            next.map((row) => ({
+                                url: row.url,
+                                ...(row.caption.length > 0 ? { caption: row.caption } : {})
+                            }))
+                        );
+                        if (result.ok) {
+                            setBaseline(next);
+                        } else if (result.status === 403) {
+                            // HOS-2258: the plan has no video entitlement; nothing was stored.
+                            setFormError(t(copy.forbidden.key, copy.forbidden.fallback));
+                        } else {
+                            setFormError(t(copy.saveFailed.key, copy.saveFailed.fallback));
+                        }
+                        return result.ok;
+                    } catch {
+                        setFormError(t(copy.network.key, copy.network.fallback));
+                        return false;
+                    }
+                },
+                retry: () => {
+                    void commitRows(next);
+                }
+            });
+            setIsSaving(false);
+        },
+        [baseline, copy, maxVideos, save, t]
+    );
+
     const addRow = useCallback(() => {
         setRows((prev) => [...prev, { url: '', caption: '' }]);
     }, []);
 
-    const removeRow = useCallback((index: number) => {
-        setRows((prev) => prev.filter((_, i) => i !== index));
-    }, []);
+    const removeRow = useCallback(
+        (index: number) => {
+            const next = rows.filter((_, i) => i !== index);
+            setRows(next);
+            void commitRows(next);
+        },
+        [rows, commitRows]
+    );
 
     const setRowField = useCallback((index: number, field: 'url' | 'caption', value: string) => {
         setRows((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
     }, []);
 
+    const commit = useCallback(() => {
+        void commitRows(rows);
+    }, [rows, commitRows]);
+
     const handleSubmit = useCallback(
-        async (event: React.FormEvent) => {
+        (event: React.FormEvent) => {
             event.preventDefault();
-            setFormError(null);
-
-            if (!isDirty) {
-                addToast({
-                    type: 'info',
-                    message: t(copy.noChanges.key, copy.noChanges.fallback)
-                });
-                return;
-            }
-
-            if (maxVideos !== undefined && rows.length > maxVideos) {
-                setFormError(t(copy.tooMany.key, copy.tooMany.fallback));
-                return;
-            }
-
-            for (const row of rows) {
-                const invalidField = validateRow(row);
-                if (invalidField === 'url') {
-                    setFormError(t(copy.urlInvalid.key, copy.urlInvalid.fallback));
-                    return;
-                }
-                if (invalidField === 'caption') {
-                    setFormError(t(copy.captionInvalid.key, copy.captionInvalid.fallback));
-                    return;
-                }
-            }
-
-            setIsSaving(true);
-            try {
-                const result = await save(
-                    rows.map((row) => ({
-                        url: row.url,
-                        ...(row.caption.length > 0 ? { caption: row.caption } : {})
-                    }))
-                );
-
-                if (result.ok) {
-                    setBaseline(rows);
-                    addToast({
-                        type: 'success',
-                        message: t(copy.saveSuccess.key, copy.saveSuccess.fallback)
-                    });
-                } else if (result.status === 403) {
-                    // HOS-2258: the plan has no video entitlement; nothing was stored.
-                    setFormError(t(copy.forbidden.key, copy.forbidden.fallback));
-                } else {
-                    setFormError(t(copy.saveFailed.key, copy.saveFailed.fallback));
-                }
-            } catch {
-                setFormError(t(copy.network.key, copy.network.fallback));
-            } finally {
-                setIsSaving(false);
-            }
+            commit();
         },
-        [copy, isDirty, maxVideos, rows, save, t]
+        [commit]
     );
 
-    return { rows, isDirty, isSaving, formError, addRow, removeRow, setRowField, handleSubmit };
+    return {
+        rows,
+        isDirty,
+        isSaving,
+        formError,
+        addRow,
+        removeRow,
+        setRowField,
+        commit,
+        handleSubmit
+    };
 }

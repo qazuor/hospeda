@@ -12,12 +12,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mockOwnerPromotionList = vi.fn();
 const mockOwnerPromotionRemove = vi.fn();
 const mockGetEffectiveSet = vi.fn();
+const mockOwnerPromotionPause = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     get ownerPromotionApi() {
         return {
             list: mockOwnerPromotionList,
-            remove: mockOwnerPromotionRemove
+            remove: mockOwnerPromotionRemove,
+            pause: mockOwnerPromotionPause
         };
     }
 }));
@@ -444,5 +446,69 @@ describe('TEST:B13a:25 PromotionList effective-set gate', () => {
         expect(await screen.findByText('Plan Catálogo')).toBeInTheDocument();
         expect(document.querySelector('[data-reason="plan"]')).not.toBeNull();
         expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
+    });
+});
+
+describe('owner decision 18: locked promotions are view + pause only', () => {
+    beforeEach(() => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([mockPromo1, mockPromo2]));
+    });
+
+    it('shows «Editar» disabled, explains why, and offers no edit link', async () => {
+        render(<PromotionList locale="es" />);
+
+        const edit = await screen.findByRole('button', { name: /editar «descuento de verano»/i });
+        expect(edit).toBeDisabled();
+        expect(screen.queryByRole('link', { name: /editar/i })).not.toBeInTheDocument();
+        expect(
+            screen.getByText(/podés ver y pausar tus promociones, pero no crearlas ni editarlas/i)
+        ).toBeInTheDocument();
+    });
+
+    it('offers «Pausar» only on an active promotion and pauses through the API', async () => {
+        // Arrange
+        mockOwnerPromotionPause.mockResolvedValue({ ok: true, data: {} });
+        const user = userEvent.setup();
+        render(<PromotionList locale="es" />);
+
+        // Act
+        const pause = await screen.findByRole('button', { name: /pausar «descuento de verano»/i });
+        expect(screen.queryByRole('button', { name: /pausar «noche extra gratis»/i })).toBeNull();
+        await user.click(pause);
+
+        // Assert
+        await waitFor(() =>
+            expect(mockOwnerPromotionPause).toHaveBeenCalledWith({ id: 'promo-uuid-1' })
+        );
+        await waitFor(() => expect(mockOwnerPromotionList).toHaveBeenCalledTimes(2));
+    });
+
+    it('says so when the pause fails', async () => {
+        mockOwnerPromotionPause.mockResolvedValue({ ok: false, error: { status: 500 } });
+        const user = userEvent.setup();
+        render(<PromotionList locale="es" />);
+
+        await user.click(
+            await screen.findByRole('button', { name: /pausar «descuento de verano»/i })
+        );
+
+        expect(
+            await screen.findByText('No pudimos pausar la promoción. Probá de nuevo.')
+        ).toBeInTheDocument();
+    });
+
+    it('with the key, keeps the edit link and offers no pause', async () => {
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { create_promotions: 1 },
+            limits: {},
+            failed: false
+        });
+        render(<PromotionList locale="es" />);
+
+        expect(
+            await screen.findByRole('link', { name: /editar «descuento de verano»/i })
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /pausar/i })).toBeNull();
     });
 });

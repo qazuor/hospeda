@@ -18,7 +18,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueEventsManager } from '../../../src/components/venue/VenueEventsManager.client';
 
-vi.mock('../../../src/lib/i18n', () => ({
+vi.mock('../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string>) =>
             (fallback ?? key).replace(
@@ -116,10 +117,10 @@ describe('VenueEventsManager — the upsell names the catalog plan (AC:G:10, AC:
                 upsellPlanName="Plan X"
             />
         );
-        await screen.findByText('Guardar agenda');
-
-        // Act
-        fireEvent.click(screen.getByText('Guardar agenda'));
+        // Act — an added (and abandoned) row dirties the draft so the save bar
+        // shows; the payload drops it.
+        fireEvent.click(await screen.findByRole('button', { name: 'Agregar evento' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         // Assert
         expect(

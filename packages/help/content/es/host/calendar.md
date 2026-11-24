@@ -37,7 +37,7 @@ covers:
   - "entitlement:can_sync_external_calendar"
 entryFor:
   - "section:accommodation.calendario"
-reviewedAt: "2026-11-20"
+reviewedAt: "2026-11-23"
 ---
 
 ## Qué podés hacer

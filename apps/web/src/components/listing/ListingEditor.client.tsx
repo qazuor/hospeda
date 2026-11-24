@@ -461,15 +461,6 @@ export function ListingEditor({
                 listingId
             })}
 
-            {formError && (
-                <p
-                    className={styles.error}
-                    role="alert"
-                >
-                    {formError}
-                </p>
-            )}
-
             {refusedTarget && exceptionVertical && (
                 <LocationExceptionRequestTrigger
                     locale={locale}
@@ -481,6 +472,7 @@ export function ListingEditor({
 
             <EditorSaveBar
                 locale={locale}
+                errorMessage={formError}
                 isDirty={Object.keys(patchPayload).length > 0}
                 onSave={save}
                 onDiscard={discard}

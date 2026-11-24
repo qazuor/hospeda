@@ -28,10 +28,8 @@ import {
     PermanentGrantCancel,
     REVOCATION_CANCEL_SUBJECT,
     RevocationCancel,
-    SIGNUP_DECLINED_SUBJECT,
     SignupBeforeCancel,
     SignupConfirmed,
-    SignupDeclined,
     SignupIncomplete,
     SUCCESSION_PREDECESSOR_CANCEL_SUBJECT,
     SUCCESSOR_CUT_CANCEL_SUBJECT,
@@ -45,9 +43,9 @@ import { SUBSCRIPTION_PATH } from './account-listing-paths.js';
 import { createBillingAddonRenderers } from './billing-addon-renderers.js';
 import { createBillingCancellationNoticeRenderers } from './billing-cancellation-notice-renderers.js';
 import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
+import { signupDeclined } from './billing-signup-declined-renderer.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 import { parseGraceScheduledChange } from './grace-scheduled-change.js';
-import { resolveSignupDeclinedMessage } from './signup-declined-reason.js';
 
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
@@ -290,34 +288,6 @@ function arrearsSuspension(row: EmailOutboxRow, subscriptionUrl: string) {
     };
 }
 
-function signupDeclined(row: EmailOutboxRow, subscriptionUrl: string) {
-    const data = objectPayload(row);
-    if (
-        typeof data.subscriptionId !== 'string' ||
-        data.subscriptionId.trim() === '' ||
-        typeof data.vertical !== 'string' ||
-        data.vertical.trim() === '' ||
-        (data.declineReason !== null && typeof data.declineReason !== 'string') ||
-        typeof data.successionPredecessor !== 'boolean'
-    )
-        throw new TypeError('Faltan datos requeridos del aviso de alta rechazada');
-    const { cause, retry } = resolveSignupDeclinedMessage({
-        declineReason: data.declineReason as string | null,
-        successionPredecessor: data.successionPredecessor
-    });
-    return {
-        subject: SIGNUP_DECLINED_SUBJECT,
-        react: (
-            <SignupDeclined
-                vertical={data.vertical}
-                subscriptionUrl={subscriptionUrl}
-                cause={cause}
-                retry={retry}
-            />
-        )
-    };
-}
-
 function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
     const data = objectPayload(row);
     const graceEndsAt =
@@ -444,7 +414,8 @@ export function createBillingSignupRenderers(input: {
         ...createBillingAddonRenderers(),
         ...createBillingChargebackRenderers({ subscriptionUrl }),
         ...createBillingCancellationNoticeRenderers({ subscriptionUrl }),
-        'billing.signup-declined': ({ row }) => signupDeclined(row, subscriptionUrl),
+        'billing.signup-declined': ({ row }) =>
+            signupDeclined({ data: objectPayload(row), subscriptionUrl }),
         'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
         'billing.paid-after-cancellation': ({ row }) => paidAfterCancellation(row, subscriptionUrl),
         'billing.payment-credited': ({ row }) => paymentCredited(row),

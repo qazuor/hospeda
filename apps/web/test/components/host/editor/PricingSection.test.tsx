@@ -16,15 +16,12 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PricingSectionProps } from '@/components/host/editor/PricingSection.client';
 import { PricingSection } from '@/components/host/editor/PricingSection.client';
 
-vi.mock('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
         tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
     })
-}));
-
-vi.mock('@/components/host/editor/PricingSection.module.css', () => ({
-    default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
 const MOCK_DATA = {
@@ -103,10 +100,11 @@ describe('PricingSection', () => {
             />
         );
 
-        expect(screen.getByRole('alert')).toHaveTextContent(
-            'El precio debe ser un número positivo'
+        const priceInput = screen.getByLabelText(/precio por noche/i);
+        expect(priceInput).toHaveAttribute('aria-invalid', 'true');
+        expect(priceInput).toHaveAccessibleDescription(
+            expect.stringContaining('El precio debe ser un número positivo')
         );
-        expect(screen.getByLabelText(/precio por noche/i)).toHaveAttribute('aria-invalid', 'true');
     });
 
     it('should accept any positive integer price without a step mismatch (BETA-179)', () => {
@@ -135,7 +133,9 @@ describe('PricingSection', () => {
     it('should render a static ARS currency indicator instead', () => {
         render(<PricingSection {...DEFAULT_PROPS} />);
 
-        expect(screen.getByText('Moneda')).toBeInTheDocument();
+        // HOS-2503: the currency is the input's «ARS» addon plus the hint that
+        // says it in words (the addon is aria-hidden).
+        expect(screen.getByText('ARS')).toHaveAttribute('aria-hidden', 'true');
         expect(screen.getByText('ARS — Peso argentino')).toBeInTheDocument();
     });
 });

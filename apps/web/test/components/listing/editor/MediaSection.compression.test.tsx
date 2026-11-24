@@ -66,7 +66,8 @@ vi.mock('../../../../src/lib/media/compress-image', () => ({
         (outcome.reason === 'decode-unsupported' || outcome.reason === 'encode-unsupported')
 }));
 
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, string | number>): string => {
             const raw = fallback ?? key;
