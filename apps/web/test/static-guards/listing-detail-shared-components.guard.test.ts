@@ -47,7 +47,7 @@ const SHARED_IMPORTS = [
     "import LocationSection from '@/components/listing/location/LocationSection.astro'"
 ] as const;
 
-/** The per-vertical components HOS-2579 PR 2 replaced. */
+/** The per-vertical components HOS-2579 PR 2 (and PR 3, `ExperienceInfo`) replaced. */
 const DELETED = [
     'components/accommodation/DetailHeader.astro',
     'components/venue/VenueDetailHeader.astro',
@@ -58,7 +58,9 @@ const DELETED = [
     'components/listing/contact/ListingContactChannels.astro',
     'components/venue/VenueAddress.astro',
     'components/experience/ExperienceMeetingPoint.astro',
-    'components/accommodation/LocationSection.astro'
+    'components/accommodation/LocationSection.astro',
+    // HOS-2579 PR 3: split into its slots (ExperienceDescription + the page).
+    'components/experience/ExperienceInfo.astro'
 ] as const;
 
 /** Resolves a static import specifier to a path relative to `src`, or `null`. */

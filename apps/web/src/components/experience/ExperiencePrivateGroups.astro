@@ -46,10 +46,17 @@ interface Props {
      * docstring.
      */
     readonly hasContactBlock: boolean;
+    /**
+     * Level of the title. `3` (default) under the contact block's `<h2>`; `2`
+     * when no contact block renders, so it opens slot 10 itself (HOS-2579 §6.8:
+     * every slot's first heading is an `<h2>`).
+     */
+    readonly headingLevel?: 2 | 3;
     readonly locale: SupportedLocale;
 }
 
-const { privateGroups, hasContactBlock, locale } = Astro.props;
+const { privateGroups, hasContactBlock, headingLevel = 3, locale } = Astro.props;
+const Heading = headingLevel === 2 ? 'h2' : 'h3';
 const { t } = createTranslations(locale);
 
 const body = t(
@@ -60,9 +67,9 @@ const body = t(
 
 {privateGroups === true && (
     <section class="exp-groups">
-        <h3 class="exp-groups__title">
+        <Heading class="exp-groups__title">
             {t('experience.detail.privateGroups.title', 'Grupos privados')}
-        </h3>
+        </Heading>
         <p class="exp-groups__body">{body}</p>
 
         {hasContactBlock && (

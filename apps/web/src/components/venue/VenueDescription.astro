@@ -9,8 +9,14 @@
  * - Text is emitted as plain child nodes (NOT via `set:html`) to avoid XSS.
  *
  * Mirrors apps/web/src/components/accommodation/Description.astro.
+ *
+ * Slot 3 («description», HOS-2579): the body sits inside `ClampedText` (4
+ * lines on mobile, 8 on desktop, «Leer más»); the full text always stays in
+ * the DOM. The summary stays outside the clamp, as on accommodation.
  */
 
+import ClampedText from '@/components/listing/ClampedText.astro';
+import type { SupportedLocale } from '@/lib/i18n';
 import { renderContent } from '@/lib/render-content';
 import { renderPlain } from '@/lib/render-plain';
 
@@ -24,9 +30,11 @@ interface Props {
      * `descriptionText` and is rendered to HTML via `renderContent`.
      */
     readonly richDescription?: string | null;
+    /** Page locale, for the «Leer más» toggle labels. */
+    readonly locale: SupportedLocale;
 }
 
-const { summary, descriptionText, richDescription } = Astro.props;
+const { summary, descriptionText, richDescription, locale } = Astro.props;
 
 // Render rich markdown to HTML only when the field is present and non-empty.
 const richHtml =
@@ -41,14 +49,16 @@ const richHtml =
     </div>
 )}
 
-{richHtml ? (
-    <div class="venue-desc__body venue-desc__body--rich" set:html={richHtml} />
-) : (
-    descriptionText && (
-        <div class="venue-desc__body">
-            <p>{descriptionText}</p>
-        </div>
-    )
+{(richHtml || descriptionText) && (
+    <ClampedText lang={locale}>
+        {richHtml ? (
+            <div class="venue-desc__body venue-desc__body--rich" set:html={richHtml} />
+        ) : (
+            <div class="venue-desc__body">
+                <p>{descriptionText}</p>
+            </div>
+        )}
+    </ClampedText>
 )}
 
 <style>

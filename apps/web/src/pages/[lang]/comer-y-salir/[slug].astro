@@ -71,9 +71,18 @@ import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildRestaurantHasMenu } from '@/lib/venue/menu-jsonld';
 import { resolveDimensionAverages } from '@/lib/venue/review-dimensions-view';
 import {
-    orderVenueDetailSections,
+    venueDetailSectionsInSlot,
     type VenueDetailBodySectionId
 } from '@/lib/venue/venue-detail-sections';
+import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
+import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
+import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
+import type { ListingDetailSlot as ListingDetailSlotName } from '@/lib/listing-detail/listing-detail-order';
+import {
+    hasHouseRules,
+    hasListingDescription,
+    hasVenueOffersContent
+} from '@/lib/listing-detail/listing-detail-presence';
 import { buildUrl } from '@/lib/urls';
 import { renderPlain } from '@/lib/render-plain';
 import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
@@ -309,10 +318,11 @@ const priceRangeMap: Record<string, string> = {
 };
 const jsonLdPriceRange = venue.priceRange ? priceRangeMap[venue.priceRange] ?? undefined : undefined;
 
-// --- Body sections (HOS-1787 leaf 6.1) ---
-// The body renders the catalog's own order and only the sections it paints:
-// the block registry below is a lookup, never a comparison against a section
-// id. `price` lives in `VenueSummary`, `media` is the fixed gallery above, and
+// --- Body sections (HOS-1787 leaf 6.1; slot order since HOS-2579 §6.2.3) ---
+// The body renders each catalog section inside the canonical slot
+// `VENUE_SECTION_SLOT` assigns it, and only the sections it paints: the block
+// registry below is a lookup, never a comparison against a section id. `price`
+// lives in slot 2 (VenueSummary), `media` is the fixed gallery above, and
 // `translations` never renders publicly — see `venue-detail-sections.ts`.
 // Conditions are applied while building each list, so the template just paints.
 interface VenueDetailBlock {
@@ -348,7 +358,8 @@ const venueDetailSectionBlocks: Readonly<
             props: {
                 summary: venue.summary,
                 descriptionText,
-                richDescription: venue.richDescription
+                richDescription: venue.richDescription,
+                locale
             }
         }
     ],
@@ -372,10 +383,9 @@ const venueDetailSectionBlocks: Readonly<
             Component: FeaturesGrid,
             props: { features: venue.features, lang: locale }
         },
-        { Component: AmenitiesGrid, props: { amenities: venue.amenities, lang: locale } },
-        // HOS-2060: `policies` belongs to the amenities section in the catalog.
-        { Component: ListingHouseRules, props: { policies: houseRulePolicies, locale } },
-        ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
+        { Component: AmenitiesGrid, props: { amenities: venue.amenities, lang: locale } }
+        // HOS-2060 binds `policies` to the amenities section for the EDITOR; the
+        // public page places the house rules by slot (11, `policies`) since HOS-2579.
     ],
     contact: [
         ...(venueContactBlock
@@ -407,7 +417,9 @@ const venueDetailSectionBlocks: Readonly<
         }
     ],
     venueEvents: [
-        { Component: VenueEvents, props: { venueEvents: venue.venueEvents, locale } }
+        { Component: VenueEvents, props: { venueEvents: venue.venueEvents, locale } },
+        // HOS-2579 D-3: the CTA sits next to the agenda it promotes, in «Lo que ofrece».
+        ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
     ],
     promotions: promotions.length > 0 ? [{ Component: VenuePromotions, props: { items: promotions, locale } }] : [],
     faqs: faqs.length > 0 ? [{ Component: FaqAccordion, props: { faqs, lang: locale } }] : [],
@@ -415,6 +427,41 @@ const venueDetailSectionBlocks: Readonly<
         { Component: VenueNightInfo, props: { nightInfo: venue.nightInfo, locale } }
     ]
 };
+
+/** The blocks of every body section that lands in `slot`, in page order. */
+const blocksInSlot = (slot: ListingDetailSlotName): readonly VenueDetailBlock[] =>
+    venueDetailSectionsInSlot({ slot }).flatMap((sectionId) => venueDetailSectionBlocks[sectionId]);
+
+const descriptionBlocks = blocksInSlot('description');
+const offersBlocks = blocksInSlot('offers');
+const hoursBlocks = blocksInSlot('hours');
+const promotionsBlocks = blocksInSlot('promotions');
+const locationBlocks = blocksInSlot('location');
+const contactBlocks = blocksInSlot('contact');
+const faqBlocks = blocksInSlot('faq');
+
+// --- Sticky section tabs (HOS-2579 §6.2): a tab exists only when its slot has content ---
+const hasDescriptionSection = hasListingDescription({
+    summary: venue.summary,
+    descriptionText,
+    richDescription: venue.richDescription
+});
+const hasOffersSection = hasVenueOffersContent({ venue, showEventsCta });
+const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);
+const hasSummarySection = Boolean(venue.priceRange) || contactMode.kind !== 'none';
+const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale });
+const sectionTabs = buildListingSectionTabs({
+    present: {
+        photos: galleryImages.length > 0,
+        details: hasDescriptionSection,
+        amenities: hasOffersSection,
+        hours: hasOpeningHours,
+        location: venueLocation !== null,
+        // The review form always renders, so slot 8 always exists.
+        reviews: true,
+        contact: hasContactSection
+    }
+});
 
 // HOS-2060: `paymentAccepted` is a `LocalBusiness` property, so a venue may
 // carry it; `petsAllowed` is not (schema.org scopes it to lodging), so it is
@@ -506,81 +553,161 @@ const headerProps = buildVenueHeader({
         <ListingHeader {...headerProps} />
     </Fragment>
 
+    <!-- Body: the 13 canonical slots in LISTING_DETAIL_SLOTS order (HOS-2579
+         §6.1). Each slot paints the catalog sections VENUE_SECTION_SLOT assigns
+         it; a section the public projector emptied contributes no visible
+         output because its components self-hide. The source order of the
+         ListingDetailSlot wrappers is guarded by
+         listing-detail-section-order.guard.test.ts. -->
     <div class="venue-detail">
-        <!-- Gallery: the listing's cover, fixed above the catalog-ordered body. -->
-        {galleryImages.length > 0 && (
-            <div class="venue-detail__gallery">
-                <ImageGallery
-                    client:load
-                    images={galleryImages}
-                    locale={locale}
-                    variant="detail"
-                    mobile={{
-                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: venue.name, campaign: 'venue' },
-                        favorite: {
-                            entityId: venue.id,
-                            entityType: 'VENUE',
-                            variant: 'standalone'
-                        }
-                    }}
-                />
-                <GalleryTapBridge />
-            </div>
+        <!-- Slot 1: the gallery (the listing's cover) and the videos (HOS-2258:
+             linked videos, lazy facade, already gated by the owner's plan
+             `can_embed_video` and moderation-filtered). -->
+        {(galleryImages.length > 0 || (venue.videos && venue.videos.length > 0)) && (
+            <ListingDetailSlot name="galleryHeader">
+                {galleryImages.length > 0 && (
+                    <div id={LISTING_SECTION_IDS.photos} class="venue-detail__gallery">
+                        <ImageGallery
+                            client:load
+                            images={galleryImages}
+                            locale={locale}
+                            variant="detail"
+                            mobile={{
+                                share: { url: `${siteOrigin}${Astro.url.pathname}`, title: venue.name, campaign: 'venue' },
+                                favorite: {
+                                    entityId: venue.id,
+                                    entityType: 'VENUE',
+                                    variant: 'standalone'
+                                }
+                            }}
+                        />
+                        <GalleryTapBridge />
+                    </div>
+                )}
+                {venue.videos && venue.videos.length > 0 && (
+                    <div class="venue-detail__videos">
+                        <ListingVideoSection videos={venue.videos} locale={locale} scope="venue" />
+                    </div>
+                )}
+            </ListingDetailSlot>
         )}
 
-        <!-- Videos (HOS-2258): linked videos, lazy facade, right under the
-             gallery. They arrive already gated by the owner's plan
-             (`can_embed_video`) and moderation-filtered; the block hides
-             itself when none is left. -->
-        {venue.videos && venue.videos.length > 0 && (
-            <div class="venue-detail__videos">
-                <ListingVideoSection videos={venue.videos} locale={locale} scope="venue" />
-            </div>
-        )}
+        <!-- Sticky section tabs (HOS-2579 §6.2). Outside every slot on purpose:
+             a sticky element sticks inside its parent. -->
+        <ListingSectionTabs
+            client:idle
+            tabs={sectionTabs}
+            locale={locale}
+            vertical="venue"
+            listingId={venue.id}
+            price={null}
+            panelId={contactPanelId}
+            primaryLabelKey={
+                contactMode.kind === 'menu'
+                    ? 'accommodations.detail.listingContact.bar.viewMenu'
+                    : 'accommodations.detail.listingContact.bar.contact'
+            }
+            galleryId={galleryImages.length > 0 ? LISTING_SECTION_IDS.photos : undefined}
+            fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
+            primaryLink={contactMode.kind === 'menu' ? { href: contactMode.href, channel: 'menu' } : undefined}
+            hasContactAction={contactMode.kind !== 'none'}
+        />
 
         <!-- Slot 2 «summary» (HOS-2579): the price range (moved out of the
              header) and «Ver carta» / «Consultar». -->
-        <VenueSummary
-            listingId={venue.id}
-            locale={locale}
-            priceRange={venue.priceRange}
-            contactMode={contactMode}
-            panelId={contactPanelId}
-            fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
-        />
-
-        <!-- Body: every catalog section in catalog order (sub-spec 6 § «Ficha»).
-             Each id resolves its blocks by lookup in the frontmatter registry;
-             a section the public projector emptied simply contributes no
-             visible output because its components self-hide. -->
-        {orderVenueDetailSections().map((sectionId) =>
-            venueDetailSectionBlocks[sectionId].map(({ Component, props }) => (
-                <Component {...props} />
-            ))
+        {hasSummarySection && (
+        <ListingDetailSlot name="summary">
+            <VenueSummary
+                listingId={venue.id}
+                locale={locale}
+                priceRange={venue.priceRange}
+                contactMode={contactMode}
+                panelId={contactPanelId}
+                fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
+            />
+        </ListingDetailSlot>
         )}
 
-        <!-- Reviews preview + form are not catalog sections: they follow the
-             last section. -->
-        <VenueReviewsPreview
-            reviewsCount={venue.reviewsCount}
-            reviews={reviews}
-            totalReviews={totalReviews}
-            locale={locale}
-            dimensionRatings={dimensionRatings}
-        />
+        <!-- Slot 3: description with «Leer más». -->
+        {hasDescriptionSection && (
+            <ListingDetailSlot name="description" anchorId={LISTING_SECTION_IDS.details}>
+                {descriptionBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
 
-        <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
-        <section class="venue-detail__review-form">
-            <VenueReviewForm
-                client:visible
-                venueId={venue.id}
-                venueName={venue.name}
-                sectionStates={venue.reviewSectionStates}
+        <!-- Slot 4 «Lo que ofrece»: features, amenities, menu, daily specials,
+             the agenda with its CTA and the night info (owner decision D-3). -->
+        {hasOffersSection && (
+            <ListingDetailSlot name="offers" anchorId={LISTING_SECTION_IDS.amenities}>
+                {offersBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
+
+        <!-- Slot 5: opening hours. -->
+        {hoursBlocks.length > 0 && (
+            <ListingDetailSlot name="hours">
+                {hoursBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
+
+        <!-- Slot 6: promotions (never the agenda, D-3). -->
+        {promotionsBlocks.length > 0 && (
+            <ListingDetailSlot name="promotions">
+                {promotionsBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
+
+        <!-- Slot 7: address and the exact map. -->
+        {locationBlocks.length > 0 && (
+            <ListingDetailSlot name="location">
+                {locationBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
+
+        <!-- Slot 8: reviews preview + form (not catalog sections). -->
+        <ListingDetailSlot name="reviews">
+            <VenueReviewsPreview
+                reviewsCount={venue.reviewsCount}
+                reviews={reviews}
+                totalReviews={totalReviews}
                 locale={locale}
-                apiUrl={getApiUrl()}
-                signInHref={reviewSignInHref}
+                dimensionRatings={dimensionRatings}
             />
-        </section>
+
+            <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
+            <section class="venue-detail__review-form">
+                <VenueReviewForm
+                    client:visible
+                    venueId={venue.id}
+                    venueName={venue.name}
+                    sectionStates={venue.reviewSectionStates}
+                    locale={locale}
+                    apiUrl={getApiUrl()}
+                    signInHref={reviewSignInHref}
+                />
+            </section>
+        </ListingDetailSlot>
+
+        <!-- Slot 10: the contact block and the WhatsApp button (HOS-2256). -->
+        {hasContactSection && (
+            <ListingDetailSlot name="contact">
+                {contactBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
+
+        <!-- Slot 11: house rules (HOS-2060). -->
+        {hasPoliciesSection && (
+            <ListingDetailSlot name="policies">
+                <ListingHouseRules policies={houseRulePolicies} locale={locale} />
+            </ListingDetailSlot>
+        )}
+
+        <!-- Slot 12: FAQ. -->
+        {faqBlocks.length > 0 && (
+            <ListingDetailSlot name="faq">
+                {faqBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
 
         <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
              basic view stats in mi-cuenta/comercio. -->
@@ -680,6 +807,8 @@ const headerProps = buildVenueHeader({
     }
 
     .venue-detail {
+        /* Height of the sticky section tabs; also offsets anchored slots. */
+        --listing-tabs-height: 48px;
         max-width: var(--container-max, 1350px);
         margin: 0 auto;
         padding: var(--space-6, 24px) var(--space-4, 16px);

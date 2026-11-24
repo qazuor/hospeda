@@ -80,7 +80,7 @@ describe('VenueSummary', () => {
         expect(mount).toContain('fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}');
         // Right after the gallery and videos, before the catalog body.
         expect(VENUE_PAGE.indexOf('<VenueSummary')).toBeLessThan(
-            VENUE_PAGE.indexOf('orderVenueDetailSections().map')
+            VENUE_PAGE.indexOf('descriptionBlocks.map')
         );
     });
 });
