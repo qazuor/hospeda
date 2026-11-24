@@ -13,8 +13,11 @@ async function render(template: string, payload: Record<string, unknown>) {
     return { subject: result.subject, html: renderToStaticMarkup(result.react) };
 }
 
-/** Wording the code does not back (HOS-2580 §A): no free plan, no reactivation. */
-const UNBACKED = /plan gratuito|reactiv/i;
+/**
+ * Wording the code does not back (HOS-2580 §A): no free plan, no reactivation, and no
+ * claim that the holder asked for the cancellation (an admin can schedule it too).
+ */
+const UNBACKED = /plan gratuito|reactiv|pediste|diste de baja|quer[ií]as darte/i;
 
 describe('HOS-2580 §B billing.scheduled-cancellation', () => {
     it('names the plan, shows the callout, the after-copy and the button', async () => {
@@ -31,7 +34,9 @@ describe('HOS-2580 §B billing.scheduled-cancellation', () => {
 
         // Assert
         expect(subject).toBe(SCHEDULED_CANCELLATION_SUBJECT);
-        expect(html).toContain('Pediste la baja de tu plan <strong>Plan Profesional</strong>');
+        expect(html).toContain(
+            'Tu plan <strong>Plan Profesional</strong> tiene la baja programada'
+        );
         expect(html).toContain('El servicio sigue hasta el 12 de octubre de 2026.');
         for (const label of ['Plan', 'Servicio hasta', 'Estado', 'Baja programada'])
             expect(html).toContain(label);
@@ -56,7 +61,7 @@ describe('HOS-2580 §B billing.scheduled-cancellation', () => {
 
     it('still renders a row queued before HOS-2580, without plan or end date', async () => {
         const { html } = await render('billing.scheduled-cancellation', { subscriptionId });
-        expect(html).toContain('Pediste la baja de tu suscripción');
+        expect(html).toContain('Tu suscripción tiene la baja programada');
         expect(html).toContain('El servicio sigue hasta el final del período que ya pagaste.');
         expect(html).toContain('Final del período pagado');
         expect(html).not.toMatch(UNBACKED);

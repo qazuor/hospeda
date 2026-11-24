@@ -26,7 +26,8 @@ export function accessEndingSubject(input: { readonly daysRemaining: number }): 
 
 /**
  * The reminder sent a few days before the service of a `CANCEL_SCHEDULED` subscription ends
- * (HOS-2580 §C). The copy says only what the code does (§A): no free plan, no reactivation
+ * (HOS-2580 §C). The wording is actor-neutral: the holder or an admin may have scheduled
+ * the cancellation. The copy says only what the code does (§A): no free plan, no reactivation
  * (PROH:B:1); the way back is a new subscription from Mi Suscripción.
  *
  * @param props - See {@link AccessEndingProps}
@@ -45,8 +46,8 @@ export function AccessEnding({
         >
             <Heading>{subject}</Heading>
             <Text>
-                Te recordamos que diste de baja tu plan <strong>{planName}</strong>. El servicio
-                sigue hasta el {serviceEndDate} y no se te va a volver a cobrar.
+                Tu plan <strong>{planName}</strong> tiene la baja programada. El servicio sigue
+                hasta el {serviceEndDate} y no se te va a volver a cobrar.
             </Text>
             <Callout tone="warning">
                 <InfoRow
@@ -69,7 +70,7 @@ export function AccessEnding({
                 Si querés seguir, podés volver a contratar un plan desde Mi Suscripción.
             </Text>
             <Button href={subscriptionUrl}>Ver mi suscripción</Button>
-            <Text>Si querías darte de baja, no tenés que hacer nada.</Text>
+            <Text>Para que la baja se complete no tenés que hacer nada.</Text>
         </EmailLayout>
     );
 }

@@ -48,11 +48,11 @@ export function ScheduledCancellation({
             <Text>
                 {planLabel ? (
                     <>
-                        Pediste la baja de tu plan <strong>{planLabel}</strong>, así que cancelamos
-                        su cobro automático: no se te va a volver a cobrar.
+                        Tu plan <strong>{planLabel}</strong> tiene la baja programada, así que
+                        cancelamos su cobro automático: no se te va a volver a cobrar.
                     </>
                 ) : (
-                    'Pediste la baja de tu suscripción, así que cancelamos su cobro automático: no se te va a volver a cobrar.'
+                    'Tu suscripción tiene la baja programada, así que cancelamos su cobro automático: no se te va a volver a cobrar.'
                 )}{' '}
                 El servicio sigue hasta {until}.
             </Text>
