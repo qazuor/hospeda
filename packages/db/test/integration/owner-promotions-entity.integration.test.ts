@@ -11,6 +11,7 @@
  * - the venue quota count ignores accommodation promotions and counts scheduled ones.
  */
 import type { Accommodation, Venue } from '@repo/schemas';
+import { TouristAudienceEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
@@ -24,6 +25,9 @@ import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 afterAll(async () => closeTestPool());
 
 const model = new OwnerPromotionModel();
+
+/** Every audience: these cases test the target, not the audience scope (HOS-2590). */
+const ALL_AUDIENCES = [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP] as const;
 
 /** Creates an owner, a destination, one accommodation and one venue. */
 async function fixtures(tx: DrizzleClient) {
@@ -135,12 +139,20 @@ describe('HOS-2270 owner promotions entity pair (integration)', () => {
             });
 
             const found = await model.findActiveForAccommodation(
-                { accommodationId: accommodation.id, ownerId: owner.id },
+                {
+                    accommodationId: accommodation.id,
+                    ownerId: owner.id,
+                    touristAudiences: ALL_AUDIENCES
+                },
                 undefined,
                 tx
             );
             const counted = await model.countActiveForAccommodation(
-                { accommodationId: accommodation.id, ownerId: owner.id },
+                {
+                    accommodationId: accommodation.id,
+                    ownerId: owner.id,
+                    touristAudiences: ALL_AUDIENCES
+                },
                 tx
             );
 
@@ -160,7 +172,11 @@ describe('HOS-2270 owner promotions entity pair (integration)', () => {
             });
 
             const found = await model.findActiveForAccommodation(
-                { accommodationId: accommodation.id, ownerId: owner.id },
+                {
+                    accommodationId: accommodation.id,
+                    ownerId: owner.id,
+                    touristAudiences: ALL_AUDIENCES
+                },
                 undefined,
                 tx
             );
@@ -193,12 +209,16 @@ describe('HOS-2270 owner promotions entity pair (integration)', () => {
             });
 
             const own = await model.findActiveForAccommodation(
-                { accommodationId: accommodation.id, ownerId: owner.id },
+                {
+                    accommodationId: accommodation.id,
+                    ownerId: owner.id,
+                    touristAudiences: ALL_AUDIENCES
+                },
                 undefined,
                 tx
             );
             const sibling = await model.findActiveForAccommodation(
-                { accommodationId: other.id, ownerId: owner.id },
+                { accommodationId: other.id, ownerId: owner.id, touristAudiences: ALL_AUDIENCES },
                 undefined,
                 tx
             );
