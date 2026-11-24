@@ -277,7 +277,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         );
         await article.getByRole('button', { name: 'Cambiar de plan' }).click();
         const optionId = await monthlyOptionForSlug('owner-premium');
-        await article.locator(`li[data-billing-option-id="${optionId}"] button`).click();
+        await article.locator(`button[data-billing-option-id="${optionId}"]`).click();
         await article.getByRole('button', { name: 'Confirmar cambio' }).click();
         await page.waitForURL((url) => url.hostname === 'payments-fake.invalid');
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
@@ -325,7 +325,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         const updated = articleFor(page, subscriptionId);
         await updated.getByRole('button', { name: 'Cambiar de plan' }).click();
         const optionId = await monthlyOptionForSlug('owner-premium');
-        await updated.locator(`li[data-billing-option-id="${optionId}"] button`).click();
+        await updated.locator(`button[data-billing-option-id="${optionId}"]`).click();
         await expect(updated.getByTestId('plan-change-promo-warning')).toHaveText(
             'Si cambiás de plan, perdés tu promo: el importe nuevo no lleva el descuento y el código no se puede volver a canjear.'
         );
@@ -404,7 +404,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         await world.fakeServer.provider.pause({ authorizationId });
         await article.getByRole('button', { name: 'Cambiar de plan' }).click();
         const optionId = await monthlyOptionForSlug('owner-premium');
-        await article.locator(`li[data-billing-option-id="${optionId}"] button`).click();
+        await article.locator(`button[data-billing-option-id="${optionId}"]`).click();
         await article.getByRole('button', { name: 'Confirmar cambio' }).click();
         await expect(article.getByTestId('plan-change-result')).toHaveText(
             'Tu último cobro no entró. Actualizá tu tarjeta en Mercado Pago para poder cambiar de plan.'

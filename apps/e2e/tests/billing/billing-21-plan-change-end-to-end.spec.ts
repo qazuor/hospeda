@@ -118,9 +118,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 plan changes end to end @p0 @billing @clock
     }) {
         const article = articleFor(args.page, args.subscriptionId);
         await article.getByRole('button', { name: 'Cambiar de plan' }).click();
-        const option = article.locator(
-            `li[data-billing-option-id="${args.billingOptionId}"] button`
-        );
+        const option = article.locator(`button[data-billing-option-id="${args.billingOptionId}"]`);
         await expect(
             option,
             `TEST:B8b:26 ${args.worldName}: target option is visible.`
