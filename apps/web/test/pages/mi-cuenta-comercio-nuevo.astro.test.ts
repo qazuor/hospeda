@@ -110,7 +110,7 @@ describe('mi-cuenta/comercio/nuevo — both URLs are now 301s (HOS-1156 D-6)', (
         // It goes where "+ Nuevo comercio" goes: the in-account hub that offers
         // each vertical's own form.
         expect(pickerRedirectSource).toMatch(/path:\s*ACCOUNT_PUBLISH_HUB_PATH/);
-        expect(listingIndexSource).toContain('path: ACCOUNT_PUBLISH_HUB_PATH');
+        expect(listingIndexSource).toContain(`path: '${ACCOUNT_PUBLISH_HUB_PATH}'`);
         expect(ACCOUNT_PUBLISH_HUB_PATH).toBe('mi-cuenta/publica');
     });
 
