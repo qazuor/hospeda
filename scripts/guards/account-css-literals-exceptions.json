@@ -2,9 +2,6 @@
     "apps/web/src/components/account/AccountButton.module.css": {
         "font-size": 8
     },
-    "apps/web/src/components/account/AccountPageHeader.astro": {
-        "font-size": 2
-    },
     "apps/web/src/components/account/AccountSection.module.css": {
         "font-size": 1,
         "shadow": 3

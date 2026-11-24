@@ -26,7 +26,6 @@ const read = (path: string): string => readFileSync(resolve(SRC, path), 'utf8');
 
 const LANDING = read('pages/[lang]/mi-cuenta/ayuda/index.astro');
 const ARTICLE = read('pages/[lang]/mi-cuenta/ayuda/[id].astro');
-const HEADER = read('components/account/AccountPageHeader.astro');
 const SHELL = read('layouts/EditorShellLayout.astro');
 const HELP_LINK = read('components/account/help/HelpLink.astro');
 const LAYOUT = read('layouts/AccountLayout.astro');
@@ -35,14 +34,13 @@ const PAGE_HELP_LINK = read('components/account/help/PageHelpLink.astro');
 const OWNER_DASHBOARD = read('components/account/dashboard/OwnerDashboardPage.astro');
 
 /**
- * What gives a page the «?» of ITS OWN article (HOS-2546): the title row of
- * `AccountPageHeader`, directly or through an editor layout, or the kit
- * `PageHeader` with `<PageHelpLink slot="help">` (or the owner dashboard
- * template, which carries one). Since `PageHelpRow` is gone, the account layout
+ * What gives a page the «?» of ITS OWN article (HOS-2546): the kit
+ * `PageHeader` with `<PageHelpLink slot="help">`, directly or through an
+ * editor layout (or the owner dashboard template, which carries one). Since `PageHelpRow` is gone, the account layout
  * alone is not enough.
  */
 const PAGE_HELP_PATH =
-    /<AccountPageHeader\b|<PageHelpLink\b[^>]*slot="help"|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
+    /<PageHelpLink\b[^>]*slot="help"|<OwnerDashboardPage\b|<EditorSectionLayout\b|<ListingEditorSectionLayout\b/;
 
 /** What gives a page at least the general «?»: a page «?», or the account header's. */
 const HELP_PATH = new RegExp(`${PAGE_HELP_PATH.source}|<AccountLayout\\b|<OwnerDashboardPage\\b`);
@@ -191,11 +189,6 @@ describe('help article (web-ui §4)', () => {
 });
 
 describe('«?» wiring (web-ui §6, AC-21, AC-22)', () => {
-    it('the header derives the page anchor from the route and renders HelpLink', () => {
-        expect(HEADER).toContain('pageHelpAnchor({ routePattern: Astro.routePattern })');
-        expect(HEADER).toContain('<HelpLink anchor={anchor} locale={locale} />');
-    });
-
     it('the editor shell passes the section anchor of its vertical', () => {
         expect(SHELL).toContain(
             'sectionHelpAnchor({ vertical: registry.id, slug: currentSectionSlug })'
