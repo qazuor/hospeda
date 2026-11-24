@@ -28,7 +28,16 @@ vi.mock('@repo/db', async (importOriginal) => {
     const buildChain = (): Record<string, unknown> => {
         const rows = queryBuilderResponses.shift() ?? [];
         const chain: Record<string, unknown> = {};
-        const methods = ['select', 'from', 'where', 'limit', 'update', 'set', 'returning'];
+        const methods = [
+            'select',
+            'from',
+            'innerJoin',
+            'where',
+            'limit',
+            'update',
+            'set',
+            'returning'
+        ];
         for (const m of methods) {
             chain[m] = vi.fn(() => chain);
         }
@@ -61,6 +70,7 @@ const DATE = new Date('2026-05-12T15:00:00.000Z');
 const EMAIL = 'subscriber@example.com';
 const MESSAGE_ID = '<202605121500.brevo@hospeda.com.ar>';
 const DELIVERY_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+const CAMPAIGN_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const SUBSCRIBER_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
 function makeService(): NewsletterTrackingService {
@@ -155,6 +165,56 @@ describe('NewsletterTrackingService.processBrevoWebhookEvent', () => {
 
             expect(result.data?.updated).toBe(false);
             expect(result.data?.skippedReason).toBe('no_match_or_already_opened');
+            expect(result.data?.openedCampaignSlug).toBeUndefined();
+        });
+
+        it('reports the stored campaign slug on the first open (HOS-2583)', async () => {
+            queryBuilderResponses = [
+                [{ id: DELIVERY_ID }],
+                [{ id: CAMPAIGN_ID, title: 'Otoño', attributionSlug: 'otono-aaaaaaaa' }]
+            ];
+
+            const result = await makeService().processBrevoWebhookEvent({
+                event: 'opened',
+                email: EMAIL,
+                messageId: MESSAGE_ID,
+                date: DATE
+            });
+
+            expect(result.data?.openedCampaignSlug).toBe('otono-aaaaaaaa');
+        });
+
+        it('reports the campaign slug on a repeat open too (HOS-2583)', async () => {
+            queryBuilderResponses = [
+                [],
+                [{ id: CAMPAIGN_ID, title: 'Otoño', attributionSlug: 'otono-aaaaaaaa' }]
+            ];
+
+            const result = await makeService().processBrevoWebhookEvent({
+                event: 'opened',
+                email: EMAIL,
+                messageId: MESSAGE_ID,
+                date: DATE
+            });
+
+            expect(result.data?.updated).toBe(false);
+            expect(result.data?.openedCampaignSlug).toBe('otono-aaaaaaaa');
+        });
+
+        it('recomputes the slug of a campaign dispatched before HOS-2359 (HOS-2583)', async () => {
+            queryBuilderResponses = [
+                [{ id: DELIVERY_ID }],
+                [{ id: CAMPAIGN_ID, title: 'Otoño', attributionSlug: null }]
+            ];
+
+            const result = await makeService().processBrevoWebhookEvent({
+                event: 'opened',
+                email: EMAIL,
+                messageId: MESSAGE_ID,
+                date: DATE
+            });
+
+            expect(result.data?.openedCampaignSlug).toBe('otono-cccccccc');
         });
     });
 

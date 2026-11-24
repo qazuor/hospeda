@@ -23,6 +23,11 @@
  * `event` field outside the SPEC-101 §4.4 whitelist are silently skipped
  * — Brevo emits "request", "proxy_open", etc. that we don't care about.
  *
+ * Opens (HOS-2583): an `opened` event is also reported to Umami as `email-open`
+ * (see `reportEmailOpen`). The email carries no pixel of ours, so this is the only open
+ * measurement. A transactional open is attributed through the `template:<catalog key>`
+ * tag Brevo echoes back in the event's `tags` array.
+ *
  * Hard bounces (HOS-1627, AC:U2:12): a `hard_bounce` event is ALSO written as
  * the idempotent `bounced` row of the address in `notification_log`, which
  * the email outbox suppression reads. That write happens before the
@@ -44,11 +49,16 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { notificationLogModel } from '@repo/db';
-import { recordProviderHardBounce } from '@repo/notifications';
+import {
+    findEmailCatalogEntry,
+    parseEmailTemplateTag,
+    recordProviderHardBounce
+} from '@repo/notifications';
 import { ServiceErrorCode } from '@repo/schemas';
 import { NewsletterTrackingService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { captureEmailOpen } from '../../lib/email-open-analytics';
 import { createPerRouteRateLimitMiddleware } from '../../middlewares/rate-limit';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
@@ -129,6 +139,11 @@ interface RawBrevoEvent {
     readonly ts_event?: number;
     /** Bounce reason (transactional `hard_bounce` / `soft_bounce` events). */
     readonly reason?: string;
+    /**
+     * Tags of the send, echoed by Brevo on every transactional event (an array of strings).
+     * Typed `unknown`: the body is an unchecked cast, so the reader validates it.
+     */
+    readonly tags?: unknown;
 }
 
 /** `notification_log.recipient` is `varchar(255)`. */
@@ -206,6 +221,53 @@ async function recordHardBounce(input: {
             'Brevo webhook: failed to record hard bounce, asking Brevo to redeliver'
         );
         return 'write_failed';
+    }
+}
+
+/**
+ * Reports an `opened` event to Umami as `email-open` (HOS-2583).
+ *
+ * A newsletter delivery is recognised by the tracking service (it matched the message id
+ * to a delivery row), which also names the campaign. Anything else is a transactional
+ * mail, attributed through the `template:<catalog key>` tag the Brevo transport adds to
+ * every send. A missing tag, or a key that is not in the email catalog, is logged and
+ * skipped: it never fails the batch, and an unknown key never becomes an Umami value.
+ *
+ * Never throws.
+ */
+function reportEmailOpen(input: {
+    readonly raw: RawBrevoEvent;
+    readonly messageId: unknown;
+    readonly campaignSlug: string | undefined;
+    readonly at: Date;
+}): void {
+    const { raw, campaignSlug, at } = input;
+    try {
+        if (campaignSlug) {
+            captureEmailOpen({ kind: 'newsletter', campaignSlug, at });
+            return;
+        }
+        const templateKey = parseEmailTemplateTag({ tags: raw.tags });
+        if (!templateKey) {
+            apiLogger.warn(
+                { hasMessageId: Boolean(input.messageId) },
+                'Brevo webhook: opened event has no template tag, not reported to analytics'
+            );
+            return;
+        }
+        if (!findEmailCatalogEntry({ key: templateKey })) {
+            apiLogger.warn(
+                { templateKey },
+                'Brevo webhook: opened event names a template that is not in the email catalog, not reported to analytics'
+            );
+            return;
+        }
+        captureEmailOpen({ kind: 'transactional', templateKey, at });
+    } catch (err) {
+        apiLogger.warn(
+            { error: err instanceof Error ? err.message : String(err) },
+            'Brevo webhook: failed to report an email open to analytics'
+        );
     }
 }
 
@@ -335,6 +397,14 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
                 skipped += 1;
             } else {
                 processed += 1;
+            }
+            if (eventType === 'opened') {
+                reportEmailOpen({
+                    raw,
+                    messageId,
+                    campaignSlug: result.data?.openedCampaignSlug,
+                    at: parseEventDate(raw)
+                });
             }
         } catch (err) {
             if (err instanceof ServiceError && err.code === ServiceErrorCode.SERVICE_UNAVAILABLE) {

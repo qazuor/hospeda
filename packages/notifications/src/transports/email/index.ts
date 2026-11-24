@@ -9,3 +9,4 @@ export * from './brevo-batch.js';
 export * from './email-transport.interface.js';
 export * from './mock-transport.js';
 export * from './resend-transport.js';
+export * from './template-tag.js';
