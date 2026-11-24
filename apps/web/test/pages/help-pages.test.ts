@@ -59,7 +59,7 @@ const ONBOARDING_GATE_PAGES = [
 
 /**
  * Account pages with no user surface: they redirect before rendering, so they
- * need no «?» (web-ui §6, `comercio/nuevo` is a 301 to /publicar).
+ * need no «?» (web-ui §6, `comercio/nuevo` is a 301 to the publish hub or a publish page).
  */
 const REDIRECT_ONLY_PAGES = ['comercio/nuevo/[vertical].astro', 'comercio/nuevo/index.astro'];
 

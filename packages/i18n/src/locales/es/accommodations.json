@@ -780,7 +780,12 @@
             "amenities": "Comodidades",
             "location": "Ubicación",
             "reviews": "Reseñas",
-            "host": "Anfitrión"
+            "host": "Anfitrión",
+            "hours": "Horarios",
+            "contact": "Contacto",
+            "offers": "Lo que ofrece",
+            "labelVenue": "Secciones del comercio",
+            "labelExperience": "Secciones de la experiencia"
         },
         "listingContact": {
             "bar": {
@@ -840,7 +845,7 @@
                 "website": "Sitio web",
                 "instagram": "Instagram",
                 "facebook": "Facebook",
-                "twitter": "Twitter / X",
+                "twitter": "X (Twitter)",
                 "youtube": "YouTube",
                 "tiktok": "TikTok"
             }

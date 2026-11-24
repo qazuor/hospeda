@@ -42,6 +42,26 @@ describe('ClampedText (AC-2.4)', () => {
         expect(read('pages/[lang]/alojamientos/[slug].astro')).toContain('<ClampedText');
     });
 
+    it.each([
+        ['venue', 'components/venue/VenueDescription.astro', 'venue-desc__body'],
+        ['experience', 'components/experience/ExperienceDescription.astro', 'exp-info__body']
+    ] as const)('wraps the %s description body, never the summary (HOS-2579 AC-24)', (_v, file, bodyClass) => {
+        // Arrange
+        const component = read(file);
+        const markup = component.slice(
+            component.indexOf('---', 3) + 3,
+            component.indexOf('<style>')
+        );
+        const clamp =
+            markup.match(/<ClampedText lang=\{locale\}>[\s\S]*?<\/ClampedText>/)?.[0] ?? '';
+
+        // Assert: both body renderings (rich and plain) sit inside the clamp…
+        expect(clamp.match(new RegExp(`class="${bodyClass}`, 'g'))).toHaveLength(2);
+        // …and the summary stays outside it, always visible in full.
+        expect(clamp).not.toContain('__summary');
+        expect(markup).toContain('__summary');
+    });
+
     it.each(['es', 'en', 'pt'] as const)('has toggle labels in %s', (locale) => {
         const { t } = createTranslations(locale);
         expect(t('accommodations.detail.descriptionToggle.more')).not.toMatch(

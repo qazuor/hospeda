@@ -41,6 +41,7 @@ import {
 } from '@repo/notifications';
 import { PriceDropEvaluatorService, PromoOfferEvaluatorService } from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
+import { resolveTouristAudienceScopeForUser } from '../../routes/owner-promotion/audience-scope.js';
 import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -109,7 +110,11 @@ export const alertsDigestJob: CronJobDefinition = {
             const since = new Date(startedAt.getTime() - DIGEST_WINDOW_HOURS * 60 * 60 * 1000);
 
             const priceDropEvaluator = new PriceDropEvaluatorService();
-            const promoOfferEvaluator = new PromoOfferEvaluatorService();
+            // HOS-2592: VIP-only promotions reach only recipients whose TOURIST
+            // effective set grants `vip_promotions_access`.
+            const promoOfferEvaluator = new PromoOfferEvaluatorService({
+                resolveAudienceScope: resolveTouristAudienceScopeForUser
+            });
             const userModel = new UserModel();
 
             const priceDropsByUser = await priceDropEvaluator.evaluatePriceDrops({ since });

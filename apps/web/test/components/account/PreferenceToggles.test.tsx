@@ -95,7 +95,11 @@ function callsTo({
     );
 }
 
-function renderPage({ gatePlanNames = [] as readonly string[] } = {}) {
+function renderPage({
+    gatePlanNames = [] as readonly string[],
+    digest = 'shown' as 'shown' | 'hidden' | 'absent'
+} = {}) {
+    const digestProp = digest === 'absent' ? {} : { showAiQuestionsDigest: digest === 'shown' };
     return render(
         <PreferenceToggles
             userId="user-1"
@@ -103,6 +107,7 @@ function renderPage({ gatePlanNames = [] as readonly string[] } = {}) {
             apiUrl={API}
             historyGatePlanNames={gatePlanNames}
             plansHref="/es/planes/turistas/precios/"
+            {...digestProp}
         />
     );
 }
@@ -189,6 +194,32 @@ describe('PreferenceToggles: sections', () => {
         expect(
             await screen.findByRole('switch', { name: /Recibir el resumen semanal/ })
         ).toBeChecked();
+    });
+});
+
+describe('PreferenceToggles: AI digest only for listing owners (HOS-2602)', () => {
+    it.each([
+        ['false', 'hidden'],
+        ['absent (fail-closed)', 'absent']
+    ] as const)('hides the «asistente de tus fichas» row when showAiQuestionsDigest is %s', async (_label, digest) => {
+        // Arrange
+        installApi();
+        // Act
+        renderPage({ digest });
+        await screen.findByRole('switch', { name: /Notificaciones por email/ });
+        // Assert
+        expect(
+            screen.queryByRole('switch', { name: /Recibir el resumen semanal/ })
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/asistente de tus fichas/)).not.toBeInTheDocument();
+    });
+
+    it('shows the row to an account with a listing assistant', async () => {
+        installApi();
+        renderPage({ digest: 'shown' });
+        expect(
+            await screen.findByRole('switch', { name: /Recibir el resumen semanal/ })
+        ).toBeInTheDocument();
     });
 });
 

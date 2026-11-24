@@ -90,7 +90,10 @@
             "title": "Qué llevar"
         },
         "whatsapp": "Consultar por WhatsApp",
-        "whatsappMessage": "Hola, me interesa obtener más información sobre {{name}}"
+        "whatsappMessage": "Hola, me interesa obtener más información sobre {{name}}",
+        "policies": {
+            "title": "Antes de ir"
+        }
     },
     "type": {
         "CAR_RENTAL": "Alquiler de autos",

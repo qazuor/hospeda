@@ -1,6 +1,13 @@
 import { AccommodationModel, OwnerPromotionModel, TouristPriceAlertModel } from '@repo/db';
 import type { Accommodation, OwnerPromotion, PriceAlert } from '@repo/schemas';
 import { LifecycleStatusEnum, OwnerPromotionEntityTypeEnum } from '@repo/schemas';
+import {
+    applyPromoOfferAudienceScope,
+    plusOnlyPromoOfferAudienceScope,
+    type ResolvePromoOfferAudienceScope
+} from './promo-offer-audience-scope';
+
+export type { ResolvePromoOfferAudienceScope };
 
 /**
  * The single accommodation a promotion targets, or `null` when it is owner-wide
@@ -228,15 +235,23 @@ export class PromoOfferEvaluatorService {
     private readonly ownerPromotionModel: OwnerPromotionModel;
     private readonly accommodationModel: AccommodationModel;
     private readonly alertModel: TouristPriceAlertModel;
+    private readonly resolveAudienceScope: ResolvePromoOfferAudienceScope;
 
+    /**
+     * @param deps - Optional model overrides plus `resolveAudienceScope`, the
+     *   per-recipient audience port (see {@link ResolvePromoOfferAudienceScope}).
+     *   Without it every recipient is treated as non-VIP (plus only).
+     */
     constructor(deps?: {
         ownerPromotionModel?: OwnerPromotionModel;
         accommodationModel?: AccommodationModel;
         alertModel?: TouristPriceAlertModel;
+        resolveAudienceScope?: ResolvePromoOfferAudienceScope;
     }) {
         this.ownerPromotionModel = deps?.ownerPromotionModel ?? new OwnerPromotionModel();
         this.accommodationModel = deps?.accommodationModel ?? new AccommodationModel();
         this.alertModel = deps?.alertModel ?? new TouristPriceAlertModel();
+        this.resolveAudienceScope = deps?.resolveAudienceScope ?? plusOnlyPromoOfferAudienceScope;
     }
 
     /**
@@ -349,7 +364,11 @@ export class PromoOfferEvaluatorService {
             }
         }
 
-        return result;
+        return applyPromoOfferAudienceScope({
+            matchesByUser: result,
+            promotions,
+            resolveAudienceScope: this.resolveAudienceScope
+        });
     }
 
     /**

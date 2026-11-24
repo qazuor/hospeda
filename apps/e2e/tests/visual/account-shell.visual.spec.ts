@@ -64,6 +64,24 @@ test.describe('VISUAL-SHELL: Mi Cuenta account shell @visual @account', () => {
         });
     }
 
+    // HOS-2601: on desktop the `reading` template's content column collapsed to
+    // its padding (an auto inline margin on a size-contained grid item). A
+    // geometry check, not a screenshot: it needs no baseline and fails on any
+    // collapse. The column must reach the 640px `--reading-max` cap.
+    for (const path of ['/es/mi-cuenta/newsletter/', '/es/mi-cuenta/novedades/']) {
+        test(`reading template keeps its width — ${path} light desktop`, async ({
+            page,
+            context
+        }) => {
+            await prepareVisualPage({ page, context, theme: 'light', viewport: 'desktop' });
+            const status = await settleVisualPage({ page, path, theme: 'light' });
+            expect(status).toBe(200);
+
+            const box = await page.locator('[data-account-content]').boundingBox();
+            expect(box?.width ?? 0).toBeGreaterThanOrEqual(600);
+        });
+    }
+
     for (const { theme } of VISUAL_MATRIX.filter((cell) => cell.viewport === 'mobile')) {
         test(`dashboard drawer open — ${theme} mobile`, async ({ page, context }) => {
             await prepareVisualPage({ page, context, theme, viewport: 'mobile' });

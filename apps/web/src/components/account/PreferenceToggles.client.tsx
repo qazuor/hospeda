@@ -4,8 +4,9 @@
  * account on/off setting lives. Kit `SwitchRow`s with an `AutoSaveChip` per
  * section (direct-action save model).
  *
- * Sections: appearance (theme, language), notifications (email, push, SMS and
- * the weekly AI digest), newsletter, search history. The newsletter and the
+ * Sections: appearance (theme, language), notifications (email, push, SMS and,
+ * only for an account that owns listings with an AI assistant, the weekly AI
+ * digest), newsletter, search history. The newsletter and the
  * search history have their own sections because their data comes from their
  * own endpoints (the ones the newsletter and history pages used before).
  *
@@ -81,6 +82,13 @@ export interface PreferenceTogglesProps {
     readonly historyGatePlanNames?: readonly string[];
     /** Where the plan pages live, for the locked search-history row. */
     readonly plansHref: string;
+    /**
+     * Whether the account owns listings with an AI assistant (HOS-2602), decided
+     * on the server by `hasListingAssistant`. When `false` the weekly AI digest
+     * row is not rendered: it would talk about «the assistant of your listings»
+     * to an account that has none. Absent reads as `false` (fail-closed).
+     */
+    readonly showAiQuestionsDigest?: boolean;
 }
 
 const DEFAULT_SETTINGS: WebSettings = {
@@ -131,7 +139,8 @@ export function PreferenceToggles({
     locale,
     apiUrl,
     historyGatePlanNames = [],
-    plansHref
+    plansHref,
+    showAiQuestionsDigest = false
 }: PreferenceTogglesProps) {
     const t = createT(locale);
     const [state, setState] = useState<AsyncResult<WebSettings>>({ status: 'loading' });
@@ -335,13 +344,15 @@ export function PreferenceToggles({
                             checked={settings.notifications.allowSms}
                             onChange={(next) => toggleNotification({ key: 'allowSms', next })}
                         />
-                        <SwitchRow
-                            label={t('account.preferences.aiQuestionsDigest.label')}
-                            description={t('account.preferences.aiQuestionsDigest.description')}
-                            locale={locale}
-                            checked={settings.aiQuestionsDigest}
-                            onChange={toggleDigest}
-                        />
+                        {showAiQuestionsDigest ? (
+                            <SwitchRow
+                                label={t('account.preferences.aiQuestionsDigest.label')}
+                                description={t('account.preferences.aiQuestionsDigest.description')}
+                                locale={locale}
+                                checked={settings.aiQuestionsDigest}
+                                onChange={toggleDigest}
+                            />
+                        ) : null}
                     </Section>
 
                     <PreferencesNewsletterSection

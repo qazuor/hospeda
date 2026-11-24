@@ -125,18 +125,18 @@ describe('HostSection.astro (AC-2.5)', () => {
         expect(HOST).toContain('{sinceDate && <span class="host-section__since"');
         expect(PAGE).toContain('const hasHostSection = Boolean(accommodation.owner.id)');
         expect(PAGE).toContain('host: hasHostSection');
-        expect(PAGE).toMatch(/\{hasHostSection && \(\s*<div id=\{LISTING_SECTION_IDS\.host\}/);
+        expect(PAGE).toMatch(/\{hasHostSection && \(\s*<ListingDetailSlot name="host">/);
     });
 
     it('does not claim data that does not exist', () => {
         expect(HOST).not.toMatch(/responseTime|response_time|superhost|badge/i);
     });
 
-    it('is mounted in the main column right before the location', () => {
+    it('is mounted in the main column in slot 9: after the reviews, before the contact (HOS-2579)', () => {
         const host = PAGE.indexOf('<HostSection');
-        const location = PAGE.indexOf('<LocationSection');
         expect(host).toBeGreaterThan(-1);
-        expect(host).toBeLessThan(location);
+        expect(host).toBeGreaterThan(PAGE.indexOf('<ReviewPreview'));
+        expect(host).toBeLessThan(PAGE.indexOf('<ListingContactBlock'));
         expect(PAGE).toContain('panelId={panelId}');
     });
 });

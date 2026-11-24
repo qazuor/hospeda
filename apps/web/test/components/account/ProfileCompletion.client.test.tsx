@@ -506,24 +506,20 @@ describe('ProfileCompletion layout on the kit (HOS-2501)', () => {
         expect(sections).toHaveLength(4);
     });
 
-    it('follows the form progress in the stepper: names open the next step, terms close it', () => {
+    it('shows no stepper: the form is one page, so no step can be claimed as done (HOS-2601)', () => {
+        // The audit's case: names prefilled from the session made the old
+        // stepper read «Step 3 of 3 · Confirm» over an untouched form.
         renderForm();
-        const steps = () =>
-            Array.from(document.querySelectorAll('li[data-state]')).map((li) =>
-                li.getAttribute('data-state')
-            );
-
-        expect(steps()).toEqual(['current', 'upcoming', 'upcoming']);
-
         fireEvent.change(document.getElementById('pc-firstName') as HTMLInputElement, {
             target: { value: 'Maria' }
         });
         fireEvent.change(document.getElementById('pc-lastName') as HTMLInputElement, {
             target: { value: 'Fernanda' }
         });
-        expect(steps()).toEqual(['done', 'done', 'current']);
 
-        fireEvent.click(screen.getByRole('checkbox', { name: /acepto los/i }));
-        expect(steps()).toEqual(['done', 'done', 'done']);
+        expect(document.querySelector('li[data-state]')).toBeNull();
+        expect(document.querySelector('[aria-current="step"]')).toBeNull();
+        expect(screen.queryByRole('navigation')).toBeNull();
+        expect(screen.queryByText(/paso \d+ de \d+/i)).toBeNull();
     });
 });

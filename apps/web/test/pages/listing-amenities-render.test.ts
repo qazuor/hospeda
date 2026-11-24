@@ -22,7 +22,7 @@
  * the listing's OWN amenities. Every assertion below reads comment-stripped
  * markup, so the docstrings that explain the mount cannot stand in for it.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -58,7 +58,7 @@ const read = (relativePath: string): string =>
     withoutComments(readFileSync(resolve(__dirname, '../../src', relativePath), 'utf8'));
 
 const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
-const EXPERIENCE_INFO = read('components/experience/ExperienceInfo.astro');
+const EXPERIENCE_PAGE = read('pages/[lang]/experiencias/[slug].astro');
 const VENUE_PRESENTATION = read('pages/[lang]/presentacion/comer-y-salir/index.astro');
 const EXPERIENCE_PRESENTATION = read('pages/[lang]/presentacion/experiencias/index.astro');
 
@@ -90,49 +90,45 @@ describe('comer-y-salir/[slug].astro — mounts the catalog grids (HOS-1072)', (
         expect(VENUE_PAGE).not.toContain('smokingAllowed');
     });
 
-    it('mounts the house rules after the grids (HOS-2060)', () => {
+    it('mounts the house rules in slot 11 «policies», after the grids (HOS-2060, HOS-2579)', () => {
         expect(VENUE_PAGE).toMatch(
-            /Component:\s*ListingHouseRules,\s*props:\s*\{\s*policies:\s*houseRulePolicies,\s*locale\s*\}/
+            /<ListingDetailSlot name="policies">\s*<ListingHouseRules policies=\{houseRulePolicies\} locale=\{locale\} \/>/
         );
-        expect(VENUE_PAGE.indexOf('Component: ListingHouseRules')).toBeGreaterThan(
+        expect(VENUE_PAGE.indexOf('<ListingHouseRules')).toBeGreaterThan(
             VENUE_PAGE.indexOf('Component: AmenitiesGrid')
         );
+        expect(VENUE_PAGE).not.toContain('Component: ListingHouseRules');
     });
 });
 
-describe('ExperienceInfo.astro — keeps the promise its own JSDoc made (HOS-1072)', () => {
-    it('mounts both grids, which the file previously only claimed to', () => {
-        expect(EXPERIENCE_INFO).toContain(
-            '<AmenitiesGrid amenities={experience.amenities} lang={locale} />'
+describe('experiencias/[slug].astro — mounts the catalog grids (HOS-1072, HOS-2579)', () => {
+    it('mounts both grids in slot 4, then the house rules in slot 11', () => {
+        expect(EXPERIENCE_PAGE).toMatch(
+            /<ListingDetailSlot name="offers" anchorId=\{LISTING_SECTION_IDS\.amenities\}>\s*<FeaturesGrid features=\{experience\.features\} lang=\{locale\} \/>\s*<AmenitiesGrid amenities=\{experience\.amenities\} lang=\{locale\} \/>/
         );
-        expect(EXPERIENCE_INFO).toContain(
-            '<FeaturesGrid features={experience.features} lang={locale} />'
-        );
-        // HOS-2060: the experience's house rules render right after the grids.
-        expect(EXPERIENCE_INFO).toContain(
+        // HOS-2060: the experience's house rules render in the policies slot.
+        expect(EXPERIENCE_PAGE).toContain(
             '<ListingHouseRules policies={experience.policies} locale={locale} />'
+        );
+        expect(EXPERIENCE_PAGE.indexOf('<ListingHouseRules')).toBeGreaterThan(
+            EXPERIENCE_PAGE.indexOf('<AmenitiesGrid')
         );
     });
 
     it('imports the shared grids rather than duplicating them for experiences', () => {
-        expect(EXPERIENCE_INFO).toContain(
+        expect(EXPERIENCE_PAGE).toContain(
             "import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro'"
         );
-        expect(EXPERIENCE_INFO).toContain(
+        expect(EXPERIENCE_PAGE).toContain(
             "import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro'"
         );
     });
 
-    it('no longer claims to render contact info, which ListingContactBlock owns', () => {
-        // The docstring is the subject here, so this one assertion reads the
-        // RAW file — the stripper would remove exactly what is under test.
-        const raw = readFileSync(
-            resolve(__dirname, '../../src/components/experience/ExperienceInfo.astro'),
-            'utf8'
-        );
-        const header = raw.slice(0, raw.indexOf('*/'));
-        expect(header).toContain('amenities/features');
-        expect(header).not.toContain('and contact info');
+    it('ExperienceInfo.astro is gone: its halves render in their own slots (HOS-2579)', () => {
+        expect(
+            existsSync(resolve(__dirname, '../../src/components/experience/ExperienceInfo.astro'))
+        ).toBe(false);
+        expect(EXPERIENCE_PAGE).not.toContain('ExperienceInfo');
     });
 });
 

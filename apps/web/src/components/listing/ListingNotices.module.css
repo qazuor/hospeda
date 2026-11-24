@@ -15,7 +15,7 @@
     background-color: var(--surface-warm);
     border: 1px solid var(--border);
     border-left: 4px solid var(--brand-accent);
-    border-radius: var(--radius-md, 12px);
+    border-radius: var(--radius-md);
     font-family: var(--font-sans);
 }
 
@@ -33,7 +33,7 @@
 
 .title {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     font-weight: 600;
     color: var(--core-foreground);
     line-height: 1.35;
@@ -41,7 +41,7 @@
 
 .body {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-muted-foreground);
     line-height: 1.45;
 }

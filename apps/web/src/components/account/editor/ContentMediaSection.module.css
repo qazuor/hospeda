@@ -26,7 +26,7 @@
 .mediaThumb {
     position: relative;
     aspect-ratio: 4 / 3;
-    border-radius: var(--radius-md, 0.625rem);
+    border-radius: var(--radius-md);
     overflow: hidden;
     border: 1px solid var(--border);
 }
@@ -49,9 +49,9 @@
     justify-content: center;
     border: none;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    font-size: 1rem;
+    background: var(--overlay-bg-strong);
+    color: var(--palette-neutral-50);
+    font-size: var(--app-body-size);
     line-height: 1;
     cursor: pointer;
 }
@@ -62,10 +62,10 @@
     align-items: center;
     justify-content: center;
     border: 1px dashed var(--border);
-    border-radius: var(--radius-md, 0.625rem);
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--core-muted-foreground, var(--core-foreground));
-    font-size: var(--text-h3, 1.5rem);
+    font-size: var(--text-h3);
     cursor: pointer;
     transition:
         border-color 150ms ease,
@@ -84,7 +84,7 @@
 
 .mediaHint {
     color: var(--core-muted-foreground, var(--core-foreground));
-    font-size: var(--text-body-xs, 0.8125rem);
+    font-size: var(--text-body-xs);
 }
 
 .mediaFileInput {

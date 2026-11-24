@@ -66,7 +66,8 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
     aria-label={heading}
     {...blockProps}
 >
-    {heading && <h3 class="listing-contact__title">{heading}</h3>}
+    <!-- An <h2>: the block opens slot 10 on the three pages (HOS-2579 §6.8). -->
+    {heading && <h2 class="listing-contact__title">{heading}</h2>}
 
     {channels.length > 0 && (
         <div class="listing-contact__channels">
@@ -113,7 +114,12 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
         </div>
     )}
 
-    <ListingSocialLinks links={socialLinks} heading={socialHeading} trackingData={trackingData} />
+    <ListingSocialLinks
+        links={socialLinks}
+        heading={socialHeading}
+        trackingData={trackingData}
+        headingLevel={heading ? 3 : 2}
+    />
 </section>
 
 <style>

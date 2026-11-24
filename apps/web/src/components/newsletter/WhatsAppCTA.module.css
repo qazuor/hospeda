@@ -93,16 +93,26 @@
     outline-offset: 2px;
 }
 
-/* ── Mobile breakpoint ─────────────────────────────────────────────────── */
+/* ── Mobile first: stacked below 30rem (480px) ─────────────────────────── */
 
-@media (max-width: 600px) {
+.wrapper {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-3);
+}
+
+.cta {
+    width: 100%;
+}
+
+@media (min-width: 30rem) {
     .wrapper {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--space-3);
+        flex-direction: row;
+        text-align: inherit;
+        gap: var(--space-4);
     }
 
     .cta {
-        width: 100%;
+        width: auto;
     }
 }

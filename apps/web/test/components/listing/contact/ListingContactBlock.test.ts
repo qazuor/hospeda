@@ -46,8 +46,8 @@ describe('ListingContactBlock.astro', () => {
     });
 
     it('delegates the social row to ListingSocialLinks with its own tracking data', () => {
-        expect(block).toContain(
-            '<ListingSocialLinks links={socialLinks} heading={socialHeading} trackingData={trackingData} />'
+        expect(block).toMatch(
+            /<ListingSocialLinks\s+links=\{socialLinks\}\s+heading=\{socialHeading\}\s+trackingData=\{trackingData\}/
         );
         expect(block).not.toContain('<IconButton');
     });
@@ -110,9 +110,14 @@ describe('the three pages use the shared block only (HOS-2579 §6.4, AC-14)', ()
         }
     });
 
-    it('ExperienceInfo no longer renders social networks (they moved into the block)', () => {
-        const info = read('components/experience/ExperienceInfo.astro');
-        expect(info).not.toContain('socialNetworks');
-        expect(info).not.toContain('exp-info__social');
+    it('ExperienceInfo is gone, so no social row is left outside the block (HOS-2579)', () => {
+        expect(
+            existsSync(
+                resolve(__dirname, '../../../../src/components/experience/ExperienceInfo.astro')
+            )
+        ).toBe(false);
+        const description = read('components/experience/ExperienceDescription.astro');
+        expect(description).not.toContain('socialNetworks');
+        expect(description).not.toContain('exp-info__social');
     });
 });

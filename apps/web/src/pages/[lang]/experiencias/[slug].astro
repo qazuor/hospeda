@@ -26,7 +26,19 @@ import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-conta
 import { buildExperienceLocation } from '@/lib/listing-location/build-location-section';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
-import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
+import ExperienceDescription from '@/components/experience/ExperienceDescription.astro';
+import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
+// Reused, not duplicated (HOS-1072): experiences read the SAME `amenities` /
+// `features` catalog as accommodations, so they share the i18n namespace
+// (`accommodations.amenityNames.<slug>`) these two grids already resolve.
+import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
+import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
+import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
+import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
+import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
+import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
+import { hasHouseRules, hasListingDescription } from '@/lib/listing-detail/listing-detail-presence';
+import { renderPlain } from '@/lib/render-plain';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
 import ExperienceSummary from '@/components/experience/ExperienceSummary.astro';
@@ -54,6 +66,7 @@ import {
     buildExperienceContactPrice
 } from '@/lib/listing-contact/listing-channels';
 import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action-bar';
+import type { VenueOpeningHoursEntry } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
@@ -225,6 +238,43 @@ const contactBlock = buildExperienceContactBlock({
     locale
 });
 
+// --- Slots 3-5 and 11 (HOS-2579): the halves of the retired ExperienceInfo ---
+const hasDescriptionSection = hasListingDescription({
+    summary: experience.summary,
+    descriptionText: renderPlain({ raw: experience.description }),
+    richDescription: experience.richDescription
+});
+const hasAmenitiesSection = experience.features.length > 0 || experience.amenities.length > 0;
+// Experience hours use the same shape as venue hours (structurally identical).
+const openingHours =
+    experience.openingHours && Object.keys(experience.openingHours).length > 0
+        ? (experience.openingHours as Record<string, VenueOpeningHoursEntry>)
+        : null;
+// Slot 11 opens with its own <h2> («Antes de ir», §6.8) only when the
+// preparation or the cancellation policy (both <h3>) render under it. The house
+// rules bring their own <h2>.
+const hasBeforeYouGo =
+    experience.whatToBring.length > 0 ||
+    experience.requirements.length > 0 ||
+    Boolean(experience.policies.cancellation);
+const hasPoliciesSection =
+    hasBeforeYouGo || hasHouseRules({ policies: experience.policies, locale });
+// Slot 10: the contact block, or the private-groups invitation on its own.
+const hasContactSection = contactBlock !== null || experience.policies.privateGroups === true;
+
+// --- Sticky section tabs (HOS-2579 §6.2): a tab exists only when its slot has content ---
+const sectionTabs = buildListingSectionTabs({
+    present: {
+        photos: galleryImages.length > 0,
+        details: hasDescriptionSection,
+        amenities: hasAmenitiesSection,
+        hours: openingHours !== null,
+        location: locationSection !== null,
+        reviews: true,
+        contact: contactBlock !== null
+    }
+});
+
 // --- Header (HOS-2579): the shared frame, built from the detail data ---
 const headerProps = buildExperienceHeader({
     experience,
@@ -284,104 +334,162 @@ const headerProps = buildExperienceHeader({
         <ListingHeader {...headerProps} />
     </Fragment>
 
+    <!-- Body: the 13 canonical slots in LISTING_DETAIL_SLOTS order (HOS-2579
+         §6.1). The source order of the ListingDetailSlot wrappers is guarded by
+         listing-detail-section-order.guard.test.ts. -->
     <div class="exp-detail">
-        <!-- Gallery -->
+        <!-- Slot 1: gallery -->
         {galleryImages.length > 0 && (
-            <div class="exp-detail__gallery">
-                <ImageGallery
-                    client:load
-                    images={galleryImages}
-                    locale={locale}
-                    variant="detail"
-                    mobile={{
-                        share: { url: `${siteOrigin}${Astro.url.pathname}`, title: experience.name, campaign: 'experience' },
-                        favorite: {
-                            entityId: experience.id,
-                            entityType: 'EXPERIENCE',
-                            variant: 'standalone'
-                        }
-                    }}
-                />
-                <GalleryTapBridge />
-            </div>
+            <ListingDetailSlot name="galleryHeader">
+                <div id={LISTING_SECTION_IDS.photos} class="exp-detail__gallery">
+                    <ImageGallery
+                        client:load
+                        images={galleryImages}
+                        locale={locale}
+                        variant="detail"
+                        mobile={{
+                            share: { url: `${siteOrigin}${Astro.url.pathname}`, title: experience.name, campaign: 'experience' },
+                            favorite: {
+                                entityId: experience.id,
+                                entityType: 'EXPERIENCE',
+                                variant: 'standalone'
+                            }
+                        }}
+                    />
+                    <GalleryTapBridge />
+                </div>
+            </ListingDetailSlot>
         )}
+
+        <!-- Sticky section tabs (HOS-2579 §6.2). Outside every slot on purpose:
+             a sticky element sticks inside its parent. -->
+        <ListingSectionTabs
+            client:idle
+            tabs={sectionTabs}
+            locale={locale}
+            vertical="experience"
+            listingId={experience.id}
+            price={contactPrice}
+            panelId={panelId}
+            primaryLabelKey="accommodations.detail.listingContact.bar.contact"
+            galleryId={galleryImages.length > 0 ? LISTING_SECTION_IDS.photos : undefined}
+            fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
+            hasContactAction={contactChannels.length > 0}
+        />
 
         <!-- Slot 2 «summary» (HOS-2579): price and duration (moved out of the
              header) and «Consultar». -->
-        <ExperienceSummary
-            listingId={experience.id}
-            locale={locale}
-            priceFrom={experience.priceFrom}
-            priceUnit={experience.priceUnit}
-            isPriceOnRequest={experience.isPriceOnRequest}
-            durationMinutes={experience.durationMinutes}
-            hasContactChannel={contactChannels.length > 0}
-            panelId={panelId}
-            fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
-        />
+        <ListingDetailSlot name="summary">
+            <ExperienceSummary
+                listingId={experience.id}
+                locale={locale}
+                priceFrom={experience.priceFrom}
+                priceUnit={experience.priceUnit}
+                isPriceOnRequest={experience.isPriceOnRequest}
+                durationMinutes={experience.durationMinutes}
+                hasContactChannel={contactChannels.length > 0}
+                panelId={panelId}
+                fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
+            />
+        </ListingDetailSlot>
 
-        <!-- Description, opening hours, social networks -->
-        <ExperienceInfo experience={experience} locale={locale} />
+        <!-- Slot 3: description with «Leer más». -->
+        {hasDescriptionSection && (
+            <ListingDetailSlot name="description" anchorId={LISTING_SECTION_IDS.details}>
+                <ExperienceDescription
+                    summary={experience.summary}
+                    description={experience.description}
+                    richDescription={experience.richDescription}
+                    locale={locale}
+                />
+            </ListingDetailSlot>
+        )}
 
-        <!-- Where the experience starts (HOS-1048). Above the contact block on
-             purpose: someone reading this page wants to know where to be before
-             they want the provider's phone number. Renders nothing when the
-             owner declared no meeting point. The meeting point TEXT carries no
-             entitlement check — it is ficha data from the basic tier. The map
-             that draws the coordinates and the how-to-get-there instructions
-             are the paid half (HOS-1049), gated by `buildExperienceLocation` on
-             `meetingPointDirectionsEnabled`, which the API resolves live from
-             the provider's current plan. -->
-        {locationSection && <LocationSection {...locationSection} />}
+        <!-- Slot 4: what is included — the features and amenities the provider
+             ticked (HOS-1072). -->
+        {hasAmenitiesSection && (
+            <ListingDetailSlot name="offers" anchorId={LISTING_SECTION_IDS.amenities}>
+                <FeaturesGrid features={experience.features} lang={locale} />
+                <AmenitiesGrid amenities={experience.amenities} lang={locale} />
+            </ListingDetailSlot>
+        )}
 
-        <!-- What to bring and what is required (HOS-1046). Right after the
-             meeting point, because the reading order of somebody planning a
-             morning is: where do I go, what do I take, can I even go. Both
-             halves self-hide on an empty list. -->
-        <ExperiencePreparation
-            whatToBring={experience.whatToBring}
-            requirements={experience.requirements}
-            locale={locale}
-        />
+        <!-- Slot 5: opening hours. -->
+        {openingHours && (
+            <ListingDetailSlot name="hours">
+                <OpeningHoursSection openingHours={openingHours} locale={locale} />
+            </ListingDetailSlot>
+        )}
 
-        <!-- What happens if the outing does not run (HOS-1047). Free text,
-             rendered as TEXT and never as HTML — it is owner-authored and
-             published with no review in between. Self-hides when absent. -->
-        <ExperienceCancellationPolicy
-            cancellation={experience.policies.cancellation}
-            locale={locale}
-        />
+        <!-- Slot 7: where the experience starts (HOS-1048). Renders nothing when
+             the owner declared no meeting point. The meeting point TEXT carries
+             no entitlement check — it is ficha data from the basic tier. The map
+             that draws the coordinates and the how-to-get-there instructions are
+             the paid half (HOS-1049), gated by `buildExperienceLocation` on
+             `meetingPointDirectionsEnabled`, which the API resolves live from the
+             provider's current plan. -->
+        {locationSection && (
+            <ListingDetailSlot name="location">
+                <LocationSection {...locationSection} />
+            </ListingDetailSlot>
+        )}
 
-        <!-- The private-groups invitation (HOS-1056). `hasContactBlock` is what
-             keeps its CTA from becoming a dead anchor when the contact block
-             below self-hides — see the constant's docstring. -->
-        <ExperiencePrivateGroups
-            privateGroups={experience.policies.privateGroups}
-            hasContactBlock={hasContactBlock}
-            locale={locale}
-        />
+        <!-- Slot 8: reviews (interactive island). -->
+        <ListingDetailSlot name="reviews">
+            <ExperienceReviews
+                client:visible
+                experienceId={experience.id}
+                initialReviews={reviews}
+                totalReviews={totalReviews}
+                averageRating={experience.averageRating}
+                locale={locale}
+            />
+        </ListingDetailSlot>
 
-        <!-- Phone / email / website the provider filled in (HOS-815). The
-             listing form blocks publication without a phone or an email, but
-             the public tier used to omit `contactInfo` entirely, so the only
-             contact affordance was the site-wide WhatsApp button pointing at
-             HOSPEDA's number — not the provider's. The published subset is
-             narrowed by `ExperiencePublicContactInfoSchema`. -->
-        {contactBlock && <ListingContactBlock {...contactBlock} />}
+        <!-- Slot 10: phone / email / website / socials the provider filled in
+             (HOS-815), then the private-groups invitation (HOS-1056), right after
+             the block its CTA points at. `hasContactBlock` keeps that CTA from
+             becoming a dead anchor — see the constant's docstring. -->
+        {hasContactSection && (
+        <ListingDetailSlot name="contact">
+            {contactBlock && <ListingContactBlock {...contactBlock} />}
+            <ExperiencePrivateGroups
+                privateGroups={experience.policies.privateGroups}
+                hasContactBlock={hasContactBlock}
+                headingLevel={contactBlock ? 3 : 2}
+                locale={locale}
+            />
+        </ListingDetailSlot>
+        )}
 
-        <!-- Reviews (interactive island) -->
-        <ExperienceReviews
-            client:visible
-            experienceId={experience.id}
-            initialReviews={reviews}
-            totalReviews={totalReviews}
-            averageRating={experience.averageRating}
-            locale={locale}
-        />
+        <!-- Slot 11 «Antes de ir»: what to bring and what is required (HOS-1046),
+             what happens if the outing does not run (HOS-1047, rendered as TEXT,
+             never as HTML) and the house rules (HOS-2060). Each self-hides. -->
+        {hasPoliciesSection && (
+        <ListingDetailSlot name="policies">
+            {hasBeforeYouGo && (
+                <h2 class="exp-detail__policies-title">
+                    {t('experience.detail.policies.title', 'Antes de ir')}
+                </h2>
+            )}
+            <ExperiencePreparation
+                whatToBring={experience.whatToBring}
+                requirements={experience.requirements}
+                locale={locale}
+            />
+            <ExperienceCancellationPolicy
+                cancellation={experience.policies.cancellation}
+                locale={locale}
+            />
+            <ListingHouseRules policies={experience.policies} locale={locale} />
+        </ListingDetailSlot>
+        )}
 
-        <!-- FAQs (static SSR accordion) -->
+        <!-- Slot 12: FAQs (static SSR accordion). -->
         {faqs.length > 0 && (
-            <ExperienceFaqs faqs={faqs} locale={locale} />
+            <ListingDetailSlot name="faq">
+                <ExperienceFaqs faqs={faqs} locale={locale} />
+            </ListingDetailSlot>
         )}
 
         <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
@@ -472,12 +580,23 @@ const headerProps = buildExperienceHeader({
     }
 
     .exp-detail {
+        /* Height of the sticky section tabs; also offsets anchored slots. */
+        --listing-tabs-height: 48px;
         max-width: var(--container-max, 1350px);
         margin: 0 auto;
         padding: var(--space-6, 24px) var(--space-4, 16px);
         display: flex;
         flex-direction: column;
         gap: var(--space-8, 32px);
+    }
+
+    /* Same look as the house-rules <h2> it sits above. */
+    .exp-detail__policies-title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
     }
 
     .exp-detail__gallery {

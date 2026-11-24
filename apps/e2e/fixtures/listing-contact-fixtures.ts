@@ -60,7 +60,13 @@ export const LISTING_CONTACT_FIXTURE_SLUGS = {
      * the bar renders all six actions (Consultar, WhatsApp, Llamar, Favorito,
      * Compartir, Comparar).
      */
-    accommodationAllActions: 'e2e-alojamiento-todas-las-acciones'
+    accommodationAllActions: 'e2e-alojamiento-todas-las-acciones',
+    /**
+     * HOS-2579 AC-2b / AC-6 (spec §11 `venueWithHoursAndMenu`): venue with opening
+     * hours, a carta and its own agenda, so the agenda must render inside
+     * «Lo que ofrece» and the «Horarios» tab has a section to point at.
+     */
+    venueWithHoursAndMenu: 'e2e-venue-con-horarios-y-carta'
 } as const;
 
 interface FixtureRow {
@@ -166,8 +172,48 @@ const FIXTURE_ROWS: readonly FixtureRow[] = [
         overrides: {
             contact_info: FIXTURE_ACCOMMODATION_CONTACT
         }
+    },
+    {
+        table: 'venues',
+        baseSlug: BASE_VENUE_SLUG,
+        id: rowId(8),
+        slug: LISTING_CONTACT_FIXTURE_SLUGS.venueWithHoursAndMenu,
+        name: 'E2E Venue con horarios y carta',
+        overrides: {}
     }
 ];
+
+/** Child-row ids of the `venueWithHoursAndMenu` fixture (a distinct prefix from rowId). */
+const childId = (n: number): string => `e2e10000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+
+/**
+ * Gives the `venueWithHoursAndMenu` fixture one carta course with a dish and one
+ * weekly agenda event. The opening hours come from the cloned template.
+ * Deterministic ids plus `ON CONFLICT DO NOTHING` keep it idempotent.
+ */
+async function ensureVenueHoursAndMenuChildren(pool: Pool): Promise<void> {
+    const venueId = rowId(8);
+    await pool.query(
+        `INSERT INTO venue_menu_sections (id, venue_id, name, display_order)
+         VALUES ($1, $2, 'Entradas', 0)
+         ON CONFLICT (id) DO NOTHING`,
+        [childId(1), venueId]
+    );
+    await pool.query(
+        `INSERT INTO venue_menu_items
+             (id, section_id, venue_id, name, description, price_cents, is_available, display_order)
+         VALUES ($1, $2, $3, 'Empanadas', 'De carne cortada a cuchillo', 250000, true, 0)
+         ON CONFLICT (id) DO NOTHING`,
+        [childId(2), childId(1), venueId]
+    );
+    await pool.query(
+        `INSERT INTO venue_events
+             (id, venue_id, title, description, recurrence, weekday, start_time, is_active, display_order)
+         VALUES ($1, $2, 'Noche de jazz', 'Música en vivo todos los viernes.', 'weekly', 5, '21:00', true, 0)
+         ON CONFLICT (id) DO NOTHING`,
+        [childId(3), venueId]
+    );
+}
 
 /**
  * Inserts the contact-bar fixture listings by cloning a published seeded one.
@@ -199,4 +245,5 @@ export async function ensureListingContactFixtures(pool: Pool): Promise<void> {
             throw new Error(`Missing seeded ${row.table} template '${row.baseSlug}'`);
         }
     }
+    await ensureVenueHoursAndMenuChildren(pool);
 }

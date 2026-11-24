@@ -23,14 +23,21 @@ interface Props {
     readonly heading?: string;
     /** `data-*` read by `initContactLinkTracking` (keys without the `data-` prefix). */
     readonly trackingData: Readonly<Record<string, string>>;
+    /**
+     * Level of the title: `3` (default) under the contact block's `<h2>`, `2`
+     * when the block has no title of its own and this row opens slot 10
+     * (HOS-2579 §6.8).
+     */
+    readonly headingLevel?: 2 | 3;
 }
 
-const { links, heading, trackingData } = Astro.props;
+const { links, heading, trackingData, headingLevel = 3 } = Astro.props;
+const Heading = headingLevel === 2 ? 'h2' : 'h3';
 ---
 
 {links.length > 0 && (
     <div class="listing-social">
-        {heading && <h3 class="listing-social__title">{heading}</h3>}
+        {heading && <Heading class="listing-social__title">{heading}</Heading>}
         <div class="listing-social__list">
             {links.map(({ href, ariaLabel, Icon, interactionKind }) => (
                 <IconButton
