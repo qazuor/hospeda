@@ -85,3 +85,13 @@ Suscripción". "Reactivate" is never used.
 - **F.** The provider-watch staff mail shows its `details` lines in Spanish through a
   keyed map. Unknown lines fall back to the raw text.
 - **G.** `purchase-confirmation` and any other template with tuteo use voseo.
+- **H. Previewer search by subject** (added by the owner, 2026-11-24). The admin email
+  previewer search also matches the subject of every scenario, case- and
+  accent-insensitively like the name. The list endpoint returns
+  `scenarios[].subject` (`@repo/schemas`, nullable when a sample fails), computed once
+  per API process through the production subject code without rendering any HTML body.
+  The client renders nothing.
+- **I. Accountless footer link label** (added by the owner, 2026-11-24). When
+  `showAccountLinks` is false, the first help link of the user footer points at
+  `EMAIL_PUBLIC_FAQ_URL` and now reads "Preguntas frecuentes". Account holders keep
+  "Centro de ayuda". This amends HOS-2565 §8.3, whose text says "Centro de ayuda" for both.
