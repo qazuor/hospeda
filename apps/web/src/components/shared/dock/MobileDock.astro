@@ -4,8 +4,10 @@
  * `data-dock-item`; add one by declaring a slot in `mobile-dock-slots.ts`,
  * portaling only its button with `DockPortal`, marking its root, and giving it
  * mobile `position: static` styling. The row simulates the owner order: listing
- * controls left, map/search/chat actions right, with scroll-to-top last; bars
- * such as comparison occupy the slot above the row.
+ * controls left, map/search/chat actions right; bars such as comparison occupy
+ * the slot above the row. Scroll-to-top is NOT a row item (HOS-2520): it is a
+ * direct child of the dock that floats above it, so it rides the auto-hide
+ * transform without shifting the row when it appears.
  */
 import type { SupportedLocale } from '@/lib/i18n';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
@@ -29,9 +31,9 @@ const { locale } = Astro.props;
 			<div data-mobile-dock-slot="map-cards"></div>
 			<div data-mobile-dock-slot="ai-search"></div>
 			<div data-mobile-dock-slot="ai-chat"></div>
-			<ScrollToTop locale={locale} />
 		</div>
 	</div>
+	<ScrollToTop locale={locale} />
 </div>
 
 <style>
@@ -105,22 +107,6 @@ const { locale } = Astro.props;
 			backdrop-filter: none;
 		}
 
-		/* Owner smoke (HOS-2520): when the only thing in the row is a floating
-		   control (scroll-to-top), it floats like the desktop button instead of
-		   sitting on a full-width frosted band. Seen with dead islands (HOS-2578),
-		   where the contact bar and the chat FAB never reach the dock. The padding
-		   stays, so the button does not jump when the band comes back. */
-		.mobile-dock[data-row-floating] .mobile-dock__row {
-			border-block-start: 0;
-			background: none;
-			backdrop-filter: none;
-			pointer-events: none;
-		}
-
-		.mobile-dock[data-row-floating] .mobile-dock__row :global([data-dock-item]) {
-			pointer-events: auto;
-		}
-
 		.mobile-dock__start,
 		.mobile-dock__end {
 			display: flex;
@@ -145,25 +131,12 @@ const { locale } = Astro.props;
 			backdrop-filter: none;
 		}
 
-		:global(.scroll-to-top) {
-			/* Relative, not static: the progress ring is absolutely positioned
-			   and must anchor to the button, not to the fixed dock. Reset the
-			   desktop offsets, which relative positioning would otherwise apply. */
-			position: relative;
-			inset: auto;
-			height: 44px;
-			width: 44px;
-		}
-
-		:global(.scroll-to-top:not(.scroll-to-top--visible)) {
-			display: none;
-		}
-
 		/* HOS-1780: the row must stay on ONE line across the whole mobile dock
 		   (<=767px). The controls keep their text and 44px height; only the spacing
-		   around them tightens. Measured with the map view's four controls (Filtros,
-		   list/map toggle, results pill, scroll-to-top): at the base spacing the
-		   row wraps below 516px, so the tight spacing has to hold up to the dock's
+		   around them tightens. Measured with the map view's controls (Filtros,
+		   list/map toggle, results pill, and scroll-to-top, which has since left
+		   the row for HOS-2520): at the base spacing the row wrapped below 516px,
+		   so the tight spacing has to hold up to the dock's
 		   own breakpoint rather than stop at a phone width. Declared after the base
 		   rules so it wins the cascade. */
 		.mobile-dock__row {
@@ -186,6 +159,9 @@ const { locale } = Astro.props;
 		:global(html[data-filters-drawer-open]) .mobile-dock {
 			visibility: hidden;
 			pointer-events: none;
+			/* The floating scroll-to-top sets its own visibility so it shows over an
+			   empty dock; this inherited token hides it with the dock. */
+			--dock-floating-visibility: hidden;
 		}
 	}
 </style>

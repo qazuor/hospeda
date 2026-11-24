@@ -115,32 +115,31 @@ describe('HOS-1768 dock CSS contract (rendered behaviour, not source strings)', 
     });
 
     it('makes the scroll-to-top button the containing block of its ring on mobile', () => {
-        // Bug 3: `static` made the absolute ring anchor to the fixed dock. The
-        // component's own scoped mobile rule outranks the dock's :global one, so
-        // neither may say static.
-        for (const rules of [dockRules, scrollRules]) {
-            expect(mobileValue(rules, '.scroll-to-top', 'position')).not.toBe('static');
-        }
-        expect([
-            mobileValue(scrollRules, '.scroll-to-top', 'position'),
-            mobileValue(dockRules, '.scroll-to-top', 'position')
-        ]).toContain('relative');
+        // Bug 3: `static` made the absolute ring anchor to the fixed dock. Since
+        // HOS-2520 the button floats above the dock as an absolute child, which is
+        // positioned too, so the ring still anchors to the button. The component owns
+        // the rule alone: a dock-side :global override would fight its cascade.
+        expect(mobileValue(dockRules, '.scroll-to-top', 'position')).toBeUndefined();
+        expect(mobileValue(scrollRules, '.scroll-to-top', 'position')).toBe('absolute');
     });
 
-    it('resets the desktop offsets of scroll-to-top on mobile', () => {
-        // Bug 4: once the button became `relative`, the desktop `bottom`/`right`
-        // offsets applied again and shifted it 24px onto the AI-search button.
+    it('redeclares every desktop offset of scroll-to-top on mobile, against the dock', () => {
+        // Bug 4: a desktop `bottom`/`right` that leaks into the mobile rule shifts the
+        // button onto its neighbour. Each desktop offset must be redeclared on mobile,
+        // and the vertical one must come from the published dock height.
         const base = scrollRules.filter((r) => !r.mobile && r.selector === '.scroll-to-top');
         const offsets = ['top', 'right', 'bottom', 'left'].filter((p) =>
             base.some((r) => p in r.decls)
         );
         expect(offsets.length).toBeGreaterThan(0);
-        for (const rules of [scrollRules, dockRules]) {
-            const inset = mobileValue(rules, '.scroll-to-top', 'inset');
-            for (const prop of offsets) {
-                expect(mobileValue(rules, '.scroll-to-top', prop) ?? inset).toBe('auto');
-            }
+        for (const prop of [...offsets, 'top', 'left']) {
+            expect(mobileValue(scrollRules, '.scroll-to-top', prop)).toBeDefined();
         }
+        expect(mobileValue(scrollRules, '.scroll-to-top', 'top')).toBe('auto');
+        expect(mobileValue(scrollRules, '.scroll-to-top', 'left')).toBe('auto');
+        expect(mobileValue(scrollRules, '.scroll-to-top', 'bottom')).toContain(
+            'var(--mobile-dock-height, 0px)'
+        );
     });
 
     it('keeps the ring absolutely positioned (it relies on the button being positioned)', () => {

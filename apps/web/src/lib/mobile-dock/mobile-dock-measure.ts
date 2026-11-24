@@ -4,12 +4,6 @@ export const MOBILE_DOCK_MEDIA_QUERY = '(max-width: 767px)' as const;
 /** Root custom property used to reserve space for the measured mobile dock. */
 export const MOBILE_DOCK_HEIGHT_VAR = '--mobile-dock-height' as const;
 
-/**
- * Marks a dock item that floats on its own (the scroll-to-top button): a row that
- * holds only such items paints no frosted band (owner smoke, HOS-2520).
- */
-export const MOBILE_DOCK_FLOATING_ATTR = 'data-dock-floating' as const;
-
 /** Input used to resolve the dock's occupied height. */
 export interface ResolveDockHeightInput {
     readonly isMobile: boolean;
@@ -63,13 +57,7 @@ export function initMobileDock({
         const row = dock.querySelector<HTMLElement>('.mobile-dock__row');
         const rowItems = row ? [...row.querySelectorAll<HTMLElement>('[data-dock-item]')] : [];
         const hasVisibleItem = allItems.some((item) => item.getClientRects().length > 0);
-        const visibleRowItems = rowItems.filter((item) => item.getClientRects().length > 0);
-        const rowHasVisibleItem = visibleRowItems.length > 0;
-        // With dead islands (HOS-2578) the contact bar and the chat FAB never portal in,
-        // and scrolling up revealed a full-width band holding only scroll-to-top.
-        const rowIsFloatingOnly =
-            rowHasVisibleItem &&
-            visibleRowItems.every((item) => item.hasAttribute(MOBILE_DOCK_FLOATING_ATTR));
+        const rowHasVisibleItem = rowItems.some((item) => item.getClientRects().length > 0);
         const { heightPx } = resolveDockHeight({
             isMobile: media.matches,
             hasVisibleItem,
@@ -78,7 +66,6 @@ export function initMobileDock({
 
         dock.toggleAttribute('data-empty', !hasVisibleItem);
         dock.toggleAttribute('data-row-empty', !rowHasVisibleItem);
-        dock.toggleAttribute('data-row-floating', rowIsFloatingOnly);
         root.style.setProperty(MOBILE_DOCK_HEIGHT_VAR, `${heightPx}px`);
     };
 
