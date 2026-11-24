@@ -44,20 +44,31 @@ function futureCreatedAt(): Date {
 
 /** One listed refund, read from the tail page that holds this file's rows; undefined when it is
  * not listed. Never walks the whole list: the block this file seeds is at most ~30 rows, always
- * inside the last page of 100, and one read is an internally consistent snapshot. */
+ * inside the last page of 100. The total read and the last-page read form one epoch: a parallel
+ * insert in between shifts the old tail past the computed page, so the epoch is discarded and
+ * retried instead of reporting a false absence (HOS-2407). A zero total is already conclusive —
+ * this file's own rows would make it positive. */
 async function listed(refundId: string) {
-    const head = await listProposedRefunds({ page: 1, pageSize: 100 });
-    if (head.total === 0) return undefined;
-    const lastPage = Math.ceil(head.total / 100);
-    const page =
-        lastPage === 1 ? head : await listProposedRefunds({ page: lastPage, pageSize: 100 });
-    return page.items.find((item) => item.refundId === refundId);
+    for (let attempt = 0; attempt < 40; attempt++) {
+        const head = await listProposedRefunds({ page: 1, pageSize: 100 });
+        if (head.total === 0) return undefined;
+        const lastPage = Math.ceil(head.total / 100);
+        const page =
+            lastPage === 1 ? head : await listProposedRefunds({ page: lastPage, pageSize: 100 });
+        if (page.total === head.total) {
+            return page.items.find((item) => item.refundId === refundId);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error('the proposed-refund list never stayed still long enough to read its tail');
 }
 
-/** Reads the last pages of the list while the row total stays still (one read epoch). The rows
- * this file seeds are the tail of the list, so a stable epoch pins every page the block touches.
- * Retries while parallel writers move the tail; failing loudly beats comparing against a stale
- * whole-list snapshot (HOS-2407). */
+/** Reads the last pages of the list during one read epoch: the row total stays still across every
+ * page of the walk, and the first id of the first page keeps holding between attempts (a
+ * compensating insert+delete pair leaves the total intact while it moves rows, which the head-id
+ * anchor detects, HOS-2407). The rows this file seeds are the tail of the list, so a stable epoch
+ * pins every page the block touches. Retries while parallel writers move the tail; failing loudly
+ * beats comparing against a stale whole-list snapshot. */
 async function readTail(input: {
     readonly pageSize: number;
     readonly windowRows: number;
@@ -65,18 +76,26 @@ async function readTail(input: {
     readonly items: readonly ProposedRefund[];
     readonly total: number;
 }> {
+    let anchoredHeadId: string | null = null;
     for (let attempt = 0; attempt < 40; attempt++) {
         const head = await listProposedRefunds({ page: 1, pageSize: input.pageSize });
-        const lastPage = Math.max(1, Math.ceil(head.total / input.pageSize));
-        const firstPage = Math.max(1, lastPage - Math.ceil(input.windowRows / input.pageSize) - 1);
-        const items: ProposedRefund[] = [];
-        let stable = true;
-        for (let page = firstPage; page <= lastPage && stable; page++) {
-            const result = await listProposedRefunds({ page, pageSize: input.pageSize });
-            if (result.total !== head.total) stable = false;
-            items.push(...result.items);
+        const headId = head.items[0]?.refundId ?? null;
+        if (anchoredHeadId === null || headId === anchoredHeadId) {
+            const lastPage = Math.max(1, Math.ceil(head.total / input.pageSize));
+            const firstPage = Math.max(
+                1,
+                lastPage - Math.ceil(input.windowRows / input.pageSize) - 1
+            );
+            const items: ProposedRefund[] = [];
+            let stable = true;
+            for (let page = firstPage; page <= lastPage && stable; page++) {
+                const result = await listProposedRefunds({ page, pageSize: input.pageSize });
+                if (result.total !== head.total) stable = false;
+                items.push(...result.items);
+            }
+            if (stable) return { items, total: head.total };
         }
-        if (stable) return { items, total: head.total };
+        anchoredHeadId = headId;
         await new Promise((resolve) => setTimeout(resolve, 25));
     }
     throw new Error('the proposed-refund list never stayed still long enough to read its tail');
