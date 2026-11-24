@@ -207,7 +207,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'billing',
         schedule: '0 9 * * *',
         description:
-            'Enqueue the renewal notice at 5 and 1 days before the next charge (HOS-1622, AC:B13a:13), and the access-ending reminder 5 days before a scheduled cancellation ends (HOS-2580).'
+            'Enqueue the renewal notice at the PLAZO:13 offsets before the next charge (HOS-1622, AC:B13a:13), and the access-ending reminder at the largest PLAZO:13 offset before a scheduled cancellation ends (HOS-2580).'
     },
     {
         name: 'plan-migration-notice',

@@ -85,13 +85,35 @@ describe('HOS-1622 subscription-renewal-notice cron (AC:B13a:13)', () => {
         });
     });
 
-    it('returns failure without throwing when the service fails', async () => {
+    it('still runs the access-ending pass when the renewal pass throws, and logs it', async () => {
         mockSend.mockRejectedValueOnce(new Error('database down'));
-        await expect(subscriptionRenewalNoticeJob.handler(context())).resolves.toMatchObject({
+        const ctx = context();
+        const result = await subscriptionRenewalNoticeJob.handler(ctx);
+        expect(mockAccessEnding).toHaveBeenCalledTimes(1);
+        expect(result).toMatchObject({
             success: false,
-            processed: 0,
+            processed: 2,
             errors: 1,
-            details: { error: 'database down' }
+            details: { error: 'database down', accessEnding: { enqueued: 2 } }
+        });
+        expect(ctx.logger.error).toHaveBeenCalledWith('Renewal notices failed', {
+            error: 'database down'
+        });
+    });
+
+    it('keeps the renewal result when the access-ending pass throws, and logs it', async () => {
+        mockAccessEnding.mockRejectedValueOnce(new Error('timeout'));
+        const ctx = context();
+        const result = await subscriptionRenewalNoticeJob.handler(ctx);
+        expect(mockSend).toHaveBeenCalledTimes(1);
+        expect(result).toMatchObject({
+            success: false,
+            processed: 3,
+            errors: 2,
+            details: { enqueued: 3, accessEnding: { error: 'timeout' } }
+        });
+        expect(ctx.logger.error).toHaveBeenCalledWith('Access-ending notices failed', {
+            error: 'timeout'
         });
     });
 
