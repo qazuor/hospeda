@@ -26,34 +26,87 @@ export const GALLERY_INDEX_ATTR = 'data-gallery-index' as const;
 /** Set by the script on the tapped button while the island loads (CSS spinner). */
 export const GALLERY_LOADING_ATTR = 'data-gallery-loading' as const;
 
+/** Time of the pre-hydration tap (`Date.now()` ms), set on the root by the script. */
+export const GALLERY_PENDING_AT_ATTR = 'data-gallery-pending-at' as const;
+
+/** `window.scrollY` (px) at the pre-hydration tap, set on the root by the script. */
+export const GALLERY_PENDING_SCROLL_ATTR = 'data-gallery-pending-scroll' as const;
+
+/** A tap older than this when the island hydrates is not replayed (ms). */
+export const GALLERY_REPLAY_MAX_AGE_MS = 8000 as const;
+
+/** A tap is not replayed once the page scrolled more than this since it (px). */
+export const GALLERY_REPLAY_MAX_SCROLL_PX = 200 as const;
+
+/**
+ * After this long without hydration the inline script clears the spinner and the
+ * pending tap on its own (a dead island, HOS-2578). Mirrored in the script (ms).
+ */
+export const GALLERY_LOADING_TIMEOUT_MS = 15000 as const;
+
 /** Input of {@link consumePendingGalleryTap}. */
 export interface ConsumePendingGalleryTapInput {
     /** The gallery root rendered by the island. */
     readonly root: HTMLElement;
     /** Number of photos, to reject an index that no longer exists. */
     readonly count: number;
+    /** Current time in ms; defaults to `Date.now()`. */
+    readonly now?: number;
+    /** Current scroll offset in px; defaults to `window.scrollY`. */
+    readonly scrollY?: number;
+}
+
+/** Reads a non-negative integer attribute, or `null` when absent or malformed. */
+function readIntAttr({ root, name }: { readonly root: HTMLElement; readonly name: string }): {
+    readonly value: number | null;
+} {
+    const raw = root.getAttribute(name);
+    return { value: raw !== null && /^\d+$/.test(raw) ? Number(raw) : null };
 }
 
 /**
  * Marks the root hydrated, then reads and clears the pending tap and the loading
  * state the inline script left. Runs once per mount; a second call finds nothing.
  *
- * @param input - The gallery root and the photo count.
- * @returns `{ index }` of the photo to open, or `null` when there was no valid tap.
+ * A tap is replayed only while it is still what the visitor wants: made at most
+ * {@link GALLERY_REPLAY_MAX_AGE_MS} ago, with the page scrolled at most
+ * {@link GALLERY_REPLAY_MAX_SCROLL_PX} since. Otherwise (or without a recorded time
+ * and scroll) it is discarded and only the loading state is cleared: opening a
+ * lightbox over content the visitor has moved on to would be worse than nothing.
+ *
+ * @param input - The gallery root, the photo count and optional clock/scroll reads.
+ * @returns `{ index }` of the photo to open, or `null` when there is nothing to replay.
  */
-export function consumePendingGalleryTap({ root, count }: ConsumePendingGalleryTapInput): {
+export function consumePendingGalleryTap({
+    root,
+    count,
+    now = Date.now(),
+    scrollY = typeof window === 'undefined' ? 0 : window.scrollY
+}: ConsumePendingGalleryTapInput): {
     readonly index: number | null;
 } {
     root.setAttribute(GALLERY_HYDRATED_ATTR, '');
-    const raw = root.getAttribute(GALLERY_PENDING_ATTR);
-    root.removeAttribute(GALLERY_PENDING_ATTR);
+    const { value: index } = readIntAttr({ root, name: GALLERY_PENDING_ATTR });
+    const { value: at } = readIntAttr({ root, name: GALLERY_PENDING_AT_ATTR });
+    const { value: tapScroll } = readIntAttr({ root, name: GALLERY_PENDING_SCROLL_ATTR });
+    for (const name of [
+        GALLERY_PENDING_ATTR,
+        GALLERY_PENDING_AT_ATTR,
+        GALLERY_PENDING_SCROLL_ATTR
+    ]) {
+        root.removeAttribute(name);
+    }
     for (const button of Array.from(root.querySelectorAll(`[${GALLERY_LOADING_ATTR}]`))) {
         button.removeAttribute(GALLERY_LOADING_ATTR);
         button.removeAttribute('aria-busy');
     }
-    if (raw === null || !/^\d+$/.test(raw)) return { index: null };
-    const index = Number(raw);
-    return { index: index < count ? index : null };
+    if (index === null || at === null || tapScroll === null || index >= count) {
+        return { index: null };
+    }
+    const age = now - at;
+    if (age < 0 || age > GALLERY_REPLAY_MAX_AGE_MS) return { index: null };
+    if (Math.abs(scrollY - tapScroll) > GALLERY_REPLAY_MAX_SCROLL_PX) return { index: null };
+    return { index };
 }
 
 /**

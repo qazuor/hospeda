@@ -20,7 +20,11 @@ import {
     GALLERY_HYDRATED_ATTR,
     GALLERY_INDEX_ATTR,
     GALLERY_LOADING_ATTR,
+    GALLERY_LOADING_TIMEOUT_MS,
+    GALLERY_PENDING_AT_ATTR,
     GALLERY_PENDING_ATTR,
+    GALLERY_PENDING_SCROLL_ATTR,
+    GALLERY_REPLAY_MAX_AGE_MS,
     GALLERY_ROOT_ATTR
 } from '@/components/gallery/gallery-hydration-bridge';
 import { ImageGallery } from '@/components/ImageGallery.client';
@@ -60,6 +64,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     for (const { type, listener, capture } of added.splice(0)) {
         document.removeEventListener(type, listener, capture);
@@ -97,10 +102,97 @@ describe('GalleryTapBridge.astro inline script', () => {
             GALLERY_HYDRATED_ATTR,
             GALLERY_PENDING_ATTR,
             GALLERY_INDEX_ATTR,
-            GALLERY_LOADING_ATTR
+            GALLERY_LOADING_ATTR,
+            GALLERY_PENDING_AT_ATTR,
+            GALLERY_PENDING_SCROLL_ATTR
         ]) {
             expect(SCRIPT_BODY).toMatch(new RegExp(`['[]${attr}[\\]']`));
         }
+    });
+
+    it('uses the loading timeout the island documents, as a literal', () => {
+        // Assert: a literal keeps the body static (no interpolation, CSP hash stable)
+        expect(SCRIPT_BODY).toMatch(new RegExp(`\\}, ${GALLERY_LOADING_TIMEOUT_MS}\\);`));
+        expect(ASTRO_SOURCE).not.toMatch(/<script[^>]*>[\s\S]*\{[a-zA-Z_]+\}[\s\S]*<\/script>/);
+    });
+
+    it('records the tap time and scroll offset with the index', () => {
+        // Arrange
+        vi.useFakeTimers({ now: 1_000_000 });
+        const { container } = serverRender();
+        runBridgeScript();
+        const root = container.querySelector(`[${GALLERY_ROOT_ATTR}]`) as HTMLElement;
+        Object.defineProperty(window, 'scrollY', { value: 340, configurable: true });
+
+        // Act
+        within(container)
+            .getAllByRole('button', { name: /Photo \d/ })[1]
+            ?.click();
+
+        // Assert
+        expect(root.getAttribute(GALLERY_PENDING_AT_ATTR)).toBe('1000000');
+        expect(root.getAttribute(GALLERY_PENDING_SCROLL_ATTR)).toBe('340');
+        Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+    });
+
+    it('clears the spinner and the pending tap after 15s if the island never hydrates', () => {
+        // Arrange
+        vi.useFakeTimers();
+        const { container } = serverRender();
+        runBridgeScript();
+        const root = container.querySelector(`[${GALLERY_ROOT_ATTR}]`) as HTMLElement;
+        const slide = within(container).getAllByRole('button', { name: /Photo \d/ })[2];
+
+        // Act
+        slide?.click();
+        vi.advanceTimersByTime(GALLERY_LOADING_TIMEOUT_MS - 1);
+        const stillLoading = slide?.hasAttribute(GALLERY_LOADING_ATTR);
+        vi.advanceTimersByTime(1);
+
+        // Assert
+        expect(stillLoading).toBe(true);
+        expect(slide).not.toHaveAttribute(GALLERY_LOADING_ATTR);
+        expect(slide).not.toHaveAttribute('aria-busy');
+        expect(root).not.toHaveAttribute(GALLERY_PENDING_ATTR);
+        expect(root).not.toHaveAttribute(GALLERY_PENDING_AT_ATTR);
+    });
+
+    it('does not let the timeout of an earlier tap clear a later one', () => {
+        // Arrange
+        vi.useFakeTimers();
+        const { container } = serverRender();
+        runBridgeScript();
+        const root = container.querySelector(`[${GALLERY_ROOT_ATTR}]`) as HTMLElement;
+        const slides = within(container).getAllByRole('button', { name: /Photo \d/ });
+
+        // Act: second tap 10s after the first; the first timeout fires 5s later
+        slides[1]?.click();
+        vi.advanceTimersByTime(10_000);
+        slides[3]?.click();
+        vi.advanceTimersByTime(5_000);
+
+        // Assert
+        expect(root.getAttribute(GALLERY_PENDING_ATTR)).toBe('3');
+        expect(slides[3]).toHaveAttribute(GALLERY_LOADING_ATTR);
+    });
+
+    it('leaves a root alone once the island hydrated before the timeout', () => {
+        // Arrange
+        vi.useFakeTimers();
+        const { container } = serverRender();
+        runBridgeScript();
+        const root = container.querySelector(`[${GALLERY_ROOT_ATTR}]`) as HTMLElement;
+        within(container)
+            .getAllByRole('button', { name: /Photo \d/ })[1]
+            ?.click();
+        root.setAttribute(GALLERY_HYDRATED_ATTR, '');
+        root.setAttribute(GALLERY_PENDING_ATTR, '4');
+
+        // Act
+        vi.advanceTimersByTime(GALLERY_LOADING_TIMEOUT_MS);
+
+        // Assert: the timeout returned early for a hydrated root
+        expect(root.getAttribute(GALLERY_PENDING_ATTR)).toBe('4');
     });
 
     it('marks the tapped photo loading and records its index before hydration', () => {
@@ -165,6 +257,28 @@ describe('GalleryTapBridge.astro inline script', () => {
         expect(rootOf(first).hasAttribute(GALLERY_PENDING_ATTR)).toBe(false);
         expect(first.querySelector(`[${GALLERY_LOADING_ATTR}]`)).toBeNull();
     });
+
+    it('clears the pending tap of another gallery root, so only the latest replays', () => {
+        // Arrange
+        const first = serverRender().container;
+        const second = serverRender().container;
+        runBridgeScript();
+        const rootOf = (c: HTMLElement) => c.querySelector(`[${GALLERY_ROOT_ATTR}]`) as HTMLElement;
+
+        // Act
+        within(first)
+            .getAllByRole('button', { name: /Photo \d/ })[2]
+            ?.click();
+        within(second)
+            .getAllByRole('button', { name: /Photo \d/ })[1]
+            ?.click();
+
+        // Assert
+        expect(rootOf(first).hasAttribute(GALLERY_PENDING_ATTR)).toBe(false);
+        expect(rootOf(first).hasAttribute(GALLERY_PENDING_AT_ATTR)).toBe(false);
+        expect(first.querySelector(`[${GALLERY_LOADING_ATTR}]`)).toBeNull();
+        expect(rootOf(second).getAttribute(GALLERY_PENDING_ATTR)).toBe('1');
+    });
 });
 
 describe('ImageGallery consumes a pre-hydration tap', () => {
@@ -194,6 +308,30 @@ describe('ImageGallery consumes a pre-hydration tap', () => {
         act(() => reactRoot.unmount());
     });
 
+    it('does not replay a tap that went stale before hydration, but clears its spinner', async () => {
+        // Arrange
+        const { container, element } = serverRender();
+        runBridgeScript();
+        within(container)
+            .getAllByRole('button', { name: /Photo \d/ })[2]
+            ?.click();
+        const root = container.querySelector(`[${GALLERY_ROOT_ATTR}]`) as HTMLElement;
+        root.setAttribute(
+            GALLERY_PENDING_AT_ATTR,
+            String(Date.now() - GALLERY_REPLAY_MAX_AGE_MS - 1000)
+        );
+
+        // Act
+        const reactRoot = hydrateRoot(container, element);
+        await act(async () => {});
+
+        // Assert
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(container.querySelector(`[${GALLERY_LOADING_ATTR}]`)).toBeNull();
+        expect(root).not.toHaveAttribute(GALLERY_PENDING_ATTR);
+        act(() => reactRoot.unmount());
+    });
+
     it('becomes a no-op once the island has hydrated', async () => {
         // Arrange
         const { container, element } = serverRender();
@@ -218,9 +356,16 @@ describe('ImageGallery consumes a pre-hydration tap', () => {
 });
 
 describe('consumePendingGalleryTap', () => {
-    function rootWith(pending: string | null): HTMLElement {
+    const TAP_AT = 1_000_000;
+
+    function rootWith(
+        pending: string | null,
+        { at = String(TAP_AT), scroll = '0' }: { at?: string | null; scroll?: string | null } = {}
+    ): HTMLElement {
         const root = document.createElement('div');
         if (pending !== null) root.setAttribute(GALLERY_PENDING_ATTR, pending);
+        if (at !== null) root.setAttribute(GALLERY_PENDING_AT_ATTR, at);
+        if (scroll !== null) root.setAttribute(GALLERY_PENDING_SCROLL_ATTR, scroll);
         return root;
     }
 
@@ -229,13 +374,58 @@ describe('consumePendingGalleryTap', () => {
         const root = rootWith('2');
 
         // Act
-        const first = consumePendingGalleryTap({ root, count: 5 });
-        const second = consumePendingGalleryTap({ root, count: 5 });
+        const first = consumePendingGalleryTap({ root, count: 5, now: TAP_AT + 500, scrollY: 0 });
+        const second = consumePendingGalleryTap({ root, count: 5, now: TAP_AT + 600, scrollY: 0 });
 
         // Assert
         expect(first).toEqual({ index: 2 });
         expect(second).toEqual({ index: null });
         expect(root).toHaveAttribute(GALLERY_HYDRATED_ATTR);
+        expect(root).not.toHaveAttribute(GALLERY_PENDING_AT_ATTR);
+        expect(root).not.toHaveAttribute(GALLERY_PENDING_SCROLL_ATTR);
+    });
+
+    it.each([
+        ['exactly 8s old', GALLERY_REPLAY_MAX_AGE_MS, 0, 2],
+        ['older than 8s', GALLERY_REPLAY_MAX_AGE_MS + 1, 0, null],
+        ['scrolled 200px since', 500, 200, 2],
+        ['scrolled more than 200px since', 500, 201, null],
+        ['scrolled back up more than 200px', 500, -250, null]
+    ])('replays a tap %s → %s', (_label, age, scrolled, expected) => {
+        // Arrange
+        const root = rootWith('2', { scroll: '400' });
+        const button = document.createElement('button');
+        button.setAttribute(GALLERY_LOADING_ATTR, '');
+        button.setAttribute('aria-busy', 'true');
+        root.appendChild(button);
+
+        // Act
+        const result = consumePendingGalleryTap({
+            root,
+            count: 5,
+            now: TAP_AT + age,
+            scrollY: 400 + scrolled
+        });
+
+        // Assert: a discarded tap still clears the loading state
+        expect(result).toEqual({ index: expected });
+        expect(button).not.toHaveAttribute(GALLERY_LOADING_ATTR);
+        expect(button).not.toHaveAttribute('aria-busy');
+    });
+
+    it.each([
+        ['no recorded time', { at: null }],
+        ['no recorded scroll', { scroll: null }],
+        ['a malformed time', { at: 'soon' }]
+    ])('discards a tap with %s', (_label, attrs) => {
+        expect(
+            consumePendingGalleryTap({
+                root: rootWith('2', attrs),
+                count: 5,
+                now: TAP_AT,
+                scrollY: 0
+            })
+        ).toEqual({ index: null });
     });
 
     it.each([
@@ -244,7 +434,9 @@ describe('consumePendingGalleryTap', () => {
         ['a negative value', '-1'],
         ['no tap at all', null]
     ])('returns null for %s', (_label, pending) => {
-        expect(consumePendingGalleryTap({ root: rootWith(pending), count: 5 })).toEqual({
+        expect(
+            consumePendingGalleryTap({ root: rootWith(pending), count: 5, now: TAP_AT, scrollY: 0 })
+        ).toEqual({
             index: null
         });
     });

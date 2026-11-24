@@ -409,8 +409,9 @@ export function ImageGallery({
         setLightboxIndex(null);
     }, []);
 
-    // HOS-2520: a photo tapped before hydration opens now, once. See
-    // gallery/GalleryTapBridge.astro for the inline half of the bridge.
+    // HOS-2520: a photo tapped before hydration opens now, once, unless the tap went
+    // stale (over 8s old, or the page scrolled since): then only its spinner clears.
+    // See gallery/GalleryTapBridge.astro for the inline half of the bridge.
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per mount; a later change of `images` must not replay a tap that is already consumed.
     useEffect(() => {
         const root = rootRef.current;
