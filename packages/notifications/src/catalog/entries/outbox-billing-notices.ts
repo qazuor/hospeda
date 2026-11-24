@@ -164,12 +164,12 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'price-increase',
-                label: 'Aumento de precio programado, con promo perdida',
+                label: 'Aumento de precio programado, conservando la promo',
                 input: {
                     payload: {
                         ...MIGRATION_DETAILS,
                         targetPlanName: 'Plan Básico',
-                        losesPromo: true,
+                        keepsPromo: true,
                         variant: 'SCHEDULED',
                         applicationDate: '2027-01-15',
                         reason: 'PRICE_INCREASE'
@@ -202,7 +202,7 @@ export const OUTBOX_BILLING_NOTICES_ENTRIES: readonly EmailCatalogEntry[] = [
                     payload: {
                         ...MIGRATION_DETAILS,
                         targetPlanName: 'Plan Básico',
-                        losesPromo: true,
+                        keepsPromo: true,
                         applicationDate: '2027-01-15',
                         daysBefore: 7,
                         providerNotifies: true,

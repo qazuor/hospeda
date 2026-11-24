@@ -94,4 +94,43 @@ describe('TEST:B12:3 AC:B12:3 el correo del anuncio usa una clave estable por fi
             }
         ]);
     });
+
+    it('passes keepsPromo through to the outbox payload and still accepts a payload without it', async () => {
+        const enqueue = vi
+            .spyOn(emailOutboxModel, 'enqueue')
+            .mockImplementation(async () => ({ enqueued: true, row: null }));
+        const base = {
+            tx: {} as DrizzleClient,
+            template: PLAN_MIGRATION_ANNOUNCED_TEMPLATE,
+            row: {
+                id: '2b222222-2222-4222-8222-222222222222',
+                recipientUserId: '1a111111-1111-4111-8111-111111111111',
+                recipientEmail: 'customer@example.test'
+            },
+            milestone: 'mig:announce',
+            targetDate: '2026-10-11'
+        } as const;
+        const payload = {
+            planMigrationId: '3c333333-3333-4333-8333-333333333333',
+            planMigrationSubscriptionId: '2b222222-2222-4222-8222-222222222222',
+            subscriptionId: '4d444444-4444-4444-8444-444444444444',
+            vertical: 'accommodation',
+            planName: 'Plan actual',
+            targetPlanName: 'Plan actual',
+            direction: 'UP' as const,
+            currentAmountMinor: 100000,
+            newAmountMinor: 150000,
+            currency: 'ARS',
+            applicationDate: '2027-01-11',
+            losesPromo: false,
+            variant: 'SCHEDULED' as const,
+            deadlinesVersion: 1,
+            reason: 'PRICE_INCREASE' as const
+        };
+        await enqueuePlanMigrationNotice({ ...base, payload: { ...payload, keepsPromo: true } });
+        await enqueuePlanMigrationNotice({ ...base, payload });
+        const [withFlag, withoutFlag] = enqueue.mock.calls.map(([mail]) => mail.payload);
+        expect(withFlag).toMatchObject({ keepsPromo: true });
+        expect(withoutFlag).not.toHaveProperty('keepsPromo');
+    });
 });

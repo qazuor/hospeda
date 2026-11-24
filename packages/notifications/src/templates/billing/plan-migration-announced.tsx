@@ -17,6 +17,8 @@ export interface PlanMigrationAnnouncedProps {
     readonly newAmount: string | null;
     readonly applicationDate: string | null;
     readonly losesPromo: boolean;
+    /** True when a live promo keeps applying on the new price (price increase only). Absent means false. */
+    readonly keepsPromo?: boolean;
     readonly reason?: PlanMigrationAnnouncedReason;
     /** Absolute URL of Mi Suscripción, built by the renderer from the site URL. */
     readonly actionUrl: string;
@@ -114,6 +116,7 @@ export function PlanMigrationAnnounced({
     newAmount,
     applicationDate,
     losesPromo,
+    keepsPromo = false,
     reason = 'RETIREMENT',
     actionUrl,
     contactUrl
@@ -143,6 +146,9 @@ export function PlanMigrationAnnounced({
                 ) : (
                     <Text>Te avisamos la fecha cuando tu suscripción vuelva a estar activa.</Text>
                 )}
+                {keepsPromo ? (
+                    <Text>Tu promoción se sigue aplicando sobre el precio nuevo.</Text>
+                ) : null}
                 <Text>Hasta esa fecha seguís pagando tu precio actual.</Text>
                 <Text>
                     Si no estás de acuerdo, podés cancelar tu suscripción antes de esa fecha.

@@ -28,6 +28,8 @@ const migrationDetailsSchema = z.object({
     targetPlanName: nonEmptyString,
     direction: z.enum(['UP', 'DOWN']),
     losesPromo: z.boolean(),
+    /** Absent on rows queued before HOS-2608; absent means false. */
+    keepsPromo: z.boolean().optional(),
     currentAmountMinor: amountMinor,
     newAmountMinor: amountMinor,
     currency: nonEmptyString,
@@ -90,6 +92,7 @@ function announced(row: EmailOutboxRow, actionUrl: string, contactUrl: string) {
                 newAmount={amounts?.next ?? null}
                 applicationDate={data.variant === 'SCHEDULED' ? data.applicationDate : null}
                 losesPromo={data.variant === 'TO_RESOLVE' ? false : data.losesPromo}
+                keepsPromo={data.variant === 'TO_RESOLVE' ? false : (data.keepsPromo ?? false)}
                 reason={reason}
                 actionUrl={actionUrl}
                 contactUrl={contactUrl}
@@ -120,6 +123,7 @@ function upcoming(row: EmailOutboxRow) {
                 newAmount={amounts.next}
                 applicationDate={data.applicationDate}
                 losesPromo={data.losesPromo}
+                keepsPromo={data.keepsPromo ?? false}
                 providerNotifies={data.providerNotifies ?? false}
                 reason={reason}
             />
