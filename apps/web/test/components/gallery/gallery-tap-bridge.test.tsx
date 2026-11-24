@@ -332,6 +332,25 @@ describe('ImageGallery consumes a pre-hydration tap', () => {
         act(() => reactRoot.unmount());
     });
 
+    it('hydrates the «see all photos» button without a warning after a bridge tap', async () => {
+        // Arrange: the bridge stamps data-gallery-loading/aria-busy on the button
+        const { container, element } = serverRender();
+        runBridgeScript();
+        within(container).getByRole('button', { name: 'See all 5 photos' }).click();
+        const onRecoverableError = vi.fn();
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        // Act
+        const reactRoot = hydrateRoot(container, element, { onRecoverableError });
+        await act(async () => {});
+
+        // Assert
+        expect(within(screen.getByRole('dialog')).getByText('1/5')).toBeInTheDocument();
+        expect(onRecoverableError).not.toHaveBeenCalled();
+        expect(consoleError.mock.calls.flat().join(' ')).not.toMatch(/hydrat|attribute/i);
+        act(() => reactRoot.unmount());
+    });
+
     it('becomes a no-op once the island has hydrated', async () => {
         // Arrange
         const { container, element } = serverRender();

@@ -331,6 +331,8 @@ function DetailVariant({
                             }
                             onClick={() => onOpen(0)}
                             dataAttributes={{ 'data-gallery-index': '0' }}
+                            // The bridge may stamp data-gallery-loading/aria-busy before hydration.
+                            suppressHydrationWarning
                         />
                     </div>
                 )}
