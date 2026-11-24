@@ -153,9 +153,8 @@ export type RenderCampaignEmailFn = (input: {
     unsubscribeUrl: string;
     isTest?: boolean;
     /**
-     * Campaign attribution (HOS-2359): UTMs on own-origin links and, when
-     * `pixelSlug` is set, the Umami open pixel. The production renderer applies it
-     * with `applyEmailAttribution` from `@repo/email`.
+     * Campaign attribution (HOS-2359): UTMs on own-origin links. The production
+     * renderer applies it with `applyEmailAttribution` from `@repo/email`.
      */
     attribution: CampaignEmailAttribution;
 }) => string | Promise<string>;
@@ -205,7 +204,7 @@ export interface SingleEmailTransport {
         subject: string;
         react: OpaqueReactElement;
         from?: string;
-        /** Campaign attribution (HOS-2359). A test send never carries a pixel. */
+        /** Campaign attribution (HOS-2359). */
         attribution: CampaignEmailAttribution;
     }): Promise<{ messageId: string }>;
 }
@@ -647,7 +646,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                 // ----------------------------------------------------------------
                 const bodyHtml = this.renderTiptapEmailFn({ content: campaign.bodyJson });
                 // HOS-2359: one attribution for the whole campaign (slugs stored at
-                // dispatch; a pre-HOS-2359 campaign recomputes the slug, no pixel).
+                // dispatch; a pre-HOS-2359 campaign recomputes the slug).
                 const attribution = resolveCampaignEmailAttribution({ campaign });
 
                 // ----------------------------------------------------------------
@@ -1006,7 +1005,7 @@ export class NewsletterDeliveryService extends BaseService implements INewslette
                     to: validated.toEmail,
                     subject: `[PRUEBA] ${campaign.subject}`,
                     react: emailElement,
-                    // HOS-2359: campaign UTMs, never a pixel (a test send is not an open).
+                    // HOS-2359: campaign UTMs.
                     attribution: buildCampaignTestSendAttribution({ campaign })
                 });
 

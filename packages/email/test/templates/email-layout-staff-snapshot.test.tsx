@@ -26,8 +26,7 @@ import { EmailLayout } from '../../src/templates/email-layout.js';
 
 const ATTRIBUTION = {
     medium: 'transactional',
-    templateKey: 'test.layout',
-    includePixel: false
+    templateKey: 'test.layout'
 } as const;
 
 /** The AC-4.2 marker, the only byte the staff variant adds to the frozen markup. */

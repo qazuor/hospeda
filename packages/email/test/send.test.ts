@@ -13,8 +13,7 @@ import { sendEmail } from '../src/send.js';
 
 const TEST_ATTRIBUTION = {
     medium: 'transactional',
-    templateKey: 'auth.reset-password',
-    includePixel: true
+    templateKey: 'auth.reset-password'
 } as const;
 
 const TEST_CLIENT: EmailClient = {
@@ -177,8 +176,7 @@ describe('sendEmail', () => {
         it('should forward the attribution into the Brevo body (HOS-2359)', async () => {
             // Arrange
             configureEmailAssets({
-                siteUrl: 'https://hospeda.com.ar',
-                pixelBaseUrl: 'https://pulso.hospeda.com.ar'
+                siteUrl: 'https://hospeda.com.ar'
             });
             fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
 
@@ -194,10 +192,38 @@ describe('sendEmail', () => {
 
             // Assert
             const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
-            expect(body.htmlContent).toContain(
-                '<img src="https://pulso.hospeda.com.ar/p/email-auth-reset-password"'
-            );
+            expect(body.htmlContent).not.toContain('/p/email-');
             expect(body.textContent).toBe('rendered plain text');
+        });
+
+        it('tags a transactional send with its template key in the Brevo body (HOS-2583)', async () => {
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Hello',
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
+            });
+
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.tags).toEqual([`template:${TEST_ATTRIBUTION.templateKey}`]);
+        });
+
+        it('adds no template tag to a campaign send (HOS-2583)', async () => {
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Hello',
+                react: mockReact,
+                attribution: { medium: 'campaign', campaignSlug: 'otono-1' }
+            });
+
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.tags).toBeUndefined();
         });
 
         it('should pass the rendered HTML and subject to the provider', async () => {

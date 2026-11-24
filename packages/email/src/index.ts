@@ -17,7 +17,7 @@ export type {
     EmailAttribution
 } from './attribution.js';
 // Attribution (HOS-2359)
-export { applyEmailAttribution, buildEmailPixelUrl, UMAMI_PIXEL_PATH } from './attribution.js';
+export { applyEmailAttribution } from './attribution.js';
 export type { CreateEmailClientInput, EmailClient } from './client.js';
 // Client
 export { createEmailClient } from './client.js';
@@ -44,7 +44,6 @@ export {
     resetEmailAssets,
     resolveEmailAssetUrl,
     resolveEmailIsotipoUrl,
-    resolveEmailPixelBaseUrl,
     resolveEmailSiteOrigin
 } from './email-assets.js';
 export type { RenderEmailBodiesInput, RenderedEmailBodies } from './render.js';
@@ -55,6 +54,11 @@ export type { SendEmailInput, SendEmailResult } from './send.js';
 export { sendEmail } from './send.js';
 // Subjects
 export { RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT } from './subjects.js';
+export {
+    buildEmailTemplateTag,
+    EMAIL_TEMPLATE_TAG_PREFIX,
+    parseEmailTemplateTag
+} from './template-tag.js';
 export type {
     EmailFooterLink,
     EmailLayoutProps,

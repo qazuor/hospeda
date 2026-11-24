@@ -10,7 +10,6 @@ export type NotificationEmailAttribution =
     | {
           readonly medium: 'transactional';
           readonly templateKey: EmailCatalogKey;
-          readonly includePixel: boolean;
       }
     | Extract<EmailAttribution, { readonly medium: 'campaign' }>;
 
@@ -25,8 +24,8 @@ export interface SendEmailInput {
     /** React Email component to render */
     react: ReactElement;
     /**
-     * Who the email is attributed to: UTMs on links to our web domain and the
-     * Umami open pixel (HOS-2359). Required so every sender names its catalog key.
+     * Who the email is attributed to: UTMs on links to our web domain
+     * (HOS-2359). Required so every sender names its catalog key.
      */
     attribution: NotificationEmailAttribution;
     /**

@@ -31,8 +31,7 @@ const { sendAppEmail } = await import('../../src/utils/email-sender');
 
 const TEST_ATTRIBUTION = {
     medium: 'transactional',
-    templateKey: 'auth.reset-password',
-    includePixel: true
+    templateKey: 'auth.reset-password'
 } as const;
 
 describe('sendAppEmail', () => {

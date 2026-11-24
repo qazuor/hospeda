@@ -46,7 +46,7 @@ const DEFAULT_BASE_URL = 'https://api.brevo.com/v3';
  *     to,
  *     subject,
  *     react,
- *     attribution: { medium: 'transactional', templateKey: 'auth.reset-password', includePixel: true }
+ *     attribution: { medium: 'transactional', templateKey: 'auth.reset-password' }
  * });
  * ```
  */

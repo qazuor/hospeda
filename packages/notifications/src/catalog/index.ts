@@ -18,12 +18,6 @@ export {
     readInputLocale
 } from './define-entry.js';
 export { buildEmailCatalogLayout } from './layout-declarations.js';
-export {
-    buildEmailPixelManifest,
-    EMAIL_PIXEL_MANIFEST_COMMAND,
-    EMAIL_PIXEL_MANIFEST_PATH,
-    type EmailPixelManifestEntry
-} from './pixel-manifest.js';
 export { type BuildPreviewOutboxRowInput, buildPreviewOutboxRow } from './preview-outbox-row.js';
 export {
     EmailCatalogEntryNotFoundError,

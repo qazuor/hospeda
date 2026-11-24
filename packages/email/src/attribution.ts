@@ -1,6 +1,7 @@
 /**
- * Email attribution: UTMs on links to our web domain and one Umami open pixel per
- * email (HOS-2359 §6.A).
+ * Email attribution: UTMs on links to our web domain (HOS-2359 §6.A). Opens are NOT
+ * measured by an image pixel (HOS-2583): Brevo's image proxy hides them from Umami, so
+ * they come from Brevo's `opened` webhook instead.
  *
  * {@link applyEmailAttribution} is the single implementation. `renderEmailBodies`
  * calls it after rendering, the newsletter batch renderer calls it on its HTML, and
@@ -10,14 +11,13 @@
  */
 import {
     buildEmailTemplateCampaign,
-    buildEmailTemplatePixelSlug,
     buildOwnWebOrigins,
     InvalidUtmParamsError,
     isOwnWebUrl,
     withUtm
 } from '@repo/analytics';
 import { createLogger } from '@repo/logger';
-import { resolveEmailPixelBaseUrl, resolveEmailSiteOrigin } from './email-assets.js';
+import { resolveEmailSiteOrigin } from './email-assets.js';
 
 const logger = createLogger('email-attribution');
 
@@ -25,28 +25,18 @@ const logger = createLogger('email-attribution');
  * Who an email is attributed to.
  *
  * - `transactional`: a catalog template, identified by its catalog key
- *   (`<sendPath>.<id>`). `includePixel: false` is for renders that must never count
- *   as an open (the admin preview).
- * - `campaign`: a newsletter campaign. `pixelSlug: null` renders no pixel (test
- *   sends, or a campaign whose pixel could not be provisioned).
+ *   (`<sendPath>.<id>`).
+ * - `campaign`: a newsletter campaign.
  */
 export type EmailAttribution =
     | {
           readonly medium: 'transactional';
           readonly templateKey: string;
-          readonly includePixel: boolean;
       }
     | {
           readonly medium: 'campaign';
           readonly campaignSlug: string;
-          readonly pixelSlug: string | null;
       };
-
-/**
- * Path segment of Umami's public pixel endpoint. Measured on Umami 3.5.0 (HOS-2359
- * M-2): `GET /p/<slug>` answers a 1x1 GIF and counts one view.
- */
-export const UMAMI_PIXEL_PATH = '/p';
 
 /** `utm_content` of a link with no explicit slot. */
 const DEFAULT_LINK_SLOT = 'body-link';
@@ -63,27 +53,10 @@ export interface ApplyEmailAttributionInput {
 
 /** Output of {@link applyEmailAttribution}. */
 export interface ApplyEmailAttributionResult {
-    /** HTML with decorated links and, when due, the pixel. */
+    /** HTML with decorated links. */
     readonly html: string;
-    /** Text part with the same links decorated (never a pixel). Absent when no text was given. */
+    /** Text part with the same links decorated. Absent when no text was given. */
     readonly text?: string;
-}
-
-/**
- * Absolute URL of an Umami pixel. It carries no query string and is identical for
- * every recipient of the same template or campaign (OD-7: no recipient id).
- *
- * @param input - Pixel origin (no trailing slash) and slug
- * @returns The pixel URL
- */
-export function buildEmailPixelUrl({
-    pixelBaseUrl,
-    slug
-}: {
-    readonly pixelBaseUrl: string;
-    readonly slug: string;
-}): string {
-    return `${pixelBaseUrl}${UMAMI_PIXEL_PATH}/${slug}`;
 }
 
 const HTML_DECODE: Readonly<Record<string, string>> = {
@@ -132,9 +105,6 @@ let warnedInvalidUtm = false;
  *    links are left byte-identical, and so is a link that already has UTMs.
  * 2. The text part gets the same replacements (decoded URLs, longest first, only
  *    whole URLs).
- * 3. When a pixel origin is configured (`https:` only) and the attribution asks for
- *    one, exactly one 1x1 `<img>` is inserted before `</body>` (appended when there
- *    is none). The text part never contains it.
  *
  * Never throws: a link whose UTM combination the vocabulary rejects is left as is
  * and logged once, so attribution can never stop an email from being sent.
@@ -153,7 +123,7 @@ export function applyEmailAttribution(
             : attribution.campaignSlug;
     const replacements = new Map<string, string>();
 
-    let html = input.html.replace(/<a\s[^>]*>/gi, (tag) => {
+    const html = input.html.replace(/<a\s[^>]*>/gi, (tag) => {
         const hrefMatch = /\shref="([^"]*)"/.exec(tag);
         if (!hrefMatch) {
             return tag;
@@ -196,22 +166,6 @@ export function applyEmailAttribution(
         }
         return tag.replace(hrefMatch[0], ` href="${encodeAttribute(decorated)}"`);
     });
-
-    const pixelBaseUrl = resolveEmailPixelBaseUrl();
-    const pixelSlug =
-        attribution.medium === 'transactional'
-            ? attribution.includePixel
-                ? buildEmailTemplatePixelSlug({ key: attribution.templateKey })
-                : null
-            : attribution.pixelSlug;
-    if (pixelBaseUrl !== null && pixelSlug !== null) {
-        const pixel = `<img src="${encodeAttribute(buildEmailPixelUrl({ pixelBaseUrl, slug: pixelSlug }))}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0" />`;
-        const bodyClose = html.toLowerCase().lastIndexOf('</body>');
-        html =
-            bodyClose === -1
-                ? `${html}${pixel}`
-                : `${html.slice(0, bodyClose)}${pixel}${html.slice(bodyClose)}`;
-    }
 
     if (input.text === undefined) {
         return { html };
