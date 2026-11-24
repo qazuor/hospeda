@@ -75,6 +75,14 @@ export function MessageBubble({
             data-delivery={delivery}
         >
             <div className={cx(styles.bubble, delivery === 'failed' && styles.failed)}>
+                {side !== 'system' && (
+                    <span
+                        className={styles.sender}
+                        aria-hidden="true"
+                    >
+                        {senderLabel}
+                    </span>
+                )}
                 <p className={styles.body}>
                     <span className={styles.visuallyHidden}>{`${senderLabel}: `}</span>
                     {body}

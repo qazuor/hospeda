@@ -27,9 +27,11 @@ describe('mi-cuenta/consultas/[conversationId].astro — on the account kit (HOS
         expect(source).toMatch(/Astro\.request\.headers\.get\(\s*['"]cookie['"]\s*\)/);
     });
 
-    it('renders ONE PageHeader with a labelled back link, and no hand-made h1', () => {
+    it('renders ONE PageHeader with a labelled kit LinkButton back action, and no hand-made h1', () => {
         expect(markup.match(/<PageHeader\b/g)).toHaveLength(1);
-        expect(markup).toContain('back={back}');
+        expect(markup).toContain(
+            '<LinkButton slot="actions" variant="secondary" href={back.href}>'
+        );
         expect(source).toContain("label: t('conversations.thread.backToInbox')");
         expect(markup).not.toMatch(/<h1[\s>]/);
     });

@@ -18,3 +18,10 @@
     font: var(--app-meta);
     color: var(--core-muted-foreground);
 }
+
+/* Inside the messages Section the composer is part of the card, not a sticky bar. */
+.panel .composer {
+    position: static;
+    margin-block-start: var(--space-4);
+    padding-block-end: var(--space-3);
+}
