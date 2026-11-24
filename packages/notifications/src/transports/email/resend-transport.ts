@@ -9,6 +9,7 @@ import type {
     SendEmailInput,
     SendEmailResult
 } from './email-transport.interface.js';
+import { buildEmailTemplateTag } from './template-tag.js';
 
 const attributionLogger = createLogger('email-attribution');
 const warnedTemplateKeys = new Set<string>();
@@ -18,8 +19,8 @@ const NEWSLETTER_CAMPAIGN_KEY = 'newsletter.campaign';
 
 /**
  * Logs one `warn` per process for a transactional template key that is not in the
- * email catalog (HOS-2359 §6.A.4): such a key renders a pixel no `umami:setup` run
- * creates, so its opens are lost. The per-caller tests are the real protection.
+ * email catalog (HOS-2359 §6.A.4): its UTM campaign and `template:` open tag then name
+ * a template nothing else knows. The per-caller tests are the real protection.
  */
 function warnOnUnknownTemplateKey(input: SendEmailInput): void {
     const { attribution } = input;
@@ -29,7 +30,7 @@ function warnOnUnknownTemplateKey(input: SendEmailInput): void {
     warnedTemplateKeys.add(key);
     attributionLogger.warn(
         { templateKey: key },
-        'Email sent with a template key that is not in the email catalog: its pixel does not exist'
+        'Email sent with a template key that is not in the email catalog'
     );
 }
 
@@ -60,7 +61,7 @@ function warnOnUnknownTemplateKey(input: SendEmailInput): void {
  *   to: 'user@example.com',
  *   subject: 'Welcome to Hospeda',
  *   react: <WelcomeEmail userName="John" />,
- *   attribution: { medium: 'transactional', templateKey: 'notification.welcome', includePixel: true }
+ *   attribution: { medium: 'transactional', templateKey: 'notification.welcome' }
  * });
  * ```
  */
@@ -142,9 +143,15 @@ export class BrevoEmailTransport implements EmailTransport {
                 body.replyTo = { email: input.replyTo };
             }
 
-            if (input.tags && input.tags.length > 0) {
-                // Brevo only accepts string tags; encode `name:value` pairs.
-                body.tags = input.tags.map((t) => `${t.name}:${t.value}`);
+            // Brevo only accepts string tags; encode `name:value` pairs. A transactional
+            // send also carries its catalog key (HOS-2583): Brevo echoes the tags in the
+            // `opened` webhook, which is how an open is attributed to a template.
+            const tags = (input.tags ?? []).map((t) => `${t.name}:${t.value}`);
+            if (input.attribution.medium === 'transactional') {
+                tags.push(buildEmailTemplateTag({ templateKey: input.attribution.templateKey }));
+            }
+            if (tags.length > 0) {
+                body.tags = tags;
             }
 
             if (input.attachments && input.attachments.length > 0) {
