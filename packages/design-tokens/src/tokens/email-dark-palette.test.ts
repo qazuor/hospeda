@@ -1,7 +1,7 @@
 /**
  * @file tokens/email-dark-palette.test.ts
  * @description HOS-2565 PR-4 — format and readability of the dark-mode email overrides.
- * The values are sampled from Gmail's inversion, not derived from tokens, so the
+ * The values come from the approved mockup's dark block, not from tokens, so the
  * guard here is shape plus contrast of every text pair that ships.
  */
 
@@ -37,7 +37,8 @@ const TEXT_PAIRS: readonly (readonly [EmailDarkPaletteRole, EmailDarkPaletteRole
     ['calloutDangerText', 'calloutDangerBackground'],
     ['optionSuccessBandText', 'optionSuccessBand'],
     ['optionInfoBandText', 'optionInfoBand'],
-    ['buttonPrimaryText', 'buttonPrimaryBackground'],
+    ['text', 'optionBackground'],
+    ['heading', 'optionBackground'],
     ['buttonSecondaryText', 'buttonSecondaryBackground'],
     ['footerText', 'footerBackground'],
     ['footerMutedText', 'footerBackground'],
