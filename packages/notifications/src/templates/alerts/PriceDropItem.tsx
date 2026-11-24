@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { Button } from '@repo/email';
+import { Button, EMAIL_TINTED_BOX_CLASS } from '@repo/email';
 import type { PriceDropMatch } from '../../types/alert.types.js';
 import { formatCurrency } from '../utils/index.js';
 import { ALERT_DIGEST_SITE_BASE_URL } from './constants.js';
@@ -41,6 +41,7 @@ export function PriceDropItem({ item }: PriceDropItemProps) {
 
     return (
         <Section
+            className={EMAIL_TINTED_BOX_CLASS}
             style={styles.itemBox}
             data-card="list"
         >

@@ -1,5 +1,5 @@
 import { Link, Section, Text } from '@react-email/components';
-import { Button, EmailLayout } from '@repo/email';
+import { Button, EMAIL_TINTED_BOX_CLASS, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /** Locales this digest is written in (owner decision, HOS-2101). */
@@ -118,6 +118,7 @@ export function AiQuestionsWeeklyDigest({
                 return (
                     <Section
                         key={listing.panelUrl}
+                        className={EMAIL_TINTED_BOX_CLASS}
                         style={styles.listingBox}
                         data-card="list"
                     >
