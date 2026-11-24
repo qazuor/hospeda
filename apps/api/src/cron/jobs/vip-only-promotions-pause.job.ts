@@ -120,6 +120,13 @@ export async function runVipOnlyPromotionsPause(input: {
     );
     const { digestLocale } = await import('../../services/ai-questions-digest.helpers.js');
     const { VerticalEnum } = await import('@repo/schemas');
+    // A Record keyed by every promotion entity type: a new one fails to compile here.
+    const VERTICAL_BY_ENTITY_TYPE: Readonly<
+        Record<ActiveVipPromotionRow['entityType'], VerticalEnum>
+    > = {
+        accommodation: VerticalEnum.ACCOMMODATION,
+        venue: VerticalEnum.VENUE
+    };
     const { deps, now } = input;
 
     const active = await deps.findActiveVipPromotions();
@@ -132,8 +139,8 @@ export async function runVipOnlyPromotionsPause(input: {
     let readErrors = 0;
     const pausedByOwner = new Map<string, string[]>();
     for (const [key, rows] of byOwnerVertical) {
-        const [ownerId = '', entityType] = key.split('|');
-        const vertical = entityType === 'venue' ? VerticalEnum.VENUE : VerticalEnum.ACCOMMODATION;
+        const [ownerId = ''] = key.split('|');
+        const vertical = VERTICAL_BY_ENTITY_TYPE[rows[0]?.entityType ?? 'accommodation'];
         let holds: boolean;
         try {
             holds = await deps.holdsVipOnlyKey({ userId: ownerId, vertical });

@@ -34,6 +34,29 @@ export interface VipDigestRecipient {
     readonly settings: unknown;
 }
 
+/** The public place of one promotion, by its entity type (exhaustive switch, G1). */
+function placeOf(input: {
+    readonly promotion: {
+        readonly entityType: string;
+        readonly entityId?: string | null;
+        readonly accommodationId?: string | null;
+    };
+    readonly places: PromotionPlaces;
+}): { readonly slug: string; readonly name: string } | undefined {
+    const { promotion, places } = input;
+    switch (promotion.entityType) {
+        case 'venue':
+            return promotion.entityId ? places.venues.get(promotion.entityId) : undefined;
+        case 'accommodation': {
+            const id = promotion.entityId ?? promotion.accommodationId;
+            return id ? places.accommodations.get(id) : undefined;
+        }
+        default:
+            // Only accommodation and venue promotions exist; anything else has no place.
+            return undefined;
+    }
+}
+
 /**
  * The promotions first activated in `[from, to)` and still current at `now`, up to
  * `limit`, with their public places, plus the total.
@@ -61,12 +84,7 @@ export async function readWeekPromotions(input: {
     });
     return {
         rows: items.map((promotion) => {
-            const id =
-                promotion.entityType === 'venue'
-                    ? promotion.entityId
-                    : (promotion.entityId ?? promotion.accommodationId);
-            const map = promotion.entityType === 'venue' ? places.venues : places.accommodations;
-            const place = id ? map.get(id) : undefined;
+            const place = placeOf({ promotion, places });
             return { promotion, place: place ? { slug: place.slug, name: place.name } : null };
         }),
         total
