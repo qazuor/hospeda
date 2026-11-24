@@ -87,7 +87,8 @@ describe('AllianceClaimInvite email template (HOS-278)', () => {
         it('should not render an unsubscribe link (transactional email)', () => {
             const html = renderToStaticMarkup(AllianceClaimInvite(validProps));
 
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 PR-4: no preferences link for this reader.
+            expect(html).not.toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
     });

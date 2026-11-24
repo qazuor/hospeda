@@ -35,10 +35,7 @@ export function TrialWinBack1Day({
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
-        <EmailLayout
-            previewText="Tu ficha quedó lista; falta un paso para volver a verla online"
-            footerLink="none"
-        >
+        <EmailLayout previewText="Tu ficha quedó lista; falta un paso para volver a verla online">
             <Heading>Tu publicación te está esperando</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

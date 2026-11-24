@@ -101,7 +101,10 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
     });
     const panelHref = adminPanelHref({ adminUrl: props.adminUrl, path: '/billing/settings' });
     return (
-        <EmailLayout previewText={subject}>
+        <EmailLayout
+            variant="staff"
+            previewText={subject}
+        >
             <Heading>{subject}</Heading>
             <Text>
                 La batería de vigilancia midió al proveedor ({ACCOUNT_LABEL[props.account]}) el{' '}

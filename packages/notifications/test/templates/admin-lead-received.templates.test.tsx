@@ -93,7 +93,8 @@ describe('AdminLeadReceived email template (H-62 / H-148)', () => {
         // be offering to restore the bug it exists to close.
         const html = renderToStaticMarkup(AdminLeadReceived(alliance));
 
-        expect(html).not.toContain('Administrar preferencias de notificaciones');
+        // HOS-2565 PR-4: no preferences link for this reader.
+        expect(html).not.toContain('data-layout-link="preferences"');
         expect(html).not.toContain('unsubscribe_url');
     });
 });

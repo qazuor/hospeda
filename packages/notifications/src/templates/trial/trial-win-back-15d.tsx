@@ -18,10 +18,7 @@ export function TrialWinBack15Days({
 }: TrialSeriesEmailProps) {
     const endDate = formatDate({ dateString: trialEndDate });
     return (
-        <EmailLayout
-            previewText="Tu publicación puede volver cuando quieras"
-            footerLink="none"
-        >
+        <EmailLayout previewText="Tu publicación puede volver cuando quieras">
             <Heading>Tu publicación puede volver cuando quieras</Heading>
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
             {verticals && verticals.length > 1 ? (

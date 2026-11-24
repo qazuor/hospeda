@@ -120,7 +120,10 @@ export function AiCostThresholdAlert({
     const scopeLabel = scope === 'global' ? 'Global' : `Funcionalidad: ${feature ?? 'desconocida'}`;
 
     return (
-        <EmailLayout previewText={`[Admin] Alerta de costo IA — ${thresholdPct}% del presupuesto`}>
+        <EmailLayout
+            variant="staff"
+            previewText={`[Admin] Alerta de costo IA — ${thresholdPct}% del presupuesto`}
+        >
             <Section style={styles.adminHeader}>
                 <Text style={styles.adminBadge}>NOTIFICACIÓN ADMINISTRATIVA</Text>
                 <Text style={getSeverityStyle(severity)}>{bandLabel}</Text>

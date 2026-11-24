@@ -63,7 +63,10 @@ export function AdminLeadReceived({
     submittedAtLabel
 }: AdminLeadReceivedProps) {
     return (
-        <EmailLayout previewText={`${programLabel} — ${contactName}`}>
+        <EmailLayout
+            variant="staff"
+            previewText={`${programLabel} — ${contactName}`}
+        >
             <Heading>Nuevo lead de {programLabel}</Heading>
 
             <Text style={styles.paragraph}>

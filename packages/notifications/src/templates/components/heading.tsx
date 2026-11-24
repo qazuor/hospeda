@@ -1,4 +1,5 @@
 import { Heading as EmailHeading } from '@react-email/components';
+import { SectionBar, type SectionBarTone } from '@repo/email';
 import type React from 'react';
 
 /**
@@ -7,14 +8,31 @@ import type React from 'react';
 export interface HeadingProps {
     /** Heading text/content */
     children: React.ReactNode;
+    /**
+     * Draws the small section bar above the heading (HOS-2565 PR-4). Teal is the
+     * default section accent; orange is the occasional one. Absent: no bar. The
+     * first heading of a mail needs none: the user layout already draws it.
+     */
+    readonly accent?: SectionBarTone;
 }
 
 /**
  * Section heading component for email templates
  * Provides consistent styling for headings across all email types
  */
-export function Heading({ children }: HeadingProps) {
-    return <EmailHeading style={styles.heading}>{children}</EmailHeading>;
+export function Heading({ children, accent }: HeadingProps) {
+    return (
+        <>
+            {accent ? (
+                <SectionBar
+                    tone={accent}
+                    spaceAbove={16}
+                    spaceBelow={10}
+                />
+            ) : null}
+            <EmailHeading style={styles.heading}>{children}</EmailHeading>
+        </>
+    );
 }
 
 const styles = {

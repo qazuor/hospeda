@@ -104,7 +104,8 @@ describe('SubscriptionAccessEndingSoon email template (SPEC-147 T-010)', () => {
     describe('transactional behaviour', () => {
         it('should not render an unsubscribe link (transactional email)', () => {
             const html = renderToStaticMarkup(SubscriptionAccessEndingSoon(validProps));
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
     });

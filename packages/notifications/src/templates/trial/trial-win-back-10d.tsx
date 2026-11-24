@@ -33,10 +33,7 @@ export function TrialWinBack10Days({
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
-        <EmailLayout
-            previewText="No tenés que cargar nada de nuevo: está todo como lo dejaste"
-            footerLink="none"
-        >
+        <EmailLayout previewText="No tenés que cargar nada de nuevo: está todo como lo dejaste">
             <Heading>Tus fotos y tus datos siguen guardados</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

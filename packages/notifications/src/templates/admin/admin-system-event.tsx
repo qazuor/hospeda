@@ -24,7 +24,10 @@ export function AdminSystemEvent({ recipientName, severity, eventDetails }: Admi
     const message = eventDetails.message as string | undefined;
 
     return (
-        <EmailLayout previewText={`[Admin] Evento del sistema: ${eventType}`}>
+        <EmailLayout
+            variant="staff"
+            previewText={`[Admin] Evento del sistema: ${eventType}`}
+        >
             <Section style={styles.adminHeader}>
                 <Text style={styles.adminBadge}>NOTIFICACIÓN ADMINISTRATIVA</Text>
                 <SeverityBadge severity={severity} />

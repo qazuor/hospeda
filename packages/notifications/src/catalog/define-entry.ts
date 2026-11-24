@@ -121,10 +121,11 @@ export function defineEmailCatalogEntry<TInput>(
         domain: input.domain,
         audience: input.audience,
         wired: input.wired ?? true,
-        scenarios: scenarios.map(({ id, label, locale }) => ({
+        scenarios: scenarios.map(({ id, label, locale, recipientVerticals }) => ({
             id,
             label,
-            locale: locale ?? 'es'
+            locale: locale ?? 'es',
+            ...(recipientVerticals ? { recipientVerticals } : {})
         })),
         renderScenario: async ({ scenarioId, deps }) => {
             const scenario = scenarios.find((candidate) => candidate.id === scenarioId);

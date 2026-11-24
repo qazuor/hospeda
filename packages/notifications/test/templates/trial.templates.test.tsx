@@ -107,15 +107,14 @@ describe('Trial Email Templates', () => {
             expect(html).toContain('https://hospeda.com.ar/precios');
         });
 
-        it('should not link to the preferences page yet (HOS-2519 OQ-2)', () => {
+        it('should link to the preferences page (HOS-2565 §8.3)', () => {
             // Arrange & Act
             const html = renderToStaticMarkup(TrialEndingReminder(validProps));
 
             // Assert
-            // REMINDER category, but the web preferences page does not drive
-            // REMINDER opt-outs today, so the footer carries no preferences link
-            // and never the old unresolved {{unsubscribe_url}} placeholder.
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: every account holder's mail carries the preferences
+            // link, and never the old unresolved {{unsubscribe_url}} placeholder.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
 

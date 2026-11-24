@@ -7,14 +7,20 @@
  * - AC-2.5: no element outside a `data-callout-tone` cell or an allowlisted list card
  *   (tagged `data-card="list"` in PriceDropItem, PromoOfferItem and the AI digest) has a
  *   `border-left` style. A hand-rolled callout reappearing in any template shows up here.
- * - AC-2.6: exactly one `<style>` element, holding exactly the single `.hospeda-btn`
- *   media rule, and every `<a>` produced by `Button` has `class="hospeda-btn"` and an
- *   inline `display:inline-block`.
+ * - AC-2.6: exactly one `<style>` element. Staff mails hold exactly the single
+ *   `.hospeda-btn` media rule; user mails hold the user layout block, which starts with
+ *   that same rule (HOS-2565 PR-4). Every `<a>` produced by `Button` has the
+ *   `hospeda-btn` class and an inline `display:inline-block`.
  *
  * AC-2.9 (size, one `<html lang="es">`, no email-unsafe CSS) is covered by
  * `email-catalog-layout.test.ts` and `email-catalog-render-all.test.ts`.
  */
-import { EMAIL_BUTTON_CLASS, EMAIL_BUTTON_MEDIA_RULE } from '@repo/email';
+import {
+    EMAIL_BUTTON_CLASS,
+    EMAIL_BUTTON_MEDIA_RULE,
+    EMAIL_BUTTON_SECONDARY_CLASS,
+    EMAIL_USER_STYLE_BLOCK
+} from '@repo/email';
 import {
     EMAIL_CATALOG,
     type EmailCatalogRenderDeps,
@@ -32,6 +38,8 @@ const deps: EmailCatalogRenderDeps = buildEmailPreviewDeps({
 const cases = EMAIL_CATALOG.flatMap((entry) =>
     entry.scenarios.map((scenario) => [entry.key, scenario.id] as const)
 );
+
+const audienceOf = new Map(EMAIL_CATALOG.map((entry) => [entry.key as string, entry.audience]));
 
 /** Opening tags of every element whose inline style carries a `border-left`. */
 function bordersLeft({ html }: { readonly html: string }): readonly string[] {
@@ -69,9 +77,14 @@ describe('email catalog: shared Callout and Button on every scenario (HOS-2565 P
 
         // Assert
         expect(styleBlocks).toHaveLength(1);
-        expect(styleBlocks[0]?.[1]).toBe(EMAIL_BUTTON_MEDIA_RULE);
+        expect(styleBlocks[0]?.[1]).toBe(
+            audienceOf.get(key) === 'user' ? EMAIL_USER_STYLE_BLOCK : EMAIL_BUTTON_MEDIA_RULE
+        );
+        expect(EMAIL_USER_STYLE_BLOCK.startsWith(EMAIL_BUTTON_MEDIA_RULE)).toBe(true);
         for (const anchor of buttonAnchors) {
-            expect(anchor, anchor).toContain(`class="${EMAIL_BUTTON_CLASS}"`);
+            expect(anchor, anchor).toMatch(
+                new RegExp(`class="${EMAIL_BUTTON_CLASS}( ${EMAIL_BUTTON_SECONDARY_CLASS})?"`)
+            );
             expect(anchor, anchor).toContain('display:inline-block');
         }
     });
@@ -117,7 +130,7 @@ describe('email catalog: shared Callout and Button on every scenario (HOS-2565 P
             for (const match of html.matchAll(/data-callout-tone="(\w+)"/g)) {
                 tones.add(match[1] ?? '');
             }
-            if (/class="hospeda-btn"[^>]*style="[^"]*background-color:#ffffff/.test(html)) {
+            if (html.includes(`class="${EMAIL_BUTTON_CLASS} ${EMAIL_BUTTON_SECONDARY_CLASS}"`)) {
                 secondary += 1;
             }
         }
