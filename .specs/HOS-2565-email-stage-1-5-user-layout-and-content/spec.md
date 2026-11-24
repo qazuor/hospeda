@@ -329,15 +329,15 @@ The owner approved the design on 2026-11-23 from the HTML mockup and screenshots
 
 ### 8.3 User body and footer
 
-- Page background `emailPalette.userPageBackground` (`brandSecondary`). The card keeps square corners. Content padding `8px 40px 44px` (20px sides under 480px through the style block).
-- An intro row above the body: a small teal section bar (36x4) right above the mail's first title and, on the right, the illustration the mail declares. Six PNG illustrations exist: `payments`, `listings`, `account`, `plan`, `messages`, `alerts`. Absent means none. Later section titles take a bar through `Heading accent="teal" | "orange"` (orange is the occasional accent).
+- Page background `emailPalette.userPageBackground` (`brandSecondary`). The card keeps square corners. Content padding `28px 40px 44px` (20px sides under 480px through the style block).
+- The mail's first title row (`EmailTitle` in `@repo/email`, which the notifications `Heading` renders): a small teal section bar (36x4) above the title and, to its RIGHT on the same row and vertically centered, the illustration the mail declares (112px, 84px under 480px). The layout opens a slot per render and the first title claims it; outside the user layout `EmailTitle` is a plain heading. Review of PR #4740: a separate intro row left a large empty gap above the title. Six PNG illustrations exist: `payments`, `listings`, `account`, `plan`, `messages`, `alerts`. Absent means none. Later section titles take a bar through `Heading accent="teal" | "orange"` (orange is the occasional accent).
 - Declarations are data, never a branch per template: `packages/notifications/src/catalog/layout-declarations.ts` holds `EMAIL_DOMAIN_LAYOUT` (a full `Record<EmailCatalogDomain, ...>`) and per-key overrides `EMAIL_KEY_LAYOUT`. The transport and the previewer pass them through `renderEmailBodies({ layout })`, which fills a React context the layout reads, so templates stay untouched.
 - Buttons (shared by both variants): primary `forest[500]` `#007742` with white text (the mockup's `#1b9247` is 4.0:1 with white and fails AA); secondary light blue, background `cyan[100]` `#bdefff`, border `#009fc1`, text `cyan[700]` `#00495a` (nearest tokens to the brief's `#ddf7ff`/`#00566b`, both AA).
 - Callouts (shared): existing colors, a 6px left border and a 20px line icon PNG in the tone's border color (ⓘ ✓ ⚠ ✕), skipped in the text part.
 - `OptionCard` (`@repo/email`): a 6px top stripe and a tinted "OPCIÓN 1/2" band, tones success and info. Only `plan_downgrade_limit_warning` uses it.
 - Footer on `userFooterBackground` (`sky[100]`) with a wave on top, in this order:
-  1. "¿Necesitás ayuda?": Centro de ayuda, Contacto, WhatsApp;
-  2. "Preguntas frecuentes": 3-4 help articles declared per domain or key, URL `/es/mi-cuenta/ayuda/<id>/`, title from the article frontmatter through `@repo/help`. Unknown ids are skipped at render and fail `email-layout-declarations.test.ts`; without a declaration the default set (`help-center`, `publish-requirements`, `change-plan`, `pause-resume`);
+  1. "¿Necesitás ayuda?": Centro de ayuda, Contacto, WhatsApp. "Centro de ayuda" is `/es/mi-cuenta/ayuda/` for account holders and the public `/es/preguntas-frecuentes/` when `footerLink` is `'none'`, because `/es/mi-cuenta/ayuda/*` redirects to login;
+  2. "Preguntas frecuentes" (account holders only: hidden entirely when `footerLink` is `'none'`, since every article sits behind the login wall): 3-4 help articles declared per domain or key, URL `/es/mi-cuenta/ayuda/<id>/`, title from the article frontmatter through `@repo/help`. Unknown ids are skipped at render and fail `email-layout-declarations.test.ts`; without a declaration the default set (`help-center`, `publish-requirements`, `change-plan`, `pause-resume`);
   3. "Nuestros canales": Seguridad, Web and Contacto cards;
   4. the trust strip (local support, safe payments, no hidden fees);
   5. the logo, with Instagram, Facebook and X icons only (`BRAND_SOCIAL_PROFILES`; YouTube stays on the web);
@@ -355,12 +355,12 @@ The owner approved the design on 2026-11-23 from the HTML mockup and screenshots
   - Targets: `'publications'` → "Gestioná tus publicaciones", `/es/mi-cuenta/publicaciones/`; `'account'` → "Gestioná tu cuenta", `/es/mi-cuenta/`.
   - The previewer takes the verticals from the scenario (`EmailScenario.recipientVerticals`); `notification.payment_success` has one scenario per case (publications, partner-only, tourist). The transport takes `SendEmailInput.recipientVerticals`.
   - **Not wired yet:** no production sender passes `recipientVerticals`, so real sends show "Gestioná tu cuenta" (the specified fallback) until a follow-up resolves the verticals once per send from the owner summary source.
-  - A static test fails if `packages/email/src` compares a `VerticalEnum` member (`=== VerticalEnum.` or `case VerticalEnum.`).
+  - A static test fails if the email layout path (`packages/email/src/templates/user-layout/**`, the dispatcher, `EmailTitle`, and the notifications `layout-declarations.ts`, `render-scenario.ts` and `resend-transport.ts`) branches on a vertical: `=== VerticalEnum.`, `VerticalEnum.X ===`, `case VerticalEnum.`, `.includes(VerticalEnum.`, or `case`/`===`/`!==` against any `VerticalEnum` value as a string literal.
 - The newsletter campaign keeps its in-body unsubscribe. The layout adds nothing that unsubscribes (D13).
 
 ### 8.4 Dark mode (corrected by the owner, 2026-11-23)
 
-- The user variant declares `<meta name="color-scheme" content="light dark">` and `supported-color-schemes`, and ships ONE `@media (prefers-color-scheme: dark)` block inside its single `<style>` (`EMAIL_USER_STYLE_BLOCK`), driven by classes.
+- The user variant declares `<meta name="color-scheme" content="light dark">` and `supported-color-schemes`, and ships ONE `@media (prefers-color-scheme: dark)` block in its OWN `<style>` (`EMAIL_USER_DARK_STYLE_BLOCK`), separate from the button and narrow-screen rules (`EMAIL_USER_STYLE_BLOCK`): Gmail drops a whole `<style>` over a selector it dislikes, and that must never take the mobile full-width button with it. The dark block uses classes only, no attribute selectors and no `*`; templates tag light tinted boxes with `EMAIL_TINTED_BOX_CLASS`.
 - **Owner correction:** the palette is the RIGHTMOST panel of `mockup-dark-compare.png`, i.e. the mockup's own dark block as Apple Mail renders it, ported as it is (`emailDarkPalette` in `@repo/design-tokens`). It does NOT imitate Gmail's forced inversion (the middle panel).
 - The wordmark turns white. No `u + .body` trick (it erased the wordmark in Gmail light mode). PNGs are transparent with mid-tone fills, so they do not glow on the dark card.
 - Clients that strip `<style>` or ignore the media query (some Gmail apps) get the correct light mail from inline styles; Gmail's own partial inversion stays an accepted residual, checked in the smoke (AC-4.8).
