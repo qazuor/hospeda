@@ -18,6 +18,12 @@ import {
     type ListingReturnedTo,
     PriceAlertClosed
 } from '../../templates/verticals/index.js';
+import {
+    isListingNoticeVertical,
+    type ListingNoticeVertical,
+    resolveAccountListingsUrl,
+    SUBSCRIPTION_PATH
+} from './account-listing-paths.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -31,12 +37,6 @@ const SUPPORT_EDIT_PART_LABELS = {
 } as const;
 
 /**
- * The verticals whose listings share the publication machine. Literal values
- * of `VerticalEnum` (`@repo/schemas`), which this package does not depend on.
- */
-export type ListingNoticeVertical = 'accommodation' | 'venue' | 'experience';
-
-/**
  * Reads the names of listings of one vertical by id, whatever their state
  * (a `PURGED` listing keeps its name). A missing id means the listing could
  * not be named, and the renderer throws instead of mailing a gap (H9).
@@ -46,14 +46,6 @@ export type ListingNamesReader = (input: {
     readonly ids: readonly string[];
 }) => Promise<ReadonlyMap<string, string>>;
 
-/** The owner's Mi Cuenta listing page, per vertical. */
-const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, string>> = {
-    accommodation: '/es/mi-cuenta/propiedades/',
-    venue: '/es/mi-cuenta/comercio/',
-    experience: '/es/mi-cuenta/comercio/'
-};
-
-const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 const RECURRING_ADDONS_PATH = '/es/mi-cuenta/complementos/';
 const VERTICAL_LABELS: Readonly<Record<ListingNoticeVertical, string>> = {
     accommodation: 'alojamiento',
@@ -71,10 +63,10 @@ function objectPayload(row: EmailOutboxRow): Record<string, unknown> {
 
 function readVertical(data: Record<string, unknown>): ListingNoticeVertical {
     const vertical = data.vertical;
-    if (typeof vertical !== 'string' || !Object.hasOwn(ACCOUNT_LISTINGS_PATH, vertical)) {
+    if (!isListingNoticeVertical(vertical)) {
         throw new TypeError('El aviso de ficha no tiene una vertical válida');
     }
-    return vertical as ListingNoticeVertical;
+    return vertical;
 }
 
 function readText(data: Record<string, unknown>, key: string): string {
@@ -180,7 +172,7 @@ export function createVerticalListingRenderers(input: {
 }): Readonly<Record<string, OutboxMailRenderer>> {
     const site = input.siteUrl.replace(/\/$/, '');
     const accountUrl = (vertical: ListingNoticeVertical) =>
-        `${site}${ACCOUNT_LISTINGS_PATH[vertical]}`;
+        resolveAccountListingsUrl({ siteUrl: site, vertical });
     const subscriptionUrl = `${site}${SUBSCRIPTION_PATH}`;
     const withdrawalUrl = (listingId: string) =>
         `${site}${RECURRING_ADDONS_PATH}?listing=${encodeURIComponent(listingId)}#recurring-addons`;

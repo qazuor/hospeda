@@ -11,7 +11,7 @@ const listingPublicationService = new ListingPublicationService();
 export const protectedUnpublishExperienceRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/unpublish',
-    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'UNPUBLISH', idParam: 'id' },
     summary: 'Unpublish experience listing',
     description: 'Moves a published experience listing to DRAFT through PB6.',
     tags: ['Experience'],

@@ -1,5 +1,5 @@
-import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Link, Text } from '@react-email/components';
+import { Button, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 
 /** Subject of the third-party business-lines change notice (HOS-1875). */
@@ -58,8 +58,10 @@ export function ListingBusinessLinesChanged({
                 No se borró nada: lo que cargaste en una sección oculta vuelve si recuperás el
                 rubro.
             </Text>
-            <Text>Mirá tu ficha en Mi Cuenta: {accountUrl}</Text>
-            <Text>Si no lo pediste, escribinos: {contactUrl}</Text>
+            <Text>
+                Si no lo pediste, <Link href={contactUrl}>escribinos</Link>.
+            </Text>
+            <Button href={accountUrl}>Ver mi ficha</Button>
         </EmailLayout>
     );
 }

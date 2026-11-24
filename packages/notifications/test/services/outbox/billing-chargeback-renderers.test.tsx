@@ -47,7 +47,7 @@ describe('TEST:B7:7 AC:B7:10 chargeback outbox renderer', () => {
         const commonStart = [
             'Turismo en el Litoral',
             'Tu suscripción de Alojamiento se suspendió.',
-            'Desconociste el cargo de $100,00 del día 19 de noviembre de 2026 en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá: https://hospeda.test/es/mi-cuenta/suscripcion/'
+            'Desconociste el cargo de $100,00 del día 19 de noviembre de 2026 en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte.'
         ];
         const commonEnd = [
             'Ya no se te va a cobrar: cancelamos la autorización de cobro.',
@@ -62,6 +62,12 @@ describe('TEST:B7:7 AC:B7:10 chargeback outbox renderer', () => {
             ...commonEnd
         ]);
         expect(withoutCourtesy).toEqual([...commonStart, ...commonEnd]);
+        const html = renderToStaticMarkup(
+            renderer({ row: row({ template, payload: { ...payload, courtesyEnded: false } }) })
+                .react
+        );
+        expect(html).toContain('href="https://hospeda.test/es/mi-cuenta/suscripcion/"');
+        expect(html).toContain('Volver a suscribirme');
     });
 
     it('rejects incomplete payloads', () => {

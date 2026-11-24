@@ -43,13 +43,13 @@ import {
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
 import { formatCurrency, formatDate } from '../../templates/utils/index.js';
+import { SUBSCRIPTION_PATH } from './account-listing-paths.js';
 import { createBillingAddonRenderers } from './billing-addon-renderers.js';
 import { createBillingChargebackRenderers } from './billing-chargeback-renderers.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 import { parseGraceScheduledChange } from './grace-scheduled-change.js';
 import { resolveSignupDeclinedMessage } from './signup-declined-reason.js';
 
-const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
 function objectPayload(row: EmailOutboxRow): Record<string, unknown> {
@@ -246,7 +246,7 @@ function scheduledCancellation(row: EmailOutboxRow) {
     };
 }
 
-function incomplete(row: EmailOutboxRow) {
+function incomplete(row: EmailOutboxRow, subscriptionUrl: string) {
     const data = objectPayload(row);
     if (
         typeof data.subscriptionId !== 'string' ||
@@ -262,6 +262,7 @@ function incomplete(row: EmailOutboxRow) {
             <SignupIncomplete
                 vertical={data.vertical}
                 closedCourtesyMonths={data.closedCourtesyMonths}
+                actionUrl={subscriptionUrl}
             />
         )
     };
@@ -289,7 +290,7 @@ function oneTimeAddonsOf(value: unknown): readonly ArrearsSuspensionOneTimeAddon
     return addons;
 }
 
-function arrearsSuspension(row: EmailOutboxRow) {
+function arrearsSuspension(row: EmailOutboxRow, subscriptionUrl: string) {
     const data = objectPayload(row);
     const oneTimeAddons = oneTimeAddonsOf(data.oneTimeAddons);
     if (
@@ -310,6 +311,7 @@ function arrearsSuspension(row: EmailOutboxRow) {
                 touristVipLost={data.touristVipLost}
                 oneTimeAddons={oneTimeAddons}
                 promoLost={data.promoLost}
+                actionUrl={subscriptionUrl}
             />
         )
     };
@@ -476,8 +478,8 @@ export function createBillingSignupRenderers(input: {
         'billing.before-cancel': ({ row }) => beforeCancel(row),
         'billing.attempt-replaced-cancel': ({ row }) => attemptReplacedCancel(row),
         'billing.attempt-cancelled-cancel': ({ row }) => attemptCancelledCancel(row),
-        'billing.signup-incomplete': ({ row }) => incomplete(row),
-        'billing.arrears-suspension': ({ row }) => arrearsSuspension(row),
+        'billing.signup-incomplete': ({ row }) => incomplete(row, subscriptionUrl),
+        'billing.arrears-suspension': ({ row }) => arrearsSuspension(row, subscriptionUrl),
         'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row),
         'billing.addon-cancelled': ({ row }) => addonCancelled(row),
         'billing.addon-authorization-expired-cancel': ({ row }) => addonAuthorizationExpired(row),

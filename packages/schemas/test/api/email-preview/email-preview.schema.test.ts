@@ -17,7 +17,7 @@ const entry = {
     domain: 'billing',
     audience: 'user',
     wired: true,
-    scenarios: [{ id: 'monthly', label: 'Mensual' }]
+    scenarios: [{ id: 'monthly', label: 'Mensual', locale: 'es' }]
 } as const;
 
 describe('HOS-2519 email preview schemas', () => {
@@ -77,6 +77,24 @@ describe('HOS-2519 email preview schemas', () => {
         expect(
             EmailPreviewRenderQuerySchema.safeParse({ key: 'k', scenarioId: 's'.repeat(101) })
                 .success
+        ).toBe(false);
+    });
+
+    it('requires each scenario to declare a locale of es, en or pt (HOS-2565 D14)', () => {
+        // Arrange
+        const withLocale = (locale: unknown) => ({
+            ...entry,
+            scenarios: [{ id: 'monthly', label: 'Mensual', locale }]
+        });
+
+        // Act + Assert
+        expect(EmailPreviewEntrySummarySchema.safeParse(withLocale('pt')).success).toBe(true);
+        expect(EmailPreviewEntrySummarySchema.safeParse(withLocale('fr')).success).toBe(false);
+        expect(
+            EmailPreviewEntrySummarySchema.safeParse({
+                ...entry,
+                scenarios: [{ id: 'monthly', label: 'Mensual' }]
+            }).success
         ).toBe(false);
     });
 

@@ -274,7 +274,11 @@ export async function requestPlanChange(
 
     const targetCycle = BillingCycleSchema.parse(target.cycle);
     const window = await getDb().transaction(async (tx) => {
-        const deadlines = await readCycleDeadlines({ tx, subscriptionId: value.subscriptionId });
+        const deadlines = await readCycleDeadlines({
+            tx,
+            subscriptionId: value.subscriptionId,
+            clock: ports.clock
+        });
         const credit = await readHasCreditedCharge({ tx, subscriptionId: value.subscriptionId });
         return resolveSuccessorWindow({
             now: ports.clock.now(),

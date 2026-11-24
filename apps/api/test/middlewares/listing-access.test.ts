@@ -50,7 +50,7 @@ function appFor(args: {
     actorId?: string;
     permissions?: PermissionEnum[];
     tier?: 'protected' | 'admin';
-    operation?: 'EDIT' | 'PUBLISH' | 'DELETE' | 'WRITE_ABOUT_LISTING';
+    operation?: 'EDIT' | 'PUBLISH' | 'UNPUBLISH' | 'DELETE' | 'WRITE_ABOUT_LISTING';
     listingSection?: { id: string; intent: 'read' | 'write' | 'delete' };
     administrativeAction?: 'ACC_15' | 'ACC_23';
     limit?: number;
@@ -223,6 +223,31 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
             code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
             details: { entitlementKey: null, reason: 'NO_COVERAGE' }
         });
+    });
+
+    it('HOS-2244: an owner with no plan unpublishes (200) but is refused editing and publishing', async () => {
+        // Arrange: no coverage source and an empty effective set
+        mocks.coverage.mockResolvedValue({ covered: false, sources: [] });
+
+        // Act
+        const unpublish = await probe(appFor({ operation: 'UNPUBLISH' }));
+        const edit = await probe(appFor({ operation: 'EDIT' }));
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        const publish = await probe(appFor({ operation: 'PUBLISH' }));
+
+        // Assert
+        expect(unpublish.status).toBe(200);
+        expect(edit.status).toBe(403);
+        expect(publish.status).toBe(403);
+    });
+
+    it('HOS-2244: a stranger still gets the ownership 404 on UNPUBLISH', async () => {
+        mocks.coverage.mockResolvedValue({ covered: false, sources: [] });
+        const result = await probe(appFor({ actorId: ADMIN, operation: 'UNPUBLISH' }));
+        expect(result.status).toBe(404);
     });
 
     it('maps NO_CAPABILITY with its key', async () => {

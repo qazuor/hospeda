@@ -6,7 +6,7 @@ import {
 } from '@repo/schemas';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
-import { visibleApiMessage } from '@/lib/api-errors';
+import { translateApiError, visibleApiMessage } from '@/lib/api-errors';
 import { getAddonName } from '@/lib/billing/addon-purchase';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -97,7 +97,11 @@ export function RecurringAddonWithdrawal({
             if (!result.ok) {
                 setError(
                     result.error.status === 404 || result.error.status === 409
-                        ? result.error.message
+                        ? translateApiError({
+                              error: result.error,
+                              locale,
+                              fallback: result.error.message
+                          })
                         : t('billing.addonPurchase.recurringAddons.withdrawError')
                 );
                 return;

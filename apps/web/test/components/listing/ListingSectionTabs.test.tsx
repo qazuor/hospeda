@@ -281,6 +281,40 @@ describe('ListingSectionTabs', () => {
         vi.restoreAllMocks();
     });
 
+    it('sticks below the REAL wave band height, not a fixed 72px (HOS-2527 scroll-up overlap)', () => {
+        // The accommodation band is ~167px tall at 360px (name + badges); the tabs used to
+        // stick at navbar + 72px, so the band covered them whenever it came back on scroll-up.
+        let bandHeight = 167;
+        const header = document.createElement('div');
+        header.setAttribute('data-wave-header', '');
+        const bar = document.createElement('div');
+        bar.className = 'wave-header__bar';
+        Object.defineProperty(bar, 'offsetHeight', { get: () => bandHeight });
+        header.append(bar);
+        document.body.append(header);
+        const resizeCallbacks: Array<() => void> = [];
+        vi.stubGlobal(
+            'ResizeObserver',
+            class {
+                constructor(callback: () => void) {
+                    resizeCallbacks.push(callback);
+                }
+                observe(): void {}
+                disconnect(): void {}
+            }
+        );
+
+        render(<ListingSectionTabs {...props} />);
+        const nav = screen.getByRole('navigation', { name: 'Secciones del alojamiento' });
+        expect(nav.style.getPropertyValue('--tabs-bar-height')).toBe('167px');
+
+        bandHeight = 90;
+        act(() => {
+            for (const callback of resizeCallbacks) callback();
+        });
+        expect(nav.style.getPropertyValue('--tabs-bar-height')).toBe('90px');
+    });
+
     it('reports the desktop CTA with its own origin, never as the bottom bar', () => {
         const source = readFileSync(
             resolve(__dirname, '../../../src/components/listing/ListingSectionTabs.client.tsx'),
@@ -297,7 +331,8 @@ describe('ListingSectionTabs', () => {
         );
 
         expect(css).toMatch(/\.nav\s*\{[^}]*position:\s*sticky/);
-        expect(css).toMatch(/--tabs-top:\s*calc\(var\(--navbar-height[^;]*--wave-bar-compact/);
+        expect(css).toMatch(/--tabs-top:\s*calc\(\s*var\(--navbar-height[^;]*--wave-bar-compact/);
+        expect(css).toContain('var(--tabs-bar-height');
         expect(css).toMatch(
             /:global\(\.wave-header--hidden\)\s*\.nav\s*\{\s*--tabs-top:\s*var\(--navbar-height/
         );

@@ -14,6 +14,7 @@ import type { PaymentProvider } from '@repo/payments';
 import { encodeFakeNotice } from '@repo/payments/fake';
 import { desc } from 'drizzle-orm';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { mirrorOurCancellationOnActive } from '../../../src/services/billing/notice/mirror-our-cancellation-on-active.js';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
 import { createProviderNoticeMirrorDelegates } from '../../../src/services/billing/notice/provider-notice-delegates.js';
@@ -202,12 +203,18 @@ describe('TEST:B7:9 — the R18 mirror keeps the period an S6 that lost to S5 ha
                     .where(eq(subscriptions.id, subscriptionId));
                 return row?.status;
             });
+            const facts: SinkFact[] = [];
             const ports = {
                 ...fixture.ports,
                 provider,
                 beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
                 coverageNotices: seenCoverage.coverageNotices,
-                payments: creditedPaymentsFromLedger
+                payments: creditedPaymentsFromLedger,
+                billingFacts: {
+                    emit: (fact: SinkFact) => {
+                        facts.push(fact);
+                    }
+                }
             };
             const result = await processProviderNotice(
                 {
@@ -262,6 +269,19 @@ describe('TEST:B7:9 — the R18 mirror keeps the period an S6 that lost to S5 ha
             expect(scheduled?.serviceEndsAt).toEqual(
                 billingPeriodEnd({ periodStart: period[0].periodStart, everyMonths: 1 }).periodEnd
             );
+            expect(facts).toEqual([
+                {
+                    kind: 'CANCEL_SCHEDULED',
+                    userId: fixture.user.id,
+                    vertical: 'accommodation',
+                    subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'SYSTEM',
+                    occurredAt: fixture.clock.now(),
+                    serviceEndsAt: scheduled?.serviceEndsAt,
+                    basis: 'PAID_PERIOD'
+                }
+            ]);
             // AC:B13a:17 adds exactly the paid-after-cancellation notice to R18's outbox delta.
             const outboxTemplatesAfter = (
                 await getServiceTestDb()

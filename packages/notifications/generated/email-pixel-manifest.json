@@ -475,7 +475,7 @@
     },
     {
         "key": "outbox.billing.mark-escalated",
-        "name": "Email · Marca de conciliación escalada",
+        "name": "Email · Marca de conciliación sin resolver",
         "utmCampaign": "outbox-billing-mark-escalated",
         "pixelSlug": "email-outbox-billing-mark-escalated"
     },

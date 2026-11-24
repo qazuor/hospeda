@@ -24,7 +24,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
         recipientName: 'Carlos Rodríguez',
         planName: 'Plan Pro',
         accessUntil: '2026-08-15',
-        migrationHint: 'Re-subscribe to another plan to keep premium features',
+        migrationHint: 'Suscribite a otro plan para conservar tus beneficios',
         baseUrl: 'https://hospeda.com.ar'
     };
 
@@ -70,7 +70,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).toContain('Re-subscribe to another plan to keep premium features');
+            expect(html).toContain('Suscribite a otro plan para conservar tus beneficios');
         });
 
         it('should include CTA link using baseUrl', () => {
@@ -86,7 +86,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).toContain('Important update about your plan');
+            expect(html).toContain('Novedades importantes sobre tu plan');
         });
 
         it('should inform that access is preserved until accessUntil', () => {
@@ -94,7 +94,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).toContain('full access until');
+            expect(html).toContain('acceso completo hasta el');
         });
 
         it('should work with a different baseUrl', () => {
@@ -118,7 +118,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).toContain('Plan being retired');
+            expect(html).toContain('Plan que deja de ofrecerse');
             expect(html).toContain('Plan Pro');
         });
 
@@ -127,7 +127,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).toContain('Access until');
+            expect(html).toContain('Acceso hasta');
         });
 
         it('should show Status as retiring at period end', () => {
@@ -135,7 +135,7 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             const html = renderToStaticMarkup(PlanBeingRetired(validProps));
 
             // Assert
-            expect(html).toContain('Retiring');
+            expect(html).toContain('Deja de ofrecerse');
         });
     });
 
@@ -147,6 +147,20 @@ describe('PlanBeingRetired email template (SPEC-148)', () => {
             // Assert
             expect(html).not.toContain('Administrar preferencias de notificaciones');
             expect(html).not.toContain('unsubscribe_url');
+        });
+    });
+
+    describe('language (HOS-2565 §7.1)', () => {
+        it('should be Spanish only, with voseo and an "Hola" greeting', () => {
+            // Arrange & Act
+            const html = renderToStaticMarkup(PlanBeingRetired(validProps));
+            const text = html.replace(/<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
+
+            // Assert
+            expect(text).toMatch(/Hola\s+\S.*,/);
+            expect(text).not.toMatch(
+                /\b(the|your|you|and|will|access|cancellation|choose|reactivate|Hi)\b/i
+            );
         });
     });
 });

@@ -53,7 +53,7 @@ describe('createEmailPreviewService', () => {
             domain: FIRST.domain,
             audience: FIRST.audience,
             wired: FIRST.wired,
-            scenarios: FIRST.scenarios.map(({ id, label }) => ({ id, label }))
+            scenarios: FIRST.scenarios.map(({ id, label, locale }) => ({ id, label, locale }))
         });
     });
 

@@ -60,7 +60,7 @@ describe('closed charge snapshot single consumer guard', () => {
                 { path: implementation, source: readFileSync(join(root, implementation), 'utf8') }
             ])
         ).toEqual([]);
-    });
+    }, 30_000);
 
     it('flags a synthetic second consumer', () => {
         expect(

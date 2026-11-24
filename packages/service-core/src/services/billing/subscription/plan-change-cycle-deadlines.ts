@@ -1,3 +1,4 @@
+import type { Clock } from '@repo/billing-verticals-contract';
 import { billingDeadlineVersions, type DrizzleClient, desc, eq, subscriptions } from '@repo/db';
 import {
     type BillingDeadlineValues,
@@ -7,10 +8,14 @@ import {
 import { ServiceError } from '../../../types/index.js';
 import { stampRenewalNoticeClock } from './renewal-notice.js';
 
-/** Reads PLAZO:15 from the predecessor's locked cycle snapshot, stamping a new cycle once. */
+/**
+ * Reads PLAZO:15 from the predecessor's locked cycle snapshot, stamping a new cycle once.
+ * The stamp instant comes from the injected {@link Clock}, never the system time (HOS-2174).
+ */
 export async function readCycleDeadlines(input: {
     readonly tx: DrizzleClient;
     readonly subscriptionId: string;
+    readonly clock: Clock;
 }): Promise<{
     readonly version: number;
     readonly values: BillingDeadlineValues;
@@ -85,7 +90,7 @@ export async function readCycleDeadlines(input: {
             subscriptionId: input.subscriptionId,
             version: current.version,
             chargeAt: row.nextChargeAt,
-            now: new Date()
+            now: input.clock.now()
         });
         return { version: current.version, values, stamped: true };
     }

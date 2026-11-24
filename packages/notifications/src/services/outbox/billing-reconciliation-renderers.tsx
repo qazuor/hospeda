@@ -6,12 +6,13 @@ import {
     MarkEscalated,
     RECONCILIATION_SUMMARY_SUBJECT,
     REVOCATION_REFUND_FAILED_SUBJECT,
-    type ReconciliationSubjectsReader,
+    type ReconciliationReasonLabelResolver,
     ReconciliationSummary,
     type ReconciliationSummaryContext,
     RevocationRefundFailed
 } from '../../templates/billing/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+import { readSubjectContext, type SubjectEnrichment } from './reconciliation-context.js';
 
 const REQUIRED = 'Faltan datos requeridos del aviso de conciliación';
 type Data = Record<string, unknown>;
@@ -85,34 +86,14 @@ function validOmitted(value: unknown): value is Data {
     });
 }
 
-/** Render-time collaborators of the summary mail (HOS-1971). */
-interface SummaryEnrichment {
-    readonly readSubjects?: ReconciliationSubjectsReader;
-    readonly environmentLabel?: string;
-    readonly adminUrl?: string;
-    readonly onEnrichmentError?: (input: { readonly error: unknown }) => void;
+/** Render-time collaborators of the summary mail and the immediate notices (HOS-1971, HOS-2565). */
+interface SummaryEnrichment extends SubjectEnrichment {
+    /** Spanish label of a reason code, injected by `apps/api` (HOS-2565 D8). */
+    readonly resolveReasonLabel?: ReconciliationReasonLabelResolver;
 }
 
-/**
- * Resolves the subjects named by the payload in ONE batched call. Never throws:
- * a failed or missing reader yields a context without details, so every line
- * renders as the bare payload line and the mail still goes out.
- */
-async function resolveContext(
-    data: Data,
-    enrichment: SummaryEnrichment
-): Promise<ReconciliationSummaryContext> {
-    const base = {
-        ...(enrichment.environmentLabel ? { environmentLabel: enrichment.environmentLabel } : {}),
-        ...(enrichment.adminUrl ? { adminUrl: enrichment.adminUrl } : {})
-    };
-    const empty: ReconciliationSummaryContext = {
-        ...base,
-        subscriptions: new Map(),
-        addonInstances: new Map(),
-        openMarks: new Map()
-    };
-    if (!enrichment.readSubjects) return empty;
+/** The ids a summary payload names, for ONE batched read. */
+function summaryLookup(data: Data) {
     const subscriptionIds = new Set<string>();
     const addonInstanceIds = new Set<string>();
     for (const mark of [...(data.marks as Data[]), ...(data.escalations as Data[])]) {
@@ -123,16 +104,22 @@ async function resolveContext(
     for (const row of [...(data.underCharges as Data[]), ...(data.pauseGifts as Data[])]) {
         subscriptionIds.add(row.subscriptionId as string);
     }
-    try {
-        const found = await enrichment.readSubjects({
-            subscriptionIds: [...subscriptionIds],
-            addonInstanceIds: [...addonInstanceIds]
-        });
-        return { ...empty, ...found };
-    } catch (error) {
-        enrichment.onEnrichmentError?.({ error });
-        return empty;
-    }
+    return { subscriptionIds: [...subscriptionIds], addonInstanceIds: [...addonInstanceIds] };
+}
+
+/** Resolves the holder and plan of the ONE subject an immediate notice names. */
+function noticeContext(
+    subject: { readonly subjectType: string; readonly subjectId: string },
+    enrichment: SummaryEnrichment
+): Promise<ReconciliationSummaryContext> {
+    const isSubscription = subject.subjectType === 'subscription';
+    return readSubjectContext({
+        enrichment,
+        lookup: {
+            subscriptionIds: isSubscription ? [subject.subjectId] : [],
+            addonInstanceIds: isSubscription ? [] : [subject.subjectId]
+        }
+    });
 }
 
 function reconciliationSummary(row: EmailOutboxRow, enrichment: SummaryEnrichment) {
@@ -163,7 +150,7 @@ function reconciliationSummary(row: EmailOutboxRow, enrichment: SummaryEnrichmen
 }
 
 async function renderSummary(data: Data, enrichment: SummaryEnrichment) {
-    const context = await resolveContext(data, enrichment);
+    const context = await readSubjectContext({ lookup: summaryLookup(data), enrichment });
     // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
     const props = data as unknown as Parameters<typeof ReconciliationSummary>[0];
     return {
@@ -172,12 +159,25 @@ async function renderSummary(data: Data, enrichment: SummaryEnrichment) {
             <ReconciliationSummary
                 {...props}
                 context={context}
+                {...(enrichment.resolveReasonLabel
+                    ? { resolveReasonLabel: enrichment.resolveReasonLabel }
+                    : {})}
             />
         )
     };
 }
 
-function duplicateChargeDetected(row: EmailOutboxRow) {
+/** Props the immediate notices share: the admin link and the injected reason labels. */
+function noticeExtras(enrichment: SummaryEnrichment) {
+    return {
+        ...(enrichment.adminUrl ? { adminUrl: enrichment.adminUrl } : {}),
+        ...(enrichment.resolveReasonLabel
+            ? { resolveReasonLabel: enrichment.resolveReasonLabel }
+            : {})
+    };
+}
+
+function duplicateChargeDetected(row: EmailOutboxRow, enrichment: SummaryEnrichment) {
     const data = payloadOf(row);
     if (
         !stringFields(data, ['markId', 'subjectId', 'reason']) ||
@@ -187,18 +187,29 @@ function duplicateChargeDetected(row: EmailOutboxRow) {
         !(data.paymentId === null || isString(data.paymentId))
     )
         throw new TypeError(REQUIRED);
+    // Validation stays synchronous (a bad payload throws at once); only the lookup is awaited.
+    return renderDuplicateCharge(data, enrichment);
+}
+
+async function renderDuplicateCharge(data: Data, enrichment: SummaryEnrichment) {
+    const context = await noticeContext(
+        { subjectType: data.subjectType as string, subjectId: data.subjectId as string },
+        enrichment
+    );
     // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
     return {
         subject: DUPLICATE_CHARGE_DETECTED_SUBJECT,
         react: (
             <DuplicateChargeDetected
                 {...(data as unknown as Parameters<typeof DuplicateChargeDetected>[0])}
+                context={context}
+                {...noticeExtras(enrichment)}
             />
         )
     };
 }
 
-function markEscalated(row: EmailOutboxRow) {
+function markEscalated(row: EmailOutboxRow, enrichment: SummaryEnrichment) {
     const data = payloadOf(row);
     if (
         !stringFields(data, ['markId', 'subjectId', 'reason']) ||
@@ -209,14 +220,29 @@ function markEscalated(row: EmailOutboxRow) {
         (data.escalationDays as number) <= 0
     )
         throw new TypeError(REQUIRED);
+    // Validation stays synchronous (a bad payload throws at once); only the lookup is awaited.
+    return renderMarkEscalated(data, enrichment);
+}
+
+async function renderMarkEscalated(data: Data, enrichment: SummaryEnrichment) {
+    const context = await noticeContext(
+        { subjectType: data.subjectType as string, subjectId: data.subjectId as string },
+        enrichment
+    );
     // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
     return {
         subject: MARK_ESCALATED_SUBJECT,
-        react: <MarkEscalated {...(data as unknown as Parameters<typeof MarkEscalated>[0])} />
+        react: (
+            <MarkEscalated
+                {...(data as unknown as Parameters<typeof MarkEscalated>[0])}
+                context={context}
+                {...noticeExtras(enrichment)}
+            />
+        )
     };
 }
 
-function revocationRefundFailed(row: EmailOutboxRow) {
+function revocationRefundFailed(row: EmailOutboxRow, enrichment: SummaryEnrichment) {
     const data = payloadOf(row);
     const subjectValid =
         (data.subjectType === null && data.subjectId === null) ||
@@ -240,6 +266,7 @@ function revocationRefundFailed(row: EmailOutboxRow) {
         react: (
             <RevocationRefundFailed
                 {...(data as unknown as Parameters<typeof RevocationRefundFailed>[0])}
+                {...(enrichment.adminUrl ? { adminUrl: enrichment.adminUrl } : {})}
             />
         )
     };
@@ -250,7 +277,10 @@ function revocationRefundFailed(row: EmailOutboxRow) {
  *
  * The summary renderer resolves holders, plans and listings through `readSubjects`
  * (one batched call per mail) and marks the environment; both are optional, and a
- * failing reader never blocks the send (HOS-1971).
+ * failing reader never blocks the send (HOS-1971). The duplicate-charge and
+ * escalated-mark notices use the same reader for their holder and plan rows, and all
+ * three notices link to the admin panel through `adminUrl` (HOS-2565 D9, §7.7).
+ * `resolveReasonLabel` supplies the Spanish label of a reason code (D8).
  */
 export function createBillingReconciliationRenderers(
     input: {
@@ -264,8 +294,8 @@ export function createBillingReconciliationRenderers(
     };
     return {
         'billing.reconciliation-summary': ({ row }) => reconciliationSummary(row, enrichment),
-        'billing.duplicate-charge-detected': ({ row }) => duplicateChargeDetected(row),
-        'billing.mark-escalated': ({ row }) => markEscalated(row),
-        'billing.revocation-refund-failed': ({ row }) => revocationRefundFailed(row)
+        'billing.duplicate-charge-detected': ({ row }) => duplicateChargeDetected(row, enrichment),
+        'billing.mark-escalated': ({ row }) => markEscalated(row, enrichment),
+        'billing.revocation-refund-failed': ({ row }) => revocationRefundFailed(row, enrichment)
     };
 }

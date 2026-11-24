@@ -85,6 +85,7 @@ export const ALERT_DIGEST_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'english-locale',
+                locale: 'en',
                 label: 'Idioma inglés (cambia solo el asunto)',
                 input: { ...BASE, locale: 'en', priceDrop: [PRICE_DROP], promoOffers: [] }
             }

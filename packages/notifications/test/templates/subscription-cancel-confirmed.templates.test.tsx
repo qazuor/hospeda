@@ -74,7 +74,7 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             const html = renderToStaticMarkup(SubscriptionCancelConfirmed(validProps));
 
             // Assert
-            expect(html).toContain('Cancellation confirmed');
+            expect(html).toContain('Confirmamos tu baja');
         });
 
         it('should inform that access is preserved until accessUntil', () => {
@@ -82,7 +82,7 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             const html = renderToStaticMarkup(SubscriptionCancelConfirmed(validProps));
 
             // Assert
-            expect(html).toContain('full access until');
+            expect(html).toContain('acceso completo hasta el');
         });
 
         it('should use a different baseUrl in the CTA link', () => {
@@ -115,7 +115,7 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             const html = renderToStaticMarkup(SubscriptionCancelConfirmed(validProps));
 
             // Assert
-            expect(html).toContain('Access until');
+            expect(html).toContain('Acceso hasta');
         });
 
         it('should show Status as cancelled at period end', () => {
@@ -123,7 +123,7 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             const html = renderToStaticMarkup(SubscriptionCancelConfirmed(validProps));
 
             // Assert
-            expect(html).toContain('Cancelled at period end');
+            expect(html).toContain('Baja al final del período');
         });
     });
 
@@ -135,6 +135,20 @@ describe('SubscriptionCancelConfirmed email template (SPEC-147)', () => {
             // Assert
             expect(html).not.toContain('Administrar preferencias de notificaciones');
             expect(html).not.toContain('unsubscribe_url');
+        });
+    });
+
+    describe('language (HOS-2565 §7.1)', () => {
+        it('should be Spanish only, with voseo and an "Hola" greeting', () => {
+            // Arrange & Act
+            const html = renderToStaticMarkup(SubscriptionCancelConfirmed(validProps));
+            const text = html.replace(/<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
+
+            // Assert
+            expect(text).toMatch(/Hola\s+\S.*,/);
+            expect(text).not.toMatch(
+                /\b(the|your|you|and|will|access|cancellation|choose|reactivate|Hi)\b/i
+            );
         });
     });
 });

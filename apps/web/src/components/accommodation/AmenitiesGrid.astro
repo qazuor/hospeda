@@ -7,6 +7,10 @@
  * Pills 7-8 are in the DOM but hidden below 768px by CSS, so the split between the
  * two breakpoints costs no JavaScript.
  *
+ * Owner rule (HOS-2528, 2026-11-23): a breakpoint collapses only when at least 5 items
+ * would be hidden (`summarizeItems`). Up to 10 items mobile shows all and has no button;
+ * up to 12 items desktop shows all and has no button.
+ *
  * SEO / no-JS: the sheet island renders nothing while closed, so its children never
  * reach the HTML. Every amenity past the visible pills therefore also renders here, in
  * SSR, as a visually-hidden list (`data-amenities-rest`): crawlers and screen readers
@@ -21,6 +25,7 @@
 import type { AccommodationAmenityItem } from '@/data/types';
 import { resolveAmenityAttributeBadges } from '@/lib/catalog-attribute-badges';
 import { createTranslations } from '@/lib/i18n';
+import { summarizeItems } from '@/lib/listing-items/summarize-items';
 import type { SupportedLocale } from '@/lib/i18n';
 import ListingPill from '@/components/listing/ListingPill.astro';
 import { ListingItemsSheet } from '@/components/listing/ListingItemsSheet.client';
@@ -66,8 +71,15 @@ const entries = amenities.map((amenity) => ({
   })
 }));
 
-const hasOverflow = entries.length > MOBILE_COUNT;
-const restEntries = entries.slice(DESKTOP_COUNT);
+/** Owner rule: collapse a breakpoint only when at least 5 items would be hidden there. */
+const { showAllMobile, showAllDesktop } = summarizeItems({
+  total: entries.length,
+  visibleMobile: MOBILE_COUNT,
+  visibleDesktop: DESKTOP_COUNT
+});
+const hasOverflow = !showAllMobile;
+const visibleEntries = showAllDesktop ? entries : entries.slice(0, DESKTOP_COUNT);
+const restEntries = showAllDesktop ? [] : entries.slice(DESKTOP_COUNT);
 const viewAllLabel = tPlural('accommodations.detail.amenitiesDetail.viewAll', entries.length);
 const title = t('accommodations.detail.amenitiesDetail.title');
 ---
@@ -76,8 +88,8 @@ const title = t('accommodations.detail.amenitiesDetail.title');
   <h2 class="amenities-section__title">{title}</h2>
 
   <div class="amenities-list" data-amenities-list>
-    {entries.slice(0, DESKTOP_COUNT).map((entry, index) => (
-      <div class:list={['amenities-list__item', { 'amenities-list__item--desktop-only': index >= MOBILE_COUNT }]}>
+    {visibleEntries.map((entry, index) => (
+      <div class:list={['amenities-list__item', { 'amenities-list__item--desktop-only': !showAllMobile && index >= MOBILE_COUNT }]}>
         <ListingPill {...entry} />
       </div>
     ))}
@@ -90,7 +102,7 @@ const title = t('accommodations.detail.amenitiesDetail.title');
   )}
 
   {hasOverflow && (
-    <div class:list={['amenities-section__more', { 'amenities-section__more--mobile-only': entries.length <= DESKTOP_COUNT }]}>
+    <div class:list={['amenities-section__more', { 'amenities-section__more--mobile-only': showAllDesktop }]}>
       <ListingItemsSheet
         client:idle
         sheetId="amenities-sheet"
@@ -135,7 +147,7 @@ const title = t('accommodations.detail.amenitiesDetail.title');
   .amenities-list__item {
     display: contents;
   }
-  /* Pills 7 and 8 are desktop-only. */
+  /* Pills past the sixth are desktop-only while mobile collapses. */
   .amenities-list__item--desktop-only {
     display: none;
   }
@@ -152,7 +164,7 @@ const title = t('accommodations.detail.amenitiesDetail.title');
     .amenities-list__item--desktop-only {
       display: contents;
     }
-    /* With 8 items or fewer the desktop already shows everything. */
+    /* When desktop would hide fewer than 5 items it shows them all: no button. */
     .amenities-section__more--mobile-only {
       display: none;
     }

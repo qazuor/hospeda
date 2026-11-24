@@ -6,8 +6,9 @@
  * `docs/error-contract.md`: 401 → 403 → 400 → 404 → business rules.
  *
  * The route declares no route-level permission; it runs the listing chain as
- * `EDIT`, whose step 6 asks for `edit_accommodation_info` in every state but
- * DRAFT. That is the authorization 403 this route can answer.
+ * `UNPUBLISH`, which skips coverage (step 5) and the entitlement step (step 6):
+ * taking a listing down never needs a plan (HOS-2244). Ownership (step 4) still
+ * decides who may, so the only refusals left are 401, 400 and 404.
  */
 import { randomUUID } from 'node:crypto';
 import { accommodations, eq, getDb, trials } from '@repo/db';
@@ -91,17 +92,16 @@ describe('unpublish route — authentication, permission, shape and ownership', 
         expect(await statusOf(listingId)).toBe(PublicationStatusEnum.PUBLISHED);
     });
 
-    it('answers 403 ENTITLEMENT_REQUIRED to an owner without the EDIT capability (step 6)', async () => {
+    it('HOS-2244: an owner without a live plan unpublishes to DRAFT (201)', async () => {
         const { owner, listingId } = await ownerWithListing(
             PublicationStatusEnum.PUBLISHED,
             'TRIAL_EXPIRED'
         );
-        const { status, body } = await readResponse(
+        const { status } = await readResponse(
             await unpublish(listingId, actorHeaders({ id: owner.id }))
         );
-        expect(status).toBe(403);
-        expect(body.error?.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(await statusOf(listingId)).toBe(PublicationStatusEnum.PUBLISHED);
+        expect(status).toBe(201);
+        expect(await statusOf(listingId)).toBe(PublicationStatusEnum.DRAFT);
     });
 
     it('answers 400 VALIDATION_ERROR to a malformed id', async () => {

@@ -28,11 +28,14 @@ const VERTICALS = [
 
 type Vertical = (typeof VERTICALS)[number];
 
-/** Per vertical, the capabilities the three publication routes ask for at step 6. */
+/**
+ * Per vertical, the capabilities the publication routes ask for at step 6. `UNPUBLISH`
+ * asks for none (HOS-2244); `REACTIVATE`'s `recover_own_listing` is added below.
+ */
 const CAPABILITIES: Readonly<Record<Vertical, readonly string[]>> = {
-    [VerticalEnum.ACCOMMODATION]: ['edit_accommodation_info', 'publish_accommodations'],
-    [VerticalEnum.VENUE]: ['edit_venue_info', 'publish_venue'],
-    [VerticalEnum.EXPERIENCE]: ['edit_experience_info', 'publish_experience']
+    [VerticalEnum.ACCOMMODATION]: ['publish_accommodations'],
+    [VerticalEnum.VENUE]: ['publish_venue'],
+    [VerticalEnum.EXPERIENCE]: ['publish_experience']
 };
 
 const OWNER_ID = '1f2e3d4c-5b6a-4789-8abc-def012345678';

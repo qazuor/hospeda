@@ -1,6 +1,6 @@
 /**
  * HOS-2184 T-018 — `set_listing_publication`: per vertical, `pause` runs the
- * unpublish route's step (PB6, listing access `EDIT`) on a published listing
+ * unpublish route's step (PB6, listing access `UNPUBLISH`) on a published listing
  * and `resume` runs publish (PB1, `PUBLISH`) from draft or billing pause and
  * reactivate (PB8, `REACTIVATE`) from archive; every other state is a no-op
  * or a refusal. Ownership is owner-only (AC-6), the audit carries the target
@@ -477,11 +477,15 @@ describe('set_listing_publication', () => {
         it('records a billing refusal as denied, with its target', async () => {
             // Arrange
             harness.givenBilling(mocks, { covered: true, granted: false });
-            givenStates(VerticalEnum.VENUE, PublicationStatusEnum.PUBLISHED);
+            harness.givenFacts(mocks, {
+                vertical: VerticalEnum.VENUE,
+                status: PublicationStatusEnum.ARCHIVED
+            });
+            givenStates(VerticalEnum.VENUE, PublicationStatusEnum.ARCHIVED);
             givenPublicationService();
 
             // Act
-            const result = await call({ vertical: 'venue', id: LISTING_ID, action: 'pause' });
+            const result = await call({ vertical: 'venue', id: LISTING_ID, action: 'resume' });
 
             // Assert
             expect(result.isError).toBe(true);

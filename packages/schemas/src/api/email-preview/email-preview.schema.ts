@@ -58,7 +58,9 @@ export type EmailAudience = z.infer<typeof EmailAudienceSchema>;
 /** One scenario of a catalog entry, as listed (no sample input). */
 export const EmailPreviewScenarioSummarySchema = z.object({
     id: z.string().min(1),
-    label: z.string().min(1)
+    label: z.string().min(1),
+    /** Locale of the rendered copy (HOS-2565 D14). Resolved: never absent. */
+    locale: z.enum(['es', 'en', 'pt'])
 });
 
 /** One scenario of a catalog entry, as listed. */

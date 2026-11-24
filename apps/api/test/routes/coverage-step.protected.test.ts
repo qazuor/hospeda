@@ -64,6 +64,7 @@ import { protectedUpdateVenueFaqRoute } from '../../src/routes/venue/protected/u
 import { protectedUpdateVenueMediaRoute } from '../../src/routes/venue/protected/updateMedia';
 import { protectedUploadVenueMenuFileRoute } from '../../src/routes/venue/protected/uploadMenuFile';
 import { protectedUploadVenueMenuItemPhotoRoute } from '../../src/routes/venue/protected/uploadMenuItemPhoto';
+import { ListingPublicationService } from '../../src/services/listing-publication/listing-publication.service';
 import type { AppBindings } from '../../src/types';
 
 const mocks = vi.hoisted(() => ({
@@ -254,7 +255,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/unpublish',
         body: undefined,
-        operation: 'EDIT',
+        operation: 'UNPUBLISH',
         vertical: VerticalEnum.ACCOMMODATION
     },
     {
@@ -299,7 +300,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/unpublish',
         body: undefined,
-        operation: 'EDIT',
+        operation: 'UNPUBLISH',
         vertical: VerticalEnum.EXPERIENCE
     },
     {
@@ -335,7 +336,7 @@ const cases = [
         method: 'POST',
         path: '/{id}/unpublish',
         body: undefined,
-        operation: 'EDIT',
+        operation: 'UNPUBLISH',
         vertical: VerticalEnum.VENUE
     },
     {
@@ -726,6 +727,9 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
                 ownerId: OWNER
             });
         }
+        const unpublish = vi
+            .spyOn(ListingPublicationService.prototype, 'unpublish')
+            .mockResolvedValue({ id: LISTING } as never);
         const app = new Hono<AppBindings>();
         app.use((ctx, next) => {
             ctx.set('actor', {
@@ -746,6 +750,21 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
             headers: { 'content-type': 'application/json' },
             body: body === undefined ? undefined : JSON.stringify(body)
         });
+        if (operation === 'UNPUBLISH') {
+            // HOS-2244: explicit exception to AC:V5:9. Taking a listing down never
+            // needs a plan, so UNPUBLISH skips steps 5 and 6 and the chain reaches
+            // the handler for an owner with no coverage and no capability.
+            expect(
+                mocks.coverage,
+                `${file}: UNPUBLISH must not reach step 5`
+            ).not.toHaveBeenCalled();
+            expect(unpublish).toHaveBeenCalledOnce();
+            // The stub payload is not a full protected projection, so response
+            // serialization may answer 500; the 201 is asserted by the integration
+            // route tests. What matters here is that the chain let the owner through.
+            expect(response.status).not.toBe(403);
+            return;
+        }
         expect(
             mocks.coverage,
             `${file}: step 5 was not reached (HTTP ${response.status})`

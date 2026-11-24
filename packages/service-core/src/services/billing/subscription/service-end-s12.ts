@@ -177,6 +177,7 @@ function stateChanged(subscriptionId: string): never {
  * @param ports - Orphanhood ports, clock and the optional succession closer
  * @returns `CANCELLED` with what the after-commit halves need, or why nothing was written
  * @throws ServiceError when the row does not exist or left its state under the lock
+ *   or, from the orphanhood/A5, with reason `ADDON_LISTING_SOFT_DELETED` (409, HOS-2128)
  */
 export async function applyS12ToPrincipal(
     input: S12Input,
@@ -243,6 +244,7 @@ export async function applyS12ToPrincipal(
  * @param ports - `políticaDeAddon` and `ficha`, for A5's coverage verticals
  * @returns What S12 did and the instance it withdrew, if any
  * @throws ServiceError when the row does not exist or left its state under the lock
+ *   or, from the orphanhood/A5, with reason `ADDON_LISTING_SOFT_DELETED` (409, HOS-2128)
  */
 export async function applyS12ToComplement(
     input: S12Input,

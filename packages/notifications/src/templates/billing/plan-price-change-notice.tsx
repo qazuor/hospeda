@@ -2,7 +2,7 @@ import { Text } from '@react-email/components';
 import { Button, Callout, EmailLayout } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
-import { formatCurrency, formatDate } from '../utils/index.js';
+import { formatBillingCycleLabel, formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for the PlanPriceChangeNotice email template (HOS-176 Increment A).
@@ -54,7 +54,9 @@ export function PlanPriceChangeNotice({
     const formattedOld = formatCurrency({ amount: oldPriceArs, currency: 'ARS' });
     const formattedNew = formatCurrency({ amount: newPriceArs, currency: 'ARS' });
     const formattedEffectiveDate = formatDate({ dateString: effectiveDate });
-    const intervalLabel = billingInterval === 'year' ? 'anual' : 'mensual';
+    const intervalLabel = formatBillingCycleLabel({
+        cycle: billingInterval === 'year' ? 'annual' : 'monthly'
+    }).toLowerCase();
 
     return (
         <EmailLayout previewText={`Aviso de cambio de precio de tu plan ${planName}`}>
