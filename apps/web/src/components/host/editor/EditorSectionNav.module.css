@@ -27,7 +27,7 @@
     margin-left: -2px;
     border-left: 2px solid transparent;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     line-height: 1.4;
     color: var(--core-muted-foreground);
     text-decoration: none;

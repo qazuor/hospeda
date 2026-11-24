@@ -17,17 +17,17 @@
     align-items: flex-start;
     gap: 0.5rem;
     padding: 0.625rem 0.875rem;
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     border: 1px solid transparent;
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     line-height: 1.45;
 }
 
 /* Row-level variant: tighter, to sit under a provider without crowding it. */
 .compact {
     padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     gap: 0.4375rem;
 }
 

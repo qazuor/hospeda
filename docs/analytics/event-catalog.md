@@ -9,7 +9,7 @@
 | Event | Description | Application | Trigger location | Source | Required properties | Optional properties | Contains PII | Dashboard |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `destination_viewed` | Destination detail viewed | web | `DestinationViewTracker.client.tsx` | frontend | `destination_id`, `destination_slug` | `locale`, `source_page` | no | Descubrimiento, Adquisición |
-| `accommodation_viewed` | Accommodation detail viewed | web | `AccommodationViewTracker.client.tsx` | frontend | `accommodation_id`, `accommodation_slug` | `accommodation_type`, `destination_id`, `is_featured`, `locale`, `source_page` | no | Resumen, Descubrimiento |
+| `accommodation_viewed` | Accommodation detail viewed | web | `EntityViewTracker.client.tsx` (`entityType="ACCOMMODATION"`) | frontend | `accommodation_id`, `accommodation_slug` | `accommodation_type`, `destination_id`, `is_featured`, `locale`, `source_page` | no | Resumen, Descubrimiento |
 | `entity_viewed` | Generic detail view for entity types without a dedicated view event | web | `EntityViewTracker.client.tsx` | frontend | `entity_type` (`VENUE`, `EXPERIENCE`, `PARTNER`), `entity_id` (UUID) | `locale` | no | Owners |
 | `event_viewed` | Event detail viewed | web | `EntityViewTracker.client.tsx` | frontend | `event_id`, `event_slug` | `locale`, `source_page` | no | Descubrimiento |
 | `post_viewed` | Post detail viewed | web | `EntityViewTracker.client.tsx` | frontend | `post_id`, `post_slug` | `locale`, `source_page` | no | Descubrimiento, Adquisición |
@@ -49,8 +49,9 @@
 | `trial_converted` | Trial converts through T2, T5 or T8 | api | `trial-coverage-listener.ts` | backend | `vertical`, `actor_kind`, `transition`, `trial_state_before` | `days_into_trial`, `days_since_expiry` | no | Suscripciones (a rehacer, HOS-1878) |
 | `trial_expired` | Trial expires in the expiry job | api | `trial-machine-expiry.job.ts` | backend | `vertical`, `actor_kind`, `trial_days` | `had_paid_intent` | no | Suscripciones (a rehacer, HOS-1878) |
 | `newsletter_subscribed` | Newsletter subscription succeeded | web | `NewsletterForm.client.tsx` | frontend | none | `source_page`, `locale`, `is_authenticated` | no | Adquisición |
-| `favorite_added` | Entity added to favorites | web | `FavoriteButton.client.tsx` | frontend | `entity_type`, `entity_id` | `assigned_collection` | no | Descubrimiento |
-| `favorite_removed` | Entity removed from favorites | web | `FavoriteButton.client.tsx` | frontend | `entity_type`, `entity_id` | `assigned_collection` | no | Descubrimiento |
+| `favorite_added` | Entity added to favorites | web | `FavoriteButton.client.tsx` | frontend | `entity_type`, `entity_id` | `assigned_collection`, `origin` (`bar`, `gallery`, ...) | no | Descubrimiento |
+| `favorite_removed` | Entity removed from favorites | web | `FavoriteButton.client.tsx` | frontend | `entity_type`, `entity_id` | `assigned_collection`, `origin` (`bar`, `gallery`, ...) | no | Descubrimiento |
+| `listing_shared` | Listing detail shared | web | `ShareButtons.client.tsx` (only with the `analytics` prop) | frontend | `listing_id`, `vertical` (`accommodation`, `experience`, `venue`), `origin`, `method` (`native`, `copy`, `network`) | `locale` | no | Descubrimiento |
 | `review_submitted` | Review submitted successfully | web | `ReviewSidebarCard.client.tsx` | frontend | `accommodation_id` | `average_rating`, `has_title`, `has_content` | no | Descubrimiento |
 | `contribution_banner_clicked` | Contribution CTA clicked | web | `ContributionBanner.astro` | frontend | `source_page`, `contribution_variant` | none | no | Adquisición |
 | `contribution_report_submitted` | Destination report contribution submitted | web | `ContributionForm.client.tsx` | frontend | none | `destination_slug`, `locale` | no | Adquisición |

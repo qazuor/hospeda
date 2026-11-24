@@ -14,7 +14,7 @@
 
 .title {
     margin: 0;
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     font-weight: 600;
     color: var(--core-foreground);
 }
@@ -26,16 +26,16 @@
     border: none;
     gap: var(--space-1, 0.25rem);
     padding: 0.125rem;
-    border-radius: var(--radius-pill, 999px);
-    background: var(--surface-warm, rgba(0, 0, 0, 0.04));
+    border-radius: var(--radius-pill);
+    background: var(--surface-warm);
 }
 
 .toggleButton,
 .toggleActive {
     padding: 0.25rem 0.75rem;
     border: none;
-    border-radius: var(--radius-pill, 999px);
-    font-size: var(--text-caption, 0.75rem);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-caption);
     font-weight: 600;
     cursor: pointer;
     background: transparent;
@@ -43,9 +43,9 @@
 }
 
 .toggleActive {
-    background: var(--core-card, #fff);
+    background: var(--core-card);
     color: var(--core-foreground);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-card);
 }
 
 .card {
@@ -54,13 +54,13 @@
     gap: var(--space-3, 0.75rem);
     padding: var(--space-4, 1rem);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.5rem);
+    border-radius: var(--radius-md);
     background: var(--core-card, var(--core-background));
 }
 
 .cardName {
     margin: 0;
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     font-weight: 600;
     color: var(--core-foreground);
 }
@@ -70,7 +70,7 @@
 .empty {
     margin: 0;
     color: var(--core-muted-foreground);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
 }
 
 .plansLink {
@@ -86,7 +86,7 @@
 }
 
 .totalNumber {
-    font-size: var(--text-body-lg, 1.5rem);
+    font-size: var(--text-body-lg);
     font-weight: 700;
     color: var(--core-foreground);
     font-variant-numeric: tabular-nums;
@@ -94,7 +94,7 @@
 
 .totalLabel {
     color: var(--core-muted-foreground);
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
 }
 
 .series {
@@ -114,15 +114,15 @@
 }
 
 .seriesDate {
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
     color: var(--core-muted-foreground);
     font-variant-numeric: tabular-nums;
 }
 
 .seriesTrack {
     height: 6px;
-    border-radius: var(--radius-pill, 999px);
-    background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+    border-radius: var(--radius-pill);
+    background: var(--surface-warm);
     overflow: hidden;
 }
 
@@ -130,13 +130,13 @@
     display: block;
     height: 100%;
     min-width: 2px;
-    border-radius: var(--radius-pill, 999px);
+    border-radius: var(--radius-pill);
     background: var(--brand-accent);
 }
 
 .seriesValue {
     text-align: right;
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
     color: var(--core-muted-foreground);
     font-variant-numeric: tabular-nums;
 }
@@ -155,7 +155,7 @@
 
 .breakdownTitle {
     margin: 0;
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
     font-weight: 600;
     color: var(--core-muted-foreground);
     text-transform: uppercase;
@@ -176,7 +176,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2, 0.5rem);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-foreground);
 }
 
@@ -197,15 +197,15 @@
 .qrImage {
     width: 128px;
     height: 128px;
-    border-radius: var(--radius-sm, 0.25rem);
-    background: #fff;
+    border-radius: var(--radius-sm);
+    background: var(--palette-neutral-50);
     padding: var(--space-2, 0.5rem);
     border: 1px solid var(--border);
 }
 
 .qrTarget {
     margin: 0;
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
     color: var(--core-muted-foreground);
     word-break: break-all;
 }
@@ -213,20 +213,20 @@
 .downloadButton {
     padding: 0.375rem 0.875rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 0.5rem);
-    background: var(--core-card, #fff);
+    border-radius: var(--radius-button);
+    background: var(--core-card);
     color: var(--core-foreground);
     font-weight: 600;
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     cursor: pointer;
 }
 
 .downloadButton:hover {
-    background: var(--surface-warm, rgba(0, 0, 0, 0.04));
+    background: var(--surface-warm);
 }
 
 .downloaded {
     margin: 0;
     color: var(--core-muted-foreground);
-    font-size: var(--text-caption, 0.75rem);
+    font-size: var(--text-caption);
 }

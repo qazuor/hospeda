@@ -36,6 +36,10 @@
  * `EXCEPTIONS_CEILING` (lower it when you shrink the list). `--print-baseline`
  * prints the current legacy-zone counts and exits 0.
  *
+ * HOS-2508 drained the list: it is `{}` and the ceiling is `0 / 0`, so any
+ * entry at all is a ceiling breach. The legacy zone is now held to the same
+ * zero as the strict zone; raising the ceiling is an owner decision.
+ *
  * ---------------------------------------------------------------------------
  * WHAT THIS GUARD DOES NOT SEE — read before trusting its green
  * ---------------------------------------------------------------------------
@@ -71,7 +75,7 @@ import {
 export const EXCEPTIONS_PATH = 'scripts/guards/account-css-literals-exceptions.json';
 
 /** Frozen maximum size of the exceptions list (entries = file × category pairs). */
-export const EXCEPTIONS_CEILING = { entries: 118, total: 487 } as const;
+export const EXCEPTIONS_CEILING = { entries: 0, total: 0 } as const;
 
 /** A scan below this many files means the scope moved or the cwd is wrong. */
 export const MIN_SCANNED_FILES = 300;

@@ -17,6 +17,7 @@ export const WebEvents = {
     SignupCompleted: AnalyticsEvents.signUpCompleted,
     BookingInitiated: AnalyticsEvents.contactOwnerStarted,
     ListingContactClicked: AnalyticsEvents.listingContactClicked,
+    ListingShared: AnalyticsEvents.listingShared,
     BookingRequestSent: AnalyticsEvents.contactOwnerCompleted,
     NewsletterSubscribed: AnalyticsEvents.newsletterSubscribed,
     ContributionBannerClicked: AnalyticsEvents.contributionBannerClicked,

@@ -172,7 +172,7 @@ describe('WhatsAppCTA.module.css', () => {
         // body — which every other spelling satisfied (`#fff`, `white`,
         // `rgb(255 255 255)`, `-webkit-text-fill-color`) and which could not see
         // the second `.cta` rule this file already has inside
-        // `@media (max-width: 600px)`, nor a descendant rule. Whole-file and
+        // `@media (min-width: 30rem)`, nor a descendant rule. Whole-file and
         // token-only, via the helper the other two WhatsApp surfaces share.
         expect(findBareInkDeclarations(cssSrc)).toEqual([]);
         expect(findBareInkDeclarations(src)).toEqual([]);
@@ -224,7 +224,13 @@ describe('WhatsAppCTA.module.css', () => {
         expect(cssSrc).toContain('outline:');
     });
 
-    it('collapses to a stacked layout below 600px width', () => {
-        expect(cssSrc).toContain('@media (max-width: 600px)');
+    it('stacks by default and goes side by side from the 30rem breakpoint (D6, HOS-2508)', () => {
+        const breakpoint = cssSrc.indexOf('@media (min-width: 30rem)');
+        expect(breakpoint).toBeGreaterThan(-1);
+        const base = cssSrc.slice(0, breakpoint);
+        const wide = cssSrc.slice(breakpoint);
+        expect(base).toMatch(/\.wrapper\s*\{[^}]*flex-direction:\s*column/);
+        expect(wide).toMatch(/\.wrapper\s*\{[^}]*flex-direction:\s*row/);
+        expect(cssSrc).not.toContain('max-width: 600px');
     });
 });

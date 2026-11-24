@@ -206,6 +206,17 @@ describe('repo-wide state', () => {
         expect(EXCEPTIONS_CEILING.total).toBeLessThanOrEqual(1682);
     });
 
+    it('holds the drained list at zero, so any entry breaches the ceiling (HOS-2508)', () => {
+        expect(EXCEPTIONS_CEILING).toEqual({ entries: 0, total: 0 });
+        expect(exceptions).toEqual({});
+        const result = compareWithExceptions({
+            observed: { [LEGACY_CSS]: { color: 1 } },
+            exceptions: { [LEGACY_CSS]: { color: 1 } },
+            ceiling: EXCEPTIONS_CEILING
+        });
+        expect(result.ceilingBreach).not.toBeNull();
+    });
+
     it('prints a baseline equal to the committed list', () => {
         expect(legacyBaseline({ counts: countHits({ hits: scan.hits }) })).toEqual(exceptions);
     });
