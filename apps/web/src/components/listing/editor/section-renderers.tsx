@@ -83,6 +83,12 @@ export interface ListingSectionRenderContext {
     readonly listingId: string;
 }
 
+/** Fallback of the amenities block title, per vertical (the key carries the real copy). */
+const AMENITIES_TITLE_FALLBACK: Readonly<Record<VenueOrExperience, string>> = {
+    venue: 'Qué ofrece tu comercio',
+    experience: 'Qué ofrece tu experiencia'
+};
+
 /**
  * Whether the two experience-only form sections render for each vertical.
  *
@@ -290,7 +296,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
                     title={translate(
                         context.locale,
                         `listing.owner.editor.groups.amenities.${context.vertical}`,
-                        ''
+                        AMENITIES_TITLE_FALLBACK[context.vertical]
                     )}
                     helpId={sectionHelpId({ vertical: context.vertical, slug: 'servicios' })}
                 >
