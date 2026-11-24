@@ -152,6 +152,41 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4732
+    {
+        id: '2026-11-23-unpublish-without-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Podés despublicar o pausar tu ficha aunque no tengas un plan activo',
+            en: 'You can unpublish or pause your listing even without an active plan',
+            pt: 'Você pode despublicar ou pausar seu anúncio mesmo sem um plano ativo'
+        },
+        body: {
+            es: 'Si no tenés un plan activo, ahora podés despublicar o pausar una ficha. En alojamientos, desde «Más acciones → Despublicar»; en comercios y experiencias, a través del asistente de IA. Para volver a publicarla sigue haciendo falta un plan.',
+            en: 'If you have no active plan, you can now unpublish or pause a listing. For accommodations, use "More actions → Unpublish"; for venues and experiences, use the AI assistant. Publishing it again still requires a plan.',
+            pt: 'Se você não tem um plano ativo, agora pode despublicar ou pausar um anúncio. Em acomodações, use «Mais ações → Despublicar»; em estabelecimentos e experiências, use o assistente de IA. Para publicá-lo novamente ainda é necessário um plano.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4743
+    {
+        id: '2026-11-24-declined-payment-plan-and-restart',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Si te rechazan el primer pago, te decimos qué plan intentaste contratar y podés empezar de nuevo',
+            en: 'If your first payment is declined, we tell you which plan you tried to buy and you can start over',
+            pt: 'Se o seu primeiro pagamento for recusado, informamos qual plano você tentou contratar e você pode começar de novo'
+        },
+        body: {
+            es: 'El email de pago rechazado ahora nombra el plan que intentaste contratar. Y cuando ya pasó el plazo para reintentar, «Mi cuenta → Suscripción» te muestra un aviso con «Empezar de nuevo» para elegir un plan otra vez.',
+            en: 'The declined-payment email now names the plan you tried to buy. And once the retry window has passed, "My account → Subscription" shows a notice with "Start over" so you can choose a plan again.',
+            pt: 'O e-mail de pagamento recusado agora informa o plano que você tentou contratar. E, quando o prazo para tentar novamente já passou, «Minha conta → Assinatura» mostra um aviso com «Começar de novo» para escolher um plano outra vez.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4687
     {
         id: '2026-11-22-close-account-blocked-by-charge-message',
