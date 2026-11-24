@@ -16,7 +16,8 @@ import type { Accommodation, OwnerPromotion, PriceAlert } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
-    OwnerPromotionEntityTypeEnum
+    OwnerPromotionEntityTypeEnum,
+    TouristAudienceEnum
 } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -60,6 +61,7 @@ function makePromotion(overrides: Partial<OwnerPromotion> = {}): OwnerPromotion 
         maxRedemptions: null,
         currentRedemptions: 0,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
+        touristAudience: TouristAudienceEnum.PLUS,
         createdAt: new Date('2026-06-30T09:00:00.000Z'),
         updatedAt: new Date('2026-06-30T09:00:00.000Z'),
         deletedAt: null,
