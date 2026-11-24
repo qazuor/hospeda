@@ -57,7 +57,7 @@ test.describe('GUEST-11: mobile listing detail @p0 @guest @discovery @messaging'
         await expect(bar.getByText(/^\$\s*150\.500$/)).toBeVisible();
         await expect(bar.getByText('/noche', { exact: true })).toBeVisible();
         // The seed has public contact information but no contactInfo.whatsapp.
-        await expect(bar.getByRole('link', { name: 'WhatsApp', exact: true })).toHaveCount(0);
+        await expect(bar.getByRole('link', { name: /WhatsApp/ })).toHaveCount(0);
 
         const { trigger, sheet } = await openContactSheet({ page });
         await expect(sheet).toHaveAttribute('data-variant', 'sheet');

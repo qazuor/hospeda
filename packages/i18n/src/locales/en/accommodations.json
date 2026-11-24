@@ -451,6 +451,17 @@
         },
         "listingContact": {
             "bar": {
+                "actions": {
+                    "inquire": "Send an inquiry",
+                    "viewMenu": "View menu",
+                    "whatsapp": "Message on WhatsApp",
+                    "call": "Call",
+                    "favoriteAdd": "Save to favorites",
+                    "favoriteRemove": "Remove from favorites",
+                    "share": "Share",
+                    "compareAdd": "Add to comparison",
+                    "compareRemove": "Remove from comparison"
+                },
                 "inquire": "Inquire",
                 "contact": "Contact",
                 "viewMenu": "View menu",

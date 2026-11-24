@@ -277,7 +277,7 @@ describe('ListingContactPanel', () => {
         for (const link of links) expect(link).not.toHaveAttribute('aria-haspopup');
     });
 
-    it('opens from the dock WhatsApp action and focuses its anonymous upsell without a lookup', async () => {
+    it('AC-30 (HOS-2579): opens from the bar WhatsApp action and focuses its anonymous upsell without a lookup', async () => {
         render(
             <>
                 <div data-mobile-dock>
@@ -285,12 +285,15 @@ describe('ListingContactPanel', () => {
                 </div>
                 <ListingContactBar
                     listingId={props.accommodation.id}
+                    listingName="Casa del Río"
                     price={props.price}
                     locale="es"
                     vertical="accommodation"
+                    primary={{ kind: 'inquire' }}
                     hasWhatsapp
+                    phoneHref={null}
+                    shareUrl="https://hospeda.test/es/alojamientos/casa-del-rio/"
                     panelId={props.panelId}
-                    primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
                 />
                 <ListingContactPanel
                     {...props}
@@ -299,7 +302,7 @@ describe('ListingContactPanel', () => {
             </>
         );
 
-        const trigger = screen.getByRole('link', { name: 'WhatsApp' });
+        const trigger = screen.getByRole('link', { name: 'Escribir por WhatsApp' });
         expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
         trigger.focus();
         await userEvent.setup().keyboard('{Enter}');

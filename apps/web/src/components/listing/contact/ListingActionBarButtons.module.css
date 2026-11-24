@@ -1,0 +1,73 @@
+/*
+ * ListingActionBarButtons.module.css
+ * The icon-only action row of the listing mobile bar (HOS-2579 §6.10.2).
+ * Width budget at 360px: 52 (Consultar) + 5 × 44 + 5 × 4px gaps = 292px,
+ * next to the 44px ai-chat button. Every target is at least 44×44px.
+ */
+
+.row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--space-1);
+    flex: none;
+}
+
+.primary,
+.action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    block-size: 44px;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+}
+
+/* Primary by every means except width: first, filled, larger (52×44). */
+.primary {
+    inline-size: 52px;
+}
+
+/* Outline round icon buttons, the same surface as FavoriteButton. */
+.action {
+    inline-size: 44px;
+    border: 1.5px solid var(--border);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+}
+
+.action:not([data-action="whatsapp"]):hover {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary-a35);
+}
+
+.primary:focus-visible,
+.action:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Wrapper of a reused island; the island root keeps its own behaviour. */
+.island {
+    display: inline-flex;
+    flex: none;
+}
+
+/* The reused islands are resized to the bar's 44px round target. The extra
+ * `.island` raises specificity over the islands' own size rules. */
+.island .favorite,
+.island .compare {
+    width: 44px;
+    height: 44px;
+    padding-inline: 0;
+    border-width: 1.5px;
+}
+
+.share :global(button[aria-expanded]) {
+    width: 44px;
+    height: 44px;
+    border: 1.5px solid var(--border);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+}

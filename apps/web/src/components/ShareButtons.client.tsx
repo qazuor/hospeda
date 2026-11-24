@@ -77,6 +77,8 @@ interface ShareButtonsProps {
     readonly appearance?: 'icon-overlay' | 'icon';
     /** When present, completed shares emit `listing_shared` (HOS-2579). */
     readonly analytics?: ShareButtonsAnalytics;
+    /** Accessible name of the trigger, replacing «Compartir» (listing action bar, HOS-2579). */
+    readonly label?: string;
 }
 
 /** A share action's `utm_source`. */
@@ -104,7 +106,8 @@ export function ShareButtons({
     campaign,
     className,
     appearance,
-    analytics
+    analytics,
+    label
 }: ShareButtonsProps) {
     const { t } = createTranslations(locale);
     const sharedUrl = (source: ShareSource): string =>
@@ -288,7 +291,7 @@ export function ShareButtons({
                 ref={triggerRef}
                 type="button"
                 className={styles.trigger}
-                aria-label={t('ui.accessibility.shareViaDevice', 'Compartir')}
+                aria-label={label ?? t('ui.accessibility.shareViaDevice', 'Compartir')}
                 aria-expanded={isOpen}
                 aria-haspopup={isCompact ? undefined : 'menu'}
                 onClick={() => void handleMainClick()}

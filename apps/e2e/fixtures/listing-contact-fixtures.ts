@@ -1,6 +1,7 @@
 /**
- * E2E-only experience and venue fixtures for the mobile contact bar (HOS-2532,
- * spec HOS-2520 section 10: AC-2.8, AC-2.9, AC-2.10).
+ * E2E-only accommodation, experience and venue fixtures for the mobile contact bar
+ * (HOS-2532, spec HOS-2520 section 10: AC-2.8, AC-2.9, AC-2.10) and the icon-only
+ * action bar (HOS-2579 §6.10: AC-33, AC-34).
  *
  * The base seed has no experience with public channels, no venue without a menu
  * and without socials, and no venue with a WhatsApp number. Those rows must NOT
@@ -18,6 +19,17 @@ import type { Pool } from 'pg';
 const BASE_EXPERIENCE_SLUG = 'excursion-rio-uruguay-concepcion';
 /** Published seeded venue used as the clone template. */
 const BASE_VENUE_SLUG = 'cafe-del-palacio-colon';
+/** Published seeded accommodation used as the clone template (nightly ARS price). */
+const BASE_ACCOMMODATION_SLUG = 'paraiso-calido-country-house-colon';
+
+/** Public phone and WhatsApp of the all-actions accommodation fixture. Never real lines. */
+export const FIXTURE_ACCOMMODATION_CONTACT = {
+    mobilePhone: '+54 9 3442 555222',
+    whatsapp: '+54 9 3442 555333',
+    personalEmail: 'reservas@e2e-alojamiento.test',
+    preferredEmail: 'HOME',
+    preferredPhone: 'MOBILE'
+} as const;
 
 /** A WhatsApp number the fixtures publish. Never a real line. */
 export const FIXTURE_VENUE_WHATSAPP_NUMBER = '+54 9 3442 555000';
@@ -44,6 +56,12 @@ export const LISTING_CONTACT_FIXTURE_SLUGS = {
     /** Venue that stores a number but whose owner never chose a visibility. */
     venueWhatsappUndecided: 'e2e-venue-whatsapp-sin-decidir',
     /**
+     * HOS-2579 AC-33: accommodation with a price, WhatsApp and a public phone, so
+     * the bar renders all six actions (Consultar, WhatsApp, Llamar, Favorito,
+     * Compartir, Comparar).
+     */
+    accommodationAllActions: 'e2e-alojamiento-todas-las-acciones',
+    /**
      * HOS-2579 AC-2b / AC-6 (spec §11 `venueWithHoursAndMenu`): venue with opening
      * hours, a carta and its own agenda, so the agenda must render inside
      * «Lo que ofrece» and the «Horarios» tab has a section to point at.
@@ -52,7 +70,7 @@ export const LISTING_CONTACT_FIXTURE_SLUGS = {
 } as const;
 
 interface FixtureRow {
-    readonly table: 'experiences' | 'venues';
+    readonly table: 'accommodations' | 'experiences' | 'venues';
     readonly baseSlug: string;
     readonly id: string;
     readonly slug: string;
@@ -146,9 +164,18 @@ const FIXTURE_ROWS: readonly FixtureRow[] = [
         }
     },
     {
+        table: 'accommodations',
+        baseSlug: BASE_ACCOMMODATION_SLUG,
+        id: rowId(7),
+        slug: LISTING_CONTACT_FIXTURE_SLUGS.accommodationAllActions,
+        name: 'E2E Alojamiento todas las acciones',
+        overrides: {
+            contact_info: FIXTURE_ACCOMMODATION_CONTACT
+        }
+    },
+    {
         table: 'venues',
         baseSlug: BASE_VENUE_SLUG,
-        // rowId(7) is taken by the HOS-2579 action-bar accommodation fixture (PR 4).
         id: rowId(8),
         slug: LISTING_CONTACT_FIXTURE_SLUGS.venueWithHoursAndMenu,
         name: 'E2E Venue con horarios y carta',
@@ -205,7 +232,7 @@ export async function ensureListingContactFixtures(pool: Pool): Promise<void> {
             slug: row.slug,
             name: row.name,
             name_i18n: null,
-            ...(row.table === 'venues' ? { location_key: null } : {})
+            ...(row.table === 'experiences' ? {} : { location_key: null })
         };
         const inserted = await pool.query(
             `INSERT INTO ${row.table}

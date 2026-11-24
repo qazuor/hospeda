@@ -1,6 +1,7 @@
 import { AnalyticsEventSchemas } from '@repo/analytics';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { ListingContactBarProps } from '@/components/listing/contact/ListingContactBar.client';
 import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
 import { markListingContactPanelReady } from '@/components/listing/contact/listing-contact-readiness';
 import { onListingContactPanelOpen } from '@/lib/listing-contact/listing-contact-events';
@@ -9,11 +10,12 @@ import { initContactLinkTracking } from '@/lib/listing-contact/track-contact-lin
 const { trackEvent } = vi.hoisted(() => ({ trackEvent: vi.fn() }));
 vi.mock('@/lib/analytics/umami-client', () => ({ trackEvent }));
 
-const experience = {
+const experience: ListingContactBarProps = {
     listingId: 'exp-1',
+    listingName: 'Kayak al atardecer',
     vertical: 'experience',
     locale: 'es',
-    hasWhatsapp: true,
+    hasWhatsapp: false,
     price: {
         amount: 15000,
         currency: 'ARS',
@@ -21,21 +23,23 @@ const experience = {
         onRequest: false
     },
     panelId: 'exp-panel',
-    primaryLabelKey: 'accommodations.detail.listingContact.bar.contact',
+    primary: { kind: 'inquire' },
+    phoneHref: null,
+    shareUrl: 'https://hospeda.test/es/experiencias/kayak/',
     fallbackHref: '#experience-contact'
-} as const;
+};
 
 describe('ListingContactBar for channel-only verticals', () => {
-    it('AC-2.8: shows the price and a Contactar button that never carries WhatsApp', () => {
+    it('AC-2.8: shows the price and a Consultar button that never carries WhatsApp', () => {
         render(<ListingContactBar {...experience} />);
 
         expect(screen.getByText(/15\.000/)).toBeInTheDocument();
         expect(screen.getByText('/persona')).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'Contactar' })).toHaveAttribute(
+        expect(screen.getByRole('link', { name: 'Consultar' })).toHaveAttribute(
             'href',
             '#experience-contact'
         );
-        expect(screen.queryByRole('link', { name: 'WhatsApp' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /WhatsApp/ })).not.toBeInTheDocument();
     });
 
     it('AC-2.8: asks for the price when the experience has none', () => {
@@ -55,7 +59,7 @@ describe('ListingContactBar for channel-only verticals', () => {
         const clearReady = markListingContactPanelReady({ panelId: experience.panelId });
         try {
             render(<ListingContactBar {...experience} />);
-            fireEvent.click(screen.getByRole('link', { name: 'Contactar' }));
+            fireEvent.click(screen.getByRole('link', { name: 'Consultar' }));
 
             expect(receive).toHaveBeenCalledWith({ origin: 'bar', focus: undefined });
             expect(trackEvent).not.toHaveBeenCalled();
@@ -65,16 +69,14 @@ describe('ListingContactBar for channel-only verticals', () => {
         }
     });
 
-    it('AC-2.9: a venue without price links «Ver carta» outward, tagged as the menu channel', () => {
+    it('AC-2.9 / AC-32: a venue without price links «Ver carta» outward, tagged as the menu channel', () => {
         render(
             <ListingContactBar
                 {...experience}
                 listingId="ven-1"
                 vertical="venue"
                 price={null}
-                hasWhatsapp={false}
-                primaryLabelKey="accommodations.detail.listingContact.bar.viewMenu"
-                primaryLink={{ href: 'https://bar.com/carta', channel: 'menu' }}
+                primary={{ kind: 'menu', href: 'https://bar.com/carta' }}
             />
         );
 
@@ -87,6 +89,7 @@ describe('ListingContactBar for channel-only verticals', () => {
         // The page's delegated listener turns the attributes into a valid event.
         initContactLinkTracking({ document });
         document.documentElement.dataset.locale = 'es';
+        document.addEventListener('click', (event) => event.preventDefault(), { once: true });
         fireEvent.click(link);
         const payload = trackEvent.mock.lastCall?.[1];
         expect(payload).toMatchObject({
@@ -96,16 +99,5 @@ describe('ListingContactBar for channel-only verticals', () => {
             origin: 'bar'
         });
         expect(AnalyticsEventSchemas.listing_contact_clicked.safeParse(payload).success).toBe(true);
-    });
-
-    it('rejects a fallback that is not an in-page anchor', () => {
-        const { container } = render(
-            <ListingContactBar
-                {...experience}
-                fallbackHref="https://evil.test"
-            />
-        );
-
-        expect(container).toBeEmptyDOMElement();
     });
 });

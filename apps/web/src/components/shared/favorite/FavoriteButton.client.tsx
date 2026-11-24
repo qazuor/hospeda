@@ -118,6 +118,12 @@ export interface FavoriteButtonProps {
     readonly guestPromptFallbackRef?: RefObject<HTMLElement | null>;
     /** Surface this heart lives on, forwarded as `origin` on the favorite events (HOS-2579). */
     readonly origin?: ContactOrigin;
+    /**
+     * Accessible names that replace the default «Agregar/Quitar de favoritos»
+     * pair, for a surface with its own vocabulary (the listing action bar,
+     * HOS-2579 §6.10.2). The loading label is kept.
+     */
+    readonly labels?: { readonly add: string; readonly remove: string };
 }
 
 /**
@@ -171,7 +177,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     showCount = false,
     focusGuestPrompt = false,
     guestPromptFallbackRef,
-    origin
+    origin,
+    labels
 }) => {
     const t = createT(locale);
 
@@ -240,8 +247,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     const ariaLabel = isResolving
         ? t('ui.favorite.loading', 'Verificando favorito...')
         : isFavorited
-          ? t('ui.favorite.remove', 'Quitar de favoritos')
-          : t('ui.favorite.add', 'Agregar a favoritos');
+          ? (labels?.remove ?? t('ui.favorite.remove', 'Quitar de favoritos'))
+          : (labels?.add ?? t('ui.favorite.add', 'Agregar a favoritos'));
 
     /**
      * Whether to show the count pill.

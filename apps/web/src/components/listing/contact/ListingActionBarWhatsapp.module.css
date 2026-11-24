@@ -1,0 +1,17 @@
+/*
+ * ListingActionBarWhatsapp.module.css
+ * The WhatsApp ink of the listing action bar (HOS-2579), kept in its own file so
+ * it is the only bar stylesheet that names the channel tokens (HOS-314 guard).
+ * The element + attribute selector outranks the outline `.action` rule of the
+ * row stylesheet whatever order the two modules load in.
+ */
+
+a.whatsapp[data-action="whatsapp"] {
+    border-color: transparent;
+    background: var(--channel-whatsapp);
+    color: var(--channel-whatsapp-foreground);
+}
+
+a.whatsapp[data-action="whatsapp"]:hover {
+    background: var(--channel-whatsapp-hover);
+}

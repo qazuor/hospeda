@@ -4,30 +4,40 @@
 
 @media (max-width: 767px) {
     :global([data-mobile-dock]) .bar {
-        /* The dock row contributes 8px padding on either side and the safe area. */
+        /* The dock row contributes 8px padding on either side and the safe area.
+           HOS-2579 §6.10: the price line sits above one row of icon buttons. */
         display: flex;
         position: static;
         flex: 1 1 0;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
         min-inline-size: 0;
         min-block-size: 48px;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--space-1);
+        gap: 2px;
+    }
+
+    /* The bar is taller than one control (price line above the icons), so the
+       row aligns on the bottom edge: the icons and the ai-chat button share a line. */
+    :global(.mobile-dock__row):has(.bar) {
+        align-items: flex-end;
     }
 }
 
 .price {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: baseline;
+    gap: var(--space-1);
     flex: 0 1 auto;
     min-inline-size: 0;
+    max-inline-size: 100%;
     margin: 0;
     line-height: 1.1;
     color: var(--core-foreground);
+    white-space: nowrap;
 }
 
-/* Small muted label above the amount ("Desde"). */
+/* Small muted label before the amount ("Desde"). */
 .prefix {
     font-size: var(--text-caption);
     line-height: 1.1;
@@ -43,7 +53,7 @@
 }
 
 .amount {
-    font-size: var(--text-lg);
+    font-size: var(--text-sm);
     font-weight: 700;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -52,9 +62,4 @@
 .unit {
     font-size: var(--text-caption);
     color: var(--core-muted-foreground);
-}
-
-/* Without a price (venue) the action cluster keeps the trailing edge. */
-.bar > :last-child {
-    margin-inline-start: auto;
 }
