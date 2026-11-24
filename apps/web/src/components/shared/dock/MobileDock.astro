@@ -154,6 +154,12 @@ const { locale } = Astro.props;
 			padding: 2px;
 		}
 
+		/* HOS-2579: an empty start group is not a row item, so it does not cost the
+		   row a gap. The listing action bar needs those 4px at 360px. */
+		.mobile-dock__start:not(:has([data-dock-item])) {
+			display: none;
+		}
+
 		:global(html[data-mobile-menu-open]) .mobile-dock,
 		:global(html[data-search-panel-open]) .mobile-dock,
 		:global(html[data-filters-drawer-open]) .mobile-dock {

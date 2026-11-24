@@ -85,9 +85,20 @@ describe('experience and venue contact surfaces carry no WhatsApp', () => {
         expect(venuePage).not.toMatch(/wa\.me|buildWhatsAppLink/);
     });
 
-    it('the venue page never feeds WhatsApp to the dock bar button', () => {
+    it('the venue page feeds the dock bar only the HOS-2256 WhatsApp state (HOS-2579 AC-29)', () => {
         expect(venuePage).toContain('hasWhatsapp={false}');
         expect(venuePage).not.toMatch(/hasWhatsapp=\{(?!false\})/);
+        expect(venuePage).toContain('venueWhatsapp={venueWhatsApp ?? null}');
+    });
+
+    it('the action bar builds a wa.me link only from the venue PUBLIC state, never from contact data', () => {
+        const bar = stripComments(read('components/listing/contact/ListingActionBarButtons.tsx'));
+
+        expect(bar).toMatch(/vertical === 'venue' && venueWhatsapp\?\.mode === 'PUBLIC'/);
+        expect(bar).toContain('phone: venueWhatsapp.number');
+        expect(bar).not.toMatch(/contactInfo|socialNetworks/);
+        // Accommodation WhatsApp only opens the panel: the number stays behind the HOS-19 gate.
+        expect(bar).toMatch(/\(vertical === 'accommodation' && hasWhatsapp\)/);
     });
 
     it('the shared actions render the WhatsApp control for accommodation only', () => {
@@ -106,15 +117,22 @@ describe('experience and venue contact surfaces carry no WhatsApp', () => {
     });
 });
 
-describe('experience and venue contact bar presence (AC-2.8, AC-2.9)', () => {
-    it('the experience bar renders only when a public channel exists', () => {
+describe('experience and venue contact bar presence (AC-2.8, AC-2.9, HOS-2579 §6.10.1)', () => {
+    it('the experience «Consultar» and panel exist only when a public channel exists', () => {
         expect(experiencePage).toMatch(/hasContactBlock\s*\?\s*buildExperienceChannels/);
-        expect(experiencePage).toMatch(/contactChannels\.length > 0 &&/);
+        expect(experiencePage).toContain(
+            "primary={contactChannels.length > 0 ? { kind: 'inquire' } : null}"
+        );
+        expect(experiencePage).toMatch(/contactChannels\.length > 0 && \(\s*<ListingChannelsPanel/);
     });
 
-    it('the venue bar is gated by the menu/socials decision and its panel only in panel mode', () => {
-        expect(venuePage).toMatch(/contactMode\.kind !== 'none' &&/);
-        expect(venuePage).toMatch(/contactMode\.kind === 'panel' &&/);
+    it('the venue primary follows the menu/socials decision and its panel the panel mode or a gated WhatsApp', () => {
+        expect(venuePage).toMatch(/contactMode\.kind === 'menu'\s*\?\s*\(\{ kind: 'menu'/);
+        expect(venuePage).toMatch(/contactMode\.kind === 'panel'\s*\?\s*\(\{ kind: 'inquire' \}/);
+        expect(venuePage).toMatch(
+            /contactMode\.kind === 'panel' \|\| venueWhatsApp\?\.mode === 'LOGGED_IN_ONLY'/
+        );
+        expect(venuePage).toMatch(/hasChannelsPanel && \(\s*<ListingChannelsPanel/);
         expect(venuePage).toContain('price={null}');
     });
 });

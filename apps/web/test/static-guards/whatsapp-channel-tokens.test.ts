@@ -108,6 +108,8 @@ const BARE_TOKEN_PREFIX = 'channel-whatsapp';
 const OWNING_FILES: readonly string[] = [
     'components/accommodation/WhatsAppContact.module.css',
     'components/listing/contact/ListingContactActions.module.css',
+    // HOS-2579: the icon-only action bar. Inked in `ListingActionBarButtons.test.tsx`.
+    'components/listing/contact/ListingActionBarWhatsapp.module.css',
     'components/newsletter/WhatsAppCTA.module.css',
     // HOS-2256: the venue WhatsApp button. Inked in `VenueWhatsAppButton.test.tsx`.
     'components/venue/VenueWhatsAppButton.module.css'
@@ -121,6 +123,11 @@ const OWNING_FILES: readonly string[] = [
  */
 const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, number>>>> = {
     'components/listing/contact/ListingContactActions.module.css': {
+        '--channel-whatsapp': 1,
+        '--channel-whatsapp-foreground': 1,
+        '--channel-whatsapp-hover': 1
+    },
+    'components/listing/contact/ListingActionBarWhatsapp.module.css': {
         '--channel-whatsapp': 1,
         '--channel-whatsapp-foreground': 1,
         '--channel-whatsapp-hover': 1

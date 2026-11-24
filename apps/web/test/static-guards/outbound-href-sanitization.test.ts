@@ -92,6 +92,10 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         'built only by `buildExperienceChannels`/`buildVenueChannels` (`lib/listing-contact/listing-channels.ts`), which pass every website and social URL through `resolveSafeExternalUrl` and compose tel:/mailto: themselves',
     'components/listing/contact/ListingContactActions.tsx#{primaryLink.href}':
         'the venue menu link, produced by `resolveVenueContactMode`, which passes `menuUrl` through `resolveSafeExternalUrl` and yields no link when it returns undefined',
+    'components/listing/contact/ListingActionBarButtons.tsx#{primary.href}':
+        'HOS-2579: the venue «Ver carta» link, produced by `resolveVenueContactMode`, which passes `menuUrl` through `resolveSafeExternalUrl`; the venue page sets `primary.kind = "menu"` only from that output',
+    'components/listing/contact/ListingActionBarButtons.tsx#{venueWhatsappHref}':
+        'HOS-2579: `buildWhatsAppLink` composes `https://wa.me/<digits>` from the venue PUBLIC number (HOS-2256); a non-dialable number yields null and the anchor is not rendered',
     'components/gallery/GalleryLightboxCaption.tsx#{credit.url}':
         '`PhotoCreditParts.url`, produced by `formatPhotoCredit`, which calls the sanitizer itself',
     'components/shared/ImageAttribution.astro#{credit.url}':

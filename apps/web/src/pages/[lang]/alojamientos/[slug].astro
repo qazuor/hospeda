@@ -55,6 +55,7 @@ import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
 import { getApiUrl } from '@/lib/env';
 import { EntitlementKeyEnum } from '@repo/schemas';
 import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
+import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action-bar';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -380,6 +381,14 @@ const whatsappGatePlanNames = await getGatePlanNames({
     entitlement: EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY
 });
 const panelId = 'listing-contact-panel';
+// HOS-2579 §6.10: the action bar's public facts. Compare reuses the header's
+// `CAN_COMPARE_ACCOMMODATIONS` upsell copy (public catalog plan names, HOS-2554).
+const barPhoneHref = resolveListingBarPhoneHref({
+    phones: [accommodation.contactInfo?.phone, accommodation.contactInfo?.landlinePhone]
+}).href;
+const barCompareGatePlanNames = await getGatePlanNames({
+    entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
+});
 const contactPrice = {
     amount: accommodation.price?.price ?? null,
     currency: accommodation.price?.currency ?? null,
@@ -857,9 +866,16 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         vertical="accommodation"
         listingId={accommodation.id}
         locale={locale}
+        listingName={accommodation.name}
         price={contactPrice}
+        primary={{ kind: 'inquire' }}
         hasWhatsapp={accommodation.hasWhatsapp}
-        primaryLabelKey="accommodations.detail.listingContact.bar.inquire"
+        phoneHref={barPhoneHref}
+        shareUrl={`${siteOrigin}${Astro.url.pathname}`}
+        compare={{
+            thumbnailUrl: accommodation.featuredImage || undefined,
+            gatePlanNames: barCompareGatePlanNames
+        }}
         panelId={panelId}
     />
     <ListingContactPanel

@@ -52,6 +52,7 @@ import {
     buildExperienceContactPrice
 } from '@/lib/listing-contact/listing-channels';
 import { EXPERIENCE_CONTACT_ANCHOR_ID } from '@/lib/experience-contact';
+import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action-bar';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { DetailFaq } from '@/data/types';
 
@@ -238,6 +239,9 @@ const contactPrice = buildExperienceContactPrice({
     isPriceOnRequest: experience.isPriceOnRequest
 });
 const panelId = 'listing-contact-panel';
+const barPhoneHref = resolveListingBarPhoneHref({
+    phones: [experience.contactInfo?.mobilePhone, experience.contactInfo?.workPhone]
+}).href;
 
 // --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -461,29 +465,33 @@ const headerProps = buildExperienceHeader({
         locale={locale}
         apiUrl={getApiUrl()}
     />
+    {/* HOS-2579 §6.10: the bar renders on every experience page (Favorito and
+         Compartir always exist), so the mobile dock stays pinned. «Consultar»
+         and the panel exist only with a public channel. */}
+    <ListingContactBar
+        client:idle
+        vertical="experience"
+        listingId={experience.id}
+        listingName={experience.name}
+        locale={locale}
+        price={contactPrice}
+        primary={contactChannels.length > 0 ? { kind: 'inquire' } : null}
+        hasWhatsapp={false}
+        phoneHref={barPhoneHref}
+        shareUrl={`${siteOrigin}${Astro.url.pathname}`}
+        panelId={panelId}
+        fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
+    />
     {contactChannels.length > 0 && (
-        <>
-            <ListingContactBar
-                client:idle
-                vertical="experience"
-                listingId={experience.id}
-                locale={locale}
-                price={contactPrice}
-                hasWhatsapp={false}
-                primaryLabelKey="accommodations.detail.listingContact.bar.contact"
-                panelId={panelId}
-                fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
-            />
-            <ListingChannelsPanel
-                client:idle
-                panelId={panelId}
-                listingId={experience.id}
-                vertical="experience"
-                locale={locale}
-                channels={contactChannels}
-                price={contactPrice}
-            />
-        </>
+        <ListingChannelsPanel
+            client:idle
+            panelId={panelId}
+            listingId={experience.id}
+            vertical="experience"
+            locale={locale}
+            channels={contactChannels}
+            price={contactPrice}
+        />
     )}
 </DetailLayout>
 

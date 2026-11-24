@@ -40,7 +40,8 @@ const clean = (value: string | null | undefined): string | undefined => {
     return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const toTelHref = (phone: string): string => `tel:${phone.replace(/[^\d+]/g, '')}`;
+/** Normalizes a free-text phone into a `tel:` href (digits and `+` only). */
+export const toTelHref = (phone: string): string => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
 /**
  * Builds the experience channels in display order: mobile phone, landline,

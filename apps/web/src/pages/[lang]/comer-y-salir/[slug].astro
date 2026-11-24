@@ -62,6 +62,7 @@ import { ListingContactBar } from '@/components/listing/contact/ListingContactBa
 import { ListingChannelsPanel } from '@/components/listing/contact/ListingChannelsPanel.client';
 import { buildVenueChannels, resolveVenueContactMode } from '@/lib/listing-contact/listing-channels';
 import { VENUE_CONTACT_ANCHOR_ID } from '@/lib/venue-contact';
+import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action-bar';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
 import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
@@ -289,6 +290,20 @@ const contactMode = resolveVenueContactMode({
     hasWhatsapp: Boolean(venueWhatsApp)
 });
 const contactPanelId = 'listing-contact-panel';
+// HOS-2579 §6.10 (D-1): position 1 is «Ver carta» with a menu, «Consultar» when the
+// panel has something to list, nothing otherwise. The panel also exists for a
+// LOGGED_IN_ONLY WhatsApp, which the bar opens on its WhatsApp row even beside a menu.
+const barPrimary =
+    contactMode.kind === 'menu'
+        ? ({ kind: 'menu', href: contactMode.href } as const)
+        : contactMode.kind === 'panel'
+          ? ({ kind: 'inquire' } as const)
+          : null;
+const hasChannelsPanel =
+    contactMode.kind === 'panel' || venueWhatsApp?.mode === 'LOGGED_IN_ONLY';
+const barPhoneHref = resolveListingBarPhoneHref({
+    phones: [venue.contactInfo?.mobilePhone, venue.contactInfo?.workPhone]
+}).href;
 
 const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
 const jsonLdHasMenu = buildRestaurantHasMenu({
@@ -621,25 +636,24 @@ const headerProps = buildVenueHeader({
         locale={locale}
         apiUrl={getApiUrl()}
     />
-    {contactMode.kind !== 'none' && (
-        <ListingContactBar
-            client:idle
-            vertical="venue"
-            listingId={venue.id}
-            locale={locale}
-            price={null}
-            hasWhatsapp={false}
-            primaryLabelKey={
-                contactMode.kind === 'menu'
-                    ? 'accommodations.detail.listingContact.bar.viewMenu'
-                    : 'accommodations.detail.listingContact.bar.contact'
-            }
-            panelId={contactPanelId}
-            fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
-            primaryLink={contactMode.kind === 'menu' ? { href: contactMode.href, channel: 'menu' } : undefined}
-        />
-    )}
-    {contactMode.kind === 'panel' && (
+    {/* HOS-2579 §6.10: the bar renders on every venue page (Favorito and
+         Compartir always exist), so the mobile dock stays pinned. */}
+    <ListingContactBar
+        client:idle
+        vertical="venue"
+        listingId={venue.id}
+        listingName={venue.name}
+        locale={locale}
+        price={null}
+        primary={barPrimary}
+        hasWhatsapp={false}
+        venueWhatsapp={venueWhatsApp ?? null}
+        phoneHref={barPhoneHref}
+        shareUrl={`${siteOrigin}${Astro.url.pathname}`}
+        panelId={contactPanelId}
+        fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
+    />
+    {hasChannelsPanel && (
         <ListingChannelsPanel
             client:idle
             panelId={contactPanelId}
