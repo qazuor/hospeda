@@ -841,14 +841,15 @@ export function buildFrameAncestors({
 }
 
 /**
- * Builds a Content-Security-Policy header value using content-hash-based
- * script/style policy.
+ * Builds a Content-Security-Policy header value using a content-hash-based
+ * script policy and a plain `'unsafe-inline'` style policy.
  *
- * SPEC-047: `script-src` and `style-src` deliberately omit `'unsafe-inline'`.
- * Every inline `<script>` / `<style>` the app emits is allowed by the `sha256`
- * of its own content, computed per response by `collectCspHashes()` and passed
- * in here. `scripts/check-no-inline-nonce.sh` guards the other half of the
- * contract: no `.astro` source may reintroduce a `nonce` attribute.
+ * SPEC-047: `script-src` deliberately omits `'unsafe-inline'`. Every inline
+ * `<script>` the app emits is allowed by the `sha256` of its own content,
+ * computed per response by `collectCspHashes()` and passed in here.
+ * `scripts/check-no-inline-nonce.sh` guards the other half of the contract: no
+ * `.astro` source may reintroduce a `nonce` attribute. (`style-src` no longer
+ * follows this rule, see HOS-2576 below.)
  *
  * HOS-369 WB0-1 (spec §5.13 / D-9) replaced the previous per-request nonce.
  * Cloudflare caches headers with the body, so a nonce survives into the cache
@@ -870,11 +871,21 @@ export function buildFrameAncestors({
  *
  * HOS-91: in `astro dev`, Vite injects component CSS as unhashed `<style>`
  * tags client-side, and Astro 7's ClientRouter re-injects them on every
- * soft-navigation. The enforcing `style-src` blocks all of them (confirmed:
- * 20/20 soft-nav `<style>` tags had `.sheet === null`), so pages render
- * unstyled after any client-side nav until a full reload. `isDev` relaxes
- * `style-src` to a plain `'unsafe-inline'` policy in dev ONLY; build/prod
- * keeps the strict hash policy unchanged.
+ * soft-navigation. A hash-enforcing `style-src` blocks all of them (confirmed:
+ * 20/20 soft-nav `<style>` tags had `.sheet === null`), so pages rendered
+ * unstyled after any client-side nav until a full reload. That was first
+ * fixed for dev only; since HOS-2576 dev and prod share the same plain
+ * `'unsafe-inline'` `style-src`.
+ *
+ * HOS-2576: `style-src` is `'self' https://fonts.googleapis.com 'unsafe-inline'`
+ * in EVERY environment, so Astro can inline small stylesheets
+ * (`build.inlineStylesheets: 'auto'`) and cut render-blocking requests. A soft
+ * navigation keeps the ORIGIN page's policy while injecting the DESTINATION
+ * page's inline `<style>` blocks, and a build-time union of style hashes (like
+ * HOS-807 does for scripts) measured about 220 distinct blocks, roughly +12 KB
+ * on every CSP header. Per the CSP3 rule (HOS-91), `style-src` must therefore
+ * carry NO hash and NO nonce, otherwise browsers ignore `'unsafe-inline'`.
+ * Scripts are unaffected and stay hash-based.
  *
  * HOS-807: `script-src` also carries the build-time union of EVERY page's
  * inline-script hashes (`softNavScriptHashes`, from
@@ -883,14 +894,13 @@ export function buildFrameAncestors({
  * script the destination page brings. The response's own hashes stay too: a
  * render-time script that cannot be in the union still runs on a direct load.
  *
- * @param params - Object with the response's inline script/style hash sources,
+ * @param params - Object with the response's inline script hash sources,
  *   the soft-nav union (defaults to the build's), optional API URL, optional
  *   Sentry report URI, and dev-mode flag
  * @returns Formatted CSP directive string
  */
 export function buildCspHeader({
     scriptHashes,
-    styleHashes,
     softNavScriptHashes = SOFT_NAV_SCRIPT_HASHES,
     apiUrl,
     sentryReportUri,
@@ -905,8 +915,6 @@ export function buildCspHeader({
      * build can emit (HOS-807). Defaults to the build-time union.
      */
     readonly softNavScriptHashes?: readonly string[];
-    /** `sha256-…` tokens (unquoted) for every inline `<style>` in the response. */
-    readonly styleHashes: readonly string[];
     readonly apiUrl?: string;
     readonly sentryReportUri?: string | null;
     readonly sentryTunnelEnabled?: boolean;
@@ -941,7 +949,6 @@ export function buildCspHeader({
     const scriptHashSources = toSourceList([
         ...new Set([...scriptHashes, ...ASTRO_RUNTIME_SCRIPT_HASHES, ...softNavScriptHashes])
     ]);
-    const styleHashSources = toSourceList(styleHashes);
 
     // Remote image hosts mirror `ALLOWED_REMOTE_HOSTS` (single source of truth
     // shared with `astro.config.mjs` `image.remotePatterns` and the SSRF guard
@@ -993,17 +1000,15 @@ export function buildCspHeader({
     // tunneled; that directive is independent of `connect-src`.
     const sentryConnectSrc = sentryTunnelEnabled ? '' : ' https://*.sentry.io';
 
-    // HOS-91: CSP3 rule — a `style-src` directive that carries a nonce or a
-    // hash source causes browsers to IGNORE `'unsafe-inline'` in that SAME
-    // directive (nonces/hashes and 'unsafe-inline' are mutually exclusive per
-    // spec, precisely so an attacker who can't forge a hash can't fall back to
-    // unsafe-inline). So the dev variant below must DROP every hash entirely
-    // rather than append 'unsafe-inline' next to them — appending it alongside
-    // a hash would be inert and the dev bug would persist. Dev-only:
-    // build/prod keeps the strict hash policy.
-    const styleSrc = isDev
-        ? "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'"
-        : `style-src 'self' https://fonts.googleapis.com${styleHashSources} 'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='`;
+    // HOS-2576 / HOS-91: CSP3 rule. A `style-src` directive that carries a
+    // nonce or a hash source causes browsers to IGNORE `'unsafe-inline'` in that
+    // SAME directive (nonces/hashes and 'unsafe-inline' are mutually exclusive
+    // per spec, precisely so an attacker who can't forge a hash can't fall back
+    // to unsafe-inline). So this directive must never gain a hash or a nonce,
+    // including the Astro client runtime's fixed `astro-island` style that used
+    // to be hash-allowed here: `'unsafe-inline'` already covers it. Dev and prod
+    // share the same value.
+    const styleSrc = "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'";
 
     const directives = [
         "default-src 'self'",
@@ -1025,25 +1030,17 @@ export function buildCspHeader({
         //     where the beacon POSTs — the two hosts are different.)
         //   - the Umami origin (HOS-2119), when configured — the tracker script.
         `script-src 'self'${scriptHashSources} https://challenges.cloudflare.com https://static.cloudflareinsights.com${umamiSource}`,
-        // The Astro client runtime injects an inline <style> at hydration time
-        // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
-        // Because the injection happens via JS AFTER the response was sent,
-        // `collectCspHashes` (which only walks the initial SSR HTML) never sees
-        // it, and the browser blocks/reports it. The CSS content is hardcoded
-        // in Astro's runtime so its SHA-256 is stable — hash-allow it
-        // explicitly to keep `style-src` strict otherwise.
-        // See `styleSrc` above for the HOS-91 dev-only relaxation.
+        // `'unsafe-inline'` for every `<style>` element (HOS-2576): Astro's
+        // inlined stylesheets, the swapped-in page's blocks on a ClientRouter
+        // soft navigation, and the `astro-island{display:contents}` block the
+        // client runtime injects at hydration. See `styleSrc` above for why it
+        // must never also carry a hash or a nonce.
         styleSrc,
-        // `style-src` (above) defaults to gating BOTH `<style>` elements and
-        // inline `style="..."` attributes. Hashes cannot be applied to style
-        // attributes by spec, so a strict hash-based `style-src` blocks every
-        // inline color/transition style we set on cards, badges, and the
-        // `data-reveal` stagger pattern (see apps/web/src/lib/colors.ts and
-        // STYLE_GUIDE.md). Override only the `-attr` variant with
-        // `'unsafe-inline'` so:
-        //   - `<style>` blocks still require a hash (the high-XSS-impact path)
-        //   - `style="..."` attributes are allowed (low-XSS-impact patterns
-        //     used for tokenized inline colors and per-card transition delays)
+        // Inline `style="..."` attributes: the cards, badges and `data-reveal`
+        // stagger set tokenized colors and transition delays this way (see
+        // apps/web/src/lib/colors.ts and STYLE_GUIDE.md). It predates HOS-2576
+        // and is stated explicitly because `style-src-attr` is the narrower
+        // directive and must not depend on what `style-src` allows.
         "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
         `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} ${videoPosterImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
@@ -1085,9 +1082,9 @@ export function buildCspHeader({
         // on every soft-nav to a page holding a `client:only` island, which here
         // means every page with a map (accommodation/destination/event detail,
         // contacto, comparar, */mapa). The production build never emits that
-        // iframe, so prod keeps the stricter policy. Sibling of the HOS-91
-        // dev-only `style-src` relaxation above, same root cause: dev-only
-        // ClientRouter behaviour meeting an enforcing CSP.
+        // iframe, so prod keeps the stricter policy. Same root cause as HOS-91
+        // (whose dev-only `style-src` relaxation HOS-2576 made universal):
+        // dev-only ClientRouter behaviour meeting an enforcing CSP.
         isDev
             ? "frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com"
             : 'frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com https://geo.dailymotion.com',

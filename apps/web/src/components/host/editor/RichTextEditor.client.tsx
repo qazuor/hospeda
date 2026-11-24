@@ -155,8 +155,9 @@ export function RichTextEditor({
 
     const editor = useEditor({
         immediatelyRender: false,
-        // HOS-2558: TipTap's default stylesheet is an injected <style> tag, which the
-        // CSP (style-src, hashes only) blocks. Its rules live in RichTextEditor.module.css.
+        // HOS-2558: TipTap's default stylesheet is an injected <style> tag appended
+        // client-side. Its rules live in RichTextEditor.module.css instead, so it ships
+        // as a regular hashed asset and no runtime <style> is injected.
         injectCSS: false,
         editable: !disabled,
         content: value,

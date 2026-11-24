@@ -59,8 +59,8 @@ export function CompletenessMeter({
     helpId
 }: CompletenessMeterProps) {
     const t = createT(locale);
-    // One segment per section: no inline width, which the CSP's style-src
-    // would refuse on an attribute.
+    // One segment per section: no inline width, so no `style=""` attribute is
+    // needed (attributes are governed by `style-src-attr`).
     const filled = total <= 0 ? 1 : Math.min(Math.max(done, 0), total);
     const summary = t('account.ui.completeness.summary', undefined, { done, total });
     const complete = missing.length === 0;
