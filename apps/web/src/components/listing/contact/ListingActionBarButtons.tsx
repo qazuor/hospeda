@@ -231,6 +231,7 @@ export function ListingActionBarButtons({
                     aria-label={t('accommodations.detail.listingContact.bar.actions.call')}
                     data-action="call"
                     data-contact-channel="phone"
+                    {...(vertical === 'venue' ? { 'data-interaction-kind': 'PHONE_CLICK' } : {})}
                     {...trackingAttributes}
                 >
                     <PhoneIcon

@@ -315,6 +315,38 @@ describe('ListingActionBarButtons: render rules', () => {
         expect(menu).toHaveAttribute('href', 'https://bar.test/carta');
         expect(screen.queryByRole('link', { name: 'Consultar' })).not.toBeInTheDocument();
     });
+
+    it('owner counters: every venue bar link carries the channel and kind the page block uses', () => {
+        render(
+            <ListingActionBarButtons
+                {...venue}
+                primary={{ kind: 'menu', href: 'https://bar.test/carta' }}
+                venueWhatsapp={{ mode: 'PUBLIC', number: '+54 9 3442 111111' }}
+                phoneHref="tel:+5493442222222"
+            />
+        );
+
+        const call = screen.getByRole('link', { name: 'Llamar' });
+        expect(call).toHaveAttribute('data-contact-channel', 'phone');
+        expect(call).toHaveAttribute('data-interaction-kind', 'PHONE_CLICK');
+        const whatsapp = screen.getByRole('link', { name: 'Escribir por WhatsApp' });
+        expect(whatsapp).toHaveAttribute('data-contact-channel', 'whatsapp');
+        expect(whatsapp).toHaveAttribute('data-interaction-kind', 'WHATSAPP_CLICK');
+        // The page's menu button carries no interaction kind (no MENU counter exists).
+        const menu = screen.getByRole('link', { name: 'Ver carta' });
+        expect(menu).toHaveAttribute('data-contact-channel', 'menu');
+        expect(menu).not.toHaveAttribute('data-interaction-kind');
+    });
+
+    it('owner counters: accommodation and experience calls carry no venue interaction kind', () => {
+        for (const props of [accommodation, experience]) {
+            const { unmount } = render(<ListingActionBarButtons {...props} />);
+            expect(screen.getByRole('link', { name: 'Llamar' })).not.toHaveAttribute(
+                'data-interaction-kind'
+            );
+            unmount();
+        }
+    });
 });
 
 describe('ListingActionBarButtons: analytics (AC-35)', () => {
