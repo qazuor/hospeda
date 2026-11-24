@@ -1,34 +1,24 @@
 /**
- * GUEST-06 — Exclusive deals & VIP promotions (HOS-21).
+ * GUEST-06 — Free and VIP promotions (HOS-21, reworked by HOS-2589).
  *
- * Actors: tourist USER on the free / VIP tiers; a HOST owner.
+ * Actors: a free tourist USER, a tourist-vip USER, a HOST owner.
  * Tags: @p1 @guest @billing
  *
  * Preconditions:
- *   - Suite seed has current `tourist-vip` and `owner-pro` catalog versions.
+ *   - Suite seed has current `tourist-vip` and `owner-pro` catalog versions, and
+ *     `owner-pro` grants `vip_only_promotions` (HOS-2589 D-4).
  *   - Suite seed has at least 1 PUBLISHED (destination-linked) accommodation
  *     available via getAnyCityDestinationId().
  *
- * Validates (HOS-21 T-016 subtasks):
- *   - Free tourist: GET /exclusive-deals → 403 ENTITLEMENT_REQUIRED (API), and
- *     the account page shows the upgrade CTA with no deal items rendered (UI).
- *   - Tourist-vip: sees BOTH the plus-tier and vip-only deals (visible
- *     accommodation), the vip-only one carries the "Solo VIP" badge, and the
- *     restricted-accommodation deal is still excluded for this tier too. The
- *     "plus-tier" deal here is an `owner_promotions.tourist_audience = 'plus'`
- *     row, not a subscription on the `tourist-plus` billing plan — that enum
- *     value is untouched by HOS-1224, which only retired the billing plan.
- *   - Owner (HOST, owner-pro): can mark a new promotion VIP-only via the
- *     "Exclusiva para plan VIP" toggle on the create form, and the created
- *     row persists with tourist_audience = 'vip'.
- *
- * HOS-1224 retired the `tourist-plus` billing plan this spec used to also
- * cover — a subscriber-facing test asserting that a `tourist-plus` subscriber
- * sees only the plus-tier deal. tourist-vip is now the only paid tourist
- * tier, so that test is gone; the vip test above still exercises the
- * plus-vs-vip audience layering on its own.
- *
- * @see HOS-21 spec.md T-016
+ * Validates (HOS-2589):
+ *   - The old «Ofertas exclusivas» page 301s to the public `/promociones/` page.
+ *   - Free tourist: on the place, the «Solo VIP» promotion comes back LOCKED (no
+ *     title, no place name; a blurred card), never as a visible item (AC-9).
+ *   - Tourist-vip: sees both the «Para todos» and the «Solo VIP» promotion of the
+ *     place, the latter with the VIP badge (AC-13); a promotion of a DRAFT listing
+ *     is excluded for every tier.
+ *   - Owner (HOST, owner-pro): picks «Solo VIP» in the audience radio group of
+ *     the create form, and the row persists with tourist_audience = 'vip'.
  */
 
 import { expect, test } from '@playwright/test';
@@ -44,8 +34,12 @@ import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
-const EXCLUSIVE_DEALS_PATH = '/api/v1/protected/owner-promotions/exclusive-deals';
+const VISIBLE_PATH = '/api/v1/public/owner-promotions/visible';
 const EXCLUSIVE_DEALS_PAGE = `${WEB_URL}/es/mi-cuenta/ofertas-exclusivas/`;
+
+type VisibilityItem =
+    | { readonly kind: 'visible'; readonly title: string; readonly audience: string }
+    | { readonly kind: 'locked'; readonly audience: string; readonly placeholderName: string };
 
 type AccommodationRow = { id: string } & Record<string, unknown>;
 type OwnerPromotionRow = { id: string; tourist_audience: string } & Record<string, unknown>;
@@ -63,20 +57,23 @@ async function attachSession(
     );
 }
 
-/** GET the exclusive-deals endpoint directly with a session cookie. */
-async function getExclusiveDeals(
-    cookie: string
-): Promise<{ readonly status: number; readonly body: unknown }> {
-    const response = await fetch(`${API_URL}${EXCLUSIVE_DEALS_PATH}`, {
-        headers: { accept: 'application/json', cookie }
+/** GET the per-actor promotions of one accommodation (HOS-2589 §7.3). */
+async function getVisiblePromotions(input: {
+    readonly cookie?: string;
+    readonly accommodationId: string;
+}): Promise<{ readonly status: number; readonly items: readonly VisibilityItem[] }> {
+    const query = new URLSearchParams({
+        entityType: 'accommodation',
+        entityId: input.accommodationId,
+        seed: 'e2e-guest-06-seed'
     });
-    let body: unknown = null;
-    try {
-        body = await response.json();
-    } catch {
-        body = null;
-    }
-    return { status: response.status, body };
+    const response = await fetch(`${API_URL}${VISIBLE_PATH}?${query.toString()}`, {
+        headers: { accept: 'application/json', ...(input.cookie ? { cookie: input.cookie } : {}) }
+    });
+    const body = (await response.json().catch(() => null)) as {
+        readonly data?: { readonly items?: readonly VisibilityItem[] };
+    } | null;
+    return { status: response.status, items: body?.data?.items ?? [] };
 }
 
 // The tier-scoping specs read one shared set of seeded deals while the owner spec
@@ -94,6 +91,7 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     // sees (DRAFT), which is all `publication_status` can say (HOS-1641).
     let ownerId: string | null = null;
     let visibleAccommodationId: string | null = null;
+    let visibleSlug = '';
     let restrictedAccommodationId: string | null = null;
     const promoIds: string[] = [];
 
@@ -104,6 +102,7 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
 
         const destinationId = await getAnyCityDestinationId();
 
+        visibleSlug = `hos21-e2e-visible-${Date.now().toString(36)}`;
         const visible = await execSQL<AccommodationRow>(
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
@@ -117,7 +116,7 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
                  NOW(), NOW()
              ) RETURNING id`,
             [
-                `hos21-e2e-visible-${Date.now().toString(36)}`,
+                visibleSlug,
                 'HOS-21 E2E Visible Accommodation',
                 'Visible',
                 'HOS-21 E2E fixture — publicly visible accommodation',
@@ -202,35 +201,47 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         }
     });
 
-    test('free tourist: 403 ENTITLEMENT_REQUIRED on the API, upgrade CTA in the UI', async ({
+    test('the old exclusive deals page moves to the public promotions page', async ({ page }) => {
+        const response = await page.request.get(EXCLUSIVE_DEALS_PAGE, { maxRedirects: 0 });
+        expect(response.status()).toBe(301);
+        expect(response.headers().location).toMatch(/\/es\/promociones\/?$/);
+    });
+
+    test('free tourist: the «Solo VIP» promotion comes back locked, with a blurred card', async ({
         page
     }) => {
         const free = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(free.id);
-        // /mi-cuenta/* bounces users with profile_completed = false to the profile
-        // form (SPEC-113), so the page under test never loads and never fetches.
         await markProfileCompleted({ userId: free.id });
 
-        // ── API: 403 ENTITLEMENT_REQUIRED ────────────────────────────────────
-        const result = await getExclusiveDeals(free.sessionCookie);
-        expect(result.status).toBe(403);
-        expect(JSON.stringify(result.body)).toContain('ENTITLEMENT_REQUIRED');
-
-        // ── UI: upgrade CTA, no deal items ───────────────────────────────────
-        await attachSession(page, free.sessionCookie);
-        await page.goto(EXCLUSIVE_DEALS_PAGE, { waitUntil: 'domcontentloaded' });
-        await page.waitForResponse(
-            (r) => r.url().includes(EXCLUSIVE_DEALS_PATH) && r.status() === 403,
-            { timeout: 15_000 }
-        );
-
-        await expect(page.getByRole('link', { name: /ver planes/i })).toBeVisible({
-            timeout: 10_000
+        // ── API: the vip row is locked; no visible item carries its title ────
+        const result = await getVisiblePromotions({
+            cookie: free.sessionCookie,
+            accommodationId: visibleAccommodationId ?? ''
         });
-        await expect(page.getByText('HOS-21 E2E Plus Deal (visible)')).not.toBeVisible();
+        expect(result.status).toBe(200);
+        const titles = result.items.flatMap((item) =>
+            item.kind === 'visible' ? [item.title] : []
+        );
+        expect(titles).not.toContain('HOS-21 E2E Vip Deal (visible)');
+        expect(result.items.some((item) => item.kind === 'locked' && item.audience === 'vip')).toBe(
+            true
+        );
+        expect(JSON.stringify(result.items)).not.toContain('HOS-21 E2E Visible Accommodation');
+
+        // ── UI: the place shows a locked card ────────────────────────────────
+        await attachSession(page, free.sessionCookie);
+        await page.goto(`${WEB_URL}/es/alojamientos/${visibleSlug}/`, {
+            waitUntil: 'domcontentloaded'
+        });
+        const promotions = page.getByTestId('place-promotions');
+        await expect(promotions.locator('[data-promotion-card="locked"]').first()).toBeVisible({
+            timeout: 15_000
+        });
+        await expect(page.getByText('HOS-21 E2E Vip Deal (visible)')).not.toBeVisible();
     });
 
-    test('tourist-vip: sees plus + vip deals with the VIP badge, restricted deal still excluded', async ({
+    test('tourist-vip: sees both promotions with the VIP badge; a draft listing stays out', async ({
         page
     }) => {
         const vip = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
@@ -238,32 +249,41 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         await seedActivePlanHolder({ userId: vip.id, slug: 'tourist-vip' });
         await markProfileCompleted({ userId: vip.id });
 
-        await attachSession(page, vip.sessionCookie);
-        await page.goto(EXCLUSIVE_DEALS_PAGE, { waitUntil: 'domcontentloaded' });
-        await page.waitForResponse(
-            (r) => r.url().includes(EXCLUSIVE_DEALS_PATH) && r.status() === 200,
-            { timeout: 15_000 }
-        );
-
-        await expect(page.getByText('HOS-21 E2E Plus Deal (visible)')).toBeVisible({
-            timeout: 10_000
+        const result = await getVisiblePromotions({
+            cookie: vip.sessionCookie,
+            accommodationId: visibleAccommodationId ?? ''
         });
-        await expect(page.getByText('HOS-21 E2E Vip Deal (visible)')).toBeVisible();
-        await expect(page.getByText('HOS-21 E2E Plus Deal (restricted)')).not.toBeVisible();
+        expect(result.status).toBe(200);
+        const titles = result.items.flatMap((item) =>
+            item.kind === 'visible' ? [item.title] : []
+        );
+        expect(titles).toEqual(
+            expect.arrayContaining([
+                'HOS-21 E2E Plus Deal (visible)',
+                'HOS-21 E2E Vip Deal (visible)'
+            ])
+        );
+        expect(result.items.some((item) => item.kind === 'locked')).toBe(false);
 
-        // VIP-only badge visually distinguishes the vip-tier item.
-        const vipDealItem = page
-            .getByText('HOS-21 E2E Vip Deal (visible)')
-            .locator('xpath=ancestor::li[1]');
-        await expect(vipDealItem.getByText(/solo vip/i)).toBeVisible();
+        const restricted = await getVisiblePromotions({
+            cookie: vip.sessionCookie,
+            accommodationId: restrictedAccommodationId ?? ''
+        });
+        expect(restricted.items).toHaveLength(0);
 
-        const plusDealItem = page
-            .getByText('HOS-21 E2E Plus Deal (visible)')
-            .locator('xpath=ancestor::li[1]');
-        await expect(plusDealItem.getByText(/solo vip/i)).not.toBeVisible();
+        await attachSession(page, vip.sessionCookie);
+        await page.goto(`${WEB_URL}/es/alojamientos/${visibleSlug}/`, {
+            waitUntil: 'domcontentloaded'
+        });
+        const vipCard = page
+            .getByTestId('place-promotions')
+            .locator('[data-promotion-card="visible"]')
+            .filter({ hasText: 'HOS-21 E2E Vip Deal (visible)' });
+        await expect(vipCard).toBeVisible({ timeout: 15_000 });
+        await expect(vipCard.getByText(/vip/i).first()).toBeVisible();
     });
 
-    test('owner: can mark a new promotion VIP-only via the form', async ({ page }) => {
+    test('owner: can pick «Solo VIP» in the create form', async ({ page }) => {
         // Fresh owner (not the shared fixture `ownerId`) so this test's
         // owner-pro subscription doesn't interfere with the shared
         // deal-visibility fixture used by the tier-scoping tests above.
@@ -284,9 +304,10 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const today = new Date().toISOString().slice(0, 10);
         await page.getByLabel(/v[aá]lido desde/i).fill(today);
 
-        const vipToggle = page.getByRole('checkbox', { name: /vip/i });
-        await expect(vipToggle).not.toBeChecked();
-        await vipToggle.check();
+        await expect(page.getByRole('radio', { name: /para todos/i })).toBeChecked();
+        const vipRadio = page.getByRole('radio', { name: /solo vip/i });
+        await expect(vipRadio).toBeEnabled({ timeout: 10_000 });
+        await vipRadio.check();
 
         await page.getByRole('button', { name: /guardar/i }).click();
 

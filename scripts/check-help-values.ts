@@ -102,6 +102,16 @@ export const FROZEN_SYSTEM_CONSTANTS: ReadonlyArray<{
         articleId: 'publish-requirements',
         phrase: 'descripcion (minimo 20)',
         reason: 'The 20-character minimum description length is a system constant, not a plan value; the unit is named by the sibling "(mínimo 10 caracteres)". The step is returned by get_help byte for byte, frozen by AC-15 (apps/api/test/mcp/tools/help/fixtures/get-help-pre-migration.json).'
+    },
+    {
+        articleId: 'owner-promotions',
+        phrase: 'solo vip',
+        reason: 'HOS-2589: «Solo VIP» is the fixed label of a promotion audience option in the host form (host.promotions.audience.vipLabel), not a plan name; the VIP plan name itself is read from the catalog.'
+    },
+    {
+        articleId: 'owner-promotions',
+        phrase: '«vip»',
+        reason: 'HOS-2589 D-6: «VIP» is the fixed search-card badge label (common.promotions.badges.vip), not a plan name.'
     }
 ];
 
