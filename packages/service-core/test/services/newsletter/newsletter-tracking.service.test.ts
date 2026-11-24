@@ -42,7 +42,11 @@ vi.mock('@repo/db', async (importOriginal) => {
             chain[m] = vi.fn(() => chain);
         }
         // biome-ignore lint/suspicious/noThenProperty: intentional thenable for Drizzle chain mock
-        chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve(rows).then(resolve);
+        chain.then = (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+            (rows instanceof Error ? Promise.reject(rows) : Promise.resolve(rows)).then(
+                resolve,
+                reject
+            );
         return chain;
     };
 
@@ -199,6 +203,21 @@ describe('NewsletterTrackingService.processBrevoWebhookEvent', () => {
 
             expect(result.data?.updated).toBe(false);
             expect(result.data?.openedCampaignSlug).toBe('otono-aaaaaaaa');
+        });
+
+        it('keeps the open result when the campaign slug lookup throws (HOS-2583)', async () => {
+            queryBuilderResponses = [[{ id: DELIVERY_ID }], new Error('lookup failed') as never];
+
+            const result = await makeService().processBrevoWebhookEvent({
+                event: 'opened',
+                email: EMAIL,
+                messageId: MESSAGE_ID,
+                date: DATE
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.updated).toBe(true);
+            expect(result.data?.openedCampaignSlug).toBeUndefined();
         });
 
         it('recomputes the slug of a campaign dispatched before HOS-2359 (HOS-2583)', async () => {

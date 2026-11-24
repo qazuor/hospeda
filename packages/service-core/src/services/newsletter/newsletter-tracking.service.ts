@@ -244,7 +244,16 @@ export class NewsletterTrackingService extends BaseService {
                 )
             )
             .returning({ id: newsletterCampaignDeliveries.id });
-        const openedCampaignSlug = await this.findCampaignSlugByMessageId(input.messageId);
+        // Analytics only (HOS-2583): a failed lookup must not undo or hide the opened_at
+        // write above, so it is logged and the open falls through to the tag branch.
+        let openedCampaignSlug: string | null = null;
+        try {
+            openedCampaignSlug = await this.findCampaignSlugByMessageId(input.messageId);
+        } catch (error) {
+            this.logger.warn(
+                `[newsletterTracking.opened] campaign slug lookup failed, open not attributed to a campaign: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
         return {
             updated: result.length > 0,
             matchedByMessageId: result.length > 0,
