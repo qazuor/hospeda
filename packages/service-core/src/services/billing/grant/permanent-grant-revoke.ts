@@ -25,6 +25,7 @@ import {
     cancelAddonComplementsAtProvider,
     emitAddonCoverageRemoved
 } from '../addon/addon-instance-a5.js';
+import { isAddonListingSoftDeleted } from '../addon/addon-listing-soft-deleted.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import {
     assertPermanentGrantPermitted,
@@ -189,7 +190,10 @@ export async function revokePermanentGrant(
                     // the new model has no soft-delete door, AC:V6:25) makes `ficha` refuse.
                     // Fail closed (owner, HOS-2069): throwing here rolls back the grant, its
                     // anchors and every addon already cancelled in this loop.
-                    if (error instanceof Error && error.name === 'ListingNotFoundError')
+                    if (
+                        (error instanceof Error && error.name === 'ListingNotFoundError') ||
+                        isAddonListingSoftDeleted({ error })
+                    )
                         throw permanentGrantRejection({
                             reason: 'PERMANENT_GRANT_LISTING_SOFT_DELETED',
                             message: 'A titled addon targets a deleted listing; nothing was revoked'
