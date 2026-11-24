@@ -1,6 +1,7 @@
-import { Heading, Text } from '@react-email/components';
+import { Text } from '@react-email/components';
 import { Button } from '../components/button.js';
 import { Callout } from '../components/callout.js';
+import { EmailTitle } from '../components/email-title.js';
 import { EmailLayout } from './email-layout.js';
 import { resolveGreeting } from './greeting.js';
 
@@ -47,7 +48,7 @@ export interface VerifyEmailTemplateProps {
 export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTemplateProps) {
     return (
         <EmailLayout footerLink="none">
-            <Heading style={h1}>Verifica tu dirección de correo electrónico</Heading>
+            <EmailTitle style={h1}>Verifica tu dirección de correo electrónico</EmailTitle>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>
 

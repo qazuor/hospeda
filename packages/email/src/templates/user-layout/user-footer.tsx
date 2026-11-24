@@ -3,7 +3,9 @@
  * top, in the owner-approved order:
  *
  * 1. "¿Necesitás ayuda?": help center, contact and WhatsApp;
- * 2. "Preguntas frecuentes": the help articles the mail declares (or the default set);
+ * 2. "Preguntas frecuentes": the help articles the mail declares (or the default set),
+ *    only for account holders: the articles sit behind the login wall. Without an
+ *    account, "Centro de ayuda" points at the public FAQ page instead;
  * 3. "Nuestros canales": security, web and contact cards;
  * 4. the trust strip;
  * 5. the logo and the Instagram, Facebook and X icons;
@@ -21,6 +23,8 @@ import { BRAND_SOCIAL_PROFILES, BRAND_WHATSAPP_URL, type BrandSocialPlatform } f
 import { emailPalette } from '@repo/design-tokens';
 import type { ReactElement } from 'react';
 import {
+    EMAIL_PREFERENCES_URL,
+    EMAIL_PUBLIC_FAQ_URL,
     EMAIL_PUBLIC_SITE_URL,
     resolveEmailAssetUrl,
     resolveEmailIsotipoUrl
@@ -32,8 +36,8 @@ import { ChannelCards, FooterHeading, FooterLink, TrustStrip } from './user-foot
 import { USER_FONT_STACK } from './user-header.js';
 import { EMAIL_USER_CLASSES } from './user-styles.js';
 
-/** Absolute URL of the logged-in notification preferences page. */
-export const EMAIL_USER_PREFERENCES_URL = `${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/preferencias/`;
+/** Logged-in help center (account holders only). */
+const EMAIL_HELP_CENTER_URL = `${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/ayuda/`;
 
 /** Label of the preferences link (owner wording, 2026-11-22). */
 export const EMAIL_USER_PREFERENCES_LABEL = 'Elegí qué correos recibís';
@@ -122,8 +126,14 @@ export function UserFooter({
                                 >
                                     <FooterHeading>¿Necesitás ayuda?</FooterHeading>
                                     <p style={linksParagraphStyle}>
+                                        {/* The help center needs a login: readers without an
+                                            account get the public FAQ page instead. */}
                                         <FooterLink
-                                            href={`${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/ayuda/`}
+                                            href={
+                                                showAccountLinks
+                                                    ? EMAIL_HELP_CENTER_URL
+                                                    : EMAIL_PUBLIC_FAQ_URL
+                                            }
                                             layoutLink="help-center"
                                         >
                                             Centro de ayuda
@@ -145,28 +155,32 @@ export function UserFooter({
                                     </p>
                                 </td>
                             </tr>
-                            <tr>
-                                <td
-                                    className={EMAIL_USER_CLASSES.padded}
-                                    style={{ ...sectionCellStyle, paddingTop: '26px' }}
-                                    data-layout-faq="true"
-                                >
-                                    <FooterHeading>Preguntas frecuentes</FooterHeading>
-                                    <p style={faqParagraphStyle}>
-                                        {links.map((link, index) => (
-                                            <span key={link.id}>
-                                                {index > 0 ? <br /> : null}
-                                                <FooterLink
-                                                    href={link.href}
-                                                    layoutLink="faq"
-                                                >
-                                                    {link.title}
-                                                </FooterLink>
-                                            </span>
-                                        ))}
-                                    </p>
-                                </td>
-                            </tr>
+                            {/* Help articles live behind the login wall: hidden for readers
+                                without an account (HOS-2565 §8.3). */}
+                            {showAccountLinks ? (
+                                <tr>
+                                    <td
+                                        className={EMAIL_USER_CLASSES.padded}
+                                        style={{ ...sectionCellStyle, paddingTop: '26px' }}
+                                        data-layout-faq="true"
+                                    >
+                                        <FooterHeading>Preguntas frecuentes</FooterHeading>
+                                        <p style={faqParagraphStyle}>
+                                            {links.map((link, index) => (
+                                                <span key={link.id}>
+                                                    {index > 0 ? <br /> : null}
+                                                    <FooterLink
+                                                        href={link.href}
+                                                        layoutLink="faq"
+                                                    >
+                                                        {link.title}
+                                                    </FooterLink>
+                                                </span>
+                                            ))}
+                                        </p>
+                                    </td>
+                                </tr>
+                            ) : null}
                             <tr>
                                 <td
                                     className={EMAIL_USER_CLASSES.padded}
@@ -266,7 +280,7 @@ export function UserFooter({
                                             Recibís este correo porque tenés una cuenta en Hospeda.
                                             <br />
                                             <a
-                                                href={EMAIL_USER_PREFERENCES_URL}
+                                                href={EMAIL_PREFERENCES_URL}
                                                 className={EMAIL_USER_CLASSES.footerLink}
                                                 style={smallLinkStyle}
                                                 data-layout-link="preferences"

@@ -1,5 +1,6 @@
 /**
- * Header and intro row of the USER email layout (HOS-2565 PR-4).
+ * Header of the USER email layout (HOS-2565 PR-4). The section bar and the
+ * illustration sit beside the first title instead (`components/email-title.tsx`).
  *
  * @module templates/user-layout/user-header
  */
@@ -7,21 +8,13 @@
 import { Column, Row } from '@react-email/components';
 import { emailPalette } from '@repo/design-tokens';
 import type { ReactElement } from 'react';
-import { SectionBar } from '../../components/section-bar.js';
 import { resolveEmailAssetUrl, resolveEmailIsotipoUrl } from '../../email-assets.js';
-import {
-    EMAIL_ILLUSTRATION_PATHS,
-    EMAIL_USER_ASSET_PATHS,
-    type EmailIllustration
-} from './user-assets.js';
+import { EMAIL_USER_ASSET_PATHS } from './user-assets.js';
 import { EMAIL_USER_CLASSES } from './user-styles.js';
 
 /** Rendered isotipo size next to the wordmark (the asset is 89x96). */
 const ISOTIPO_WIDTH = 44;
 const ISOTIPO_HEIGHT = 48;
-
-/** Rendered illustration size (84px on narrow screens through the style block). */
-const ILLUSTRATION_SIZE = 112;
 
 /** Shared font stack of the user layout. */
 export const USER_FONT_STACK = 'Arial, Helvetica, sans-serif';
@@ -103,65 +96,6 @@ export function UserHeader(): ReactElement {
     );
 }
 
-/** Props of {@link UserIntro}. */
-export interface UserIntroProps {
-    /** Illustration the mail declares, if any. */
-    readonly illustration?: EmailIllustration;
-}
-
-/**
- * The row above the body copy: the teal section bar, sitting right above the mail's
- * first title, and the declared illustration on the right. Skipped in the text part.
- *
- * @param props - The optional illustration.
- * @returns The intro row.
- */
-export function UserIntro({ illustration }: UserIntroProps): ReactElement {
-    return (
-        <Row data-skip-in-text="true">
-            <Column
-                className={EMAIL_USER_CLASSES.padded}
-                style={introCellStyle}
-            >
-                <table
-                    role="presentation"
-                    width="100%"
-                    cellPadding={0}
-                    cellSpacing={0}
-                    border={0}
-                >
-                    <tbody>
-                        <tr>
-                            <td style={barCellStyle}>
-                                <SectionBar />
-                            </td>
-                            {illustration ? (
-                                <td
-                                    width={ILLUSTRATION_SIZE}
-                                    align="right"
-                                    style={illustrationCellStyle}
-                                    data-email-illustration={illustration}
-                                >
-                                    <img
-                                        className={EMAIL_USER_CLASSES.illustration}
-                                        src={resolveEmailAssetUrl({
-                                            path: EMAIL_ILLUSTRATION_PATHS[illustration]
-                                        })}
-                                        width={ILLUSTRATION_SIZE}
-                                        height={ILLUSTRATION_SIZE}
-                                        alt=""
-                                        style={illustrationStyle}
-                                    />
-                                </td>
-                            ) : null}
-                        </tr>
-                    </tbody>
-                </table>
-            </Column>
-        </Row>
-    );
-}
-
 const waveCellStyle = {
     fontSize: '0',
     lineHeight: '0'
@@ -205,26 +139,4 @@ const wordmarkStyle = {
 const taglineCellStyle = {
     padding: '2px 24px 8px 24px',
     textAlign: 'center' as const
-};
-
-const introCellStyle = {
-    padding: '28px 40px 0 40px'
-};
-
-const barCellStyle = {
-    paddingBottom: '4px',
-    verticalAlign: 'bottom' as const
-};
-
-const illustrationCellStyle = {
-    paddingLeft: '12px',
-    verticalAlign: 'middle' as const,
-    width: `${ILLUSTRATION_SIZE}px`
-};
-
-const illustrationStyle = {
-    border: '0',
-    display: 'block',
-    height: `${ILLUSTRATION_SIZE}px`,
-    width: `${ILLUSTRATION_SIZE}px`
 };

@@ -50,7 +50,7 @@ export function buildEmailHelpArticleUrl(input: { readonly id: string }): string
  * Resolves the footer FAQ links of one mail.
  *
  * Unknown ids are skipped here so a footer never breaks a send; the catalog test
- * (`email-help-articles.test.ts` in `@repo/notifications`) fails on them instead.
+ * (`email-layout-declarations.test.ts` in `@repo/notifications`) fails on them instead.
  * When the declared ids resolve to nothing, the default set is used.
  *
  * @param input - The declared ids, if any.

@@ -8,10 +8,19 @@
  *
  * The one allowed difference is the `data-layout-variant="staff"` marker on
  * `<body>` (AC-4.2), which is stripped before comparing.
+ *
+ * A third fixture, `staff-layout.pr4-baseline.components.html`, renders the shared
+ * components a staff mail uses (EmailTitle, Button in both variants, Callout) inside
+ * the staff layout. It was taken from PR-4 itself, so it accepts PR-4's green
+ * button and callout icon as the baseline; from here on a change to a shared
+ * component shows up in the staff mails too.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { Button } from '../../src/components/button.js';
+import { Callout } from '../../src/components/callout.js';
+import { EmailTitle } from '../../src/components/email-title.js';
 import { renderEmailBodies } from '../../src/render.js';
 import { EmailLayout } from '../../src/templates/email-layout.js';
 
@@ -70,6 +79,42 @@ describe('EmailLayout staff variant (HOS-2565 AC-4.1)', () => {
                     footerLink="preferences"
                 >
                     <p>Contenido fijo</p>
+                </EmailLayout>
+            )
+        });
+
+        // Assert
+        expect(stripVariantMarker({ html })).toBe(expected);
+    });
+
+    it('renders the shared components inside the staff layout byte for byte (PR-4 baseline)', async () => {
+        // Arrange
+        const expected = readFixture({ name: 'staff-layout.pr4-baseline.components.html' });
+
+        // Act
+        const { html } = await renderEmailBodies({
+            attribution: ATTRIBUTION,
+            layout: { illustration: 'payments' },
+            react: (
+                <EmailLayout
+                    variant="staff"
+                    previewText="Vista previa"
+                >
+                    <EmailTitle>Título fijo</EmailTitle>
+                    <p>Contenido fijo</p>
+                    <Callout
+                        tone="warning"
+                        title="Atención"
+                    >
+                        Texto del aviso
+                    </Callout>
+                    <Button href="https://hospeda.com.ar/es/">Acción principal</Button>
+                    <Button
+                        href="https://hospeda.com.ar/es/ayuda/"
+                        variant="secondary"
+                    >
+                        Acción secundaria
+                    </Button>
                 </EmailLayout>
             )
         });

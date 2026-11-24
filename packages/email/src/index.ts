@@ -31,6 +31,8 @@ export {
 } from './components/button.js';
 export type { CalloutProps, CalloutTone } from './components/callout.js';
 export { Callout } from './components/callout.js';
+export type { EmailTitleProps, EmailTitleSlot } from './components/email-title.js';
+export { EmailTitle } from './components/email-title.js';
 export type { OptionCardProps, OptionCardTone } from './components/option-card.js';
 export { OptionCard } from './components/option-card.js';
 export type { SectionBarProps, SectionBarTone } from './components/section-bar.js';
@@ -38,6 +40,7 @@ export { SectionBar } from './components/section-bar.js';
 export type { ConfigureEmailAssetsInput, EmailAssetPath } from './email-assets.js';
 export {
     configureEmailAssets,
+    EMAIL_PUBLIC_FAQ_URL,
     resetEmailAssets,
     resolveEmailAssetUrl,
     resolveEmailIsotipoUrl,
@@ -87,9 +90,12 @@ export {
 } from './templates/user-layout/user-assets.js';
 export {
     EMAIL_SOCIAL_PLATFORMS,
-    EMAIL_USER_PREFERENCES_LABEL,
-    EMAIL_USER_PREFERENCES_URL
+    EMAIL_USER_PREFERENCES_LABEL
 } from './templates/user-layout/user-footer.js';
-export { EMAIL_USER_STYLE_BLOCK } from './templates/user-layout/user-styles.js';
+export {
+    EMAIL_TINTED_BOX_CLASS,
+    EMAIL_USER_DARK_STYLE_BLOCK,
+    EMAIL_USER_STYLE_BLOCK
+} from './templates/user-layout/user-styles.js';
 export type { VerifyEmailTemplateProps } from './templates/verify-email.js';
 export { VerifyEmailTemplate } from './templates/verify-email.js';

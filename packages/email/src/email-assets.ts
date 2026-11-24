@@ -16,6 +16,15 @@
 export const EMAIL_PUBLIC_SITE_URL = 'https://hospeda.com.ar';
 
 /**
+ * Absolute URL of the logged-in notification preferences page. The one constant
+ * both layout variants link to (HOS-2519 OQ-2, HOS-2565 §8.3).
+ */
+export const EMAIL_PREFERENCES_URL = `${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/preferencias/`;
+
+/** Public FAQ page, readable without an account (the help center needs a login). */
+export const EMAIL_PUBLIC_FAQ_URL = `${EMAIL_PUBLIC_SITE_URL}/es/preguntas-frecuentes/`;
+
+/**
  * Path of the hosted isotipo PNG (transparent background, 89x96), relative to the
  * site origin (`apps/web/public/email/`). The "hospeda" wordmark is live text, not
  * part of the image, so dark-mode clients never show a white rectangle.

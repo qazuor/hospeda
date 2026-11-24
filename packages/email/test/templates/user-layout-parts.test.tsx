@@ -28,6 +28,48 @@ import {
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..');
 const WEB_PUBLIC = join(REPO_ROOT, 'apps', 'web', 'public');
 const EMAIL_SRC = join(__dirname, '..', '..', 'src');
+const NOTIFICATIONS_SRC = join(REPO_ROOT, 'packages', 'notifications', 'src');
+
+/**
+ * The email layout path the no-vertical-branch guard scans: the user layout itself
+ * plus the notifications wiring that feeds it. Legitimate vertical code elsewhere
+ * (billing, verticals) is out of scope on purpose.
+ */
+const LAYOUT_PATH_FILES: readonly string[] = [
+    ...sourceFiles(join(EMAIL_SRC, 'templates', 'user-layout')),
+    join(EMAIL_SRC, 'templates', 'email-layout.tsx'),
+    join(EMAIL_SRC, 'templates', 'email-layout-context.ts'),
+    join(EMAIL_SRC, 'components', 'email-title.tsx'),
+    join(NOTIFICATIONS_SRC, 'catalog', 'layout-declarations.ts'),
+    join(NOTIFICATIONS_SRC, 'catalog', 'render-scenario.ts'),
+    join(NOTIFICATIONS_SRC, 'transports', 'email', 'resend-transport.ts')
+];
+
+/** Alternation of every vertical value as a quoted literal, from the enum itself. */
+const VERTICAL_LITERAL = `['"\`](?:${Object.values(VerticalEnum).join('|')})['"\`]`;
+
+/** The branch forms: on the enum member, or on its string value. */
+const VERTICAL_BRANCH_PATTERNS: readonly RegExp[] = [
+    /(===|!==)\s*VerticalEnum\./g,
+    /VerticalEnum\.\w+\s*(===|!==)/g,
+    /case\s+VerticalEnum\./g,
+    /\.includes\(\s*VerticalEnum\./g,
+    new RegExp(`case\\s+${VERTICAL_LITERAL}`, 'g'),
+    new RegExp(`(===|!==)\\s*${VERTICAL_LITERAL}`, 'g'),
+    new RegExp(`${VERTICAL_LITERAL}\\s*(===|!==)`, 'g')
+];
+
+/**
+ * Every vertical branch in a source text.
+ *
+ * @param input - The source text.
+ * @returns The matched snippets; empty when there is none.
+ */
+function findVerticalBranches(input: { readonly source: string }): string[] {
+    return VERTICAL_BRANCH_PATTERNS.flatMap((pattern) =>
+        [...input.source.matchAll(pattern)].map((match) => match[0])
+    );
+}
 
 /** Every `.ts`/`.tsx` file under a directory. */
 function sourceFiles(dir: string): string[] {
@@ -119,22 +161,62 @@ describe('resolveEmailAccountLinkTarget (D16)', () => {
         expect(target.kind).toBe(kind);
     });
 
-    it('should answer for every VerticalEnum value without throwing', () => {
-        // Act & Assert
-        for (const vertical of Object.values(VerticalEnum)) {
-            const { kind } = resolveEmailAccountLinkTarget({ verticals: [vertical] });
-            expect(['publications', 'account']).toContain(kind);
-        }
+    /**
+     * The expected link per vertical, written out by hand. Typed as a full
+     * `Record<VerticalEnum, ...>`, so a new vertical fails to compile until it is
+     * placed here.
+     */
+    const EXPECTED_KIND: Readonly<Record<VerticalEnum, 'publications' | 'account'>> = {
+        [VerticalEnum.ACCOMMODATION]: 'publications',
+        [VerticalEnum.VENUE]: 'publications',
+        [VerticalEnum.EXPERIENCE]: 'publications',
+        [VerticalEnum.TOURIST]: 'account',
+        [VerticalEnum.PARTNER]: 'account'
+    };
+
+    it.each(
+        Object.values(VerticalEnum)
+    )('should map the %s vertical to its exact link', (vertical) => {
+        // Act
+        const { kind } = resolveEmailAccountLinkTarget({ verticals: [vertical] });
+
+        // Assert
+        expect(kind).toBe(EXPECTED_KIND[vertical]);
     });
 
-    it('should never branch on a VerticalEnum member in packages/email/src', () => {
+    it('should never branch on a vertical in the email layout path', () => {
         // Arrange
-        const offenders = sourceFiles(EMAIL_SRC).filter((file) =>
-            /(===|!==)\s*VerticalEnum\.|case\s+VerticalEnum\./.test(readFileSync(file, 'utf8'))
+        const offenders = LAYOUT_PATH_FILES.flatMap((file) =>
+            findVerticalBranches({ source: readFileSync(file, 'utf8') }).map(
+                (match) => `${relative(REPO_ROOT, file)}: ${match}`
+            )
         );
 
         // Assert
-        expect(offenders.map((file) => relative(EMAIL_SRC, file))).toEqual([]);
+        expect(LAYOUT_PATH_FILES.length).toBeGreaterThan(10);
+        expect(offenders).toEqual([]);
+    });
+
+    it.each([
+        'if (vertical === VerticalEnum.PARTNER) {}',
+        'if (VerticalEnum.TOURIST === vertical) {}',
+        'case VerticalEnum.VENUE:',
+        'verticals.includes(VerticalEnum.ACCOMMODATION)',
+        "case 'experience':",
+        "if (v === 'tourist') {}",
+        'if ("partner" !== v) {}'
+    ])('should catch the branch form %s', (source) => {
+        // Assert: the guard can fail.
+        expect(findVerticalBranches({ source })).not.toEqual([]);
+    });
+
+    it('should not flag a vertical named outside a branch', () => {
+        // Assert
+        expect(
+            findVerticalBranches({
+                source: "const label = 'accommodation';\nrender({ verticals: ['partner'] });"
+            })
+        ).toEqual([]);
     });
 });
 

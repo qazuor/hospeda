@@ -1,13 +1,13 @@
 /**
  * The USER variant of `EmailLayout` (HOS-2565 PR-4), the owner-approved design of
- * 2026-11-23: wave header with the live wordmark and the Caveat tagline, a section
- * bar and optional illustration above the body, more vertical space, and the rich
- * footer.
+ * 2026-11-23: wave header with the live wordmark and the Caveat tagline, the first
+ * title with its section bar and the optional illustration on its right, more
+ * vertical space, and the rich footer.
  *
  * Email-client-safe as the staff layout: table layout, inline styles, hex colors
  * from `emailPalette`, images as `<img>` (never SVG or CSS backgrounds), spacing in
- * cell padding for Outlook desktop, and the 600px MSO ghost table. The one `<style>`
- * block (`user-styles.ts`) only enhances: narrow screens and dark mode.
+ * cell padding for Outlook desktop, and the 600px MSO ghost table. The two `<style>`
+ * blocks (`user-styles.ts`) only enhance: narrow screens, and dark mode apart.
  *
  * @module templates/user-layout/user-layout
  */
@@ -15,10 +15,15 @@
 import { Body, Column, Container, Head, Html, Preview, Row } from '@react-email/components';
 import { emailPalette } from '@repo/design-tokens';
 import { type ReactElement, type ReactNode, useContext } from 'react';
+import { createEmailTitleSlot, EmailTitleSlotContext } from '../../components/email-title.js';
 import { EmailLayoutContext } from '../email-layout-context.js';
 import { UserFooter } from './user-footer.js';
-import { USER_FONT_STACK, UserHeader, UserIntro } from './user-header.js';
-import { EMAIL_USER_CLASSES, EMAIL_USER_STYLE_BLOCK } from './user-styles.js';
+import { USER_FONT_STACK, UserHeader } from './user-header.js';
+import {
+    EMAIL_USER_CLASSES,
+    EMAIL_USER_DARK_STYLE_BLOCK,
+    EMAIL_USER_STYLE_BLOCK
+} from './user-styles.js';
 
 /** Props of {@link UserEmailLayout}. */
 export interface UserEmailLayoutProps {
@@ -46,6 +51,7 @@ export function UserEmailLayout({
     footerLink
 }: UserEmailLayoutProps): ReactElement {
     const { illustration, helpArticleIds, recipientVerticals } = useContext(EmailLayoutContext);
+    const titleSlot = createEmailTitleSlot(illustration ? { illustration } : {});
 
     return (
         <Html
@@ -61,8 +67,9 @@ export function UserEmailLayout({
                     name="supported-color-schemes"
                     content="light dark"
                 />
-                {/* The ONE <style> element: button rule, narrow screens, dark mode (HOS-2565 PR-4). */}
+                {/* Two <style> elements: a client that drops one it dislikes keeps the other. */}
                 <style>{EMAIL_USER_STYLE_BLOCK}</style>
+                <style>{EMAIL_USER_DARK_STYLE_BLOCK}</style>
             </Head>
             {previewText ? <Preview>{previewText}</Preview> : null}
             <Body
@@ -81,13 +88,16 @@ export function UserEmailLayout({
                     style={containerStyle}
                 >
                     <UserHeader />
-                    <UserIntro illustration={illustration} />
                     <Row>
                         <Column
                             className={`${EMAIL_USER_CLASSES.padded} ${EMAIL_USER_CLASSES.surface}`}
                             style={contentStyle}
                         >
-                            {children}
+                            {/* The first EmailTitle in the body claims this slot and draws
+                                the section bar and the illustration beside itself. */}
+                            <EmailTitleSlotContext.Provider value={titleSlot}>
+                                {children}
+                            </EmailTitleSlotContext.Provider>
                         </Column>
                     </Row>
                     <UserFooter
@@ -129,5 +139,5 @@ const containerStyle = {
 
 const contentStyle = {
     backgroundColor: emailPalette.surface,
-    padding: '8px 40px 44px 40px'
+    padding: '28px 40px 44px 40px'
 };

@@ -5,7 +5,13 @@
 import { BRAND_SOCIAL_PROFILES, BRAND_WHATSAPP_URL } from '@repo/config';
 import { emailDarkPalette } from '@repo/design-tokens';
 import { afterEach, describe, expect, it } from 'vitest';
-import { configureEmailAssets, resetEmailAssets } from '../../src/email-assets.js';
+import { EmailTitle } from '../../src/components/email-title.js';
+import {
+    configureEmailAssets,
+    EMAIL_PREFERENCES_URL,
+    EMAIL_PUBLIC_FAQ_URL,
+    resetEmailAssets
+} from '../../src/email-assets.js';
 import { renderEmailBodies } from '../../src/render.js';
 import { type EmailFooterLink, EmailLayout } from '../../src/templates/email-layout.js';
 import type { EmailLayoutContextValue } from '../../src/templates/email-layout-context.js';
@@ -20,10 +26,12 @@ import {
 } from '../../src/templates/user-layout/user-assets.js';
 import {
     EMAIL_SOCIAL_PLATFORMS,
-    EMAIL_USER_PREFERENCES_LABEL,
-    EMAIL_USER_PREFERENCES_URL
+    EMAIL_USER_PREFERENCES_LABEL
 } from '../../src/templates/user-layout/user-footer.js';
-import { EMAIL_USER_STYLE_BLOCK } from '../../src/templates/user-layout/user-styles.js';
+import {
+    EMAIL_USER_DARK_STYLE_BLOCK,
+    EMAIL_USER_STYLE_BLOCK
+} from '../../src/templates/user-layout/user-styles.js';
 
 const ATTRIBUTION = {
     medium: 'transactional',
@@ -43,7 +51,9 @@ async function renderUser(
                 previewText="Vista previa"
                 {...(input.footerLink ? { footerLink: input.footerLink } : {})}
             >
+                <EmailTitle>Título del correo</EmailTitle>
                 <p>Cuerpo del mensaje</p>
+                <EmailTitle>Segundo título</EmailTitle>
             </EmailLayout>
         )
     });
@@ -67,7 +77,7 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
             expect(html).toContain('Vista previa');
         });
 
-        it('should declare light and dark support and ship ONE style with ONE dark block', async () => {
+        it('should declare light and dark support and keep the ONE dark block in its own style', async () => {
             // Act
             const { html } = await renderUser();
             const styles = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)];
@@ -75,20 +85,32 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
             // Assert
             expect(html).toContain('<meta name="color-scheme" content="light dark"/>');
             expect(html).toContain('<meta name="supported-color-schemes" content="light dark"/>');
-            expect(styles).toHaveLength(1);
-            expect(styles[0]?.[1]).toBe(EMAIL_USER_STYLE_BLOCK);
-            expect(EMAIL_USER_STYLE_BLOCK.match(/prefers-color-scheme:dark/g)).toHaveLength(1);
+            expect(styles.map((match) => match[1])).toEqual([
+                EMAIL_USER_STYLE_BLOCK,
+                EMAIL_USER_DARK_STYLE_BLOCK
+            ]);
+            expect(html.match(/prefers-color-scheme:dark/g)).toHaveLength(1);
+            expect(EMAIL_USER_STYLE_BLOCK).not.toContain('prefers-color-scheme');
             expect(EMAIL_USER_STYLE_BLOCK).toContain('.hospeda-btn{display:block !important;');
             expect(EMAIL_USER_STYLE_BLOCK).not.toContain('u + .body');
         });
 
+        it('should build the dark block from classes only: no attribute selector, no *', () => {
+            // Assert: Gmail drops a whole <style> over selectors like these.
+            expect(EMAIL_USER_DARK_STYLE_BLOCK).not.toContain('[');
+            expect(EMAIL_USER_DARK_STYLE_BLOCK).not.toContain('*');
+            expect(EMAIL_USER_DARK_STYLE_BLOCK).toContain(
+                `.hd-card .hd-tint{background-color:${emailDarkPalette.tintedBox} !important;`
+            );
+        });
+
         it('should turn the wordmark white in dark mode with the mockup palette', () => {
             // Assert
-            expect(EMAIL_USER_STYLE_BLOCK).toContain(
+            expect(EMAIL_USER_DARK_STYLE_BLOCK).toContain(
                 `.hd-card .hd-word{color:${emailDarkPalette.wordmark} !important;}`
             );
             expect(emailDarkPalette.wordmark.toLowerCase()).toMatch(/^#f{3}(f{3})?$/);
-            expect(EMAIL_USER_STYLE_BLOCK).toContain(emailDarkPalette.surface);
+            expect(EMAIL_USER_DARK_STYLE_BLOCK).toContain(emailDarkPalette.surface);
         });
 
         it('should use only email-safe markup', async () => {
@@ -140,6 +162,52 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
             expect(without.html).not.toContain('data-email-illustration');
             expect(without.html).not.toContain('/email/user/ill-');
         });
+
+        it('should put the illustration on the first title row, to its right, centered', async () => {
+            // Act
+            const { html } = await renderUser({ layout: { illustration: 'payments' } });
+            const row = html.slice(
+                html.indexOf('data-email-title="true"'),
+                html.indexOf('Cuerpo del mensaje')
+            );
+
+            // Assert: one title row, bar + heading cell first, illustration cell after.
+            expect(html.match(/data-email-title="true"/g)).toHaveLength(1);
+            expect(row).toMatch(
+                /<td style="vertical-align:middle"><table[^>]*>[\s\S]*width="36"[\s\S]*Título del correo<\/h1><\/td><td[^>]*data-email-illustration="payments"/
+            );
+            expect(row).toMatch(
+                /<td[^>]*style="[^"]*vertical-align:middle[^"]*"[^>]*data-email-illustration="payments"/
+            );
+            expect(row).not.toContain('Segundo título');
+            expect(html).toMatch(/<h1[^>]*>Segundo título<\/h1>/);
+        });
+
+        it('should shrink the illustration to 84px on narrow screens', () => {
+            // Assert
+            expect(EMAIL_USER_STYLE_BLOCK).toContain(
+                '.hd-ill{width:84px !important;height:84px !important;}'
+            );
+            expect(EMAIL_USER_STYLE_BLOCK).toContain('.hd-illcell{width:84px !important;');
+        });
+
+        it('should render a plain heading for EmailTitle outside the user layout', async () => {
+            // Act
+            const { html } = await renderEmailBodies({
+                attribution: ATTRIBUTION,
+                layout: { illustration: 'payments' },
+                react: (
+                    <EmailLayout variant="staff">
+                        <EmailTitle>Solo título</EmailTitle>
+                    </EmailLayout>
+                )
+            });
+
+            // Assert
+            expect(html).not.toContain('data-email-title');
+            expect(html).not.toContain('data-email-illustration');
+            expect(html).toMatch(/<h1[^>]*>Solo título<\/h1>/);
+        });
     });
 
     describe('footer', () => {
@@ -152,6 +220,32 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
             expect(layoutAnchors(html, 'help-center')).toHaveLength(1);
             expect(layoutAnchors(html, 'contact')).toHaveLength(1);
             expect(html).toContain(`href="${BRAND_WHATSAPP_URL}"`);
+        });
+
+        it('should link the logged-in help center and show the FAQ for account holders', async () => {
+            // Act
+            const { html } = await renderUser();
+
+            // Assert
+            expect(layoutAnchors(html, 'help-center')[0]).toContain(
+                'href="https://hospeda.com.ar/es/mi-cuenta/ayuda/?utm_source='
+            );
+            expect(html).toContain('data-layout-faq="true"');
+        });
+
+        it('should hide the FAQ and link the public FAQ page when the reader has no account', async () => {
+            // Act: the help articles sit behind the login wall (HOS-2565 §8.3).
+            const { html, text } = await renderUser({ footerLink: 'none' });
+
+            // Assert
+            expect(html).not.toContain('data-layout-faq');
+            expect(html).not.toContain('Preguntas frecuentes');
+            expect(layoutAnchors(html, 'faq')).toHaveLength(0);
+            expect(html).not.toContain('/mi-cuenta/ayuda/');
+            expect(layoutAnchors(html, 'help-center')[0]).toContain(
+                `href="${EMAIL_PUBLIC_FAQ_URL}?utm_source=`
+            );
+            expect(text).not.toContain('/mi-cuenta/');
         });
 
         it('should fall back to the default FAQ set when the mail declares none', async () => {
@@ -214,7 +308,7 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
             // Assert
             expect(html).toContain('Recibís este correo porque tenés una cuenta en Hospeda.');
             const [preferences] = layoutAnchors(html, 'preferences');
-            expect(preferences).toContain(`href="${EMAIL_USER_PREFERENCES_URL}?utm_source=email`);
+            expect(preferences).toContain(`href="${EMAIL_PREFERENCES_URL}?utm_source=email`);
             expect(html).toContain(`>${EMAIL_USER_PREFERENCES_LABEL}</a>`);
             expect(layoutAnchors(html, 'account')).toHaveLength(1);
             expect(html).toContain(`>${EMAIL_ACCOUNT_LINK_TARGETS.account.label}</a>`);
@@ -280,7 +374,7 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
             for (const src of sources) {
                 expect(src).toMatch(/^https:\/\/staging\.hospeda\.com\.ar\/email\//);
             }
-            expect(html).toContain(`href="${EMAIL_USER_PREFERENCES_URL}?utm_source=email`);
+            expect(html).toContain(`href="${EMAIL_PREFERENCES_URL}?utm_source=email`);
         });
     });
 });

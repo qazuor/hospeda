@@ -1,11 +1,10 @@
 import type { ReactElement, ReactNode } from 'react';
-import { EMAIL_ISOTIPO_PATH, EMAIL_PUBLIC_SITE_URL } from '../email-assets.js';
 import {
-    EMAIL_ISOTIPO_HEIGHT,
-    EMAIL_ISOTIPO_WIDTH,
+    EMAIL_ISOTIPO_PATH,
     EMAIL_PREFERENCES_URL,
-    StaffEmailLayout
-} from './staff-layout.js';
+    EMAIL_PUBLIC_SITE_URL
+} from '../email-assets.js';
+import { EMAIL_ISOTIPO_HEIGHT, EMAIL_ISOTIPO_WIDTH, StaffEmailLayout } from './staff-layout.js';
 import { UserEmailLayout } from './user-layout/user-layout.js';
 
 export { EMAIL_ISOTIPO_HEIGHT, EMAIL_ISOTIPO_WIDTH, EMAIL_PREFERENCES_URL, EMAIL_PUBLIC_SITE_URL };

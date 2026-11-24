@@ -22,7 +22,11 @@ import {
 import { emailPalette } from '@repo/design-tokens';
 import type { ReactElement, ReactNode } from 'react';
 import { EMAIL_BUTTON_MEDIA_RULE } from '../components/button.js';
-import { EMAIL_PUBLIC_SITE_URL, resolveEmailIsotipoUrl } from '../email-assets.js';
+import {
+    EMAIL_PREFERENCES_URL,
+    EMAIL_PUBLIC_SITE_URL,
+    resolveEmailIsotipoUrl
+} from '../email-assets.js';
 
 /** Rendered isotipo width in CSS pixels (the asset is 2x: 89x96). */
 export const EMAIL_ISOTIPO_WIDTH = 44;
@@ -32,9 +36,6 @@ export const EMAIL_ISOTIPO_WIDTH = 44;
  * (89:96 ~ 44:48), since Outlook desktop honours the `height` attribute.
  */
 export const EMAIL_ISOTIPO_HEIGHT = 48;
-
-/** Absolute URL of the logged-in notification preferences page (HOS-2519 OQ-2). */
-export const EMAIL_PREFERENCES_URL = `${EMAIL_PUBLIC_SITE_URL}/es/mi-cuenta/preferencias/`;
 
 /** Props of {@link StaffEmailLayout}. */
 export interface StaffEmailLayoutProps {

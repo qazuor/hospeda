@@ -1,6 +1,7 @@
 /**
- * The single `<style>` block of the USER layout (HOS-2565 PR-4): the shared button
- * rule, a few narrow-screen rules and ONE `prefers-color-scheme: dark` block.
+ * The two `<style>` blocks of the USER layout (HOS-2565 PR-4): the shared button
+ * rule with a few narrow-screen rules, and, in a separate element, ONE
+ * `prefers-color-scheme: dark` block.
  *
  * Every rule is an enhancement. With the block stripped (some Gmail account types,
  * older clients) the mail is still the correct light layout from inline styles.
@@ -43,7 +44,10 @@ export const EMAIL_USER_CLASSES = {
     calloutInfo: 'hd-co-info',
     calloutSuccess: 'hd-co-success',
     calloutWarning: 'hd-co-warning',
-    calloutDanger: 'hd-co-danger'
+    calloutDanger: 'hd-co-danger',
+    tintedBox: 'hd-tint',
+    title: 'hd-title',
+    illustrationCell: 'hd-illcell'
 } as const;
 
 const c = EMAIL_USER_CLASSES;
@@ -53,7 +57,8 @@ const NARROW_RULES = [
     `.${c.padded}{padding-left:20px !important;padding-right:20px !important;}`,
     `.${c.stack}{display:block !important;width:100% !important;box-sizing:border-box;}`,
     `.${c.spacer}{height:12px !important;}`,
-    `.${c.illustration}{width:84px !important;height:84px !important;}`
+    `.${c.illustration}{width:84px !important;height:84px !important;}`,
+    `.${c.illustrationCell}{width:84px !important;padding-left:8px !important;}`
 ].join('');
 
 /**
@@ -69,13 +74,13 @@ const DARK_RULES = [
     `.${c.card} p,.${c.card} td,.${c.card} li,.${c.card} span{color:${dark.text} !important;}`,
     `.${c.card} h1,.${c.card} h2,.${c.card} h3,.${c.card} strong,.${c.card} b{color:${dark.heading} !important;}`,
     `.${c.card} a{color:${dark.link} !important;}`,
-    `.${c.card} [style*="background-color:${emailPalette.pageBackground}"]{background-color:${dark.tintedBox} !important;border-color:${dark.border} !important;}`,
+    `.${c.card} .${c.tintedBox}{background-color:${dark.tintedBox} !important;border-color:${dark.border} !important;}`,
     `.${c.card} .${c.muted}{color:${dark.mutedText} !important;}`,
     `.${c.card} .${c.wordmark}{color:${dark.wordmark} !important;}`,
-    `.${c.card} .${c.calloutInfo},.${c.card} .${c.calloutInfo} *{background-color:${dark.calloutInfoBackground} !important;color:${dark.calloutInfoText} !important;border-color:${dark.calloutInfoRule} !important;}`,
-    `.${c.card} .${c.calloutSuccess},.${c.card} .${c.calloutSuccess} *{background-color:${dark.calloutSuccessBackground} !important;color:${dark.calloutSuccessText} !important;}`,
-    `.${c.card} .${c.calloutWarning},.${c.card} .${c.calloutWarning} *{background-color:${dark.calloutWarningBackground} !important;color:${dark.calloutWarningText} !important;}`,
-    `.${c.card} .${c.calloutDanger},.${c.card} .${c.calloutDanger} *{background-color:${dark.calloutDangerBackground} !important;color:${dark.calloutDangerText} !important;}`,
+    `.${c.card} .${c.calloutInfo},.${c.card} .${c.calloutInfo} p,.${c.card} .${c.calloutInfo} td,.${c.card} .${c.calloutInfo} span,.${c.card} .${c.calloutInfo} strong{background-color:${dark.calloutInfoBackground} !important;color:${dark.calloutInfoText} !important;border-color:${dark.calloutInfoRule} !important;}`,
+    `.${c.card} .${c.calloutSuccess},.${c.card} .${c.calloutSuccess} p,.${c.card} .${c.calloutSuccess} td,.${c.card} .${c.calloutSuccess} span,.${c.card} .${c.calloutSuccess} strong{background-color:${dark.calloutSuccessBackground} !important;color:${dark.calloutSuccessText} !important;}`,
+    `.${c.card} .${c.calloutWarning},.${c.card} .${c.calloutWarning} p,.${c.card} .${c.calloutWarning} td,.${c.card} .${c.calloutWarning} span,.${c.card} .${c.calloutWarning} strong{background-color:${dark.calloutWarningBackground} !important;color:${dark.calloutWarningText} !important;}`,
+    `.${c.card} .${c.calloutDanger},.${c.card} .${c.calloutDanger} p,.${c.card} .${c.calloutDanger} td,.${c.card} .${c.calloutDanger} span,.${c.card} .${c.calloutDanger} strong{background-color:${dark.calloutDangerBackground} !important;color:${dark.calloutDangerText} !important;}`,
     `.${c.card} .${c.optionCard}{background-color:${dark.optionBackground} !important;border-left-color:${dark.optionBorder} !important;border-right-color:${dark.optionBorder} !important;border-bottom-color:${dark.optionBorder} !important;}`,
     `.${c.card} .${c.optionBandSuccess}{background-color:${dark.optionSuccessBand} !important;color:${dark.optionSuccessBandText} !important;}`,
     `.${c.card} .${c.optionBandInfo}{background-color:${dark.optionInfoBand} !important;color:${dark.optionInfoBandText} !important;}`,
@@ -91,6 +96,21 @@ const DARK_RULES = [
 ].join('');
 
 /**
- * The full content of the user layout's one `<style>` element.
+ * The first `<style>` element of the user layout: the button rule and the narrow
+ * screen rules.
  */
-export const EMAIL_USER_STYLE_BLOCK = `${EMAIL_BUTTON_MEDIA_RULE}@media only screen and (max-width:480px){${NARROW_RULES}}@media (prefers-color-scheme:dark){${DARK_RULES}}`;
+export const EMAIL_USER_STYLE_BLOCK = `${EMAIL_BUTTON_MEDIA_RULE}@media only screen and (max-width:480px){${NARROW_RULES}}`;
+
+/**
+ * The second `<style>` element: the ONE dark-mode block. Kept apart from
+ * {@link EMAIL_USER_STYLE_BLOCK} so a client that drops a whole `<style>` over a
+ * rule it dislikes (Gmail does) never takes the mobile full-width button with it.
+ * Classes only: no attribute selectors and no `*`.
+ */
+export const EMAIL_USER_DARK_STYLE_BLOCK = `@media (prefers-color-scheme:dark){${DARK_RULES}}`;
+
+/**
+ * Class a template puts on a light tinted box (a receipt, a list card) so the dark
+ * block can tint it dark. Without it the box keeps its light fill under light text.
+ */
+export const EMAIL_TINTED_BOX_CLASS = EMAIL_USER_CLASSES.tintedBox;
