@@ -25,6 +25,7 @@ interface TrialSummaryCopy {
     readonly endedExpired: string;
     readonly activePlanMessage: string;
     readonly endedPlanMessage: string;
+    readonly endedPlanMessageTourist: string;
     readonly choosePlan: string;
     readonly vertical: Record<'accommodation' | 'venue' | 'experience', string>;
     readonly total_one: string;
@@ -78,11 +79,11 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
             ]);
         }
         expect(copies[1].endedTitle).toBe('Your free {{vertical}} trial has ended');
-        expect(copies[1].endedConverted).toBe('Your trial ended and you now have your plan.');
-        expect(copies[1].endedExpired).toBe('Your trial ended on {{end}}.');
+        expect(copies[1].endedConverted).toBe('You now have your plan.');
+        expect(copies[1].endedExpired).toBe('End date: {{end}}.');
         expect(copies[2].endedTitle).toBe('Seu teste grátis de {{vertical}} terminou');
-        expect(copies[2].endedConverted).toBe('Seu teste terminou e agora você tem seu plano.');
-        expect(copies[2].endedExpired).toBe('Seu teste terminou em {{end}}.');
+        expect(copies[2].endedConverted).toBe('Agora você tem seu plano.');
+        expect(copies[2].endedExpired).toBe('Data de término: {{end}}.');
         for (const copy of copies) {
             expect(copy.activePlanMessage).toBeTruthy();
             expect(copy.endedPlanMessage).toBeTruthy();
@@ -170,16 +171,17 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
     });
 
     it('uses ended copy and the same localized pricing link for expired trials', () => {
-        expect(SOURCE).toContain(
-            "message: t('account.subscription.trialSummary.endedPlanMessage')"
-        );
+        expect(SOURCE).toContain('message: t(endedPlanMessageKey)');
+        expect(SOURCE).toContain("'account.subscription.trialSummary.endedPlanMessageTourist'");
         expect(SOURCE).toContain(
             'href: buildUrl({ locale, path: PRICING_PATH_BY_VERTICAL[vertical] })'
         );
         const copy = readCopy('es');
-        expect(copy.endedPlanMessage).toBe(
-            'Tu prueba terminó. Elegí un plan para volver a publicar.'
-        );
+        expect(copy.endedPlanMessage).toBe('Elegí un plan para volver a publicar.');
+        // F-40: a tourist is never told to publish again.
+        expect(readCopy('es').endedPlanMessageTourist).not.toMatch(/publicar/);
+        expect(readCopy('en').endedPlanMessageTourist).not.toMatch(/publish/);
+        expect(readCopy('pt').endedPlanMessageTourist).not.toMatch(/publicar/);
     });
 
     it('has English copy and builds English pricing URLs with the shared URL helper', () => {
