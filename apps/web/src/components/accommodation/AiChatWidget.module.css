@@ -467,3 +467,18 @@
         opacity: 1;
     }
 }
+
+/* Mobile bottom sheet (shared `Dialog` variant="sheet"): the content column
+   fills the sheet, clamped to the visual viewport so the on-screen keyboard
+   never covers the composer. The messages list is the inner scroller. */
+.sheetContent {
+    --chat-visible-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    height: min(70dvh, calc(var(--chat-visible-height) - 120px));
+    min-height: 0;
+}
+
+.sheetContent[data-keyboard-open="true"] {
+    height: calc(var(--chat-visible-height) - 72px);
+}
