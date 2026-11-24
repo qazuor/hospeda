@@ -1,5 +1,5 @@
 {
-  "contentHash": "054d2e105e7b80cde22b2020f6b444dd29102b4f5b70eac7feb126a84f79b5c8",
+  "contentHash": "b62092c82ab3b47e2c97933f2931c8c7608740fcfce4355a22bcfb8ff09b97a3",
   "locales": {
     "es": [
       {
@@ -493,7 +493,7 @@
             ]
           },
           "notExpect": "- Cambiar de plan con un pago pendiente, con la suscripción pausada o con otro cambio ya programado.\n- Que dar de baja la suscripción corte el servicio en el acto: seguís hasta el final del período pago.",
-          "troubleshooting": "### No aparece el botón para cambiar {#no-aparece}\n\nEl sitio te explica el motivo. Si lo que querés es sumar algo puntual, quizás te sirva {{article:addons|un complemento}}.\n\n### Me rechazaron el primer pago {#pago-rechazado}\n\nDurante los 7 días siguientes al rechazo, «Suscripción» te muestra el aviso y el botón para volver a intentarlo. Pasado ese plazo, si en esa categoría no tenés otra suscripción activa, aparece «Empezar de nuevo» para elegir el plan otra vez.\n\n### Mi plan no incluye el calendario {#sin-calendario}\n\nMirá {{article:calendar|el calendario de ocupación}} para saber qué depende del plan."
+          "troubleshooting": "### No aparece el botón para cambiar {#no-aparece}\n\nEl sitio te explica el motivo. Si lo que querés es sumar algo puntual, quizás te sirva {{article:addons|un complemento}}.\n\n### Me rechazaron el primer pago {#pago-rechazado}\n\nDurante unos días después del rechazo, «Suscripción» te muestra el aviso y el botón para volver a intentarlo. Cuando ese aviso deja de aparecer, si en esa categoría no tenés otra suscripción activa, aparece «Empezar de nuevo» para elegir el plan otra vez.\n\n### Mi plan no incluye el calendario {#sin-calendario}\n\nMirá {{article:calendar|el calendario de ocupación}} para saber qué depende del plan."
         },
         "summary": "Cómo pasar a otro plan o frecuencia de cobro, cuándo rige el cambio y por qué a veces no se puede.",
         "title": "Cambiar de plan",

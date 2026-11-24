@@ -83,7 +83,7 @@ El sitio te explica el motivo. Si lo que querés es sumar algo puntual, quizás 
 
 ### Me rechazaron el primer pago {#pago-rechazado}
 
-Durante los 7 días siguientes al rechazo, «Suscripción» te muestra el aviso y el botón para volver a intentarlo. Pasado ese plazo, si en esa categoría no tenés otra suscripción activa, aparece «Empezar de nuevo» para elegir el plan otra vez.
+Durante unos días después del rechazo, «Suscripción» te muestra el aviso y el botón para volver a intentarlo. Cuando ese aviso deja de aparecer, si en esa categoría no tenés otra suscripción activa, aparece «Empezar de nuevo» para elegir el plan otra vez.
 
 ### Mi plan no incluye el calendario {#sin-calendario}
 
