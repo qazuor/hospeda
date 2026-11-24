@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import type { EmailAttribution } from './attribution.js';
 import type { EmailClient } from './client.js';
 import { renderEmailBodies } from './render.js';
+import { buildEmailTemplateTag } from './template-tag.js';
 import type { EmailLayoutContextValue } from './templates/email-layout-context.js';
 
 const logger = createLogger('email');
@@ -173,6 +174,11 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         };
         if (replyTo) {
             body.replyTo = { email: replyTo };
+        }
+        // HOS-2583: Brevo echoes the tags in its `opened` webhook, which is how an open is
+        // attributed to a template. `attribution` is required, so no caller can omit the key.
+        if (attribution.medium === 'transactional') {
+            body.tags = [buildEmailTemplateTag({ templateKey: attribution.templateKey })];
         }
 
         const response = await fetch(`${client.baseUrl}/smtp/email`, {

@@ -196,6 +196,36 @@ describe('sendEmail', () => {
             expect(body.textContent).toBe('rendered plain text');
         });
 
+        it('tags a transactional send with its template key in the Brevo body (HOS-2583)', async () => {
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Hello',
+                react: mockReact,
+                attribution: TEST_ATTRIBUTION
+            });
+
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.tags).toEqual([`template:${TEST_ATTRIBUTION.templateKey}`]);
+        });
+
+        it('adds no template tag to a campaign send (HOS-2583)', async () => {
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            await sendEmail({
+                client: TEST_CLIENT,
+                to: 'test@example.com',
+                subject: 'Hello',
+                react: mockReact,
+                attribution: { medium: 'campaign', campaignSlug: 'otono-1' }
+            });
+
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(body.tags).toBeUndefined();
+        });
+
         it('should pass the rendered HTML and subject to the provider', async () => {
             // Arrange
             fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));

@@ -45,7 +45,7 @@ export function buildTransactionalAttribution({
     templateKey
 }: {
     readonly templateKey: EmailCatalogKey;
-}): EmailAttribution {
+}): Extract<EmailAttribution, { readonly medium: 'transactional' }> {
     return { medium: 'transactional', templateKey };
 }
 

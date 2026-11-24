@@ -1,4 +1,4 @@
-import { renderEmailBodies } from '@repo/email';
+import { buildEmailTemplateTag, renderEmailBodies } from '@repo/email';
 import { createLogger } from '@repo/logger';
 import { findEmailCatalogEntry } from '../../catalog/catalog.js';
 import { buildEmailCatalogLayout } from '../../catalog/layout-declarations.js';
@@ -9,7 +9,6 @@ import type {
     SendEmailInput,
     SendEmailResult
 } from './email-transport.interface.js';
-import { buildEmailTemplateTag } from './template-tag.js';
 
 const attributionLogger = createLogger('email-attribution');
 const warnedTemplateKeys = new Set<string>();

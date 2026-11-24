@@ -54,6 +54,11 @@ export type { SendEmailInput, SendEmailResult } from './send.js';
 export { sendEmail } from './send.js';
 // Subjects
 export { RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT } from './subjects.js';
+export {
+    buildEmailTemplateTag,
+    EMAIL_TEMPLATE_TAG_PREFIX,
+    parseEmailTemplateTag
+} from './template-tag.js';
 export type {
     EmailFooterLink,
     EmailLayoutProps,
