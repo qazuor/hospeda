@@ -784,6 +784,17 @@
         },
         "listingContact": {
             "bar": {
+                "actions": {
+                    "inquire": "Consultar",
+                    "viewMenu": "Ver carta",
+                    "whatsapp": "Escribir por WhatsApp",
+                    "call": "Llamar",
+                    "favoriteAdd": "Guardar en favoritos",
+                    "favoriteRemove": "Quitar de favoritos",
+                    "share": "Compartir",
+                    "compareAdd": "Agregar a la comparación",
+                    "compareRemove": "Quitar de la comparación"
+                },
                 "inquire": "Consultar",
                 "contact": "Contactar",
                 "viewMenu": "Ver carta",

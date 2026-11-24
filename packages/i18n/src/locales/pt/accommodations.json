@@ -446,6 +446,17 @@
         },
         "listingContact": {
             "bar": {
+                "actions": {
+                    "inquire": "Enviar consulta",
+                    "viewMenu": "Ver cardápio",
+                    "whatsapp": "Enviar mensagem no WhatsApp",
+                    "call": "Ligar",
+                    "favoriteAdd": "Salvar nos favoritos",
+                    "favoriteRemove": "Remover dos favoritos",
+                    "share": "Compartilhar",
+                    "compareAdd": "Adicionar à comparação",
+                    "compareRemove": "Remover da comparação"
+                },
                 "inquire": "Enviar consulta",
                 "contact": "Entrar em contato",
                 "viewMenu": "Ver cardápio",
