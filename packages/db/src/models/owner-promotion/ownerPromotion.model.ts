@@ -1,5 +1,5 @@
-import type { OwnerPromotion } from '@repo/schemas';
-import { and, eq, gte, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
+import type { OwnerPromotion, TouristAudienceEnum } from '@repo/schemas';
+import { and, eq, gte, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -34,6 +34,21 @@ export function accommodationTargetCondition(accommodationId: string): SQL {
  */
 export function ownerWideAccommodationCondition(ownerId: string): SQL {
     return sql`(${ownerPromotions.entityType} = 'accommodation' AND ${ownerPromotions.entityId} IS NULL AND ${ownerPromotions.accommodationId} IS NULL AND ${ownerPromotions.ownerId} = ${ownerId})`;
+}
+
+/**
+ * Input of the accommodation reads of active promotions (D-4 of SPEC-285).
+ *
+ * `touristAudiences` is required on purpose (HOS-2590): a caller cannot forget the
+ * audience scope and serve VIP-only promotions to every reader.
+ */
+export interface ActiveForAccommodationParams {
+    /** The accommodation whose promotions are read. */
+    readonly accommodationId: string;
+    /** The accommodation's owner, for owner-wide promotions. */
+    readonly ownerId: string;
+    /** The audiences the reader may see (`plus` always; `vip` only for VIP tourists). */
+    readonly touristAudiences: readonly TouristAudienceEnum[];
 }
 
 /**
@@ -226,13 +241,15 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
      * Date window and ACTIVE gates are applied here so the result
      * set is identical to what `_executeSearch` returns for the same conditions.
      *
-     * @param params - `{ accommodationId, ownerId }` — both must be resolved by the caller.
+     * @param params - `{ accommodationId, ownerId, touristAudiences }` — all resolved by the
+     *   caller. `touristAudiences` is the reader's audience scope (HOS-2590): a VIP-only
+     *   promotion is returned only when `vip` is in it.
      * @param options - Optional pagination parameters.
      * @param tx - Optional transaction client.
      * @returns Promise resolving to an object with `items` and `total`.
      */
     async findActiveForAccommodation(
-        { accommodationId, ownerId }: { accommodationId: string; ownerId: string },
+        { accommodationId, ownerId, touristAudiences }: ActiveForAccommodationParams,
         options?: { page?: number; pageSize?: number },
         tx?: DrizzleClient
     ): Promise<{ items: OwnerPromotion[]; total: number }> {
@@ -256,7 +273,9 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 eq(ownerPromotions.lifecycleState, 'ACTIVE'),
                 isNull(ownerPromotions.deletedAt),
                 validWindowCondition,
-                or(targetedCondition, ownerWideCondition)
+                or(targetedCondition, ownerWideCondition),
+                // HOS-2590: only the audiences the reader may see.
+                inArray(ownerPromotions.touristAudience, [...touristAudiences])
             );
 
             const page = options?.page ?? 1;
@@ -293,12 +312,14 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
      * Unlike `findActiveForAccommodation`, this method issues a single COUNT(*) query
      * and discards no rows — suitable for the D-4 count path in `_executeCount`.
      *
-     * @param params - `{ accommodationId, ownerId }` — both must be resolved by the caller.
+     * @param params - `{ accommodationId, ownerId, touristAudiences }` — all resolved by the
+     *   caller. `touristAudiences` is the reader's audience scope (HOS-2590): a VIP-only
+     *   promotion is returned only when `vip` is in it.
      * @param tx - Optional transaction client.
      * @returns Promise resolving to the total number of matching promotions.
      */
     async countActiveForAccommodation(
-        { accommodationId, ownerId }: { accommodationId: string; ownerId: string },
+        { accommodationId, ownerId, touristAudiences }: ActiveForAccommodationParams,
         tx?: DrizzleClient
     ): Promise<number> {
         const db = this.getClient(tx);
@@ -317,7 +338,9 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 eq(ownerPromotions.lifecycleState, 'ACTIVE'),
                 isNull(ownerPromotions.deletedAt),
                 validWindowCondition,
-                or(targetedCondition, ownerWideCondition)
+                or(targetedCondition, ownerWideCondition),
+                // HOS-2590: only the audiences the reader may see.
+                inArray(ownerPromotions.touristAudience, [...touristAudiences])
             );
 
             const rows = await db.select().from(ownerPromotions).where(whereClause);
