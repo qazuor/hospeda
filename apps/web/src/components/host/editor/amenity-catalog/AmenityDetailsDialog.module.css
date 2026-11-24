@@ -29,16 +29,34 @@
  * panel with `.panel[data-size="sm"]` (0,2,0). The rules below sit strictly
  * above both — `.overlay.overlay` (0,2,0) and `.panel.panel.panel` (0,3,0) —
  * so they win whichever CSS chunk the bundler emits last.
+ *
+ * Mobile first (D6 breakpoints): the drawer is the base layout, and from
+ * 48rem up the block below restores the shared Dialog's centred `sm` values
+ * (`align-items: center`, `padding: var(--space-4)`, `max-width: 420px`,
+ * `border-radius: var(--radius-card)`). `--dialog-max-height: initial` makes
+ * the custom property guaranteed-invalid, so the shared `.dialog-panel` cap
+ * falls back to its own default.
  */
-@media (max-width: 640px) {
+.overlay.overlay {
+    align-items: flex-end;
+    padding: 0;
+}
+
+.panel.panel.panel {
+    --dialog-max-height: 85dvh;
+    max-width: 100%;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+@media (min-width: 48rem) {
     .overlay.overlay {
-        align-items: flex-end;
-        padding: 0;
+        align-items: center;
+        padding: var(--space-4);
     }
 
     .panel.panel.panel {
-        --dialog-max-height: 85dvh;
-        max-width: 100%;
-        border-radius: var(--radius-card, 24px) var(--radius-card, 24px) 0 0;
+        --dialog-max-height: initial;
+        max-width: 420px;
+        border-radius: var(--radius-card);
     }
 }

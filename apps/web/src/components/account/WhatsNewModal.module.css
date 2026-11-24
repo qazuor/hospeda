@@ -4,7 +4,7 @@
     z-index: 1000;
     display: flex;
     justify-content: flex-end;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: var(--overlay);
     animation: fadeIn 0.2s ease;
 }
 
@@ -20,7 +20,7 @@
     flex-direction: column;
     border-radius: var(--radius-card);
     background-color: var(--core-card);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-overlay);
     animation: fadeIn 0.2s ease;
 }
 
@@ -36,7 +36,7 @@
 .modalTitle {
     margin: 0;
     font-family: var(--font-heading);
-    font-size: 1.25rem;
+    font-size: var(--app-section-size);
     font-weight: 700;
     color: var(--core-foreground);
 }
@@ -71,7 +71,7 @@
 .modalEntryTitle {
     margin: 0;
     font-family: var(--font-heading);
-    font-size: 1.125rem;
+    font-size: var(--app-card-title-size);
     font-weight: 600;
     color: var(--core-foreground);
 }
@@ -97,10 +97,10 @@
 .panel {
     --dialog-max-height: 100%;
     width: 100%;
-    max-width: 420px;
+    max-width: 100%;
     height: 100%;
     background-color: var(--core-card);
-    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-overlay);
     animation: slideIn 0.25s ease;
     outline: none;
     display: flex;
@@ -125,7 +125,7 @@
     flex: 1;
     margin: 0;
     font-family: var(--font-heading);
-    font-size: 1.125rem;
+    font-size: var(--app-card-title-size);
     font-weight: 600;
     color: var(--core-foreground);
 }
@@ -145,7 +145,7 @@
     padding: 2rem 1.25rem;
     text-align: center;
     color: var(--core-muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
 }
 
 .entryList {
@@ -201,7 +201,7 @@
 
 .panelRowTitleUnseen {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     font-weight: 600;
     color: var(--core-foreground);
     overflow: hidden;
@@ -211,7 +211,7 @@
 
 .panelRowTitleSeen {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     font-weight: 400;
     color: var(--core-muted-foreground);
     overflow: hidden;
@@ -221,7 +221,7 @@
 
 .panelRowDate {
     margin: 0.125rem 0 0;
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
 }
 
@@ -231,7 +231,7 @@
     border-radius: var(--radius-pill);
     background-color: var(--brand-primary-a12);
     padding: 0.125rem 0.5rem;
-    font-size: 0.6875rem;
+    font-size: var(--app-caption-size);
     font-weight: 600;
     color: var(--brand-primary);
 }
@@ -246,7 +246,7 @@
     border: none;
     cursor: pointer;
     color: var(--core-muted-foreground);
-    font-size: 1.125rem;
+    font-size: var(--app-card-title-size);
     border-radius: var(--radius-button);
     transition:
         background-color var(--duration-fast) ease,
@@ -269,7 +269,7 @@
     border: none;
     cursor: pointer;
     color: var(--core-muted-foreground);
-    font-size: 1rem;
+    font-size: var(--app-body-size);
     border-radius: var(--radius-button);
     transition:
         background-color var(--duration-fast) ease,
@@ -287,7 +287,7 @@
     border: none;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     font-weight: 500;
     color: var(--brand-primary);
     border-radius: var(--radius-button);
@@ -312,7 +312,7 @@
 }
 
 .entryBody {
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     line-height: 1.6;
     color: var(--core-foreground);
 }
@@ -347,9 +347,9 @@
 
 .entryBody code {
     background-color: var(--brand-primary-a08);
-    border-radius: 3px;
+    border-radius: var(--radius-control);
     padding: 0.125em 0.375em;
-    font-size: 0.875em;
+    font-size: var(--app-meta-size);
 }
 
 .entryBody hr {
@@ -358,9 +358,10 @@
     margin: 1.5em 0;
 }
 
-@media (max-width: 480px) {
+/* Mobile first: the drawer takes the full width below 30rem (480px). */
+@media (min-width: 30rem) {
     .panel {
-        max-width: 100%;
+        max-width: 420px;
     }
 }
 

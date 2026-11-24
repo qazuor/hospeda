@@ -32,6 +32,10 @@
  *     with, and the guard fails when the list exceeds it. Lower the ceiling
  *     when you shrink the list. Raising it is an owner decision, never a fix.
  *
+ * HOS-2508 drained the list: it is `{}` and the ceiling is `0 / 0`, so any
+ * entry at all is a ceiling breach and the legacy zone answers to the same
+ * zero as the strict zone.
+ *
  * `--print-baseline` prints the current legacy-zone counts as JSON (it is how
  * the initial list was produced) and exits 0.
  *
@@ -73,7 +77,7 @@ const COMPLEMENT_REM = ['29.99', '47.99', '63.99', '79.99'] as const;
 export const EXCEPTIONS_PATH = 'scripts/guards/account-breakpoints-exceptions.json';
 
 /** Frozen maximum size of the exceptions list (entries = file × rule pairs). */
-export const EXCEPTIONS_CEILING = { entries: 5, total: 5 } as const;
+export const EXCEPTIONS_CEILING = { entries: 0, total: 0 } as const;
 
 /** A scan below this many files means the scope moved or the cwd is wrong. */
 export const MIN_SCANNED_FILES = 300;

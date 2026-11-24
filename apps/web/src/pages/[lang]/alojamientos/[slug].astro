@@ -14,6 +14,7 @@ import { CompareBar } from '@/components/shared/compare/CompareBar.client';
 import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
+import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import { formatPhotoCredit } from '@/lib/photo-credit';
@@ -44,7 +45,7 @@ import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
 import { ListingContactBar } from '@/components/listing/contact/ListingContactBar.client';
 import { ListingContactPanel } from '@/components/listing/contact/ListingContactPanel.client';
 import { ListingContactCard } from '@/components/listing/contact/ListingContactCard.client';
-import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
@@ -58,7 +59,7 @@ import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
 import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
 import type { NearbyPoi } from '@repo/schemas';
-import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
+import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import { buildListingPolicyStructuredData } from '@/lib/seo/listing-policies-jsonld';
 import ClampedText from '@/components/listing/ClampedText.astro';
@@ -561,11 +562,11 @@ const sectionTabs = buildListingSectionTabs({
     }
 });
 
-// --- FAQPage JSON-LD when FAQs exist (REQ-096-37 / T-067) ---
-const faqSections = accommodation.faqs.map((faq) => ({
-    heading: faq.question,
-    body: faq.answer
-}));
+// --- FAQPage JSON-LD when FAQs exist (REQ-096-37 / T-067; shared helper since HOS-2579) ---
+const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
+    faqs: accommodation.faqs,
+    locale
+});
 ---
 
 <DetailLayout
@@ -606,7 +607,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
     />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
-        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqSetInLanguage(accommodation.faqs, locale)} />
+        <FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={faqInLanguage} />
     )}
 
     <div slot="breadcrumbs" class="acc-detail-breadcrumbs">
@@ -811,11 +812,12 @@ const faqSections = accommodation.faqs.map((faq) => ({
         entityId={accommodation.id}
         locale={locale}
     />
-    <!-- Analytics tracker (headless, SPEC-140) -->
-    <AccommodationViewTracker
+    <!-- Analytics tracker (headless, SPEC-140; EntityViewTracker since HOS-2579) -->
+    <EntityViewTracker
         client:idle
+        entityType="ACCOMMODATION"
         slug={slug}
-        accommodationId={accommodation.id}
+        entityId={accommodation.id}
         locale={locale}
         accommodationType={accommodation.type}
         isFeatured={accommodation.isFeatured}
