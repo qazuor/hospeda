@@ -46,11 +46,11 @@ describe('email catalog completeness', () => {
         }
     });
 
-    it('has exactly the 46 notification entries renderNotificationEmail supports', () => {
+    it('has exactly the 48 notification entries renderNotificationEmail supports', () => {
         const ids = EMAIL_CATALOG.filter((entry) => entry.sendPath === 'notification').map(
             (entry) => entry.id
         );
-        expect(ids).toHaveLength(46);
+        expect(ids).toHaveLength(48);
         expect(new Set(ids)).toEqual(new Set(NOTIFICATION_TYPES_WITH_TEMPLATE));
     });
 

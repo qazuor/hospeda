@@ -348,6 +348,18 @@
         "pixelSlug": "email-notification-trial-win-back-60d"
     },
     {
+        "key": "notification.vip_promotions_paused",
+        "name": "Email · Promociones Solo VIP pausadas",
+        "utmCampaign": "notification-vip-promotions-paused",
+        "pixelSlug": "email-notification-vip-promotions-paused"
+    },
+    {
+        "key": "notification.vip_promotions_weekly_digest",
+        "name": "Email · Resumen semanal de promociones para VIP",
+        "utmCampaign": "notification-vip-promotions-weekly-digest",
+        "pixelSlug": "email-notification-vip-promotions-weekly-digest"
+    },
+    {
         "key": "outbox.billing.access-ending",
         "name": "Email · Aviso de fin de acceso por baja programada",
         "utmCampaign": "outbox-billing-access-ending",

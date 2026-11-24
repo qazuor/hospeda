@@ -1,7 +1,7 @@
 /**
  * Template selectors of the community notification types.
  *
- * Covers: Alliance, host-trade, partner, listing and calendar notifications.
+ * Covers: Alliance, host-trade, partner, listing, calendar and promotion notifications.
  *
  * Moved verbatim out of `NotificationService.selectTemplate` (HOS-2519 D6), so
  * the production send and the admin email preview map a payload to the same
@@ -24,7 +24,9 @@ import {
     UsageConfirmationReminder,
     UsageConfirmationRequest,
     UsageConfirmed,
-    UsageRejected
+    UsageRejected,
+    VipPromotionsPaused,
+    VipPromotionsWeeklyDigest
 } from '../../templates/index.js';
 import { formatDate } from '../../templates/utils/index.js';
 import type {
@@ -40,7 +42,9 @@ import type {
     HostTradeUsageRejectedPayload,
     ListingLocationExceptionDecisionPayload,
     PartnerMentionsLoggedPayload,
-    PartnerRevokedPayload
+    PartnerRevokedPayload,
+    VipPromotionsPausedPayload,
+    VipPromotionsWeeklyDigestPayload
 } from '../../types/notification.types.js';
 import type { NotificationTemplateSelectors } from './types.js';
 
@@ -186,6 +190,28 @@ export const COMMUNITY_NOTIFICATION_TEMPLATES: NotificationTemplateSelectors = {
             accommodationName: p.accommodationName,
             providerLabel: p.providerLabel,
             reconnectUrl: p.reconnectUrl
+        });
+    },
+    vip_promotions_weekly_digest: ({ payload }) => {
+        const { recipientName } = payload;
+        const p = payload as VipPromotionsWeeklyDigestPayload;
+        return VipPromotionsWeeklyDigest({
+            recipientName,
+            locale: p.locale,
+            promotions: p.promotions,
+            moreCount: p.moreCount,
+            promotionsUrl: p.promotionsUrl,
+            preferencesUrl: p.preferencesUrl
+        });
+    },
+    vip_promotions_paused: ({ payload }) => {
+        const { recipientName } = payload;
+        const p = payload as VipPromotionsPausedPayload;
+        return VipPromotionsPaused({
+            recipientName,
+            locale: p.locale,
+            promotionTitles: p.promotionTitles,
+            promotionsUrl: p.promotionsUrl
         });
     }
 };
