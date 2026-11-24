@@ -16,6 +16,7 @@ vi.mock('../../../src/routes/newsletter/admin/_singletons', () => ({
 
 import { Hono } from 'hono';
 import { adminCampaignAudienceCountRoute } from '../../../src/routes/newsletter/admin/campaigns';
+import type { AppBindings } from '../../../src/types';
 import { createGuestActor } from '../../../src/utils/actor';
 
 const campaignId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
@@ -23,8 +24,8 @@ const URL = `/api/v1/admin/newsletter/campaigns/${campaignId}/audience-count`;
 
 const GUEST = createGuestActor();
 
-function buildApp(actor: object) {
-    const app = new Hono();
+function buildApp(actor: AppBindings['Variables']['actor']) {
+    const app = new Hono<AppBindings>();
     app.use('*', async (c, next) => {
         c.set('actor', actor);
         await next();
@@ -56,7 +57,8 @@ describe('GET /campaigns/:id/audience-count auth boundary', () => {
             permissions: [
                 PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
                 PermissionEnum.ACCESS_PANEL_ADMIN
-            ]
+            ],
+            emailVerified: true
         }).request(URL);
 
         expect(res.status).toBe(403);
@@ -70,7 +72,8 @@ describe('GET /campaigns/:id/audience-count auth boundary', () => {
             permissions: [
                 PermissionEnum.NEWSLETTER_CAMPAIGN_SEND,
                 PermissionEnum.ACCESS_PANEL_ADMIN
-            ]
+            ],
+            emailVerified: true
         }).request(URL);
 
         expect(res.status).toBe(200);
