@@ -28,8 +28,12 @@ const propsSchema = z
                 z.object({ kind: z.literal('menu'), href: z.string().url() }).readonly()
             ])
             .nullable(),
-        /** Accommodation only (HOS-19 gate resolved inside the panel). */
-        hasWhatsapp: z.boolean(),
+        /**
+         * Accommodation only (HOS-19 gate resolved inside the panel). The public
+         * payload types it optional, and an absent flag must not reject the props:
+         * a rejected bar renders nothing and unpins the dock.
+         */
+        hasWhatsapp: z.boolean().default(false),
         /** Venue only: the HOS-2256 public state. */
         venueWhatsapp: z
             .union([
