@@ -289,8 +289,8 @@ export const LISTING_SECTION_RENDERERS: Readonly<
                     id="editor-amenities"
                     title={translate(
                         context.locale,
-                        'listing.owner.editor.groups.amenities',
-                        'Qué ofrece tu comercio'
+                        `listing.owner.editor.groups.amenities.${context.vertical}`,
+                        ''
                     )}
                     helpId={sectionHelpId({ vertical: context.vertical, slug: 'servicios' })}
                 >
@@ -409,6 +409,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
     translations: (context) => (
         <ListingTranslationPanel
             locale={context.locale}
+            vertical={context.vertical}
             initialValues={context.data.i18nValues}
             plainTextValues={{
                 name: context.data.name,
