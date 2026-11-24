@@ -228,14 +228,19 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
     .guest-thread__message--guest .guest-thread__bubble {
         background-color: var(--brand-primary);
         color: white;
-        border-radius: var(--radius-organic-sm, 0px 75px);
+        /* Chat bubble shape, same as the account kit's MessageBubble: card
+           radius with a small corner on the author's side. The organic hero
+           radii (0 75px / 100px 0) deformed short bubbles. */
+        border-radius: var(--radius-card);
+        border-end-end-radius: var(--radius-control);
         padding: var(--space-3, 12px) var(--space-4, 16px);
     }
 
     .guest-thread__message--owner .guest-thread__bubble {
         background-color: var(--core-card);
         border: 1px solid var(--border);
-        border-radius: var(--radius-organic-alt, 100px 0px);
+        border-radius: var(--radius-card);
+        border-end-start-radius: var(--radius-control);
         padding: var(--space-3, 12px) var(--space-4, 16px);
     }
 
