@@ -97,6 +97,18 @@ describe('planGalleryWarmup', () => {
         ).toEqual([]);
     });
 
+    it('warms the full size of a single photo but plans no strip thumbnails', () => {
+        // Act
+        const plan = preload.planGalleryWarmup({
+            imageUrls: URLS.slice(0, 1),
+            allowed: true,
+            alreadyWarmedFull: 0
+        });
+
+        // Assert: the strip only renders with 2+ photos
+        expect(plan).toEqual({ full: FULL.slice(0, 1), thumbs: [] });
+    });
+
     it('plans nothing when preloading is not allowed', () => {
         expect(
             preload.planGalleryWarmup({ imageUrls: URLS, allowed: false, alreadyWarmedFull: 0 })
@@ -156,6 +168,51 @@ describe('warmGalleryOnIdle', () => {
             .map((img) => img.src)
             .filter((src) => FULL.includes(src) || fullOther.includes(src));
         expect(fullRequested).toHaveLength(3);
+    });
+
+    it('gives every page its own 3-photo budget across a soft navigation', () => {
+        // Arrange: ONE module instance (no vi.resetModules between pages), as under
+        // ClientRouter, where the module survives the navigation.
+        const first = fakeWarmup();
+        Object.assign(first.win, { location: { pathname: '/es/alojamientos/a/' } });
+        const second = fakeWarmup();
+        Object.assign(second.win, { location: { pathname: '/es/alojamientos/b/' } });
+        const other = URLS.map((url) => url.replace('photo-', 'other-'));
+        const fullOther = other.map((url) => buildLightboxUrl({ url }).src);
+
+        // Act: listing A warms, then the visitor soft-navigates to listing B
+        preload.warmGalleryOnIdle({
+            win: first.win,
+            imageUrls: URLS,
+            createImage: first.createImage
+        });
+        preload.warmGalleryOnIdle({
+            win: second.win,
+            imageUrls: other,
+            createImage: second.createImage
+        });
+
+        // Assert
+        const fullOf = (created: readonly FakeImage[], full: readonly string[]) =>
+            created.map((img) => img.src).filter((src) => full.includes(src));
+        expect(fullOf(first.created, FULL)).toEqual(FULL.slice(0, 3));
+        expect(fullOf(second.created, fullOther)).toEqual(fullOther.slice(0, 3));
+    });
+
+    it('still shares the budget between two galleries of the same page', () => {
+        // Arrange
+        const { win, created, createImage } = fakeWarmup();
+        Object.assign(win, { location: { pathname: '/es/alojamientos/a/' } });
+        const other = URLS.map((url) => url.replace('photo-', 'other-'));
+        const fullOther = other.map((url) => buildLightboxUrl({ url }).src);
+
+        // Act
+        preload.warmGalleryOnIdle({ win, imageUrls: URLS, createImage });
+        preload.warmGalleryOnIdle({ win, imageUrls: other, createImage });
+
+        // Assert
+        const sources = created.map((img) => img.src);
+        expect(sources.filter((src) => fullOther.includes(src))).toEqual([]);
     });
 
     it.each([

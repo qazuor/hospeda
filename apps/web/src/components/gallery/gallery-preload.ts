@@ -197,7 +197,7 @@ export interface PlanGalleryWarmupInput {
 /**
  * The URLs the idle warm-up fetches: the lightbox (`full`) URL of the first photos, up
  * to {@link GALLERY_WARMUP_FULL_LIMIT} for the whole page, and every strip thumbnail
- * (small, and the strip mounts right after the first open).
+ * (small, and the strip mounts right after the first open) when there are 2+ photos.
  *
  * @param input - Image URLs, the network verdict and the page-wide full-size count.
  * @returns `{ full, thumbs }`, deduplicated; both empty when preloading is not allowed.
@@ -216,15 +216,38 @@ export function planGalleryWarmup({
         0,
         budget
     );
-    const thumbs = [...new Set(imageUrls.map((url) => buildLightboxThumbUrl({ url }).src))];
+    // A single photo still opens the lightbox (so its full size is worth warming),
+    // but the strip only renders with 2+ photos (`GalleryLightboxThumbs`).
+    const thumbs =
+        imageUrls.length < 2
+            ? []
+            : [...new Set(imageUrls.map((url) => buildLightboxThumbUrl({ url }).src))];
     return { full, thumbs };
 }
 
-/** URLs this document already asked for, so no two callers fetch the same photo twice. */
+/**
+ * URLs this session already asked for, so no two callers fetch the same photo twice.
+ * Session-wide on purpose: it only dedupes requests the HTTP cache already holds.
+ */
 const warmedUrls = new Set<string>();
 
-/** Full-size URLs warmed by the idle pass, counted page-wide against the limit. */
-const idleWarmedFull = new Set<string>();
+/**
+ * Full-size URLs warmed by the idle pass on the CURRENT page, counted against the
+ * limit. Keyed by `location.pathname`: this module survives ClientRouter soft
+ * navigations, so a module-wide counter let the first listing spend the budget of
+ * every listing visited after it.
+ */
+let idleWarmedFull: { readonly page: string; readonly urls: Set<string> } = {
+    page: '',
+    urls: new Set<string>()
+};
+
+/** The idle full-size budget of the page `win` shows; a new page starts at zero. */
+function currentPageWarmedFull({ win }: { readonly win: Window }): Set<string> {
+    const page = win.location?.pathname ?? '';
+    if (idleWarmedFull.page !== page) idleWarmedFull = { page, urls: new Set<string>() };
+    return idleWarmedFull.urls;
+}
 
 /** Input of {@link warmImage}. */
 export interface WarmImageInput {
@@ -284,13 +307,14 @@ export function warmGalleryOnIdle({
         win,
         onReady: () => {
             const { allowed } = readPreloadAllowed({ nav: win.navigator });
+            const pageWarmedFull = currentPageWarmedFull({ win });
             const { full, thumbs } = planGalleryWarmup({
                 imageUrls,
                 allowed,
-                alreadyWarmedFull: idleWarmedFull.size
+                alreadyWarmedFull: pageWarmedFull.size
             });
             for (const url of full) {
-                idleWarmedFull.add(url);
+                pageWarmedFull.add(url);
                 warmImage({ url, priority: 'low', createImage });
             }
             for (const url of thumbs) warmImage({ url, priority: 'low', createImage });
