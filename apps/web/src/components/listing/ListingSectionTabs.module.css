@@ -4,8 +4,10 @@
  * (`wave-header--hidden`) the tabs close the gap and stick to the navbar.
  */
 .nav {
-    /* --tabs-bar-height is the band's measured height, published by the island; the
-       72px fallback only applies before hydration (and without JavaScript). */
+    /* The island overrides this inline with the band's measured height. Declared as
+       `initial` (guaranteed-invalid) so the 72px fallback below applies before
+       hydration and without JavaScript. */
+    --tabs-bar-height: initial;
     --tabs-top: calc(
         var(--navbar-height, 80px) +
         var(--tabs-bar-height, var(--wave-bar-compact, 72px))
