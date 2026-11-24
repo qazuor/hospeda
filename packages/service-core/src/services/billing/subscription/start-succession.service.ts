@@ -208,7 +208,11 @@ export async function startSuccession(
 
     const deadlines = await getCurrentBillingDeadlines();
     const { cycleDeadlines, credit } = await getDb().transaction(async (tx) => ({
-        cycleDeadlines: await readCycleDeadlines({ tx, subscriptionId: admitted.predecessorId }),
+        cycleDeadlines: await readCycleDeadlines({
+            tx,
+            subscriptionId: admitted.predecessorId,
+            clock: ports.clock
+        }),
         credit: await readHasCreditedCharge({ tx, subscriptionId: admitted.predecessorId })
     }));
     const windowNow = ports.clock.now();
