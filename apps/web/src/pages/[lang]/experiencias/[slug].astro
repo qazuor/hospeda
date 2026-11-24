@@ -37,7 +37,7 @@ import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
 import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
 import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
-import { hasListingDescription } from '@/lib/listing-detail/listing-detail-presence';
+import { hasHouseRules, hasListingDescription } from '@/lib/listing-detail/listing-detail-presence';
 import { renderPlain } from '@/lib/render-plain';
 import LocationSection from '@/components/listing/location/LocationSection.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
@@ -302,6 +302,10 @@ const hasBeforeYouGo =
     experience.whatToBring.length > 0 ||
     experience.requirements.length > 0 ||
     Boolean(experience.policies.cancellation);
+const hasPoliciesSection =
+    hasBeforeYouGo || hasHouseRules({ policies: experience.policies, locale });
+// Slot 10: the contact block, or the private-groups invitation on its own.
+const hasContactSection = contactBlock !== null || experience.policies.privateGroups === true;
 
 // --- Sticky section tabs (HOS-2579 §6.2): a tab exists only when its slot has content ---
 const sectionTabs = buildListingSectionTabs({
@@ -490,6 +494,7 @@ const headerProps = buildExperienceHeader({
              (HOS-815), then the private-groups invitation (HOS-1056), right after
              the block its CTA points at. `hasContactBlock` keeps that CTA from
              becoming a dead anchor — see the constant's docstring. -->
+        {hasContactSection && (
         <ListingDetailSlot name="contact">
             {contactBlock && <ListingContactBlock {...contactBlock} />}
             <ExperiencePrivateGroups
@@ -499,10 +504,12 @@ const headerProps = buildExperienceHeader({
                 locale={locale}
             />
         </ListingDetailSlot>
+        )}
 
         <!-- Slot 11 «Antes de ir»: what to bring and what is required (HOS-1046),
              what happens if the outing does not run (HOS-1047, rendered as TEXT,
              never as HTML) and the house rules (HOS-2060). Each self-hides. -->
+        {hasPoliciesSection && (
         <ListingDetailSlot name="policies">
             {hasBeforeYouGo && (
                 <h2 class="exp-detail__policies-title">
@@ -520,6 +527,7 @@ const headerProps = buildExperienceHeader({
             />
             <ListingHouseRules policies={experience.policies} locale={locale} />
         </ListingDetailSlot>
+        )}
 
         <!-- Slot 12: FAQs (static SSR accordion). -->
         {faqs.length > 0 && (

@@ -26,7 +26,7 @@
  * - **Rendered order.** It reads source order. A slot whose blocks are chosen
  *   at runtime (the venue's `blocksInSlot`) is covered by the unit tests of
  *   `venue-detail-sections.ts`; the DOM order on a real page is the E2E
- *   `guest-13-listing-detail-standard.spec.ts` (AC-4).
+ *   `apps/e2e/tests/guest/guest-13-listing-detail-order-tabs.spec.ts` (AC-4).
  * - **Blocks outside a wrapper.** A block placed between two wrappers renders
  *   in that position without a slot id; review is the control for that, and
  *   the trackers / panels / bars that legitimately sit outside are not slots.
@@ -65,6 +65,18 @@ function slotNames(source: string): readonly string[] {
     return [...source.matchAll(/<ListingDetailSlot\b[^>]*?\bname="([^"]+)"/g)].map(
         ([, name]) => name as string
     );
+}
+
+/**
+ * Slot ids written as literals on an `id` attribute: `id="…"`, `id='…'`,
+ * `id={'…'}`, `id={"…"}` or `` id={`…`} ``. An id built from an expression
+ * (other than a bare literal) is not read; the wrapper is the only writer.
+ */
+function handWrittenSlotIds(source: string): readonly string[] {
+    const slotIds = new Set<string>(Object.values(LISTING_DETAIL_SLOT_IDS));
+    return [...source.matchAll(/\bid=(?:\{\s*)?(["'`])([^"'`]+)\1(?:\s*\})?/g)]
+        .map(([, , id]) => id as string)
+        .filter((id) => slotIds.has(id));
 }
 
 /** True when `names` is a strictly increasing subsequence of the canonical slots. */
@@ -110,9 +122,30 @@ describe('listing detail pages follow the 13-slot order (HOS-2579 AC-1)', () => 
 
     it.each(PAGES)('%s writes no slot id by hand', (page) => {
         const source = withoutComments(read(page));
-        for (const id of Object.values(LISTING_DETAIL_SLOT_IDS)) {
-            expect(source).not.toContain(`id="${id}"`);
-        }
+        expect(handWrittenSlotIds(source)).toEqual([]);
+    });
+
+    it('catches every literal form of a hand-written slot id', () => {
+        expect(
+            handWrittenSlotIds(
+                [
+                    '<div id="listing-offers">',
+                    "<div id='listing-hours'>",
+                    "<div id={'listing-faq'}>",
+                    '<div id={"listing-contact"}>',
+                    '<div id={`listing-reviews`}>',
+                    '<div id={ `listing-summary` }>',
+                    '<div id={LISTING_SECTION_IDS.photos}>'
+                ].join('\n')
+            )
+        ).toEqual([
+            'listing-offers',
+            'listing-hours',
+            'listing-faq',
+            'listing-contact',
+            'listing-reviews',
+            'listing-summary'
+        ]);
     });
 
     it.each(PAGES)('%s has no <h1> of its own (the header owns it, AC-25)', (page) => {

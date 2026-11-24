@@ -10,10 +10,11 @@
  * `amenities` on slot 4) passes `anchorId`: the content is then wrapped in an
  * inner element with that id, so `LISTING_SECTION_IDS` keeps its values.
  *
- * A wrapper whose blocks all self-hid (no element child) is not displayed, so
- * an empty slot never adds a gap to the page's flex column. Its id still
- * exists in that case, which is why the pages only add a TAB for a slot when
- * they know the slot has content.
+ * A wrapper whose blocks all self-hid (no element besides the inner anchor) is
+ * not displayed, so an empty slot never adds a gap to the page's flex column.
+ * That CSS is the safety net only: the pages mount a wrapper when they know
+ * its slot has content (the same predicates that decide its TAB), so an empty
+ * slot normally leaves no id in the DOM at all.
  *
  * The order of the wrappers in each page's source is guarded by
  * `listing-detail-section-order.guard.test.ts` (AC-1).
@@ -75,7 +76,9 @@ const innerId = anchorId && anchorId !== slotId ? anchorId : undefined;
         gap: 0;
     }
 
-    .listing-slot:not(:has(*)) {
+    /* No content: no element child, or only the inner tab anchor with nothing
+       inside it. The anchor alone must not keep an empty slot on the page. */
+    .listing-slot:not(:has(:not(.listing-slot__anchor))) {
         display: none;
     }
 </style>

@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    hasHouseRules,
     hasListingDescription,
     hasVenueOffersContent,
     type VenueOffersSource
@@ -112,5 +113,25 @@ describe('hasVenueOffersContent («Lo que ofrece», D-3)', () => {
 
         expect(hasVenueOffersContent({ venue: unsafe, showEventsCta: false })).toBe(false);
         expect(hasVenueOffersContent({ venue: noKind, showEventsCta: false })).toBe(false);
+    });
+});
+
+describe('hasHouseRules', () => {
+    it('is false with no policies or none that build a row', () => {
+        expect(hasHouseRules({ policies: undefined, locale: 'es' })).toBe(false);
+        expect(hasHouseRules({ policies: {}, locale: 'es' })).toBe(false);
+    });
+
+    it('is true when a rule builds a row', () => {
+        expect(hasHouseRules({ policies: { paymentMethods: ['cash'] }, locale: 'es' })).toBe(true);
+    });
+});
+
+describe('a venue with no description and no offers (HOS-2579 review)', () => {
+    it('reports both slots absent, so the page mounts neither wrapper nor tab', () => {
+        expect(
+            hasListingDescription({ summary: '', descriptionText: '', richDescription: null })
+        ).toBe(false);
+        expect(hasVenueOffersContent({ venue: EMPTY_VENUE, showEventsCta: false })).toBe(false);
     });
 });

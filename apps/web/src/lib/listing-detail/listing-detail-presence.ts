@@ -11,6 +11,9 @@
  */
 
 import type { VenueDailySpecial, VenueEvent, VenueMenuSection } from '@/data/types';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildHouseRuleRows } from '@/lib/listing/listing-house-rules';
+import type { ListingPolicyValues } from '@/lib/listing/listing-policies';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { hasNightInfoContent, type VenueNightInfoData } from '@/lib/venue/night-info';
 
@@ -76,4 +79,23 @@ export function hasVenueOffersContent({
         showEventsCta ||
         (venue.nightInfo ? hasNightInfoContent(venue.nightInfo) : false)
     );
+}
+
+/**
+ * True when `ListingHouseRules` renders at least one row (its own self-hide
+ * rule, `buildHouseRuleRows(...).length === 0`).
+ *
+ * @param input.policies - The listing's house rules.
+ * @param input.locale - Page locale (the rows are built with its labels).
+ * @returns Whether the house-rules block has content.
+ */
+export function hasHouseRules({
+    policies,
+    locale
+}: {
+    readonly policies: ListingPolicyValues | null | undefined;
+    readonly locale: SupportedLocale;
+}): boolean {
+    const { t } = createTranslations(locale);
+    return buildHouseRuleRows({ policies: policies ?? {}, t, locale }).length > 0;
 }

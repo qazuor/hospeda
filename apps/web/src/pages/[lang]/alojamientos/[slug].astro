@@ -69,6 +69,7 @@ import ClampedText from '@/components/listing/ClampedText.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
 import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
+import { hasHouseRules } from '@/lib/listing-detail/listing-detail-presence';
 import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translateAmenityName } from '@/lib/catalog-names';
@@ -786,13 +787,17 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
             </ListingDetailSlot>
         )}
         <!-- Slot 11: house rules. -->
-        <ListingDetailSlot name="policies">
-            <ListingHouseRules policies={accommodation.policies} locale={locale} />
-        </ListingDetailSlot>
-        <!-- Slot 12: FAQ (self-hides with none). -->
-        <ListingDetailSlot name="faq">
-            <FaqAccordion faqs={accommodation.faqs} lang={locale} />
-        </ListingDetailSlot>
+        {hasHouseRules({ policies: accommodation.policies, locale }) && (
+            <ListingDetailSlot name="policies">
+                <ListingHouseRules policies={accommodation.policies} locale={locale} />
+            </ListingDetailSlot>
+        )}
+        <!-- Slot 12: FAQ. -->
+        {accommodation.faqs.length > 0 && (
+            <ListingDetailSlot name="faq">
+                <FaqAccordion faqs={accommodation.faqs} lang={locale} />
+            </ListingDetailSlot>
+        )}
     </div>
 
     <Fragment slot="after-content">

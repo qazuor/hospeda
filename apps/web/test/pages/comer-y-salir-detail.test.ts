@@ -209,7 +209,9 @@ describe('HOS-2579 — venue slots and section tabs (AC-2b, AC-6)', () => {
         expect(src).toContain('amenities: hasOffersSection');
         expect(src).toContain('hours: hasOpeningHours');
         expect(src).toContain('location: venueLocation !== null');
-        expect(src).toContain('contact: venueContactBlock !== null || Boolean(venueWhatsApp)');
+        expect(src).toContain(
+            'const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);'
+        );
         // No events tab: the agenda lives in «Lo que ofrece» (D-3).
         expect(src).not.toMatch(/venueEvents: (true|has)/);
     });
@@ -225,5 +227,24 @@ describe('HOS-2579 — venue slots and section tabs (AC-2b, AC-6)', () => {
 
     it('passes the locale to VenueDescription for its «Leer más» toggle (AC-24)', () => {
         expect(src).toMatch(/richDescription: venue\.richDescription,\s*locale/);
+    });
+});
+
+describe('HOS-2579 — a venue with no description and no offers mounts neither slot', () => {
+    it('gates the description and «Lo que ofrece» wrappers on the same predicates as their tabs', () => {
+        expect(src).toMatch(
+            /\{hasDescriptionSection && \(\s*<ListingDetailSlot name="description"/
+        );
+        expect(src).toMatch(/\{hasOffersSection && \(\s*<ListingDetailSlot name="offers"/);
+        // Never on the block lists, which are non-empty even when every block self-hides.
+        expect(src).not.toContain('descriptionBlocks.length > 0 &&');
+        expect(src).not.toContain('offersBlocks.length > 0 &&');
+    });
+
+    it('gates every other slot that can be empty', () => {
+        expect(src).toMatch(/\{hasSummarySection && \(\s*<ListingDetailSlot name="summary">/);
+        expect(src).toMatch(/\{hasContactSection && \(\s*<ListingDetailSlot name="contact">/);
+        expect(src).toMatch(/\{hasPoliciesSection && \(\s*<ListingDetailSlot name="policies">/);
+        expect(src).toContain('contact: hasContactSection');
     });
 });

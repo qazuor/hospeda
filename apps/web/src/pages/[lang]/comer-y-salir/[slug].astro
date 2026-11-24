@@ -78,7 +78,11 @@ import ListingDetailSlot from '@/components/listing/ListingDetailSlot.astro';
 import { ListingSectionTabs } from '@/components/listing/ListingSectionTabs.client';
 import { buildListingSectionTabs, LISTING_SECTION_IDS } from '@/lib/listing-section-tabs';
 import type { ListingDetailSlot as ListingDetailSlotName } from '@/lib/listing-detail/listing-detail-order';
-import { hasListingDescription, hasVenueOffersContent } from '@/lib/listing-detail/listing-detail-presence';
+import {
+    hasHouseRules,
+    hasListingDescription,
+    hasVenueOffersContent
+} from '@/lib/listing-detail/listing-detail-presence';
 import { buildUrl } from '@/lib/urls';
 import { renderPlain } from '@/lib/render-plain';
 import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
@@ -443,6 +447,9 @@ const hasDescriptionSection = hasListingDescription({
     richDescription: venue.richDescription
 });
 const hasOffersSection = hasVenueOffersContent({ venue, showEventsCta });
+const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);
+const hasSummarySection = Boolean(venue.priceRange) || contactMode.kind !== 'none';
+const hasPoliciesSection = hasHouseRules({ policies: houseRulePolicies, locale });
 const sectionTabs = buildListingSectionTabs({
     present: {
         photos: galleryImages.length > 0,
@@ -452,7 +459,7 @@ const sectionTabs = buildListingSectionTabs({
         location: venueLocation !== null,
         // The review form always renders, so slot 8 always exists.
         reviews: true,
-        contact: venueContactBlock !== null || Boolean(venueWhatsApp)
+        contact: hasContactSection
     }
 });
 
@@ -608,6 +615,7 @@ const headerProps = buildVenueHeader({
 
         <!-- Slot 2 «summary» (HOS-2579): the price range (moved out of the
              header) and «Ver carta» / «Consultar». -->
+        {hasSummarySection && (
         <ListingDetailSlot name="summary">
             <VenueSummary
                 listingId={venue.id}
@@ -618,9 +626,10 @@ const headerProps = buildVenueHeader({
                 fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
             />
         </ListingDetailSlot>
+        )}
 
         <!-- Slot 3: description with «Leer más». -->
-        {descriptionBlocks.length > 0 && (
+        {hasDescriptionSection && (
             <ListingDetailSlot name="description" anchorId={LISTING_SECTION_IDS.details}>
                 {descriptionBlocks.map(({ Component, props }) => <Component {...props} />)}
             </ListingDetailSlot>
@@ -628,7 +637,7 @@ const headerProps = buildVenueHeader({
 
         <!-- Slot 4 «Lo que ofrece»: features, amenities, menu, daily specials,
              the agenda with its CTA and the night info (owner decision D-3). -->
-        {offersBlocks.length > 0 && (
+        {hasOffersSection && (
             <ListingDetailSlot name="offers" anchorId={LISTING_SECTION_IDS.amenities}>
                 {offersBlocks.map(({ Component, props }) => <Component {...props} />)}
             </ListingDetailSlot>
@@ -680,14 +689,18 @@ const headerProps = buildVenueHeader({
         </ListingDetailSlot>
 
         <!-- Slot 10: the contact block and the WhatsApp button (HOS-2256). -->
-        <ListingDetailSlot name="contact">
-            {contactBlocks.map(({ Component, props }) => <Component {...props} />)}
-        </ListingDetailSlot>
+        {hasContactSection && (
+            <ListingDetailSlot name="contact">
+                {contactBlocks.map(({ Component, props }) => <Component {...props} />)}
+            </ListingDetailSlot>
+        )}
 
         <!-- Slot 11: house rules (HOS-2060). -->
-        <ListingDetailSlot name="policies">
-            <ListingHouseRules policies={houseRulePolicies} locale={locale} />
-        </ListingDetailSlot>
+        {hasPoliciesSection && (
+            <ListingDetailSlot name="policies">
+                <ListingHouseRules policies={houseRulePolicies} locale={locale} />
+            </ListingDetailSlot>
+        )}
 
         <!-- Slot 12: FAQ. -->
         {faqBlocks.length > 0 && (
