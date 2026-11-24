@@ -15,6 +15,7 @@ import { LIVE_SUBSCRIPTION_STATUSES } from '@repo/db';
 import {
     DECLINED_SIGNUP_NOTICE_DAYS,
     type DeclinedSignupCandidateRow,
+    deriveDeclinedSignupsForPage,
     selectDeclinedSignupNotices,
     selectExpiredDeclinedSignups
 } from '../../../../src/services/billing/subscription/declined-signup-notices';
@@ -275,12 +276,9 @@ describe('HOS-2193 selectExpiredDeclinedSignups', () => {
             })
         );
         // Act
-        const retry = selectDeclinedSignupNotices({ rows, now: NOW }).map(
-            (notice) => notice.subscriptionId
-        );
-        const expired = selectExpiredDeclinedSignups({ rows, now: NOW }).map(
-            (notice) => notice.subscriptionId
-        );
+        const derived = deriveDeclinedSignupsForPage({ rows, now: NOW });
+        const retry = derived.retry.map((notice) => notice.subscriptionId);
+        const expired = derived.expired.map((notice) => notice.subscriptionId);
         // Assert: strictly inside the window -> retry, at or past the edge -> expired
         expect([...retry].sort()).toEqual([rows[3]?.id, rows[4]?.id].sort());
         expect([...expired].sort()).toEqual([rows[0]?.id, rows[1]?.id, rows[2]?.id].sort());

@@ -200,9 +200,24 @@ export async function readOwnDeclinedSignupsForPage(input: {
     readonly now: Date;
 }): Promise<OwnDeclinedSignupsForPage> {
     const rows = await readOwnPrincipalCandidates(input.userId);
+    return deriveDeclinedSignupsForPage({ rows, now: input.now });
+}
+
+/**
+ * Pure core of {@link readOwnDeclinedSignupsForPage}: both lists come from the same rows and the
+ * same instant, which is what makes them disjoint by construction.
+ *
+ * @param input.rows - Every PRINCIPAL row of one owner, any status.
+ * @param input.now - The single instant both rules use.
+ * @returns The retry notices and the expired notices.
+ */
+export function deriveDeclinedSignupsForPage(input: {
+    readonly rows: readonly DeclinedSignupCandidateRow[];
+    readonly now: Date;
+}): OwnDeclinedSignupsForPage {
     return {
-        retry: selectDeclinedSignupNotices({ rows, now: input.now }),
-        expired: selectExpiredDeclinedSignups({ rows, now: input.now })
+        retry: selectDeclinedSignupNotices(input),
+        expired: selectExpiredDeclinedSignups(input)
     };
 }
 
