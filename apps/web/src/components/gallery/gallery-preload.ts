@@ -5,7 +5,14 @@
  * next slides are fetched so a swipe finds them ready; every swipe moves that window
  * forward. A visitor who asked to save data (`navigator.connection.saveData`) gets
  * no preloading at all: only what the browser's own lazy loading decides.
+ *
+ * It also warms the LIGHTBOX in the background (owner request, HOS-2520): once the
+ * page is idle, the full-size URLs of the first {@link GALLERY_WARMUP_FULL_LIMIT}
+ * photos and the strip's thumbnails, so the first open usually paints from cache.
+ * Data saver and 2G connections skip all of it ({@link readPreloadAllowed}).
  */
+
+import { buildLightboxThumbUrl, buildLightboxUrl } from './gallery-image-sources';
 
 /** How many photos past the current one are fetched ahead of a swipe. */
 export const GALLERY_PRELOAD_AHEAD = 2 as const;
@@ -13,6 +20,13 @@ export const GALLERY_PRELOAD_AHEAD = 2 as const;
 /** The subset of `navigator.connection` this module reads (not in every TS DOM lib). */
 interface ConnectionLike {
     readonly saveData?: boolean;
+    /** Network Information API estimate: 'slow-2g' | '2g' | '3g' | '4g'. */
+    readonly effectiveType?: string;
+}
+
+/** Reads `navigator.connection`, which is not in every TS DOM lib. */
+function readConnection(nav?: Navigator): ConnectionLike | undefined {
+    return (nav as (Navigator & { readonly connection?: ConnectionLike }) | undefined)?.connection;
 }
 
 /**
@@ -24,9 +38,27 @@ interface ConnectionLike {
 export function readSaveData({ nav }: { readonly nav?: Navigator }): {
     readonly saveData: boolean;
 } {
-    const connection = (nav as (Navigator & { readonly connection?: ConnectionLike }) | undefined)
-        ?.connection;
-    return { saveData: connection?.saveData === true };
+    return { saveData: readConnection(nav)?.saveData === true };
+}
+
+/** Connection estimates on which no photo is fetched ahead of need. */
+const SLOW_EFFECTIVE_TYPES: ReadonlySet<string> = new Set(['slow-2g', '2g']);
+
+/**
+ * Whether background photo preloading is allowed at all: false with data saver on
+ * or on a `slow-2g`/`2g` connection estimate. True when the API is not available
+ * (Safari, Firefox), which is the same default the browser's own loading assumes.
+ *
+ * @param input - The navigator to read; absent outside a browser.
+ * @returns `{ allowed }`.
+ */
+export function readPreloadAllowed({ nav }: { readonly nav?: Navigator }): {
+    readonly allowed: boolean;
+} {
+    const connection = readConnection(nav);
+    if (connection?.saveData === true) return { allowed: false };
+    const type = connection?.effectiveType;
+    return { allowed: !(typeof type === 'string' && SLOW_EFFECTIVE_TYPES.has(type)) };
 }
 
 /** Input of {@link resolveEagerThrough}. */
@@ -147,4 +179,121 @@ export function whenPageIdle({
             if (timeoutId !== null) clearTimeout(timeoutId);
         }
     };
+}
+
+/** Most full-size lightbox photos warmed before the visitor has interacted at all. */
+export const GALLERY_WARMUP_FULL_LIMIT = 3 as const;
+
+/** Input of {@link planGalleryWarmup}. */
+export interface PlanGalleryWarmupInput {
+    /** The gallery's original image URLs, in display order. */
+    readonly imageUrls: readonly string[];
+    /** Result of {@link readPreloadAllowed}. */
+    readonly allowed: boolean;
+    /** Full-size photos the page already warmed before any interaction (other galleries). */
+    readonly alreadyWarmedFull: number;
+}
+
+/**
+ * The URLs the idle warm-up fetches: the lightbox (`full`) URL of the first photos, up
+ * to {@link GALLERY_WARMUP_FULL_LIMIT} for the whole page, and every strip thumbnail
+ * (small, and the strip mounts right after the first open).
+ *
+ * @param input - Image URLs, the network verdict and the page-wide full-size count.
+ * @returns `{ full, thumbs }`, deduplicated; both empty when preloading is not allowed.
+ */
+export function planGalleryWarmup({
+    imageUrls,
+    allowed,
+    alreadyWarmedFull
+}: PlanGalleryWarmupInput): {
+    readonly full: readonly string[];
+    readonly thumbs: readonly string[];
+} {
+    if (!allowed || imageUrls.length === 0) return { full: [], thumbs: [] };
+    const budget = Math.max(0, GALLERY_WARMUP_FULL_LIMIT - alreadyWarmedFull);
+    const full = [...new Set(imageUrls.map((url) => buildLightboxUrl({ url }).src))].slice(
+        0,
+        budget
+    );
+    const thumbs = [...new Set(imageUrls.map((url) => buildLightboxThumbUrl({ url }).src))];
+    return { full, thumbs };
+}
+
+/** URLs this document already asked for, so no two callers fetch the same photo twice. */
+const warmedUrls = new Set<string>();
+
+/** Full-size URLs warmed by the idle pass, counted page-wide against the limit. */
+const idleWarmedFull = new Set<string>();
+
+/** Input of {@link warmImage}. */
+export interface WarmImageInput {
+    readonly url: string;
+    /** `low` for speculative warm-ups, `auto` once the visitor is navigating. */
+    readonly priority: 'low' | 'auto';
+    /** Image factory; tests inject a fake. Defaults to `new Image()`. */
+    readonly createImage?: () => HTMLImageElement;
+    /** Dedup set; tests pass their own. Defaults to the document-wide set. */
+    readonly seen?: Set<string>;
+}
+
+/**
+ * Fetches one image into the browser cache, once per URL per document.
+ *
+ * Why `new Image()` and not `<link rel="prefetch">`: prefetch is for the NEXT
+ * navigation (Safari does not implement it, and Chrome keeps the response in a
+ * prefetch cache an `<img>` of the same document does not reliably reuse), while a
+ * detached `Image` lands in the memory cache the lightbox's `<img>` reads from on
+ * every engine. `fetchPriority = 'low'` keeps it behind everything the page needs.
+ *
+ * @param input - URL, priority and optional injections.
+ * @returns `{ started }`, false when the URL was already requested.
+ */
+export function warmImage({
+    url,
+    priority,
+    createImage = () => new Image(),
+    seen = warmedUrls
+}: WarmImageInput): { readonly started: boolean } {
+    if (!url || seen.has(url)) return { started: false };
+    seen.add(url);
+    const img = createImage();
+    img.decoding = 'async';
+    if (priority === 'low') img.fetchPriority = 'low';
+    img.src = url;
+    return { started: true };
+}
+
+/**
+ * Warms the lightbox after the page is ready: `load`, then idle (see
+ * {@link whenPageIdle}). Reads the network verdict at that moment, not at mount.
+ *
+ * @param input - The window, the gallery's image URLs and an optional image factory.
+ * @returns `{ cleanup }` to cancel a warm-up that has not fired yet.
+ */
+export function warmGalleryOnIdle({
+    win,
+    imageUrls,
+    createImage
+}: {
+    readonly win: Window;
+    readonly imageUrls: readonly string[];
+    readonly createImage?: () => HTMLImageElement;
+}): { readonly cleanup: () => void } {
+    return whenPageIdle({
+        win,
+        onReady: () => {
+            const { allowed } = readPreloadAllowed({ nav: win.navigator });
+            const { full, thumbs } = planGalleryWarmup({
+                imageUrls,
+                allowed,
+                alreadyWarmedFull: idleWarmedFull.size
+            });
+            for (const url of full) {
+                idleWarmedFull.add(url);
+                warmImage({ url, priority: 'low', createImage });
+            }
+            for (const url of thumbs) warmImage({ url, priority: 'low', createImage });
+        }
+    });
 }
