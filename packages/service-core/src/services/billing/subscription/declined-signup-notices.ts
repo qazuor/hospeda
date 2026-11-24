@@ -55,6 +55,37 @@ export interface DeclinedSignupNotice {
 }
 
 /**
+ * The vertical's LAST signup attempt (a row that does not succeed another), for every vertical
+ * that has no live subscription. Verticals with a live row are left out entirely.
+ */
+function selectLastAttemptsWithoutLiveTitle(
+    rows: readonly DeclinedSignupCandidateRow[]
+): Array<[string, DeclinedSignupCandidateRow]> {
+    const byVertical = new Map<string, DeclinedSignupCandidateRow[]>();
+    for (const row of rows) {
+        const bucket = byVertical.get(row.vertical) ?? [];
+        bucket.push(row);
+        byVertical.set(row.vertical, bucket);
+    }
+    const lastAttempts: Array<[string, DeclinedSignupCandidateRow]> = [];
+    for (const [vertical, bucket] of byVertical) {
+        if (
+            bucket.some((row) => LIVE_SUBSCRIPTION_STATUSES.some((status) => status === row.status))
+        )
+            continue;
+        const [latest] = bucket
+            .filter((row) => row.succeedsId === null)
+            .sort(
+                (left, right) =>
+                    right.createdAt.getTime() - left.createdAt.getTime() ||
+                    right.id.localeCompare(left.id)
+            );
+        if (latest) lastAttempts.push([vertical, latest]);
+    }
+    return lastAttempts;
+}
+
+/**
  * Pure rule (one notice per vertical at most), ordered by vertical. A declined row is
  * shown only when it is the vertical's LAST signup attempt, it was declined less than
  * {@link DECLINED_SIGNUP_NOTICE_DAYS} days ago, and the vertical has no live subscription.
@@ -71,27 +102,10 @@ export function selectDeclinedSignupNotices(input: {
     readonly rows: readonly DeclinedSignupCandidateRow[];
     readonly now: Date;
 }): DeclinedSignupNotice[] {
-    const byVertical = new Map<string, DeclinedSignupCandidateRow[]>();
-    for (const row of input.rows) {
-        const bucket = byVertical.get(row.vertical) ?? [];
-        bucket.push(row);
-        byVertical.set(row.vertical, bucket);
-    }
-
     const notices: DeclinedSignupNotice[] = [];
-    for (const [vertical, rows] of byVertical) {
-        if (rows.some((row) => LIVE_SUBSCRIPTION_STATUSES.some((status) => status === row.status)))
-            continue;
-        const attempts = rows
-            .filter((row) => row.succeedsId === null)
-            .sort(
-                (left, right) =>
-                    right.createdAt.getTime() - left.createdAt.getTime() ||
-                    right.id.localeCompare(left.id)
-            );
-        const latest = attempts[0];
+    for (const [vertical, latest] of selectLastAttemptsWithoutLiveTitle(input.rows)) {
         if (
-            latest?.status !== 'CHARGE_DECLINED' ||
+            latest.status !== 'CHARGE_DECLINED' ||
             !latest.billingOptionId ||
             input.now.getTime() - latest.updatedAt.getTime() >= DECLINED_SIGNUP_NOTICE_DAYS * DAY_MS
         )
@@ -108,6 +122,46 @@ export function selectDeclinedSignupNotices(input: {
     return notices.sort((left, right) => left.vertical.localeCompare(right.vertical));
 }
 
+/** A declined signup whose seven-day retry window has passed (HOS-2193): a restart path only. */
+export interface ExpiredDeclinedSignupNotice {
+    readonly subscriptionId: string;
+    readonly vertical: string;
+    readonly declinedAt: Date;
+    readonly plan: { readonly slug: string; readonly name: string };
+}
+
+/**
+ * Pure rule for the notice that follows {@link selectDeclinedSignupNotices} (one per vertical at
+ * most, ordered by vertical). A declined row is listed when it is the vertical's LAST signup
+ * attempt, the vertical has no live subscription, and at least
+ * {@link DECLINED_SIGNUP_NOTICE_DAYS} days have passed since the decline. It is the exact
+ * complement of the retry notice, so a vertical never shows both.
+ *
+ * @param input.rows - Every PRINCIPAL row of one owner, any status.
+ * @param input.now - The caller's clock instant.
+ * @returns The expired declined signups.
+ */
+export function selectExpiredDeclinedSignups(input: {
+    readonly rows: readonly DeclinedSignupCandidateRow[];
+    readonly now: Date;
+}): ExpiredDeclinedSignupNotice[] {
+    const expired: ExpiredDeclinedSignupNotice[] = [];
+    for (const [vertical, latest] of selectLastAttemptsWithoutLiveTitle(input.rows)) {
+        if (
+            latest.status !== 'CHARGE_DECLINED' ||
+            input.now.getTime() - latest.updatedAt.getTime() < DECLINED_SIGNUP_NOTICE_DAYS * DAY_MS
+        )
+            continue;
+        expired.push({
+            subscriptionId: latest.id,
+            vertical,
+            declinedAt: latest.updatedAt,
+            plan: { slug: latest.planSlug, name: latest.planName }
+        });
+    }
+    return expired.sort((left, right) => left.vertical.localeCompare(right.vertical));
+}
+
 /**
  * Reads the owner's PRINCIPAL rows and applies {@link selectDeclinedSignupNotices}.
  *
@@ -119,6 +173,26 @@ export async function readOwnDeclinedSignupNotices(input: {
     readonly userId: string;
     readonly now: Date;
 }): Promise<DeclinedSignupNotice[]> {
+    const candidates = await readOwnPrincipalCandidates(input.userId);
+    return selectDeclinedSignupNotices({ rows: candidates, now: input.now });
+}
+
+/**
+ * Reads the owner's PRINCIPAL rows and applies {@link selectExpiredDeclinedSignups}.
+ *
+ * @param input.userId - The owner; only their own rows are read.
+ * @param input.now - The caller's clock instant.
+ * @returns The declined signups whose retry window has passed.
+ */
+export async function readOwnExpiredDeclinedSignups(input: {
+    readonly userId: string;
+    readonly now: Date;
+}): Promise<ExpiredDeclinedSignupNotice[]> {
+    const candidates = await readOwnPrincipalCandidates(input.userId);
+    return selectExpiredDeclinedSignups({ rows: candidates, now: input.now });
+}
+
+async function readOwnPrincipalCandidates(userId: string): Promise<DeclinedSignupCandidateRow[]> {
     const rows = await getDb()
         .select({
             id: subscriptions.id,
@@ -135,10 +209,9 @@ export async function readOwnDeclinedSignupNotices(input: {
         .from(subscriptions)
         .innerJoin(planVersions, eq(planVersions.id, subscriptions.planVersionId))
         .innerJoin(plans, eq(plans.id, planVersions.planId))
-        .where(and(eq(subscriptions.userId, input.userId), eq(subscriptions.class, 'PRINCIPAL')))
+        .where(and(eq(subscriptions.userId, userId), eq(subscriptions.class, 'PRINCIPAL')))
         .orderBy(asc(subscriptions.createdAt), asc(subscriptions.id));
-    const candidates: DeclinedSignupCandidateRow[] = rows.flatMap((row) =>
+    return rows.flatMap((row) =>
         row.vertical === null ? [] : [{ ...row, vertical: row.vertical }]
     );
-    return selectDeclinedSignupNotices({ rows: candidates, now: input.now });
 }

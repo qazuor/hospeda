@@ -15,7 +15,8 @@ import { LIVE_SUBSCRIPTION_STATUSES } from '@repo/db';
 import {
     DECLINED_SIGNUP_NOTICE_DAYS,
     type DeclinedSignupCandidateRow,
-    selectDeclinedSignupNotices
+    selectDeclinedSignupNotices,
+    selectExpiredDeclinedSignups
 } from '../../../../src/services/billing/subscription/declined-signup-notices';
 
 const NOW = new Date('2026-11-12T12:00:00.000Z');
@@ -135,5 +136,129 @@ describe('HOS-2064 selectDeclinedSignupNotices', () => {
         const result = selectDeclinedSignupNotices({ rows: [candidate], now: NOW });
         // Assert
         expect(result).toEqual([]);
+    });
+});
+
+describe('HOS-2193 selectExpiredDeclinedSignups', () => {
+    const OLD = new Date(NOW.getTime() - DECLINED_SIGNUP_NOTICE_DAYS * DAY);
+
+    it('lists a declined signup once its seven days have passed, with the plan and vertical', () => {
+        // Arrange
+        const candidate = row({ updatedAt: OLD, createdAt: OLD });
+        // Act
+        const result = selectExpiredDeclinedSignups({ rows: [candidate], now: NOW });
+        // Assert
+        expect(result).toEqual([
+            {
+                subscriptionId: candidate.id,
+                vertical: 'accommodation',
+                declinedAt: OLD,
+                plan: { slug: 'basic', name: 'Basic' }
+            }
+        ]);
+    });
+
+    it('does not list a decline still inside the window: the retry notice owns it', () => {
+        // Arrange
+        const inside = row({ updatedAt: new Date(OLD.getTime() + 1) });
+        // Act
+        const expired = selectExpiredDeclinedSignups({ rows: [inside], now: NOW });
+        const retry = selectDeclinedSignupNotices({ rows: [inside], now: NOW });
+        // Assert
+        expect(expired).toEqual([]);
+        expect(retry).toHaveLength(1);
+    });
+
+    it('is the exact complement of the retry notice at the boundary', () => {
+        // Arrange
+        const boundary = row({ updatedAt: OLD });
+        // Act
+        const expired = selectExpiredDeclinedSignups({ rows: [boundary], now: NOW });
+        const retry = selectDeclinedSignupNotices({ rows: [boundary], now: NOW });
+        // Assert
+        expect(expired).toHaveLength(1);
+        expect(retry).toEqual([]);
+    });
+
+    it('lists it even when the declined row has no billing option', () => {
+        // Arrange
+        const candidate = row({ updatedAt: OLD, createdAt: OLD, billingOptionId: null });
+        // Act
+        const result = selectExpiredDeclinedSignups({ rows: [candidate], now: NOW });
+        // Assert
+        expect(result.map((notice) => notice.subscriptionId)).toEqual([candidate.id]);
+    });
+
+    it.each(
+        LIVE_SUBSCRIPTION_STATUSES
+    )('hides it when the same vertical has a live subscription: %s', (status) => {
+        // Arrange
+        const declined = row({ updatedAt: OLD, createdAt: OLD });
+        const live = row({
+            id: '00000000-0000-4000-8000-000000000003',
+            status,
+            createdAt: NOW
+        });
+        // Act
+        const result = selectExpiredDeclinedSignups({ rows: [declined, live], now: NOW });
+        // Assert
+        expect(result).toEqual([]);
+    });
+
+    it('hides it when a newer attempt exists in that vertical, even an abandoned one', () => {
+        // Arrange
+        const declined = row({ updatedAt: OLD, createdAt: OLD });
+        const abandoned = row({
+            id: '00000000-0000-4000-8000-000000000003',
+            status: 'ABANDONED',
+            createdAt: NOW,
+            updatedAt: OLD
+        });
+        // Act
+        const result = selectExpiredDeclinedSignups({ rows: [declined, abandoned], now: NOW });
+        // Assert
+        expect(result).toEqual([]);
+    });
+
+    it('does not let another vertical live subscription hide it', () => {
+        // Arrange
+        const declined = row({ updatedAt: OLD, createdAt: OLD, vertical: 'venue' });
+        const liveElsewhere = row({
+            id: '00000000-0000-4000-8000-000000000003',
+            vertical: 'accommodation',
+            status: 'ACTIVE',
+            createdAt: NOW
+        });
+        // Act
+        const result = selectExpiredDeclinedSignups({
+            rows: [declined, liveElsewhere],
+            now: NOW
+        });
+        // Assert
+        expect(result.map((notice) => notice.vertical)).toEqual(['venue']);
+    });
+
+    it('ignores rows that are not declined and orders by vertical', () => {
+        // Arrange
+        const cancelled = row({ status: 'CANCELLED', updatedAt: OLD, createdAt: OLD });
+        const tourist = row({
+            id: '00000000-0000-4000-8000-000000000003',
+            vertical: 'tourist',
+            updatedAt: OLD,
+            createdAt: OLD
+        });
+        const venue = row({
+            id: '00000000-0000-4000-8000-000000000004',
+            vertical: 'venue',
+            updatedAt: OLD,
+            createdAt: OLD
+        });
+        // Act
+        const result = selectExpiredDeclinedSignups({
+            rows: [venue, cancelled, tourist],
+            now: NOW
+        });
+        // Assert
+        expect(result.map((notice) => notice.vertical)).toEqual(['tourist', 'venue']);
     });
 });
