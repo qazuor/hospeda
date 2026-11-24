@@ -82,8 +82,8 @@ describe('the three list pages page instead of capping at 50', () => {
         expect(source).not.toMatch(/pageSize(=|:\s*)50/);
         expect(source).toContain('parsePageParam');
         expect(source).toContain('ACCOUNT_LIST_PAGE_SIZE');
-        // The legacy pager, or the kit list template fed the page count (HOS-2505).
-        expect(source).toMatch(/<AccountPagination|pageCount=\{pageState\.totalPages\}/);
+        // The kit list template fed the page count (HOS-2505).
+        expect(source).toContain('pageCount={pageState.totalPages}');
         expect(source).toContain('pageState.isPastEnd');
     });
 
@@ -102,25 +102,6 @@ describe('the three list pages page instead of capping at 50', () => {
         expect(source).toContain('publicationStatus=${status}');
         expect(source).toContain('publishedTotal ??');
         expect(source).toContain('draftTotal !== null');
-    });
-});
-
-describe('AccountPagination.astro', () => {
-    const source = readFileSync(
-        resolve(__dirname, '../../src/components/account/AccountPagination.astro'),
-        'utf8'
-    );
-
-    it('renders nothing for a single page and labels its controls from i18n', () => {
-        expect(source).toContain('totalPages > 1 &&');
-        expect(source).toContain("t('common.prevPage'");
-        expect(source).toContain("t('common.nextPage'");
-        expect(source).toContain("t('common.pagination'");
-    });
-
-    it('uses plain links with rel prev/next so it works without JavaScript', () => {
-        expect(source).toContain('rel="prev"');
-        expect(source).toContain('rel="next"');
     });
 });
 
