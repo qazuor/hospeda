@@ -38,7 +38,7 @@ describe('defineEmailCatalogEntry', () => {
         // Assert
         expect(entry.key).toBe('auth.sample');
         expect(entry.wired).toBe(true);
-        expect(entry.scenarios).toEqual([{ id: 'one', label: 'Uno' }]);
+        expect(entry.scenarios).toEqual([{ id: 'one', label: 'Uno', locale: 'es' }]);
     });
 
     it('rejects duplicate scenario ids at definition time', () => {
@@ -60,6 +60,69 @@ describe('defineEmailCatalogEntry', () => {
                 })
             })
         ).toThrow('Duplicate scenario id "same" in email catalog entry "auth.dup"');
+    });
+
+    it('resolves a scenario locale, defaulting to es (HOS-2565 D14)', () => {
+        // Act
+        const entry = defineEmailCatalogEntry<{ readonly locale?: 'es' | 'pt' }>({
+            sendPath: 'auth',
+            id: 'locales',
+            name: 'Idiomas',
+            domain: 'auth',
+            audience: 'user',
+            scenarios: [
+                { id: 'implicit', label: 'Implícito', input: {} },
+                { id: 'portuguese', label: 'Portugués', locale: 'pt', input: { locale: 'pt' } }
+            ],
+            render: () => ({ subject: 'x', react: createElement(Text, null, 'x'), warnings: [] })
+        });
+
+        // Assert
+        expect(entry.scenarios.map(({ id, locale }) => [id, locale])).toEqual([
+            ['implicit', 'es'],
+            ['portuguese', 'pt']
+        ]);
+    });
+
+    it.each([
+        ['at the top level', { locale: 'en' }],
+        ['inside the payload', { payload: { locale: 'en' } }]
+    ])('rejects a scenario whose input carries a locale it does not declare, %s (AC-3.2)', (_where, input) => {
+        expect(() =>
+            defineEmailCatalogEntry<Record<string, unknown>>({
+                sendPath: 'auth',
+                id: 'liar',
+                name: 'Mentiroso',
+                domain: 'auth',
+                audience: 'user',
+                scenarios: [{ id: 'english', label: 'Inglés', input }],
+                render: () => ({
+                    subject: 'x',
+                    react: createElement(Text, null, 'x'),
+                    warnings: []
+                })
+            })
+        ).toThrow('carries locale "en" but declares "es"');
+    });
+
+    it('accepts a scenario that declares the locale its input carries', () => {
+        expect(() =>
+            defineEmailCatalogEntry<Record<string, unknown>>({
+                sendPath: 'auth',
+                id: 'honest',
+                name: 'Honesto',
+                domain: 'auth',
+                audience: 'user',
+                scenarios: [
+                    { id: 'english', label: 'Inglés', locale: 'en', input: { locale: 'en' } }
+                ],
+                render: () => ({
+                    subject: 'x',
+                    react: createElement(Text, null, 'x'),
+                    warnings: []
+                })
+            })
+        ).not.toThrow();
     });
 
     it('rejects an unknown scenario id on render', async () => {

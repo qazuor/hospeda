@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Heading } from '../components/heading.js';
 
@@ -33,7 +33,7 @@ export function PaidAfterCancellation({
                     los seguís viendo hasta el {serviceEndDate}.
                 </Text>
             ) : null}
-            <Text>Mi Suscripción: {subscriptionUrl}</Text>
+            <Button href={subscriptionUrl}>Ver Mi Suscripción</Button>
         </EmailLayout>
     );
 }

@@ -1,4 +1,4 @@
-import { Text } from '@react-email/components';
+import { Link, Text } from '@react-email/components';
 import { Button } from '@repo/email';
 
 /**
@@ -86,7 +86,8 @@ export function ModeratedListingBody({
             {recurringListingAddons === undefined ? (
                 <Text>
                     Si tenés destaques recurrentes sobre esta ficha, se siguen cobrando hasta que
-                    los des de baja. Los das de baja desde Mi Suscripción: {subscriptionUrl}
+                    los des de baja. Los das de baja desde{' '}
+                    <Link href={subscriptionUrl}>Mi Suscripción</Link>.
                 </Text>
             ) : recurringListingAddons.length > 0 ? (
                 <>

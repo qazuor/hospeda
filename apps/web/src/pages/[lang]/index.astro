@@ -238,9 +238,13 @@ const categoryTiles = [
         WebP `<source>`/`<img>` fallback inside `<picture>`. Emitting a second
         WebP preload to cover them would make every AVIF-capable browser — i.e.
         almost all traffic — preload BOTH formats and download the hero twice.
+
+        `head-priority`, not `head-extra` (HOS-2575): this slot renders before
+        the ~83 KB inline critical CSS, so the preload scanner finds the hint
+        in the first bytes of the document instead of ~99 KB in.
     -->
     <link
-        slot="head-extra"
+        slot="head-priority"
         rel="preload"
         as="image"
         type="image/avif"

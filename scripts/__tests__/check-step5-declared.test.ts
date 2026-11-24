@@ -53,10 +53,10 @@ describe('TEST:V5:25 - G-R3-C: a domain operation that does not declare step 5',
         () => {
             const real = run();
             expect(real.exitCode).toBe(0);
-            expect(real.output).toContain('OK GUARD:G-R3-C: 10 domain operations');
+            expect(real.output).toContain('OK GUARD:G-R3-C: 11 domain operations');
             const tree = runTree(tempTree());
             expect(tree.exitCode).toBe(0);
-            expect(tree.output).toContain('(5 pass, 5 do not)');
+            expect(tree.output).toContain('(5 pass, 6 do not)');
         },
         REAL_REPO_TIMEOUT
     );

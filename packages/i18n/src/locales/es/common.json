@@ -64,6 +64,7 @@
         "general": "Lo sentimos, algo salió mal."
     },
     "apiError": {
+        "ADDON_LISTING_SOFT_DELETED": "No podemos dar de baja este destaque porque la ficha asociada fue eliminada. Escribinos y lo resolvemos.",
         "GENERIC": "Algo salió mal. Intentá de nuevo en un momento.",
         "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Esperá unos segundos y volvé a intentar.",
         "VALIDATION_ERROR": "Los datos enviados no son válidos.",

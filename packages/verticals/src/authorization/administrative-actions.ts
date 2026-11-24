@@ -194,8 +194,11 @@ export type ListingAdministrativeAction = Extract<
 
 /**
  * The listing operations each listing administrative action admits in step 3:
- * action 15 edits content and nothing else — including creating a draft on
- * behalf of its owner (H12); action 23 purges at the owner's request and edits
+ * action 15 edits content and takes a listing down (`UNPUBLISH`, HOS-2244: the
+ * unpublish routes used to run as `EDIT`, so removing it would turn a
+ * foreign-content editor's unpublish into FORBIDDEN) — including creating a
+ * draft on behalf of its owner (H12). It admits neither `PUBLISH`, `REACTIVATE`
+ * nor `DELETE`; action 23 purges at the owner's request and edits
  * nothing (AC:V8a:8, AC:V8a:9); action 27 changes the listing's business-line
  * classification and nothing else (HOS-1875, DEC-FAC-074). Any other operation
  * is FORBIDDEN.
@@ -203,8 +206,9 @@ export type ListingAdministrativeAction = Extract<
 export const ADMINISTRATIVE_ACTION_LISTING_OPERATIONS: Readonly<
     Record<ListingAdministrativeAction, readonly ListingOperation[]>
 > = {
-    // Action 15 edits content, so it may read the content it edits (DEC-FAC-055, AC:3:7).
-    ACC_15: ['EDIT', 'CREATE', 'READ_OWN'],
+    // Action 15 edits content, so it may read the content it edits (DEC-FAC-055, AC:3:7),
+    // and unpublish it (HOS-2244); never PUBLISH, REACTIVATE or DELETE.
+    ACC_15: ['EDIT', 'UNPUBLISH', 'CREATE', 'READ_OWN'],
     ACC_23: ['DELETE'],
     // Action 27 rewrites the classification and nothing else (HOS-1875).
     ACC_27: ['EDIT']

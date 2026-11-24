@@ -43,6 +43,7 @@ import { readListingNames } from '../../utils/listing-publication/listing-names-
 import { apiLogger } from '../../utils/logger.js';
 import { issuePartnerClaimSecret } from '../../utils/partner-application/partner-claim-secret.js';
 import { resolvePartnerMailCopy } from '../../utils/partner-application/partner-mail-copy.js';
+import { resolveReconciliationReasonLabel } from '../../utils/reconciliation-summary/reconciliation-reason-label.js';
 import { readReconciliationSubjects } from '../../utils/reconciliation-summary/reconciliation-subjects-reader.js';
 
 /** Input of {@link buildOutboxRendererRegistry}. */
@@ -91,19 +92,30 @@ export function buildOutboxRendererRegistry(
         ...createBillingPromoRenderers({ siteUrl: input.siteUrl }),
         ...createBillingPlanMigrationRenderers({ siteUrl: input.siteUrl }),
         ...createBillingCourtesyRenderers(),
-        ...createBillingProviderWatchRenderers(),
+        ...createBillingProviderWatchRenderers({
+            ...(input.adminUrl ? { adminUrl: input.adminUrl } : {})
+        }),
         ...createBillingReconciliationRenderers({
             siteUrl: input.siteUrl,
             readSubjects: input.readReconciliationSubjects ?? readReconciliationSubjects,
+            resolveReasonLabel: resolveReconciliationReasonLabel,
             ...(input.adminUrl ? { adminUrl: input.adminUrl } : {}),
             ...(input.environmentLabel ? { environmentLabel: input.environmentLabel } : {}),
             onEnrichmentError: ({ error }) =>
                 apiLogger.warn(
                     { error: error instanceof Error ? error.message : String(error) },
-                    'Reconciliation summary: subjects could not be resolved; sending the bare lines'
+                    'Reconciliation notice: subjects could not be resolved; sending without them'
                 )
         }),
-        ...createBillingManualPaymentRenderers(),
+        ...createBillingManualPaymentRenderers({
+            readSubjects: input.readReconciliationSubjects ?? readReconciliationSubjects,
+            ...(input.adminUrl ? { adminUrl: input.adminUrl } : {}),
+            onEnrichmentError: ({ error }) =>
+                apiLogger.warn(
+                    { error: error instanceof Error ? error.message : String(error) },
+                    'Manual installment notice: subject could not be resolved; sending without it'
+                )
+        }),
         ...createBillingManualInstallmentOpenedRenderers({
             siteUrl: input.siteUrl,
             resolveCopy: resolveManualInstallmentMailCopy

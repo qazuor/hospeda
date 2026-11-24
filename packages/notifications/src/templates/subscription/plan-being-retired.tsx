@@ -50,50 +50,51 @@ export function PlanBeingRetired({
 
     return (
         <EmailLayout
-            previewText={`The ${planName} plan is being retired — you keep access until ${formattedAccessUntil}`}
+            previewText={`El plan ${planName} deja de ofrecerse: tu acceso sigue hasta el ${formattedAccessUntil}`}
         >
-            <Heading>Important update about your plan</Heading>
+            <Heading>Novedades importantes sobre tu plan</Heading>
 
-            <Text style={styles.greeting}>Hi {recipientName},</Text>
+            <Text style={styles.greeting}>Hola {recipientName},</Text>
 
             <Text style={styles.paragraph}>
-                We are writing to let you know that the <strong>{planName}</strong> plan is being
-                retired. We appreciate your loyalty and want to make this transition as smooth as
-                possible.
+                Te escribimos para avisarte que el plan <strong>{planName}</strong> deja de
+                ofrecerse. Valoramos que estés con nosotros y queremos que el cambio sea lo más
+                simple posible.
             </Text>
 
             <Text style={styles.accessBanner}>
-                You keep full access until <strong>{formattedAccessUntil}</strong>. No action is
-                needed before that date — your current features and limits remain intact.
+                Seguís con acceso completo hasta el <strong>{formattedAccessUntil}</strong>. No
+                tenés que hacer nada antes de esa fecha: tus funciones y límites actuales se
+                mantienen.
             </Text>
 
             <Callout tone="info">
                 <InfoRow
-                    label="Plan being retired"
+                    label="Plan que deja de ofrecerse"
                     value={planName}
                 />
                 <InfoRow
-                    label="Access until"
+                    label="Acceso hasta"
                     value={formattedAccessUntil}
                 />
                 <InfoRow
-                    label="Status"
-                    value="Retiring — access preserved until period end"
+                    label="Estado"
+                    value="Deja de ofrecerse: tu acceso se mantiene hasta el fin del período"
                 />
             </Callout>
 
             <Text style={styles.paragraph}>{migrationHint}</Text>
 
             <Text style={styles.paragraph}>
-                Browse our current plans and choose the one that best fits your needs before{' '}
-                {formattedAccessUntil}.
+                Mirá nuestros planes actuales y elegí el que mejor se ajuste a lo que necesitás
+                antes del {formattedAccessUntil}.
             </Text>
 
-            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Choose a new plan</Button>
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Elegir un plan nuevo</Button>
 
             <Text style={styles.footer}>
-                If you have any questions or need help choosing a plan, please contact our support
-                team — we are happy to assist.
+                Si tenés dudas o necesitás ayuda para elegir un plan, escribinos: con gusto te damos
+                una mano.
             </Text>
         </EmailLayout>
     );

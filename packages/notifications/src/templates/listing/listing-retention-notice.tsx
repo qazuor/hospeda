@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { EmailLayout } from '@repo/email';
+import { Button, EmailLayout } from '@repo/email';
 import type { ReactNode } from 'react';
 import { Heading } from '../components/heading.js';
 
@@ -9,6 +9,8 @@ export interface ListingRetentionBeforeArchiveProps {
     readonly transition: 'PB4' | 'PB5';
     /** Market date of the announced archive, already formatted. */
     readonly archiveDate: string;
+    /** Absolute URL of the owner's listing page in Mi Cuenta, built by the renderer. */
+    readonly actionUrl: string;
 }
 
 /** Props of the notice sent before PB9 deletes a listing's content. */
@@ -16,6 +18,8 @@ export interface ListingRetentionBeforeDeletionProps {
     readonly verticalName: string;
     /** Market date of the announced deletion, already formatted. */
     readonly deletionDate: string;
+    /** Absolute URL of the owner's listing page in Mi Cuenta, built by the renderer. */
+    readonly actionUrl: string;
 }
 
 const BEFORE_ARCHIVE_PARAGRAPH: Readonly<Record<'PB4' | 'PB5', ReactNode>> = {
@@ -27,7 +31,8 @@ const BEFORE_ARCHIVE_PARAGRAPH: Readonly<Record<'PB4' | 'PB5', ReactNode>> = {
 export function ListingRetentionBeforeArchive({
     verticalName,
     transition,
-    archiveDate
+    archiveDate,
+    actionUrl
 }: ListingRetentionBeforeArchiveProps) {
     return (
         <EmailLayout previewText={`Tu ficha de ${verticalName} se va a archivar por inactividad`}>
@@ -37,6 +42,7 @@ export function ListingRetentionBeforeArchive({
                 deja de verse en el sitio. Archivarla no borra su contenido.
             </Text>
             {BEFORE_ARCHIVE_PARAGRAPH[transition]}
+            <Button href={actionUrl}>Ir a mi ficha</Button>
         </EmailLayout>
     );
 }
@@ -44,7 +50,8 @@ export function ListingRetentionBeforeArchive({
 /** Notice that names when an archived listing's content will be deleted. */
 export function ListingRetentionBeforeDeletion({
     verticalName,
-    deletionDate
+    deletionDate,
+    actionUrl
 }: ListingRetentionBeforeDeletionProps) {
     return (
         <EmailLayout previewText={`El contenido de tu ficha de ${verticalName} se va a borrar`}>
@@ -55,6 +62,7 @@ export function ListingRetentionBeforeDeletion({
                 frecuentes y horarios), y no se puede recuperar.
             </Text>
             <Text>Antes de esa fecha podés pasarla a borrador desde tu cuenta, sin pagar.</Text>
+            <Button href={actionUrl}>Ir a mi ficha</Button>
         </EmailLayout>
     );
 }

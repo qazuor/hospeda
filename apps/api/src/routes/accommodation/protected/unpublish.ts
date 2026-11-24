@@ -25,7 +25,7 @@ const listingPublicationService = new ListingPublicationService();
 export const protectedUnpublishAccommodationRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/unpublish',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'UNPUBLISH', idParam: 'id' },
     summary: 'Unpublish accommodation',
     description:
         'Transitions an accommodation from ACTIVE to INACTIVE. Requires ownership or ACCOMMODATION_UPDATE_ANY permission.',

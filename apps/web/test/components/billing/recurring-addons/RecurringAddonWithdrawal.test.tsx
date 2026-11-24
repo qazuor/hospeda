@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RecurringAddonWithdrawal } from '../../../../src/components/billing/recurring-addons/RecurringAddonWithdrawal.client';
 
@@ -81,6 +81,39 @@ describe('TEST:B13b:1 AC:B13b:1 — la baja ofrecida cancela el destaque recurre
         expect(document.activeElement).toBe(
             screen.getByTestId(`recurring-addon-withdraw-${instanceId}`)
         );
+    });
+
+    it.each([
+        ['es', 'la ficha asociada fue eliminada'],
+        ['en', 'its listing was deleted'],
+        ['pt', 'o anúncio associado foi excluído']
+    ] as const)('HOS-2128 translates ADDON_LISTING_SOFT_DELETED in %s, not the raw API text', async (locale, expected) => {
+        listRecurringAddons.mockResolvedValue({ ok: true, data: { items: [item] } });
+        withdrawAddon.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 409,
+                code: 'ALREADY_EXISTS',
+                reason: 'ADDON_LISTING_SOFT_DELETED',
+                message: 'An addon targets a deleted listing; nothing was cancelled'
+            }
+        });
+        render(
+            <RecurringAddonWithdrawal
+                locale={locale}
+                listingId={listingId}
+            />
+        );
+        fireEvent.click(await screen.findByTestId(`recurring-addon-withdraw-${instanceId}`));
+        fireEvent.click(
+            within(screen.getByTestId('recurring-addon-withdraw-confirm')).getAllByRole(
+                'button'
+            )[0] as HTMLElement
+        );
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent(expected);
+        expect(alert).not.toHaveTextContent('An addon targets');
+        expect(screen.getByTestId(`recurring-addon-${instanceId}`)).toBeInTheDocument();
     });
 
     it('shows a 409 response text without removing the row', async () => {

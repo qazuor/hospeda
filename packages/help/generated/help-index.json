@@ -1,5 +1,5 @@
 {
-  "contentHash": "d2ad30855f321499b3bb29e1c9241e229463ad91b26bf14488705cc4f737c0b3",
+  "contentHash": "fbbc2868478b7080ce6a5d1f27086e5d427abb344558243ea5c3d94860b3a0e2",
   "locales": {
     "es": [
       {
@@ -931,7 +931,7 @@
         "reviewedAt": "2026-11-23",
         "sections": {
           "canDo": "Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.\n\nLas publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.",
-          "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
+          "expect": "- Al despublicar, la publicación vuelve a borrador y deja de verse en el sitio.\n- Podés despublicar o pausar aunque no tengas un plan vigente. Volver a publicar sí lo pide.\n- Volver a publicar exige cumplir {{article:publish-requirements|los requisitos}} otra vez.\n- Los destaques recurrentes se siguen cobrando hasta que los des de baja en {{link:addons|Complementos}}.",
           "howTo": {
             "after": "",
             "steps": [

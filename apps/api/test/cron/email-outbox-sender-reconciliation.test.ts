@@ -32,7 +32,15 @@ function row(template: string, payload: Record<string, unknown>): EmailOutboxRow
 }
 
 describe('TEST:1607:10 reconciliation renderers are registered in the production sender', () => {
-    const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
+    // The notices read the subject's holder at render time (HOS-2565 D9): a stub keeps the test off the database.
+    const render = buildOutboxSenderRender({
+        siteUrl: 'https://hospeda.test',
+        readReconciliationSubjects: async () => ({
+            subscriptions: new Map(),
+            addonInstances: new Map(),
+            openMarks: new Map()
+        })
+    });
     const summary = {
         windowId: 'private-window-id',
         coversFrom: '2026-10-01T00:00:00.000Z',
@@ -74,7 +82,7 @@ describe('TEST:1607:10 reconciliation renderers are registered in the production
                     privateToken: 'private-token'
                 },
                 DUPLICATE_CHARGE_DETECTED_SUBJECT,
-                ['mark-1', 'visible-subscription'],
+                ['Cobro duplicado', 'visible-subscription'],
                 ['private-token']
             ],
             [
@@ -90,7 +98,7 @@ describe('TEST:1607:10 reconciliation renderers are registered in the production
                     privateToken: 'private-token'
                 },
                 MARK_ESCALATED_SUBJECT,
-                ['mark-2', 'visible-addon'],
+                ['Complemento', 'visible-addon', '7 días'],
                 ['private-token']
             ],
             [
@@ -99,7 +107,7 @@ describe('TEST:1607:10 reconciliation renderers are registered in the production
                     refundId: 'refund-visible',
                     refundReason: 'REVOCATION',
                     sourceKind: 'payment',
-                    sourceId: 'private-payment-id',
+                    sourceId: 'visible-payment-id',
                     subjectType: null,
                     subjectId: null,
                     amountMinor: 250000,
@@ -107,8 +115,8 @@ describe('TEST:1607:10 reconciliation renderers are registered in the production
                     failedAt: '2026-10-01T00:00:00.000Z'
                 },
                 REVOCATION_REFUND_FAILED_SUBJECT,
-                ['refund-visible', '$2.500,00'],
-                ['private-payment-id']
+                ['refund-visible', 'visible-payment-id', '$2.500,00', 'Pago con Mercado Pago'],
+                ['private-token']
             ]
         ] as const;
         for (const [template, payload, subject, includes, excludes] of cases) {
@@ -173,7 +181,7 @@ describe('HOS-1971 reconciliation summary wiring in the production sender', () =
         expect(html).toContain('https://admin.hospeda.test/billing/reconciliation/');
     });
 
-    it('sends the bare line when the subject lookup throws', async () => {
+    it('sends the bare item when the subject lookup throws', async () => {
         const render = buildOutboxSenderRender({
             siteUrl: 'https://hospeda.test',
             readReconciliationSubjects: async () => {
@@ -181,8 +189,10 @@ describe('HOS-1971 reconciliation summary wiring in the production sender', () =
             }
         });
         const result = await render({ row: row('billing.reconciliation-summary', payload) });
-        expect(renderToStaticMarkup(result.react)).toContain(
-            'COBRO_DUPLICADO · subscription sub-1 · 1 vez'
-        );
+        const html = renderToStaticMarkup(result.react);
+        expect(html).not.toContain('COBRO_DUPLICADO · subscription sub-1 · 1 vez');
+        expect(html).not.toContain(' · ');
+        expect(html).toContain('Cobro duplicado');
+        expect(html).toContain('1 vez');
     });
 });

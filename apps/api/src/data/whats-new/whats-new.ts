@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4687
+    {
+        id: '2026-11-22-close-account-blocked-by-charge-message',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Dar de baja una cuenta que todavía se puede cobrar te dice qué falta',
+            en: 'Closing an account that can still be charged now tells you what is missing',
+            pt: 'Encerrar uma conta que ainda pode ser cobrada agora diz o que falta'
+        },
+        body: {
+            es: 'Si intentás dar de baja una cuenta con una suscripción que todavía puede cobrar, el panel te avisa que primero hay que cancelarla, en lugar de mostrar un error genérico.',
+            en: 'If you try to close an account that still has a subscription that can be charged, the panel tells you to cancel it first instead of showing a generic error.',
+            pt: 'Se você tentar encerrar uma conta com uma assinatura que ainda pode ser cobrada, o painel avisa que é preciso cancelá-la primeiro, em vez de mostrar um erro genérico.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4713
     {
         id: '2026-11-23-faster-mobile-home',

@@ -11,7 +11,7 @@ const listingPublicationService = new ListingPublicationService();
 export const protectedUnpublishVenueRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/unpublish',
-    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'UNPUBLISH', idParam: 'id' },
     summary: 'Unpublish venue listing',
     description: 'Moves a published venue listing to DRAFT through PB6.',
     tags: ['Venue'],

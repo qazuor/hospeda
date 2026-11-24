@@ -99,6 +99,15 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+		<!--
+		  HOS-2575: priority resource hints (the page's LCP image preload). This
+		  slot MUST stay above the CriticalStyles block below: it inlines ~83 KB of
+		  CSS, and any hint emitted after it is invisible to the preload scanner
+		  until those bytes arrive (measured: 1,250 ms of LCP load delay on mobile).
+		  Hints only. Never put an inline <style> or <script> here.
+		-->
+		<slot name="head-priority" />
+
 		<!-- HOS-369: global.css inlined as critical CSS (see CriticalStyles.astro
 		     for why this must be byte-identical across all four layouts). -->
 		<CriticalStyles />

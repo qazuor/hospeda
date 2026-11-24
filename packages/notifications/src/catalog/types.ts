@@ -43,6 +43,9 @@ export type EmailCatalogDomain =
 /** Who reads the email. Drives the previewer audience filter (HOS-2565). */
 export type EmailAudience = 'user' | 'staff';
 
+/** Locale of a scenario's rendered copy (HOS-2565 D14). */
+export type EmailScenarioLocale = 'es' | 'en' | 'pt';
+
 /** One named sample input for an entry. */
 export interface EmailScenario<TInput> {
     /** Kebab-case, unique within the entry. */
@@ -51,6 +54,11 @@ export interface EmailScenario<TInput> {
     readonly label: string;
     /** Sample input. Fictional data only. */
     readonly input: TInput;
+    /**
+     * Locale the rendered copy is written in. Defaults to `'es'`. A scenario whose input
+     * carries a `locale` must declare the same one: the Spanish-only test relies on it.
+     */
+    readonly locale?: EmailScenarioLocale;
 }
 
 /** Runtime collaborators injected by the host app. */
@@ -77,6 +85,8 @@ export interface EmailCatalogScenarioSummary {
     readonly id: string;
     /** Spanish label. */
     readonly label: string;
+    /** Locale of the rendered copy, resolved: never undefined. */
+    readonly locale: EmailScenarioLocale;
 }
 
 /** Input of {@link EmailCatalogEntry.renderScenario}. */

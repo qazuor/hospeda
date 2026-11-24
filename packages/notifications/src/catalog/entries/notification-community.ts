@@ -331,6 +331,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'en',
+                locale: 'en',
                 label: 'Inglés',
                 input: {
                     ...SAMPLE_RECIPIENT,
@@ -365,6 +366,7 @@ export const NOTIFICATION_COMMUNITY_ENTRIES: readonly EmailCatalogEntry[] = [
             },
             {
                 id: 'en-without-reason',
+                locale: 'en',
                 label: 'Inglés, sin motivo',
                 input: {
                     ...SAMPLE_RECIPIENT,
