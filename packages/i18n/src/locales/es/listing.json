@@ -379,7 +379,7 @@
             },
             "nightInfo": {
                 "entryPriceFrom": "Precio desde (en pesos)",
-                "entryNoteLabel": "Nota (es/en/pt)",
+                "entryNoteLabel": "Nota sobre la entrada (es/en/pt)",
                 "dressCodeNoteLabel": "Nota sobre el código de vestimenta (es/en/pt)",
                 "notInformed": "No informado",
                 "priceUpdatedAt": "Actualizado {{month}}",

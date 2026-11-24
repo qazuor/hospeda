@@ -338,4 +338,26 @@ describe('NightInfoSection — localized note tabs (HOS-2504)', () => {
 
         expect(document.getElementById('ce-entryNoteI18n-en')).not.toBeNull();
     });
+
+    it('names every localized note with a visible legend (HOS-2600)', () => {
+        // Arrange & Act
+        renderSection('free', {
+            policies: {
+                minAge: 18,
+                minAgeScope: { kind: 'area', area: { es: '', en: '', pt: '' } }
+            }
+        });
+
+        // Assert: one labelled group per note, the legend is real text (not only an aria-label)
+        for (const name of [
+            'Nota sobre la entrada (es/en/pt)',
+            'Nota sobre el código de vestimenta (es/en/pt)',
+            'Sector o actividad (es/en/pt)'
+        ]) {
+            const group = screen.getByRole('group', { name });
+            const legend = group.querySelector('legend');
+            expect(legend).toHaveTextContent(name);
+            expect(within(group).getByRole('tablist')).toBeInTheDocument();
+        }
+    });
 });

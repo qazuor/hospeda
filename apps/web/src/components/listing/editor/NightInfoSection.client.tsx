@@ -43,6 +43,10 @@
  * CONTROLLED: whenever a note's errors change, the first locale with an error
  * becomes the selected tab (its control is mounted and focusable), and a tab
  * with an error says so in its label. Field ids are unchanged.
+ *
+ * Each note is a `<fieldset>` whose visible `<legend>` names what goes in it
+ * (HOS-2600): the tabs alone only said «Español / Inglés / Portugués», so two
+ * notes in a row looked identical.
  */
 
 import {
@@ -142,35 +146,38 @@ function I18nNoteField({
               : t('listing.owner.editor.nightInfo.localePt', 'Portugués');
 
     return (
-        <Tabs
-            variant="segmented"
-            ariaLabel={legend}
-            value={selected}
-            onValueChange={(id) => setSelected(id as NoteLocale)}
-            items={NOTE_LOCALES.map((code) => ({
-                id: code,
-                label:
-                    errorOf(code) === undefined
-                        ? labelFor(code)
-                        : `${labelFor(code)} (${t('listing.owner.editor.nightInfo.localeHasError', 'Con error')})`,
-                panel: (
-                    <Field
-                        locale={locale}
-                        idParts={{ prefix: LISTING_FIELD_PREFIX, name: nameOf(code) }}
-                        label={labelFor(code)}
-                        error={errorOf(code)}
-                    >
-                        <TextInput
-                            value={values[code]}
-                            maxLength={maxLength}
-                            onChange={(event) =>
-                                onChange({ ...values, [code]: event.target.value })
-                            }
-                        />
-                    </Field>
-                )
-            }))}
-        />
+        <fieldset className={styles.noteGroup}>
+            <legend className={styles.noteLegend}>{legend}</legend>
+            <Tabs
+                variant="segmented"
+                ariaLabel={legend}
+                value={selected}
+                onValueChange={(id) => setSelected(id as NoteLocale)}
+                items={NOTE_LOCALES.map((code) => ({
+                    id: code,
+                    label:
+                        errorOf(code) === undefined
+                            ? labelFor(code)
+                            : `${labelFor(code)} (${t('listing.owner.editor.nightInfo.localeHasError', 'Con error')})`,
+                    panel: (
+                        <Field
+                            locale={locale}
+                            idParts={{ prefix: LISTING_FIELD_PREFIX, name: nameOf(code) }}
+                            label={labelFor(code)}
+                            error={errorOf(code)}
+                        >
+                            <TextInput
+                                value={values[code]}
+                                maxLength={maxLength}
+                                onChange={(event) =>
+                                    onChange({ ...values, [code]: event.target.value })
+                                }
+                            />
+                        </Field>
+                    )
+                }))}
+            />
+        </fieldset>
     );
 }
 
@@ -420,7 +427,7 @@ export function NightInfoSection({
                         baseName="entryNoteI18n"
                         legend={t(
                             'listing.owner.editor.nightInfo.entryNoteLabel',
-                            'Nota (es/en/pt)'
+                            'Nota sobre la entrada (es/en/pt)'
                         )}
                         values={data.entryNoteI18n}
                         errors={errors}
