@@ -7,7 +7,8 @@ import type { VenueDetailLocation } from '../../../src/data/types';
 import {
     buildVenueJsonLdPlace,
     buildVenueMapUrl,
-    formatVenueStreetLine
+    formatVenueStreetLine,
+    resolveVenueCoordinates
 } from '../../../src/lib/venue/venue-address';
 
 const FULL: VenueDetailLocation = {
@@ -75,5 +76,29 @@ describe('buildVenueMapUrl', () => {
         expect(buildVenueMapUrl({ location: null })).toBeNull();
         expect(buildVenueMapUrl({ location: { ...FULL, lat: 'abc' } })).toBeNull();
         expect(buildVenueMapUrl({ location: { ...FULL, long: '' } })).toBeNull();
+    });
+});
+
+describe('resolveVenueCoordinates', () => {
+    it('parses the pinned strings into numbers', () => {
+        expect(resolveVenueCoordinates({ location: FULL })).toEqual({
+            coordinates: { lat: -32.4825, lng: -58.2333 }
+        });
+    });
+
+    it('keeps 0 as a real coordinate', () => {
+        expect(resolveVenueCoordinates({ location: { ...FULL, lat: '0', long: '0' } })).toEqual({
+            coordinates: { lat: 0, lng: 0 }
+        });
+    });
+
+    it('is null without usable coordinates', () => {
+        expect(resolveVenueCoordinates({ location: null })).toEqual({ coordinates: null });
+        expect(resolveVenueCoordinates({ location: { ...FULL, lat: '' } })).toEqual({
+            coordinates: null
+        });
+        expect(resolveVenueCoordinates({ location: { ...FULL, long: 'x' } })).toEqual({
+            coordinates: null
+        });
     });
 });

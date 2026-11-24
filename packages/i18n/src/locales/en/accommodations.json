@@ -544,7 +544,7 @@
             "nights_other": "{{count}} nights"
         },
         "gallery": {
-            "viewAll": "View all photos",
+            "viewAll": "See the photos on one page",
             "moreOverlay": "+{{count}} more",
             "viewAllCount_one": "See the photo",
             "viewAllCount_other": "See all {{count}} photos",

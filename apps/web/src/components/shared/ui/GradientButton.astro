@@ -12,6 +12,8 @@
  * - icon: pass "true" to render a trailing ArrowRightIcon
  * - as: 'a' | 'button'
  * - href, target, rel, type, name, id, data, aria, class
+ * - srHint: screen-reader-only text appended after the visible label (e.g. a phone
+ *   number as the label plus ", Llamar al alojamiento" for assistive tech)
  *
  * Slots:
  * - leading: rendered before the label (e.g. icon)
@@ -49,6 +51,11 @@ interface Props {
    * @example { busy: isLoading }
    */
   readonly aria?: Record<string, string | boolean>;
+  /**
+   * Visually-hidden text rendered right after the visible label, so the accessible
+   * name can say more than the label shows (the `aria` record cannot set `label`).
+   */
+  readonly srHint?: string;
 }
 
 const {
@@ -67,6 +74,7 @@ const {
   name,
   data,
   aria,
+  srHint,
 } = Astro.props;
 
 const classes = [
@@ -107,6 +115,7 @@ const hasTrailingSlot = Astro.slots.has('trailing');
       </span>
     )}
     <span class="gradient-btn__label">{label}</span>
+    {srHint && <span class="sr-only">{srHint}</span>}
     {hasTrailingSlot ? (
       <span class="gradient-btn__icon gradient-btn__icon--trailing" aria-hidden="true">
         <slot name="trailing" />
@@ -132,6 +141,7 @@ const hasTrailingSlot = Astro.slots.has('trailing');
       </span>
     )}
     <span class="gradient-btn__label">{label}</span>
+    {srHint && <span class="sr-only">{srHint}</span>}
     {hasTrailingSlot ? (
       <span class="gradient-btn__icon gradient-btn__icon--trailing" aria-hidden="true">
         <slot name="trailing" />

@@ -29,7 +29,7 @@ vi.mock('../../src/lib/i18n', () => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
             if (params && fallback) {
                 return Object.entries(params).reduce(
-                    (acc, [k, v]) => acc.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v)),
+                    (acc, [k, v]) => acc.replace(new RegExp(`\\{\\{?${k}\\}\\}?`, 'g'), String(v)),
                     fallback
                 );
             }
@@ -69,6 +69,18 @@ vi.mock('@repo/icons', () => ({
     FullscreenIcon: ({ size }: { size: number }) => (
         <svg
             data-testid="fullscreen-icon"
+            width={size}
+        />
+    ),
+    GridIcon: ({ size }: { size: number }) => (
+        <svg
+            data-testid="grid-icon"
+            width={size}
+        />
+    ),
+    ArrowRightIcon: ({ size }: { size: number }) => (
+        <svg
+            data-testid="arrow-right-icon"
             width={size}
         />
     )
@@ -367,7 +379,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
      * So `lightboxIndex = 3`, and `onOpen(3 + 1) = onOpen(4)` → lightbox opens at index 4
      * (images[4], 0-based), which is the 5th image — the first hidden one.
      *
-     * The lightbox counter shows "{index+1} / {total}" so it should show "5 / 5".
+     * The lightbox counter shows "{index+1} / {total}" so it should show "5/5".
      */
 
     it('click on overlay opens lightbox dialog', () => {
@@ -383,7 +395,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('click on overlay opens lightbox at index 4 (first hidden image, "5 / 5")', () => {
+    it('click on overlay opens lightbox at index 4 (first hidden image, "5/5")', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -393,8 +405,8 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
         );
         const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
         fireEvent.click(overlayBtn);
-        // Counter is "{index+1} / {total}" — first hidden image is index 4 → "5 / 5"
-        expect(screen.getByText('5 / 5')).toBeInTheDocument();
+        // Counter is "{index+1} / {total}" — first hidden image is index 4 → "5/5"
+        expect(screen.getByText('5/5')).toBeInTheDocument();
     });
 
     it('lightbox at overlay-open shows the correct image alt (images[4])', () => {
@@ -416,7 +428,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
         expect(mainImg).toBeDefined();
     });
 
-    it('overlay click on 7-image gallery opens lightbox at index 4 ("5 / 7")', () => {
+    it('overlay click on 7-image gallery opens lightbox at index 4 ("5/7")', () => {
         render(
             <ImageGallery
                 images={IMG_7}
@@ -426,8 +438,8 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
         );
         const overlayBtn = screen.getByRole('button', { name: /\+3 más/i });
         fireEvent.click(overlayBtn);
-        // Lightbox opens at the first hidden image (index 4) → counter = "5 / 7"
-        expect(screen.getByText('5 / 7')).toBeInTheDocument();
+        // Lightbox opens at the first hidden image (index 4) → counter = "5/7"
+        expect(screen.getByText('5/7')).toBeInTheDocument();
     });
 
     it('lightbox receives ALL images (not just visible ones) at count=7', () => {
@@ -441,7 +453,7 @@ describe('DetailVariant — overlay activates lightbox at first hidden image', (
         const overlayBtn = screen.getByRole('button', { name: /\+3 más/i });
         fireEvent.click(overlayBtn);
         // Counter denominator = total image count
-        expect(screen.getByText('5 / 7')).toBeInTheDocument();
+        expect(screen.getByText('5/7')).toBeInTheDocument();
     });
 
     it('keyboard Enter on overlay button opens the lightbox', () => {
@@ -504,14 +516,14 @@ describe('DetailVariant — thumb click opens lightbox at correct index (index m
      * `lightboxIndex = i + 1` (1-based offset past the featured image).
      *
      * count=3: thumbs are images[1] and images[2].
-     *   - clicking thumb 0 (images[1]) → lightbox index 1 → counter "2 / 3"
-     *   - clicking thumb 1 (images[2]) → lightbox index 2 → counter "3 / 3"
+     *   - clicking thumb 0 (images[1]) → lightbox index 1 → counter "2/3"
+     *   - clicking thumb 1 (images[2]) → lightbox index 2 → counter "3/3"
      *
      * count=4: thumbs are images[1..3].
-     *   - clicking thumb 2 (images[3]) → lightbox index 3 → counter "4 / 4"
+     *   - clicking thumb 2 (images[3]) → lightbox index 3 → counter "4/4"
      */
 
-    it('count=3: clicking first thumb opens lightbox at index 1 ("2 / 3")', () => {
+    it('count=3: clicking first thumb opens lightbox at index 1 ("2/3")', () => {
         render(
             <ImageGallery
                 images={IMG_3}
@@ -524,10 +536,10 @@ describe('DetailVariant — thumb click opens lightbox at correct index (index m
         // allBtns[0] = featured, allBtns[1] = first thumb
         expect(allBtns.length).toBeGreaterThanOrEqual(2);
         fireEvent.click(allBtns[1] as HTMLElement);
-        expect(screen.getByText('2 / 3')).toBeInTheDocument();
+        expect(screen.getByText('2/3')).toBeInTheDocument();
     });
 
-    it('count=3: clicking second thumb opens lightbox at index 2 ("3 / 3")', () => {
+    it('count=3: clicking second thumb opens lightbox at index 2 ("3/3")', () => {
         render(
             <ImageGallery
                 images={IMG_3}
@@ -538,10 +550,10 @@ describe('DetailVariant — thumb click opens lightbox at correct index (index m
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         // allBtns[0] = featured, allBtns[1] = thumb0, allBtns[2] = thumb1
         fireEvent.click(allBtns[2] as HTMLElement);
-        expect(screen.getByText('3 / 3')).toBeInTheDocument();
+        expect(screen.getByText('3/3')).toBeInTheDocument();
     });
 
-    it('count=4: clicking third thumb opens lightbox at index 3 ("4 / 4")', () => {
+    it('count=4: clicking third thumb opens lightbox at index 3 ("4/4")', () => {
         render(
             <ImageGallery
                 images={IMG_4}
@@ -552,10 +564,10 @@ describe('DetailVariant — thumb click opens lightbox at correct index (index m
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         // allBtns[0]=featured, [1]=thumb0, [2]=thumb1, [3]=thumb2
         fireEvent.click(allBtns[3] as HTMLElement);
-        expect(screen.getByText('4 / 4')).toBeInTheDocument();
+        expect(screen.getByText('4/4')).toBeInTheDocument();
     });
 
-    it('count=2: clicking the half thumb opens lightbox at index 1 ("2 / 2")', () => {
+    it('count=2: clicking the half thumb opens lightbox at index 1 ("2/2")', () => {
         render(
             <ImageGallery
                 images={IMG_2}
@@ -565,10 +577,10 @@ describe('DetailVariant — thumb click opens lightbox at correct index (index m
         );
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         fireEvent.click(allBtns[1] as HTMLElement);
-        expect(screen.getByText('2 / 2')).toBeInTheDocument();
+        expect(screen.getByText('2/2')).toBeInTheDocument();
     });
 
-    it('count=1: featured click opens lightbox at index 0 ("1 / 1")', () => {
+    it('count=1: featured click opens lightbox at index 0 ("1/1")', () => {
         render(
             <ImageGallery
                 images={IMG_1}
@@ -578,11 +590,11 @@ describe('DetailVariant — thumb click opens lightbox at correct index (index m
         );
         const [featuredBtn] = screen.getAllByRole('button', { name: /pantalla completa/i });
         fireEvent.click(featuredBtn as HTMLElement);
-        expect(screen.getByText('1 / 1')).toBeInTheDocument();
+        expect(screen.getByText('1/1')).toBeInTheDocument();
     });
 });
 
-// ─── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ─────────
+// ─── "Ver las fotos en una página" CTA (FIX-2, SPEC-186 browser smoke T-018) ─────────
 
 describe('DetailVariant — viewAllHref CTA link', () => {
     /**
@@ -595,7 +607,9 @@ describe('DetailVariant — viewAllHref CTA link', () => {
      * - count < 5 (all images already visible inline).
      *
      * The link text is driven by the i18n key
-     * 'accommodations.detail.gallery.viewAll' (fallback "Ver todas las fotos").
+     * 'accommodations.detail.gallery.viewAll' (fallback "Ver las fotos en una página").
+     * Owner decision (HOS-2520 smoke): the link is VISIBLE at every width and reads
+     * as a page link, distinct from the «Ver las N fotos» lightbox button.
      */
 
     it('absent when viewAllHref is not provided (count=7)', () => {
@@ -607,7 +621,9 @@ describe('DetailVariant — viewAllHref CTA link', () => {
             />
         );
         // No anchor with the gallery viewAll i18n key text should be rendered.
-        expect(screen.queryByRole('link', { name: /todas las fotos/i })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: /fotos en una página/i })
+        ).not.toBeInTheDocument();
     });
 
     it('absent when viewAllHref is provided but count=4 (all images visible)', () => {
@@ -619,7 +635,9 @@ describe('DetailVariant — viewAllHref CTA link', () => {
                 viewAllHref="/es/alojamientos/test-slug/fotos/"
             />
         );
-        expect(screen.queryByRole('link', { name: /todas las fotos/i })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: /fotos en una página/i })
+        ).not.toBeInTheDocument();
     });
 
     it('present with viewAllHref and count=5 (first overflow case)', () => {
@@ -631,7 +649,7 @@ describe('DetailVariant — viewAllHref CTA link', () => {
                 viewAllHref="/es/alojamientos/test-slug/fotos/"
             />
         );
-        const link = screen.getByRole('link', { name: /todas las fotos/i });
+        const link = screen.getByRole('link', { name: /fotos en una página/i });
         expect(link).toBeInTheDocument();
         expect(link).toHaveAttribute('href', '/es/alojamientos/test-slug/fotos/');
         // Regression (T-018): the CTA must hard-navigate across the /fotos boundary
@@ -648,11 +666,11 @@ describe('DetailVariant — viewAllHref CTA link', () => {
                 viewAllHref="/es/alojamientos/la-posada/fotos/"
             />
         );
-        const link = screen.getByRole('link', { name: /todas las fotos/i });
+        const link = screen.getByRole('link', { name: /fotos en una página/i });
         expect(link).toHaveAttribute('href', '/es/alojamientos/la-posada/fotos/');
     });
 
-    it('link text is driven by the i18n key (fallback "Ver todas las fotos")', () => {
+    it('link text is driven by the i18n key (fallback "Ver las fotos en una página")', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -663,8 +681,26 @@ describe('DetailVariant — viewAllHref CTA link', () => {
         );
         // The mock i18n returns the fallback string when the key is not specially
         // handled — verify the link renders the expected human-readable text.
-        const link = screen.getByRole('link', { name: /todas las fotos/i });
-        expect(link.textContent?.trim()).toMatch(/Ver todas las fotos/i);
+        const link = screen.getByRole('link', { name: /fotos en una página/i });
+        expect(link.textContent?.trim()).toMatch(/Ver las fotos en una página/i);
+    });
+
+    it('reads differently from the lightbox button: page link with grid icon and arrow', () => {
+        render(
+            <ImageGallery
+                images={IMG_5}
+                variant="detail"
+                locale="es"
+                viewAllHref="/es/alojamientos/test-slug/fotos/"
+            />
+        );
+        const link = screen.getByRole('link', { name: /fotos en una página/i });
+        expect(link.querySelector('[data-testid="grid-icon"]')).not.toBeNull();
+        expect(link.querySelector('[data-testid="arrow-right-icon"]')).not.toBeNull();
+        // The lightbox opener stays a <button>, with a different accessible name.
+        const lightbox = screen.getByRole('button', { name: /Ver las 5 fotos/i });
+        expect(lightbox.tagName).toBe('BUTTON');
+        expect(lightbox).not.toHaveAccessibleName(link.textContent ?? '');
     });
 });
 
@@ -922,6 +958,6 @@ describe('ImageGallery detail variant: see-all-photos button (HOS-2531)', () => 
         );
         fireEvent.click(screen.getByRole('button', { name: 'Ver las 7 fotos' }));
         expect(screen.getByRole('dialog')).toBeInTheDocument();
-        expect(screen.getByText('1 / 7')).toBeInTheDocument();
+        expect(screen.getByText('1/7')).toBeInTheDocument();
     });
 });

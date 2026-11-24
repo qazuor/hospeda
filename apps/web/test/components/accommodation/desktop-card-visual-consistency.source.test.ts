@@ -102,10 +102,12 @@ describe('visual consistency (HOS-2533)', () => {
         expect(DIVIDER).toContain('M0,60 C180,120 360,160 540,130');
     });
 
-    it('gives the location map tiles the organic radius without clipping the disclaimer', () => {
+    it('gives the location map tiles the uniform card radius without clipping the disclaimer', () => {
+        // Owner smoke (HOS-2520): the organic radius rounded only two corners of the map.
         expect(LOCATION).toMatch(
-            /\.location-section__map\s*\{[^}]*--location-map-tile-radius: var\(--radius-organic\)/
+            /\.location-section__map\s*\{[^}]*--location-map-tile-radius: var\(--radius-card\)/
         );
+        expect(LOCATION).not.toContain('--radius-organic');
         expect(MAP_CSS).toMatch(
             /\.mapWrapper\s*\{[^}]*border-radius: var\(--location-map-tile-radius, 0\)/
         );

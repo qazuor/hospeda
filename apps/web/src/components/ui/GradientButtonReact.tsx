@@ -4,7 +4,7 @@
  * Uses the same .btn-gradient CSS classes from components.css as the Astro version.
  */
 
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 
 export interface GradientButtonProps {
@@ -45,6 +45,11 @@ export interface GradientButtonProps {
      * @example { busy: isLoading }
      */
     readonly aria?: Record<string, string | boolean>;
+    /**
+     * Ref to the rendered `<button>` (only with `as="button"`), e.g. for a dialog
+     * trigger that gets focus back when the dialog closes.
+     */
+    readonly buttonRef?: Ref<HTMLButtonElement>;
 }
 
 export function GradientButton({
@@ -64,7 +69,8 @@ export function GradientButton({
     type = 'button',
     loading = false,
     loadingLabel,
-    aria
+    aria,
+    buttonRef
 }: GradientButtonProps) {
     const classes = [
         'btn-gradient',
@@ -118,6 +124,7 @@ export function GradientButton({
     if (Element === 'button') {
         return (
             <button
+                ref={buttonRef}
                 type={type}
                 className={classes}
                 onClick={onClick}

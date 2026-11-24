@@ -70,6 +70,16 @@ export function VenueOpenNowBadge({
     }
 
     return (
-        <div className={cn(styles.badge, tone, variant === 'inline' && styles.inline)}>{label}</div>
+        <div
+            className={cn(
+                styles.badge,
+                tone,
+                // The detail header sizes every badge in its row the same (HOS-2520).
+                variant === 'inline' && styles.inline,
+                variant === 'inline' && 'listing-header-badge'
+            )}
+        >
+            {label}
+        </div>
     );
 }

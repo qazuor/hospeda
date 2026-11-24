@@ -3,34 +3,34 @@
  * @file QuickFacts.astro
  * @description Horizontal row of icon+value pills showing accommodation quick facts.
  * Only renders pills for non-null fields. Hidden when there is nothing to show.
- * The stay length comes from the house rules (`policies.minNights` /
- * `policies.maxNights`, HOS-2060), the rest from `extraInfo`.
+ * Everything comes from `extraInfo`.
+ *
+ * The stay length (`policies.minNights` / `policies.maxNights`) is NOT here any more
+ * (owner smoke, HOS-2520): it was shown twice, a few pixels apart, here and in the
+ * price block. It is a booking constraint, so it lives only next to the price and
+ * «Consultar»: `MobileBookingSummary` up to 1024px, `PricingSidebar` above. Those two
+ * never show at the same width, so every viewport shows it exactly once.
  */
 import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { GuestsIcon, BedroomsIcon, BedLinensIcon, BathroomsIcon, MoonIcon } from '@repo/icons';
+import { GuestsIcon, BedroomsIcon, BedLinensIcon, BathroomsIcon } from '@repo/icons';
 
 interface Props {
   readonly extraInfo: AccommodationDetailData['extraInfo'];
-  readonly policies: AccommodationDetailData['policies'];
   readonly lang: string;
 }
 
-const { extraInfo, policies, lang } = Astro.props;
+const { extraInfo, lang } = Astro.props;
 const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
-const stayMin = policies.minNights ?? null;
-const stayMax = policies.maxNights ?? null;
-if (!extraInfo && stayMin === null && stayMax === null) return;
+if (!extraInfo) return;
 
 const compactFacts = [
   extraInfo?.capacity != null && tPlural('accommodations.detail.quickFacts.guests', extraInfo.capacity),
   extraInfo?.bedrooms != null && tPlural('accommodations.detail.quickFacts.compactBedrooms', extraInfo.bedrooms),
   extraInfo?.beds != null && tPlural('accommodations.detail.quickFacts.compactBeds', extraInfo.beds),
-  extraInfo?.bathrooms != null && tPlural('accommodations.detail.quickFacts.compactBathrooms', extraInfo.bathrooms),
-  stayMin !== null && `${t('accommodations.detail.quickFacts.minNights')}: ${stayMin}`,
-  stayMax !== null && `${t('accommodations.detail.quickFacts.maxNights')}: ${stayMax}`
+  extraInfo?.bathrooms != null && tPlural('accommodations.detail.quickFacts.compactBathrooms', extraInfo.bathrooms)
 ].filter(Boolean);
 ---
 
@@ -85,24 +85,6 @@ const compactFacts = [
       </div>
     </div>
   )}
-  {stayMin !== null && (
-    <div class="quick-facts__pill">
-      <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
-      <div class="quick-facts__text">
-        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', stayMin)}</span>
-        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.minNights')}</span>
-      </div>
-    </div>
-  )}
-  {stayMax !== null && (
-    <div class="quick-facts__pill">
-      <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
-      <div class="quick-facts__text">
-        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', stayMax)}</span>
-        <span class="quick-facts__label">{t('accommodations.detail.quickFacts.maxNights')}</span>
-      </div>
-    </div>
-  )}
 </div>
 
 <style>
@@ -147,7 +129,7 @@ const compactFacts = [
       display: none;
     }
     /* Wraps to a second line instead of clipping: a horizontal scroller hid
-       the last facts (the minimum stay) and nobody discovered the swipe. */
+       the last facts and nobody discovered the swipe. */
     .quick-facts__compact {
       display: flex;
       flex-wrap: wrap;

@@ -160,6 +160,63 @@
 }
 
 /* =======================================================================
+   LISTING DETAIL HEADER BADGES — one size for every vertical
+   (owner smoke, HOS-2520 items 2 and 15)
+
+   Accommodation, venue and experience headers each styled their badges on
+   their own (24 / 26 / 30px tall, 12–14px text). The row container takes
+   `.listing-header-badges`, every badge in it takes `.listing-header-badge`,
+   and size comes only from the tokens below; each badge keeps its own colours,
+   icon and casing. The compact wave-header state shrinks all of them together.
+
+   The doubled class lifts the rule over component-scoped rules (one class plus
+   the `data-astro-cid` attribute) and over `.featured-badge`, so no vertical can
+   drift back to its own height.
+   ======================================================================= */
+.listing-header-badges {
+    --listing-badge-height: 1.75rem;
+    --listing-badge-font-size: 0.75rem;
+    --listing-badge-padding-inline: 0.75rem;
+}
+
+.listing-header-badges .listing-header-badge.listing-header-badge {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    block-size: var(--listing-badge-height);
+    padding: 0 var(--listing-badge-padding-inline);
+    font-size: var(--listing-badge-font-size);
+    line-height: 1;
+    white-space: nowrap;
+    /* AccommodationTypeBadge sizes itself from these two props. */
+    --acc-type-padding: 0 var(--listing-badge-padding-inline);
+    --acc-type-font-size: var(--listing-badge-font-size);
+    transition:
+        block-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
+        padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
+        font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+}
+
+.wave-header.wave-header--compact .listing-header-badges {
+    --listing-badge-height: 1.375rem;
+    --listing-badge-font-size: 0.625rem;
+    --listing-badge-padding-inline: 0.625rem;
+}
+
+/* Beats the generic `.wh-compact-badge` shrink, which would set its own
+   padding and font size on only some of the badges. */
+.wave-header.wave-header--compact .listing-header-badges .listing-header-badge {
+    padding: 0 var(--listing-badge-padding-inline);
+    font-size: var(--listing-badge-font-size);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .listing-header-badges .listing-header-badge.listing-header-badge {
+        transition: none;
+    }
+}
+
+/* =======================================================================
    GRADIENT BUTTON — unified CTA component
    Variants: accent (orange), primary (blue), outline-accent, outline-primary
    Sizes: sm, md (default), lg

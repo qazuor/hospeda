@@ -118,18 +118,26 @@ describe('data-umami-block on the six surfaces (HOS-2347 AC-B1)', () => {
         expect(source).toContain("from '@/lib/analytics/recording-block'");
     });
 
-    it.each([
-        ['5. VenueContactBlock', 'components/venue/VenueContactBlock.astro'],
-        ['6. ExperienceContactBlock', 'components/experience/ExperienceContactBlock.astro']
-    ])('%s (D-6): the outermost element spreads UMAMI_BLOCK_PROPS', (_label, file) => {
-        const source = readFileSync(resolve(SRC, file), 'utf8');
+    it('5/6. ListingContactChannels (D-6): the outermost element is a <section> spreading blockProps', () => {
+        const source = readFileSync(
+            resolve(SRC, 'components/listing/contact/ListingContactChannels.astro'),
+            'utf8'
+        );
         const template = source
             .split(/^---\s*$/m)
             .slice(2)
             .join('---');
-        const firstElement = template.match(/<[a-z][^>]*>/)?.[0] ?? '';
-        expect(firstElement).toMatch(/^<section\b/);
-        expect(firstElement).toContain('{...UMAMI_BLOCK_PROPS}');
+        const firstElement = template.match(/<section[^>]*>/)?.[0] ?? '';
+        expect(template.trimStart().startsWith('<section')).toBe(true);
+        expect(firstElement).toContain('{...blockProps}');
+    });
+
+    it.each([
+        ['5. VenueContactBlock', 'components/venue/VenueContactBlock.astro'],
+        ['6. ExperienceContactBlock', 'components/experience/ExperienceContactBlock.astro']
+    ])('%s (D-6): passes UMAMI_BLOCK_PROPS as the shared block props', (_label, file) => {
+        const source = readFileSync(resolve(SRC, file), 'utf8');
+        expect(source).toContain('blockProps={UMAMI_BLOCK_PROPS}');
         expect(source).toContain("from '@/lib/analytics/recording-block'");
     });
 });

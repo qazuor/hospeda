@@ -271,10 +271,13 @@ const compareGatePlanNames = await getGatePlanNames({
 </article>
 
 <style>
+	/* `--acc-card-radius` lets a container opt into another corner (the listing
+	   detail's related carousels use `--radius-card`, HOS-2533); the default is
+	   unchanged. */
 	.acc-card {
 		background-color: var(--core-card);
 		border: 1px solid var(--border);
-		border-radius: var(--radius-md, 12px);
+		border-radius: var(--acc-card-radius, var(--radius-md, 12px));
 		box-shadow: var(--shadow-card);
 		display: flex;
 		flex-direction: column;
@@ -302,7 +305,7 @@ const compareGatePlanNames = await getGatePlanNames({
 	.acc-card__link:focus-visible {
 		outline: 2px solid var(--brand-primary);
 		outline-offset: 2px;
-		border-radius: var(--radius-md, 12px);
+		border-radius: var(--acc-card-radius, var(--radius-md, 12px));
 	}
 
 	/* IMAGE AREA */
@@ -310,7 +313,7 @@ const compareGatePlanNames = await getGatePlanNames({
 		position: relative;
 		height: clamp(160px, 30vw, 220px);
 		overflow: hidden;
-		border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+		border-radius: var(--acc-card-radius, var(--radius-md, 12px)) var(--acc-card-radius, var(--radius-md, 12px)) 0 0;
 		background-color: var(--muted);
 	}
 

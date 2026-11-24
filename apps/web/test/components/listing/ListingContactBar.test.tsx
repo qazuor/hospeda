@@ -40,6 +40,30 @@ describe('ListingContactBar', () => {
         expect(html).toContain('155,500');
     });
 
+    it('structures the price as a muted prefix, a prominent amount and a muted unit', () => {
+        const { container } = render(<ListingContactBar {...props} />);
+        const price = container.querySelector('p');
+
+        expect(price).not.toBeNull();
+        if (!price) throw new Error('Missing price');
+        expect(within(price).getByText('Desde')).toBeInTheDocument();
+        expect(price.querySelector('strong')?.textContent).toMatch(/155\.500/);
+        expect(within(price).getByText('/noche')).toBeInTheDocument();
+    });
+
+    it('omits the prefix when there is no unit (experience without price unit)', () => {
+        const { container } = render(
+            <ListingContactBar
+                {...props}
+                vertical="experience"
+                price={{ ...props.price, unitLabelKey: null }}
+            />
+        );
+
+        expect(container.querySelector('p strong')).not.toBeNull();
+        expect(screen.queryByText('Desde')).not.toBeInTheDocument();
+    });
+
     it('renders the dock WhatsApp glyph in the channel foreground color', () => {
         render(<ListingContactBar {...props} />);
 

@@ -36,7 +36,7 @@ vi.mock('../../src/lib/i18n', () => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
             if (params && fallback) {
                 return Object.entries(params).reduce(
-                    (acc, [k, v]) => acc.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v)),
+                    (acc, [k, v]) => acc.replace(new RegExp(`\\{\\{?${k}\\}\\}?`, 'g'), String(v)),
                     fallback
                 );
             }
@@ -407,7 +407,7 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
      *   onClick={() => onOpen(lightboxIndex + 1)} = onOpen(4)
      *
      * So lightbox opens at index 4 (images[4], 0-based = 5th image).
-     * Counter shows "{index+1} / {total}" → "5 / 5".
+     * Counter shows "{index+1} / {total}" → "5/5".
      */
 
     it('click on overlay opens lightbox dialog at total=5', () => {
@@ -423,7 +423,7 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('click on overlay opens lightbox at index 4 ("5 / 5") at total=5', () => {
+    it('click on overlay opens lightbox at index 4 ("5/5") at total=5', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -433,8 +433,8 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
         );
         const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
         fireEvent.click(overlayBtn);
-        // First hidden image is index 4 → counter "5 / 5"
-        expect(screen.getByText('5 / 5')).toBeInTheDocument();
+        // First hidden image is index 4 → counter "5/5"
+        expect(screen.getByText('5/5')).toBeInTheDocument();
     });
 
     it('lightbox shows the correct image alt at overlay click (images[4] = "Photo 5") at total=5', () => {
@@ -454,7 +454,7 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
         expect(mainImg).toBeDefined();
     });
 
-    it('click on overlay at total=8 opens lightbox at index 4 ("5 / 8")', () => {
+    it('click on overlay at total=8 opens lightbox at index 4 ("5/8")', () => {
         render(
             <ImageGallery
                 images={IMG_8}
@@ -465,7 +465,7 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
         const overlayBtn = screen.getByRole('button', { name: /\+4 más/i });
         fireEvent.click(overlayBtn);
         // First hidden image is still index 4 (cover=0, extras[0..2] = 1..3, overlay target = 4)
-        expect(screen.getByText('5 / 8')).toBeInTheDocument();
+        expect(screen.getByText('5/8')).toBeInTheDocument();
     });
 
     it('lightbox receives ALL images (not just visible ones) at total=8', () => {
@@ -479,7 +479,7 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
         const overlayBtn = screen.getByRole('button', { name: /\+4 más/i });
         fireEvent.click(overlayBtn);
         // Denominator = total image count
-        expect(screen.getByText('5 / 8')).toBeInTheDocument();
+        expect(screen.getByText('5/8')).toBeInTheDocument();
     });
 
     it('keyboard Enter on overlay button opens the lightbox at total=5', () => {
@@ -497,7 +497,7 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('keyboard Enter on overlay opens lightbox at first hidden image ("5 / 5")', () => {
+    it('keyboard Enter on overlay opens lightbox at first hidden image ("5/5")', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -508,7 +508,7 @@ describe('CoverPlusGridVariant — overlay activates lightbox at first hidden im
         const overlayBtn = screen.getByRole('button', { name: /\+1 más/i });
         fireEvent.keyDown(overlayBtn, { key: 'Enter', code: 'Enter' });
         fireEvent.click(overlayBtn);
-        expect(screen.getByText('5 / 5')).toBeInTheDocument();
+        expect(screen.getByText('5/5')).toBeInTheDocument();
     });
 });
 
@@ -520,7 +520,7 @@ describe('CoverPlusGridVariant — cover click opens lightbox at index 0', () =>
      * Counter shows "1 / N" for any N.
      */
 
-    it('cover click at total=1 opens lightbox at "1 / 1"', () => {
+    it('cover click at total=1 opens lightbox at "1/1"', () => {
         render(
             <ImageGallery
                 images={IMG_1}
@@ -535,7 +535,7 @@ describe('CoverPlusGridVariant — cover click opens lightbox at index 0', () =>
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('cover click at total=5 opens lightbox at "1 / 5"', () => {
+    it('cover click at total=5 opens lightbox at "1/5"', () => {
         render(
             <ImageGallery
                 images={IMG_5}
@@ -546,10 +546,10 @@ describe('CoverPlusGridVariant — cover click opens lightbox at index 0', () =>
         // The cover button is the first "Ver en pantalla completa" button
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         fireEvent.click(allBtns[0] as HTMLElement);
-        expect(screen.getByText('1 / 5')).toBeInTheDocument();
+        expect(screen.getByText('1/5')).toBeInTheDocument();
     });
 
-    it('cover click at total=8 opens lightbox at "1 / 8"', () => {
+    it('cover click at total=8 opens lightbox at "1/8"', () => {
         render(
             <ImageGallery
                 images={IMG_8}
@@ -559,7 +559,7 @@ describe('CoverPlusGridVariant — cover click opens lightbox at index 0', () =>
         );
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         fireEvent.click(allBtns[0] as HTMLElement);
-        expect(screen.getByText('1 / 8')).toBeInTheDocument();
+        expect(screen.getByText('1/8')).toBeInTheDocument();
     });
 });
 
@@ -572,14 +572,14 @@ describe('CoverPlusGridVariant — extra-cell clicks open lightbox at correct in
      *   lightboxIndex = i + 1  (cover = index 0, extra i=0 → index 1, etc.)
      *
      * For total=3: extras are images[1] and images[2].
-     *   - clicking extra i=0 (images[1]) → lightbox index 1 → counter "2 / 3"
-     *   - clicking extra i=1 (images[2]) → lightbox index 2 → counter "3 / 3"
+     *   - clicking extra i=0 (images[1]) → lightbox index 1 → counter "2/3"
+     *   - clicking extra i=1 (images[2]) → lightbox index 2 → counter "3/3"
      *
      * For total=4: extras are images[1..3].
-     *   - clicking extra i=2 (images[3]) → lightbox index 3 → counter "4 / 4"
+     *   - clicking extra i=2 (images[3]) → lightbox index 3 → counter "4/4"
      */
 
-    it('total=2: clicking the half extra opens lightbox at index 1 ("2 / 2")', () => {
+    it('total=2: clicking the half extra opens lightbox at index 1 ("2/2")', () => {
         render(
             <ImageGallery
                 images={IMG_2}
@@ -591,10 +591,10 @@ describe('CoverPlusGridVariant — extra-cell clicks open lightbox at correct in
         // allBtns[0] = cover, allBtns[1] = first extra
         expect(allBtns.length).toBeGreaterThanOrEqual(2);
         fireEvent.click(allBtns[1] as HTMLElement);
-        expect(screen.getByText('2 / 2')).toBeInTheDocument();
+        expect(screen.getByText('2/2')).toBeInTheDocument();
     });
 
-    it('total=3: clicking first half extra opens lightbox at index 1 ("2 / 3")', () => {
+    it('total=3: clicking first half extra opens lightbox at index 1 ("2/3")', () => {
         render(
             <ImageGallery
                 images={IMG_3}
@@ -605,10 +605,10 @@ describe('CoverPlusGridVariant — extra-cell clicks open lightbox at correct in
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         // allBtns[0] = cover, [1] = extra i=0, [2] = extra i=1
         fireEvent.click(allBtns[1] as HTMLElement);
-        expect(screen.getByText('2 / 3')).toBeInTheDocument();
+        expect(screen.getByText('2/3')).toBeInTheDocument();
     });
 
-    it('total=3: clicking second half extra opens lightbox at index 2 ("3 / 3")', () => {
+    it('total=3: clicking second half extra opens lightbox at index 2 ("3/3")', () => {
         render(
             <ImageGallery
                 images={IMG_3}
@@ -618,10 +618,10 @@ describe('CoverPlusGridVariant — extra-cell clicks open lightbox at correct in
         );
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         fireEvent.click(allBtns[2] as HTMLElement);
-        expect(screen.getByText('3 / 3')).toBeInTheDocument();
+        expect(screen.getByText('3/3')).toBeInTheDocument();
     });
 
-    it('total=4: clicking third quarter extra opens lightbox at index 3 ("4 / 4")', () => {
+    it('total=4: clicking third quarter extra opens lightbox at index 3 ("4/4")', () => {
         render(
             <ImageGallery
                 images={IMG_4}
@@ -632,10 +632,10 @@ describe('CoverPlusGridVariant — extra-cell clicks open lightbox at correct in
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         // allBtns[0]=cover, [1]=extra i=0, [2]=extra i=1, [3]=extra i=2
         fireEvent.click(allBtns[3] as HTMLElement);
-        expect(screen.getByText('4 / 4')).toBeInTheDocument();
+        expect(screen.getByText('4/4')).toBeInTheDocument();
     });
 
-    it('total=4: clicking first quarter extra opens lightbox at index 1 ("2 / 4")', () => {
+    it('total=4: clicking first quarter extra opens lightbox at index 1 ("2/4")', () => {
         render(
             <ImageGallery
                 images={IMG_4}
@@ -645,7 +645,7 @@ describe('CoverPlusGridVariant — extra-cell clicks open lightbox at correct in
         );
         const allBtns = screen.getAllByRole('button', { name: /pantalla completa/i });
         fireEvent.click(allBtns[1] as HTMLElement);
-        expect(screen.getByText('2 / 4')).toBeInTheDocument();
+        expect(screen.getByText('2/4')).toBeInTheDocument();
     });
 });
 

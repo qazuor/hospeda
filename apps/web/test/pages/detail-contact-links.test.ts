@@ -12,26 +12,34 @@ describe('rendered contact-link contracts (Astro source)', () => {
             'Accommodation',
             'alojamientos',
             'accommodation',
-            'phone phone email website social social'
+            'phone phone email website'
         ],
         ['experience', 'Experience', 'experiencias', 'experience', 'phone email website'],
-        ['venue', 'Venue', 'comer-y-salir', 'venue', 'phone email website menu social']
-    ])('annotates each %s contact anchor with its channel and listing context', (directory, component, route, vertical, channels) => {
+        ['venue', 'Venue', 'comer-y-salir', 'venue', 'phone email website']
+    ])('annotates each %s contact channel with its kind and listing context', (directory, component, route, vertical, kinds) => {
         const block = readSource(`components/${directory}/${component}ContactBlock.astro`);
         const page = pageSource(route);
 
-        const anchors = [...block.matchAll(/<a\s+[^>]*>/g)].map(([tag]) => tag);
-
-        expect(anchors).toHaveLength(channels.split(' ').length);
-        for (const [index, anchor] of anchors.entries()) {
-            expect(anchor).toContain(`data-contact-channel="${channels.split(' ')[index]}"`);
-            expect(anchor).toContain('{...trackingAttributes}');
-        }
-        expect(block).toContain(`'data-vertical': '${vertical}'`);
-        expect(block).toContain("'data-listing-id': listingId");
-        expect(block).toContain("'data-contact-origin': contactOrigin");
+        // The wrapper owns the channel kinds and the tracking context...
+        const declared = [...block.matchAll(/kind: '(phone|email|website)'/g)].map(
+            ([, kind]) => kind
+        );
+        expect(new Set(declared)).toEqual(new Set(kinds.split(' ')));
+        expect(block).toContain('<ListingContactChannels');
+        expect(block).toContain('trackingData={trackingData}');
+        expect(block).toContain(`vertical: '${vertical}'`);
+        expect(block).toContain("'listing-id': listingId");
+        expect(block).toContain("'contact-origin': contactOrigin");
         expect(block).toContain("contactOrigin: ContactOrigin = 'contact_block'");
         expect(page).toMatch(new RegExp(`listingId(?:=\\{|: )${vertical}\\.id`));
+    });
+
+    it('stamps every shared channel and social link with the wrapper tracking data', () => {
+        const shared = readSource('components/listing/contact/ListingContactChannels.astro');
+
+        expect(shared).toContain('...trackingData');
+        expect(shared).toContain("'contact-channel': kind");
+        expect(shared).toContain("'contact-channel': 'social'");
     });
 
     it('renders partner phone and email using the resolver, preserving text for other fields', () => {

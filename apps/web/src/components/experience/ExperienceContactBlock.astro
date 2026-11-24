@@ -57,8 +57,9 @@
  * Hydration: none — fully static Astro component.
  */
 
-import { EmailIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
 import type { ExperienceContactInfo } from '@/data/types';
+import ListingContactChannels from '@/components/listing/contact/ListingContactChannels.astro';
+import type { ListingContactChannel } from '@/components/listing/contact/listing-contact.types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
@@ -78,10 +79,11 @@ interface Props {
 
 const { contactInfo, locale, listingId } = Astro.props;
 const contactOrigin: ContactOrigin = 'contact_block';
-const trackingAttributes = {
-    'data-listing-id': listingId,
-    'data-vertical': 'experience',
-    'data-contact-origin': contactOrigin
+/** `data-*` read by `initContactLinkTracking` (keys without the `data-` prefix). */
+const trackingData = {
+    'listing-id': listingId,
+    vertical: 'experience',
+    'contact-origin': contactOrigin
 };
 const { t } = createTranslations(locale);
 
@@ -135,117 +137,47 @@ if (!hasPublicContactChannel({ contactInfo })) {
 }
 
 const heading = t('experience.detail.contact', 'Contacto');
+
+// Only the channels that are present, and never WhatsApp or a contact form
+// (HOS-363/HOS-815). The shared block draws them exactly like accommodation.
+const channels: ListingContactChannel[] = phones.map(
+    ({ value, key }): ListingContactChannel => ({
+        kind: 'phone',
+        href: toTelHref(value),
+        label: value,
+        srHint: `, ${
+            key === 'work'
+                ? t(
+                      'experience.detail.contactLandlineAriaLabel',
+                      'Llamar al teléfono fijo del prestador'
+                  )
+                : t('experience.detail.contactPhoneAriaLabel', 'Llamar al prestador')
+        }`
+    })
+);
+if (workEmail) {
+    channels.push({
+        kind: 'email',
+        href: `mailto:${workEmail}`,
+        label: workEmail,
+        srHint: `, ${t('experience.detail.contactEmailAriaLabel', 'Enviar un email al prestador')}`
+    });
+}
+if (websiteHref) {
+    channels.push({
+        kind: 'website',
+        href: websiteHref,
+        label: websiteHref.replace(/^https?:\/\//, ''),
+        srHint: `, ${t('experience.detail.contactWebsiteAriaLabel', 'Visitar el sitio web del prestador')}`
+    });
+}
 ---
 
-<section class="exp-contact" id={EXPERIENCE_CONTACT_ANCHOR_ID} aria-label={heading} {...UMAMI_BLOCK_PROPS}>
-    <h3 class="exp-contact__title">{heading}</h3>
-
-    <div class="exp-contact__channels">
-        {phones.map(({ value, key }) => (
-            <a
-                href={toTelHref(value)}
-                data-contact-channel="phone"
-                {...trackingAttributes}
-                class="exp-contact__link"
-                aria-label={
-                    key === 'work'
-                        ? t(
-                              'experience.detail.contactLandlineAriaLabel',
-                              'Llamar al teléfono fijo del prestador'
-                          )
-                        : t('experience.detail.contactPhoneAriaLabel', 'Llamar al prestador')
-                }
-            >
-                <PhoneIcon size={16} aria-hidden="true" />
-                <span>{value}</span>
-            </a>
-        ))}
-
-        {workEmail && (
-            <a
-                href={`mailto:${workEmail}`}
-                data-contact-channel="email"
-                {...trackingAttributes}
-                class="exp-contact__link"
-                aria-label={t(
-                    'experience.detail.contactEmailAriaLabel',
-                    'Enviar un email al prestador'
-                )}
-            >
-                <EmailIcon size={16} aria-hidden="true" />
-                <span>{workEmail}</span>
-            </a>
-        )}
-
-        {websiteHref && (
-            <a
-                href={websiteHref}
-                data-contact-channel="website"
-                {...trackingAttributes}
-                class="exp-contact__link"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t(
-                    'experience.detail.contactWebsiteAriaLabel',
-                    'Visitar el sitio web del prestador'
-                )}
-            >
-                <GlobeIcon size={16} aria-hidden="true" />
-                <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
-            </a>
-        )}
-    </div>
-</section>
-
-<style>
-    .exp-contact {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-4, 16px);
-        padding: var(--space-5, 20px);
-        background-color: var(--surface-warm);
-        border-radius: var(--radius-card, 24px);
-        border: 1px solid var(--border);
-    }
-
-    .exp-contact__title {
-        font-family: var(--font-heading);
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .exp-contact__channels {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .exp-contact__link {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: var(--radius-pill, 9999px);
-        border: 1px solid var(--border);
-        background-color: var(--core-card);
-        color: var(--core-foreground);
-        font-family: var(--font-sans);
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-decoration: none;
-        transition:
-            background-color 150ms ease-out,
-            border-color 150ms ease-out;
-    }
-
-    .exp-contact__link:hover {
-        border-color: var(--brand-primary);
-    }
-
-    .exp-contact__link:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
-    }
-</style>
+<ListingContactChannels
+    heading={heading}
+    channels={channels}
+    socialLinks={[]}
+    trackingData={trackingData}
+    id={EXPERIENCE_CONTACT_ANCHOR_ID}
+    blockProps={UMAMI_BLOCK_PROPS}
+/>

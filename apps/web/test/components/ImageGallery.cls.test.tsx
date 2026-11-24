@@ -41,7 +41,7 @@ vi.mock('../../src/lib/i18n', () => ({
         t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
             if (params && fallback) {
                 return Object.entries(params).reduce(
-                    (acc, [k, v]) => acc.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v)),
+                    (acc, [k, v]) => acc.replace(new RegExp(`\\{\\{?${k}\\}\\}?`, 'g'), String(v)),
                     fallback
                 );
             }
