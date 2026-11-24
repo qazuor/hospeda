@@ -27,7 +27,7 @@
     gap: var(--space-4, 16px);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 48rem) {
     .grid {
         grid-template-columns: repeat(3, 1fr);
     }

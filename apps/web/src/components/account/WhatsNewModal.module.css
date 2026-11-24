@@ -97,7 +97,7 @@
 .panel {
     --dialog-max-height: 100%;
     width: 100%;
-    max-width: 420px;
+    max-width: 100%;
     height: 100%;
     background-color: var(--core-card);
     box-shadow: var(--shadow-overlay);
@@ -358,9 +358,10 @@
     margin: 1.5em 0;
 }
 
-@media (max-width: 480px) {
+/* Mobile first: the drawer takes the full width below 30rem (480px). */
+@media (min-width: 30rem) {
     .panel {
-        max-width: 100%;
+        max-width: 420px;
     }
 }
 

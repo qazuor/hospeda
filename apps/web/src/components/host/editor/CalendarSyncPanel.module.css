@@ -213,14 +213,25 @@
 
 /* --- Row-scoped inline feedback (smaller than the panel-level banners) --- */
 
-@media (max-width: 480px) {
+/* Mobile first: stacked, full-width actions below 30rem (480px). */
+.actions {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.primaryButton,
+.dangerButton {
+    justify-content: center;
+}
+
+@media (min-width: 30rem) {
     .actions {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: normal;
     }
 
     .primaryButton,
     .dangerButton {
-        justify-content: center;
+        justify-content: normal;
     }
 }
