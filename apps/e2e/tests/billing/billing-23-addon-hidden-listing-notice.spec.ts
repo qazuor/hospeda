@@ -136,7 +136,8 @@ test.describe('TEST:B10:13 AC:B10:11 the hidden-listing notice before buying a f
             } else {
                 await expect(notice).toBeVisible();
                 await expect(notice).toHaveAttribute('data-notice-kind', 'RECURRING');
-                await expect(notice).toHaveText(esBilling.addonPurchase.hiddenListingRecurring);
+                // The kit Alert prefixes a severity label ("Atención:"), so match the copy, not the whole text.
+                await expect(notice).toContainText(esBilling.addonPurchase.hiddenListingRecurring);
             }
         });
     }

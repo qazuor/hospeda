@@ -97,18 +97,14 @@ async function choose(id: string) {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
     const list = await screen.findByTestId('plan-change-options');
-    const items = within(list).getAllByRole('listitem');
+    const items = within(list).getAllByRole('button');
     expect(items.map((item) => item.getAttribute('data-billing-option-id'))).toEqual([
         higherId,
         lowerId
     ]);
     expect(items[0]).toHaveTextContent(/Pro.*por mes.*3[.]500,50/u);
     expect(items[1]).toHaveTextContent(/Pro.*por año.*35[.]000/u);
-    fireEvent.click(
-        within(items.find((item) => item.getAttribute('data-billing-option-id') === id)!).getByRole(
-            'button'
-        )
-    );
+    fireEvent.click(items.find((item) => item.getAttribute('data-billing-option-id') === id)!);
     // HOS-2218: a row without a declared email leaves the field empty; the payer declares one.
     const email = screen.getByTestId('plan-change-payer-email') as HTMLInputElement;
     if (!email.value) fireEvent.change(email, { target: { value: 'typed@example.test' } });
@@ -449,5 +445,42 @@ describe('HOS-2218 PlanChangeOffer payer email', () => {
             'Ingresá un correo válido del pagador.'
         );
         expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
+    });
+    it('HOS-2599 toggles data-expanded and renders the plans as kit option cards', async () => {
+        render(
+            <PlanChangeOffer
+                subscriptionId={subscriptionId}
+                vertical="accommodation"
+                locale="es"
+            />
+        );
+        const root = screen.getByTestId('plan-change-offer');
+        expect(root).not.toHaveAttribute('data-expanded');
+        fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
+        const list = await screen.findByTestId('plan-change-options');
+        expect(root).toHaveAttribute('data-expanded', 'true');
+        expect(list.querySelector('ul')).toBeNull();
+        const cards = within(list).getAllByRole('button');
+        expect(cards.length).toBeGreaterThan(0);
+        for (const card of cards) {
+            expect(card).toHaveAttribute('data-billing-option-id');
+        }
+    });
+
+    it('HOS-2599 labels the payer email through the kit Field', async () => {
+        render(
+            <PlanChangeOffer
+                subscriptionId={subscriptionId}
+                vertical="accommodation"
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
+        const list = await screen.findByTestId('plan-change-options');
+        fireEvent.click(within(list).getAllByRole('button')[0]);
+        const email = screen.getByTestId('plan-change-payer-email');
+        const label = document.querySelector(`label[for="${email.id}"]`);
+        expect(label).not.toBeNull();
+        expect(email.getAttribute('aria-describedby')).toContain('-hint');
     });
 });

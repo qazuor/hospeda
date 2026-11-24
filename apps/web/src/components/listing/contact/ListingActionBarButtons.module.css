@@ -24,16 +24,32 @@
     text-decoration: none;
 }
 
-/* Primary by every means except width: first, filled, larger (52×44). */
+/* Primary by every means except width: first, larger (52×44), white with the
+ * brand orange (HOS-2607, owner rule: white with orange or white with blue, never
+ * orange on the blue-ish dock). `--on-action-accent` is white in both themes.
+ * `--brand-accent-l82` is the brand orange at ~0.58 lightness in BOTH themes
+ * (`--brand-accent-text` lightens to 0.72 in dark, too light on white), and a
+ * soft orange ring plus the card shadow keep it reading as the primary control. */
 .primary {
     inline-size: 52px;
+    border: 1.5px solid var(--brand-accent-a35);
+    background: var(--on-action-accent);
+    color: var(--brand-accent-l82);
+    box-shadow: var(--shadow-card);
 }
 
-/* Outline round icon buttons, the same surface as FavoriteButton. */
+.primary:hover {
+    border-color: var(--brand-accent);
+    box-shadow: var(--shadow-card-hover);
+}
+
+/* Outline round icon buttons. `--surface-overlay` is the card white in light and
+ * a lifted surface in dark, so the buttons stand out from the dock in both themes
+ * (HOS-2607: in dark they had the dock's own colour). */
 .action {
     inline-size: 44px;
     border: 1.5px solid var(--border);
-    background-color: var(--core-card);
+    background-color: var(--surface-overlay);
     color: var(--core-foreground);
 }
 
@@ -54,20 +70,31 @@
     flex: none;
 }
 
-/* The reused islands are resized to the bar's 44px round target. The extra
- * `.island` raises specificity over the islands' own size rules. */
-.island .favorite,
-.island .compare {
+/* The reused islands are resized to the bar's 44px round target and take the
+ * same surface as `.action`. Two CSS modules load in no guaranteed order, so a
+ * tie in specificity is a loss: `.row .island` (0,3,0) outranks every size rule
+ * the islands ship, e.g. FavoriteButton's `.button[data-variant]` and the
+ * compare button's `.wave-header--compact .button`, both (0,2,0). HOS-2606: the
+ * favorite rendered 32×32 and 6px low. Guarded by
+ * `test/components/listing/listing-action-bar-island-size.test.ts`. */
+.row .island .favorite,
+.row .island .compare {
     width: 44px;
     height: 44px;
     padding-inline: 0;
     border-width: 1.5px;
 }
 
+/* Resting surface only: the islands keep their own pressed tint. */
+.row .island .favorite:not([aria-pressed="true"]),
+.row .island .compare:not([aria-pressed="true"]) {
+    background-color: var(--surface-overlay);
+}
+
 .share :global(button[aria-expanded]) {
     width: 44px;
     height: 44px;
     border: 1.5px solid var(--border);
-    background-color: var(--core-card);
+    background-color: var(--surface-overlay);
     color: var(--core-foreground);
 }

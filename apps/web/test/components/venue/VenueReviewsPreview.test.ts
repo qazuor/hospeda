@@ -40,8 +40,16 @@ describe('VenueReviewsPreview.astro — dimension averages (TEST:6.6:3, AC:6:10)
         expect(src).not.toContain('.businessLines');
     });
 
-    it('keeps the existing no-reviews gate', () => {
-        expect(src).toContain('if (reviewsCount <= 0) return;');
+    it('always renders the section h2, with an empty state at 0 reviews (HOS-2604, AC-25)', () => {
+        // The reviews slot must open with an <h2> even when the venue has no
+        // reviews; an early return left the review form's <h3> as its first heading.
+        const frontmatter = src.split('---')[1] ?? '';
+        expect(frontmatter).not.toMatch(/\breturn\b/);
+        expect(frontmatter).not.toContain('reviewsCount');
+        const markup = src.split('---').slice(2).join('---');
+        const firstHeading = markup.match(/<h([1-6])\b/);
+        expect(firstHeading?.[1]).toBe('2');
+        expect(markup).toMatch(/t\(\s*'venue\.detail\.reviews\.empty'/);
     });
 
     it('styles the block with design tokens, not Tailwind', () => {

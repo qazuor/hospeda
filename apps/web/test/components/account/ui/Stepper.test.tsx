@@ -79,4 +79,33 @@ describe('Stepper', () => {
         expect(items[1]).toHaveTextContent('2');
         expect(items[2]).toHaveTextContent('3');
     });
+
+    it('renders the flow action on the progress line, inside the stepper (HOS-2599)', () => {
+        render(
+            <Stepper
+                steps={STEPS}
+                current={2}
+                label="Progreso"
+                locale="es"
+                action={<button type="button">Volver</button>}
+            />
+        );
+        const nav = screen.getByRole('navigation', { name: 'Progreso' });
+        const back = within(nav).getByRole('button', { name: 'Volver' });
+        expect(back.closest('div')?.parentElement).toHaveTextContent('Paso 3 de 3');
+    });
+
+    it('renders no action wrapper without an action', () => {
+        render(
+            <Stepper
+                steps={STEPS}
+                current={0}
+                label="Progreso"
+                locale="es"
+            />
+        );
+        expect(
+            within(screen.getByRole('navigation', { name: 'Progreso' })).queryByRole('button')
+        ).toBeNull();
+    });
 });

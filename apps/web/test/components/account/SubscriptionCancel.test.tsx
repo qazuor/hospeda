@@ -541,4 +541,33 @@ describe('SubscriptionCancel island', () => {
         });
         expect(reload).not.toHaveBeenCalled();
     });
+
+    it('HOS-2599 expands on open and shows the consequences in a kit alert with a Field select', async () => {
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'ACTIVE',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        const { container } = render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
+            />
+        );
+        expect(container.querySelector('[data-expanded]')).toBeNull();
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        await screen.findByTestId('self-cancel-end');
+        expect(container.querySelector('[data-expanded="true"]')).not.toBeNull();
+        expect(screen.getByRole('status')).toContainElement(screen.getByTestId('self-cancel-end'));
+        const reason = screen.getByTestId('self-cancel-reason');
+        expect(container.querySelector(`label[for="${reason.id}"]`)).not.toBeNull();
+    });
 });

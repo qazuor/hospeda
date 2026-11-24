@@ -19,6 +19,7 @@ vi.mock('../../../src/lib/i18n', async () => {
         key.startsWith('account.ui.') ||
         key.startsWith('account.searchHistory.') ||
         key.startsWith('account.recommendations.') ||
+        key.startsWith('account.exclusiveDeals.') ||
         key.startsWith('account.pages.')
             ? tFromCatalog(key, fallback, params)
             : (fallback ?? `${key} ${JSON.stringify(params ?? {})}`);

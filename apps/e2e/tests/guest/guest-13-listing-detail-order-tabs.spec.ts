@@ -205,6 +205,21 @@ test.describe('GUEST-13: listing detail order and tabs @p1 @guest @discovery', (
         });
     }
 
+    test('AC-25: a venue with no reviews still opens its reviews slot with an <h2> (HOS-2604)', async ({
+        page
+    }) => {
+        // The E2E-only venue is created by the fixtures and has no reviews. Before
+        // HOS-2604 the preview returned nothing at 0 reviews and the slot opened
+        // with the review form's <h3>.
+        await page.goto(VENUE_WITH_HOURS_AND_MENU.url, { waitUntil: 'domcontentloaded' });
+        const slot = page.locator('[data-listing-slot="reviews"]');
+        await expect(slot).toBeAttached({ timeout: 15_000 });
+        const firstHeading = await slot.evaluate(
+            (element) => element.querySelector('h1, h2, h3, h4, h5, h6')?.tagName ?? null
+        );
+        expect(firstHeading).toBe('H2');
+    });
+
     test('AC-6: the venue tabs label slot 4 «Lo que ofrece» and «Horarios» scrolls below the sticky band', async ({
         page
     }) => {

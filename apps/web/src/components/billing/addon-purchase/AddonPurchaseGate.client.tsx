@@ -3,6 +3,7 @@ import { EmptyState } from '@/components/account/ui/EmptyState';
 import { LinkButton } from '@/components/account/ui/LinkButton';
 import { Skeleton } from '@/components/account/ui/Skeleton';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import { accountVerticalsFrom } from '@/lib/billing/addon-account-verticals';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { AddonPurchase } from './AddonPurchase.client';
@@ -32,6 +33,11 @@ type GateState = 'LOADING' | 'NONE' | 'SOME';
  * authority), and a return from Mercado Pago skips the read entirely: there is
  * an order to settle.
  *
+ * HOS-2599: the same read tells which verticals the account works in, so the
+ * flow offers only the add-ons the catalog marks compatible with them. When the
+ * verticals are unknown (failed read, return from Mercado Pago) every add-on
+ * stays on offer and the server decides.
+ *
  * @param props - See {@link AddonPurchaseGateProps}.
  * @returns The empty state, a loading skeleton, or the purchase flow.
  */
@@ -43,6 +49,7 @@ export function AddonPurchaseGate({
 }: AddonPurchaseGateProps) {
     const { t } = useMemo(() => createTranslations(locale), [locale]);
     const [state, setState] = useState<GateState>(returnOrderRequestId ? 'SOME' : 'LOADING');
+    const [accountVerticals, setAccountVerticals] = useState<readonly string[] | null>(null);
 
     useEffect(() => {
         if (returnOrderRequestId) return;
@@ -51,6 +58,10 @@ export function AddonPurchaseGate({
             try {
                 const result = await billingSubscriptionApi.listMine({});
                 if (!alive) return;
+                if (result.ok)
+                    setAccountVerticals(
+                        accountVerticalsFrom({ subscriptions: result.data.subscriptions })
+                    );
                 setState(result.ok && result.data.subscriptions.length === 0 ? 'NONE' : 'SOME');
             } catch {
                 if (alive) setState('SOME');
@@ -93,6 +104,7 @@ export function AddonPurchaseGate({
             locale={locale}
             returnOrderRequestId={returnOrderRequestId}
             accountEmail={accountEmail}
+            accountVerticals={accountVerticals}
         />
     );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EntitlementsData } from '../../src/lib/entitlements-cache';
-import { resolvePriceAlertGate } from '../../src/lib/price-alert-gate';
+import { resolvePriceAlertGate, showPriceAlertsLock } from '../../src/lib/price-alert-gate';
 
 const set = (enabled: boolean, limit: number): EntitlementsData => ({
     entitlements: enabled ? { price_alerts: 1 } : {},
@@ -35,5 +35,25 @@ describe('TEST:B13a:25 price alert effective-set gate', () => {
         expect(
             resolvePriceAlertGate({ effectiveSet: set(true, 0), currentAlertCount: 0 }).maxReached
         ).toBe(true);
+    });
+});
+
+describe('HOS-2599 price alerts page: lock instead of an inviting empty state', () => {
+    it('locks an empty list when the plan lacks price alerts', () => {
+        expect(showPriceAlertsLock({ alertCount: 0, effectiveSet: set(false, 0) })).toBe(true);
+    });
+    it('keeps the empty state when the plan includes price alerts', () => {
+        expect(showPriceAlertsLock({ alertCount: 0, effectiveSet: set(true, 5) })).toBe(false);
+    });
+    it('keeps listing existing alerts even without the entitlement', () => {
+        expect(showPriceAlertsLock({ alertCount: 2, effectiveSet: set(false, 0) })).toBe(false);
+    });
+    it('does not lock on a failed effective-set read', () => {
+        expect(
+            showPriceAlertsLock({
+                alertCount: 0,
+                effectiveSet: { ...set(false, 0), failed: true }
+            })
+        ).toBe(false);
     });
 });

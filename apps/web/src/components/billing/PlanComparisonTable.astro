@@ -27,6 +27,7 @@ import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons'
 import { getLineMarkText } from '@/components/billing/plan-comparison-catalog-rows';
 import { resolveGroupCell } from '@/components/billing/plan-comparison-source';
 import {
+	comparisonScrollsOnMobile,
 	formatPriceArs,
 	getActivePlans,
 	getComparisonGroups,
@@ -86,13 +87,14 @@ const isAccommodationAudience = audience === 'owner' || audience === 'tourist';
 // as columns here; the helper re-filters so columns are always active-only and
 // sortOrder-sorted, and the teaser below covers the complex plans (HOS-1032).
 const activePlans = getActivePlans({ plans, audience });
+const scrollsOnMobile = comparisonScrollsOnMobile({ planCount: activePlans.length });
 const groups = getComparisonGroups(audience);
 
 const freePlanLabel = t('pricing.free', 'Gratis');
 ---
 
 <div class="comparison-table__wrapper" role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
-	<table class="comparison-table">
+	<table class:list={['comparison-table', { 'comparison-table--fits-mobile': !scrollsOnMobile }]}>
 		<thead>
 			<tr>
 				<th scope="col" class="comparison-table__label-col">
@@ -194,10 +196,10 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 	</table>
 </div>
 
-<p class="comparison-table__scroll-hint" aria-hidden="true">
+{scrollsOnMobile && <p class="comparison-table__scroll-hint" aria-hidden="true">
 	<span>{t('billing.comparison.scrollHint', 'Deslizá para ver todos los planes')}</span>
 	<span class="comparison-table__scroll-hint-arrow">→</span>
-</p>
+</p>}
 
 {audience === 'owner' && (
 	<p class="comparison-table__complex-teaser">
@@ -494,6 +496,9 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 		.comparison-table__plan-col {
 			min-width: 120px;
 		}
+		/* HOS-2599: Gratis + VIP fit 390px; no 600px floor hides the VIP column. */
+		.comparison-table--fits-mobile { min-width: 0; }
+		.comparison-table--fits-mobile .comparison-table__plan-col { min-width: 0; padding-inline: var(--space-2); }
 		.comparison-table__scroll-hint {
 			display: flex;
 			align-items: center;
