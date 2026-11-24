@@ -146,6 +146,11 @@ const SoftDeleteInputSchema = z.object({
     id: z.string().uuid()
 });
 
+const AudienceEstimateInputSchema = z.object({
+    id: z.string().uuid(),
+    ignoreSoftCap: z.boolean().default(false)
+});
+
 const SendInputSchema = z.object({
     id: z.string().uuid(),
     ignoreSoftCap: z.boolean().default(false)
@@ -175,6 +180,16 @@ const CloseSentCampaignsInputSchema = z.object({});
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
+
+/** Result of `getAudienceEstimate`. */
+export interface CampaignAudienceEstimate {
+    /** Subscribers a send would enqueue now (matches filters, not soft-capped). */
+    readonly eligible: number;
+    /** Matching subscribers skipped by the frequency limit. */
+    readonly softCapped: number;
+    /** All active subscribers matching the language and content filters. */
+    readonly totalCandidates: number;
+}
 
 /** Result returned by `send()`. */
 export interface SendCampaignResult {
@@ -703,30 +718,11 @@ export class NewsletterCampaignService extends BaseService {
                     );
                 }
 
-                // Step 2 — Resolve eligible subscribers
-                const softCapDays = validated.ignoreSoftCap ? 0 : this.softCapDays;
-                const eligibleResult = await this.subscriberService.getEligibleForCampaign({
-                    localeFilter: campaign.localeFilter as 'all' | 'es' | 'en' | 'pt',
-                    softCapWindowDays: softCapDays === 0 ? 99999 : softCapDays,
-                    // NULL contentType collapses to undefined → no preferences
-                    // filter applied; non-NULL gates the audience by
-                    // `preferences[contentType] = true` (with a defensive
-                    // COALESCE-to-TRUE inside the SQL for rows missing the key).
-                    contentType:
-                        (campaign.contentType as NewsletterContentTypeEnum | null) ?? undefined
+                // Step 2 — Resolve eligible subscribers (shared with getAudienceEstimate)
+                const { eligibleIds, softCappedCount } = await this.resolveEligibleForCampaign({
+                    campaign,
+                    ignoreSoftCap: validated.ignoreSoftCap
                 });
-
-                if (eligibleResult.error) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        `Failed to resolve eligible subscribers: ${eligibleResult.error.message}`,
-                        eligibleResult.error,
-                        'ELIGIBLE_FETCH_FAILED'
-                    );
-                }
-
-                const { eligibleIds, softCappedCount } =
-                    eligibleResult.data as GetEligibleForCampaignResult;
 
                 // Step 3 — No eligible subscribers → early return without status change
                 if (eligibleIds.length === 0) {
@@ -808,6 +804,115 @@ export class NewsletterCampaignService extends BaseService {
     // -------------------------------------------------------------------------
     // testSend
     // -------------------------------------------------------------------------
+
+    /**
+     * Resolves the eligible audience for a campaign using the exact same
+     * filter the dispatch uses (locale filter, optional content-type
+     * segmentation, rolling soft-cap window). Single source of truth shared by
+     * `send()` and `getAudienceEstimate()`.
+     *
+     * @param input.campaign - Campaign row (only `localeFilter` / `contentType` are read).
+     * @param input.ignoreSoftCap - When true the soft-cap window is bypassed.
+     * @returns Eligible ids, soft-capped count and total candidates.
+     * @throws {ServiceError} `ELIGIBLE_FETCH_FAILED` when the subscriber query fails.
+     */
+    private async resolveEligibleForCampaign(input: {
+        readonly campaign: { readonly localeFilter: string; readonly contentType: string | null };
+        readonly ignoreSoftCap: boolean;
+    }): Promise<GetEligibleForCampaignResult> {
+        const { campaign, ignoreSoftCap } = input;
+        const softCapDays = ignoreSoftCap ? 0 : this.softCapDays;
+        const eligibleResult = await this.subscriberService.getEligibleForCampaign({
+            localeFilter: campaign.localeFilter as 'all' | 'es' | 'en' | 'pt',
+            softCapWindowDays: softCapDays === 0 ? 99999 : softCapDays,
+            // NULL contentType collapses to undefined → no preferences
+            // filter applied; non-NULL gates the audience by
+            // `preferences[contentType] = true` (with a defensive
+            // COALESCE-to-TRUE inside the SQL for rows missing the key).
+            contentType: (campaign.contentType as NewsletterContentTypeEnum | null) ?? undefined
+        });
+
+        if (eligibleResult.error) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to resolve eligible subscribers: ${eligibleResult.error.message}`,
+                eligibleResult.error,
+                'ELIGIBLE_FETCH_FAILED'
+            );
+        }
+
+        return eligibleResult.data as GetEligibleForCampaignResult;
+    }
+
+    /**
+     * Estimates how many subscribers a campaign would be queued for if it were
+     * sent now. Read-only: nothing is inserted and the status is untouched.
+     *
+     * Uses the same recipient resolution as `send()` (see
+     * `resolveEligibleForCampaign`), so `eligible` equals the number of
+     * deliveries `send()` would enqueue; `softCapped` are the active matches
+     * skipped by the frequency limit.
+     *
+     * Requires the same permission as sending (`NEWSLETTER_CAMPAIGN_SEND`).
+     *
+     * @param actor - Actor requesting the estimate.
+     * @param input - Campaign `id` and optional `ignoreSoftCap`.
+     * @returns `{ eligible, softCapped, totalCandidates }`.
+     *
+     * @example
+     * ```ts
+     * const result = await svc.getAudienceEstimate(actor, { id: campaignId });
+     * // { data: { eligible: 7, softCapped: 0, totalCandidates: 7 } }
+     * ```
+     */
+    public async getAudienceEstimate(
+        actor: Actor,
+        input: { id: string; ignoreSoftCap?: boolean },
+        _ctx?: ServiceContext
+    ): Promise<ServiceOutput<CampaignAudienceEstimate>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAudienceEstimate',
+            input: { actor, ...input },
+            schema: AudienceEstimateInputSchema,
+            execute: async (validated) => {
+                checkCanSendCampaign(actor);
+
+                const db = getDb();
+                const rows = await db
+                    .select()
+                    .from(newsletterCampaigns)
+                    .where(
+                        and(
+                            eq(newsletterCampaigns.id, validated.id),
+                            isNull(newsletterCampaigns.deletedAt)
+                        )
+                    )
+                    .limit(1);
+                const campaign = rows[0];
+
+                if (!campaign) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Campaign not found: ${validated.id}`,
+                        undefined,
+                        'CAMPAIGN_NOT_FOUND'
+                    );
+                }
+
+                const { eligibleIds, softCappedCount, totalCandidates } =
+                    await this.resolveEligibleForCampaign({
+                        campaign,
+                        ignoreSoftCap: validated.ignoreSoftCap
+                    });
+
+                return {
+                    eligible: eligibleIds.length,
+                    softCapped: softCappedCount,
+                    totalCandidates
+                };
+            }
+        });
+    }
 
     /**
      * Sends a single preview email to one address without touching deliveries
