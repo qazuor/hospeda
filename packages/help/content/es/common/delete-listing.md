@@ -20,7 +20,7 @@ keywords:
 destinations:
   - kind: ownerListings
     vertical: accommodation
-    label: "Mis propiedades"
+    label: "Mis alojamientos"
   - kind: ownerListings
     vertical: venue
     label: "Mi comercio"
@@ -42,13 +42,13 @@ reviewedAt: "2026-11-23"
 
 ## Qué podés hacer
 
-Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis propiedades}}.
+Eliminar una propiedad desde su tarjeta en {{link:list:accommodation|Mis alojamientos}}.
 
 Para un comercio o una experiencia, {{link:contact|escribinos}}.
 
 ## Cómo se hace
 
-1. Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad.
+1. Entrá a «Mis alojamientos» y buscá la tarjeta de la propiedad.
 2. Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos) y elegí «Eliminar». El sitio te pide confirmar y, si la publicación tiene complementos, te muestra cuáles se pierden con ella, sin devolución.
 3. Confirmá con «Sí, eliminar». El borrado es definitivo: el contenido se borra y la publicación no vuelve.
 4. Si lo que querés es sacarla del sitio por un tiempo, es mejor despublicarla (mirá «Pausar y volver a publicar»).

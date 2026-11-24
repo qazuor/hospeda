@@ -23,7 +23,7 @@ keywords:
 destinations:
   - kind: ownerListings
     vertical: accommodation
-    label: "Mis propiedades"
+    label: "Mis alojamientos"
   - kind: ownerListings
     vertical: venue
     label: "Mi comercio"
@@ -47,11 +47,11 @@ reviewedAt: "2026-11-23"
 
 ## Qué podés hacer
 
-Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.
+Ver el aviso de arreglo o de moderación en {{link:list:accommodation|Mis alojamientos}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}, corregir desde el editor y avisar a Hospeda.
 
 ## Cómo se hace
 
-1. Si Hospeda te pidió un arreglo, vas a ver el aviso «Te pidieron un arreglo en esta ficha» en «Mis propiedades» o «Mi comercio» y en el editor de esa publicación.
+1. Si Hospeda te pidió un arreglo, vas a ver el aviso «Te pidieron un arreglo en esta ficha» en «Mis alojamientos» o «Mi comercio» y en el editor de esa publicación.
 2. El aviso puede traer una fecha sugerida para corregirlo. Tu publicación sigue a la vista mientras tanto.
 3. Corregí lo que se pidió desde el editor.
 4. Tocá «Ya lo corregí» para avisar a Hospeda. Eso no cierra el pedido ni publica nada: lo revisa el equipo.

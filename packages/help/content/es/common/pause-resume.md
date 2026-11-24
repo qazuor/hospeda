@@ -23,7 +23,7 @@ keywords:
 destinations:
   - kind: ownerListings
     vertical: accommodation
-    label: "Mis propiedades"
+    label: "Mis alojamientos"
   - kind: ownerListings
     vertical: venue
     label: "Mi comercio"
@@ -50,13 +50,13 @@ reviewedAt: "2026-11-23"
 
 ## Qué podés hacer
 
-Despublicar una propiedad desde {{link:list:accommodation|Mis propiedades}} y volver a publicarla cuando quieras.
+Despublicar una propiedad desde {{link:list:accommodation|Mis alojamientos}} y volver a publicarla cuando quieras.
 
 Las publicaciones de {{link:list:venue|Mis locales}} y {{link:list:experience|Mis experiencias}} se pausan y reanudan con un asistente de IA.
 
 ## Cómo se hace
 
-1. Entrá a «Mis propiedades» y buscá la tarjeta de la propiedad publicada.
+1. Entrá a «Mis alojamientos» y buscá la tarjeta de la propiedad publicada.
 2. Abrí el menú «Más acciones» de la tarjeta (el botón de los tres puntos), elegí «Despublicar» y confirmá con «Sí, despublicar»: la propiedad deja de aparecer en el sitio.
 3. Despublicar no frena la prueba gratis si la tenés en curso, y los destaques recurrentes se siguen cobrando hasta que los des de baja en «Complementos».
 4. Para volver a publicarla, tocá «Publicar» en la misma tarjeta (queda como borrador) y confirmá. Tiene que cumplir los requisitos de publicación.

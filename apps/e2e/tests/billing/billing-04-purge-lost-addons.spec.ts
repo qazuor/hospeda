@@ -95,7 +95,7 @@ test.describe('TEST:B13a:3 AC:B13a:4 the delete confirmation names the lost add-
         await seedCookieConsent(page);
         await attachSession({ page, sessionCookie: owner.sessionCookie });
         await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-        const list = page.getByRole('list', { name: 'Mis propiedades' });
+        const list = page.getByRole('list', { name: 'Mis alojamientos' });
         const addonCard = list.getByRole('listitem').filter({ hasText: withAddonName });
         await expect(addonCard).toHaveCount(1);
         const addonConfirm = await openPropertyCardConfirm({

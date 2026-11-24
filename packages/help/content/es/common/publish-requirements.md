@@ -24,7 +24,7 @@ keywords:
 destinations:
   - kind: ownerListings
     vertical: accommodation
-    label: "Mis propiedades"
+    label: "Mis alojamientos"
   - kind: ownerListings
     vertical: venue
     label: "Mi comercio"
@@ -65,7 +65,7 @@ reviewedAt: "2026-11-23"
 
 ## Qué podés hacer
 
-Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis propiedades}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.
+Ver qué le falta a tu publicación y completarlo desde {{link:list:accommodation|Mis alojamientos}}, {{link:list:venue|Mis locales}} o {{link:list:experience|Mis experiencias}}.
 
 Pedir una excepción a la regla de una dirección desde {{link:section:accommodation:ubicacion|Ubicación del alojamiento}} o {{link:section:venue:ubicacion|Ubicación del comercio}}.
 

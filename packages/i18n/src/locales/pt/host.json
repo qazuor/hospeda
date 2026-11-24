@@ -195,7 +195,7 @@
     },
     "properties": {
         "list": {
-            "title": "Minhas propriedades",
+            "title": "Meus alojamentos",
             "subtitle": "Gerencie suas publicações",
             "publishAnother": "Publicar outra",
             "needsPlanBanner": {
@@ -714,7 +714,7 @@
                 "management": "Gestão"
             },
             "breadcrumb": {
-                "properties": "Minhas propriedades"
+                "properties": "Meus alojamentos"
             },
             "hub": {
                 "title": "Editar propriedade",

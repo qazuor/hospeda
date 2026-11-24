@@ -168,7 +168,7 @@ test.describe('TEST:V4:23 AC:V4:17 the late conversion of an expired trial (T5) 
             await attachSession(page, ownerUser.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
             await page
-                .getByRole('list', { name: 'Mis propiedades' })
+                .getByRole('list', { name: 'Mis alojamientos' })
                 .getByRole('button', { name: 'Publicar', exact: true })
                 .click();
             await page.getByRole('button', { name: 'Sí, publicar', exact: true }).click();

@@ -1371,7 +1371,7 @@ export function transformHostDashboard({
         planUnavailable: item.planUnavailable === true,
         unreadCount: Number(item.unreadConversations ?? 0),
         quickActions: [
-            { label: 'Mis propiedades', href: 'mi-cuenta/propiedades', icon: 'building' },
+            { label: 'Mis alojamientos', href: 'mi-cuenta/propiedades', icon: 'building' },
             { label: 'Promociones', href: 'mi-cuenta/promociones', icon: 'megaphone' },
             { label: 'Mensajes', href: 'mi-cuenta/consultas', icon: 'chat-dots' },
             { label: 'Suscripción', href: 'mi-cuenta/suscripcion', icon: 'credit-card' }

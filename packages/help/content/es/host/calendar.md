@@ -46,7 +46,7 @@ Bloquear y liberar fechas, y conectar calendarios externos, desde {{link:section
 
 ## Cómo se hace
 
-1. Abrí el editor de tu alojamiento («Mis propiedades» → «Editar») y entrá a «Calendario». Es una sección de alojamientos.
+1. Abrí el editor de tu alojamiento («Mis alojamientos» → «Editar») y entrá a «Calendario». Es una sección de alojamientos.
 2. En el calendario de ocupación, hacé clic en un día y en otro para elegir un rango, sumá una nota si querés y tocá «Bloquear». Con «Liberar» desbloqueás. Esas fechas no aparecen disponibles en las búsquedas.
 3. Para sincronizar con otro calendario, tocá «Conectar calendarios externos».
 4. Con Google Calendar, tocá «Conectar Google Calendar» y aprobá el acceso de solo lectura. Con Airbnb, Booking.com u otro, pegá la URL de exportación en formato iCal (.ics) y tocá «Conectar».
