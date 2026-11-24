@@ -80,7 +80,7 @@
 {"anchor":"page:mi-cuenta/cambiar-contrasena","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"password"},
 {"anchor":"page:mi-cuenta/comercio","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"listing-states"},
 {"anchor":"page:mi-cuenta/comercio/[vertical]/[id]/editar","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"listing-editor"},
-{"anchor":"page:mi-cuenta/comercio/nuevo","kind":"no-user-surface","reason":"301 to /publicar/ (inventory part A, catalog §4.1)."},
+{"anchor":"page:mi-cuenta/comercio/nuevo","kind":"no-user-surface","reason":"301 to /mi-cuenta/publica/ (inventory part A, catalog §4.1; HOS-2602)."},
 {"anchor":"page:mi-cuenta/comercio/nuevo/[vertical]","kind":"no-user-surface","reason":"301 to /publicar/<vertical>/ (inventory part A, catalog §4.1)."},
 {"anchor":"page:mi-cuenta/completar-perfil","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"edit-profile"},
 {"anchor":"page:mi-cuenta/consultas","kind":"out-of-scope","reason":"Guest inbox (NG-1); the owner inbox is mi-cuenta/consultas-propietario."},
