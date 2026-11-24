@@ -316,63 +316,63 @@ All four use `InfoRow` rows, a one-sentence intro, a `Callout tone="warning"` wi
 - `variant="staff"` renders exactly today's markup (AC-4.1).
 - The 13 staff templates pass `variant="staff"`.
 
-### 8.2 User header
+### 8.2 User header (approved design, 2026-11-23)
 
-- One `<img>` of the composite header (D11): `src={resolveEmailAssetUrl({ path: EMAIL_USER_HEADER_PATH })}`, `width={600}`, `height={120}`, `alt="Hospeda"` (styled as the wordmark, as today), `style="display:block;width:100%;height:auto;border:0"`.
-- The header `<td>` has `bgcolor` and `background-color` set to the wave's dominant color, so a blocked image still shows a colored band with the alt wordmark.
-- Marked `data-skip-in-text="true"`.
-- The asset is produced by the implementer: the `Footer.astro` wave path rasterized at 2x (1200x240), in `emailPalette` colors, with the logo composited on a white area. It is opaque RGB, under 40 KB, and committed to `apps/web/public/email/`. The owner approves it in the draft (§8.6).
-- `email-assets.ts` gains `resolveEmailAssetUrl({ path })`. `resolveEmailLogoUrl()` becomes a wrapper and keeps its behavior.
+The owner approved the design on 2026-11-23 from the HTML mockup and screenshots. The composite header image proposed first (D11) was replaced by parts, so the wordmark can turn white in dark mode:
+
+- A blue-to-teal wave PNG (`/email/user/header-wave@2x.png`, 1200x112, rendered `width="600"` at `width:100%`).
+- The isotipo PNG (44x48) next to the live text "hospeda" in bold `brandStrong` (`#003987`), in a nested table with `role="img" aria-label="Hospeda"`. No script font for the logo.
+- The tagline "Descubrí el Litoral" as a teal PNG with no halo (`/email/user/tagline@2x.png`, rendered 220x44, `alt="Descubrí el Litoral"`).
+- All three rows are `data-skip-in-text="true"`.
+- `email-assets.ts` gains `resolveEmailAssetUrl({ path })`; `resolveEmailIsotipoUrl()` delegates to it. Every user asset lives in `apps/web/public/email/user/` and follows the deployment origin.
 - The staff variant keeps the logo plus tagline plus 4px bar.
 
 ### 8.3 User body and footer
 
-- Page background `emailPalette.userPageBackground` (new role, proposal `sky[50]`). Card radius 12px (ignored by Outlook). Body padding `40px 32px` (fluid: at 320px width this still leaves 256px of content). `Callout` and `Button` keep their PR-2 margins, and the extra space comes from the layout's padding only, so the components need no variant awareness.
-- Footer on `emailPalette.footerBackground` (new role, proposal `neutral[100]`), in this order:
-  1. a social row: 4 icons, 32x32 rendered, spaced 12px, centered, each a `Link` to the `BRAND_SOCIAL_PROFILES` URL with `alt` "Hospeda en Facebook" (and so on);
-  2. the two existing brand lines, verbatim;
-  3. the `hospeda.com.ar` link;
-  4. two account links, shown unless the template passes `footerLink="none"`:
-     - "Elegí qué correos recibís" → `EMAIL_PREFERENCES_URL` (`data-layout-link="preferences"`);
-     - the account link (`data-layout-link="account"`), whose label follows D16: "Gestioná tus publicaciones" when the recipient owns publications, otherwise "Gestioná tu cuenta";
-  5. "© {year} Hospeda" (year from the render date).
-- Icon assets: `apps/web/public/email/social/{facebook,instagram,x,youtube}@2x.png` (64x64). They are **PNG with alpha**: a white glyph on a mid-tone brand circle, so they read on light and dark backgrounds. They are resolved through `resolveEmailAssetUrl`. The social row is marked `data-skip-in-text`.
+- Page background `emailPalette.userPageBackground` (`brandSecondary`). The card keeps square corners. Content padding `8px 40px 44px` (20px sides under 480px through the style block).
+- An intro row above the body: a small teal section bar (36x4) right above the mail's first title and, on the right, the illustration the mail declares. Six PNG illustrations exist: `payments`, `listings`, `account`, `plan`, `messages`, `alerts`. Absent means none. Later section titles take a bar through `Heading accent="teal" | "orange"` (orange is the occasional accent).
+- Declarations are data, never a branch per template: `packages/notifications/src/catalog/layout-declarations.ts` holds `EMAIL_DOMAIN_LAYOUT` (a full `Record<EmailCatalogDomain, ...>`) and per-key overrides `EMAIL_KEY_LAYOUT`. The transport and the previewer pass them through `renderEmailBodies({ layout })`, which fills a React context the layout reads, so templates stay untouched.
+- Buttons (shared by both variants): primary `forest[500]` `#007742` with white text (the mockup's `#1b9247` is 4.0:1 with white and fails AA); secondary light blue, background `cyan[100]` `#bdefff`, border `#009fc1`, text `cyan[700]` `#00495a` (nearest tokens to the brief's `#ddf7ff`/`#00566b`, both AA).
+- Callouts (shared): existing colors, a 6px left border and a 20px line icon PNG in the tone's border color (ⓘ ✓ ⚠ ✕), skipped in the text part.
+- `OptionCard` (`@repo/email`): a 6px top stripe and a tinted "OPCIÓN 1/2" band, tones success and info. Only `plan_downgrade_limit_warning` uses it.
+- Footer on `userFooterBackground` (`sky[100]`) with a wave on top, in this order:
+  1. "¿Necesitás ayuda?": Centro de ayuda, Contacto, WhatsApp;
+  2. "Preguntas frecuentes": 3-4 help articles declared per domain or key, URL `/es/mi-cuenta/ayuda/<id>/`, title from the article frontmatter through `@repo/help`. Unknown ids are skipped at render and fail `email-layout-declarations.test.ts`; without a declaration the default set (`help-center`, `publish-requirements`, `change-plan`, `pause-resume`);
+  3. "Nuestros canales": Seguridad, Web and Contacto cards;
+  4. the trust strip (local support, safe payments, no hidden fees);
+  5. the logo, with Instagram, Facebook and X icons only (`BRAND_SOCIAL_PROFILES`; YouTube stays on the web);
+  6. small print: "Recibís este correo porque tenés una cuenta en Hospeda.", "Elegí qué correos recibís" → `/es/mi-cuenta/preferencias/`, the D16 account link, and "© {year} Hospeda". The sentence and both links show only when `footerLink` is not `'none'`.
+- Social links and contact data (email, phone, WhatsApp) live in `@repo/config` (`brand-contact.ts`); web `SOCIAL_PROFILES` reads from there.
 - `footerLink` defaults by variant: `'preferences'` for user, `'none'` for staff. Recipients without an account pass `footerLink="none"`:
   - the 2 auth mails (the reader cannot log in yet);
   - the 5 anonymous conversation mails (verify, access link, new message anon, token day 15 and day 25);
   - the 3 newsletter mails (subscribers may have no account);
   - `notification.alliance_claim_invite`, `outbox.verticals.partner-claim-notice` and `outbox.verticals.partner-application-rejected`.
 
-  The implementer confirms each one against its producer, and a test freezes the set. The preferences link text changes from "Administrar preferencias de notificaciones" to "Elegí qué correos recibís" (owner wording, 2026-11-22).
+  `email-catalog-layout.test.ts` freezes the set. The trial and renewal REMINDER mails dropped their explicit `'none'` and take the default (this replaces HOS-2519 OQ-2).
 - **Account link (D16).** Its label and target come from data, never from a branch per vertical:
-  - `@repo/schemas` gains `VERTICAL_OWNS_PUBLICATIONS: Record<VerticalEnum, boolean>`, next to `vertical-activation-event.ts` and following its pattern: accommodation, venue and experience are `true`, tourist and partner are `false`. Typing it as a full `Record` means adding a vertical does not compile until someone decides its value.
-  - A pure function `resolveEmailAccountLink({ verticals })` returns `'publications'` if any of the recipient's verticals owns publications, and `'account'` otherwise. Partner alone, tourist alone or no vertical give `'account'`. Partner together with a listing vertical gives `'publications'`.
-  - `apps/api` resolves the recipient's verticals once per send, from an existing cross-vertical owner source (the one behind "my listings" or the owner summary). The implementer must find and reuse it: no new query per listing table. It is passed to the layout through the render context, the same seam as `siteUrl`. The previewer takes it from the scenario, and the catalog adds one scenario per case (publications, partner-only and tourist).
-  - Targets: `'account'` → `/es/mi-cuenta/`. `'publications'` → the account's publications hub, a real route the implementer confirms; `/es/mi-cuenta/` if there is none.
-  - A static guard test fails if `packages/email` or the layout wiring in `apps/api` compares a `VerticalEnum` member directly (`=== VerticalEnum.` or `case VerticalEnum.`). The rule lives only in `VERTICAL_OWNS_PUBLICATIONS`.
-  - If the vertical lookup fails, the link falls back to "Gestioná tu cuenta" and the mail still sends. A footer label never blocks a send.
+  - `@repo/schemas` holds `VERTICAL_OWNS_PUBLICATIONS: Record<VerticalEnum, boolean>` (accommodation, venue and experience `true`; tourist and partner `false`) and `resolveEmailAccountLink({ verticals })`. A full `Record` means a new vertical does not compile until someone decides its value. A test covers every `VerticalEnum` value.
+  - Targets: `'publications'` → "Gestioná tus publicaciones", `/es/mi-cuenta/publicaciones/`; `'account'` → "Gestioná tu cuenta", `/es/mi-cuenta/`.
+  - The previewer takes the verticals from the scenario (`EmailScenario.recipientVerticals`); `notification.payment_success` has one scenario per case (publications, partner-only, tourist). The transport takes `SendEmailInput.recipientVerticals`.
+  - **Not wired yet:** no production sender passes `recipientVerticals`, so real sends show "Gestioná tu cuenta" (the specified fallback) until a follow-up resolves the verticals once per send from the owner summary source.
+  - A static test fails if `packages/email/src` compares a `VerticalEnum` member (`=== VerticalEnum.` or `case VerticalEnum.`).
 - The newsletter campaign keeps its in-body unsubscribe. The layout adds nothing that unsubscribes (D13).
 
-### 8.4 Dark mode
+### 8.4 Dark mode (corrected by the owner, 2026-11-23)
 
-- `color-scheme: light` metas stay. They stop inversion in Apple Mail and Outlook.com.
-- Gmail apps apply partial inversion, which darkens light backgrounds but never images. The header is one opaque image, so it stays intact as a light banner. The social icons are transparent with a mid-tone fill, so they read on both. The logo inside the staff header is opaque RGB, unchanged from HOS-2519 (R-11 residual accepted there).
-- Accepted residual: in Gmail iOS dark mode the card turns dark and the header banner stays light. This is checked in the smoke (AC-4.8).
+- The user variant declares `<meta name="color-scheme" content="light dark">` and `supported-color-schemes`, and ships ONE `@media (prefers-color-scheme: dark)` block inside its single `<style>` (`EMAIL_USER_STYLE_BLOCK`), driven by classes.
+- **Owner correction:** the palette is the RIGHTMOST panel of `mockup-dark-compare.png`, i.e. the mockup's own dark block as Apple Mail renders it, ported as it is (`emailDarkPalette` in `@repo/design-tokens`). It does NOT imitate Gmail's forced inversion (the middle panel).
+- The wordmark turns white. No `u + .body` trick (it erased the wordmark in Gmail light mode). PNGs are transparent with mid-tone fills, so they do not glow on the dark card.
+- Clients that strip `<style>` or ignore the media query (some Gmail apps) get the correct light mail from inline styles; Gmail's own partial inversion stays an accepted residual, checked in the smoke (AC-4.8).
+- The staff variant keeps `color-scheme: light` and no dark block.
 
 ### 8.5 Outlook desktop
 
-The header is an `<img>` with `width`/`height` attributes inside the existing 600px ghost table, so no VML is needed. Card and button radius degrade to square corners (D5). The social row is a nested `role="presentation"` table with fixed `width` attributes per cell.
+The header is three image/text rows inside the existing 600px ghost table, so no VML is needed. All vertical spacing is td padding or fixed-height spacer cells (`SectionBar` `spaceAbove`/`spaceBelow`). Button corners degrade to square (D5). The social row and the channel cards are nested `role="presentation"` tables with fixed `width` attributes.
 
-### 8.6 Design draft gate
+### 8.6 Design draft gate (waived, 2026-11-23)
 
-PR-4 starts as a draft PR. Before any of the work beyond the layout itself (template edits, tests, docs), the implementer:
-
-1. implements `variant="user"` in `EmailLayout` and the assets on the branch;
-2. runs the local previewer (`hops servers-up` in the worktree) and captures desktop (600px) and mobile (375px) screenshots of six user mails (`auth.verify-email`, `outbox.billing.grace-started`, `notification.payment_success`, `outbox.verticals.listing-archived`, `conversation.new-message`, `notification.trial_ending_reminder`) and one staff mail (`outbox.billing.reconciliation-summary`) to show it unchanged;
-3. saves the rendered HTML of the same seven (`renderEmailBodies`) and screenshots of the user header in a dark-mode emulation;
-4. posts all of it as one comment on HOS-2565 and waits.
-
-The owner approves, or asks for changes and the loop repeats. Only after approval does PR-4 continue to completion. The approval comment is linked from the PR description.
+The owner approved the design on 2026-11-23 and waived the screenshot gate: PR-4 does not start as a draft and no approval comment is required on Linear. The implementer still renders `plan_downgrade_limit_warning` and other scenarios locally (light at 640 and 375, dark) as a self-check.
 
 ## 9. Contracts
 
@@ -443,7 +443,8 @@ export type EmailLayoutVariant = 'user' | 'staff';
 // footerLink default becomes variant-dependent: 'preferences' (user), 'none' (staff).
 
 export function resolveEmailAssetUrl(input: { readonly path: `/email/${string}` }): string;
-export const EMAIL_USER_HEADER_PATH = '/email/hospeda-header-user@2x.png';
+// The composite header path was dropped by the approved design (§8.2): the user assets
+// are EMAIL_USER_ASSET_PATHS and EMAIL_ILLUSTRATION_PATHS under /email/user/.
 ```
 
 ### 9.4 `@repo/config`
@@ -508,16 +509,17 @@ export type ReconciliationReasonLabelResolver = (input: { readonly reason: strin
 
 ### US-4. User layout (PR-4)
 
-- **AC-4.1** Given `EmailLayout` with `variant="staff"` and fixed children, then its HTML equals the inline snapshot captured from the pre-PR-4 `EmailLayout` in the first commit of PR-4.
+- **AC-4.1** Given `EmailLayout` with `variant="staff"` and fixed children, then its HTML equals the snapshot captured from the pre-PR-4 `EmailLayout` in the first commit of PR-4, apart from the AC-4.2 marker.
 - **AC-4.2** Given every catalog scenario, then `data-layout-variant` equals the entry's `audience`.
-- **AC-4.3** Given a user scenario, then the HTML has the header `<img>` with `src` ending in `/email/hospeda-header-user@2x.png`, `width="600"`, `height="120"` and `alt="Hospeda"`. With `configureEmailAssets({ siteUrl: 'https://staging.hospeda.com.ar' })`, the `src` starts with that origin. No `.svg` appears.
-- **AC-4.4** Given a user scenario, then the footer contains 4 social links whose `href`s equal `BRAND_SOCIAL_PROFILES` URLs in order, each wrapping a `.png` `<img>` with explicit `width`/`height` and non-empty `alt`. It also contains the two brand lines verbatim, the `hospeda.com.ar` link and "© ". "Elegí qué correos recibís" links to `https://hospeda.com.ar/es/mi-cuenta/preferencias/`, and the account link reads "Gestioná tus publicaciones" for a recipient with a listing vertical and "Gestioná tu cuenta" for partner-only and tourist scenarios. The frozen no-account set (§8.3) has neither link.
-- **AC-4.5** Given a staff scenario, then there is no social row, no account links and no header image other than the logo.
-- **AC-4.6** Given any scenario, then the text part contains no social icon URL, no header asset URL and no logo URL. A user scenario's text part contains "Elegí qué correos recibís".
+- **AC-4.3** Given a user scenario, then the HTML has the header wave `<img>`, the isotipo, the live "hospeda" wordmark span and the tagline `<img alt="Descubrí el Litoral">`, all under `/email/`. With `configureEmailAssets({ siteUrl: 'https://staging.hospeda.com.ar' })`, the asset `src`s start with that origin. No `<svg` appears.
+- **AC-4.4** Given a user scenario, then the footer has the help row, the FAQ (declared articles or the default set), the channel cards, the trust strip, and Instagram, Facebook and X links whose `href`s equal `BRAND_SOCIAL_PROFILES`. "Elegí qué correos recibís" links to `https://hospeda.com.ar/es/mi-cuenta/preferencias/`, and the account link reads "Gestioná tus publicaciones" for a recipient with a listing vertical and "Gestioná tu cuenta" for partner-only and tourist scenarios. The frozen no-account set (§8.3) has neither link. Every declared help id has an article.
+- **AC-4.5** Given a staff scenario, then there is no FAQ, no social row, no account links and no header image other than the logo.
+- **AC-4.6** Given any scenario, then the text part contains no image or asset URL. A user scenario outside the no-account set has "Elegí qué correos recibís" in its text part.
 - **AC-4.7** Given every scenario, then the AC-2.9 checks pass with PR-4 in place, including under 90 KB.
-- **AC-4.8** Given the staging smoke, then `auth.verify-email`, `outbox.billing.grace-started` and one staff mail are received and checked in Gmail web, Gmail Android or iOS (light and dark), Outlook desktop (Windows), Outlook web and Apple Mail iOS (light and dark). The header, the social icons, the full-width mobile button and the unchanged staff layout are confirmed, and the result is recorded as a sign-off comment.
+- **AC-4.8** Given the staging smoke, then `auth.verify-email`, `outbox.billing.grace-started` and one staff mail are received and checked in Gmail web, Gmail Android or iOS (light and dark), Outlook desktop (Windows), Outlook web and Apple Mail iOS (light and dark). The header, the footer, the full-width mobile button, the dark palette and the unchanged staff layout are confirmed, and the result is recorded as a sign-off comment.
 - **AC-4.9** Given `apps/web`, then `SOCIAL_PROFILES` still exports the same 5 platforms in the same order, built from `BRAND_SOCIAL_PROFILES` plus whatsapp, and the existing web social and whatsapp guards pass.
-- **AC-4.10** Given HOS-2565's Linear comments, then an owner approval of the §8.6 draft exists before PR-4 is marked ready for review.
+- **AC-4.10** Given the user layout, then it has the `light dark` metas and exactly one `prefers-color-scheme: dark` block, which turns the wordmark white with the mockup's dark palette.
+- **AC-4.11** Given `VERTICAL_OWNS_PUBLICATIONS`, then it has a value for every `VerticalEnum` member and no file in `packages/email/src` compares a `VerticalEnum` member.
 
 ## 11. Risks
 
