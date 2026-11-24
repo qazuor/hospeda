@@ -69,12 +69,47 @@ export const emailPalette = {
     calloutDangerBorder: '#e40016',
     /** Danger callout text. Source: `danger[800]`. */
     calloutDangerText: '#3a0001',
-    /** Primary button background. Source: `river[600]`. */
-    buttonPrimary: '#1c5dbf',
+    /**
+     * Primary button background (HOS-2565 PR-4). Source: `forest[500]`.
+     *
+     * The approved mockup used `success[500]` (`#1b9247`), but white 16px text on it
+     * measures 4.0:1, under WCAG AA (4.5:1). `forest[500]` is the closest brand green
+     * that passes (5.7:1); `success[500]` stays as the option-card stripe, which
+     * carries no text.
+     */
+    buttonPrimary: '#007742',
     /** Primary button text. Source: pure white (OKLCH `l: 1, c: 0`). */
     buttonPrimaryText: '#ffffff',
-    /** Secondary (outlined) button border and text. Source: `river[600]`. */
-    buttonSecondaryBorder: '#1c5dbf'
+    /** Secondary button background. Source: `cyan[100]`. */
+    buttonSecondaryBackground: '#bdefff',
+    /** Secondary button border. Source: `cyan[500]`. */
+    buttonSecondaryBorder: '#009fc1',
+    /** Secondary button text. Source: `cyan[700]` (`cyan[600]` fails AA on the background). */
+    buttonSecondaryText: '#00495a',
+    /** User layout (HOS-2565 PR-4): section title bar, main accent. Source: `teal[500]`. */
+    accentTeal: '#1b9388',
+    /** User layout: occasional section title bar accent. Source: `accent[500]`. */
+    accentOrange: '#ed7b00',
+    /** User layout page background behind the card. Source: `brandSecondary`. */
+    userPageBackground: '#e6f4fe',
+    /** User layout footer background. Source: `sky[100]`. */
+    userFooterBackground: '#e6f0ff',
+    /** User footer small print and channel card text. Source: `neutral[600]`. */
+    userFooterMutedText: '#4d4d4d',
+    /** User footer hairlines (trust strip). Source: `sky[300]`. */
+    userFooterRule: '#bfd8ff',
+    /** Option card "success" top stripe. Source: `success[500]`. */
+    optionSuccessStripe: '#1b9247',
+    /** Option card "success" label band. Source: `brandTertiary`. */
+    optionSuccessBand: '#d6ebdc',
+    /** Option card "success" label text. Source: `success[600]`. */
+    optionSuccessBandText: '#006b2e',
+    /** Option card "info" top stripe. Source: `cyan[500]`. */
+    optionInfoStripe: '#009fc1',
+    /** Option card "info" label band. Source: `cyan[100]`. */
+    optionInfoBand: '#bdefff',
+    /** Option card "info" label text. Source: `cyan[700]`. */
+    optionInfoBandText: '#00495a'
 } as const;
 
 /** Role names of {@link emailPalette}. */

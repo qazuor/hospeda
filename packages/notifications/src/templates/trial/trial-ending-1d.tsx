@@ -39,10 +39,7 @@ export function TrialEnding1Day({
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
-        <EmailLayout
-            previewText="Mañana tu publicación deja de verse en Hospeda"
-            footerLink="none"
-        >
+        <EmailLayout previewText="Mañana tu publicación deja de verse en Hospeda">
             <Heading>Mañana tu publicación sale del sitio</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

@@ -40,7 +40,10 @@ export function AllianceClaimInvite({
     expiresAtLabel
 }: AllianceClaimInviteProps) {
     return (
-        <EmailLayout previewText="Recibimos una postulación con tu email — confirmá si fuiste vos">
+        <EmailLayout
+            footerLink="none"
+            previewText="Recibimos una postulación con tu email — confirmá si fuiste vos"
+        >
             <Heading>¿Fuiste vos?</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

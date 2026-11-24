@@ -17,6 +17,7 @@ import {
     AllianceLeadDecision,
     type AllianceLeadDecisionProps
 } from '../../src/templates/alliance/alliance-lead-decision';
+import { mailBodyOf } from './helpers/mail-body.js';
 
 const approved: AllianceLeadDecisionProps = {
     recipientName: 'Juan Pérez',
@@ -55,7 +56,8 @@ describe('AllianceLeadDecision email template (HOS-278 AC-6)', () => {
             // Slices C/D/E build the per-program onboarding. Until then, a CTA
             // here would be copy describing software that does not exist, and
             // the applicant would go looking for it.
-            const html = renderToStaticMarkup(AllianceLeadDecision(approved));
+            // The user layout footer links the account pages; the body must not.
+            const html = mailBodyOf({ html: renderToStaticMarkup(AllianceLeadDecision(approved)) });
 
             expect(html).not.toContain('/mi-cuenta');
             expect(html).not.toContain('completá tus datos');
@@ -96,7 +98,8 @@ describe('AllianceLeadDecision email template (HOS-278 AC-6)', () => {
         it('should not render an unsubscribe link', () => {
             const html = renderToStaticMarkup(AllianceLeadDecision(approved));
 
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
     });

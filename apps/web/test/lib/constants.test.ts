@@ -3,6 +3,7 @@
  * @description Unit tests for application constants.
  */
 
+import { BRAND_CONTACT_EMAIL, BRAND_SOCIAL_PROFILES } from '@repo/config';
 import { describe, expect, it } from 'vitest';
 import {
     BRAND_NAME,
@@ -34,5 +35,25 @@ describe('contact number — single source, two derived forms (HOS-364)', () => 
 
     it('Organization telephone is E.164 WITHOUT the AR mobile 9 — a plain call, not WhatsApp', () => {
         expect(ORGANIZATION_INFO.telephone).toBe('+543442470650');
+    });
+});
+
+describe('SOCIAL_PROFILES — built from @repo/config (HOS-2565 AC-4.9)', () => {
+    it('keeps the same five platforms in the same order', () => {
+        // Act
+        const platforms = SOCIAL_PROFILES.map((profile) => profile.platform);
+
+        // Assert
+        expect(platforms).toEqual(['facebook', 'instagram', 'x', 'youtube', 'whatsapp']);
+    });
+
+    it('takes the four env-independent profiles from BRAND_SOCIAL_PROFILES', () => {
+        // Assert
+        expect(SOCIAL_PROFILES.slice(0, 4)).toEqual([...BRAND_SOCIAL_PROFILES]);
+    });
+
+    it('uses the shared brand contact email', () => {
+        // Assert
+        expect(ORGANIZATION_INFO.email).toBe(BRAND_CONTACT_EMAIL);
     });
 });

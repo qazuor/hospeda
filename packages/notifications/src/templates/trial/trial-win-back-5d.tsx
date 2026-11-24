@@ -29,10 +29,7 @@ export function TrialWinBack5Days({
     const copy = resolveTrialSeriesCopy(productDomain);
 
     return (
-        <EmailLayout
-            previewText={`Hay gente buscando ${copy.searchIntent} en tu zona ahora mismo`}
-            footerLink="none"
-        >
+        <EmailLayout previewText={`Hay gente buscando ${copy.searchIntent} en tu zona ahora mismo`}>
             <Heading>Volvé a aparecer en Hospeda</Heading>
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>

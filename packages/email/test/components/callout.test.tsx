@@ -58,10 +58,25 @@ describe('Callout (HOS-2565 US-2, AC-2.1)', () => {
         // Assert
         expect(cell).toContain(`data-callout-tone="${tone}"`);
         expect(cell).toContain(`background-color:${background}`);
-        expect(cell).toContain(`border-left:4px solid ${border}`);
+        // HOS-2565 PR-4: the left border grew to 6px and the cell carries its tone class.
+        expect(cell).toContain(`border-left:6px solid ${border}`);
+        expect(cell).toContain(`class="hd-co-${tone}"`);
         expect(cell).toContain('border-radius:8px');
         expect(cell).toContain(`color:${text}`);
         expect(cell).toContain('padding:16px 20px');
+    });
+
+    it.each(TONES)('should draw the $tone line icon, skipped in the text part', async ({
+        tone
+    }) => {
+        // Arrange & Act
+        const html = await render(<Callout tone={tone}>Contenido</Callout>);
+
+        // Assert
+        const icon = html.match(/<td\b[^>]*data-skip-in-text="true"[^>]*><img\b[^>]*>/)?.[0];
+        expect(icon).toBeDefined();
+        expect(icon).toContain(`/email/user/callout-${tone}@2x.png`);
+        expect(icon).toContain('alt=""');
     });
 
     it('should carry every visual style on the single <td> inside a 100% presentation table', async () => {

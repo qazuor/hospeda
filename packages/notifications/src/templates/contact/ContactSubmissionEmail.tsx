@@ -135,7 +135,10 @@ export function ContactSubmissionEmail({
     const typeLabel = resolveContactTypeLabel(contactType);
 
     return (
-        <EmailLayout previewText={`[Contacto] ${typeLabel} - ${fullName}`}>
+        <EmailLayout
+            variant="staff"
+            previewText={`[Contacto] ${typeLabel} - ${fullName}`}
+        >
             <Section style={styles.badgeRow}>
                 <Text style={styles.typeBadge}>{typeLabel}</Text>
             </Section>

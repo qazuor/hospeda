@@ -24,6 +24,7 @@ import {
     SubscriptionReactivated,
     type SubscriptionReactivatedProps
 } from '../../src/templates/subscription/subscription-reactivated';
+import { mailBodyOf } from './helpers/mail-body.js';
 
 describe('Subscription Lifecycle Email Templates', () => {
     describe('SubscriptionCancelled', () => {
@@ -176,7 +177,7 @@ describe('Subscription Lifecycle Email Templates', () => {
         // otherwise be told their card failed for no reason.
         it('should not blame the payment method (HOS-926)', () => {
             // Arrange & Act
-            const html = renderToStaticMarkup(SubscriptionPaused(validProps));
+            const html = mailBodyOf({ html: renderToStaticMarkup(SubscriptionPaused(validProps)) });
 
             // Assert
             expect(html).not.toContain('metodo de pago');
@@ -326,7 +327,8 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionCancelled(props));
 
             // Assert
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
 
@@ -342,7 +344,8 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionPaused(props));
 
             // Assert
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
 
@@ -359,7 +362,8 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionReactivated(props));
 
             // Assert
-            expect(html).not.toContain('Administrar preferencias de notificaciones');
+            // HOS-2565 §8.3: the preferences link is a footer default, not an unsubscribe.
+            expect(html).toContain('data-layout-link="preferences"');
             expect(html).not.toContain('unsubscribe_url');
         });
     });

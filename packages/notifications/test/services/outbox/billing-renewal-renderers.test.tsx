@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createBillingRenewalRenderers } from '../../../src/services/outbox/billing-renewal-renderers.js';
 import { RENEWAL_UPCOMING_SUBJECT } from '../../../src/templates/billing/renewal-upcoming.js';
+import { mailBodyOf } from '../../templates/helpers/mail-body.js';
 import { row } from './outbox-batch.harness.js';
 
 const renderers = createBillingRenewalRenderers({ siteUrl: 'https://hospeda.test' });
@@ -44,7 +45,9 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice renders', () => {
         });
         const manualHtml = renderToStaticMarkup(manual.react);
         expect(manualHtml).toContain('transferencia');
-        expect(manualHtml).not.toMatch(/tarjeta|débito|cobro automático|Mercado Pago/i);
+        expect(mailBodyOf({ html: manualHtml })).not.toMatch(
+            /tarjeta|débito|cobro automático|Mercado Pago/i
+        );
     });
 
     it('uses singular preview text one day before renewal', async () => {

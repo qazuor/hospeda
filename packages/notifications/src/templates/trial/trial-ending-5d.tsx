@@ -40,7 +40,6 @@ export function TrialEnding5Days({
                     ? `Tu prueba del plan ${plan} termina en 5 días`
                     : 'Tu prueba termina en 5 días'
             }
-            footerLink="none"
         >
             <Heading>Te quedan 5 días de prueba</Heading>
 

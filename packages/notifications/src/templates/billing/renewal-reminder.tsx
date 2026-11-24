@@ -55,10 +55,7 @@ export function RenewalReminder({
     const footerLine = resolveRenewalReminderFooter(productDomain);
 
     return (
-        <EmailLayout
-            previewText={`Recordatorio: renovación de ${planName}`}
-            footerLink="none"
-        >
+        <EmailLayout previewText={`Recordatorio: renovación de ${planName}`}>
             <Heading>Recordatorio de renovación</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>

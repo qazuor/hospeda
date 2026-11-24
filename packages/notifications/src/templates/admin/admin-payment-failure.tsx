@@ -38,7 +38,10 @@ export function AdminPaymentFailure({
             : 'N/A';
 
     return (
-        <EmailLayout previewText="[Admin] Fallo de pago detectado">
+        <EmailLayout
+            variant="staff"
+            previewText="[Admin] Fallo de pago detectado"
+        >
             <Section style={styles.adminHeader}>
                 <Text style={styles.adminBadge}>NOTIFICACIÓN ADMINISTRATIVA</Text>
                 <SeverityBadge severity={severity} />

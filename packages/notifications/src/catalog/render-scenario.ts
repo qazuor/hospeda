@@ -8,6 +8,7 @@
 import { renderEmailBodies } from '@repo/email';
 import { findEmailCatalogEntry } from './catalog.js';
 import { EmailCatalogScenarioNotFoundError } from './define-entry.js';
+import { buildEmailCatalogLayout } from './layout-declarations.js';
 import type { EmailCatalogRenderDeps } from './types.js';
 
 /** Thrown when no catalog entry has the requested key. */
@@ -57,7 +58,8 @@ export async function renderEmailCatalogScenario(
     if (!entry) {
         throw new EmailCatalogEntryNotFoundError(key);
     }
-    if (!entry.scenarios.some((scenario) => scenario.id === scenarioId)) {
+    const summary = entry.scenarios.find((scenario) => scenario.id === scenarioId);
+    if (!summary) {
         throw new EmailCatalogScenarioNotFoundError({ key: entry.key, scenarioId });
     }
     const rendered = await entry.renderScenario({ scenarioId, deps });
@@ -66,7 +68,14 @@ export async function renderEmailCatalogScenario(
     // a preview differs from a real send (HOS-2519 D4).
     const { html, text } = await renderEmailBodies({
         react: rendered.react,
-        attribution: { medium: 'transactional', templateKey: entry.key, includePixel: false }
+        attribution: { medium: 'transactional', templateKey: entry.key, includePixel: false },
+        // HOS-2565 PR-4: the same layout declarations a real send reads.
+        layout: buildEmailCatalogLayout({
+            entry,
+            ...(summary.recipientVerticals
+                ? { recipientVerticals: summary.recipientVerticals }
+                : {})
+        })
     });
     return { subject: rendered.subject, html, text, warnings: rendered.warnings };
 }

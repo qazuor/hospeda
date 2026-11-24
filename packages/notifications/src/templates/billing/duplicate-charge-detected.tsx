@@ -38,7 +38,10 @@ export function DuplicateChargeDetected(props: DuplicateChargeDetectedProps) {
         subjectId: props.subjectId
     });
     return (
-        <EmailLayout previewText={DUPLICATE_CHARGE_DETECTED_SUBJECT}>
+        <EmailLayout
+            variant="staff"
+            previewText={DUPLICATE_CHARGE_DETECTED_SUBJECT}
+        >
             <Heading>{DUPLICATE_CHARGE_DETECTED_SUBJECT}</Heading>
             <Text>
                 Se abrió una marca por cobro duplicado: un período quedó con dos cobros acreditados

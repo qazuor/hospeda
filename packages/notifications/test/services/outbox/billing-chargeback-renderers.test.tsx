@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createBillingChargebackRenderers } from '../../../src/services/outbox/billing-chargeback-renderers.js';
 import { CHARGEBACK_SUSPENSION_SUBJECT } from '../../../src/templates/billing/index.js';
+import { mailBodyOf } from '../../templates/helpers/mail-body.js';
 import { row } from './outbox-batch.harness.js';
 
 const template = 'billing.chargeback-suspension';
@@ -19,7 +20,8 @@ const payload = {
 
 function textLines(courtesyEnded: boolean): string[] {
     const rendered = renderer({ row: row({ template, payload: { ...payload, courtesyEnded } }) });
-    const html = renderToStaticMarkup(rendered.react);
+    // The template's paragraphs only: the user layout footer has its own copy.
+    const html = mailBodyOf({ html: renderToStaticMarkup(rendered.react) });
     return [...html.matchAll(/<p[^>]*>(.*?)<\/p>/g)].map((match) => stripTags(match[1]!));
 }
 
@@ -42,19 +44,15 @@ describe('TEST:B7:7 AC:B7:10 chargeback outbox renderer', () => {
         expect(result.subject).toBe(CHARGEBACK_SUSPENSION_SUBJECT);
         const withCourtesy = textLines(true);
         const withoutCourtesy = textLines(false);
-        // Layout chrome (HOS-2519): the header logo is an <img>, so only the
-        // tagline is a paragraph; the footer ends with the site-home link.
+        // The user layout header has no paragraph (the logo and the tagline are
+        // images, the wordmark a span) and the footer is sliced off (HOS-2565 PR-4).
         const commonStart = [
-            'Turismo en el Litoral',
             'Tu suscripción de Alojamiento se suspendió.',
             'Desconociste el cargo de $100,00 del día 19 de noviembre de 2026 en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte.'
         ];
         const commonEnd = [
             'Ya no se te va a cobrar: cancelamos la autorización de cobro.',
-            'Una persona de nuestro equipo sigue el caso.',
-            'Hospeda - Turismo en el Litoral',
-            'Plataforma de alojamientos turísticos en Concepción del Uruguay y la región del Litoral argentino',
-            'hospeda.com.ar'
+            'Una persona de nuestro equipo sigue el caso.'
         ];
         expect(withCourtesy).toEqual([
             ...commonStart,

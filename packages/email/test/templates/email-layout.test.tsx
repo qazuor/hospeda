@@ -24,9 +24,11 @@ const PREFERENCES_TEXT = 'Administrar preferencias de notificaciones';
 const TAGLINE = 'Turismo en el Litoral</p>';
 
 /**
- * Unit tests for the unified EmailLayout (HOS-2519 §5.1).
+ * Unit tests for the STAFF variant of EmailLayout: the HOS-2519 §5.1 layout, kept
+ * as it was for the internal mails (HOS-2565 AC-4.1). The user variant is covered
+ * by `email-layout-user.test.tsx`.
  */
-describe('EmailLayout', () => {
+describe('EmailLayout (staff variant)', () => {
     afterEach(() => {
         resetEmailAssets();
     });
@@ -36,7 +38,10 @@ describe('EmailLayout', () => {
         const { html } = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout previewText="Vista previa">
+                <EmailLayout
+                    variant="staff"
+                    previewText="Vista previa"
+                >
                     <p>Contenido del email</p>
                 </EmailLayout>
             )
@@ -56,7 +61,7 @@ describe('EmailLayout', () => {
         const { html } = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout>
+                <EmailLayout variant="staff">
                     <p>x</p>
                 </EmailLayout>
             )
@@ -86,7 +91,10 @@ describe('EmailLayout', () => {
         const withPreview = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout previewText="Preheader único">
+                <EmailLayout
+                    variant="staff"
+                    previewText="Preheader único"
+                >
                     <p>x</p>
                 </EmailLayout>
             )
@@ -94,7 +102,7 @@ describe('EmailLayout', () => {
         const withoutPreview = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout>
+                <EmailLayout variant="staff">
                     <p>x</p>
                 </EmailLayout>
             )
@@ -110,7 +118,7 @@ describe('EmailLayout', () => {
         const { html } = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout>
+                <EmailLayout variant="staff">
                     <p>x</p>
                 </EmailLayout>
             )
@@ -129,7 +137,7 @@ describe('EmailLayout', () => {
         const { html } = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout>
+                <EmailLayout variant="staff">
                     <p>x</p>
                 </EmailLayout>
             )
@@ -145,7 +153,10 @@ describe('EmailLayout', () => {
         const { html } = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout footerLink="preferences">
+                <EmailLayout
+                    variant="staff"
+                    footerLink="preferences"
+                >
                     <p>x</p>
                 </EmailLayout>
             )
@@ -165,7 +176,10 @@ describe('EmailLayout', () => {
         const { html } = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout footerLink="preferences">
+                <EmailLayout
+                    variant="staff"
+                    footerLink="preferences"
+                >
                     <p>x</p>
                 </EmailLayout>
             )
@@ -183,7 +197,7 @@ describe('EmailLayout', () => {
         const { html, text } = await renderEmailBodies({
             attribution: TEST_ATTRIBUTION,
             react: (
-                <EmailLayout>
+                <EmailLayout variant="staff">
                     <p>x</p>
                 </EmailLayout>
             )
@@ -209,6 +223,7 @@ describe('EmailLayout', () => {
             attribution: TEST_ATTRIBUTION,
             react: (
                 <EmailLayout
+                    variant="staff"
                     previewText="Vista previa"
                     footerLink="preferences"
                 >
@@ -232,7 +247,10 @@ describe('EmailLayout', () => {
             renderEmailBodies({
                 attribution: TEST_ATTRIBUTION,
                 react: (
-                    <EmailLayout footerLink="preferences">
+                    <EmailLayout
+                        variant="staff"
+                        footerLink="preferences"
+                    >
                         <p>x</p>
                     </EmailLayout>
                 )
@@ -322,7 +340,7 @@ describe('EmailLayout', () => {
             const { html } = await renderEmailBodies({
                 attribution: TEST_ATTRIBUTION,
                 react: (
-                    <EmailLayout>
+                    <EmailLayout variant="staff">
                         <p>x</p>
                     </EmailLayout>
                 )
@@ -341,7 +359,7 @@ describe('EmailLayout', () => {
             const { text } = await renderEmailBodies({
                 attribution: TEST_ATTRIBUTION,
                 react: (
-                    <EmailLayout>
+                    <EmailLayout variant="staff">
                         <p>Contenido</p>
                     </EmailLayout>
                 )

@@ -59,7 +59,10 @@ export function NewsletterCampaign(props: NewsletterCampaignProps) {
     const sanitisedBody = { __html: bodyHtml };
 
     return (
-        <EmailLayout previewText={previewText}>
+        <EmailLayout
+            footerLink="none"
+            previewText={previewText}
+        >
             {isTest && (
                 <Callout tone="warning">
                     <Text style={styles.testBannerText}>

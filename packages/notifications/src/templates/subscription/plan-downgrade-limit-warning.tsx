@@ -1,5 +1,5 @@
 import { Text } from '@react-email/components';
-import { Button, Callout, EmailLayout } from '@repo/email';
+import { Button, Callout, EmailLayout, OptionCard } from '@repo/email';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 
@@ -106,12 +106,15 @@ export function PlanDowngradeLimitWarning({
                 </Text>
             </Callout>
 
-            <Heading>¿Qué podés hacer?</Heading>
+            <Heading accent="orange">¿Qué podés hacer?</Heading>
 
             <Text style={styles.ctaIntro}>Elegí la opción que mejor se adapte a tu situación:</Text>
 
-            <Callout tone="info">
-                <Text style={styles.ctaOptionTitle}>Opción 1: Actualizá tu plan</Text>
+            <OptionCard
+                tone="success"
+                label="Opción 1"
+                title="Actualizá tu plan"
+            >
                 <Text style={styles.ctaOptionBody}>
                     Volvé a un plan que incluya el límite que necesitás y todo seguirá funcionando
                     sin cambios. Es la opción más rápida si tu contenido es importante.
@@ -129,17 +132,25 @@ export function PlanDowngradeLimitWarning({
                 <Button href={`${baseUrl}/es/planes/anfitriones/precios/`}>
                     Ver planes disponibles
                 </Button>
-            </Callout>
+            </OptionCard>
 
-            <Callout tone="info">
-                <Text style={styles.ctaOptionTitle}>Opción 2: Reducí tu uso</Text>
+            <OptionCard
+                tone="info"
+                label="Opción 2"
+                title="Reducí tu uso"
+            >
                 <Text style={styles.ctaOptionBody}>
                     Eliminá o archivá {limitLabel.toLowerCase()} hasta estar dentro del nuevo
                     límite. Tenés 7 días para hacerlo antes de que el contenido en exceso sea
                     desactivado automáticamente.
                 </Text>
-                <Button href={`${baseUrl}/es/mi-cuenta/propiedades/`}>Administrar contenido</Button>
-            </Callout>
+                <Button
+                    href={`${baseUrl}/es/mi-cuenta/propiedades/`}
+                    variant="secondary"
+                >
+                    Administrar contenido
+                </Button>
+            </OptionCard>
 
             <Text style={styles.footerNote}>
                 Si necesitás ayuda para decidir qué hacer, nuestro equipo de soporte está disponible
@@ -172,12 +183,6 @@ const styles = {
         fontSize: '15px',
         lineHeight: '22px',
         margin: '0 0 16px'
-    },
-    ctaOptionTitle: {
-        fontSize: '15px',
-        fontWeight: 'bold',
-        lineHeight: '22px',
-        margin: '0 0 8px'
     },
     ctaOptionBody: {
         fontSize: '14px',
