@@ -328,7 +328,12 @@ const venueDetailSectionBlocks: Readonly<
         ? [
               {
                   Component: VenueAddress,
-                  props: { location: venue.location, cityName: venue.destinationName, locale }
+                  props: {
+                      location: venue.location,
+                      cityName: venue.destinationName,
+                      venueName: venue.name,
+                      locale
+                  }
               }
           ]
         : [],
@@ -499,7 +504,6 @@ const breadcrumbItems = [
                     locale={locale}
                     variant="detail"
                     mobile={{
-                        backHref: buildUrl({ locale, path: 'comer-y-salir' }),
                         share: { url: `${siteOrigin}${Astro.url.pathname}`, title: venue.name, campaign: 'venue' },
                         favorite: {
                             entityId: venue.id,

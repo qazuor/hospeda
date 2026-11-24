@@ -86,9 +86,28 @@ export function buildVenueJsonLdPlace({
 }
 
 /**
+ * The venue's pinned coordinates as numbers, or `null` when the owner pinned
+ * none (empty strings) or they do not parse. `0` is a real coordinate.
+ *
+ * @param params.location - The venue's address, or `null`.
+ * @returns `{ coordinates }`, `null` inside when there is no usable pin.
+ */
+export function resolveVenueCoordinates({
+    location
+}: {
+    readonly location: VenueDetailLocation | null;
+}): { readonly coordinates: { readonly lat: number; readonly lng: number } | null } {
+    if (!location || location.lat === '' || location.long === '') return { coordinates: null };
+    const lat = Number(location.lat);
+    const lng = Number(location.long);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { coordinates: null };
+    return { coordinates: { lat, lng } };
+}
+
+/**
  * OpenStreetMap link for the venue's pin, or `null` when there are no
- * coordinates. A plain link rather than an embedded map: no script, no cookie,
- * nothing that varies by session.
+ * coordinates. Kept next to the inline map (owner smoke, HOS-2520) as the
+ * "open it in a full map" escape.
  *
  * @param params.location - The venue's address, or `null`.
  * @returns The map URL, or `null`.
@@ -98,10 +117,9 @@ export function buildVenueMapUrl({
 }: {
     readonly location: VenueDetailLocation | null;
 }): string | null {
-    if (!location || location.lat === '' || location.long === '') return null;
-    const lat = Number(location.lat);
-    const long = Number(location.long);
-    if (!Number.isFinite(lat) || !Number.isFinite(long)) return null;
+    const { coordinates } = resolveVenueCoordinates({ location });
+    if (!coordinates) return null;
+    const { lat, lng } = coordinates;
 
-    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${long}#map=17/${lat}/${long}`;
+    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
 }
