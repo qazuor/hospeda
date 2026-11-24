@@ -45,7 +45,8 @@ export function markPerActorResponse({ ctx }: { readonly ctx: Context }): void {
  * @returns An opaque seed.
  */
 export function resolveRequestSeed({ raw }: { readonly raw: unknown }): string {
-    return PromotionSeedSchema.parse(raw) ?? randomUUID();
+    const parsed = PromotionSeedSchema.safeParse(raw);
+    return parsed.success ? parsed.data : randomUUID();
 }
 
 /** One public place and its current promotions, every audience. */

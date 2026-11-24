@@ -16,14 +16,16 @@ import { PromotionWindowSchema } from './owner-promotion.venue.schema.js';
 
 /**
  * The session seed a client sends so its random pick is stable (D-7). Opaque, no
- * personal data. A missing or malformed seed is dropped (the server picks a fresh
- * one), never a 400: the read must still answer.
+ * personal data. The route checks it with `safeParse` and drops a malformed one
+ * (the server picks a fresh seed), never a 400: the read must still answer.
  */
-export const PromotionSeedSchema = z
-    .string()
-    .regex(/^[A-Za-z0-9_-]{8,64}$/)
-    .optional()
-    .catch(undefined);
+export const PromotionSeedSchema = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
+
+/**
+ * The raw `seed` query param: any string, so a malformed seed never fails the
+ * query check (and no `.catch`, which the OpenAPI generator cannot describe).
+ */
+const PromotionSeedParamSchema = z.string().optional();
 
 /** The place a visible promotion belongs to, for its link. */
 export const PromotionPlaceSchema = z
@@ -94,7 +96,7 @@ export type PromotionVisibilityMeta = z.infer<typeof PromotionVisibilityMetaSche
 export const PromotionVisibleQuerySchema = z.object({
     entityType: OwnerPromotionEntityTypeEnumSchema,
     entityId: z.string().uuid(),
-    seed: PromotionSeedSchema
+    seed: PromotionSeedParamSchema
 });
 export type PromotionVisibleQuery = z.infer<typeof PromotionVisibleQuerySchema>;
 
@@ -109,7 +111,7 @@ export type PromotionVisibleResponse = z.infer<typeof PromotionVisibleResponseSc
 export const PromotionListingQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(48).default(12),
-    seed: PromotionSeedSchema
+    seed: PromotionSeedParamSchema
 });
 export type PromotionListingQuery = z.infer<typeof PromotionListingQuerySchema>;
 
