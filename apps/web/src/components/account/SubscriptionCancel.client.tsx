@@ -11,6 +11,7 @@ import {
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './SubscriptionCancel.module.css';
+import { Alert, Button, Field, Select } from './ui';
 
 type Preview = Exclude<ReturnType<typeof parseCancellationPreview>, null>;
 type State =
@@ -107,37 +108,38 @@ export function SubscriptionCancel({
     };
     if (state === 'idle')
         return (
-            <button
-                type="button"
-                className={styles.open}
+            <Button
+                variant="danger-ghost"
+                size="sm"
                 data-testid="self-cancel-open"
                 onClick={() => void loadPreview()}
             >
                 {t('account.subscription.cancel.open')}
-            </button>
+            </Button>
         );
     if (state === 'loading' || state === 'pending')
         return (
             <div
                 className={styles.flow}
                 aria-busy="true"
+                data-expanded="true"
             >
                 <p>{t('account.subscription.cancel.pending')}</p>
                 <div className={styles.actions}>
-                    <button
-                        type="button"
-                        className={styles.confirm}
+                    <Button
+                        variant="danger"
+                        size="sm"
                         disabled
                     >
                         {t('account.subscription.cancel.confirm')}
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.back}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         disabled
                     >
                         {t('account.subscription.cancel.back')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
@@ -146,6 +148,7 @@ export function SubscriptionCancel({
             <p
                 className={styles.note}
                 data-testid="self-cancel-done"
+                data-expanded="true"
             >
                 {endDate
                     ? t('account.subscription.cancel.doneScheduled', undefined, { date: endDate })
@@ -153,21 +156,31 @@ export function SubscriptionCancel({
             </p>
         );
     if (state === 'stateChanged')
-        return <div role="alert">{t('account.subscription.cancel.stateChanged')}</div>;
+        return (
+            <div
+                role="alert"
+                data-expanded="true"
+            >
+                {t('account.subscription.cancel.stateChanged')}
+            </div>
+        );
     if (state === 'actError')
         return (
             <div
                 role="alert"
                 className={styles.flow}
+                data-expanded="true"
             >
                 <p>{t('account.subscription.cancel.actError')}</p>
-                <button
-                    type="button"
-                    className={styles.confirm}
-                    onClick={() => void confirmCancellation()}
-                >
-                    {t('account.subscription.cancel.retry')}
-                </button>
+                <div className={styles.actions}>
+                    <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => void confirmCancellation()}
+                    >
+                        {t('account.subscription.cancel.retry')}
+                    </Button>
+                </div>
             </div>
         );
     if (state === 'loadError')
@@ -175,31 +188,33 @@ export function SubscriptionCancel({
             <div
                 role="alert"
                 className={styles.flow}
+                data-expanded="true"
             >
                 <p>{t('account.subscription.cancel.loadError')}</p>
                 <div className={styles.actions}>
-                    <button
-                        type="button"
-                        className={styles.retry}
+                    <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => void loadPreview()}
                     >
                         {t('account.subscription.cancel.retry')}
-                    </button>
-                    <button
-                        type="button"
-                        className={styles.back}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setState('idle')}
                     >
                         {t('account.subscription.cancel.back')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
     if (!preview) return null;
     return (
         <section
-            className={styles.panel}
+            className={styles.flow}
             aria-labelledby={headingId}
+            data-expanded="true"
         >
             <h4
                 id={headingId}
@@ -211,15 +226,21 @@ export function SubscriptionCancel({
                     vertical: verticalLabel
                 })}
             </h4>
-            <p data-testid="self-cancel-end">{endLine(preview)}</p>
-            <p>{t('account.subscription.cancel.noMoreCharges')}</p>
+            <Alert
+                tone="warning"
+                locale={locale}
+            >
+                <p data-testid="self-cancel-end">{endLine(preview)}</p>
+                <p>{t('account.subscription.cancel.noMoreCharges')}</p>
+            </Alert>
             {preview.origin === 'CANCEL_SCHEDULED' ? null : (
-                <div className={styles.reason}>
-                    <label htmlFor={`${headingId}-reason`}>
-                        {t('account.subscription.cancel.reason.label')}
-                    </label>
-                    <select
-                        id={`${headingId}-reason`}
+                <Field
+                    label={t('account.subscription.cancel.reason.label')}
+                    locale={locale}
+                    id={`${headingId}-reason`}
+                    className={styles.reason}
+                >
+                    <Select
                         value={reason}
                         onChange={(event) =>
                             setReason(event.target.value as CancellationReasonEnum | '')
@@ -235,8 +256,8 @@ export function SubscriptionCancel({
                                 {t(`account.subscription.cancel.reason.${value}`)}
                             </option>
                         ))}
-                    </select>
-                </div>
+                    </Select>
+                </Field>
             )}
             {preview.addons.length > 0 && (
                 <>
@@ -278,23 +299,23 @@ export function SubscriptionCancel({
                 {preview.origin === 'CANCEL_SCHEDULED' ? (
                     <p>{endLine(preview)}</p>
                 ) : (
-                    <button
-                        type="button"
-                        className={styles.confirm}
+                    <Button
+                        variant="danger"
+                        size="sm"
                         data-testid="self-cancel-confirm"
                         aria-describedby={headingId}
                         onClick={() => void confirmCancellation()}
                     >
                         {t('account.subscription.cancel.confirm')}
-                    </button>
+                    </Button>
                 )}
-                <button
-                    type="button"
-                    className={styles.back}
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setState('idle')}
                 >
                     {t('account.subscription.cancel.back')}
-                </button>
+                </Button>
             </div>
         </section>
     );

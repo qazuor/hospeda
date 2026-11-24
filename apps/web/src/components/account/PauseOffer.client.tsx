@@ -4,6 +4,7 @@ import { parsePausePreview, pauseDate } from '@/lib/billing/pause-offer';
 import { scheduleSubscriptionRefresh } from '@/lib/billing/refresh-subscription-card';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './PlanChangeOffer.module.css';
+import { Alert, Button, Field, Select } from './ui';
 
 type Preview = NonNullable<ReturnType<typeof parsePausePreview>>;
 /** Props for the customer pause flow. */
@@ -65,15 +66,16 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
         <section
             className={styles.root}
             data-testid="pause-offer"
+            data-expanded={state === 'idle' ? undefined : 'true'}
         >
             {state === 'idle' && (
-                <button
-                    type="button"
-                    className={styles.primary}
+                <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => void open()}
                 >
                     {t('account.subscription.mine.pause.open')}
-                </button>
+                </Button>
             )}
             {(state === 'loading' || state === 'pending') && (
                 <p aria-live="polite">{t('account.subscription.mine.pause.pending')}</p>
@@ -99,7 +101,7 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
                 </p>
             )}
             {state === 'ready' && preview?.offered && (
-                <>
+                <div className={styles.panel}>
                     {preview.courtesyForfeit && (
                         <p data-testid="pause-courtesy-forfeit">
                             {t('account.subscription.mine.pause.courtesyForfeit', undefined, {
@@ -107,73 +109,87 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
                             })}
                         </p>
                     )}
-                    <label htmlFor={`pause-months-${subscriptionId}`}>
-                        {t('account.subscription.mine.pause.months')}
-                    </label>
-                    <select
+                    <Field
+                        label={t('account.subscription.mine.pause.months')}
+                        locale={locale}
                         id={`pause-months-${subscriptionId}`}
-                        value={months}
-                        onChange={(event) => setMonths(Number(event.target.value))}
+                        className={styles.field}
                     >
-                        {Array.from(
-                            { length: preview.months.max - preview.months.min + 1 },
-                            (_, i) => i + preview.months.min
-                        ).map((value) => (
-                            <option
-                                key={value}
-                                value={value}
-                            >
-                                {tPlural('account.subscription.mine.pause.monthCount', value, {
-                                    count: value
-                                })}
-                            </option>
-                        ))}
-                    </select>
-                    {end && (
-                        <div data-testid="pause-confirmation">
-                            {preview.courtesyForfeit && (
-                                <p>{t('account.subscription.mine.pause.courtesyConfirmation')}</p>
-                            )}
-                            <p>
-                                {t('account.subscription.mine.pause.confirmation', undefined, {
-                                    date: pauseDate(end, locale)
-                                })}
-                            </p>
-                            <p>{t('account.subscription.mine.pause.listing')}</p>
-                            {preview.addons.vertical.length > 0 && (
-                                <>
-                                    <p>{t('account.subscription.mine.pause.addonsVertical')}</p>
-                                    {preview.addons.vertical.map((name) => (
-                                        <p key={name}>{name}</p>
-                                    ))}
-                                </>
-                            )}
-                            {preview.addons.account.map((addon) => (
-                                <p key={addon.name}>
-                                    {t(
-                                        addon.pauses
-                                            ? 'account.subscription.mine.pause.addonPauses'
-                                            : 'account.subscription.mine.pause.addonContinues',
-                                        undefined,
-                                        { name: addon.name }
-                                    )}
-                                </p>
+                        <Select
+                            value={months}
+                            onChange={(event) => setMonths(Number(event.target.value))}
+                        >
+                            {Array.from(
+                                { length: preview.months.max - preview.months.min + 1 },
+                                (_, i) => i + preview.months.min
+                            ).map((value) => (
+                                <option
+                                    key={value}
+                                    value={value}
+                                >
+                                    {tPlural('account.subscription.mine.pause.monthCount', value, {
+                                        count: value
+                                    })}
+                                </option>
                             ))}
-                            <button
-                                type="button"
-                                data-testid={
-                                    preview.courtesyForfeit
-                                        ? 'pause-confirm-courtesy-forfeit'
-                                        : 'pause-confirm-simple'
-                                }
-                                className={styles.primary}
-                                onClick={() => void applyPause()}
+                        </Select>
+                    </Field>
+                    {end && (
+                        <div
+                            className={styles.panel}
+                            data-testid="pause-confirmation"
+                        >
+                            <Alert
+                                tone="info"
+                                locale={locale}
                             >
-                                {t('account.subscription.mine.pause.confirm')}
-                            </button>
+                                {preview.courtesyForfeit && (
+                                    <p>
+                                        {t('account.subscription.mine.pause.courtesyConfirmation')}
+                                    </p>
+                                )}
+                                <p>
+                                    {t('account.subscription.mine.pause.confirmation', undefined, {
+                                        date: pauseDate(end, locale)
+                                    })}
+                                </p>
+                                <p>{t('account.subscription.mine.pause.listing')}</p>
+                                {preview.addons.vertical.length > 0 && (
+                                    <>
+                                        <p>{t('account.subscription.mine.pause.addonsVertical')}</p>
+                                        {preview.addons.vertical.map((name) => (
+                                            <p key={name}>{name}</p>
+                                        ))}
+                                    </>
+                                )}
+                                {preview.addons.account.map((addon) => (
+                                    <p key={addon.name}>
+                                        {t(
+                                            addon.pauses
+                                                ? 'account.subscription.mine.pause.addonPauses'
+                                                : 'account.subscription.mine.pause.addonContinues',
+                                            undefined,
+                                            { name: addon.name }
+                                        )}
+                                    </p>
+                                ))}
+                            </Alert>
+                            <div className={styles.actions}>
+                                <Button
+                                    size="sm"
+                                    data-testid={
+                                        preview.courtesyForfeit
+                                            ? 'pause-confirm-courtesy-forfeit'
+                                            : 'pause-confirm-simple'
+                                    }
+                                    onClick={() => void applyPause()}
+                                >
+                                    {t('account.subscription.mine.pause.confirm')}
+                                </Button>
+                            </div>
                         </div>
                     )}
-                </>
+                </div>
             )}
             {state === 'done' && (
                 <p role="status">

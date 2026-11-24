@@ -1,36 +1,35 @@
+/* PromoCodeRedeem.module.css — promo redemption block. The label, input and
+   button are kit components. Tokens only. */
+
 .root {
-    display: grid;
-    gap: var(--space-2, 0.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
     color: var(--core-foreground);
 }
+
 .root h3,
 .root p {
     margin: 0;
 }
-.root form {
+
+.title {
+    font: var(--app-card-title);
+}
+
+.form {
     display: flex;
     flex-wrap: wrap;
-    align-items: end;
-    gap: var(--space-2, 0.5rem);
+    align-items: flex-end;
+    gap: var(--space-2);
 }
-.root label {
-    width: 100%;
+
+.field {
+    flex: 1 1 16rem;
+    max-inline-size: 28rem;
 }
-.root input {
-    min-width: min(16rem, 100%);
-    padding: var(--space-2, 0.5rem);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    color: var(--core-foreground);
-    background: var(--core-background);
-}
-.submit {
-    composes: primary from "./AccountButton.module.css";
-}
+
 .result {
     display: grid;
-    gap: var(--space-1, 0.25rem);
-}
-.result p {
-    line-height: 1.5;
+    gap: var(--space-1);
 }
