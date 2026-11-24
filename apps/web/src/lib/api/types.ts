@@ -615,9 +615,9 @@ export interface OwnerPromotionUpdateInput {
 export type EditorContentModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 /**
- * The author's own publish switch. Independent of `moderationState` — see
- * `EditableContentCard.astro` for why the two must never be collapsed into
- * one "draft/published" boolean (HOS-374 §7.6.1).
+ * The author's own publish switch. Independent of `moderationState`: the two
+ * must never be collapsed into one "draft/published" boolean (HOS-374 §7.6.1;
+ * `PublicationSection` renders them as separate statuses).
  */
 export type EditorContentVisibility = 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
 
