@@ -9,7 +9,7 @@
  * What it cannot see: it reads source, so it proves the mount is not wrapped in
  * a JSX condition and that the bar gets the facts it needs, not that the island
  * hydrates. That half is `ListingContactBar.test.tsx` (bare listing of each
- * vertical) and the E2E pin case in `guest-13-listing-detail-standard.spec.ts`.
+ * vertical) and the E2E pin case in `apps/e2e/tests/guest/guest-13-listing-detail-action-bar.spec.ts`.
  */
 
 import { readFileSync } from 'node:fs';

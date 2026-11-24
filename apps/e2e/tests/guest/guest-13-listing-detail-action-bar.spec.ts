@@ -109,6 +109,11 @@ test.describe('GUEST-13: listing action bar @p1 @guest @discovery @messaging', (
                 await expect(
                     bar.getByRole('link', { name: 'Consultar', exact: true })
                 ).toHaveAttribute('aria-haspopup', 'dialog', { timeout: 15_000 });
+                // The tightest row is six actions plus the AI chat FAB: a guest gets
+                // the FAB once the widget resolves the session, so wait for it.
+                await expect(
+                    page.locator('[data-mobile-dock-slot="ai-chat"] [data-dock-item]')
+                ).toBeVisible({ timeout: 15_000 });
 
                 const {
                     actions,
@@ -131,14 +136,14 @@ test.describe('GUEST-13: listing action bar @p1 @guest @discovery @messaging', (
                     expect(Math.abs(control.top - firstTop), control.action).toBeLessThanOrEqual(1);
                 }
                 expect(Math.abs(row.height - 44)).toBeLessThanOrEqual(2);
-                if (aiChat) {
-                    // Same line as the AI chat button, and never under it.
-                    expect(
-                        Math.abs(aiChat.top + aiChat.height - (firstTop + 44))
-                    ).toBeLessThanOrEqual(2);
-                    expect(row.right).toBeLessThanOrEqual(aiChat.left);
-                    expect(aiChat.right).toBeLessThanOrEqual(width);
-                }
+                // Same line as the AI chat button, and never under it.
+                expect(aiChat).not.toBeNull();
+                if (!aiChat) return;
+                expect(Math.abs(aiChat.top + aiChat.height - (firstTop + 44))).toBeLessThanOrEqual(
+                    2
+                );
+                expect(row.right).toBeLessThanOrEqual(aiChat.left);
+                expect(aiChat.right).toBeLessThanOrEqual(width);
                 expect(row.right).toBeLessThanOrEqual(width);
                 expect(overflow).toBeLessThanOrEqual(0);
             });
