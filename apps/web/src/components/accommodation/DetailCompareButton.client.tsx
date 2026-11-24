@@ -51,6 +51,12 @@ export interface DetailCompareButtonProps {
     readonly gatePlanNames?: readonly string[];
     /** Additional CSS classes forwarded to the root button element. */
     readonly className?: string;
+    /**
+     * Label pair that replaces «Agregar a comparación» / «En comparación», for a
+     * surface with its own vocabulary (the listing action bar, HOS-2579 §6.10.2).
+     * It is still the button's visible-or-sr-only text, never an `aria-label`.
+     */
+    readonly labels?: { readonly add: string; readonly remove: string };
 }
 
 /**
@@ -83,7 +89,8 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
     accommodationThumbnailUrl,
     locale = 'es',
     gatePlanNames = [],
-    className
+    className,
+    labels
 }) => {
     const { t, tPlural } = createTranslations(locale);
     const { isInList, isLoading, maxItems, toggle } = useCompareGuard();
@@ -98,8 +105,8 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
     const pricingHref = `/${locale}/${PRICING_PAGE_PATH_BY_AUDIENCE.tourist}/`;
 
     const label = selected
-        ? t('accommodations.comparison.detail.added', 'En comparación')
-        : t('accommodations.comparison.detail.add', 'Agregar a comparación');
+        ? (labels?.remove ?? t('accommodations.comparison.detail.added', 'En comparación'))
+        : (labels?.add ?? t('accommodations.comparison.detail.add', 'Agregar a comparación'));
 
     const handleClick = (_event: MouseEvent<HTMLButtonElement>): void => {
         // Defer while entitlements are still loading (guard fails closed until known).

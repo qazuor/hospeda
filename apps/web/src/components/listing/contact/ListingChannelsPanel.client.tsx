@@ -16,7 +16,7 @@ import {
     YoutubeIcon
 } from '@repo/icons';
 import type { ReactNode } from 'react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import type { VenueWhatsAppButtonMode } from '@/components/venue/VenueWhatsAppButton.client';
 import { VenueWhatsAppButton } from '@/components/venue/VenueWhatsAppButton.client';
@@ -88,15 +88,15 @@ export function ListingChannelsPanel({
     venueName = '',
     signInHref = ''
 }: ListingChannelsPanelProps) {
-    const [open, setOpen] = useState(false);
+    const [request, setRequest] = useState<ListingContactPanelOpen | null>(null);
+    const open = request !== null;
+    const whatsappRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
     const { t } = createTranslations(locale);
     const display = getListingContactPrice({ price, locale });
 
     useEffect(() => {
-        const unsubscribe = onListingContactPanelOpen((_request: ListingContactPanelOpen) =>
-            setOpen(true)
-        );
+        const unsubscribe = onListingContactPanelOpen(setRequest);
         const clearReady = markListingContactPanelReady({ panelId });
         return () => {
             unsubscribe();
@@ -117,7 +117,27 @@ export function ListingChannelsPanel({
         return channel.text;
     }
 
-    const close = () => setOpen(false);
+    // The action bar's venue WhatsApp (LOGGED_IN_ONLY, HOS-2579 §6.10.1) opens the
+    // sheet on the WhatsApp row. Dialog queues its default focus in the opening
+    // frame, so the row is focused one frame later.
+    useEffect(() => {
+        if (request?.focus !== 'whatsapp') return;
+        let focusFrame = 0;
+        const openingFrame = requestAnimationFrame(() => {
+            focusFrame = requestAnimationFrame(() => {
+                const row = whatsappRef.current;
+                const control = row?.querySelector<HTMLElement>('a[href], button');
+                row?.scrollIntoView?.({ block: 'nearest' });
+                control?.focus({ preventScroll: true });
+            });
+        });
+        return () => {
+            cancelAnimationFrame(openingFrame);
+            cancelAnimationFrame(focusFrame);
+        };
+    }, [request]);
+
+    const close = () => setRequest(null);
 
     return (
         <Dialog
@@ -168,7 +188,9 @@ export function ListingChannelsPanel({
                     // biome-ignore lint/a11y/noStaticElementInteractions: delegated tracking for the child link.
                     // biome-ignore lint/a11y/useKeyWithClickEvents: the child link is the keyboard-operable control.
                     <div
+                        ref={whatsappRef}
                         className={styles.whatsapp}
+                        data-panel-row="whatsapp"
                         onClick={(event) => {
                             const target = event.target;
                             if (
