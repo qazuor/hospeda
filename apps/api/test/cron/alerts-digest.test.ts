@@ -105,6 +105,7 @@ import { AlertDigestDeliveryService } from '@repo/notifications';
 import { PriceDropEvaluatorService, PromoOfferEvaluatorService } from '@repo/service-core';
 import { alertsDigestJob } from '../../src/cron/jobs/alerts-digest.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
+import { resolveTouristAudienceScopeForUser } from '../../src/routes/owner-promotion/audience-scope.js';
 
 // ---------------------------------------------------------------------------
 // Test setup
@@ -366,6 +367,16 @@ describe('Alerts Digest Cron Job', () => {
             expect(PromoOfferEvaluatorService).toHaveBeenCalledOnce();
             expect(mockEvaluatePromoOffers).toHaveBeenCalledWith({
                 since: new Date(mockContext.startedAt.getTime() - 24 * 60 * 60 * 1000)
+            });
+        });
+
+        it('wires the per-recipient VIP audience scope into PromoOfferEvaluatorService (HOS-2592)', async () => {
+            mockEvaluatePromoOffers.mockResolvedValue(new Map());
+
+            await alertsDigestJob.handler(mockContext);
+
+            expect(PromoOfferEvaluatorService).toHaveBeenCalledWith({
+                resolveAudienceScope: resolveTouristAudienceScopeForUser
             });
         });
 
