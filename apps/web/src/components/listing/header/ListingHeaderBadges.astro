@@ -1,0 +1,168 @@
+---
+/**
+ * @file ListingHeaderBadges.astro
+ * @description Badge row of the shared listing header (HOS-2579 §6.3).
+ *
+ * Every badge carries `listing-header-badge` inside a `listing-header-badges`
+ * row, so its height, text size and inline padding come from the ONE contract
+ * in `styles/components.css` (owner smoke, HOS-2520), identical across the
+ * three verticals. No badge here declares its own font size or padding.
+ *
+ * The row wraps on every width. The owner smoke (HOS-2520) rejected the
+ * horizontal scroller because it drew a scrollbar under the row.
+ *
+ * The open-now badge (HOS-2257) is a client island: the page is edge-cached and
+ * cannot know «today». Its wrapper is server-rendered EMPTY with the pill's
+ * footprint reserved, so the late hydration paints into it without shifting
+ * the title (CLS). It is last in the row (the builder puts it there) so no
+ * sibling moves horizontally either.
+ */
+import { CheckCircleIcon, StarIcon } from '@repo/icons';
+import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
+import { VenueOpenNowBadge } from '@/components/venue/VenueOpenNowBadge.client';
+import { getBadgeStatusColor } from '@/lib/colors';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { ListingHeaderBadge } from './listing-header.types';
+
+interface Props {
+    readonly badges: readonly ListingHeaderBadge[];
+    readonly locale: SupportedLocale;
+}
+
+const { badges, locale } = Astro.props;
+
+const newColors = getBadgeStatusColor({ status: 'new' });
+const newStyle = `background-color: ${newColors.bg}; color: ${newColors.onFill}; border-color: ${newColors.border};`;
+---
+
+{badges.length > 0 && (
+    <div class="listing-header__badges listing-header-badges wh-compact-hide-mobile">
+        {badges.map((badge) => {
+            if (badge.kind === 'openNow') {
+                return (
+                    <span class="listing-header__open-now" data-open-now-slot>
+                        <VenueOpenNowBadge
+                            client:idle
+                            locale={locale}
+                            openingHours={badge.openingHours}
+                            variant="inline"
+                        />
+                    </span>
+                );
+            }
+            if (badge.kind === 'type') {
+                return badge.accommodationType ? (
+                    <AccommodationTypeBadge
+                        type={badge.accommodationType}
+                        locale={locale}
+                        size="sm"
+                        class="listing-header__type-badge listing-header-badge"
+                    />
+                ) : (
+                    <span class="listing-header__type-badge listing-header__type-badge--tinted listing-header-badge">
+                        {badge.label}
+                    </span>
+                );
+            }
+            if (badge.kind === 'featured') {
+                return (
+                    <span class="featured-badge listing-header-badge">
+                        <StarIcon size={12} weight="fill" aria-hidden="true" />
+                        <span>{badge.label}</span>
+                    </span>
+                );
+            }
+            if (badge.kind === 'verified') {
+                return (
+                    <span class="featured-badge listing-header__verified-badge listing-header-badge">
+                        <CheckCircleIcon size={12} weight="fill" aria-hidden="true" />
+                        <span>{badge.label}</span>
+                    </span>
+                );
+            }
+            return (
+                <span class="listing-header__status-pill listing-header-badge" style={newStyle}>
+                    {badge.label}
+                </span>
+            );
+        })}
+    </div>
+)}
+
+<style>
+    .listing-header__badges {
+        grid-area: badges;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2, 8px);
+        min-width: 0;
+        max-width: 100%;
+        transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    /* Venue and experience types: a tinted pill (accommodation types use the
+     * shared AccommodationTypeBadge and its own colours). */
+    .listing-header__type-badge--tinted {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary-a12);
+        color: var(--brand-primary-link);
+        border: 1px solid var(--brand-primary-a25);
+        font-family: var(--font-sans);
+        font-weight: 600;
+    }
+
+    /* Verified: the shared `.featured-badge` shape on the semantic "info"
+     * (trust) token, so it reads apart from the accent featured badge. */
+    .listing-header__verified-badge {
+        background-color: var(--info);
+        color: var(--info-foreground);
+    }
+
+    /* «Nuevo»: colours from `getBadgeStatusColor`, applied inline. */
+    .listing-header__status-pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid transparent;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* Reserved footprint of the open-now pill: the shared badge height, and the
+       widest label "Abre a las 23:00" fits ~9.5rem. */
+    .listing-header__open-now {
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--listing-badge-height, 1.75rem);
+        min-width: 9.5rem;
+    }
+
+    :global(.wave-header--compact) .listing-header__badges {
+        gap: 4px;
+    }
+
+    /* Mobile compact state (owner smoke, HOS-2520): the row collapses through
+       `wh-compact-hide-mobile` (made inert by WaveHeader), so it needs its own
+       max-height/opacity transition to animate. */
+    @media (max-width: 767px) {
+        .listing-header__badges {
+            max-height: 6em;
+            opacity: 1;
+            transition:
+                max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
+                opacity 0.2s ease;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .listing-header__badges,
+        .listing-header__status-pill {
+            transition: none;
+        }
+    }
+</style>

@@ -79,8 +79,9 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('detail blocks', () => {
-        it('renders VenueDetailHeader', () => {
-            expect(src).toContain('VenueDetailHeader');
+        it('renders the shared ListingHeader (HOS-2579)', () => {
+            expect(src).toContain('<ListingHeader {...headerProps} />');
+            expect(src).not.toContain('VenueDetailHeader');
         });
 
         it('renders VenueDescription', () => {

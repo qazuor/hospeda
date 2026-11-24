@@ -111,15 +111,15 @@ describe('experience and venue mobile header spacing (same fixes as accommodatio
             name: 'experience',
             page: 'pages/[lang]/experiencias/[slug].astro',
             cls: 'exp-detail',
-            header: 'components/experience/ExperienceHero.astro',
-            hdr: 'exp-hero'
+            header: 'components/listing/header/ListingHeader.astro',
+            hdr: 'listing-header'
         },
         {
             name: 'venue',
             page: 'pages/[lang]/comer-y-salir/[slug].astro',
             cls: 'venue-detail',
-            header: 'components/venue/VenueDetailHeader.astro',
-            hdr: 'venue-detail-header'
+            header: 'components/listing/header/ListingHeader.astro',
+            hdr: 'listing-header'
         }
     ] as const;
 
@@ -142,7 +142,7 @@ describe('experience and venue mobile header spacing (same fixes as accommodatio
     it.each(cases)('$name header uses the h3 step for the mobile title', ({ header, hdr }) => {
         expect(read(header)).toMatch(
             new RegExp(
-                `\\.${hdr}--mobile-gallery \\.${hdr}__name\\s*\\{[^}]*font-size: var\\(--text-h3`
+                `\\.${hdr}--mobile-gallery \\.${hdr}__title\\s*\\{[^}]*font-size: var\\(--text-h3`
             )
         );
     });

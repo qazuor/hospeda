@@ -17,7 +17,8 @@ import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import { formatPhotoCredit } from '@/lib/photo-credit';
-import DetailHeader from '@/components/accommodation/DetailHeader.astro';
+import ListingHeader from '@/components/listing/header/ListingHeader.astro';
+import { buildAccommodationHeader } from '@/lib/listing-header/build-listing-header';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import MobileBookingSummary from '@/components/accommodation/MobileBookingSummary.astro';
 import Description from '@/components/accommodation/Description.astro';
@@ -561,6 +562,15 @@ const sectionTabs = buildListingSectionTabs({
     }
 });
 
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
+const headerProps = buildAccommodationHeader({
+    accommodation,
+    locale,
+    shareUrl: `${siteOrigin}${Astro.url.pathname}`,
+    bookmarkCount,
+    hasMobileGalleryControls: true
+});
+
 // --- FAQPage JSON-LD when FAQs exist (REQ-096-37 / T-067) ---
 const faqSections = accommodation.faqs.map((faq) => ({
     heading: faq.question,
@@ -620,13 +630,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
     </div>
 
     <Fragment slot="page-header">
-        <DetailHeader
-            accommodation={accommodation}
-            lang={locale}
-            accommodationId={accommodation.id}
-            bookmarkCount={bookmarkCount}
-            hasMobileGalleryControls
-        />
+        <ListingHeader {...headerProps} />
     </Fragment>
 
     <!-- Main content -->

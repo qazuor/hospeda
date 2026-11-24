@@ -2705,7 +2705,14 @@ export function toVenueCardProps({
     });
 
     // Resolve destination name from API join (destinationId is the FK)
-    const destinationObj = item.destination as { name?: unknown; nameI18n?: unknown } | undefined;
+    const destinationObj = item.destination as
+        | { name?: unknown; nameI18n?: unknown; slug?: unknown }
+        | undefined;
+    // HOS-2579: the header links the location line to the destination page.
+    const destinationSlug =
+        typeof destinationObj?.slug === 'string' && destinationObj.slug.trim() !== ''
+            ? destinationObj.slug
+            : null;
     const destinationName = destinationObj
         ? resolveI18nText(
               (destinationObj.nameI18n as I18nTextLike | string) ?? destinationObj.name ?? '',
@@ -2737,6 +2744,7 @@ export function toVenueCardProps({
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
+        destinationSlug,
         priceRange: item.priceRange == null ? null : String(item.priceRange),
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
@@ -3193,7 +3201,14 @@ export function toExperienceCardProps({
         fallback: '/assets/images/placeholder-experience.svg'
     });
 
-    const destinationObj = item.destination as { name?: unknown; nameI18n?: unknown } | undefined;
+    const destinationObj = item.destination as
+        | { name?: unknown; nameI18n?: unknown; slug?: unknown }
+        | undefined;
+    // HOS-2579: the header links the location line to the destination page.
+    const destinationSlug =
+        typeof destinationObj?.slug === 'string' && destinationObj.slug.trim() !== ''
+            ? destinationObj.slug
+            : null;
     const destinationName = destinationObj
         ? resolveI18nText(
               (destinationObj.nameI18n as I18nTextLike | string) ?? destinationObj.name ?? '',
@@ -3218,6 +3233,7 @@ export function toExperienceCardProps({
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
+        destinationSlug,
         // HOS-1943: a price "a consultar" is null. Keep it null instead of
         // inventing a 0 that reads as "$0" downstream.
         priceFrom: item.priceFrom == null ? null : Number(item.priceFrom),

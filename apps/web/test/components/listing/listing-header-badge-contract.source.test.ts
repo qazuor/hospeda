@@ -12,10 +12,10 @@ const read = (relative: string): string =>
     readFileSync(resolve(__dirname, '../../../src', relative), 'utf8');
 
 const CSS = read('styles/components.css');
+// HOS-2579: the three vertical headers became one `ListingHeader`, whose badge
+// row lives in `ListingHeaderBadges.astro`. One row, so one source to check.
 const HEADERS = {
-    accommodation: read('components/accommodation/DetailHeader.astro'),
-    venue: read('components/venue/VenueDetailHeader.astro'),
-    experience: read('components/experience/ExperienceHero.astro')
+    shared: read('components/listing/header/ListingHeaderBadges.astro')
 } as const;
 
 describe('shared listing header badge contract (components.css)', () => {
@@ -66,18 +66,12 @@ describe.each(Object.entries(HEADERS))('%s detail header', (_vertical, src) => {
     });
 });
 
-describe.each([
-    ['venue', HEADERS.venue, 'venue-detail-header'],
-    ['experience', HEADERS.experience, 'exp-hero']
-] as const)('%s badges on mobile', (_vertical, src, prefix) => {
+describe('badges on mobile, every vertical', () => {
     it('wrap instead of scrolling sideways', () => {
-        const mobile =
-            src.match(/@media \(max-width: 767px\)[\s\S]*?(?=@media|<\/style>)/)?.[0] ?? '';
-        const row =
-            mobile.match(
-                new RegExp(`\\.${prefix}--mobile-gallery \\.${prefix}__badges \\{[^}]*\\}`)
-            )?.[0] ?? '';
+        const src = HEADERS.shared;
+        const row = src.match(/\.listing-header__badges \{[^}]*\}/)?.[0] ?? '';
         expect(row).toContain('flex-wrap: wrap;');
-        expect(row).not.toContain('overflow-x');
+        expect(src).not.toContain('overflow-x');
+        expect(src).not.toContain('nowrap');
     });
 });

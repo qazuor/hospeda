@@ -21,7 +21,8 @@ import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
 import VenueJsonLd from '@/components/seo/VenueJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
+import ListingHeader from '@/components/listing/header/ListingHeader.astro';
+import { buildVenueHeader } from '@/lib/listing-header/build-listing-header';
 import VenueDescription from '@/components/venue/VenueDescription.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
@@ -439,6 +440,15 @@ const breadcrumbItems = [
     },
     { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
+
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
+const headerProps = buildVenueHeader({
+    venue,
+    locale,
+    shareUrl: `${siteOrigin}${Astro.url.pathname}`,
+    bookmarkCount,
+    hasMobileGalleryControls: galleryImages.length > 0
+});
 ---
 
 <DetailLayout
@@ -487,12 +497,7 @@ const breadcrumbItems = [
 
     <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
-        <VenueDetailHeader
-            venue={venue}
-            locale={locale}
-            bookmarkCount={bookmarkCount}
-            hasMobileGalleryControls={galleryImages.length > 0}
-        />
+        <ListingHeader {...headerProps} />
     </Fragment>
 
     <div class="venue-detail">

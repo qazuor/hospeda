@@ -69,8 +69,9 @@ describe('experiencias/[slug].astro', () => {
     });
 
     describe('detail blocks', () => {
-        it('renders ExperienceHero with hero, type, pricing, rating', () => {
-            expect(src).toContain('ExperienceHero');
+        it('renders the shared ListingHeader (HOS-2579)', () => {
+            expect(src).toContain('<ListingHeader {...headerProps} />');
+            expect(src).not.toContain('ExperienceHero');
         });
 
         it('renders ExperienceInfo with description, hours, social', () => {
