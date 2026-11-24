@@ -115,7 +115,6 @@
 {"anchor":"page:mi-cuenta/publicaciones/nuevo","kind":"out-of-scope","reason":"Editorial posts, gated by POST_CREATE (NG-2)."},
 {"anchor":"page:mi-cuenta/recomendaciones","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
 {"anchor":"page:mi-cuenta/resenas","kind":"out-of-scope","reason":"Tourist page (NG-1)."},
-{"anchor":"page:mi-cuenta/suscripcion","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"subscription-status"},
 {"anchor":"page:mi-cuenta/tablero-experiencias","kind":"pending-content","reason":"HOS-2476 owner dashboard; its help is the planned listing-stats article (HOS-2410 Phase 5, docs/catalog.md).","plannedArticle":"listing-stats"},
 {"anchor":"page:mi-cuenta/tablero-locales","kind":"pending-content","reason":"HOS-2475 owner dashboard; its help is the planned listing-stats article (HOS-2410 Phase 5, docs/catalog.md).","plannedArticle":"listing-stats"},
 {"anchor":"section:accommodation.capacidad-precio","kind":"pending-content","reason":"HOS-2410 Phase 5: planned in docs/catalog.md.","plannedArticle":"capacity-price"},
