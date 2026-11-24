@@ -110,6 +110,20 @@ export const OwnSubscriptionsResponseSchema = z.object({
                 plan: z.object({ slug: z.string(), name: z.string() })
             })
         )
+        .default([]),
+    /**
+     * Declined signups whose seven-day retry window has passed, with no live subscription and no
+     * newer attempt in their vertical (HOS-2193). The page offers a fresh start for that vertical.
+     */
+    expiredDeclinedSignups: z
+        .array(
+            z.object({
+                subscriptionId: z.string().uuid(),
+                vertical: z.string(),
+                declinedAt: z.string().datetime(),
+                plan: z.object({ slug: z.string(), name: z.string() })
+            })
+        )
         .default([])
 });
 

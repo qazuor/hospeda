@@ -1,5 +1,5 @@
 {
-  "contentHash": "fbbc2868478b7080ce6a5d1f27086e5d427abb344558243ea5c3d94860b3a0e2",
+  "contentHash": "148d28e0530b66d9091735bcd1bc99523cdd9e0be5cddf6b14e05c2851ffbee1",
   "locales": {
     "es": [
       {
@@ -476,7 +476,7 @@
           "publish-requirements",
           "calendar"
         ],
-        "reviewedAt": "2026-11-23",
+        "reviewedAt": "2026-11-24",
         "sections": {
           "canDo": "Cambiar el plan o la frecuencia de cobro de una suscripción activa desde {{link:subscription|Suscripción}}.\n\nComparar los planes en {{link:plans:accommodation|planes para alojamientos}}, {{link:plans:venue|planes para comercios}} o {{link:plans:experience|planes para experiencias}}.",
           "expect": "- Si el cambio requiere autorización, pasás por el checkout de Mercado Pago y tu plan actual sigue hasta que autorices.\n- Si el cambio se programa, ves la fecha exacta desde la que rige.\n- Los importes se ven en la lista de opciones y en la página de planes.",
@@ -493,7 +493,7 @@
             ]
           },
           "notExpect": "- Cambiar de plan con un pago pendiente, con la suscripción pausada o con otro cambio ya programado.\n- Que dar de baja la suscripción corte el servicio en el acto: seguís hasta el final del período pago.",
-          "troubleshooting": "### No aparece el botón para cambiar {#no-aparece}\n\nEl sitio te explica el motivo. Si lo que querés es sumar algo puntual, quizás te sirva {{article:addons|un complemento}}.\n\n### Mi plan no incluye el calendario {#sin-calendario}\n\nMirá {{article:calendar|el calendario de ocupación}} para saber qué depende del plan."
+          "troubleshooting": "### No aparece el botón para cambiar {#no-aparece}\n\nEl sitio te explica el motivo. Si lo que querés es sumar algo puntual, quizás te sirva {{article:addons|un complemento}}.\n\n### Me rechazaron el primer pago {#pago-rechazado}\n\nDurante unos días después del rechazo, «Suscripción» te muestra el aviso y el botón para volver a intentarlo. Cuando ese aviso deja de aparecer, si en esa categoría no tenés otra suscripción activa, aparece «Empezar de nuevo» para elegir el plan otra vez.\n\n### Mi plan no incluye el calendario {#sin-calendario}\n\nMirá {{article:calendar|el calendario de ocupación}} para saber qué depende del plan."
         },
         "summary": "Cómo pasar a otro plan o frecuencia de cobro, cuándo rige el cambio y por qué a veces no se puede.",
         "title": "Cambiar de plan",

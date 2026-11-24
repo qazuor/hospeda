@@ -37,6 +37,48 @@ describe('self cancellation schemas', () => {
             expect(result.success).toBe(true);
             if (result.success) expect(result.data.declinedSignups).toEqual([entry]);
         });
+        it('HOS-2193 defaults expiredDeclinedSignups to an empty list when absent', () => {
+            // Arrange
+            const response = { subscriptions: [], deferredCourtesies: [] };
+            // Act
+            const result = OwnSubscriptionsResponseSchema.parse(response);
+            // Assert
+            expect(result.expiredDeclinedSignups).toEqual([]);
+        });
+        it('HOS-2193 parses an expired declined signup entry', () => {
+            // Arrange
+            const expired = {
+                subscriptionId: entry.subscriptionId,
+                vertical: 'venue',
+                declinedAt: '2026-11-01T12:00:00.000Z',
+                plan: { slug: 'basic', name: 'Basic' }
+            };
+            // Act
+            const result = OwnSubscriptionsResponseSchema.safeParse({
+                subscriptions: [],
+                deferredCourtesies: [],
+                expiredDeclinedSignups: [expired]
+            });
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) expect(result.data.expiredDeclinedSignups).toEqual([expired]);
+        });
+        it('HOS-2193 rejects an expired declined signup without a plan', () => {
+            // Act
+            const result = OwnSubscriptionsResponseSchema.safeParse({
+                subscriptions: [],
+                deferredCourtesies: [],
+                expiredDeclinedSignups: [
+                    {
+                        subscriptionId: entry.subscriptionId,
+                        vertical: 'venue',
+                        declinedAt: '2026-11-01T12:00:00.000Z'
+                    }
+                ]
+            });
+            // Assert
+            expect(result.success).toBe(false);
+        });
         it('S3 rejects a declined signup without billingOptionId', () => {
             // Arrange
             const { billingOptionId: _billingOptionId, ...invalidEntry } = entry;

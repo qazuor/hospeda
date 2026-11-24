@@ -172,7 +172,8 @@ const FROZEN_BODY = JSON.stringify({
             declinedAt: '2026-11-01T10:00:00.000Z',
             plan: { slug: 'venue-pro', name: 'venue-pro' }
         }
-    ]
+    ],
+    expiredDeclinedSignups: []
 });
 
 /** The protected read router behind a fixed, permitted owner. */
@@ -200,7 +201,7 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
         vi.clearAllMocks();
     });
 
-    it('answers byte for byte what it answered before, without the reader-only planVersionId', async () => {
+    it('answers the frozen contract body (declined and expired notices included), without the reader-only planVersionId', async () => {
         // Arrange
         mocks.readOwnPlanState.mockResolvedValue({
             subscriptions: readerRows(),
@@ -208,16 +209,19 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
                 { courtesyGrantId: COURTESY_ID, vertical: 'accommodation', balanceMonths: 3 }
             ]
         });
-        mocks.readOwnDeclinedSignups.mockResolvedValue([
-            {
-                subscriptionId: SUBSCRIPTION_ID,
-                vertical: 'venue',
-                billingOptionId: OPTION_ID,
-                declaredPayerEmail: null,
-                declinedAt: new Date('2026-11-01T10:00:00.000Z'),
-                plan: { slug: 'venue-pro', name: 'venue-pro' }
-            }
-        ]);
+        mocks.readOwnDeclinedSignups.mockResolvedValue({
+            retry: [
+                {
+                    subscriptionId: SUBSCRIPTION_ID,
+                    vertical: 'venue',
+                    billingOptionId: OPTION_ID,
+                    declaredPayerEmail: null,
+                    declinedAt: new Date('2026-11-01T10:00:00.000Z'),
+                    plan: { slug: 'venue-pro', name: 'venue-pro' }
+                }
+            ],
+            expired: []
+        });
 
         // Act
         const response = await app().request('/api/v1/protected/billing-subscription', {
@@ -247,16 +251,19 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
             ],
             deferredCourtesies: []
         });
-        mocks.readOwnDeclinedSignups.mockResolvedValue([
-            {
-                subscriptionId: SUCCESSOR_ID,
-                vertical: 'accommodation',
-                billingOptionId: OPTION_ID,
-                declaredPayerEmail: null,
-                declinedAt: new Date('2026-11-18T10:00:00.000Z'),
-                plan: { slug: 'owner-pro', name: 'owner-pro' }
-            }
-        ]);
+        mocks.readOwnDeclinedSignups.mockResolvedValue({
+            retry: [
+                {
+                    subscriptionId: SUCCESSOR_ID,
+                    vertical: 'accommodation',
+                    billingOptionId: OPTION_ID,
+                    declaredPayerEmail: null,
+                    declinedAt: new Date('2026-11-18T10:00:00.000Z'),
+                    plan: { slug: 'owner-pro', name: 'owner-pro' }
+                }
+            ],
+            expired: []
+        });
 
         // Act
         const response = await app().request('/api/v1/protected/billing-subscription', {
@@ -274,6 +281,40 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
         expect(body.data.subscriptions.map((row) => row.status)).toEqual(['ACTIVE']);
         expect(body.data.declinedSignups.map((notice) => notice.subscriptionId)).toEqual([
             SUCCESSOR_ID
+        ]);
+    });
+
+    it('exposes the expired declined signups with an ISO declinedAt (HOS-2193)', async () => {
+        // Arrange
+        mocks.readOwnPlanState.mockResolvedValue({ subscriptions: [], deferredCourtesies: [] });
+        mocks.readOwnDeclinedSignups.mockResolvedValue({
+            retry: [],
+            expired: [
+                {
+                    subscriptionId: SUBSCRIPTION_ID,
+                    vertical: 'venue',
+                    declinedAt: new Date('2026-11-01T10:00:00.000Z'),
+                    plan: { slug: 'venue-pro', name: 'Pro' }
+                }
+            ]
+        });
+
+        // Act
+        const response = await app().request('/api/v1/protected/billing-subscription', {
+            headers: { 'Content-Type': 'application/json', 'user-agent': 'vitest' }
+        });
+        const body = (await response.json()) as { data: { expiredDeclinedSignups: unknown } };
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(mocks.readOwnDeclinedSignups).toHaveBeenCalledWith(OWNER_ID);
+        expect(body.data.expiredDeclinedSignups).toEqual([
+            {
+                subscriptionId: SUBSCRIPTION_ID,
+                vertical: 'venue',
+                declinedAt: '2026-11-01T10:00:00.000Z',
+                plan: { slug: 'venue-pro', name: 'Pro' }
+            }
         ]);
     });
 });

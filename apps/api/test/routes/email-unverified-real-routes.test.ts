@@ -30,7 +30,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     readOwnPlanState: cancellationRouteMocks.readOwnPlanState
 }));
 vi.mock('../../src/routes/billing-subscription/read-own-declined-signups', () => ({
-    readOwnDeclinedSignups: vi.fn(async () => [])
+    readOwnDeclinedSignups: vi.fn(async () => ({ retry: [], expired: [] }))
 }));
 vi.mock('../../src/routes/billing-subscription/read-subscription', () => ({
     readSubscription: cancellationRouteMocks.readSubscription
