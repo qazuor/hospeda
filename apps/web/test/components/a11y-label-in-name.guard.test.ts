@@ -62,13 +62,43 @@ describe('label in name (WCAG 2.5.3): links whose visible text is their content'
 });
 
 const CONTACT_LINKS: ReadonlyArray<{ file: string; className: string }> = [
-    { file: 'accommodation/AccommodationContactBlock.astro', className: 'acc-contact__link' },
-    { file: 'venue/VenueContactBlock.astro', className: 'venue-contact__link' },
     {
         file: 'event/EventDetailOrganizerCard.astro',
         className: 'event-organizer-card__contact-link'
     }
 ];
+
+/** HOS-2533/HOS-2520: the three blocks render their channels through one shared component. */
+const CONTACT_BLOCK_WRAPPERS: readonly string[] = [
+    'accommodation/AccommodationContactBlock.astro',
+    'venue/VenueContactBlock.astro',
+    'experience/ExperienceContactBlock.astro'
+];
+
+describe('label in name (WCAG 2.5.3): GradientButton contact channels', () => {
+    it('listing/contact/ListingContactChannels.astro: visible value is the label and the context rides in srHint', () => {
+        // Arrange
+        const src = read('listing/contact/ListingContactChannels.astro');
+
+        // Assert: no aria-label replaces the visible text, context is appended
+        expect(src).toContain('<GradientButton');
+        expect(src).toContain('srHint={srHint}');
+        const gradientTags = src.match(/<GradientButton[\s\S]*?>/g) ?? [];
+        expect(gradientTags.length).toBeGreaterThan(0);
+        for (const tag of gradientTags) {
+            expect(tag).not.toMatch(/aria-label(ledby)?=/);
+        }
+    });
+
+    for (const file of CONTACT_BLOCK_WRAPPERS) {
+        it(`${file}: every channel supplies its context as a srHint starting with a comma`, () => {
+            const src = read(file);
+            expect(src).toContain('<ListingContactChannels');
+            expect(src).toContain('srHint: `, ');
+            expect(src).not.toMatch(/aria-label(ledby)?=/);
+        });
+    }
+});
 
 describe('label in name (WCAG 2.5.3): contact links', () => {
     for (const { file, className } of CONTACT_LINKS) {

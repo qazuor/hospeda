@@ -60,6 +60,10 @@ interface Props {
      * Destination URL. Only meaningful when `as === 'a'`.
      */
     readonly href?: string;
+    /** Link target (anchor only), e.g. `_blank` for an external profile. */
+    readonly target?: string;
+    /** Link rel (anchor only); pair `target="_blank"` with `noopener noreferrer`. */
+    readonly rel?: string;
     /**
      * Visual style variant.
      * - `ghost`: transparent background, subtle hover fill (default)
@@ -126,6 +130,8 @@ const {
     ariaLabel,
     as: element = 'button',
     href,
+    target,
+    rel,
     variant = 'ghost',
     size = 'md',
     shape = 'circle',
@@ -167,6 +173,8 @@ if (aria) {
 {element === 'a' ? (
     <a
         href={href}
+        target={target}
+        rel={rel}
         id={id}
         class={classes}
         aria-label={ariaLabel}

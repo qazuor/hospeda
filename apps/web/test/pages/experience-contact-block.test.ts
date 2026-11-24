@@ -209,7 +209,12 @@ describe('HOS-815 wiring — the component follows the site conventions', () => 
     });
 
     it('marks the outbound site link noopener noreferrer, not sponsored', () => {
-        expect(COMPONENT_CODE).toContain('rel="noopener noreferrer"');
+        // target/rel live in the shared component, which only gives them to the website kind.
+        const shared = readFileSync(
+            resolve(__dirname, '../../src/components/listing/contact/ListingContactChannels.astro'),
+            'utf8'
+        );
+        expect(shared).toContain("target: '_blank', rel: 'noopener noreferrer'");
         expect(COMPONENT_CODE).not.toContain('sponsored');
     });
 
@@ -317,5 +322,27 @@ describe('HOS-363 — the dormant WhatsApp CTA no longer exists', () => {
         });
 
         expect(detail.contactInfo).toBeNull();
+    });
+});
+
+describe('ExperienceContactBlock looks like the accommodation block (HOS-2520 item 19)', () => {
+    const accommodationSrc = readFileSync(
+        resolve(__dirname, '../../src/components/accommodation/AccommodationContactBlock.astro'),
+        'utf8'
+    );
+
+    it('renders through the same shared component as accommodation, card shell included', () => {
+        expect(COMPONENT_SRC).toContain('<ListingContactChannels');
+        expect(accommodationSrc).toContain('<ListingContactChannels');
+        // Neither wrapper overrides the default `card` shell, so the visuals match.
+        expect(COMPONENT_SRC).not.toContain('shell=');
+        expect(accommodationSrc).not.toContain('shell=');
+    });
+
+    it('keeps its own rules: only present channels, no social row, srHint context, tracking data', () => {
+        expect(COMPONENT_SRC).toContain('socialLinks={[]}');
+        expect(COMPONENT_SRC).toContain('srHint:');
+        expect(COMPONENT_SRC).toContain('trackingData={trackingData}');
+        expect(COMPONENT_SRC).not.toContain('<GradientButton');
     });
 });
