@@ -66,18 +66,6 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.AI_COST_THRESHOLD_ALERT]:
         '[Admin] Alerta de costo IA — {thresholdPct}% del presupuesto ({scope})',
 
-    // Soft-cancel confirmation (SPEC-147)
-    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]:
-        'Confirmamos tu baja: seguís con {planName} hasta el {accessUntil}',
-
-    // D3 access-ending reminder (SPEC-147 T-010)
-    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]:
-        'Tu acceso a {planName} termina en {daysRemaining} días',
-
-    // Plan retirement notification (SPEC-148)
-    [NotificationType.PLAN_BEING_RETIRED]:
-        '{planName} deja de ofrecerse: tu acceso sigue hasta el {accessUntil}',
-
     // Alliance claim invitation (HOS-278 §6.2)
     [NotificationType.ALLIANCE_CLAIM_INVITE]:
         '¿Postulaste a {programLabel} en Hospeda? Confirmanos que fuiste vos',

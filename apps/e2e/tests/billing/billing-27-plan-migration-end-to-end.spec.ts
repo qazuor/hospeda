@@ -207,8 +207,9 @@ test.describe('TEST:B12:12 AC:B12:11 la migración de un plan retirado, de punta
         expect(announcement).toContain(`Tu plan ${SOURCE_NAME} deja de venderse.`);
         expect(announcement).toContain(`Tu suscripción pasará al plan ${TARGET_NAME}.`);
         expect(announcement).toContain('es una subida de precio');
-        expect(announcement).toContain(`Tu precio actual es ${formatMinorAmount(PRICE)}.`);
-        expect(announcement).toContain(`El precio nuevo será ${formatMinorAmount(NEW_PRICE)}.`);
+        // HOS-2580: the announcement shows the amounts as callout rows (label, then value).
+        expect(announcement).toContain(`Precio actual ${formatMinorAmount(PRICE)}`);
+        expect(announcement).toContain(`Precio nuevo ${formatMinorAmount(NEW_PRICE)}`);
         expect(announcement).toContain(
             `El cambio se aplicará el ${formatMarketDate(anchorOf(applicationDay))}.`
         );

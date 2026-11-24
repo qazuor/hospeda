@@ -82,8 +82,8 @@ export function RenewalReminder({
             </Callout>
 
             <Text style={styles.paragraph}>
-                El cargo se realizará automáticamente usando tu método de pago registrado. Si deseas
-                realizar algún cambio, puedes gestionar tu suscripción desde tu cuenta.
+                El cargo se va a hacer automáticamente con tu método de pago registrado. Si querés
+                hacer algún cambio, podés gestionar tu suscripción desde tu cuenta.
             </Text>
 
             <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Gestionar suscripción</Button>

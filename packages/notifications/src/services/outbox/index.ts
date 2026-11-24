@@ -1,5 +1,6 @@
 export * from './account-listing-paths.js';
 export * from './billing-addon-renderers.js';
+export * from './billing-cancellation-notice-renderers.js';
 export * from './billing-chargeback-renderers.js';
 export * from './billing-courtesy-renderers.js';
 export * from './billing-grace-reminder-renderers.js';

@@ -33,18 +33,18 @@ export function SubscriptionCancelled({
         : undefined;
 
     return (
-        <EmailLayout previewText={`Tu suscripcion al plan ${planName} ha sido cancelada`}>
-            <Heading>Tu suscripcion ha sido cancelada</Heading>
+        <EmailLayout previewText={`Tu suscripción al plan ${planName} fue cancelada`}>
+            <Heading>Tu suscripción fue cancelada</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
 
             <Text style={styles.paragraph}>
-                Tu suscripcion al plan <strong>{planName}</strong> ha sido cancelada.
+                Tu suscripción al plan <strong>{planName}</strong> fue cancelada.
             </Text>
 
             {formattedEndDate && (
                 <Text style={styles.paragraph}>
-                    Tu acceso continuara activo hasta el <strong>{formattedEndDate}</strong>.
+                    Tu acceso sigue activo hasta el <strong>{formattedEndDate}</strong>.
                 </Text>
             )}
 
@@ -61,11 +61,10 @@ export function SubscriptionCancelled({
                 )}
             </Callout>
 
-            <Text style={styles.paragraph}>
-                Si no realizaste esta cancelacion, contactanos para resolverlo.
-            </Text>
+            <Text style={styles.paragraph}>Si no fuiste vos, escribinos para resolverlo.</Text>
 
-            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Reactivar suscripcion</Button>
+            {/* No "reactivar": a cancelled subscription cannot come back (HOS-2580 §A2, PROH:B:1). */}
+            <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver mi suscripción</Button>
         </EmailLayout>
     );
 }

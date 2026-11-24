@@ -46,11 +46,11 @@ describe('email catalog completeness', () => {
         }
     });
 
-    it('has exactly the 49 notification entries renderNotificationEmail supports', () => {
+    it('has exactly the 46 notification entries renderNotificationEmail supports', () => {
         const ids = EMAIL_CATALOG.filter((entry) => entry.sendPath === 'notification').map(
             (entry) => entry.id
         );
-        expect(ids).toHaveLength(49);
+        expect(ids).toHaveLength(46);
         expect(new Set(ids)).toEqual(new Set(NOTIFICATION_TYPES_WITH_TEMPLATE));
     });
 
@@ -59,7 +59,7 @@ describe('email catalog completeness', () => {
         ['conversation', 6],
         ['alert-digest', 1],
         ['newsletter', 3],
-        ['outbox', 64]
+        ['outbox', 65]
     ] as const)('has %s entries: %i', (sendPath, count) => {
         expect(EMAIL_CATALOG.filter((entry) => entry.sendPath === sendPath)).toHaveLength(count);
     });

@@ -79,6 +79,19 @@ describe('email catalog layout declarations (HOS-2565 PR-4)', () => {
         }
     });
 
+    it('HOS-2580 gives every auth and security mail the account illustration', () => {
+        // Act
+        const auth = EMAIL_CATALOG.filter((entry) => entry.domain === 'auth');
+
+        // Assert: reset password and verify email today; a new auth mail inherits it.
+        expect(auth.map((entry) => entry.key)).toEqual(
+            expect.arrayContaining(['auth.reset-password', 'auth.verify-email'])
+        );
+        for (const entry of auth) {
+            expect(buildEmailCatalogLayout({ entry }).illustration, entry.key).toBe('account');
+        }
+    });
+
     it('should prefer the key override over the domain default', () => {
         // Act
         const downgrade = buildEmailCatalogLayout({

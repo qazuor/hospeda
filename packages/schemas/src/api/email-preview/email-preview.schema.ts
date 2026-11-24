@@ -60,7 +60,12 @@ export const EmailPreviewScenarioSummarySchema = z.object({
     id: z.string().min(1),
     label: z.string().min(1),
     /** Locale of the rendered copy (HOS-2565 D14). Resolved: never absent. */
-    locale: z.enum(['es', 'en', 'pt'])
+    locale: z.enum(['es', 'en', 'pt']),
+    /**
+     * Subject this sample renders, without the environment prefix, so the previewer can
+     * search by it (HOS-2580 §H). `null` when the sample could not be rendered.
+     */
+    subject: z.string().nullable()
 });
 
 /** One scenario of a catalog entry, as listed. */

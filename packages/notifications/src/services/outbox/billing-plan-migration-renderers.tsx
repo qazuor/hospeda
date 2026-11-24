@@ -16,7 +16,7 @@ import {
     PlanMigrationUpcoming
 } from '../../templates/billing/plan-migration-upcoming.js';
 import { formatCurrency } from '../../templates/utils/index.js';
-import { SUBSCRIPTION_PATH } from './account-listing-paths.js';
+import { CONTACT_PATH, SUBSCRIPTION_PATH } from './account-listing-paths.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 const nonEmptyString = z.string().refine((value) => value.trim() !== '');
@@ -69,7 +69,7 @@ function migrationAmounts(data: MigrationDetailsPayload) {
     };
 }
 
-function announced(row: EmailOutboxRow, actionUrl: string) {
+function announced(row: EmailOutboxRow, actionUrl: string, contactUrl: string) {
     const parsed = announcedSchema.safeParse(row.payload);
     if (!parsed.success) throw new TypeError('Faltan datos requeridos del anuncio de migración');
     const data = parsed.data;
@@ -92,6 +92,7 @@ function announced(row: EmailOutboxRow, actionUrl: string) {
                 losesPromo={data.variant === 'TO_RESOLVE' ? false : data.losesPromo}
                 reason={reason}
                 actionUrl={actionUrl}
+                contactUrl={contactUrl}
             />
         )
     };
@@ -157,9 +158,11 @@ function cancelled(row: EmailOutboxRow) {
 export function createBillingPlanMigrationRenderers(input: {
     readonly siteUrl: string;
 }): Readonly<Record<string, OutboxMailRenderer>> {
-    const actionUrl = `${input.siteUrl.replace(/\/$/, '')}${SUBSCRIPTION_PATH}`;
+    const site = input.siteUrl.replace(/\/$/, '');
+    const actionUrl = `${site}${SUBSCRIPTION_PATH}`;
+    const contactUrl = `${site}${CONTACT_PATH}`;
     return {
-        'billing.plan-migration-announced': ({ row }) => announced(row, actionUrl),
+        'billing.plan-migration-announced': ({ row }) => announced(row, actionUrl, contactUrl),
         'billing.plan-migration-upcoming': ({ row }) => upcoming(row),
         'billing.plan-migration-cancelled': ({ row }) => cancelled(row)
     };

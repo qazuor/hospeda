@@ -73,7 +73,7 @@ export function PaymentSuccess({
             </Section>
 
             <Text style={styles.paragraph}>
-                Puedes descargar tu recibo desde tu panel de facturación.
+                Podés descargar tu recibo desde tu panel de facturación.
             </Text>
 
             <Button href={`${baseUrl}/es/mi-cuenta/suscripcion/`}>Ver recibo</Button>

@@ -109,7 +109,7 @@ export function PaymentFailure({
             )}
 
             <Text style={styles.footerNote}>
-                Si necesitas ayuda, nuestro equipo de soporte está disponible para asistirte.
+                Si necesitás ayuda, nuestro equipo de soporte está disponible para asistirte.
             </Text>
         </EmailLayout>
     );

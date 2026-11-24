@@ -2,6 +2,7 @@
  * Billing email templates
  */
 
+export * from './access-ending.js';
 export * from './addon-authorization-expired.js';
 export * from './addon-cancelled.js';
 export * from './addon-listing-purged.js';
@@ -33,6 +34,7 @@ export * from './plan-migration-upcoming.js';
 export * from './plan-price-change-notice.js';
 export * from './promo-ending.js';
 export * from './provider-watch-alert.js';
+export * from './provider-watch-details.js';
 export * from './purchase-confirmation.js';
 export * from './reconciliation-labels.js';
 export * from './reconciliation-summary.js';

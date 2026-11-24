@@ -11,7 +11,8 @@
  * - AC-2.1: no unresolved `{{...}}` placeholder and no `unsubscribe_url`.
  * - The user variant: the dark-mode metas and media block, one title row, and the
  *   footer FAQ and preferences link exactly when the reader has an account (frozen
- *   set below); without one, "Centro de ayuda" links the public FAQ page.
+ *   set below); without one, the help link reads "Preguntas frecuentes" and links
+ *   the public FAQ page (HOS-2580 §I).
  * - The staff variant: the HOS-2519 footer brand line, light-only.
  * - AC-3.2: a non-empty text part without images or asset URLs.
  * - R-8: HTML under 90 KB (Gmail clips at 102 KB).
@@ -120,7 +121,7 @@ describe('email catalog: layout on every scenario (HOS-2519 PR-3, HOS-2565 PR-4)
             expect(html).toContain('<meta name="color-scheme" content="light dark"/>');
             expect(html.match(/prefers-color-scheme:dark/g)).toHaveLength(1);
             // The help articles sit behind the login wall: FAQ only with an account,
-            // and without one "Centro de ayuda" opens the public FAQ page (§8.3).
+            // and without one the "Preguntas frecuentes" link opens the public FAQ page (§8.3).
             expect(html.includes('data-layout-faq="true"'), 'FAQ section').toBe(hasAccount);
             expect(html.includes('/es/mi-cuenta/ayuda/'), 'logged-in help links').toBe(hasAccount);
             if (!hasAccount) {

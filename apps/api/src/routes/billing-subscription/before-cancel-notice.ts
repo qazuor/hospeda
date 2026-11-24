@@ -5,6 +5,8 @@ import {
     emailOutboxModel,
     eq,
     getDb,
+    plans,
+    planVersions,
     sql,
     subscriptions,
     users
@@ -13,10 +15,48 @@ import {
     BEFORE_CANCEL_TEMPLATE_BY_KIND,
     type BeforeCancelNotice,
     type BeforeCancelNoticeKind,
-    type BeforeCancelNoticeStatusReader
+    type BeforeCancelNoticeStatusReader,
+    resolvePlanDisplayName
 } from '@repo/service-core';
 
 const SCHEDULED_CANCELLATION_KIND = 'SCHEDULED_CANCELLATION' satisfies BeforeCancelNoticeKind;
+
+/**
+ * The facts the scheduled-cancellation notice shows: the committed service end (HOS-1617),
+ * and the plan's display name and vertical (HOS-2580). The plan join is a LEFT join, so a
+ * row without a plan version still gets its notice, only without the plan name.
+ */
+async function readScheduledCancellationFacts(input: { readonly subscriptionId: string }): Promise<{
+    readonly serviceEndsAt: string | null;
+    readonly planName?: string;
+    readonly vertical?: string;
+}> {
+    const [row] = await getDb()
+        .select({
+            serviceEndsAt: subscriptions.serviceEndsAt,
+            vertical: subscriptions.vertical,
+            planName: plans.name,
+            planSlug: plans.slug
+        })
+        .from(subscriptions)
+        .leftJoin(planVersions, eq(planVersions.id, subscriptions.planVersionId))
+        .leftJoin(plans, eq(plans.id, planVersions.planId))
+        .where(eq(subscriptions.id, input.subscriptionId))
+        .limit(1);
+    const serviceEndsAt = row?.serviceEndsAt?.toISOString() ?? null;
+    const planName =
+        row?.planName && row.planSlug
+            ? await resolvePlanDisplayName({
+                  vertical: row.vertical,
+                  plan: { slug: row.planSlug, name: row.planName }
+              })
+            : undefined;
+    return {
+        serviceEndsAt,
+        ...(planName ? { planName } : {}),
+        ...(row?.vertical ? { vertical: row.vertical } : {})
+    };
+}
 
 function beforeCancelDedupKey(input: {
     subscriptionId: string;
@@ -68,22 +108,17 @@ export const beforeCancelNotice: BeforeCancelNotice = {
         if (!recipient) return 'NO_RECIPIENT';
         const template = BEFORE_CANCEL_TEMPLATE_BY_KIND[kind];
         const dedupKey = beforeCancelDedupKey({ subscriptionId, userId, kind, occurrenceId });
-        const scheduledServiceEnd =
+        const scheduledFacts =
             kind === SCHEDULED_CANCELLATION_KIND
-                ? await getDb()
-                      .select({ serviceEndsAt: subscriptions.serviceEndsAt })
-                      .from(subscriptions)
-                      .where(eq(subscriptions.id, subscriptionId))
-                      .limit(1)
-                : null;
-        const serviceEndsAt = scheduledServiceEnd?.[0]?.serviceEndsAt?.toISOString() ?? null;
+                ? await readScheduledCancellationFacts({ subscriptionId })
+                : {};
         await emailOutboxModel.enqueue({
             recipientUserId: userId,
             recipientEmail: recipient.email,
             template,
             payload: {
                 subscriptionId,
-                ...(kind === SCHEDULED_CANCELLATION_KIND ? { serviceEndsAt } : {}),
+                ...scheduledFacts,
                 ...(content ?? {})
             },
             dedupKey

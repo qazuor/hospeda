@@ -9,7 +9,7 @@
  */
 
 /** Subject of the password reset email ({@link ResetPasswordTemplate}). */
-export const RESET_PASSWORD_EMAIL_SUBJECT = 'Restablece tu contraseña de Hospeda';
+export const RESET_PASSWORD_EMAIL_SUBJECT = 'Restablecé tu contraseña de Hospeda';
 
 /** Subject of the account verification email ({@link VerifyEmailTemplate}). */
-export const VERIFY_EMAIL_SUBJECT = 'Verifica tu cuenta de Hospeda';
+export const VERIFY_EMAIL_SUBJECT = 'Verificá tu cuenta de Hospeda';

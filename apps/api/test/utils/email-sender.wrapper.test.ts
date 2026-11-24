@@ -52,7 +52,7 @@ describe('sendAppEmail', () => {
         await sendAppEmail({
             client: {} as never,
             to: 'user@example.com',
-            subject: 'Restablece tu contraseña de Hospeda',
+            subject: 'Restablecé tu contraseña de Hospeda',
             react: {} as never,
             attribution: TEST_ATTRIBUTION
         });
@@ -60,7 +60,7 @@ describe('sendAppEmail', () => {
         // Assert
         expect(mockSendEmail).toHaveBeenCalledTimes(1);
         const [input] = mockSendEmail.mock.calls[0] as [Record<string, unknown>];
-        expect(input.subject).toBe('[STAGING] Restablece tu contraseña de Hospeda');
+        expect(input.subject).toBe('[STAGING] Restablecé tu contraseña de Hospeda');
         expect(input.fromName).toBe('Hospeda [STAGING]');
         // HOS-2359: the attribution reaches @repo/email untouched
         expect(input.attribution).toEqual(TEST_ATTRIBUTION);
@@ -74,14 +74,14 @@ describe('sendAppEmail', () => {
         await sendAppEmail({
             client: {} as never,
             to: 'user@example.com',
-            subject: 'Restablece tu contraseña de Hospeda',
+            subject: 'Restablecé tu contraseña de Hospeda',
             react: {} as never,
             attribution: TEST_ATTRIBUTION
         });
 
         // Assert
         const [input] = mockSendEmail.mock.calls[0] as [Record<string, unknown>];
-        expect(input.subject).toBe('Restablece tu contraseña de Hospeda');
+        expect(input.subject).toBe('Restablecé tu contraseña de Hospeda');
         expect(input.fromName).toBe('Hospeda');
     });
 

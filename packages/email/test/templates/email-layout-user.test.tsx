@@ -60,6 +60,14 @@ async function renderUser(
 }
 
 /** Opening tags of every anchor marked with the given `data-layout-link`. */
+/** The visible text of the first anchor in a layout slot, tags stripped. */
+function layoutAnchorText(html: string, slot: string): string | undefined {
+    const match = html.match(
+        new RegExp(`<a\\b[^>]*data-layout-link="${slot}"[^>]*>([\\s\\S]*?)</a>`)
+    );
+    return match?.[1]?.replace(/<[^>]+>/g, '').trim();
+}
+
 function layoutAnchors(html: string, slot: string): string[] {
     return html.match(new RegExp(`<a\\b[^>]*data-layout-link="${slot}"[^>]*>`, 'g')) ?? [];
 }
@@ -230,6 +238,7 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
             expect(layoutAnchors(html, 'help-center')[0]).toContain(
                 'href="https://hospeda.com.ar/es/mi-cuenta/ayuda/?utm_source='
             );
+            expect(layoutAnchorText(html, 'help-center')).toBe('Centro de ayuda');
             expect(html).toContain('data-layout-faq="true"');
         });
 
@@ -239,12 +248,14 @@ describe('EmailLayout (user variant, HOS-2565 PR-4)', () => {
 
             // Assert
             expect(html).not.toContain('data-layout-faq');
-            expect(html).not.toContain('Preguntas frecuentes');
             expect(layoutAnchors(html, 'faq')).toHaveLength(0);
             expect(html).not.toContain('/mi-cuenta/ayuda/');
             expect(layoutAnchors(html, 'help-center')[0]).toContain(
                 `href="${EMAIL_PUBLIC_FAQ_URL}?utm_source=`
             );
+            // HOS-2580 §I: the link names the page it opens.
+            expect(layoutAnchorText(html, 'help-center')).toBe('Preguntas frecuentes');
+            expect(html).not.toContain('Centro de ayuda');
             expect(text).not.toContain('/mi-cuenta/');
         });
 

@@ -18,6 +18,7 @@ import {
     billingOptions,
     experiences,
     getDb,
+    partners,
     plans,
     planVersions,
     reconciliationMarks,
@@ -79,6 +80,29 @@ async function readListingNames(input: {
     return result;
 }
 
+/** The vertical whose subscriptions belong to a Partner (`VerticalEnum.PARTNER`). */
+const PARTNER_VERTICAL = 'partner';
+
+/**
+ * The live Partner of each owner, in one query. An owner has at most one
+ * (`uq_partners_owner_user_id`), so the map is keyed by owner id (HOS-2580 §E).
+ */
+async function readPartnersByOwner(input: {
+    readonly ownerIds: readonly string[];
+}): Promise<ReadonlyMap<string, { readonly id: string; readonly name: string }>> {
+    const ownerIds = [...new Set(input.ownerIds)];
+    if (ownerIds.length === 0) return new Map();
+    const rows = await getDb()
+        .select({ id: partners.id, name: partners.name, ownerUserId: partners.ownerUserId })
+        .from(partners)
+        .where(and(inArray(partners.ownerUserId, ownerIds), isNull(partners.deletedAt)));
+    return new Map(
+        rows.flatMap((row) =>
+            row.ownerUserId ? [[row.ownerUserId, { id: row.id, name: row.name }] as const] : []
+        )
+    );
+}
+
 /**
  * Production {@link ReconciliationSubjectsReader}.
  *
@@ -121,7 +145,16 @@ export const readReconciliationSubjects: ReconciliationSubjectsReader = async ({
                 row.userId && row.vertical ? [{ userId: row.userId, vertical: row.vertical }] : []
             )
         });
+        const partnersByOwner = await readPartnersByOwner({
+            ownerIds: rows.flatMap((row) =>
+                row.userId && row.vertical === PARTNER_VERTICAL ? [row.userId] : []
+            )
+        });
         for (const row of rows) {
+            const partner =
+                row.userId && row.vertical === PARTNER_VERTICAL
+                    ? (partnersByOwner.get(row.userId) ?? null)
+                    : null;
             subscriptionMap.set(row.id, {
                 holderName: holderName(row),
                 holderEmail: row.email,
@@ -131,7 +164,8 @@ export const readReconciliationSubjects: ReconciliationSubjectsReader = async ({
                 amountMinor: row.amountMinor,
                 currency: row.currency,
                 status: row.status,
-                listingNames: listings.get(`${row.userId}|${row.vertical}`) ?? []
+                listingNames: listings.get(`${row.userId}|${row.vertical}`) ?? [],
+                partner
             });
         }
     }

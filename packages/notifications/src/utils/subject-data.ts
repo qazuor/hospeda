@@ -109,14 +109,6 @@ function buildDerivedSubjectData(payload: NotificationPayload): Record<string, s
 
     // Dates are formatted here rather than copied, so the subject never embeds
     // a raw ISO timestamp such as "2026-07-15T23:59:59.000Z".
-    if (payload.type === 'subscription_cancel_confirmed' && 'accessUntil' in payload) {
-        derived.accessUntil = formatDate({ dateString: payload.accessUntil });
-    }
-
-    if (payload.type === 'plan_being_retired' && 'accessUntil' in payload) {
-        derived.accessUntil = formatDate({ dateString: payload.accessUntil });
-    }
-
     if (payload.type === 'plan_price_change_notice' && 'effectiveDate' in payload) {
         derived.effectiveDate = formatDate({ dateString: payload.effectiveDate });
     }

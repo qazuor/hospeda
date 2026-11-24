@@ -4,7 +4,7 @@
  *
  * Two halves:
  *
- * - **Manifest (all 125 entries, no rendering):** the committed
+ * - **Manifest (all 123 entries, no rendering):** the committed
  *   `generated/email-pixel-manifest.json` that `pnpm umami:setup` reads must equal
  *   what the catalog derives, so a template can never ship without its pixel being
  *   created. Slugs are unique, ≤ 90 chars and inside Umami's measured slug limit
@@ -70,7 +70,7 @@ describe('email pixel manifest (HOS-2359 OD-2)', () => {
     const derived = buildEmailPixelManifest();
 
     it('covers the whole catalog (non-vacuity)', () => {
-        expect(EMAIL_CATALOG.length).toBeGreaterThanOrEqual(125);
+        expect(EMAIL_CATALOG.length).toBeGreaterThanOrEqual(123);
         expect(derived).toHaveLength(EMAIL_CATALOG.length);
     });
 

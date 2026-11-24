@@ -5,7 +5,8 @@
  * 1. "¿Necesitás ayuda?": help center, contact and WhatsApp;
  * 2. "Preguntas frecuentes": the help articles the mail declares (or the default set),
  *    only for account holders: the articles sit behind the login wall. Without an
- *    account, "Centro de ayuda" points at the public FAQ page instead;
+ *    account, the first help link reads "Preguntas frecuentes" and points at the
+ *    public FAQ page instead (HOS-2580 §I);
  * 3. "Nuestros canales": security, web and contact cards;
  * 4. the trust strip;
  * 5. the logo and the Instagram, Facebook and X icons;
@@ -127,7 +128,8 @@ export function UserFooter({
                                     <FooterHeading>¿Necesitás ayuda?</FooterHeading>
                                     <p style={linksParagraphStyle}>
                                         {/* The help center needs a login: readers without an
-                                            account get the public FAQ page instead. */}
+                                            account get the public FAQ page instead, under the
+                                            name of what it is (HOS-2580 §I). */}
                                         <FooterLink
                                             href={
                                                 showAccountLinks
@@ -136,7 +138,9 @@ export function UserFooter({
                                             }
                                             layoutLink="help-center"
                                         >
-                                            Centro de ayuda
+                                            {showAccountLinks
+                                                ? 'Centro de ayuda'
+                                                : 'Preguntas frecuentes'}
                                         </FooterLink>
                                         <span style={dotStyle}>&nbsp;·&nbsp;</span>
                                         <FooterLink

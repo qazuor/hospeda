@@ -7,8 +7,12 @@
  * pixel no `umami:setup` run creates, so these keys are pinned against
  * `EMAIL_CATALOG` by `test/utils/email-attribution.test.ts`.
  */
-import type { EmailAttribution } from '@repo/email';
-import type { EmailCatalogKey } from '@repo/notifications';
+import type { EmailAttribution, EmailLayoutContextValue } from '@repo/email';
+import {
+    buildEmailCatalogLayout,
+    type EmailCatalogKey,
+    findEmailCatalogEntry
+} from '@repo/notifications';
 
 /** Catalog keys of the auth emails (OD-1: reset and verify carry a pixel too). */
 export const AUTH_EMAIL_KEYS = {
@@ -44,4 +48,19 @@ export function buildTransactionalAttribution({
     readonly templateKey: EmailCatalogKey;
 }): EmailAttribution {
     return { medium: 'transactional', templateKey, includePixel: true };
+}
+
+/**
+ * Layout context of a mail `apps/api` sends itself: the illustration and help articles its
+ * catalog entry declares, the same ones the previewer shows (HOS-2580). Without it the
+ * Better Auth mails reached the inbox with no illustration.
+ *
+ * @param input - `templateKey`: the email catalog key
+ * @returns The layout to pass to `sendAppEmail`
+ */
+export function buildAppEmailLayout(input: {
+    readonly templateKey: EmailCatalogKey;
+}): EmailLayoutContextValue {
+    const entry = findEmailCatalogEntry({ key: input.templateKey });
+    return buildEmailCatalogLayout(entry ? { entry } : {});
 }

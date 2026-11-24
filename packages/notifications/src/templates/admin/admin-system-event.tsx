@@ -78,7 +78,7 @@ export function AdminSystemEvent({ recipientName, severity, eventDetails }: Admi
             </Section>
 
             <Text style={styles.footerNote}>
-                Esta es una notificación automática del sistema. Revisa el panel de administración o
+                Esta es una notificación automática del sistema. Revisá el panel de administración o
                 los logs para investigar más a fondo.
             </Text>
         </EmailLayout>

@@ -55,7 +55,7 @@ export function TrialExpired({
                 exactamente qué pasó y no te enteres cuando alguien no te encuentre.
             </Text>
 
-            <Callout tone="danger">
+            <Callout tone="warning">
                 <Text style={styles.paragraph}>
                     <strong>No se borró nada.</strong> Tu ficha completa —{copy.expiredSavedLine}—
                     quedó guardada en tu cuenta, tal como la dejaste. Lo único que cambió es que ya

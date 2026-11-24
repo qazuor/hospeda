@@ -80,11 +80,12 @@ describe('Subscription Lifecycle Email Templates', () => {
             const html = renderToStaticMarkup(SubscriptionCancelled(validProps));
 
             // Assert
-            expect(html).toContain('Tu suscripcion ha sido cancelada');
+            expect(html).toContain('Tu suscripción fue cancelada');
             expect(html).toContain('Hola');
-            expect(html).toContain('ha sido cancelada');
+            expect(html).toContain('fue cancelada');
             expect(html).toContain('Plan');
-            expect(html).toContain('Reactivar suscripcion');
+            expect(html).toContain('Ver mi suscripción');
+            expect(html).not.toMatch(/reactiv/i);
         });
 
         it('should not show period end date when currentPeriodEnd is omitted', () => {

@@ -17,7 +17,9 @@ const entry = {
     domain: 'billing',
     audience: 'user',
     wired: true,
-    scenarios: [{ id: 'monthly', label: 'Mensual', locale: 'es' }]
+    scenarios: [
+        { id: 'monthly', label: 'Mensual', locale: 'es', subject: 'Tu plan se renueva pronto' }
+    ]
 } as const;
 
 describe('HOS-2519 email preview schemas', () => {
@@ -62,6 +64,19 @@ describe('HOS-2519 email preview schemas', () => {
         expect(EmailPreviewEntrySummarySchema.safeParse(withoutAudience).success).toBe(false);
     });
 
+    it('HOS-2580 §H requires each scenario subject as a string or null', () => {
+        const withSubject = (subject: unknown) => ({
+            ...entry,
+            scenarios: [{ id: 'monthly', label: 'Mensual', locale: 'es', subject }]
+        });
+        expect(EmailPreviewEntrySummarySchema.safeParse(withSubject('Asunto')).success).toBe(true);
+        expect(EmailPreviewEntrySummarySchema.safeParse(withSubject(null)).success).toBe(true);
+        expect(EmailPreviewEntrySummarySchema.safeParse(withSubject(undefined)).success).toBe(
+            false
+        );
+        expect(EmailPreviewEntrySummarySchema.safeParse(withSubject(7)).success).toBe(false);
+    });
+
     it('requires both query params within their length limits', () => {
         expect(EmailPreviewRenderQuerySchema.safeParse({ key: 'a', scenarioId: 'b' }).success).toBe(
             true
@@ -84,7 +99,7 @@ describe('HOS-2519 email preview schemas', () => {
         // Arrange
         const withLocale = (locale: unknown) => ({
             ...entry,
-            scenarios: [{ id: 'monthly', label: 'Mensual', locale }]
+            scenarios: [{ id: 'monthly', label: 'Mensual', locale, subject: null }]
         });
 
         // Act + Assert

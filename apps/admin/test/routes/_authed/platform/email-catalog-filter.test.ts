@@ -13,13 +13,13 @@ import {
 
 const entry = (
     input: Pick<EmailPreviewEntrySummary, 'key' | 'id' | 'name' | 'domain'> &
-        Partial<Pick<EmailPreviewEntrySummary, 'audience'>>
+        Partial<Pick<EmailPreviewEntrySummary, 'audience' | 'scenarios'>>
 ): EmailPreviewEntrySummary => ({
     audience: 'user',
+    scenarios: [{ id: 'default', label: 'Por defecto', locale: 'es', subject: null }],
     ...input,
     sendPath: 'outbox',
-    wired: true,
-    scenarios: [{ id: 'default', label: 'Por defecto', locale: 'es' }]
+    wired: true
 });
 
 const ENTRIES = [
@@ -69,6 +69,52 @@ describe('email catalog filter', () => {
 
         // Assert
         expect(result).toEqual([idOnly]);
+    });
+
+    it('HOS-2580 §H matches a scenario subject, accent- and case-insensitively', () => {
+        // Arrange: the subject shares no word with the name (the owner's search).
+        const downgrade = entry({
+            key: 'outbox.billing.downgrade-limit',
+            id: 'billing.downgrade-limit',
+            name: 'Aviso de límite por cambio a un plan menor',
+            domain: 'billing',
+            scenarios: [
+                { id: 'one', label: 'Uno', locale: 'es', subject: 'Otro asunto' },
+                {
+                    id: 'two',
+                    label: 'Dos',
+                    locale: 'es',
+                    subject: 'Cambio de límite en tu plan'
+                },
+                { id: 'broken', label: 'Roto', locale: 'es', subject: null }
+            ]
+        });
+        const entries = [...ENTRIES, downgrade];
+
+        // Act
+        const exact = filterEmailCatalog({
+            entries,
+            search: 'Cambio de límite en tu plan',
+            domains: [],
+            audience: 'all'
+        });
+        const loose = filterEmailCatalog({
+            entries,
+            search: 'CAMBIO DE LIMITE EN TU',
+            domains: [],
+            audience: 'all'
+        });
+        const miss = filterEmailCatalog({
+            entries,
+            search: 'asunto inexistente',
+            domains: [],
+            audience: 'all'
+        });
+
+        // Assert
+        expect(exact).toEqual([downgrade]);
+        expect(loose).toEqual([downgrade]);
+        expect(miss).toEqual([]);
     });
 
     it('combines the search with a multi-domain filter', () => {

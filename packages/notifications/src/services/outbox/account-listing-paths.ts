@@ -24,6 +24,9 @@ export const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, strin
 /** Mi Suscripción, the page every billing notice sends the reader to. */
 export const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 
+/** The public contact page, where a notice sends a reader with questions. */
+export const CONTACT_PATH = '/es/contacto/';
+
 /** Whether a value names a vertical that has a Mi Cuenta listing page. */
 export function isListingNoticeVertical(value: unknown): value is ListingNoticeVertical {
     return typeof value === 'string' && Object.hasOwn(ACCOUNT_LISTINGS_PATH, value);

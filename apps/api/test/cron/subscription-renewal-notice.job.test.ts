@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockSend, mockClock } = vi.hoisted(() => ({
+const { mockSend, mockAccessEnding, mockClock } = vi.hoisted(() => ({
     mockSend: vi.fn(),
+    mockAccessEnding: vi.fn(),
     mockClock: { now: vi.fn(() => new Date('2026-10-14T20:00:00.000Z')) }
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
-    sendRenewalNotices: mockSend
+    sendRenewalNotices: mockSend,
+    sendAccessEndingNotices: mockAccessEnding
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 
@@ -35,6 +37,13 @@ beforeEach(() => {
         failed: 1,
         rows: []
     });
+    mockAccessEnding.mockResolvedValue({
+        enqueued: 2,
+        alreadyEnqueued: 5,
+        notDue: 1,
+        failed: 0,
+        rows: []
+    });
 });
 
 describe('HOS-1622 subscription-renewal-notice cron (AC:B13a:13)', () => {
@@ -51,6 +60,7 @@ describe('HOS-1622 subscription-renewal-notice cron (AC:B13a:13)', () => {
         const result = await subscriptionRenewalNoticeJob.handler(context(true));
         expect(result).toMatchObject({ success: true, processed: 0, details: { dryRun: true } });
         expect(mockSend).not.toHaveBeenCalled();
+        expect(mockAccessEnding).not.toHaveBeenCalled();
     });
 
     it('calls the service once with limit and the production clock, then maps counts', async () => {
@@ -59,20 +69,51 @@ describe('HOS-1622 subscription-renewal-notice cron (AC:B13a:13)', () => {
         expect(mockSend).toHaveBeenCalledWith({ limit: 1000 }, { clock: mockClock });
         expect(result).toMatchObject({
             success: true,
-            processed: 3,
+            processed: 5,
             errors: 1,
             details: { enqueued: 3, alreadyEnqueued: 1, stamped: 2, notDue: 4, failed: 1 }
         });
         expect(result.details).not.toHaveProperty('rows');
     });
 
-    it('returns failure without throwing when the service fails', async () => {
+    it('runs the HOS-2580 access-ending pass in the same job, with the same clock', async () => {
+        const result = await subscriptionRenewalNoticeJob.handler(context());
+        expect(mockAccessEnding).toHaveBeenCalledTimes(1);
+        expect(mockAccessEnding).toHaveBeenCalledWith({ limit: 1000 }, { clock: mockClock });
+        expect(result.details).toMatchObject({
+            accessEnding: { enqueued: 2, alreadyEnqueued: 5, notDue: 1, failed: 0 }
+        });
+    });
+
+    it('still runs the access-ending pass when the renewal pass throws, and logs it', async () => {
         mockSend.mockRejectedValueOnce(new Error('database down'));
-        await expect(subscriptionRenewalNoticeJob.handler(context())).resolves.toMatchObject({
+        const ctx = context();
+        const result = await subscriptionRenewalNoticeJob.handler(ctx);
+        expect(mockAccessEnding).toHaveBeenCalledTimes(1);
+        expect(result).toMatchObject({
             success: false,
-            processed: 0,
+            processed: 2,
             errors: 1,
-            details: { error: 'database down' }
+            details: { error: 'database down', accessEnding: { enqueued: 2 } }
+        });
+        expect(ctx.logger.error).toHaveBeenCalledWith('Renewal notices failed', {
+            error: 'database down'
+        });
+    });
+
+    it('keeps the renewal result when the access-ending pass throws, and logs it', async () => {
+        mockAccessEnding.mockRejectedValueOnce(new Error('timeout'));
+        const ctx = context();
+        const result = await subscriptionRenewalNoticeJob.handler(ctx);
+        expect(mockSend).toHaveBeenCalledTimes(1);
+        expect(result).toMatchObject({
+            success: false,
+            processed: 3,
+            errors: 2,
+            details: { enqueued: 3, accessEnding: { error: 'timeout' } }
+        });
+        expect(ctx.logger.error).toHaveBeenCalledWith('Access-ending notices failed', {
+            error: 'timeout'
         });
     });
 

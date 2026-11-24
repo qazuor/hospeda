@@ -26,7 +26,10 @@ export function normalizeSearchText({ text }: { readonly text: string }): string
 /** Input of {@link filterEmailCatalog}. */
 export interface FilterEmailCatalogInput {
     readonly entries: readonly EmailPreviewEntrySummary[];
-    /** Free text matched against name, key and id (case- and accent-insensitive). */
+    /**
+     * Free text matched against name, key, id and every scenario subject (case- and
+     * accent-insensitive).
+     */
     readonly search: string;
     /** Selected domains; empty means every domain. */
     readonly domains: readonly EmailCatalogDomain[];
@@ -56,7 +59,11 @@ export function filterEmailCatalog(
         if (!needle) {
             return true;
         }
-        return [entry.name, entry.key, entry.id].some((field) =>
+        // HOS-2580 §H: the subject is what the reader saw in the inbox, so it is searchable too.
+        const subjects = entry.scenarios.flatMap((scenario) =>
+            scenario.subject ? [scenario.subject] : []
+        );
+        return [entry.name, entry.key, entry.id, ...subjects].some((field) =>
             normalizeSearchText({ text: field }).includes(needle)
         );
     });

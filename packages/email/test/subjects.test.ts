@@ -7,11 +7,11 @@ import { RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT } from '../src/index
  * move; a change here is a copy change and needs owner sign-off.
  */
 describe('auth email subjects', () => {
-    it('keeps the password reset subject byte-identical', () => {
-        expect(RESET_PASSWORD_EMAIL_SUBJECT).toBe('Restablece tu contraseña de Hospeda');
+    it('HOS-2580 says the password reset subject in voseo', () => {
+        expect(RESET_PASSWORD_EMAIL_SUBJECT).toBe('Restablecé tu contraseña de Hospeda');
     });
 
-    it('keeps the verification subject byte-identical', () => {
-        expect(VERIFY_EMAIL_SUBJECT).toBe('Verifica tu cuenta de Hospeda');
+    it('HOS-2580 says the verification subject in voseo', () => {
+        expect(VERIFY_EMAIL_SUBJECT).toBe('Verificá tu cuenta de Hospeda');
     });
 });

@@ -34,7 +34,7 @@ export const SEGMENT_COUNT = buildSegmentDefinitions().filter((d) => d.type === 
 /** Number of declared cohorts. */
 export const COHORT_COUNT = buildSegmentDefinitions().filter((d) => d.type === 'cohort').length;
 
-/** Small pixel set the setup tests upsert instead of the 125-entry manifest. */
+/** Small pixel set the setup tests upsert instead of the 123-entry manifest. */
 export const TEST_PIXELS: readonly PixelDefinition[] = [
     { name: 'Email · Verificar email', slug: 'email-auth-verify-email' },
     { name: 'Email · Restablecer contraseña', slug: 'email-auth-reset-password' }
