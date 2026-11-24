@@ -13,7 +13,7 @@
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { Hono } from 'hono';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { protectedBillingSubscriptionReadRoutes } from '../../../src/routes/billing-subscription/index';
 import type { AppBindings } from '../../../src/types';
 import { injectClock } from '../../../src/utils/clock';
@@ -27,7 +27,8 @@ const OPTION_ID = '77777777-7777-4777-8777-777777777777';
 
 const mocks = vi.hoisted(() => ({
     readOwnPlanState: vi.fn(),
-    readOwnDeclinedSignups: vi.fn()
+    readOwnDeclinedSignups: vi.fn(),
+    readOwnExpiredDeclinedSignupNotices: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
@@ -35,7 +36,8 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     readOwnPlanState: mocks.readOwnPlanState
 }));
 vi.mock('../../../src/routes/billing-subscription/read-own-declined-signups', () => ({
-    readOwnDeclinedSignups: mocks.readOwnDeclinedSignups
+    readOwnDeclinedSignups: mocks.readOwnDeclinedSignups,
+    readOwnExpiredDeclinedSignupNotices: mocks.readOwnExpiredDeclinedSignupNotices
 }));
 
 /** The two rows the reader returns, exactly as `readOwnSubscriptions` builds them. */
@@ -172,7 +174,8 @@ const FROZEN_BODY = JSON.stringify({
             declinedAt: '2026-11-01T10:00:00.000Z',
             plan: { slug: 'venue-pro', name: 'venue-pro' }
         }
-    ]
+    ],
+    expiredDeclinedSignups: []
 });
 
 /** The protected read router behind a fixed, permitted owner. */
@@ -194,6 +197,10 @@ function app() {
 describe('GET /protected/billing-subscription/ after the reader extraction (AC-P1)', () => {
     beforeAll(() => {
         injectClock({ clock: { now: () => new Date('2026-11-19T12:00:00.000Z') } });
+    });
+
+    beforeEach(() => {
+        mocks.readOwnExpiredDeclinedSignupNotices.mockResolvedValue([]);
     });
 
     afterEach(() => {
@@ -274,6 +281,38 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
         expect(body.data.subscriptions.map((row) => row.status)).toEqual(['ACTIVE']);
         expect(body.data.declinedSignups.map((notice) => notice.subscriptionId)).toEqual([
             SUCCESSOR_ID
+        ]);
+    });
+
+    it('exposes the expired declined signups with an ISO declinedAt (HOS-2193)', async () => {
+        // Arrange
+        mocks.readOwnPlanState.mockResolvedValue({ subscriptions: [], deferredCourtesies: [] });
+        mocks.readOwnDeclinedSignups.mockResolvedValue([]);
+        mocks.readOwnExpiredDeclinedSignupNotices.mockResolvedValue([
+            {
+                subscriptionId: SUBSCRIPTION_ID,
+                vertical: 'venue',
+                declinedAt: new Date('2026-11-01T10:00:00.000Z'),
+                plan: { slug: 'venue-pro', name: 'Pro' }
+            }
+        ]);
+
+        // Act
+        const response = await app().request('/api/v1/protected/billing-subscription', {
+            headers: { 'Content-Type': 'application/json', 'user-agent': 'vitest' }
+        });
+        const body = (await response.json()) as { data: { expiredDeclinedSignups: unknown } };
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(mocks.readOwnExpiredDeclinedSignupNotices).toHaveBeenCalledWith(OWNER_ID);
+        expect(body.data.expiredDeclinedSignups).toEqual([
+            {
+                subscriptionId: SUBSCRIPTION_ID,
+                vertical: 'venue',
+                declinedAt: '2026-11-01T10:00:00.000Z',
+                plan: { slug: 'venue-pro', name: 'Pro' }
+            }
         ]);
     });
 });

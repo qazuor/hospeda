@@ -3,7 +3,10 @@ import { readOwnPlanState } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
 import { getClock } from '../../utils/clock';
 import { createProtectedRoute } from '../../utils/route-factory';
-import { readOwnDeclinedSignups } from './read-own-declined-signups';
+import {
+    readOwnDeclinedSignups,
+    readOwnExpiredDeclinedSignupNotices
+} from './read-own-declined-signups';
 
 /** List only the authenticated owner's cancellable principal subscriptions. */
 export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
@@ -19,12 +22,14 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
         const userId = getActorFromContext(ctx).id;
         // HOS-2328: the shared plan-state reader (also behind `get_my_plan`). Its
         // `planVersionId` is for the assistant; this response does not carry it.
-        const [{ subscriptions, deferredCourtesies }, declined] = await Promise.all([
-            // HOS-2553: this page also tells about a declined charge and a checkout
-            // waiting for authorization; `get_my_plan` keeps reading the settled ones only.
-            readOwnPlanState({ userId, now: getClock().clock.now(), includeUnsettled: true }),
-            readOwnDeclinedSignups(userId)
-        ]);
+        const [{ subscriptions, deferredCourtesies }, declined, expiredDeclined] =
+            await Promise.all([
+                // HOS-2553: this page also tells about a declined charge and a checkout
+                // waiting for authorization; `get_my_plan` keeps reading the settled ones only.
+                readOwnPlanState({ userId, now: getClock().clock.now(), includeUnsettled: true }),
+                readOwnDeclinedSignups(userId),
+                readOwnExpiredDeclinedSignupNotices(userId)
+            ]);
         return {
             // HOS-2553: a declined signup is told ONCE, by `declinedSignups`. That notice
             // follows the same rule the reader applies to `CHARGE_DECLINED` rows and carries
@@ -45,6 +50,11 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
                 })),
             deferredCourtesies,
             declinedSignups: declined.map((notice) => ({
+                ...notice,
+                declinedAt: notice.declinedAt.toISOString()
+            })),
+            // HOS-2193: once the retry window has passed, the page offers a fresh start.
+            expiredDeclinedSignups: expiredDeclined.map((notice) => ({
                 ...notice,
                 declinedAt: notice.declinedAt.toISOString()
             }))
