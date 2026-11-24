@@ -257,6 +257,20 @@ async function runMiddlewarePipeline(
             }
             return response;
         }
+        // HOS-2578: a 404 for a content-addressed `/_astro/<hash>.*` chunk must
+        // never be cacheable. During a rollout the OLD container answers the NEW
+        // hash with a 404 carrying no Cache-Control; Cloudflare stores it and
+        // hands the browser its zone default (`max-age=14400`), so a shared chunk
+        // (`react.<hash>.js`) leaves every island un-hydrated for 4h. Same
+        // mechanism as HOS-2080 (`/i18n/[file].js`). Only the 404 is touched: a
+        // 200 keeps the adapter's immutable header.
+        if (path.startsWith('/_astro/')) {
+            const response = await next();
+            if (response.status === 404) {
+                response.headers.set('Cache-Control', 'no-store');
+            }
+            return response;
+        }
         return next();
     }
 
