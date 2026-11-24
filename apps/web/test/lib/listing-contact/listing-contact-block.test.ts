@@ -143,6 +143,27 @@ describe('buildVenueContactBlock (HOS-2042, HOS-2256)', () => {
         ]);
     });
 
+    it.each([
+        ['es', 'Sitio web'],
+        ['en', 'Website'],
+        ['pt', 'Site']
+    ] as const)('names the website profile in the page locale (%s)', (locale, expected) => {
+        const block = buildVenueContactBlock({
+            listingId: 'ven-1',
+            contactInfo: null,
+            socialNetworks: { website: 'https://bar.ar', tiktok: 'https://tiktok.com/@bar' },
+            menuUrl: null,
+            locale
+        });
+        expect(block?.socialLinks.map((l) => l.ariaLabel)).toEqual([expected, 'TikTok']);
+    });
+
+    it('takes every social label from i18n, none hardcoded', () => {
+        const list = SOURCE.match(/const PUBLIC_SOCIAL_LINKS[\s\S]*?\n\];/)?.[0] ?? '';
+        expect(list).not.toContain('label:');
+        expect(SOURCE).toContain(`accommodations.detail.listingContact.social.\${key}`);
+    });
+
     it('adds the allow-listed menu link, drops an unsafe one', () => {
         expect(venue({ menuUrl: 'https://carta.bar.ar' })?.menuLink?.href).toBe(
             'https://carta.bar.ar'

@@ -80,18 +80,21 @@ export interface ListingContactBlockModel {
 /** Social networks a venue or an experience may publish. Never `whatsapp`. */
 type PublicSocialKey = 'website' | 'instagram' | 'facebook' | 'twitter' | 'youtube' | 'tiktok';
 
-/** Display order and brand logo of each allowed network. */
+/**
+ * Display order and brand logo of each allowed network. The accessible name of
+ * each button is `accommodations.detail.listingContact.social.<key>` in the
+ * page locale, so /en/ and /pt/ get their own («Website», «Site»).
+ */
 const PUBLIC_SOCIAL_LINKS: readonly {
     readonly key: PublicSocialKey;
-    readonly label: string;
     readonly Icon: ListingContactSocialLink['Icon'];
 }[] = [
-    { key: 'website', label: 'Sitio web', Icon: GlobeIcon },
-    { key: 'instagram', label: 'Instagram', Icon: InstagramIcon },
-    { key: 'facebook', label: 'Facebook', Icon: FacebookIcon },
-    { key: 'twitter', label: 'Twitter / X', Icon: XIcon },
-    { key: 'youtube', label: 'YouTube', Icon: YoutubeIcon },
-    { key: 'tiktok', label: 'TikTok', Icon: TiktokIcon }
+    { key: 'website', Icon: GlobeIcon },
+    { key: 'instagram', Icon: InstagramIcon },
+    { key: 'facebook', Icon: FacebookIcon },
+    { key: 'twitter', Icon: XIcon },
+    { key: 'youtube', Icon: YoutubeIcon },
+    { key: 'tiktok', Icon: TiktokIcon }
 ];
 
 /** The venue profiles the owner panel counts (HOS-2256). */
@@ -133,8 +136,11 @@ function trackingDataFor(input: {
 function publicSocialLinks(input: {
     readonly socialNetworks: Partial<Record<PublicSocialKey, string | null | undefined>> | null;
     readonly interactionKinds?: Partial<Record<PublicSocialKey, string>>;
+    readonly locale: SupportedLocale;
 }): ListingContactSocialLink[] {
-    return PUBLIC_SOCIAL_LINKS.flatMap(({ key, label, Icon }) => {
+    const { t } = createTranslations(input.locale);
+    return PUBLIC_SOCIAL_LINKS.flatMap(({ key, Icon }) => {
+        const label = t(`accommodations.detail.listingContact.social.${key}`);
         const href = resolveSafeExternalUrl(input.socialNetworks?.[key] ?? undefined);
         if (!href) return [];
         const interactionKind = input.interactionKinds?.[key];
@@ -309,7 +315,8 @@ export function buildVenueContactBlock(input: {
         channels,
         socialLinks: publicSocialLinks({
             socialNetworks,
-            interactionKinds: VENUE_SOCIAL_INTERACTION_KINDS
+            interactionKinds: VENUE_SOCIAL_INTERACTION_KINDS,
+            locale: input.locale
         }),
         trackingData,
         shell: 'plain',
@@ -385,7 +392,10 @@ export function buildExperienceContactBlock(input: {
         });
     }
 
-    const socialLinks = publicSocialLinks({ socialNetworks: input.socialNetworks });
+    const socialLinks = publicSocialLinks({
+        socialNetworks: input.socialNetworks,
+        locale: input.locale
+    });
     if (channels.length === 0 && socialLinks.length === 0) return null;
 
     return {
