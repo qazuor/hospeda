@@ -2,7 +2,7 @@
  * Owner conversation thread page: inquiry summary header (HOS-2534).
  *
  * `.astro` files cannot be rendered by vitest in this repo (see
- * `test/components/experience/ExperienceMeetingPoint.test.ts`), so the page
+ * `test/components/listing/location/LocationSection.test.ts`), so the page
  * wiring is asserted at the source level. What the header SAYS, with and
  * without data, is executed for real in `test/lib/format-inquiry-summary.test.ts`;
  * here we prove the page feeds it the stored columns and only renders the

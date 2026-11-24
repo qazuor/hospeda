@@ -18,8 +18,19 @@ describe('gallery description reaches the ImageGallery island', () => {
         );
     });
 
-    it.each(['comer-y-salir', 'experiencias'])('%s detail maps g.description', (dir) => {
-        expect(read(`pages/[lang]/${dir}/[slug].astro`)).toContain('description: g.description');
+    it('comer-y-salir detail maps g.description', () => {
+        expect(read('pages/[lang]/comer-y-salir/[slug].astro')).toContain(
+            'description: g.description'
+        );
+    });
+
+    it('experiencias detail maps entry.description (via buildExperienceGalleryImages, HOS-2579)', () => {
+        expect(read('pages/[lang]/experiencias/[slug].astro')).toContain(
+            'buildExperienceGalleryImages'
+        );
+        expect(read('lib/experience/experience-gallery-images.ts')).toContain(
+            'description: entry.description'
+        );
     });
 
     it('GalleryImage declares description', () => {

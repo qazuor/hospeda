@@ -19,6 +19,7 @@ import {
     toVenueDetailPageProps
 } from '@/lib/api/transforms';
 import { hasPublicContactChannel } from '@/lib/experience-contact';
+import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
 import { hasVenueContactInfoChannel, hasVenuePublicContact } from '@/lib/venue-contact';
 
 const read = (rel: string): string => readFileSync(resolve(__dirname, '../../', rel), 'utf8');
@@ -94,9 +95,9 @@ describe('accommodation public page (HOS-2042)', () => {
     });
 
     it('wires the landline link with its own localized aria-label', () => {
-        const src = code(read('src/components/accommodation/AccommodationContactBlock.astro'));
+        const src = code(read('src/lib/listing-contact/listing-contact-block.ts'));
 
-        expect(src).toContain('contactInfo.landlinePhone');
+        expect(src).toContain('clean(contactInfo?.landlinePhone)');
         expect(src).toContain("'accommodations.detail.contact.landlineAriaLabel'");
     });
 });
@@ -167,7 +168,7 @@ describe('venue public page (HOS-2042)', () => {
 
     it('wires the page gate, the CTA predicate and the block to one shared predicate', () => {
         const page = code(read('src/pages/[lang]/comer-y-salir/[slug].astro'));
-        const block = code(read('src/components/venue/VenueContactBlock.astro'));
+        const block = code(read('src/lib/listing-contact/listing-contact-block.ts'));
 
         expect(page).toContain("from '@/lib/venue-contact'");
         expect(page).toContain('contactInfo: venue.contactInfo');
@@ -175,7 +176,7 @@ describe('venue public page (HOS-2042)', () => {
     });
 
     it('renders the landline with its own aria-label and never reads homePhone or whatsapp', () => {
-        const block = code(read('src/components/venue/VenueContactBlock.astro'));
+        const block = code(read('src/lib/listing-contact/listing-contact-block.ts'));
 
         expect(block).toContain('contactInfo?.workPhone');
         expect(block).toContain("'venue.detail.contactLandlineAriaLabel'");
@@ -201,8 +202,18 @@ describe('experience public page (HOS-2042)', () => {
         expect(detail.contactInfo?.workPhone).toBe('+543442452345');
         expect(hasPublicContactChannel({ contactInfo: detail.contactInfo })).toBe(true);
 
-        const block = code(read('src/components/experience/ExperienceContactBlock.astro'));
-        expect(block.indexOf("key: 'mobile'")).toBeLessThan(block.indexOf("key: 'work'"));
-        expect(block).toContain("'experience.detail.contactLandlineAriaLabel'");
+        const block = buildExperienceContactBlock({
+            listingId: detail.id,
+            contactInfo: detail.contactInfo,
+            socialNetworks: null,
+            locale: 'es'
+        });
+        expect(block?.channels.map((channel) => channel.label)).toEqual([
+            '+5493442452345',
+            '+543442452345'
+        ]);
+        expect(code(read('src/lib/listing-contact/listing-contact-block.ts'))).toContain(
+            "'experience.detail.contactLandlineAriaLabel'"
+        );
     });
 });

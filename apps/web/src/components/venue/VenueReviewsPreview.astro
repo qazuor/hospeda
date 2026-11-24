@@ -10,6 +10,7 @@
  * Self-hides when the venue has no reviews, exactly as the inline block did.
  */
 
+import { StarIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
@@ -76,7 +77,8 @@ if (reviewsCount <= 0) return;
                     </p>
                     {resolveReviewCardRating(review) != null && (
                         <span class="venue-detail__review-rating">
-                            ★ {resolveReviewCardRating(review)?.toFixed(1)}
+                            <StarIcon size={14} weight="fill" color="var(--rating-star)" aria-hidden="true" />
+                            {resolveReviewCardRating(review)?.toFixed(1)}
                         </span>
                     )}
                     {review.content && (

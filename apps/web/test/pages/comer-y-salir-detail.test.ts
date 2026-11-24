@@ -79,8 +79,9 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('detail blocks', () => {
-        it('renders VenueDetailHeader', () => {
-            expect(src).toContain('VenueDetailHeader');
+        it('renders the shared ListingHeader (HOS-2579)', () => {
+            expect(src).toContain('<ListingHeader {...headerProps} />');
+            expect(src).not.toContain('VenueDetailHeader');
         });
 
         it('renders VenueDescription', () => {
@@ -92,8 +93,11 @@ describe('comer-y-salir/[slug].astro', () => {
             expect(src).toContain('venue.openingHours');
         });
 
-        it('renders VenueContactBlock for menu + social', () => {
-            expect(src).toContain('VenueContactBlock');
+        it('renders the shared ListingContactBlock for menu + social (HOS-2579)', () => {
+            expect(src).toContain('buildVenueContactBlock({');
+            expect(src).toContain(
+                'Component: ListingContactBlock, props: { ...venueContactBlock }'
+            );
         });
 
         it('reuses FaqAccordion from accommodation components', () => {
@@ -160,8 +164,8 @@ describe('comer-y-salir/[slug].astro', () => {
 });
 
 describe('HOS-1787 leaf 6.1 — catalog-ordered body and JSON-LD type', () => {
-    it('orders the body through orderVenueDetailSections', () => {
-        expect(src).toContain('orderVenueDetailSections(');
+    it('orders the body by slot through venueDetailSectionsInSlot (HOS-2579 §6.2.3)', () => {
+        expect(src).toContain('venueDetailSectionsInSlot({ slot })');
     });
 
     it('mounts VenueJsonLd with the venue type', () => {
@@ -182,5 +186,65 @@ describe('HOS-1787 leaf 6.1 — catalog-ordered body and JSON-LD type', () => {
 
     it('does not read business lines', () => {
         expect(src).not.toContain('.businessLines');
+    });
+});
+
+describe('HOS-2579 — venue slots and section tabs (AC-2b, AC-6)', () => {
+    it('mounts ListingSectionTabs for the venue with no price and the page contact decision', () => {
+        const mount = src.match(/<ListingSectionTabs[\s\S]*?\/>/)?.[0] ?? '';
+
+        expect(mount).toContain('client:idle');
+        expect(mount).toContain('vertical="venue"');
+        expect(mount).toContain('price={null}');
+        expect(mount).toContain('panelId={contactPanelId}');
+        expect(mount).toContain("'accommodations.detail.listingContact.bar.viewMenu'");
+        expect(mount).toContain("'accommodations.detail.listingContact.bar.contact'");
+        expect(mount).toContain("primaryLink={contactMode.kind === 'menu'");
+        expect(mount).toContain("hasContactAction={contactMode.kind !== 'none'}");
+    });
+
+    it('creates a tab only for a slot that renders', () => {
+        expect(src).toContain('photos: galleryImages.length > 0');
+        expect(src).toContain('details: hasDescriptionSection');
+        expect(src).toContain('amenities: hasOffersSection');
+        expect(src).toContain('hours: hasOpeningHours');
+        expect(src).toContain('location: venueLocation !== null');
+        expect(src).toContain(
+            'const hasContactSection = venueContactBlock !== null || Boolean(venueWhatsApp);'
+        );
+        // No events tab: the agenda lives in «Lo que ofrece» (D-3).
+        expect(src).not.toMatch(/venueEvents: (true|has)/);
+    });
+
+    it('paints «Lo que ofrece» (menu + agenda) in slot 4 and promotions alone in slot 6', () => {
+        expect(src).toContain("const offersBlocks = blocksInSlot('offers');");
+        expect(src).toContain("const promotionsBlocks = blocksInSlot('promotions');");
+        expect(src).toMatch(
+            /<ListingDetailSlot name="offers" anchorId=\{LISTING_SECTION_IDS\.amenities\}>\s*\{offersBlocks\.map/
+        );
+        expect(src).toMatch(/<ListingDetailSlot name="promotions">\s*\{promotionsBlocks\.map/);
+    });
+
+    it('passes the locale to VenueDescription for its «Leer más» toggle (AC-24)', () => {
+        expect(src).toMatch(/richDescription: venue\.richDescription,\s*locale/);
+    });
+});
+
+describe('HOS-2579 — a venue with no description and no offers mounts neither slot', () => {
+    it('gates the description and «Lo que ofrece» wrappers on the same predicates as their tabs', () => {
+        expect(src).toMatch(
+            /\{hasDescriptionSection && \(\s*<ListingDetailSlot name="description"/
+        );
+        expect(src).toMatch(/\{hasOffersSection && \(\s*<ListingDetailSlot name="offers"/);
+        // Never on the block lists, which are non-empty even when every block self-hides.
+        expect(src).not.toContain('descriptionBlocks.length > 0 &&');
+        expect(src).not.toContain('offersBlocks.length > 0 &&');
+    });
+
+    it('gates every other slot that can be empty', () => {
+        expect(src).toMatch(/\{hasSummarySection && \(\s*<ListingDetailSlot name="summary">/);
+        expect(src).toMatch(/\{hasContactSection && \(\s*<ListingDetailSlot name="contact">/);
+        expect(src).toMatch(/\{hasPoliciesSection && \(\s*<ListingDetailSlot name="policies">/);
+        expect(src).toContain('contact: hasContactSection');
     });
 });

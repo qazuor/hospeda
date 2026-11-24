@@ -1348,13 +1348,7 @@
             "preferences": "Contacto y preferencias",
             "more": "Sobre vos",
             "consent": "Para terminar"
-        },
-        "steps": {
-            "basics": "Tus datos",
-            "preferences": "Preferencias",
-            "confirm": "Confirmar"
-        },
-        "stepsLabel": "Progreso de tu perfil"
+        }
     },
     "setPassword": {
         "pageTitle": "Agregar contraseña",

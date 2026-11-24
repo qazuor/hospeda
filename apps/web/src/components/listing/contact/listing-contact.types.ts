@@ -1,6 +1,6 @@
 /**
  * @file listing-contact.types.ts
- * @description Shared prop types for `ListingContactChannels.astro`, the one
+ * @description Shared prop types for `ListingContactBlock.astro` and `ListingSocialLinks.astro`, the one
  * presentation of a listing's contact channels and social profiles used by the
  * accommodation, venue and experience contact blocks (HOS-2520, owner smoke
  * items 18 and 19).
@@ -39,3 +39,11 @@ export interface ListingContactSocialLink {
 
 /** Visual shell around the block. */
 export type ListingContactShell = 'card' | 'plain';
+
+/** The venue's «Ver menú» outbound link, drawn between channels and socials. */
+export interface ListingContactMenuLink {
+    /** Already-safe, allow-listed href. */
+    readonly href: string;
+    /** Visible text of the button. */
+    readonly label: string;
+}

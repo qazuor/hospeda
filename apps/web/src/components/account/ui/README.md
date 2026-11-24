@@ -113,7 +113,8 @@ anchor resolves to a help article is HOS-2410's guard.
   from the catalog (never a literal, G7), `status`, `scope`, `renewal`, and a
   body for the details and actions of that state.
 - **`Stepper`** — display-only progress of a short flow (`steps`, `current`,
-  `label`); the flow owns moving between steps and the back step.
+  `label`); the flow owns moving between steps and the back step. Only for a
+  flow split across screens: a single-page form gets no stepper (HOS-2601).
 - **`OptionCard` / `OptionCardGrid`** — one choice as a single native button
   (`title`, `description`, `meta`, `badge`); `data-*` pass through.
 

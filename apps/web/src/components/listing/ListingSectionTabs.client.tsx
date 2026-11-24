@@ -13,7 +13,7 @@ import {
     getListingContactPrice,
     listingContactPriceSchema
 } from '@/lib/listing-contact/listing-contact-price';
-import { listingSectionKeySchema } from '@/lib/listing-section-tabs';
+import { getListingSectionTabLabelKey, listingSectionKeySchema } from '@/lib/listing-section-tabs';
 import { ListingContactActions } from './contact/ListingContactActions';
 import styles from './ListingSectionTabs.module.css';
 
@@ -37,12 +37,32 @@ const propsSchema = z
         panelId: z.string().min(1),
         primaryLabelKey: z.string().min(1),
         /** Id of the gallery element: once it scrolls out, the desktop band shows price and CTA. */
-        galleryId: z.string().min(1).optional()
+        galleryId: z.string().min(1).optional(),
+        /** In-page anchor the CTA falls back to before the panel is ready (venue, experience). */
+        fallbackHref: z.string().min(1).optional(),
+        /** Turns the CTA into a plain outbound link (the venue menu, HOS-2520 §7.8). */
+        primaryLink: z
+            .object({ href: z.string().min(1), channel: z.literal('menu') })
+            .readonly()
+            .optional(),
+        /**
+         * `false` when the listing has no channel to consult (a venue or experience
+         * with no public contact): the band then shows the price only, never a
+         * button that opens nothing. Defaults to `true`.
+         */
+        hasContactAction: z.boolean().optional()
     })
     .readonly();
 
 /** Session-blind props of the sticky section navigation. */
 export type ListingSectionTabsProps = z.infer<typeof propsSchema>;
+
+/** Accessible name of the navigation per vertical: a bar is not «Secciones del alojamiento». */
+const NAV_LABEL_KEYS = {
+    accommodation: 'accommodations.detail.sectionTabs.label',
+    venue: 'accommodations.detail.sectionTabs.labelVenue',
+    experience: 'accommodations.detail.sectionTabs.labelExperience'
+} as const;
 
 /** Extra breathing room kept between the sticky band and a section it scrolled to. */
 const SCROLL_GAP_PX = 8;
@@ -196,7 +216,17 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
     }, [activeId]);
 
     if (!parsed.success || tabs.length === 0) return null;
-    const { locale, vertical, listingId, price, panelId, primaryLabelKey } = parsed.data;
+    const {
+        locale,
+        vertical,
+        listingId,
+        price,
+        panelId,
+        primaryLabelKey,
+        fallbackHref,
+        primaryLink,
+        hasContactAction = true
+    } = parsed.data;
     const { t } = createTranslations(locale as SupportedLocale);
     const display = getListingContactPrice({ price, locale });
 
@@ -222,7 +252,7 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
         <nav
             ref={navRef}
             className={styles.nav}
-            aria-label={t('accommodations.detail.sectionTabs.label')}
+            aria-label={t(NAV_LABEL_KEYS[vertical])}
             data-listing-section-tabs
         >
             <ul
@@ -241,7 +271,9 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
                             aria-current={activeId === tab.id ? 'location' : undefined}
                             onClick={(event) => handleClick({ event, id: tab.id })}
                         >
-                            {t(`accommodations.detail.sectionTabs.${tab.key}`)}
+                            {t(
+                                `accommodations.detail.sectionTabs.${getListingSectionTabLabelKey({ key: tab.key, vertical })}`
+                            )}
                         </a>
                     </li>
                 ))}
@@ -257,15 +289,19 @@ export function ListingSectionTabs(props: ListingSectionTabsProps) {
                         {display.unit && <span>{display.unit}</span>}
                     </p>
                 )}
-                <ListingContactActions
-                    listingId={listingId}
-                    vertical={vertical}
-                    locale={locale}
-                    hasWhatsapp={false}
-                    panelId={panelId}
-                    primaryLabelKey={primaryLabelKey}
-                    origin="tabs"
-                />
+                {hasContactAction && (
+                    <ListingContactActions
+                        listingId={listingId}
+                        vertical={vertical}
+                        locale={locale}
+                        hasWhatsapp={false}
+                        panelId={panelId}
+                        primaryLabelKey={primaryLabelKey}
+                        origin="tabs"
+                        fallbackHref={fallbackHref}
+                        primaryLink={primaryLink}
+                    />
+                )}
             </div>
         </nav>
     );

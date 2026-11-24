@@ -2,8 +2,10 @@
  * @file listing-contact-channels-no-whatsapp.guard.test.ts
  * @description AC-2.10 (HOS-2532): the experience and venue contact surfaces carry
  * no WhatsApp element (HOS-363, HOS-1076), and each page wires its bar from the
- * channel builders only. Reads source with comments stripped, so prose that
- * explains the rule does not trip it.
+ * channel builders only. HOS-2579 AC-16 extends it to the one contact block of
+ * the three pages (`ListingContactBlock`, `ListingSocialLinks` and their
+ * builders). Reads source with comments stripped, so prose that explains the
+ * rule does not trip it.
  */
 
 import { readFileSync } from 'node:fs';
@@ -45,6 +47,12 @@ const experiencePage = stripComments(read('pages/[lang]/experiencias/[slug].astr
 const venuePage = stripComments(read('pages/[lang]/comer-y-salir/[slug].astro'));
 const panel = stripComments(read('components/listing/contact/ListingChannelsPanel.client.tsx'));
 const channelsLib = stripComments(read('lib/listing-contact/listing-channels.ts'));
+const contactBlockSources = [
+    'components/listing/contact/ListingContactBlock.astro',
+    'components/listing/contact/ListingSocialLinks.astro',
+    'components/listing/contact/listing-contact.types.ts',
+    'lib/listing-contact/listing-contact-block.ts'
+] as const;
 
 describe('experience and venue contact surfaces carry no WhatsApp', () => {
     it('the experience page has no WhatsApp element at all', () => {
@@ -53,6 +61,12 @@ describe('experience and venue contact surfaces carry no WhatsApp', () => {
             /whatsapp|wa\.me/i
         );
         expect(experiencePage).toContain('hasWhatsapp={false}');
+    });
+
+    it.each(
+        contactBlockSources
+    )('the shared contact block file %s has no WhatsApp element (AC-16)', (file) => {
+        expect(stripComments(read(file))).not.toMatch(/whatsapp|wa\.me/i);
     });
 
     it('the channel builders have no WhatsApp element', () => {
@@ -111,15 +125,15 @@ describe('experience and venue mobile header spacing (same fixes as accommodatio
             name: 'experience',
             page: 'pages/[lang]/experiencias/[slug].astro',
             cls: 'exp-detail',
-            header: 'components/experience/ExperienceHero.astro',
-            hdr: 'exp-hero'
+            header: 'components/listing/header/ListingHeader.astro',
+            hdr: 'listing-header'
         },
         {
             name: 'venue',
             page: 'pages/[lang]/comer-y-salir/[slug].astro',
             cls: 'venue-detail',
-            header: 'components/venue/VenueDetailHeader.astro',
-            hdr: 'venue-detail-header'
+            header: 'components/listing/header/ListingHeader.astro',
+            hdr: 'listing-header'
         }
     ] as const;
 
@@ -142,7 +156,7 @@ describe('experience and venue mobile header spacing (same fixes as accommodatio
     it.each(cases)('$name header uses the h3 step for the mobile title', ({ header, hdr }) => {
         expect(read(header)).toMatch(
             new RegExp(
-                `\\.${hdr}--mobile-gallery \\.${hdr}__name\\s*\\{[^}]*font-size: var\\(--text-h3`
+                `\\.${hdr}--mobile-gallery \\.${hdr}__title\\s*\\{[^}]*font-size: var\\(--text-h3`
             )
         );
     });

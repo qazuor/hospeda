@@ -30,7 +30,7 @@ function read(relativePath: string): string {
 const PAGE = read('pages/[lang]/alojamientos/[slug].astro');
 const CONTACT_CARD = read('components/accommodation/ContactCard.astro');
 const SHELL = read('components/accommodation/ContactHostShell.astro');
-const LOCATION = read('components/accommodation/LocationSection.astro');
+const LOCATION = read('components/listing/location/LocationSection.astro');
 const REPUTATION = read('components/accommodation/ExternalReputation.astro');
 const REPUTATION_ROW = read('components/accommodation/ExternalReputationSummaryRow.astro');
 const MAP_CSS = read('components/maps/LocationMap.module.css');

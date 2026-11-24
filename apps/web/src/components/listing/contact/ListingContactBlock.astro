@@ -1,27 +1,27 @@
 ---
 /**
- * @file ListingContactChannels.astro
- * @description Single presentation of a listing's public contact block, shared
- * by `AccommodationContactBlock`, `VenueContactBlock` and
- * `ExperienceContactBlock` (HOS-2520, owner smoke items 18 and 19).
+ * @file ListingContactBlock.astro
+ * @description The one contact block of the three listing detail pages
+ * (HOS-2579 §6.4, HOS-2520 owner smoke items 18 and 19).
  *
- * Renders the channels (phone, email, website) as outline `GradientButton`s and
- * the social profiles as outline `IconButton`s carrying the network's brand
- * logo from `@repo/icons`. A default slot sits between the two groups (the
- * venue's "Ver menú" button).
+ * Renders the channels (phone, email, website) as outline `GradientButton`s,
+ * then the venue's «Ver menú» link when there is one, then the social profiles
+ * through `ListingSocialLinks`.
  *
- * This component only PRESENTS. It never decides which channels a vertical
- * shows, never reads a raw URL, and has no WhatsApp channel: each wrapper
- * computes its own allow-listed data and passes it in. Every `href` it receives
- * must already have gone through `resolveSafeExternalUrl` (or be a `tel:` /
- * `mailto:` URI). Tracking attributes are the wrapper's `trackingData` plus a
- * per-link `contact-channel`.
+ * This component only PRESENTS. Its props come from the per-vertical builders
+ * in `@/lib/listing-contact/listing-contact-block`, which decide which channels
+ * and networks a vertical shows, run every URL through
+ * `resolveSafeExternalUrl` and never produce a WhatsApp channel. Every `href`
+ * received here is already safe (or a `tel:` / `mailto:` URI). Tracking
+ * attributes are the builder's `trackingData` plus a per-link
+ * `contact-channel`.
  */
-import { EmailIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
+import { EmailIcon, ExternalLinkIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
-import IconButton from '@/components/shared/ui/IconButton.astro';
+import ListingSocialLinks from './ListingSocialLinks.astro';
 import type {
     ListingContactChannel,
+    ListingContactMenuLink,
     ListingContactShell,
     ListingContactSocialLink
 } from './listing-contact.types';
@@ -35,12 +35,14 @@ interface Props {
     readonly socialLinks: readonly ListingContactSocialLink[];
     /** `data-*` read by `initContactLinkTracking` (keys without the `data-` prefix). */
     readonly trackingData: Readonly<Record<string, string>>;
-    /** `card` (default) draws the accommodation card; `plain` has no chrome. */
+    /** `card` (default) draws a card; `plain` has no chrome. */
     readonly shell?: ListingContactShell;
     /** Stable anchor id of the root `<section>` (in-page CTAs point at it). */
     readonly id?: string;
     /** Extra attributes for the root element (the Umami block marker). */
     readonly blockProps?: Readonly<Record<string, string>>;
+    /** The venue's «Ver menú» outbound link (not counted by the owner panel). */
+    readonly menuLink?: ListingContactMenuLink;
 }
 
 const {
@@ -51,7 +53,8 @@ const {
     trackingData,
     shell = 'card',
     id,
-    blockProps = {}
+    blockProps = {},
+    menuLink
 } = Astro.props;
 
 const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon } as const;
@@ -63,7 +66,8 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
     aria-label={heading}
     {...blockProps}
 >
-    {heading && <h3 class="listing-contact__title">{heading}</h3>}
+    <!-- An <h2>: the block opens slot 10 on the three pages (HOS-2579 §6.8). -->
+    {heading && <h2 class="listing-contact__title">{heading}</h2>}
 
     {channels.length > 0 && (
         <div class="listing-contact__channels">
@@ -93,33 +97,29 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
         </div>
     )}
 
-    <slot />
-
-    {socialLinks.length > 0 && (
-        <div class="listing-contact__social">
-            {socialHeading && <h3 class="listing-contact__title">{socialHeading}</h3>}
-            <div class="listing-contact__social-list">
-                {socialLinks.map(({ href, ariaLabel, Icon, interactionKind }) => (
-                    <IconButton
-                        as="a"
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="outline"
-                        size="md"
-                        ariaLabel={ariaLabel}
-                        data={{
-                            ...trackingData,
-                            'contact-channel': 'social',
-                            ...(interactionKind ? { 'interaction-kind': interactionKind } : {})
-                        }}
-                    >
-                        <Icon size={18} aria-hidden="true" />
-                    </IconButton>
-                ))}
-            </div>
+    {menuLink && (
+        <div class="listing-contact__menu">
+            <GradientButton
+                href={menuLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                label={menuLink.label}
+                variant="accent"
+                size="md"
+                class="venue-contact__menu-btn"
+                data={{ ...trackingData, 'contact-channel': 'menu' }}
+            >
+                <ExternalLinkIcon slot="trailing" size={16} aria-hidden="true" />
+            </GradientButton>
         </div>
     )}
+
+    <ListingSocialLinks
+        links={socialLinks}
+        heading={socialHeading}
+        trackingData={trackingData}
+        headingLevel={heading ? 3 : 2}
+    />
 </section>
 
 <style>
@@ -158,16 +158,5 @@ const CHANNEL_ICONS = { phone: PhoneIcon, email: EmailIcon, website: GlobeIcon }
     .listing-contact__channels :global(.listing-contact__channel .gradient-btn__label) {
         min-inline-size: 0;
         overflow-wrap: anywhere;
-    }
-    .listing-contact__social {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3, 12px);
-    }
-    .listing-contact__social-list {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--space-2, 8px);
     }
 </style>

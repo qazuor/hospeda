@@ -780,7 +780,12 @@
             "amenities": "Comodidades",
             "location": "Ubicación",
             "reviews": "Reseñas",
-            "host": "Anfitrión"
+            "host": "Anfitrión",
+            "hours": "Horarios",
+            "contact": "Contacto",
+            "offers": "Lo que ofrece",
+            "labelVenue": "Secciones del comercio",
+            "labelExperience": "Secciones de la experiencia"
         },
         "listingContact": {
             "bar": {
@@ -824,6 +829,14 @@
                 "perHour": "/hora",
                 "perPerson": "/persona",
                 "perGroup": "/grupo"
+            },
+            "social": {
+                "website": "Sitio web",
+                "instagram": "Instagram",
+                "facebook": "Facebook",
+                "twitter": "X (Twitter)",
+                "youtube": "YouTube",
+                "tiktok": "TikTok"
             }
         },
         "home": "Inicio",
@@ -996,8 +1009,7 @@
             "generalCategory": "General"
         },
         "locationDetail": {
-            "title": "Ubicación",
-            "mapPlaceholder": "Mapa próximamente"
+            "title": "Ubicación"
         },
         "nearbyPoi": {
             "title": "Qué hay cerca"
@@ -1011,7 +1023,6 @@
             "nextSlide": "Slide siguiente"
         },
         "badges": {
-            "scrollLabel": "Distintivos del alojamiento",
             "new": "Nuevo",
             "featured": "Destacado",
             "verified": "Verificado"

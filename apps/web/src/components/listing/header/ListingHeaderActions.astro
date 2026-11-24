@@ -1,0 +1,116 @@
+---
+/**
+ * @file ListingHeaderActions.astro
+ * @description Action cluster of the shared listing header (HOS-2579 §6.3):
+ * compare (accommodation only), favorite and share, as round 44px buttons.
+ *
+ * - **Compare** keeps its `CAN_COMPARE_ACCOMMODATIONS` upsell: the catalog plan
+ *   names that carry it are public (not per-user), so the page stays
+ *   session-blind (HOS-2554). It stays visible on mobile, next to the title.
+ * - **Favorite** is the shared `FavoriteButton` island: its state lives in the
+ *   favorites store, so it stays in sync with the gallery overlay's copy.
+ * - **Share** uses `ShareButtons` (Web Share API, popover fallback, UTM-tagged
+ *   URL). Every vertical gets it on desktop.
+ * - Below 768px, with the gallery opt-in, favorite and share are hidden: the
+ *   gallery overlay (and the action bar) already carry them.
+ */
+import { EntitlementKeyEnum } from '@repo/schemas';
+import { DetailCompareButton } from '@/components/accommodation/DetailCompareButton.client';
+import { ShareButtons } from '@/components/ShareButtons.client';
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { getGatePlanNames } from '@/lib/billing/gate-plan-names';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { ListingHeaderProps } from './listing-header.types';
+
+interface Props {
+    readonly vertical: ListingHeaderProps['vertical'];
+    readonly locale: SupportedLocale;
+    readonly entityId: string;
+    readonly title: string;
+    readonly share: ListingHeaderProps['share'];
+    readonly compare: ListingHeaderProps['compare'];
+}
+
+const { vertical, locale, entityId, title, share, compare } = Astro.props;
+
+const FAVORITE_ENTITY_TYPES = {
+    accommodation: 'ACCOMMODATION',
+    venue: 'VENUE',
+    experience: 'EXPERIENCE'
+} as const;
+
+const compareGatePlanNames = compare
+    ? await getGatePlanNames({ entitlement: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS })
+    : [];
+---
+
+<div class="listing-header__actions">
+    {compare && (
+        <DetailCompareButton
+            client:load
+            accommodationId={entityId}
+            accommodationName={title}
+            accommodationThumbnailUrl={compare.thumbnailUrl}
+            locale={locale}
+            gatePlanNames={compareGatePlanNames}
+            className="listing-header__compare-btn"
+        />
+    )}
+    <div class="listing-header__gallery-duplicate">
+        <FavoriteButton
+            client:load
+            entityId={entityId}
+            entityType={FAVORITE_ENTITY_TYPES[vertical]}
+            variant="standalone"
+            locale={locale}
+            className="listing-header__favorite-btn"
+        />
+    </div>
+    <div class="listing-header__gallery-duplicate listing-header__share">
+        {/* AC-11: the header's own icon-only share trigger (HOS-2593). */}
+        <ShareButtons
+            client:visible
+            url={share.url}
+            title={share.title}
+            campaign={share.campaign}
+            locale={locale}
+            appearance="icon"
+            className="listing-header__share-btn"
+        />
+    </div>
+</div>
+
+<style>
+    .listing-header__actions {
+        grid-area: actions;
+        align-self: start;
+        flex-shrink: 0;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2, 8px);
+    }
+
+    .listing-header__gallery-duplicate {
+        display: contents;
+    }
+
+    /* The share trigger is an outline circle on the band, the same 44px as the
+     * favorite button. */
+    .listing-header__share :global(.listing-header__share-btn button) {
+        border: 1.5px solid var(--border);
+        box-shadow: none;
+    }
+
+    @media (max-width: 767px) {
+        :global(.listing-header--mobile-gallery) .listing-header__gallery-duplicate {
+            display: none;
+        }
+
+        :global(.listing-header--mobile-gallery) :global(.listing-header__compare-btn) {
+            width: 32px;
+            height: 32px;
+            padding-inline: 0;
+        }
+    }
+</style>

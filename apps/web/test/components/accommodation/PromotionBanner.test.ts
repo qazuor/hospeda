@@ -239,7 +239,7 @@ describe('Detail page — PromotionBanner wiring (SPEC-285 T-007)', () => {
     it('shows exactly one copy per width, switching at the same 1024px as the price summary', () => {
         expect(detailPageSrc).toMatch(/\.acc-promos--summary\s*\{\s*display: none;\s*\}/);
         expect(detailPageSrc).toMatch(
-            /@media \(max-width: 1024px\)\s*\{\s*\.acc-promos--summary\s*\{\s*display: block;\s*\}\s*\.acc-promos--content\s*\{\s*display: none;\s*\}/
+            /@media \(max-width: 1024px\)\s*\{\s*\.acc-promos--summary\s*\{\s*display: block;\s*\}\s*\.acc-detail :global\(\.acc-promos--content\)\s*\{\s*display: none;\s*\}/
         );
     });
 

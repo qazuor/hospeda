@@ -1,13 +1,22 @@
 import { z } from 'zod';
 
-/** Sections a listing detail page can expose as sticky tabs, in page order. */
+/**
+ * Sections a listing detail page can expose as sticky tabs, in page order.
+ *
+ * The order follows the 13 canonical slots of `listing-detail-order.ts`
+ * (HOS-2579 §6.2): photos (slot 1), details (3), amenities (4, «Lo que
+ * ofrece» on a venue), hours (5), location (7), reviews (8), host (9) and
+ * contact (10).
+ */
 export const LISTING_SECTION_KEYS = [
     'photos',
     'details',
     'amenities',
+    'hours',
+    'location',
     'reviews',
     'host',
-    'location'
+    'contact'
 ] as const;
 
 /** A tab-able listing section. */
@@ -16,15 +25,45 @@ export type ListingSectionKey = (typeof LISTING_SECTION_KEYS)[number];
 /** Zod schema for {@link ListingSectionKey}. */
 export const listingSectionKeySchema = z.enum(LISTING_SECTION_KEYS);
 
-/** Stable anchor id of each section. The page owns the element, the tab links to it. */
+/**
+ * Stable anchor id of each section. The page owns the element, the tab links to it.
+ *
+ * These are aliases of the slot wrapper ids (`LISTING_DETAIL_SLOT_IDS`):
+ * `hours`, `location`, `reviews`, `host` and `contact` ARE the slot wrapper
+ * ids; `photos` sits on the gallery inside slot 1, `details` inside slot 3 and
+ * `amenities` inside slot 4 (HOS-2579 §6.1.2).
+ */
 export const LISTING_SECTION_IDS: Readonly<Record<ListingSectionKey, string>> = {
     photos: 'listing-photos',
     details: 'listing-details',
     amenities: 'listing-amenities',
+    hours: 'listing-hours',
+    location: 'listing-location',
     reviews: 'listing-reviews',
     host: 'listing-host',
-    location: 'listing-location'
+    contact: 'listing-contact'
 };
+
+/**
+ * The i18n key (under `accommodations.detail.sectionTabs.`) of a tab's label.
+ *
+ * On a venue the slot-4 tab also holds the menu and the agenda (owner decision
+ * D-3), so it reads «Lo que ofrece» (`offers`) instead of the amenities label.
+ * There is no separate events tab.
+ *
+ * @param input.key - The tab.
+ * @param input.vertical - The listing's vertical.
+ * @returns The label key suffix.
+ */
+export function getListingSectionTabLabelKey({
+    key,
+    vertical
+}: {
+    readonly key: ListingSectionKey;
+    readonly vertical: 'accommodation' | 'experience' | 'venue';
+}): ListingSectionKey | 'offers' {
+    return vertical === 'venue' && key === 'amenities' ? 'offers' : key;
+}
 
 /** One tab of the sticky section navigation. */
 export interface ListingSectionTab {

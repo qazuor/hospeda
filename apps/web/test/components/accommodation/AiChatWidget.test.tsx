@@ -530,10 +530,11 @@ describe('AiChatWidget', () => {
         render(<AiChatWidget {...defaultProps} />);
         await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
 
-        // Arrow icon text should be present
+        // The send arrow is an icon, not a text glyph (HOS-2579 §6.7)
         const sendBtn = screen.getByRole('button', { name: 'Send' });
         expect(sendBtn).toBeInTheDocument();
-        expect(sendBtn.textContent).toContain('↑');
+        expect(sendBtn.querySelector('svg')).not.toBeNull();
+        expect(sendBtn.textContent).not.toContain('↑');
     });
 
     it('T-009: shows thinking indicator when streaming with no assistant content yet', async () => {

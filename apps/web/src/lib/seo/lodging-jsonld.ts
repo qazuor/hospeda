@@ -67,7 +67,7 @@ export function buildLodgingGeo({
  * HOS-585 P-4: Bing assembles its local pack from NAP — name, address, phone —
  * and the component emitted a complete `PostalAddress` with no phone at all.
  *
- * Publishes nothing new: `AccommodationContactBlock` already renders this exact
+ * Publishes nothing new: the accommodation `ListingContactBlock` already renders this exact
  * number as a `tel:` link on the same page. That is the whole reason this is
  * safe while `geo` needed HOS-554's obfuscated coordinate — the phone is
  * already public, the exact pin is deliberately not.

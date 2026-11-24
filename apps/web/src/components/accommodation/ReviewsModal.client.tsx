@@ -1,3 +1,4 @@
+import { StarIcon } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { Spinner } from '@/components/shared/feedback/Spinner';
@@ -189,7 +190,13 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                                     </div>
                                     {review.averageRating != null && (
                                         <span className={styles.reviewRating}>
-                                            &#9733; {review.averageRating.toFixed(1)}
+                                            <StarIcon
+                                                size={14}
+                                                weight="fill"
+                                                color="var(--rating-star)"
+                                                aria-hidden="true"
+                                            />{' '}
+                                            {review.averageRating.toFixed(1)}
                                         </span>
                                     )}
                                 </div>

@@ -15,7 +15,7 @@ const read = (relativePath: string): string =>
 const PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const WRAPPER = read('components/venue/VenueWhatsAppContact.astro');
 const ISLAND = read('components/venue/VenueWhatsAppButton.client.tsx');
-const CONTACT_BLOCK = read('components/venue/VenueContactBlock.astro');
+const CONTACT_BLOCK = read('lib/listing-contact/listing-contact-block.ts');
 
 describe('venue WhatsApp button stays session-blind (AC-19)', () => {
     it.each([

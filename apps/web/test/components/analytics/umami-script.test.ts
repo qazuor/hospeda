@@ -3,7 +3,7 @@
  * @description Source-level tests for `UmamiScript.astro` (HOS-2119 T-028).
  *
  * Vitest cannot render `.astro` in this repo (see
- * `test/components/experience/ExperienceMeetingPoint.test.ts`), so these
+ * `test/components/listing/location/LocationSection.test.ts`), so these
  * assertions read the SOURCE. They prove the tag is spelled the way the
  * contract requires, not that a given env combination takes a given branch.
  * The definitive check is the staging deploy, where the rendered `<head>` must

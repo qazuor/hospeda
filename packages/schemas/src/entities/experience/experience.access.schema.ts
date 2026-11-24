@@ -76,7 +76,7 @@ const EXPERIENCE_BUSINESS_LINE_VALUES = BUSINESS_LINES.experience.map(
  *   - `whatsapp` — the WhatsApp NUMBER is gated by the VIEWER's plan on a
  *     separate per-user protected endpoint (HOS-19). This payload is
  *     shared-cached with no auth in the cache key, so emitting it here would
- *     serve a gated value to everyone. `AccommodationContactBlock` excludes it
+ *     serve a gated value to everyone. the accommodation `ListingContactBlock` excludes it
  *     for exactly the same reason.
  *   - `preferredEmail` / `preferredPhone` — internal routing preferences, not
  *     contact values.

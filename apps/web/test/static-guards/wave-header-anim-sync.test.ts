@@ -57,11 +57,11 @@ const WEB_SRC = path.resolve(__dirname, '../../src');
  * content on scroll. Adding a header to the band means adding it here.
  */
 const BAND_HEADERS = [
-    'components/accommodation/DetailHeader.astro',
+    'components/listing/header/ListingHeader.astro',
+    'components/listing/header/ListingHeaderBadges.astro',
+    'components/listing/header/ListingLocationLine.astro',
     'components/destination/DestinationDetailHeader.astro',
     'components/event/EventDetailHeader.astro',
-    'components/experience/ExperienceHero.astro',
-    'components/venue/VenueDetailHeader.astro',
     'components/post/PostDetailHeader.astro',
     'components/shared/layout/ListingPageHeader.astro'
 ] as const;

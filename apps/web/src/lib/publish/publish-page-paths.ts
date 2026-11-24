@@ -38,6 +38,19 @@ export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug,
 } as const;
 
 /**
+ * The in-account publish hub (`/mi-cuenta/publica/`): the page that lists the
+ * three verticals and knows which ones the account already holds.
+ *
+ * It is where a request to start a listing lands when it names no vertical —
+ * "+ Nuevo comercio" on `/mi-cuenta/comercio/`, and the retired
+ * `/mi-cuenta/comercio/nuevo/` picker's 301 (HOS-2602). "Comercio" means a venue
+ * or an experience, so sending that URL to the accommodation page
+ * (`PUBLISH_PAGE_PATH_BY_VERTICAL.accommodation`) put a venue owner on the
+ * wrong form.
+ */
+export const ACCOUNT_PUBLISH_HUB_PATH = 'mi-cuenta/publica';
+
+/**
  * Where an owner manages the listings of one vertical — "Ver mis fichas" on the
  * precheck panel, and where the "pick among several drafts" branch sends them.
  *

@@ -225,14 +225,14 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
 
         // ── Public ficha: verify type badge reflects new value ───────────────
         // The public venue ficha renders the translated type label inside
-        // .venue-detail-header__type-badge. For BAR the i18n fallback is the
+        // .listing-header__type-badge (HOS-2579 shared header). For BAR the i18n fallback is the
         // raw enum value 'BAR' (since there may be no translation key in the
         // local seed's i18n catalog). We match by the DB value or any text that
         // appears — using toContainText on the badge element covers both cases.
         await page.goto(`${WEB_URL}/es/comer-y-salir/${VENUE_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
-        const typeBadge = page.locator('.venue-detail-header__type-badge');
+        const typeBadge = page.locator('.listing-header__type-badge');
         await expect(typeBadge).toBeVisible({ timeout: 10_000 });
         // The badge text is whatever the i18n function renders for VENUE_NEW_TYPE.
         // We cannot predict the exact label without the full i18n catalog, but we
@@ -365,11 +365,11 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
         // ── Public ficha: verify type badge reflects new value ───────────────
-        // ExperienceHero.astro renders the translated label inside .exp-hero__type-badge.
+        // ListingHeader renders the translated label inside .listing-header__type-badge.
         await page.goto(`${WEB_URL}/es/experiencias/${EXPERIENCE_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
-        const typeBadge = page.locator('.exp-hero__type-badge');
+        const typeBadge = page.locator('.listing-header__type-badge');
         await expect(typeBadge).toBeVisible({ timeout: 10_000 });
         const badgeText = await typeBadge.textContent();
         expect(badgeText?.trim().length).toBeGreaterThan(0);

@@ -17,6 +17,7 @@
  * @module AiChatWidget
  */
 
+import { ChevronUpIcon, CloseIcon, FullscreenIcon, MinimizeIcon } from '@repo/icons';
 import type { AiChatEntityType } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DockPortal } from '@/components/shared/dock/DockPortal';
@@ -359,7 +360,14 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                                 chat.state.status === 'streaming' ? copy('sending') : copy('send')
                             }
                         >
-                            {chat.state.status === 'streaming' ? <Spinner size="sm" /> : '↑'}
+                            {chat.state.status === 'streaming' ? (
+                                <Spinner size="sm" />
+                            ) : (
+                                <ChevronUpIcon
+                                    size={18}
+                                    aria-hidden="true"
+                                />
+                            )}
                         </button>
                     </form>
                 </>
@@ -440,7 +448,17 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 aria-label={isExpanded ? copy('collapse') : copy('expand')}
                             >
-                                {isExpanded ? '↘' : '↗'}
+                                {isExpanded ? (
+                                    <MinimizeIcon
+                                        size={16}
+                                        aria-hidden="true"
+                                    />
+                                ) : (
+                                    <FullscreenIcon
+                                        size={16}
+                                        aria-hidden="true"
+                                    />
+                                )}
                             </button>
                             <button
                                 type="button"
@@ -448,7 +466,10 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                                 onClick={() => setIsOpen(false)}
                                 aria-label={copy('close')}
                             >
-                                ✕
+                                <CloseIcon
+                                    size={16}
+                                    aria-hidden="true"
+                                />
                             </button>
                         </div>
                     </div>

@@ -78,8 +78,8 @@ with an empty placeholder, so not even their masked shape is recorded:
 
 1. the contact-owner form on an accommodation (`ContactHost`);
 2. the WhatsApp contact block (`WhatsAppContact`);
-3. the venue contact block (`VenueContactBlock`);
-4. the experience contact block (`ExperienceContactBlock`);
+3. the venue contact block (`ListingContactBlock`, `blockProps` from `buildVenueContactBlock`);
+4. the experience contact block (`ListingContactBlock`, `blockProps` from `buildExperienceContactBlock`);
 5. the cookie consent banner, backdrop and dialog (`CookieConsentBanner`);
 6. the feedback modal, on its portal root (`FeedbackHeadlessHost` passes the marker to
    `@repo/feedback`'s `FeedbackModal`).

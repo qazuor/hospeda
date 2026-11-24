@@ -340,4 +340,111 @@ describe('ListingSectionTabs', () => {
         expect(css).toMatch(/\.cta\s*\{\s*display:\s*none/);
         expect(css).toMatch(/\.link:focus-visible\s*\{[^}]*outline:/);
     });
+
+    describe('venue and experience (HOS-2579 §6.2, AC-6, AC-7)', () => {
+        const venueTabs = buildListingSectionTabs({
+            present: { photos: true, amenities: true, hours: true, reviews: true, contact: true }
+        });
+
+        it('labels the venue slot-4 tab «Lo que ofrece», with no events tab', () => {
+            // Arrange + Act
+            render(
+                <ListingSectionTabs
+                    {...props}
+                    tabs={venueTabs}
+                    vertical="venue"
+                    price={null}
+                />
+            );
+            const nav = screen.getByRole('navigation', { name: 'Secciones del comercio' });
+
+            // Assert
+            expect(screen.getByRole('link', { name: 'Lo que ofrece' })).toHaveAttribute(
+                'href',
+                '#listing-amenities'
+            );
+            expect(screen.queryByRole('link', { name: 'Comodidades' })).not.toBeInTheDocument();
+            expect(screen.getByRole('link', { name: 'Horarios' })).toHaveAttribute(
+                'href',
+                '#listing-hours'
+            );
+            expect(screen.getByRole('link', { name: 'Contacto' })).toHaveAttribute(
+                'href',
+                '#listing-contact'
+            );
+            expect([...nav.querySelectorAll('a[data-tab-id]')].map((a) => a.textContent)).toEqual([
+                'Fotos',
+                'Lo que ofrece',
+                'Horarios',
+                'Reseñas',
+                'Contacto'
+            ]);
+        });
+
+        it('keeps the amenities label and names the nav after the experience', () => {
+            render(
+                <ListingSectionTabs
+                    {...props}
+                    tabs={venueTabs}
+                    vertical="experience"
+                />
+            );
+
+            expect(
+                screen.getByRole('navigation', { name: 'Secciones de la experiencia' })
+            ).toBeInTheDocument();
+            expect(screen.getByRole('link', { name: 'Comodidades' })).toBeInTheDocument();
+        });
+
+        it('turns the CTA into the menu link for a venue with a menu', () => {
+            render(
+                <ListingSectionTabs
+                    {...props}
+                    tabs={venueTabs}
+                    vertical="venue"
+                    price={null}
+                    primaryLabelKey="accommodations.detail.listingContact.bar.viewMenu"
+                    primaryLink={{ href: 'https://example.com/carta', channel: 'menu' }}
+                />
+            );
+            const cta = document.querySelector('[data-listing-section-cta]');
+            const link = cta?.querySelector('a');
+
+            expect(link).toHaveAttribute('href', 'https://example.com/carta');
+            expect(link).toHaveAttribute('data-contact-channel', 'menu');
+            expect(link).toHaveAttribute('data-contact-origin', 'tabs');
+        });
+
+        it('falls back to the given contact anchor before the panel is ready', () => {
+            render(
+                <ListingSectionTabs
+                    {...props}
+                    tabs={venueTabs}
+                    vertical="experience"
+                    fallbackHref="#experience-contact"
+                />
+            );
+
+            expect(document.querySelector('[data-listing-section-cta] a')).toHaveAttribute(
+                'href',
+                '#experience-contact'
+            );
+        });
+
+        it('shows no button when the listing has no channel to consult', () => {
+            render(
+                <ListingSectionTabs
+                    {...props}
+                    tabs={venueTabs}
+                    vertical="experience"
+                    hasContactAction={false}
+                />
+            );
+            const cta = document.querySelector('[data-listing-section-cta]');
+
+            expect(cta?.querySelector('a')).toBeNull();
+            // The price stays: it is information, not an action.
+            expect(cta?.textContent).toContain('155.500');
+        });
+    });
 });

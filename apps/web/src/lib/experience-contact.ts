@@ -5,7 +5,7 @@
  *
  * ## Why this is a shared function and not an inline check
  *
- * `ExperienceContactBlock` renders nothing at all when every published channel
+ * the experience `ListingContactBlock` renders nothing at all when every published channel
  * is missing — and the private-groups CTA (HOS-1056) is an anchor INTO that
  * block. So the CTA's link is only real when the block exists, and the two
  * decisions have to be made from the same predicate: an inline copy in each file
@@ -51,7 +51,7 @@ function usable(value: string | null | undefined): boolean {
  * Whether the listing publishes at least one contact channel.
  *
  * @param contactInfo - The narrowed public contact object, or `null`.
- * @returns `true` when `ExperienceContactBlock` will render something.
+ * @returns `true` when the experience `ListingContactBlock` will render something.
  */
 export function hasPublicContactChannel({
     contactInfo
@@ -68,7 +68,7 @@ export function hasPublicContactChannel({
 }
 
 /**
- * The DOM id `ExperienceContactBlock` renders on its wrapper, and the target of
+ * The DOM id the experience `ListingContactBlock` renders on its wrapper, and the target of
  * the private-groups CTA (HOS-1056).
  *
  * Exported so the anchor and the element are written from ONE constant. A

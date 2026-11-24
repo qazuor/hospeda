@@ -91,7 +91,7 @@ const { lang, summary, descriptionHtml } = Astro.props;
   /* Rich-text styles for the sanitized markdown emitted via `set:html`.
      `:global()` is required: Astro's scoped-style hashing only rewrites
      elements present in the template, and these nodes are injected at
-     runtime. Mirrors `ExperienceInfo.astro`'s `--rich` block. */
+     runtime. Mirrors `ExperienceDescription.astro`'s `--rich` block. */
   .description__body--rich :global(h2),
   .description__body--rich :global(h3),
   .description__body--rich :global(h4) {

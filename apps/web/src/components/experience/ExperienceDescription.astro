@@ -1,0 +1,116 @@
+---
+/**
+ * @file ExperienceDescription.astro
+ * @description Slot 3 («description») of the experience detail page
+ * (HOS-2579 §6.1.1): the summary, then the description inside `ClampedText`
+ * (4 lines on mobile, 8 on desktop, «Leer más»; the full text always stays in
+ * the DOM).
+ *
+ * This is the description half of the retired `ExperienceInfo.astro`. Its
+ * other halves now render in their own slots on the page: opening hours in
+ * slot 5, features and amenities in slot 4 and the house rules in slot 11. Its
+ * social half moved into `ListingContactBlock` (slot 10). The class names
+ * (`exp-info__summary`, `exp-info__body`) are kept, because the owner-edit E2E
+ * reads the public description through them.
+ *
+ * Renders nothing when there is neither a summary nor a description.
+ */
+
+import ClampedText from '@/components/listing/ClampedText.astro';
+import { renderContent } from '@/lib/render-content';
+import { renderPlain } from '@/lib/render-plain';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly summary: string;
+    /** Plain description (rendered as text, escaped). */
+    readonly description: string;
+    /** Markdown description; supersedes `description` when non-empty. */
+    readonly richDescription?: string | null;
+    readonly locale: SupportedLocale;
+}
+
+const { summary, description, richDescription, locale } = Astro.props;
+
+// Render rich markdown to HTML only when the field is present and non-empty.
+const richHtml =
+    richDescription && richDescription.trim().length > 0
+        ? renderContent({ raw: richDescription, siteOrigin: '' })
+        : null;
+
+const descriptionText = renderPlain({ raw: description });
+const hasBody = Boolean(richHtml || descriptionText);
+---
+
+{summary && (
+    <div class="exp-info__summary">
+        <p>{summary}</p>
+    </div>
+)}
+
+{hasBody && (
+    <ClampedText lang={locale}>
+        {richHtml ? (
+            <div class="exp-info__body exp-info__body--rich" set:html={richHtml} />
+        ) : (
+            <div class="exp-info__body">
+                <p>{descriptionText}</p>
+            </div>
+        )}
+    </ClampedText>
+)}
+
+<style>
+    .exp-info__summary {
+        background-color: var(--surface-warm);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-4, 16px) var(--space-5, 20px);
+        margin-bottom: var(--space-5, 20px);
+    }
+
+    .exp-info__summary p {
+        font-family: var(--font-sans);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-info__body {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--core-foreground);
+    }
+
+    .exp-info__body p {
+        margin-bottom: var(--space-3, 12px);
+    }
+
+    .exp-info__body p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Rich-text heading styles */
+    .exp-info__body--rich :global(h2),
+    .exp-info__body--rich :global(h3) {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-2, 8px);
+    }
+
+    .exp-info__body--rich :global(strong) {
+        font-weight: 700;
+    }
+
+    .exp-info__body--rich :global(ul),
+    .exp-info__body--rich :global(ol) {
+        padding-left: var(--space-5, 20px);
+    }
+
+    .exp-info__body--rich :global(li) {
+        margin-bottom: var(--space-1, 4px);
+    }
+</style>
