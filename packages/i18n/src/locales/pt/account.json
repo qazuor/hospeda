@@ -690,6 +690,11 @@
             "title": "Suas assinaturas",
             "replacedBy": "Substituída por {{plan}}; será cancelada na próxima hora.",
             "empty": "Você não tem assinaturas vigentes.",
+            "expiredDeclined": {
+                "title": "Não conseguimos cobrar sua assinatura",
+                "body": "Sua assinatura do plano {{plan}} ({{vertical}}) não pôde ser cobrada e o prazo para tentar novamente terminou. Nada foi cobrado de você. Você pode começar de novo quando quiser.",
+                "cta": "Começar de novo"
+            },
             "pause": {
                 "open": "Pausar assinatura",
                 "pending": "Processando a pausa...",

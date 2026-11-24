@@ -19,7 +19,10 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
         const userId = getActorFromContext(ctx).id;
         // HOS-2328: the shared plan-state reader (also behind `get_my_plan`). Its
         // `planVersionId` is for the assistant; this response does not carry it.
-        const [{ subscriptions, deferredCourtesies }, declined] = await Promise.all([
+        const [
+            { subscriptions, deferredCourtesies },
+            { retry: declined, expired: expiredDeclined }
+        ] = await Promise.all([
             // HOS-2553: this page also tells about a declined charge and a checkout
             // waiting for authorization; `get_my_plan` keeps reading the settled ones only.
             readOwnPlanState({ userId, now: getClock().clock.now(), includeUnsettled: true }),
@@ -45,6 +48,11 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
                 })),
             deferredCourtesies,
             declinedSignups: declined.map((notice) => ({
+                ...notice,
+                declinedAt: notice.declinedAt.toISOString()
+            })),
+            // HOS-2193: once the retry window has passed, the page offers a fresh start.
+            expiredDeclinedSignups: expiredDeclined.map((notice) => ({
                 ...notice,
                 declinedAt: notice.declinedAt.toISOString()
             }))
