@@ -507,6 +507,15 @@
 /* Overlay tint + scroll lock + ESC + click-outside + portal + focus management
  * are all handled by the shared <Dialog variant="transparent" size="full">. */
 
+/* The lightbox scrim is darker than the shared modal scrim (0.7): the white
+ * caption and description sit straight on it, with no panel behind them, and
+ * the page showing through at 0.7 made them hard to read (owner smoke,
+ * HOS-2520). The doubled class outranks the Dialog's own `.overlay`, whose
+ * module stylesheet may load after this one. */
+.lightboxOverlay.lightboxOverlay {
+    background-color: oklch(0 0 0 / 0.92);
+}
+
 .lightboxCounter {
     position: absolute;
     top: var(--space-4, 16px);
@@ -641,7 +650,7 @@
 
 .lightboxCaption {
     margin-top: var(--space-2, 8px);
-    color: oklch(1 0 0 / 0.7);
+    color: oklch(1 0 0 / 0.85);
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
     text-align: center;
@@ -661,7 +670,7 @@
 
 .lightboxDescription {
     margin: var(--space-1, 4px) 0 0;
-    color: oklch(1 0 0 / 0.75);
+    color: oklch(1 0 0 / 0.88);
     font-size: 0.875rem;
     line-height: 1.4;
 }

@@ -364,6 +364,7 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
             onClose={onClose}
             size="full"
             variant="transparent"
+            overlayClassName={styles.lightboxOverlay}
             ariaLabel={t('ui.accessibility.openFullscreen', 'Visor de imágenes')}
         >
             <DialogFloatingCloseButton
