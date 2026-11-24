@@ -27,7 +27,7 @@
 .textarea {
     font-family: var(--font-sans);
     /* 16px minimum: iOS Safari zooms the page on focus below it (HOS-2439). */
-    font-size: 1rem;
+    font-size: var(--app-body-size);
     color: var(--core-foreground);
     background-color: var(--core-background);
     border: 1px solid var(--border);
@@ -52,7 +52,7 @@
 
 .charCount {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
     text-align: right;
 }
@@ -69,7 +69,7 @@
 
 .error {
     font-family: var(--font-sans);
-    font-size: 0.85rem;
+    font-size: var(--app-ui-size);
     color: var(--destructive);
     background-color: var(--destructive-a08);
     border: 1px solid var(--destructive-a25);
@@ -80,7 +80,7 @@
 
 .success {
     font-family: var(--font-sans);
-    font-size: 0.85rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
     background-color: var(--brand-primary-a10);
     border: 1px solid var(--brand-primary-a30);

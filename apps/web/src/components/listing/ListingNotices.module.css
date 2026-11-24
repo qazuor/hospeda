@@ -33,7 +33,7 @@
 
 .title {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     font-weight: 600;
     color: var(--core-foreground);
     line-height: 1.35;
@@ -41,7 +41,7 @@
 
 .body {
     margin: 0;
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-muted-foreground);
     line-height: 1.45;
 }

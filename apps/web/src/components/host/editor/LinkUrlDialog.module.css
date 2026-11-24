@@ -19,7 +19,7 @@
 
 .label {
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     font-weight: 500;
     color: var(--core-foreground);
 }
@@ -32,7 +32,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-button);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     line-height: 1.5;
     box-sizing: border-box;
     transition:
@@ -50,7 +50,7 @@
 .hint {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: var(--core-muted-foreground);
 }
 
@@ -69,7 +69,7 @@
     background: transparent;
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     cursor: pointer;
 }
 
@@ -88,7 +88,7 @@
     color: var(--core-background);
     font-family: var(--font-sans);
     font-weight: 500;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     cursor: pointer;
 }
 

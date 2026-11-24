@@ -34,7 +34,7 @@
 .searchLabel {
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
 }
 
@@ -46,7 +46,7 @@
     border-radius: var(--radius-md);
     background-color: var(--core-card, var(--core-background));
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: var(--core-foreground);
 }
 
@@ -61,7 +61,7 @@
     border-radius: var(--radius-pill);
     background-color: var(--surface-warm);
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     font-weight: 600;
     color: var(--core-foreground);
     white-space: nowrap;
@@ -96,7 +96,7 @@
 .navGroupTitle {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 0.6875rem;
+    font-size: var(--app-caption-size);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -124,7 +124,7 @@
     border-radius: var(--radius-pill);
     background-color: var(--core-card, var(--core-background));
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
     text-align: left;
     white-space: nowrap;
@@ -163,7 +163,7 @@
     border-radius: var(--radius-pill);
     background-color: var(--brand-primary);
     color: var(--primary-foreground);
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     font-weight: 600;
     flex-shrink: 0;
 }
@@ -191,14 +191,14 @@
 .panelTitle {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 1.0625rem;
+    font-size: var(--app-body-size);
     font-weight: 600;
     color: var(--core-foreground);
 }
 
 .panelCount {
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: var(--core-muted-foreground);
     white-space: nowrap;
 }
@@ -206,7 +206,7 @@
 .noResults {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-muted-foreground);
 }
 
@@ -219,7 +219,7 @@
 .resultGroupTitle {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -255,7 +255,7 @@
     border-radius: var(--radius-md);
     background-color: var(--core-card, var(--core-background));
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
     text-align: left;
     cursor: pointer;
@@ -286,7 +286,7 @@
     width: 1.125rem;
     height: 1.125rem;
     border: 1.5px solid var(--border);
-    border-radius: 4px;
+    border-radius: var(--radius-control);
     color: var(--primary-foreground);
     flex-shrink: 0;
 }
@@ -319,7 +319,7 @@
     border: none;
     background: none;
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     font-weight: 500;
     color: var(--brand-primary);
     text-decoration: underline;
@@ -330,12 +330,12 @@
 .detailsLink:focus-visible {
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: var(--radius-control);
 }
 
 .detailsSummary {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
 }
 

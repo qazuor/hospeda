@@ -27,14 +27,14 @@
     margin: 0 0 var(--space-4, 1rem);
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1.25rem;
+    font-size: var(--app-section-size);
 }
 
 .legend {
     padding: 0;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: var(--core-foreground);
 }
 
@@ -74,7 +74,7 @@
 }
 
 .starGlyph {
-    font-size: 1.5rem;
+    font-size: var(--text-xl);
     line-height: 1;
     color: var(--core-foreground-a25);
     transition: color var(--duration-normal, 0.4s) ease-out;
@@ -114,7 +114,7 @@
 
 .starValue {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
 }
 
@@ -127,7 +127,7 @@
     min-height: 44px;
     margin-right: var(--space-4, 1rem);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     cursor: pointer;
 }
 
@@ -144,7 +144,7 @@
 .breakdownSummary {
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     cursor: pointer;
 }
 
@@ -159,7 +159,7 @@
 
 .dimensionLabel {
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-muted-foreground);
 }
 
@@ -170,7 +170,7 @@
     margin-bottom: var(--space-2, 0.5rem);
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
 }
 
 .textarea {
@@ -178,7 +178,7 @@
     min-height: 88px;
     padding: 0.625rem 0.875rem;
     font-family: var(--font-sans);
-    font-size: 1rem;
+    font-size: var(--app-body-size);
     color: var(--core-foreground);
     background-color: var(--core-background);
     border: 1px solid var(--core-foreground-a08);
@@ -210,7 +210,7 @@
     padding: 0.5rem 1.125rem;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
     cursor: pointer;
@@ -261,7 +261,7 @@
     margin: var(--space-4, 1rem) 0 0;
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: oklch(0.55 0.22 25);
     background-color: oklch(0.55 0.22 25 / 0.08);
     border: 1px solid oklch(0.85 0.05 25 / 0.4);

@@ -51,7 +51,7 @@
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.6);
     color: #fff;
-    font-size: 1rem;
+    font-size: var(--app-body-size);
     line-height: 1;
     cursor: pointer;
 }

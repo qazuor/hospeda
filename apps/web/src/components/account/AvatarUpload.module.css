@@ -40,7 +40,7 @@
 
 .initials {
     font-family: var(--font-heading);
-    font-size: 1.75rem;
+    font-size: var(--app-title-size);
     font-weight: 700;
     color: var(--primary-foreground);
     line-height: 1;
@@ -94,7 +94,7 @@
 
 .hint {
     font-family: var(--font-sans);
-    font-size: 0.78rem;
+    font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
     margin: 0;
     text-align: center;
@@ -115,7 +115,7 @@
 
 .errorMsg {
     font-family: var(--font-sans);
-    font-size: 0.85rem;
+    font-size: var(--app-ui-size);
     color: var(--destructive);
     margin: 0;
     text-align: center;
@@ -124,7 +124,7 @@
 
 .successMsg {
     font-family: var(--font-sans);
-    font-size: 0.85rem;
+    font-size: var(--app-ui-size);
     color: var(--success);
     margin: 0;
     text-align: center;

@@ -19,7 +19,7 @@
     margin: 0;
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1.0625rem;
+    font-size: var(--app-body-size);
     color: var(--core-foreground);
 }
 
@@ -64,14 +64,14 @@
     margin: 0;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: var(--core-foreground);
 }
 
 .rowMeta {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: var(--core-muted-foreground);
 }
 
@@ -84,7 +84,7 @@
 }
 
 .stars {
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     line-height: 1;
     color: var(--brand-accent);
 }
@@ -106,7 +106,7 @@
 
 .breakdownLabel {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--core-muted-foreground);
@@ -116,7 +116,7 @@
     margin: 0;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
 }
 
@@ -149,7 +149,7 @@
     padding: 0.5rem 1rem;
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
     cursor: pointer;
     background-color: transparent;
@@ -174,7 +174,7 @@
 
 .pageStatus {
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: var(--core-muted-foreground);
 }
 
@@ -196,7 +196,7 @@
     margin: 0;
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: oklch(0.55 0.22 25);
     background-color: oklch(0.55 0.22 25 / 0.08);
     border: 1px solid oklch(0.85 0.05 25 / 0.4);

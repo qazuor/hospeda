@@ -64,7 +64,7 @@
     padding-inline-start: 1.25rem;
 }
 .heading {
-    font-size: 1rem;
+    font-size: var(--app-body-size);
     font-weight: 600;
 }
 .reason {

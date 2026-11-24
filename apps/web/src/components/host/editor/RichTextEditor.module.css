@@ -75,7 +75,7 @@
     background: transparent;
     color: var(--core-muted-foreground);
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     font-weight: 600;
     cursor: pointer;
     transition:
@@ -180,7 +180,7 @@
     min-height: 140px;
     padding: 0.75rem;
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     line-height: 1.6;
     color: var(--core-foreground);
     outline: none;
@@ -197,14 +197,14 @@
 
 .editorContent h2 {
     font-family: var(--font-heading);
-    font-size: 1.25rem;
+    font-size: var(--app-section-size);
     font-weight: 600;
     margin: 1em 0 0.5em;
 }
 
 .editorContent h3 {
     font-family: var(--font-heading);
-    font-size: 1.125rem;
+    font-size: var(--app-card-title-size);
     font-weight: 600;
     margin: 1em 0 0.5em;
 }
@@ -254,7 +254,7 @@
     left: 0;
     padding: 0.75rem;
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: var(--core-muted-foreground);
     pointer-events: none;
     opacity: 0.6;
@@ -264,7 +264,7 @@
     min-height: 140px;
     padding: 0.75rem;
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: var(--core-muted-foreground);
 }
 
@@ -272,7 +272,7 @@
 .errorMessage {
     padding: 0.375rem 0.75rem;
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: var(--destructive-text);
     border-top: 1px solid var(--destructive-a25);
     background-color: var(--destructive-a08);

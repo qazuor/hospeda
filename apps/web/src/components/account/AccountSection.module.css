@@ -54,7 +54,7 @@
     position: relative;
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1.125rem;
+    font-size: var(--app-card-title-size);
     color: var(--core-foreground);
     margin: 0 0 var(--space-5, 20px);
     padding-bottom: var(--space-3);

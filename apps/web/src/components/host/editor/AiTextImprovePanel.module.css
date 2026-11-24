@@ -22,7 +22,7 @@
     color: var(--core-foreground);
     font-family: var(--font-sans);
     font-weight: 500;
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     cursor: pointer;
     transition:
         background-color 150ms ease-out,
@@ -100,7 +100,7 @@
 
 .loadingText {
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: var(--core-muted-foreground);
 }
 
@@ -119,7 +119,7 @@
 .streaming {
     white-space: pre-wrap;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     line-height: 1.5;
 }
 
@@ -141,7 +141,7 @@
 .doneText {
     white-space: pre-wrap;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     line-height: 1.5;
 }
 
@@ -163,7 +163,7 @@
     color: var(--accent-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     cursor: pointer;
     transition: opacity 150ms ease-out;
 }
@@ -189,7 +189,7 @@
     color: var(--core-foreground);
     font-family: var(--font-sans);
     font-weight: 500;
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     cursor: pointer;
     transition: background-color 150ms ease-out;
 }
@@ -207,7 +207,7 @@
 
 .errorMessage {
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: oklch(0.55 0.22 25);
 }
 
