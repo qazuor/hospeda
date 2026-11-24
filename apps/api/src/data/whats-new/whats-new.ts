@@ -164,9 +164,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             pt: 'Você pode despublicar ou pausar seu anúncio mesmo sem um plano ativo'
         },
         body: {
-            es: 'Si no tenés un plan activo, ahora podés despublicar o pausar una ficha. En alojamientos, desde «Más acciones → Despublicar»; en espacios y experiencias, a través del asistente de IA. Para volver a publicarla sigue haciendo falta un plan.',
+            es: 'Si no tenés un plan activo, ahora podés despublicar o pausar una ficha. En alojamientos, desde «Más acciones → Despublicar»; en comercios y experiencias, a través del asistente de IA. Para volver a publicarla sigue haciendo falta un plan.',
             en: 'If you have no active plan, you can now unpublish or pause a listing. For accommodations, use "More actions → Unpublish"; for venues and experiences, use the AI assistant. Publishing it again still requires a plan.',
-            pt: 'Se você não tem um plano ativo, agora pode despublicar ou pausar um anúncio. Em acomodações, use «Mais ações → Despublicar»; em espaços e experiências, use o assistente de IA. Para publicá-lo novamente ainda é necessário um plano.'
+            pt: 'Se você não tem um plano ativo, agora pode despublicar ou pausar um anúncio. Em acomodações, use «Mais ações → Despublicar»; em estabelecimentos e experiências, use o assistente de IA. Para publicá-lo novamente ainda é necessário um plano.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
