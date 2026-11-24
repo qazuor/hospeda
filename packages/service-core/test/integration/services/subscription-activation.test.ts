@@ -18,6 +18,7 @@ import { startSubscription } from '../../../src/services/billing/subscription/st
 import { startSuccession } from '../../../src/services/billing/subscription/start-succession.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { namespaceFake } from './support/payment-provider';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import {
     seedPredecessor,
     seedSuccessionChoice,
@@ -73,7 +74,7 @@ async function seedChoice(inheritsTouristVip = false) {
         await getServiceTestPool().query<{ id: string }>(
             `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip)
          VALUES ($1, 'accommodation', $2, true, true, 0, false, $3) RETURNING id`,
-            [planId, Math.floor(Math.random() * 100000000) + 1000, inheritsTouristVip]
+            [planId, nextPlanVersionRank(), inheritsTouristVip]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('No version');
@@ -328,7 +329,7 @@ describe('TEST:B3:28 inherited Tourist VIP at S2', () => {
             .values({
                 planId: vipPlan!.id,
                 vertical: 'tourist',
-                rank: Math.floor(Math.random() * 100000000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,
@@ -424,7 +425,7 @@ describe('TEST:B3:28 inherited Tourist VIP at S2', () => {
             .values({
                 planId: vipPlan!.id,
                 vertical: 'tourist',
-                rank: Math.floor(Math.random() * 100000000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,
@@ -498,7 +499,7 @@ describe('TEST:B3:28 inherited Tourist VIP at S2', () => {
             .values({
                 planId: vipPlan!.id,
                 vertical: 'tourist',
-                rank: Math.floor(Math.random() * 100000000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: true,
                 trialDays: 0,

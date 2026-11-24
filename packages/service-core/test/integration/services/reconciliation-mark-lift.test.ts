@@ -9,6 +9,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { liftReconciliationMark } from '../../../src/services/billing/reconciliation/lift-reconciliation-mark.service';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 afterAll(closeServiceTestPool);
 const clock = { now: () => new Date('2026-10-10T12:00:00.000Z') };
@@ -49,7 +50,7 @@ async function fixture() {
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
             "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 1e8) + 1]
+            [planId, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     const optionId = (

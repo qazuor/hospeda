@@ -16,6 +16,7 @@ import { receiveProviderDelivery } from '../../../src/services/billing/notice/re
 import { sweepInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 afterAll(closeServiceTestPool);
 
@@ -52,7 +53,7 @@ async function fixture() {
         .values({
             planId: ownerPlan.id,
             vertical: 'accommodation',
-            rank: Math.floor(Math.random() * 100_000_000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,
@@ -85,7 +86,7 @@ async function fixture() {
         .values({
             planId: vipPlan.id,
             vertical: 'tourist',
-            rank: Math.floor(Math.random() * 100_000_000) + 1000,
+            rank: nextPlanVersionRank(),
             sellable: true,
             current: true,
             trialDays: 0,

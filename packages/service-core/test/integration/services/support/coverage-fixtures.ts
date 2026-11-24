@@ -20,6 +20,7 @@ import {
     users
 } from '@repo/db';
 import type { BillingCoveragePorts } from '../../../../src/services/billing/coverage/coverage-ports';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 
 /** The instant every coverage test reads as "now". */
 export const coverageNow = new Date('2026-10-12T12:00:00.000Z');
@@ -59,7 +60,7 @@ export async function seedCoveragePlanVersion(
         .values({
             planId: plan.id,
             vertical,
-            rank: Math.floor(Math.random() * 1_000_000_000) + 1,
+            rank: nextPlanVersionRank(),
             sellable: false,
             current: true,
             trialDays: 0,

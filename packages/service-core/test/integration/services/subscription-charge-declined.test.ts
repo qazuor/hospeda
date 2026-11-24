@@ -7,6 +7,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { declineFirstCharge } from '../../../src/services/billing/subscription/decline-first-charge.service';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip';
 
 afterAll(closeServiceTestPool);
@@ -41,7 +42,7 @@ async function seedActive({
         await getServiceTestPool().query<{ id: string }>(
             `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause)
          VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id`,
-            [planId, Math.floor(Math.random() * 100000000) + 1000]
+            [planId, nextPlanVersionRank()]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('No version');

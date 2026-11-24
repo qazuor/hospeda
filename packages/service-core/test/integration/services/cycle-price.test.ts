@@ -22,6 +22,7 @@ import {
     seedCyclePriceVersion,
     startCyclePriceCustomer
 } from './support/cycle-price-fixtures.js';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 import { noTouristVip } from './support/tourist-vip.js';
 
 beforeAll(seedCyclePriceDeadlines);
@@ -203,7 +204,7 @@ describe.skipIf(!isServiceTestDbAvailable())('cycle price action 19', () => {
             .values({
                 planId: plan.id,
                 vertical: 'accommodation',
-                rank: Math.floor(Math.random() * 1_000_000_000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: false,
                 current: false,
                 graceDays: 10,
@@ -224,7 +225,7 @@ describe.skipIf(!isServiceTestDbAvailable())('cycle price action 19', () => {
             .values({
                 planId: plan.id,
                 vertical: 'accommodation',
-                rank: Math.floor(Math.random() * 1_000_000_000) + 1000,
+                rank: nextPlanVersionRank(),
                 sellable: true,
                 current: false,
                 graceDays: 10,

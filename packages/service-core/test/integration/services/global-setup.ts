@@ -8,7 +8,9 @@
  * without stepping on each other.
  */
 import { execFileSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 
@@ -26,6 +28,10 @@ const CONNECTION_BASE =
 
 const MAX_CONNECT_RETRIES = 5;
 const RETRY_DELAY_MS = 2_000;
+
+/** Per-run directory where `support/plan-version-rank.ts` claims its exclusive rank blocks
+ * (HOS-2176); fresh for every run, announced to the forked workers, removed at teardown. */
+let rankRunDir: string | null = null;
 
 function getAdminConnectionString(): string {
     const url = new URL(CONNECTION_BASE);
@@ -122,11 +128,34 @@ export async function setup(): Promise<void> {
     }
 
     process.env.HOSPEDA_TEST_DATABASE_URL = getTestConnectionString();
-    console.info(`[service-integration-setup] Test DB "${DB_NAME}" ready.`);
+
+    // Rank-block directory (HOS-2176): one fresh empty directory per run — fresh implies cleared —
+    // so every forked worker claims a distinct block of plan-version ranks by exclusively creating
+    // marker files inside it. Worker processes inherit this main-process environment (evidence:
+    // every test already receives HOSPEDA_TEST_DATABASE_URL set exactly this way), and the helper
+    // probes the same property. `mkdtempSync` never hands out a name a concurrent run could share.
+    rankRunDir = mkdtempSync(join(tmpdir(), 'hospeda-service-rank-run-'));
+    process.env.HOSPEDA_SERVICE_TEST_RANK_DIR = rankRunDir;
+
+    console.info(
+        `[service-integration-setup] Test DB "${DB_NAME}" ready; rank run dir "${rankRunDir}".`
+    );
 }
 
 export async function teardown(): Promise<void> {
     console.info('[service-integration-teardown] Cleaning up...');
+
+    if (rankRunDir) {
+        try {
+            rmSync(rankRunDir, { recursive: true, force: true });
+            console.info('[service-integration-teardown] Rank run dir removed.');
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.warn(`[service-integration-teardown] Failed to remove rank run dir: ${msg}`);
+        } finally {
+            rankRunDir = null;
+        }
+    }
 
     const adminPool = new Pool({ connectionString: getAdminConnectionString() });
     try {

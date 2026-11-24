@@ -15,6 +15,7 @@ import { createPlanCatalogInverse } from '@repo/verticals';
 import type { Actor } from '../../../../src/types/index.js';
 import { getServiceTestDb, getServiceTestPool } from '../helpers';
 import { cleanUpCoverageNoticeRows } from './coverage-notice-fixtures.js';
+import { nextPlanVersionRank } from './plan-version-rank.js';
 
 /** Build a fixture signer actor with the complimentary grant permission. */
 export function grantSignerActor(
@@ -39,7 +40,7 @@ export async function seedGrantPlan(
         .values({
             planId: plan.id,
             vertical,
-            rank: Math.floor(Math.random() * 1_000_000_000) + 1,
+            rank: nextPlanVersionRank(),
             sellable: false,
             current: true,
             trialDays: 0,

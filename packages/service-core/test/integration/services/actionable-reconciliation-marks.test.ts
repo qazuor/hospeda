@@ -20,6 +20,7 @@ import { lateRejectionDetail } from '../../../src/services/billing/subscription/
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
 import { seedLiftAdmin } from './support/admin-lift-fixtures.js';
 import { markPaymentClock } from './support/mark-payment-fixtures.js';
+import { nextPlanVersionRank } from './support/plan-version-rank.js';
 
 type Fixture = {
     readonly userId: string;
@@ -87,7 +88,7 @@ async function seedFixture(
             (
                 await pool.query<{ id: string }>(
                     "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id",
-                    [planId, Math.floor(Math.random() * 1e8) + 1]
+                    [planId, nextPlanVersionRank()]
                 )
             ).rows[0]?.id ?? null;
         optionId =
