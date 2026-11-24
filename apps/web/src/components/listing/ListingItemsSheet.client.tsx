@@ -4,10 +4,12 @@
  * listing (HOS-2528). The summarized section renders only a few pills; this island
  * owns the «Ver las N …» button and the panel with the complete list. The list itself
  * arrives as server-rendered children, so icons and translations never ship to the client.
+ * The trigger is an outline `GradientButton` (HOS-2533), the page's shared CTA style.
  */
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import styles from './ListingItemsSheet.module.css';
 
 /** Props of {@link ListingItemsSheet}. */
@@ -43,16 +45,16 @@ export function ListingItemsSheet({
 
     return (
         <>
-            <button
-                ref={triggerRef}
-                type="button"
+            <GradientButton
+                as="button"
+                buttonRef={triggerRef}
+                variant="outline-primary"
+                size="sm"
                 className={styles.trigger}
-                aria-haspopup="dialog"
-                aria-expanded={isOpen}
+                label={triggerLabel}
+                aria={{ haspopup: 'dialog', expanded: isOpen }}
                 onClick={() => setIsOpen(true)}
-            >
-                {triggerLabel}
-            </button>
+            />
             <Dialog
                 isOpen={isOpen}
                 onClose={close}
