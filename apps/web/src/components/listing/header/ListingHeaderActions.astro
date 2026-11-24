@@ -67,16 +67,14 @@ const compareGatePlanNames = compare
         />
     </div>
     <div class="listing-header__gallery-duplicate listing-header__share">
-        {/* HOS-2593 (foundations PR) adds `appearance="icon"` to ShareButtons;
-            until it lands, "icon-overlay" is the existing round 44px
-            icon-only trigger. */}
+        {/* AC-11: the header's own icon-only share trigger (HOS-2593). */}
         <ShareButtons
             client:visible
             url={share.url}
             title={share.title}
             campaign={share.campaign}
             locale={locale}
-            appearance="icon-overlay"
+            appearance="icon"
             className="listing-header__share-btn"
         />
     </div>

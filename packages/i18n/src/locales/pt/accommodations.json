@@ -497,6 +497,14 @@
                 "perHour": "/hora",
                 "perPerson": "/pessoa",
                 "perGroup": "/grupo"
+            },
+            "social": {
+                "website": "Site",
+                "instagram": "Instagram",
+                "facebook": "Facebook",
+                "twitter": "Twitter / X",
+                "youtube": "YouTube",
+                "tiktok": "TikTok"
             }
         },
         "home": "Início",
@@ -669,8 +677,7 @@
             "generalCategory": "Geral"
         },
         "locationDetail": {
-            "title": "Localização",
-            "mapPlaceholder": "Mapa em breve"
+            "title": "Localização"
         },
         "nearbyPoi": {
             "title": "O que há por perto"
@@ -684,7 +691,6 @@
             "nextSlide": "Próximo slide"
         },
         "badges": {
-            "scrollLabel": "Selos da hospedagem",
             "new": "Novo",
             "featured": "Destaque",
             "verified": "Verificado"

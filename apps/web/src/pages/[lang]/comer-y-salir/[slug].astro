@@ -327,7 +327,7 @@ const jsonLdPriceRange = venue.priceRange ? priceRangeMap[venue.priceRange] ?? u
 // --- Body sections (HOS-1787 leaf 6.1) ---
 // The body renders the catalog's own order and only the sections it paints:
 // the block registry below is a lookup, never a comparison against a section
-// id. `price` lives in the header, `media` is the fixed gallery above, and
+// id. `price` lives in `VenueSummary`, `media` is the fixed gallery above, and
 // `translations` never renders publicly — see `venue-detail-sections.ts`.
 // Conditions are applied while building each list, so the template just paints.
 interface VenueDetailBlock {
@@ -338,14 +338,14 @@ interface VenueDetailBlock {
 const hasOpeningHours =
     venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
 const hasContactBlock = hasVenueContact;
+/** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
+const venueLocation = buildVenueLocation({ venue, locale });
+
 /**
  * HOS-2579 §6.4: the shared contact block. Its builder renders on the same
  * `hasVenuePublicContact` predicate as `hasVenueContact`, so it is non-null
  * exactly when `hasContactBlock` is true.
  */
-/** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
-const venueLocation = buildVenueLocation({ venue, locale });
-
 const venueContactBlock = buildVenueContactBlock({
     listingId: venue.id,
     contactInfo: venue.contactInfo,

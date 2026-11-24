@@ -7,13 +7,15 @@ import {
     OwnerPromotionEntityTypeEnum,
     OwnerPromotionIdSchema,
     OwnerPromotionPublicSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    TouristAudienceEnum
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
+import { resolveTouristAudienceScope } from '../audience-scope';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 
@@ -27,6 +29,8 @@ const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
  *   2. Parses the returned row through `OwnerPromotionPublicSchema` to strip
  *      admin-only fields (`lifecycleState`, `ownerId`, `currentRedemptions`,
  *      audit columns). Partial close of the systemic issue tracked by SPEC-087.
+ *   3. HOS-2590: a VIP-only promotion answers `null` (like a DRAFT one) unless
+ *      the reader's TOURIST effective set grants `vip_promotions_access`.
  */
 export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
     method: 'get',
@@ -58,7 +62,12 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
         // - entityType = venue         → HOS-2270: a venue promotion is published by the
         //   venue's own route (HOS-2271), never by this accommodation endpoint.
         const row = result.data as
-            | { lifecycleState?: string; deletedAt?: unknown; entityType?: string }
+            | {
+                  lifecycleState?: string;
+                  deletedAt?: unknown;
+                  entityType?: string;
+                  touristAudience?: string;
+              }
             | null
             | undefined;
         if (!row || row.lifecycleState !== LifecycleStatusEnum.ACTIVE || row.deletedAt != null) {
@@ -66,6 +75,12 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
         }
         if (row.entityType === OwnerPromotionEntityTypeEnum.VENUE) {
             return null;
+        }
+        if (row.touristAudience !== TouristAudienceEnum.PLUS) {
+            const audienceScope = await resolveTouristAudienceScope({ actor });
+            if (!audienceScope.includes(row.touristAudience as TouristAudienceEnum)) {
+                return null;
+            }
         }
 
         // Strip admin-only fields before the response leaves the public tier.

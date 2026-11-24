@@ -39,7 +39,9 @@ import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.clie
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
-import { hasPublicContactChannel } from '@/lib/experience-contact';
+import { buildExperienceGalleryImages } from '@/lib/experience/experience-gallery-images';
+import { fetchExperienceSecondaryData } from '@/lib/experience/experience-secondary-data';
+import { EXPERIENCE_CONTACT_ANCHOR_ID, hasPublicContactChannel } from '@/lib/experience-contact';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -51,10 +53,7 @@ import {
     buildExperienceChannels,
     buildExperienceContactPrice
 } from '@/lib/listing-contact/listing-channels';
-import { EXPERIENCE_CONTACT_ANCHOR_ID } from '@/lib/experience-contact';
 import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action-bar';
-import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
-import type { DetailFaq } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
@@ -120,34 +119,12 @@ applyCacheHeaders({
 // edge cache so the failure is not frozen in as "this owner did not pay".
 markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
-// --- Parallel secondary fetches ---
-const [reviewsSettled, faqsSettled] = await Promise.allSettled([
-    experiencesApi.getReviews({ id: experience.id, page: 1, pageSize: 5 }),
-    experiencesApi.getFaqs({ id: experience.id })
-]);
-
-const reviewsResult =
-    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
-const faqsResult =
-    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
-
-const reviews: readonly ExperienceReviewPublicItem[] =
-    reviewsResult?.ok ? reviewsResult.data.items : [];
-const totalReviews: number =
-    reviewsResult?.ok ? reviewsResult.data.pagination.total : experience.reviewsCount;
-
-// FAQs: prefer inline entity FAQs, fall back to standalone endpoint
-const faqs: readonly DetailFaq[] =
-    experience.faqs.length > 0
-        ? experience.faqs
-        : faqsResult?.ok && Array.isArray(faqsResult.data)
-          ? (faqsResult.data as Array<Record<string, unknown>>).map((faq) => ({
-                id: String(faq.id || ''),
-                question: String(faq.question || ''),
-                answer: String(faq.answer || ''),
-                category: faq.category ? String(faq.category) : null
-            }))
-          : [];
+// --- Parallel secondary fetches (reviews + FAQs, inline FAQs first) ---
+const { reviews, totalReviews, faqs } = await fetchExperienceSecondaryData({
+    experienceId: experience.id,
+    inlineFaqs: experience.faqs,
+    fallbackTotalReviews: experience.reviewsCount
+});
 
 // --- FAQPage JSON-LD when FAQs exist (HOS-2579 §6.6, same helper as accommodation) ---
 const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
@@ -155,37 +132,12 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     locale
 });
 
-// --- Gallery images ---
-const galleryImages = (() => {
-    const mediaObj = raw.media as
-        | { gallery?: Array<{ url?: string; caption?: string; description?: string }> }
-        | undefined;
-    const gallery = mediaObj?.gallery ?? [];
-    if (gallery.length > 0) {
-        return gallery
-            .filter((g) => g.url)
-            .map((g) => ({
-                url: String(g.url),
-                alt: g.caption ?? experience.name,
-                caption: g.caption,
-                description: g.description
-            }));
-    }
-    if (
-        experience.featuredImage.url &&
-        !experience.featuredImage.url.includes('placeholder')
-    ) {
-        return [
-            {
-                url: experience.featuredImage.url,
-                alt: experience.featuredImage.caption ?? experience.name,
-                caption: experience.featuredImage.caption
-            }
-        ];
-    }
-    return [];
-})();
-
+// --- Gallery images (media.gallery on the raw payload, featured image fallback) ---
+const { images: galleryImages } = buildExperienceGalleryImages({
+    media: raw.media,
+    name: experience.name,
+    featuredImage: experience.featuredImage
+});
 
 // --- SSR bookmark status for hero ---
 let bookmarkCount: number | undefined;
@@ -201,7 +153,6 @@ try {
 } catch {
     // graceful degradation
 }
-
 
 const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/` });
 
@@ -254,13 +205,6 @@ const breadcrumbItems = [
     { name: experience.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
 
-// --- Header (HOS-2579): the shared frame, built from the detail data ---
-/**
- * HOS-2579 §6.4: the shared contact block, now also carrying the social
- * profiles that used to render as emoji pills inside `ExperienceInfo`. It
- * exists whenever `hasContactBlock` is true (and also for a socials-only
- * listing), so the private-groups anchor never points at a missing element.
- */
 /**
  * HOS-2579 §6.5: the meeting point (free) and, only with
  * `meetingPointDirectionsEnabled`, the exact map and the directions (HOS-1049).
@@ -268,6 +212,12 @@ const breadcrumbItems = [
  */
 const locationSection = buildExperienceLocation({ experience, locale });
 
+/**
+ * HOS-2579 §6.4: the shared contact block, now also carrying the social
+ * profiles that used to render as emoji pills inside `ExperienceInfo`. It
+ * exists whenever `hasContactBlock` is true (and also for a socials-only
+ * listing), so the private-groups anchor never points at a missing element.
+ */
 const contactBlock = buildExperienceContactBlock({
     listingId: experience.id,
     contactInfo: experience.contactInfo,
@@ -275,6 +225,7 @@ const contactBlock = buildExperienceContactBlock({
     locale
 });
 
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
 const headerProps = buildExperienceHeader({
     experience,
     locale,

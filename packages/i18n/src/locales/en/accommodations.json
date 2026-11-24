@@ -497,6 +497,14 @@
                 "perHour": "/hour",
                 "perPerson": "/person",
                 "perGroup": "/group"
+            },
+            "social": {
+                "website": "Website",
+                "instagram": "Instagram",
+                "facebook": "Facebook",
+                "twitter": "Twitter / X",
+                "youtube": "YouTube",
+                "tiktok": "TikTok"
             }
         },
         "home": "Home",
@@ -669,8 +677,7 @@
             "generalCategory": "General"
         },
         "locationDetail": {
-            "title": "Location",
-            "mapPlaceholder": "Map coming soon"
+            "title": "Location"
         },
         "nearbyPoi": {
             "title": "What's nearby"
@@ -684,7 +691,6 @@
             "nextSlide": "Next slide"
         },
         "badges": {
-            "scrollLabel": "Accommodation badges",
             "new": "New",
             "featured": "Featured",
             "verified": "Verified"
