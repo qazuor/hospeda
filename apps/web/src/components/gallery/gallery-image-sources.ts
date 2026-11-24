@@ -49,3 +49,27 @@ export function buildCellSources({
         .join(', ');
     return { src, srcSet, sizes: sizesOverride ?? sizes };
 }
+
+/**
+ * Large, non-cropped URL for the lightbox viewer: the `full` preset applies
+ * quality and format negotiation but no dimensional crop, so the subject is
+ * never clipped to the cell's frame. Non-Cloudinary URLs pass through unchanged.
+ *
+ * @param input - The original image URL (may already carry a Cloudinary transform).
+ * @returns `{ src }` for the lightbox's main image.
+ */
+export function buildLightboxUrl({ url }: { readonly url: string }): { readonly src: string } {
+    return buildCellUrl({ url, preset: 'full' });
+}
+
+/**
+ * URL of a lightbox thumbnail-strip image (`galleryThumb` preset).
+ *
+ * @param input - The original image URL.
+ * @returns `{ src }` for the strip's `<img>`.
+ */
+export function buildLightboxThumbUrl({ url }: { readonly url: string }): {
+    readonly src: string;
+} {
+    return buildCellUrl({ url, preset: 'galleryThumb' });
+}

@@ -19,8 +19,8 @@ describe('TEST:1768:1 MobileDock layout contract', () => {
     it('mounts one dock in BaseLayout and forwards listing dock-start', () => {
         expect(base.match(/<MobileDock\b/g)).toHaveLength(1);
         expect(base).not.toContain('<ScrollToTop');
-        expect(dock).toMatch(/<div class="mobile-dock__end">[\s\S]*?<ScrollToTop[\s\S]*?<\/div>/);
         const markup = dock.split('<style>')[0] ?? '';
+        expect(markup.match(/<ScrollToTop\b/g)).toHaveLength(1);
         const slotNames = [...markup.matchAll(/data-mobile-dock-slot="([^"]+)"/g)].map(
             (match) => match[1]
         );
@@ -84,21 +84,87 @@ describe('TEST:1768:7 dock overlay rule and z scale', () => {
     });
 });
 
-describe('TEST:1768:8 ScrollToTop dock item', () => {
-    it('marks the button and removes it from the mobile row until visible', () => {
-        expect(scrollToTop).toMatch(/<button[\s\S]*?data-dock-item/);
-        const mobileStart = scrollToTop.indexOf('@media (max-width: 767px)');
-        const mobileEnd = scrollToTop.indexOf(
-            '@media (prefers-reduced-motion: reduce)',
-            mobileStart
+/**
+ * Owner smoke (HOS-2520, option 1): when scroll-to-top joined the dock row at 300px of
+ * scroll it pushed the contact bar and the chat FAB sideways. It now floats above the
+ * dock, outside the row, so its appearance never moves a row item.
+ */
+describe('TEST:2520:1 ScrollToTop floats above the dock, outside the row', () => {
+    const markup = dock.split('<style>')[0] ?? '';
+    const parsed = new DOMParser().parseFromString(
+        markup
+            .replace(/^---[\s\S]*?---/, '')
+            .replace(/<ScrollToTop\b[^>]*\/>/, '<scroll-to-top></scroll-to-top>'),
+        'text/html'
+    );
+    const mobileBlock = (() => {
+        const start = scrollToTop.indexOf('@media (max-width: 767px)');
+        return scrollToTop.slice(
+            start,
+            scrollToTop.indexOf('@media (prefers-reduced-motion', start)
         );
-        const mobile = scrollToTop.slice(mobileStart, mobileEnd);
-        expect(mobile).toMatch(/position:\s*relative/);
-        expect(mobile).toMatch(/height:\s*44px/);
-        expect(mobile).toMatch(/width:\s*44px/);
-        expect(mobile).not.toMatch(/\b(bottom|right):/);
-        expect(mobile).toMatch(
-            /\.scroll-to-top:not\(\.scroll-to-top--visible\)\s*\{[^}]*display:\s*none/s
+    })();
+
+    it('mounts the button as a direct child of the dock, not inside the row', () => {
+        const button = parsed.querySelector('scroll-to-top');
+        expect(button?.parentElement?.matches('[data-mobile-dock]')).toBe(true);
+        expect(button?.closest('.mobile-dock__row')).toBeNull();
+    });
+
+    it('is not a measured dock item, so it neither counts for the row nor sizes the dock', () => {
+        const buttonTag = scrollToTop.match(/<button[\s\S]*?>/)?.[0] ?? '';
+        expect(buttonTag).not.toContain('data-dock-item');
+        expect(buttonTag).not.toContain('data-dock-floating');
+    });
+
+    it('anchors above the published dock height, safe area and a gap token, right-aligned with the row', () => {
+        expect(mobileBlock).toMatch(/position:\s*absolute;/);
+        expect(mobileBlock).toMatch(
+            /bottom:\s*calc\(\s*max\(\s*var\(--mobile-dock-height, 0px\),\s*env\(safe-area-inset-bottom, 0px\)\s*\)\s*\+\s*var\(--space-2\)\s*\);/
+        );
+        expect(mobileBlock).toMatch(/right:\s*var\(--space-2\);/);
+        expect(mobileBlock).toMatch(/top:\s*auto;/);
+        expect(mobileBlock).toMatch(/left:\s*auto;/);
+        expect(mobileBlock).toMatch(/height:\s*44px/);
+        expect(mobileBlock).toMatch(/width:\s*44px/);
+    });
+
+    it('fades and slides in instead of entering the layout', () => {
+        expect(mobileBlock).not.toMatch(/display:\s*none/);
+        const hidden = mobileBlock.match(/\.scroll-to-top\s*\{([^}]*)\}/)?.[1] ?? '';
+        expect(hidden).toMatch(/opacity:\s*0;/);
+        expect(hidden).toMatch(/transform:\s*translateY\(var\(--space-2\)\)/);
+        expect(hidden).toMatch(/visibility:\s*hidden;/);
+        const shown = mobileBlock.match(/\.scroll-to-top--visible\s*\{([^}]*)\}/)?.[1] ?? '';
+        expect(shown).toMatch(/opacity:\s*1;/);
+        expect(shown).toMatch(/transform:\s*none;/);
+        expect(shown).toMatch(/visibility:\s*var\(--dock-floating-visibility, visible\);/);
+    });
+
+    it('drops the slide and every transition for reduced motion', () => {
+        const reduced = scrollToTop.slice(
+            scrollToTop.indexOf('@media (prefers-reduced-motion: reduce)')
+        );
+        const rule = reduced.match(/\.scroll-to-top\s*\{([^}]*)\}/)?.[1] ?? '';
+        expect(rule).toMatch(/transition:\s*none;/);
+        expect(rule).toMatch(/transform:\s*none;/);
+    });
+
+    it('hides with the dock behind the three overlays, through the inherited visibility token', () => {
+        const style = dock.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? '';
+        expect(style).toMatch(
+            /html\[data-filters-drawer-open\]\) \.mobile-dock\s*\{[^}]*--dock-floating-visibility:\s*hidden;/
+        );
+    });
+
+    it('keeps no dock-side scroll-to-top override and no floating-row special case', () => {
+        expect(dock).not.toMatch(/\.scroll-to-top/);
+        expect(dock).not.toContain('data-row-floating');
+    });
+
+    it('scopes the cookie-banner lift to desktop so it cannot override the dock anchor', () => {
+        expect(globalCss).toMatch(
+            /@media \(min-width: 768px\)\s*\{\s*body\.cookie-banner-open #scroll-to-top\s*\{/
         );
     });
 });

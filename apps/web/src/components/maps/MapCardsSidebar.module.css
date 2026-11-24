@@ -550,7 +550,8 @@
 
 /* Breakpoints, measured in headless Chrome with the dock in its real worst
  * case: four controls (Filtros, list/map toggle, this pill, scroll-to-top)
- * and a 3-digit count ("888"). Widths swept 1px at a time, es / en / pt:
+ * and a 3-digit count ("888"). Scroll-to-top has since left the row (HOS-2520),
+ * so these widths now carry its 44px plus one gap of extra margin. Widths swept 1px at a time, es / en / pt:
  *   - "Ver 888 resultados" (es/pt, the widest) fits on ONE row from 437px up
  *     (en "View 888 results" from 408px). Full label from 450px (13px of
  *     margin).

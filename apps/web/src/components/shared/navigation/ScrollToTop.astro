@@ -6,6 +6,10 @@
  * The progress ring stroke-dashoffset reflects current scroll percentage.
  * Uses requestAnimationFrame for smooth ring updates.
  * Respects prefers-reduced-motion: disables ring animation but still shows/hides.
+ * Mobile (<=767px): mounted by MobileDock as a direct child of the dock, OUTSIDE
+ * the control row, so its appearance never shifts the row items (HOS-2520). It
+ * floats right-aligned a gap above the published `--mobile-dock-height` (stacked
+ * over the AI chat FAB) and rides the dock's auto-hide transform.
  * All interactivity is vanilla JS in an inline script tag (no React island).
  */
 
@@ -23,8 +27,6 @@ const { t } = createTranslations(locale);
 <button
   id="scroll-to-top"
   transition:persist="scroll-to-top"
-  data-dock-item
-  data-dock-floating
   aria-label={t('common.scrollToTop')}
   class="scroll-to-top"
 >
@@ -139,22 +141,40 @@ const { t } = createTranslations(locale);
     transition: color var(--duration-normal) ease;
   }
 
-  /* The button lives in the mobile dock, so it joins the row flow.
-     Keep the empty state out of the row until the scroll threshold reveals it. */
+  /* HOS-2520: on mobile the button floats above the dock instead of joining its
+     row, so appearing at 300px of scroll never moves the contact bar or the chat
+     FAB. MobileDock mounts it as a direct child of the fixed dock: `absolute`
+     anchors it to the dock (and so to its auto-hide transform) and keeps the
+     progress ring anchored to the button. Every desktop offset is redeclared.
+     The vertical offset is the published dock height, or the safe area when the
+     dock is empty, plus a gap; `right` matches the row's inline padding, so the
+     button stacks right-aligned over the last row control (the chat FAB).
+     Hidden, it stays out of the tab order through `visibility`, delayed so the
+     fade-out can play. The dock's overlay rule sets --dock-floating-visibility. */
   @media (max-width: 767px) {
     .scroll-to-top {
-      /* Relative, not static: the progress ring is position:absolute and must
-         anchor to this button instead of the fixed dock. Relative honours
-         offsets, so the desktop bottom/right must be reset or the button
-         shifts onto its neighbour. */
-      position: relative;
-      inset: auto;
+      position: absolute;
+      top: auto;
+      left: auto;
+      right: var(--space-2);
+      bottom: calc(max(var(--mobile-dock-height, 0px), env(safe-area-inset-bottom, 0px)) + var(--space-2));
       height: 44px;
       width: 44px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(var(--space-2));
+      transition:
+        opacity var(--duration-normal) ease,
+        transform var(--duration-normal) ease,
+        visibility 0s linear var(--duration-normal),
+        background-color var(--duration-normal) ease;
     }
 
-    .scroll-to-top:not(.scroll-to-top--visible) {
-      display: none;
+    .scroll-to-top--visible {
+      opacity: 1;
+      transform: none;
+      visibility: var(--dock-floating-visibility, visible);
+      transition-delay: 0s;
     }
 
     .scroll-to-top__arrow {
@@ -167,6 +187,7 @@ const { t } = createTranslations(locale);
   @media (prefers-reduced-motion: reduce) {
     .scroll-to-top {
       transition: none;
+      transform: none;
     }
 
     .scroll-to-top__progress {

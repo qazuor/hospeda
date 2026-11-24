@@ -1,0 +1,76 @@
+---
+/**
+ * @file GalleryTapBridge.astro
+ * @description Pre-hydration tap feedback for `ImageGallery` (owner smoke, HOS-2520).
+ *
+ * The gallery island takes 2s (desktop) to 12s (slow 4G) to hydrate, and a tap on a
+ * photo before that did nothing, with no feedback. This script runs at parse time and
+ * listens, in the capture phase on `document`, for clicks on an element carrying
+ * `data-gallery-index` inside a `data-gallery-root` the island has NOT marked
+ * `data-gallery-hydrated` yet. On such a click it:
+ *
+ * - clears any pending tap on EVERY gallery root, so only the latest tap can replay;
+ * - marks the tapped button `data-gallery-loading` + `aria-busy` (a CSS spinner);
+ * - records on THAT gallery root the photo index (`data-gallery-pending`), the time
+ *   (`data-gallery-pending-at`) and the scroll offset (`data-gallery-pending-scroll`).
+ *   The island discards a replay that is too old or made before a scroll;
+ * - arms a 15s timeout that clears all of it if the island never hydrated (a dead
+ *   island, HOS-2578), so the spinner never stays forever.
+ *
+ * The island consumes it on mount (`consumePendingGalleryTap`) and opens the lightbox
+ * at that photo once. Once a root is hydrated the listener returns immediately for
+ * it; the `window` flag keeps a second copy of the script (soft navigation, two
+ * galleries) from adding a second listener. The no-op `touchstart` listener is what
+ * lets iOS Safari apply the CSS `:active` pressed state on touch.
+ *
+ * Attribute names and the 15s timeout mirror `gallery-hydration-bridge.ts`; a unit
+ * test holds them equal.
+ *
+ * CSP: a STATIC `is:inline` body (no expression inside), so `middleware.ts` hashes it
+ * per response and the `csp-soft-nav-hashes` build scan adds it to the soft-nav
+ * union with no registration. Never turn it into `set:html` without adding it to
+ * `DEPLOYMENT_CONSTANT_INLINE_SCRIPTS`. Render it once per page, next to the gallery.
+ */
+---
+
+<script is:inline>
+(function () {
+	if (window.__hospedaGalleryTapBridge) return;
+	window.__hospedaGalleryTapBridge = true;
+	function clearRoot(root) {
+		root.removeAttribute('data-gallery-pending');
+		root.removeAttribute('data-gallery-pending-at');
+		root.removeAttribute('data-gallery-pending-scroll');
+		var loading = root.querySelectorAll('[data-gallery-loading]');
+		for (var i = 0; i < loading.length; i++) {
+			loading[i].removeAttribute('data-gallery-loading');
+			loading[i].removeAttribute('aria-busy');
+		}
+	}
+	document.addEventListener('touchstart', function () {}, { passive: true });
+	document.addEventListener('click', function (event) {
+		var target = event.target;
+		if (!target || typeof target.closest !== 'function') return;
+		var button = target.closest('[data-gallery-index]');
+		if (!button) return;
+		var root = button.closest('[data-gallery-root]');
+		if (!root || root.hasAttribute('data-gallery-hydrated')) return;
+		var index = button.getAttribute('data-gallery-index');
+		if (!/^\d+$/.test(index || '')) return;
+		var pending = document.querySelectorAll('[data-gallery-pending]');
+		for (var j = 0; j < pending.length; j++) clearRoot(pending[j]);
+		clearRoot(root);
+		var at = String(Date.now());
+		button.setAttribute('data-gallery-loading', '');
+		button.setAttribute('aria-busy', 'true');
+		root.setAttribute('data-gallery-pending', index);
+		root.setAttribute('data-gallery-pending-at', at);
+		root.setAttribute('data-gallery-pending-scroll', String(Math.round(window.scrollY || 0)));
+		setTimeout(function () {
+			if (root.hasAttribute('data-gallery-hydrated')) return;
+			if (root.getAttribute('data-gallery-pending-at') !== at) return;
+			clearRoot(root);
+		}, 15000);
+	}, true);
+})();
+</script>

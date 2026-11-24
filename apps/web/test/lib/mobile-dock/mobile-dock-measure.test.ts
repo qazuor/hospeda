@@ -89,22 +89,17 @@ describe('TEST:1768:4 initMobileDock', () => {
 });
 
 /**
- * Owner smoke (HOS-2520): on an accommodation page with dead islands (HOS-2578), the
- * contact bar and the AI chat FAB never portal into the dock, so scrolling up revealed a
- * full-width frosted band 61px tall that held nothing but the scroll-to-top button.
- * A row whose only visible items are floating controls must not paint the band.
+ * Owner smoke (HOS-2520, option 1): scroll-to-top left the row and floats above the
+ * dock, so it is no longer a measured item. A dock that holds only that button is
+ * empty: it publishes no height and paints no band. This replaces the PR #4739
+ * floating-only row special case, which existed only for that button.
  */
-describe('HOS-2520 floating-only dock row', () => {
-    function mountRow(html: string, visible: readonly string[]) {
+describe('HOS-2520 scroll-to-top is not a dock item', () => {
+    it('leaves the dock empty when the floating button is its only visible content', () => {
         const dock = document.createElement('div');
-        dock.innerHTML = `<div class="mobile-dock__row">${html}</div>`;
-        for (const item of dock.querySelectorAll<HTMLElement>('[data-dock-item]')) {
-            const isVisible = visible.includes(item.id);
-            vi.spyOn(item, 'getClientRects').mockReturnValue({
-                length: isVisible ? 1 : 0
-            } as DOMRectList);
-        }
-        vi.spyOn(dock, 'getBoundingClientRect').mockReturnValue({ height: 61 } as DOMRect);
+        dock.innerHTML =
+            '<div class="mobile-dock__row"></div><button id="scroll-to-top">top</button>';
+        vi.spyOn(dock, 'getBoundingClientRect').mockReturnValue({ height: 0 } as DOMRect);
         const root = document.createElement('html');
         const { cleanup } = initMobileDock({
             dock,
@@ -116,49 +111,15 @@ describe('HOS-2520 floating-only dock row', () => {
                     removeEventListener: vi.fn()
                 }) as unknown as MediaQueryList
         });
-        return { dock, cleanup };
-    }
-
-    const ROW =
-        '<div id="bar" data-dock-item>bar</div><button id="fab" data-dock-item>chat</button><button id="top" data-dock-item data-dock-floating>top</button>';
-
-    it('flags the row as floating when scroll-to-top is the only visible item', () => {
-        const { dock, cleanup } = mountRow(ROW, ['top']);
-        expect(dock.hasAttribute('data-row-floating')).toBe(true);
-        expect(dock.hasAttribute('data-row-empty')).toBe(false);
-        cleanup();
-    });
-
-    it('keeps the band when the contact bar or the chat FAB is there too', () => {
-        const withBar = mountRow(ROW, ['bar', 'top']);
-        expect(withBar.dock.hasAttribute('data-row-floating')).toBe(false);
-        withBar.cleanup();
-        const withFab = mountRow(ROW, ['fab', 'top']);
-        expect(withFab.dock.hasAttribute('data-row-floating')).toBe(false);
-        withFab.cleanup();
-    });
-
-    it('is not floating when the row is empty', () => {
-        const { dock, cleanup } = mountRow(ROW, []);
-        expect(dock.hasAttribute('data-row-floating')).toBe(false);
+        expect(dock.hasAttribute('data-empty')).toBe(true);
         expect(dock.hasAttribute('data-row-empty')).toBe(true);
+        expect(dock.hasAttribute('data-row-floating')).toBe(false);
+        expect(root.style.getPropertyValue('--mobile-dock-height')).toBe('0px');
         cleanup();
     });
-});
 
-describe('HOS-2520 floating-only dock row: markup and CSS', () => {
-    it('marks scroll-to-top as a floating dock item', () => {
-        const src = readFileSync('src/components/shared/navigation/ScrollToTop.astro', 'utf8');
-        expect(src).toMatch(/data-dock-item\s+data-dock-floating/);
-    });
-
-    it('drops the frosted band, but not the padding, for a floating-only row', () => {
-        const css = readFileSync('src/components/shared/dock/MobileDock.astro', 'utf8');
-        const rule =
-            css.match(/\.mobile-dock\[data-row-floating\] \.mobile-dock__row \{[^}]*\}/)?.[0] ?? '';
-        expect(rule).toContain('background: none;');
-        expect(rule).toContain('backdrop-filter: none;');
-        expect(rule).toContain('border-block-start: 0;');
-        expect(rule).not.toMatch(/padding/);
+    it('keeps the measurement free of a floating-row attribute', () => {
+        const src = readFileSync('src/lib/mobile-dock/mobile-dock-measure.ts', 'utf8');
+        expect(src).not.toMatch(/data-dock-floating|data-row-floating/);
     });
 });

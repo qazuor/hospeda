@@ -62,6 +62,49 @@
     object-fit: cover;
 }
 
+/* Tap feedback before and after hydration (HOS-2520): see the matching block in
+ * ImageGallery.module.css. `.slide` is `position: relative`, which anchors it. */
+.slide:active img {
+    filter: brightness(0.82);
+}
+
+.slide[data-gallery-loading]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: oklch(0 0 0 / 0.35);
+}
+
+.slide[data-gallery-loading]::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid oklch(1 0 0 / 0.35);
+    border-top-color: oklch(1 0 0);
+    border-radius: 50%;
+    animation: gallery-slide-tap-spin 0.8s linear infinite;
+}
+
+@keyframes gallery-slide-tap-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .slide[data-gallery-loading]::after {
+        animation: none;
+        border-color: oklch(1 0 0);
+        border-right-color: transparent;
+    }
+}
+
 .actions,
 .counter,
 .dots {

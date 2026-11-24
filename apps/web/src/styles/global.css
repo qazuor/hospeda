@@ -114,8 +114,13 @@ body.cookie-banner-open {
     padding-bottom: var(--cookie-banner-height, 0px);
 }
 
-body.cookie-banner-open #scroll-to-top {
-    bottom: calc(var(--cookie-banner-height, 0px) + 1rem);
+/* Desktop only: on mobile the button anchors to the dock (HOS-2520), and the dock
+   already sits above the banner through --bottom-safe-inset. Unscoped, this ID
+   selector would outrank that anchor and drop the button onto the dock row. */
+@media (min-width: 768px) {
+    body.cookie-banner-open #scroll-to-top {
+        bottom: calc(var(--cookie-banner-height, 0px) + 1rem);
+    }
 }
 
 @media (max-width: 767px) {

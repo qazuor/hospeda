@@ -44,7 +44,7 @@ const FIXED_POSITION_FILES: Readonly<Record<string, FixedPositionCategory>> = Ob
     'components/accommodation/AiChatWidget.tsx': 'comment',
     'components/ai-search/AiSearchEntry.module.css': 'dock',
     'components/accommodation/AiChatFab.module.css': 'dock',
-    'components/ImageGallery.module.css': 'overlay',
+    'components/gallery/GalleryLightbox.module.css': 'overlay',
     'components/auth/AuthRequiredPopover.client.tsx': 'comment',
     'components/accommodation/AiChatWidget.module.css': 'overlay',
     'components/legal/CookieConsentBanner.module.css': 'bottom-bar',
@@ -87,10 +87,6 @@ const DOCK_ITEMS: readonly DockItemSource[] = [
     {
         component: 'components/listing/contact/ListingContactBar.client.tsx',
         css: 'components/listing/contact/ListingContactBar.module.css'
-    },
-    {
-        component: 'components/shared/navigation/ScrollToTop.astro',
-        css: 'components/shared/navigation/ScrollToTop.astro'
     },
     {
         component: 'components/shared/filters/components/FilterDockTrigger.tsx',
@@ -181,12 +177,24 @@ describe('mobile floating dock guard (TEST:1768:20)', () => {
 
         const mobileRule = extractMediaBlock(cssSource, '@media (max-width: 767px)');
         expect(mobileRule, `${css} must declare the 767px mobile rule`).not.toBe('');
-        // ScrollToTop is the one exception: its progress ring is position:absolute,
-        // so the button must be positioned (relative) or the ring anchors to the dock.
-        const expected = component.endsWith('ScrollToTop.astro') ? 'relative' : 'static';
-        expect(mobileRule, `${css} must become ${expected} inside the dock`).toMatch(
-            new RegExp(`position:\\s*${expected}\\s*;`)
+        expect(mobileRule, `${css} must become static inside the dock`).toMatch(
+            /position:\s*static\s*;/
         );
+    });
+
+    it('floats ScrollToTop above the dock instead of making it a row item (HOS-2520)', () => {
+        // Its appearance at 300px of scroll used to push the row items sideways. It
+        // lives inside the dock (so it rides the auto-hide transform) but outside the
+        // row, is not measured, and anchors to the dock instead of joining its flow.
+        const relative = 'components/shared/navigation/ScrollToTop.astro';
+        const source = read(relative);
+        expect(source, `${relative} must not be a measured dock item`).not.toMatch(
+            /<button[^>]*data-dock-item/
+        );
+        const mobileRule = extractMediaBlock(source, '@media (max-width: 767px)');
+        expect(mobileRule).toMatch(/position:\s*absolute\s*;/);
+        expect(mobileRule).toContain('var(--mobile-dock-height, 0px)');
+        expect(FIXED_POSITION_FILES[relative]).toBe('dock');
     });
 
     it('uses each required non-start DockPortal slot exactly once', () => {

@@ -17,6 +17,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ExperienceHero from '@/components/experience/ExperienceHero.astro';
@@ -300,6 +301,7 @@ const breadcrumbItems = [
                         }
                     }}
                 />
+                <GalleryTapBridge />
             </div>
         )}
 

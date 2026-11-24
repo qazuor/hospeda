@@ -906,7 +906,7 @@ describe('Lightbox main image — single src (full preset, uncropped)', () => {
         expect(src?.length).toBeGreaterThan(0);
     });
 
-    it('lightbox thumb strip imgs use galleryThumb preset (120px) not full preset', () => {
+    it('lightbox thumb strip imgs use galleryThumb preset (120px) not full preset', async () => {
         /**
          * The lightbox thumbnail strip uses 'galleryThumb' (w_120,ar_1:1,c_fill) —
          * intentionally small to minimize payload. Verify they are NOT using the
@@ -924,6 +924,8 @@ describe('Lightbox main image — single src (full preset, uncropped)', () => {
         fireEvent.click(featuredBtn as HTMLElement);
 
         const dialog = screen.getByRole('dialog');
+        // The strip mounts after the dialog's first paint (HOS-2520).
+        await within(dialog).findAllByRole('listitem');
         // Thumb strip imgs are inside <li> elements.
         const thumbStripImgs = within(dialog)
             .getAllByRole('img')

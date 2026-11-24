@@ -176,6 +176,74 @@
     }
 }
 
+/* ── Tap feedback (owner smoke, HOS-2520) ─────────────────────────────────────
+ * A tap on a photo has to answer at once, even before the island hydrates (2s to
+ * 12s): `:active` needs no JS (iOS applies it thanks to the passive `touchstart`
+ * listener in gallery/GalleryTapBridge.astro), and `[data-gallery-loading]` is set
+ * by that same inline script on the tapped photo until the lightbox opens. Every
+ * photo button is already `position: relative` or `absolute`, which anchors the
+ * overlay. The track slides get the same rules in ImageGalleryMobileTrack.module.css. */
+.cellFeatured:active .cellImg,
+.thumbBtn:active .cellImg,
+.inlineGridBtn:active .cellImg {
+    transform: scale(0.98);
+    filter: brightness(0.82);
+    transition-duration: 0s;
+}
+
+.moreOverlayBtn:active {
+    background: oklch(0 0 0 / 0.7);
+}
+
+.cellFeatured[data-gallery-loading]::before,
+.thumbBtn[data-gallery-loading]::before,
+.coverBtn[data-gallery-loading]::before,
+.inlineGridBtn[data-gallery-loading]::before,
+.moreOverlayBtn[data-gallery-loading]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: oklch(0 0 0 / 0.35);
+}
+
+.cellFeatured[data-gallery-loading]::after,
+.thumbBtn[data-gallery-loading]::after,
+.coverBtn[data-gallery-loading]::after,
+.inlineGridBtn[data-gallery-loading]::after,
+.moreOverlayBtn[data-gallery-loading]::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid oklch(1 0 0 / 0.35);
+    border-top-color: oklch(1 0 0);
+    border-radius: 50%;
+    animation: gallery-tap-spin 0.8s linear infinite;
+}
+
+@keyframes gallery-tap-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cellFeatured[data-gallery-loading]::after,
+    .thumbBtn[data-gallery-loading]::after,
+    .coverBtn[data-gallery-loading]::after,
+    .inlineGridBtn[data-gallery-loading]::after,
+    .moreOverlayBtn[data-gallery-loading]::after {
+        animation: none;
+        border-color: oklch(1 0 0);
+        border-right-color: transparent;
+    }
+}
+
 /* ── +N más overlay ──────────────────────────────────────────────────────── */
 
 /** Wrapper on the last visible cell when count >= 5 (stacked with cellQuarter). */
@@ -364,6 +432,14 @@
     border-radius: var(--radius-card, 24px);
 }
 
+/* Pressed state of the cover (HOS-2520 tap feedback, see the block above the
+ * "+N más" overlay). Declared after `.coverImg` to keep specificity ascending. */
+.coverBtn:active .coverImg {
+    transform: scale(0.98);
+    filter: brightness(0.82);
+    transition-duration: 0s;
+}
+
 .coverBtn:hover .coverImg,
 .coverBtn:focus-visible .coverImg {
     transform: scale(1.03);
@@ -468,6 +544,13 @@
     box-shadow: var(--shadow-card);
 }
 
+/* HOS-2520: a tap before hydration gets an answer at once. The inline bridge marks
+ * the button `data-gallery-loading` (and `aria-busy`) until the island replays it. */
+.seeAllPhotos :global(.btn-gradient[data-gallery-loading]) {
+    cursor: progress;
+    filter: brightness(0.92);
+}
+
 /* ── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ───── */
 
 /*
@@ -500,285 +583,6 @@
     outline: 3px solid var(--brand-primary);
     outline-offset: 2px;
     border-radius: 2px;
-}
-
-/* ── Lightbox ───────────────────────────────────────────────────────────── */
-
-/* Overlay tint + scroll lock + ESC + click-outside + portal + focus management
- * are all handled by the shared <Dialog variant="transparent" size="full">. */
-
-.lightboxCounter {
-    position: absolute;
-    top: var(--space-4, 16px);
-    left: 50%;
-    transform: translateX(-50%);
-    /* The pill itself is GalleryCounter (HOS-2520): same look as the swipe track. */
-    z-index: 10;
-}
-
-.lightboxNav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    border: 1px solid oklch(1 0 0 / 0.4);
-    border-radius: 50%;
-    background: oklch(0 0 0 / 0.65);
-    color: oklch(1 0 0);
-    cursor: pointer;
-    transition:
-        background var(--duration-normal, 0.4s) ease,
-        border-color var(--duration-normal, 0.4s) ease,
-        transform var(--duration-normal, 0.4s) ease;
-    z-index: 10;
-    box-shadow: 0 2px 12px oklch(0 0 0 / 0.5);
-}
-
-.lightboxNav:hover,
-.lightboxNav:focus-visible {
-    background: oklch(0 0 0 / 0.9);
-    border-color: oklch(1 0 0 / 0.8);
-}
-
-.lightboxNav:focus-visible {
-    outline: 2px solid var(--brand-accent);
-    outline-offset: 2px;
-}
-
-.lightboxNavPrev:hover,
-.lightboxNavPrev:focus-visible {
-    transform: translateY(-50%) scale(1.05);
-}
-
-.lightboxNavNext:hover,
-.lightboxNavNext:focus-visible {
-    transform: translateY(-50%) scale(1.05);
-}
-
-.lightboxNavPrev {
-    left: var(--space-4, 16px);
-}
-
-.lightboxNavNext {
-    right: var(--space-4, 16px);
-}
-
-.lightboxFigure {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    max-width: min(90vw, 1200px);
-    max-height: 80vh;
-    margin: 0;
-}
-
-.lightboxImg {
-    max-width: 100%;
-    max-height: 70vh;
-    min-height: 0;
-    object-fit: contain;
-    border-radius: var(--radius-card, 24px);
-}
-
-/**
- * .lightboxImgFade — fade-in transition applied to each new lightbox image.
- * Uses a CSS animation (opacity 0→1) to avoid a jarring blank frame when
- * navigating between images. The `key` prop on the <img> element forces React
- * to remount the element on every image change, restarting the animation.
- *
- * Respects `prefers-reduced-motion`: animation is suppressed so users who
- * have requested reduced motion do not experience any fade effect.
- */
-.lightboxImgFade {
-    animation: lightboxImgFadeIn var(--duration-fast, 0.2s) ease-out;
-}
-
-@keyframes lightboxImgFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .lightboxImgFade {
-        animation: none;
-    }
-}
-
-/**
- * .lightboxSpinner — centered loading indicator shown over the lightbox while
- * the active image is still loading (i.e. while navigating between photos).
- * Fixed-centered so it stays put even though the <figure> briefly collapses
- * while the <img> has no loaded content. `pointer-events: none` keeps the
- * prev/next controls clickable underneath.
- */
-.lightboxSpinner {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    pointer-events: none;
-}
-
-/**
- * .lightboxImgLoading — hides the <img> while it loads so the spinner shows
- * instead of a blank frame. The fade animation is suppressed during load and
- * plays once this class is removed (on load), since restoring `animation`
- * restarts the keyframes.
- */
-.lightboxImgLoading {
-    opacity: 0;
-    animation: none;
-}
-
-.lightboxCaption {
-    margin-top: var(--space-2, 8px);
-    color: oklch(1 0 0 / 0.7);
-    font-family: var(--font-sans, sans-serif);
-    font-size: 0.875rem;
-    text-align: center;
-    max-width: 600px;
-    /* Never push the photo off-screen: the bar scrolls instead (HOS-2125). */
-    flex: 0 0 auto;
-    max-height: 28vh;
-    overflow-y: auto;
-}
-
-.lightboxCaptionTitle {
-    display: block;
-    color: oklch(1 0 0 / 0.95);
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.lightboxDescription {
-    margin: var(--space-1, 4px) 0 0;
-    color: oklch(1 0 0 / 0.75);
-    font-size: 0.875rem;
-    line-height: 1.4;
-}
-
-/* The toggle only exists for the mobile clamp; desktop shows the full text. */
-.lightboxDescriptionToggle {
-    display: none;
-    margin: var(--space-1, 4px) auto 0;
-    padding: var(--space-1, 4px) var(--space-2, 8px);
-    min-height: 32px;
-    background: none;
-    border: 0;
-    color: oklch(1 0 0 / 0.9);
-    font: inherit;
-    font-size: 0.8125rem;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-.lightboxDescriptionToggle:focus-visible {
-    outline: 2px solid oklch(1 0 0 / 0.9);
-    outline-offset: 2px;
-}
-
-@media (max-width: 640px) {
-    .lightboxCaption {
-        max-height: 24vh;
-    }
-
-    .lightboxDescription[data-expanded="false"] {
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        overflow: hidden;
-    }
-
-    .lightboxDescriptionToggle {
-        display: block;
-    }
-}
-
-/* Photo credit under the caption (H-125). Its own line and dimmer than the
- * caption, so it reads as provenance rather than as part of the description. */
-.lightboxCredit {
-    display: block;
-    margin-top: var(--space-1, 4px);
-    color: oklch(1 0 0 / 0.55);
-    font-size: 0.75rem;
-}
-
-.lightboxCreditLink {
-    color: inherit;
-    text-decoration: underline;
-}
-
-.lightboxCreditLink:hover,
-.lightboxCreditLink:focus-visible {
-    color: oklch(1 0 0 / 0.85);
-}
-
-/* Thumbnail strip at bottom */
-.lightboxThumbs {
-    position: absolute;
-    bottom: var(--space-4, 16px);
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: var(--space-2, 8px);
-    max-width: 90vw;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding: var(--space-1, 4px);
-    z-index: 10;
-    list-style: none;
-    margin: 0;
-}
-
-.lightboxThumbs::-webkit-scrollbar {
-    display: none;
-}
-
-.lightboxThumb {
-    flex-shrink: 0;
-    width: 52px;
-    height: 52px;
-    border: 2px solid transparent;
-    border-radius: var(--radius-button, 8px);
-    overflow: hidden;
-    padding: 0;
-    background: none;
-    cursor: pointer;
-    opacity: 0.6;
-    transition:
-        opacity var(--duration-normal, 0.4s) ease,
-        border-color var(--duration-normal, 0.4s) ease;
-}
-
-.lightboxThumb:hover,
-.lightboxThumb:focus-visible {
-    opacity: 0.85;
-}
-
-.lightboxThumb:focus-visible {
-    outline: 2px solid var(--brand-accent);
-    outline-offset: 2px;
-}
-
-.lightboxThumbActive {
-    opacity: 1;
-    border-color: var(--brand-accent);
-}
-
-.lightboxThumbImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
 
 /* ── Responsive — tablet (641px–1023px) ─────────────────────────────────── */
@@ -865,18 +669,5 @@
     .inlineGrid[data-extras-count="3"],
     .inlineGrid[data-extras-count="3plus"] {
         grid-template-columns: repeat(2, 1fr);
-    }
-
-    .lightboxNavPrev {
-        left: var(--space-2, 8px);
-    }
-
-    .lightboxNavNext {
-        right: var(--space-2, 8px);
-    }
-
-    .lightboxNav {
-        width: 40px;
-        height: 40px;
     }
 }

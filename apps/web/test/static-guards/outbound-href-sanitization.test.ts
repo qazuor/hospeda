@@ -88,7 +88,7 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         'built only by `buildExperienceChannels`/`buildVenueChannels` (`lib/listing-contact/listing-channels.ts`), which pass every website and social URL through `resolveSafeExternalUrl` and compose tel:/mailto: themselves',
     'components/listing/contact/ListingContactActions.tsx#{primaryLink.href}':
         'the venue menu link, produced by `resolveVenueContactMode`, which passes `menuUrl` through `resolveSafeExternalUrl` and yields no link when it returns undefined',
-    'components/ImageGallery.client.tsx#{credit.url}':
+    'components/gallery/GalleryLightboxCaption.tsx#{credit.url}':
         '`PhotoCreditParts.url`, produced by `formatPhotoCredit`, which calls the sanitizer itself',
     'components/shared/ImageAttribution.astro#{credit.url}':
         'same `formatPhotoCredit` output as the lightbox above',
