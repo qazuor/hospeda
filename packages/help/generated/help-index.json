@@ -1,5 +1,5 @@
 {
-  "contentHash": "fbbc2868478b7080ce6a5d1f27086e5d427abb344558243ea5c3d94860b3a0e2",
+  "contentHash": "c0a827ace31a1f41fe6910d6ea98ff2ce958ee5b1ab5bff5b93ecbb5fa794fe7",
   "locales": {
     "es": [
       {
@@ -786,7 +786,7 @@
           "change-plan",
           "photos"
         ],
-        "reviewedAt": "2026-11-22",
+        "reviewedAt": "2026-11-24",
         "sections": {
           "canDo": "Encontrar cómo se hace algo en tu cuenta sin salir de {{link:help|Ayuda}}: buscar por palabras, ver los artículos de lo que publicás y abrir la ayuda de la pantalla en la que estás.",
           "expect": "- La pestaña que se abre primero es la de lo que publicás. Podés cambiarla cuando quieras.\n- Cada artículo tiene siempre las mismas partes: qué podés hacer, cómo se hace, qué esperar, qué no esperar y problemas comunes. Al final hay artículos relacionados.\n- El botón «?» abre la ayuda en otra pestaña, así no perdés lo que estabas cargando. Dentro de la ayuda se abre en la misma pestaña.",

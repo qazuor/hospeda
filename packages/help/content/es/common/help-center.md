@@ -37,7 +37,7 @@ covers:
 entryFor:
   - "page:mi-cuenta/ayuda"
   - "page:mi-cuenta/ayuda/[id]"
-reviewedAt: "2026-11-22"
+reviewedAt: "2026-11-24"
 ---
 
 ## Qué podés hacer
