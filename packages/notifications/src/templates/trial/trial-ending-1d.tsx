@@ -44,7 +44,7 @@ export function TrialEnding1Day({
 
             <Text style={styles.greeting}>{formatTrialGreeting({ recipientName })}</Text>
 
-            <Callout tone="danger">
+            <Callout tone="warning">
                 <Text style={styles.paragraph}>
                     Mañana <strong>{formattedEndDate}</strong> termina tu prueba gratis
                     {planFragment}. Si no elegís un plan antes, {copy.possessive} deja de aparecer
