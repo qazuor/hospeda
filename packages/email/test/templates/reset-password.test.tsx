@@ -25,7 +25,7 @@ describe('ResetPasswordTemplate', () => {
         const html = await render(<ResetPasswordTemplate {...defaultProps} />);
 
         // Assert
-        expect(html).toContain('Restablece tu contraseña');
+        expect(html).toContain('Restablecé tu contraseña');
     });
 
     it('should render the request description text', async () => {
@@ -54,7 +54,7 @@ describe('ResetPasswordTemplate', () => {
 
         // Assert
         expect(html).toContain(
-            'Este enlace expira en 1 hora por motivos de seguridad. Si necesitas más tiempo, puedes solicitar un nuevo enlace de restablecimiento.'
+            'Este enlace expira en 1 hora por motivos de seguridad. Si necesitás más tiempo, podés pedir un nuevo enlace de restablecimiento.'
         );
     });
 
@@ -63,7 +63,7 @@ describe('ResetPasswordTemplate', () => {
         const html = await render(<ResetPasswordTemplate {...defaultProps} />);
 
         // Assert
-        expect(html).toContain('Haz clic en el botón de abajo para crear una nueva contraseña:');
+        expect(html).toContain('Hacé clic en el botón de abajo para crear una nueva contraseña:');
     });
 
     it('should render bold security question and explanation', async () => {
@@ -73,9 +73,17 @@ describe('ResetPasswordTemplate', () => {
         // Assert
         expect(html).toContain('¿No solicitaste esto?');
         expect(html).toContain(
-            'Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma segura'
+            'Si no solicitaste restablecer tu contraseña, podés ignorar este correo de forma segura'
         );
         expect(html).toContain('Tu contraseña actual seguirá siendo válida');
+        // HOS-2580: a routine "if you didn't request this" notice is a warning, not a danger.
+        expect(html).toContain('data-callout-tone="warning"');
+        expect(html).not.toContain('data-callout-tone="danger"');
+    });
+
+    it('HOS-2580 speaks in voseo', async () => {
+        const html = await render(<ResetPasswordTemplate {...defaultProps} />);
+        expect(html).not.toMatch(/\b(haz|copia y pega|puedes|necesitas|restablece tu)\b/i);
     });
 
     it('should render fallback URL text', async () => {
@@ -83,7 +91,7 @@ describe('ResetPasswordTemplate', () => {
         const html = await render(<ResetPasswordTemplate {...defaultProps} />);
 
         // Assert
-        expect(html).toContain('O copia y pega este enlace en tu navegador:');
+        expect(html).toContain('O copiá y pegá este enlace en tu navegador:');
     });
 
     it('should render inside EmailLayout with footerLink none (HOS-2519 AC-1.3)', async () => {

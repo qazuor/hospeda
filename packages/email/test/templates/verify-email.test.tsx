@@ -25,7 +25,7 @@ describe('VerifyEmailTemplate', () => {
         const html = await render(<VerifyEmailTemplate {...defaultProps} />);
 
         // Assert
-        expect(html).toContain('Verifica tu dirección de correo electrónico');
+        expect(html).toContain('Verificá tu dirección de correo electrónico');
     });
 
     it('should render the registration thank you text', async () => {
@@ -44,7 +44,7 @@ describe('VerifyEmailTemplate', () => {
 
         // Assert
         expect(html).toContain(
-            'Haz clic en el botón de abajo para verificar tu correo electrónico:'
+            'Hacé clic en el botón de abajo para verificar tu correo electrónico:'
         );
     });
 
@@ -72,7 +72,7 @@ describe('VerifyEmailTemplate', () => {
 
         // Assert
         expect(html).toContain(
-            'Si no solicitaste esta verificación, puedes ignorar este correo de forma segura'
+            'Si no solicitaste esta verificación, podés ignorar este correo de forma segura'
         );
     });
 
@@ -81,7 +81,7 @@ describe('VerifyEmailTemplate', () => {
         const html = await render(<VerifyEmailTemplate {...defaultProps} />);
 
         // Assert
-        expect(html).toContain('O copia y pega este enlace en tu navegador:');
+        expect(html).toContain('O copiá y pegá este enlace en tu navegador:');
     });
 
     it('should render inside EmailLayout with footerLink none (HOS-2519 AC-1.3)', async () => {

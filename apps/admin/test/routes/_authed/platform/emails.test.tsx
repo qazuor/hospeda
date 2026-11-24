@@ -79,7 +79,7 @@ const ENTRIES: EmailPreviewEntrySummary[] = [
                 id: 'with-name',
                 label: 'Con nombre',
                 locale: 'es',
-                subject: 'Restablece tu contraseña de Hospeda'
+                subject: 'Restablecé tu contraseña de Hospeda'
             }
         ]
     },

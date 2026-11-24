@@ -37,7 +37,7 @@ export interface VerifyEmailTemplateProps {
  *
  * await sendEmail({
  *   to: 'user@example.com',
- *   subject: 'Verifica tu dirección de correo electrónico',
+ *   subject: 'Verificá tu dirección de correo electrónico',
  *   react: VerifyEmailTemplate({
  *     name: 'Juan Pérez',
  *     verificationUrl: 'https://hospeda.com.ar/verify?token=abc123'
@@ -48,7 +48,7 @@ export interface VerifyEmailTemplateProps {
 export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTemplateProps) {
     return (
         <EmailLayout footerLink="none">
-            <EmailTitle style={h1}>Verifica tu dirección de correo electrónico</EmailTitle>
+            <EmailTitle style={h1}>Verificá tu dirección de correo electrónico</EmailTitle>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>
 
@@ -58,7 +58,7 @@ export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTempla
             </Text>
 
             <Text style={text}>
-                Haz clic en el botón de abajo para verificar tu correo electrónico:
+                Hacé clic en el botón de abajo para verificar tu correo electrónico:
             </Text>
 
             {/* Keeps the pre-HOS-2565 attribution slot, so the text part stays byte-identical (AC-2.8). */}
@@ -70,13 +70,13 @@ export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTempla
             </Button>
 
             <Text style={text}>
-                O copia y pega este enlace en tu navegador:
+                O copiá y pegá este enlace en tu navegador:
                 <br />
                 <span style={link}>{verificationUrl}</span>
             </Text>
 
             <Callout tone="info">
-                Este enlace expira en 24 horas. Si no solicitaste esta verificación, puedes ignorar
+                Este enlace expira en 24 horas. Si no solicitaste esta verificación, podés ignorar
                 este correo de forma segura.
             </Callout>
         </EmailLayout>

@@ -37,7 +37,7 @@ export interface ResetPasswordTemplateProps {
  *
  * await sendEmail({
  *   to: 'user@example.com',
- *   subject: 'Restablece tu contraseña',
+ *   subject: 'Restablecé tu contraseña',
  *   react: ResetPasswordTemplate({
  *     name: 'Juan Pérez',
  *     resetUrl: 'https://hospeda.com.ar/reset-password?token=xyz789'
@@ -48,7 +48,7 @@ export interface ResetPasswordTemplateProps {
 export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateProps) {
     return (
         <EmailLayout footerLink="none">
-            <EmailTitle style={h1}>Restablece tu contraseña</EmailTitle>
+            <EmailTitle style={h1}>Restablecé tu contraseña</EmailTitle>
 
             <Text style={text}>{resolveGreeting({ name }).text}</Text>
 
@@ -56,7 +56,9 @@ export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateP
                 Recibimos una solicitud para restablecer la contraseña de tu cuenta en Hospeda.
             </Text>
 
-            <Text style={text}>Haz clic en el botón de abajo para crear una nueva contraseña:</Text>
+            <Text style={text}>
+                Hacé clic en el botón de abajo para crear una nueva contraseña:
+            </Text>
 
             {/* Keeps the pre-HOS-2565 attribution slot, so the text part stays byte-identical (AC-2.8). */}
             <Button
@@ -67,22 +69,22 @@ export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateP
             </Button>
 
             <Text style={text}>
-                O copia y pega este enlace en tu navegador:
+                O copiá y pegá este enlace en tu navegador:
                 <br />
                 <span style={link}>{resetUrl}</span>
             </Text>
 
-            <Callout tone="danger">
+            <Callout tone="warning">
                 <strong>¿No solicitaste esto?</strong>
                 <br />
-                Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma
+                Si no solicitaste restablecer tu contraseña, podés ignorar este correo de forma
                 segura. Tu contraseña actual seguirá siendo válida y no se realizarán cambios en tu
                 cuenta.
             </Callout>
 
             <Callout tone="info">
-                Este enlace expira en 1 hora por motivos de seguridad. Si necesitas más tiempo,
-                puedes solicitar un nuevo enlace de restablecimiento.
+                Este enlace expira en 1 hora por motivos de seguridad. Si necesitás más tiempo,
+                podés pedir un nuevo enlace de restablecimiento.
             </Callout>
         </EmailLayout>
     );
