@@ -1,8 +1,9 @@
 ---
 /**
  * @file FeaturesGrid.astro
- * @description Features as pills with icon. Hidden when empty. HOS-2528: with more
- * than {@link SUMMARY_COUNT} features only the first ones show, and «Ver las N
+ * @description Features as pills with icon. Hidden when empty. HOS-2528: when at least
+ * 5 features would be hidden past the first {@link SUMMARY_COUNT} (11 or more in total) only
+ * the first ones show, and «Ver las N
  * características» opens a `sheet` dialog (island `ListingItemsSheet`) with the full list.
  *
  * SEO / no-JS: the sheet island renders nothing while closed, so the features past the
@@ -21,6 +22,7 @@
 import type { AccommodationFeatureItem } from '@/data/types';
 import { groupFeaturesForDisplay } from '@/lib/catalog-attribute-badges';
 import { createTranslations } from '@/lib/i18n';
+import { summarizeItems } from '@/lib/listing-items/summarize-items';
 import ListingPill from '@/components/listing/ListingPill.astro';
 import { ListingItemsSheet } from '@/components/listing/ListingItemsSheet.client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -37,7 +39,7 @@ const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 if (features.length === 0) return;
 
-/** More features than this collapse into a summary plus the full-list sheet. */
+/** Features shown when the list collapses into a summary plus the full-list sheet. */
 const SUMMARY_COUNT = 6;
 
 /**
@@ -76,7 +78,13 @@ function toPill(feature: AccommodationFeatureItem) {
   };
 }
 
-const hasOverflow = features.length > SUMMARY_COUNT;
+/** Owner rule (HOS-2528): summarise only when at least 5 features would be hidden. */
+const { showAllMobile } = summarizeItems({
+  total: features.length,
+  visibleMobile: SUMMARY_COUNT,
+  visibleDesktop: SUMMARY_COUNT
+});
+const hasOverflow = !showAllMobile;
 const title = t('accommodations.detail.features.title');
 const summaryPills = features.slice(0, SUMMARY_COUNT).map(toPill);
 const restPills = features.slice(SUMMARY_COUNT).map(toPill);

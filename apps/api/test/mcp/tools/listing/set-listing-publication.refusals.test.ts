@@ -131,36 +131,25 @@ describe('set_listing_publication — refusals in Spanish', () => {
             expect(publish).not.toHaveBeenCalled();
         });
 
-        it('pause without coverage → NO_COVERAGE (EDIT passes step 5 too)', async () => {
+        it('HOS-2244: pause without coverage or capability still unpublishes (no plan needed)', async () => {
             // Arrange
-            harness.givenBilling(mocks, { covered: false, granted: true });
+            harness.givenBilling(mocks, { covered: false, granted: false });
             givenState(PublicationStatusEnum.PUBLISHED);
-            const unpublish = vi.spyOn(ListingPublicationService.prototype, 'unpublish');
+            const unpublish = vi
+                .spyOn(ListingPublicationService.prototype, 'unpublish')
+                .mockResolvedValue({} as never);
 
             // Act
-            const failure = await failureOf('pause');
-
-            // Assert
-            expect(failure.message).toBe(MESSAGES.NO_COVERAGE);
-            expect(unpublish).not.toHaveBeenCalled();
-        });
-
-        it('pause without the edit capability → NO_CAPABILITY (step 6, EDIT)', async () => {
-            // Arrange
-            harness.givenBilling(mocks, { covered: true, granted: false });
-            givenState(PublicationStatusEnum.PUBLISHED);
-
-            // Act
-            const failure = await failureOf('pause');
-
-            // Assert
-            expect(failure).toMatchObject({
-                code: 'ENTITLEMENT_REQUIRED',
-                message: MESSAGES.NO_CAPABILITY
+            const outcome = await runTool({
+                definition: setListingPublicationTool,
+                actor: actorFor(OWNER_ID),
+                input: { vertical, id: LISTING_ID, action: 'pause' },
+                context: { channel: 'mcp' }
             });
-            expect(mocks.effectiveSet).toHaveBeenCalledWith(
-                expect.objectContaining({ userId: OWNER_ID, vertical })
-            );
+
+            // Assert
+            expect(unpublish).toHaveBeenCalledTimes(1);
+            expect(outcome.ok).toBe(true);
         });
 
         it('resume without the recover capability on an archived listing → NO_CAPABILITY (REACTIVATE)', async () => {

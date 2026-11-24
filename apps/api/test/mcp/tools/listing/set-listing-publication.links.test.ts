@@ -237,10 +237,10 @@ describe('set_listing_publication — portal links on refusals', () => {
         it('NO_CAPABILITY → the subscription', async () => {
             // Arrange
             harness.givenBilling(mocks, { covered: true, granted: false });
-            givenState(vertical, PublicationStatusEnum.PUBLISHED);
+            givenState(vertical, PublicationStatusEnum.DRAFT);
 
             // Act
-            const failure = await failureOf(vertical, 'pause');
+            const failure = await failureOf(vertical);
 
             // Assert
             expect(failure.action?.url).toBe(SUBSCRIPTION_URL);

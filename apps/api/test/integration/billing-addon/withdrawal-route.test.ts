@@ -253,6 +253,97 @@ describe('TEST:B13b:1 AC:B13b:1 the owner withdrawal route', () => {
         expect((await remaining.json()).data.items).toEqual([]);
     });
 
+    it('HOS-2128 answers 409 ADDON_LISTING_SOFT_DELETED and cancels nothing when the addon listing is soft-deleted', async () => {
+        // Arrange
+        const fixture = await purchaseCatalog({ chargeKind: 'PERIODICO', scopeType: 'LISTING' });
+        const { app, fake } = purchaseApp();
+        await makePayingPrincipal({
+            ownerId: fixture.ownerId,
+            payerEmail: fixture.payerEmail,
+            fake
+        });
+        const destinationId = await createVerticalDestination();
+        destinationIds.push(destinationId);
+        const listingId = await createListing({
+            ownerId: fixture.ownerId,
+            destinationId,
+            status: PublicationStatusEnum.DRAFT,
+            complete: false
+        });
+        listingIds.push(listingId);
+        injectAddonPurchaseListingForTests({
+            listing: async () => ({
+                vertical: VerticalEnum.ACCOMMODATION,
+                ownerId: fixture.ownerId,
+                acceptsFeature: true
+            })
+        });
+        const id = await purchase({
+            app,
+            ownerId: fixture.ownerId,
+            request: fixture.request(listingId)
+        });
+        const [instance] = await getDb()
+            .select()
+            .from(addonInstances)
+            .where(eq(addonInstances.id, id));
+        if (!instance?.complementSubscriptionId) throw new Error('Complement missing');
+        const [link] = await getDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, instance.complementSubscriptionId));
+        if (!link) throw new Error('Provider link missing');
+        await fake.approve({ authorizationId: link.providerId });
+        const notice = encodeFakeNotice({
+            notice: { resourceKind: 'authorization', resourceId: link.providerId, version: '1' },
+            format: 'json'
+        });
+        const applied = await processProviderNotice(
+            {
+                channel: 'WEBHOOKS',
+                delivery: { headers: { 'content-type': 'application/json' }, body: notice.body }
+            },
+            {
+                ...buildAddonPurchasePorts(),
+                complements: buildComplementPolicyPorts(),
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            }
+        );
+        expect(applied.outcome).toBe('APPLIED');
+        const [active] = await getDb()
+            .select({ status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, id));
+        expect(active?.status).toBe('ACTIVE');
+        // The listing is deleted afterwards; the withdrawal reads the production `ficha`.
+        await getDb()
+            .update(accommodations)
+            .set({ deletedAt: new Date() })
+            .where(eq(accommodations.id, listingId));
+        injectAddonPurchaseListingForTests({});
+        const cancel = vi.spyOn(fake, 'cancel');
+
+        // Act
+        const response = await call(app, fixture.ownerId, `/instances/${id}/withdrawal`, 'POST');
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({
+            error: { code: 'ALREADY_EXISTS', reason: 'ADDON_LISTING_SOFT_DELETED' }
+        });
+        const [after] = await getDb()
+            .select({ status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, id));
+        expect(after?.status).toBe('ACTIVE');
+        const [complement] = await getDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, instance.complementSubscriptionId));
+        expect(complement?.status).not.toBe('CANCELLED');
+        expect(cancel).not.toHaveBeenCalled();
+    });
+
     it('hides a foreign instance, rejects absent session and invalid ids, and refuses one-time purchases', async () => {
         const foreign = await purchaseCatalog({ chargeKind: 'PERIODICO' });
         const own = await purchaseCatalog({ chargeKind: 'UNA_VEZ' });
