@@ -24,6 +24,7 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildVenueHeader } from '@/lib/listing-header/build-listing-header';
 import { buildVenueContactBlock } from '@/lib/listing-contact/listing-contact-block';
+import { buildVenueLocation } from '@/lib/listing-location/build-location-section';
 import VenueDescription from '@/components/venue/VenueDescription.astro';
 import VenueSummary from '@/components/venue/VenueSummary.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
@@ -35,7 +36,7 @@ import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
 import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
-import VenueAddress from '@/components/venue/VenueAddress.astro';
+import LocationSection from '@/components/listing/location/LocationSection.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
@@ -319,6 +320,9 @@ const hasContactBlock = hasVenueContact;
  * `hasVenuePublicContact` predicate as `hasVenueContact`, so it is non-null
  * exactly when `hasContactBlock` is true.
  */
+/** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
+const venueLocation = buildVenueLocation({ venue, locale });
+
 const venueContactBlock = buildVenueContactBlock({
     listingId: venue.id,
     contactInfo: venue.contactInfo,
@@ -340,19 +344,7 @@ const venueDetailSectionBlocks: Readonly<
             }
         }
     ],
-    location: venue.location
-        ? [
-              {
-                  Component: VenueAddress,
-                  props: {
-                      location: venue.location,
-                      cityName: venue.destinationName,
-                      venueName: venue.name,
-                      locale
-                  }
-              }
-          ]
-        : [],
+    location: venueLocation ? [{ Component: LocationSection, props: { ...venueLocation } }] : [],
     openingHours: hasOpeningHours
         ? [
               {

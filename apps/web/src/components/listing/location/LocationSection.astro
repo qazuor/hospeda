@@ -1,0 +1,236 @@
+---
+/**
+ * @file LocationSection.astro
+ * @description The one location block of the three listing detail pages
+ * (HOS-2579 §6.5, slot 7): heading, address text, destination link, the map
+ * and, for experiences, how to get there.
+ *
+ * This component only PRESENTS. Its props come from the per-vertical builders
+ * in `@/lib/listing-location/build-location-section`, which decide the map
+ * mode and every gate:
+ * - accommodation: `mode="approximate"`, the privacy circle (SPEC-097);
+ * - venue: `mode="exact"` (a public business address, HOS-2189) plus the
+ *   counted «Ver en el mapa» link;
+ * - experience: `mode="exact"` and the directions only when the provider's
+ *   plan grants them (HOS-1049).
+ *
+ * `map: null` draws no map: the text and the destination link remain.
+ * `LocationMap` keeps its three modes; `exact` loads the light
+ * `LocationMapInner` chunk, not the multi-marker one. The map tiles take the
+ * uniform card radius (owner smoke, HOS-2520) through LocationMap's custom
+ * properties, so the disclaimer below the tiles is not clipped.
+ */
+import { ArrowRightIcon, LocationIcon } from '@repo/icons';
+import { LocationMap } from '@/components/maps/LocationMap.client';
+import { createTranslations } from '@/lib/i18n';
+import type { LocationSectionModel } from '@/lib/listing-location/build-location-section';
+
+type Props = LocationSectionModel;
+
+const {
+    locale,
+    heading,
+    addressLines,
+    destination,
+    map,
+    externalMapHref,
+    externalMapLabel,
+    directions = [],
+    directionsHeading,
+    trackingData = {},
+    id
+} = Astro.props;
+const { t } = createTranslations(locale);
+
+const linkData = Object.fromEntries(
+    Object.entries(trackingData).map(([key, value]) => [`data-${key}`, value])
+);
+---
+
+<section class="location-section" id={id}>
+    <header class="location-section__header">
+        <h2 class="location-section__title">{heading}</h2>
+        {addressLines.length > 0 && (
+            <address class="location-section__address">
+                <LocationIcon size={18} weight="duotone" aria-hidden="true" />
+                <span class="location-section__address-lines">
+                    {addressLines.map((line) => (
+                        <span class="location-section__address-line">{line}</span>
+                    ))}
+                </span>
+            </address>
+        )}
+        {destination && (
+            <div class="location-section__destination">
+                {addressLines.length === 0 && (
+                    <LocationIcon size={18} weight="duotone" aria-hidden="true" />
+                )}
+                {destination.href ? (
+                    <a href={destination.href} class="location-section__link">
+                        {destination.name}
+                    </a>
+                ) : (
+                    <span class="location-section__city">{destination.name}</span>
+                )}
+            </div>
+        )}
+    </header>
+
+    {map?.mode === 'approximate' && (
+        <div class="location-section__map">
+            <LocationMap
+                client:only="react"
+                mode="approximate"
+                lat={map.lat}
+                lng={map.lng}
+                radiusMeters={map.radiusMeters}
+                ariaLabel={map.ariaLabel}
+                i18nStrings={{
+                    attribution: t('maps.attribution'),
+                    approximateDisclaimer: t('maps.approximateDisclaimer')
+                }}
+            />
+        </div>
+    )}
+    {map?.mode === 'exact' && (
+        <div class="location-section__map">
+            <LocationMap
+                client:visible
+                mode="exact"
+                lat={map.lat}
+                lng={map.lng}
+                zoom={map.zoom}
+                markerLabel={map.label}
+                ariaLabel={map.ariaLabel}
+                i18nStrings={{ attribution: t('maps.attribution'), markerLabel: map.label }}
+            />
+        </div>
+    )}
+
+    {externalMapHref && (
+        <a
+            class="location-section__external"
+            href={externalMapHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            {...linkData}
+        >
+            {externalMapLabel}
+        </a>
+    )}
+
+    {directions.length > 0 && (
+        <div class="location-section__directions">
+            {directionsHeading && (
+                <h3 class="location-section__directions-title">{directionsHeading}</h3>
+            )}
+            <ul class="location-section__directions-list">
+                {directions.map((step) => (
+                    <li class="location-section__directions-item">
+                        <ArrowRightIcon size={16} aria-hidden="true" />
+                        <span>{step}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    )}
+</section>
+
+<style>
+    .location-section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+        margin-top: var(--space-8, 40px);
+        margin-bottom: var(--space-6, 24px);
+    }
+    .location-section__header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+    .location-section__title {
+        font-family: var(--font-heading);
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+        line-height: 1.2;
+    }
+    .location-section__address {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-2, 8px);
+        font-family: var(--font-sans);
+        font-style: normal;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+    }
+    .location-section__address :global(svg) {
+        flex-shrink: 0;
+        margin-top: 0.2em;
+    }
+    .location-section__address-lines {
+        display: flex;
+        flex-direction: column;
+    }
+    .location-section__destination {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2, 8px);
+        font-family: var(--font-sans);
+        font-size: 1rem;
+    }
+    .location-section__link {
+        color: var(--brand-primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .location-section__link:hover {
+        text-decoration: underline;
+    }
+    .location-section__city {
+        color: var(--core-muted-foreground);
+    }
+    .location-section__map {
+        width: 100%;
+        --location-map-tile-radius: var(--radius-card);
+        --location-map-tile-overflow: hidden;
+    }
+    .location-section__external {
+        align-self: flex-start;
+        font-family: var(--font-sans);
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+    .location-section__directions-title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2, 8px);
+    }
+    .location-section__directions-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+    .location-section__directions-item {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-2, 8px);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+    }
+    .location-section__directions-item :global(svg) {
+        flex-shrink: 0;
+        margin-top: 0.25em;
+        color: var(--brand-primary);
+    }
+</style>

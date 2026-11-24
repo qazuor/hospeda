@@ -15,7 +15,8 @@ const read = (file: string) => readFileSync(resolve(__dirname, '../../../src', f
 const contact = read('lib/listing-contact/listing-contact-block.ts');
 const venueBuilder = contact.slice(contact.indexOf('export function buildVenueContactBlock'));
 const block = read('components/listing/contact/ListingContactBlock.astro');
-const address = read('components/venue/VenueAddress.astro');
+const address = read('components/listing/location/LocationSection.astro');
+const locationBuilders = read('lib/listing-location/build-location-section.ts');
 const page = read('pages/[lang]/comer-y-salir/[slug].astro');
 
 describe('venue interaction attributes (HOS-2256)', () => {
@@ -77,8 +78,12 @@ describe('venue interaction attributes (HOS-2256)', () => {
         expect(contact).toContain("from '@repo/icons'");
     });
 
-    it('marks "Ver en el mapa" as MAP_CLICK', () => {
-        expect(address).toMatch(/href=\{mapUrl\}[\s\S]*?data-interaction-kind="MAP_CLICK"/);
+    it('marks "Ver en el mapa" as MAP_CLICK (HOS-2579: builder data on the shared section)', () => {
+        expect(locationBuilders).toMatch(
+            /externalMapHref: mapUrl,[\s\S]*?trackingData: \{ 'interaction-kind': 'MAP_CLICK' \}/
+        );
+        expect(address).toMatch(/href=\{externalMapHref\}[\s\S]*?\{\.\.\.linkData\}/);
+        expect(address).toContain('[`data-${key}`, value]');
     });
 
     it('mounts the island with the venue id, on idle', () => {

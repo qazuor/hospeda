@@ -20,6 +20,7 @@ import { formatPhotoCredit } from '@/lib/photo-credit';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildAccommodationHeader } from '@/lib/listing-header/build-listing-header';
 import { buildAccommodationContactBlock } from '@/lib/listing-contact/listing-contact-block';
+import { buildAccommodationLocation } from '@/lib/listing-location/build-location-section';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import MobileBookingSummary from '@/components/accommodation/MobileBookingSummary.astro';
 import Description from '@/components/accommodation/Description.astro';
@@ -33,7 +34,7 @@ import ExternalReputation from '@/components/accommodation/ExternalReputation.as
 import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
 import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
-import LocationSection from '@/components/accommodation/LocationSection.astro';
+import LocationSection from '@/components/listing/location/LocationSection.astro';
 import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.astro';
 import WaveDivider from '@/components/shared/ui/WaveDivider.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
@@ -565,6 +566,9 @@ const sectionTabs = buildListingSectionTabs({
 
 // --- Header (HOS-2579): the shared frame, built from the detail data ---
 /** HOS-2579 §6.4: the shared contact block, `null` when nothing is publishable (H-118). */
+/** HOS-2579 §6.5: slot 7, the approximate circle (SPEC-097). */
+const locationSection = buildAccommodationLocation({ accommodation, locale });
+
 const contactBlock = buildAccommodationContactBlock({
     listingId: accommodation.id,
     contactInfo: accommodation.contactInfo,
@@ -762,12 +766,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         </div>
         )}
         <div id={LISTING_SECTION_IDS.location} class="acc-anchor acc-anchor--stack">
-        <LocationSection
-            destination={accommodation.destination}
-            approximateLocation={accommodation.approximateLocation}
-            accommodationName={accommodation.name}
-            lang={locale}
-        />
+        <LocationSection {...locationSection} />
         <WhatsNearbySection pointsOfInterest={nearbyPois} locale={locale} />
         </div>
     </div>

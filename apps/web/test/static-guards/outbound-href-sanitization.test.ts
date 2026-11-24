@@ -98,8 +98,8 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         'same `formatPhotoCredit` output as the lightbox above',
     'components/MapPlaceholder.astro#{mapsUrl}':
         'composed here as `https://maps.google.com/?q=` + an encoded address — the scheme is our literal',
-    'components/venue/VenueAddress.astro#{mapUrl}':
-        '`buildVenueMapUrl` composes `https://www.openstreetmap.org/` from two `Number()`-parsed coordinates; non-finite values yield null, so the scheme and host are our literal',
+    'components/listing/location/LocationSection.astro#{externalMapHref}':
+        'only the venue builder sets it (`lib/listing-location/build-location-section.ts`), from `buildVenueMapUrl`, which composes `https://www.openstreetmap.org/` from two `Number()`-parsed coordinates; non-finite values yield null, so the scheme and host are our literal',
     'components/ShareButtons.client.tsx#{link.href}':
         'share intents composed by lib/share-intents.ts from literal provider bases (wa.me, facebook.com/sharer, twitter.com/intent, t.me)',
     'components/presentacion/PresentationShareRow.client.tsx#{buildShareIntentUrl({ network: action.network, url: shortUrl(action.network), title: presentation.headline })}':

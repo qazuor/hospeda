@@ -23,8 +23,9 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ListingHeader from '@/components/listing/header/ListingHeader.astro';
 import { buildExperienceHeader } from '@/lib/listing-header/build-listing-header';
 import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
+import { buildExperienceLocation } from '@/lib/listing-location/build-location-section';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
-import ExperienceMeetingPoint from '@/components/experience/ExperienceMeetingPoint.astro';
+import LocationSection from '@/components/listing/location/LocationSection.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
 import ExperienceSummary from '@/components/experience/ExperienceSummary.astro';
 import ExperienceCancellationPolicy from '@/components/experience/ExperienceCancellationPolicy.astro';
@@ -248,6 +249,13 @@ const breadcrumbItems = [
  * exists whenever `hasContactBlock` is true (and also for a socials-only
  * listing), so the private-groups anchor never points at a missing element.
  */
+/**
+ * HOS-2579 §6.5: the meeting point (free) and, only with
+ * `meetingPointDirectionsEnabled`, the exact map and the directions (HOS-1049).
+ * `null` when the owner declared no meeting point.
+ */
+const locationSection = buildExperienceLocation({ experience, locale });
+
 const contactBlock = buildExperienceContactBlock({
     listingId: experience.id,
     contactInfo: experience.contactInfo,
@@ -348,17 +356,10 @@ const headerProps = buildExperienceHeader({
              owner declared no meeting point. The meeting point TEXT carries no
              entitlement check — it is ficha data from the basic tier. The map
              that draws the coordinates and the how-to-get-there instructions
-             are the paid half (HOS-1049), rendered by the same component and
-             gated on `meetingPointDirectionsEnabled`, which the API resolves
-             live from the provider's current plan. -->
-        <ExperienceMeetingPoint
-            meetingPoint={experience.meetingPoint}
-            meetingPointLat={experience.meetingPointLat}
-            meetingPointLong={experience.meetingPointLong}
-            meetingPointDirections={experience.meetingPointDirections}
-            meetingPointDirectionsEnabled={experience.meetingPointDirectionsEnabled}
-            locale={locale}
-        />
+             are the paid half (HOS-1049), gated by `buildExperienceLocation` on
+             `meetingPointDirectionsEnabled`, which the API resolves live from
+             the provider's current plan. -->
+        {locationSection && <LocationSection {...locationSection} />}
 
         <!-- What to bring and what is required (HOS-1046). Right after the
              meeting point, because the reading order of somebody planning a

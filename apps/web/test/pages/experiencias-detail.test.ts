@@ -112,9 +112,9 @@ describe('experiencias/[slug].astro', () => {
         // `test/lib/api/transform-experience-meeting-point.test.ts`, and whether
         // the field survives the projection at all in the full public-tier parse
         // under `packages/schemas`.
-        it('wires ExperienceMeetingPoint to the transformed meeting point', () => {
-            expect(src).toContain('ExperienceMeetingPoint');
-            expect(src).toContain('meetingPoint={experience.meetingPoint}');
+        it('wires the shared LocationSection to the meeting point builder (HOS-2579)', () => {
+            expect(src).toContain('buildExperienceLocation({ experience, locale })');
+            expect(src).toContain('{locationSection && <LocationSection {...locationSection} />}');
         });
 
         // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. SOURCE reads, with the same
@@ -156,7 +156,7 @@ describe('experiencias/[slug].astro', () => {
             expect(src).not.toContain('loadEntitlements');
         });
 
-        it('hands the map and the directions to ExperienceMeetingPoint (HOS-1049)', () => {
+        it('hands the map and the directions to the location builder (HOS-1049)', () => {
             // HOS-1048 asserted the opposite here — no map, no coordinates on
             // this page — because the paid half did not exist yet. It does now,
             // and the page's job is to FORWARD it: the coordinates, the
@@ -166,12 +166,21 @@ describe('experiencias/[slug].astro', () => {
             // `meetingPointDirectionsEnabled` renders a component whose gate
             // reads `undefined` and shows nothing, on every listing, for every
             // tier — a paid feature that ships and never appears.
-            expect(src).toContain('meetingPointLat={experience.meetingPointLat}');
-            expect(src).toContain('meetingPointLong={experience.meetingPointLong}');
-            expect(src).toContain('meetingPointDirections={experience.meetingPointDirections}');
-            expect(src).toContain(
-                'meetingPointDirectionsEnabled={experience.meetingPointDirectionsEnabled}'
+            // HOS-2579: the page hands the whole experience to
+            // `buildExperienceLocation`, which reads the four fields (its unit
+            // test covers each gate); here the builder must name all four.
+            const builder = readFileSync(
+                resolve(__dirname, '../../src/lib/listing-location/build-location-section.ts'),
+                'utf8'
             );
+            for (const field of [
+                'experience.meetingPointLat',
+                'experience.meetingPointLong',
+                'experience.meetingPointDirections',
+                'experience.meetingPointDirectionsEnabled === true'
+            ]) {
+                expect(builder).toContain(field);
+            }
         });
 
         it('still runs no entitlement machinery of its own (HOS-1049)', () => {
