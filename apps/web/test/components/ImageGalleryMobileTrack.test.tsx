@@ -22,7 +22,7 @@ const share = {
     title: 'Suite',
     campaign: 'accommodation'
 } as const;
-const mobile = { backHref: '/en/alojamientos/' };
+const mobile = {};
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -71,19 +71,112 @@ it('keeps the existing mosaic for detail callers that have not opted in', () => 
     expect(container.querySelector('[data-count]')).toBeInTheDocument();
 });
 
-it('uses the fallback supplied by the opted-in caller', () => {
+it('renders no back control over the photo (owner decision, HOS-2520 smoke)', () => {
     render(
         <ImageGallery
             images={images}
             locale="pt"
-            mobile={{ backHref: '/pt/experiencias/' }}
+            mobile={{ share }}
         />
     );
 
-    expect(screen.getByRole('link', { name: 'Voltar' })).toHaveAttribute(
-        'href',
-        '/pt/experiencias/'
+    expect(screen.queryByRole('link', { name: 'Voltar' })).not.toBeInTheDocument();
+    expect(readFileSync('src/components/ImageGalleryMobileTrack.client.tsx', 'utf8')).not.toMatch(
+        /backHref|history\.back|goBack/
     );
+});
+
+/** Loading attribute of every slide in the mobile track, in order. */
+function slideLoading(): (string | null)[] {
+    const track = screen.getByRole('region', { name: 'Image gallery' });
+    return Array.from(track.querySelectorAll('img'), (img) => img.getAttribute('loading'));
+}
+
+it('keeps every slide but the first lazy until the page is idle, then preloads the next two', async () => {
+    let fireIdle: (() => void) | undefined;
+    vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+        fireIdle = callback;
+        return 1;
+    });
+    render(
+        <ImageGallery
+            images={images.slice(0, 5)}
+            locale="en"
+            mobile={mobile}
+        />
+    );
+
+    expect(slideLoading()).toEqual(['eager', 'lazy', 'lazy', 'lazy', 'lazy']);
+    await act(async () => fireIdle?.());
+    expect(slideLoading()).toEqual(['eager', 'eager', 'eager', 'lazy', 'lazy']);
+});
+
+it('moves the preload window forward as the visitor swipes, and never back', async () => {
+    let notify: IntersectionObserverCallback | undefined;
+    const observer = { observe: vi.fn(), disconnect: vi.fn() };
+    vi.stubGlobal(
+        'IntersectionObserver',
+        vi.fn(function (callback: IntersectionObserverCallback) {
+            notify = callback;
+            return observer;
+        })
+    );
+    vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+        callback();
+        return 1;
+    });
+    render(
+        <ImageGallery
+            images={images.slice(0, 7)}
+            locale="en"
+            mobile={mobile}
+        />
+    );
+    const track = screen.getByRole('region', { name: 'Image gallery' });
+    Object.defineProperty(track, 'clientWidth', { value: 390 });
+    const slides = within(track).getAllByRole('button');
+    const show = (index: number) =>
+        act(() => {
+            notify?.(
+                [
+                    {
+                        target: slides[index],
+                        intersectionRatio: 1,
+                        isIntersecting: true
+                    } as unknown as IntersectionObserverEntry
+                ],
+                observer as unknown as IntersectionObserver
+            );
+        });
+
+    show(3);
+    expect(slideLoading()).toEqual(['eager', 'eager', 'eager', 'eager', 'eager', 'eager', 'lazy']);
+    show(1);
+    expect(slideLoading()).toEqual(['eager', 'eager', 'eager', 'eager', 'eager', 'eager', 'lazy']);
+});
+
+it('preloads nothing ahead when the visitor asked to save data', async () => {
+    vi.stubGlobal('requestIdleCallback', (callback: () => void) => {
+        callback();
+        return 1;
+    });
+    Object.defineProperty(navigator, 'connection', {
+        configurable: true,
+        value: { saveData: true }
+    });
+    try {
+        render(
+            <ImageGallery
+                images={images.slice(0, 4)}
+                locale="en"
+                mobile={mobile}
+            />
+        );
+        await act(async () => {});
+        expect(slideLoading()).toEqual(['eager', 'lazy', 'lazy', 'lazy']);
+    } finally {
+        Reflect.deleteProperty(navigator, 'connection');
+    }
 });
 
 it('retains the featured candidates but advertises a full viewport slot for every mobile slide', () => {
@@ -222,10 +315,11 @@ it('follows the snapped slide, limits dots, supports track arrows and opens the 
         threshold: 0.6
     });
     expect(observe).toHaveBeenCalledTimes(10);
-    expect(screen.getByText('10/10')).toBeInTheDocument();
+    // Track and lightbox share GalleryCounter, so both read «10/10».
+    expect(screen.getAllByText('10/10')).toHaveLength(2);
     expect(container.querySelectorAll('[data-active]')).toHaveLength(8);
     expect(container.querySelectorAll('[data-active="true"]')).toHaveLength(1);
-    expect(within(screen.getByRole('dialog')).getByText('10 / 10')).toBeInTheDocument();
+    expect(within(screen.getByRole('dialog')).getByText('10/10')).toBeInTheDocument();
     unmount();
     expect(disconnect).toHaveBeenCalledOnce();
 });
@@ -246,7 +340,7 @@ it('navigates with arrows after dismissing the lightbox opened by a pointer-focu
 
     await user.click(second);
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('2 / 3')).toBeInTheDocument();
+    expect(within(dialog).getByText('2/3')).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(dialog).not.toBeInTheDocument();
     expect(second).toHaveFocus();
@@ -254,7 +348,7 @@ it('navigates with arrows after dismissing the lightbox opened by a pointer-focu
     // Keep the scroll position distinct from the button's index to detect stolen activation.
     for (const key of ['{Enter}', ' ']) {
         await user.keyboard(key);
-        expect(within(screen.getByRole('dialog')).getByText('2 / 3')).toBeInTheDocument();
+        expect(within(screen.getByRole('dialog')).getByText('2/3')).toBeInTheDocument();
         await user.keyboard('{Escape}');
     }
 
@@ -262,74 +356,6 @@ it('navigates with arrows after dismissing the lightbox opened by a pointer-focu
     await user.keyboard('{ArrowRight}');
     expect(scrollTo).toHaveBeenCalledExactlyOnceWith({ left: 780 });
     expect(track).toHaveFocus();
-});
-
-it.each([
-    { case: 'no previous entry', length: 1, state: null, navigation: undefined, intercept: false },
-    {
-        case: 'forward-only history without Navigation API',
-        length: 2,
-        state: { index: 0 },
-        navigation: undefined,
-        intercept: false
-    },
-    {
-        case: 'forward-only history with Navigation API',
-        length: 2,
-        state: { index: 1 },
-        navigation: { canGoBack: false },
-        intercept: false
-    },
-    {
-        case: 'confirmed prior entry',
-        length: 2,
-        state: null,
-        navigation: { canGoBack: true },
-        intercept: true
-    },
-    {
-        case: 'confirmed Astro entry without Navigation API',
-        length: 2,
-        state: { index: 1 },
-        navigation: undefined,
-        intercept: true
-    },
-    {
-        case: 'unconfirmed index without Navigation API',
-        length: 2,
-        state: { index: '1' },
-        navigation: undefined,
-        intercept: false
-    }
-])('uses the correct back behavior with $case', ({ length, state, navigation, intercept }) => {
-    vi.stubGlobal('navigation', navigation);
-    vi.spyOn(window.history, 'length', 'get').mockReturnValue(length);
-    vi.spyOn(window.history, 'state', 'get').mockReturnValue(state);
-    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
-    render(
-        <ImageGallery
-            images={images}
-            locale="en"
-            mobile={mobile}
-        />
-    );
-    const link = screen.getByRole('link', { name: 'Go back' });
-
-    // Stop jsdom's unsupported navigation after observing the fallback decision.
-    let directClickPrevented: boolean | undefined;
-    document.addEventListener(
-        'click',
-        (event) => {
-            directClickPrevented = event.defaultPrevented;
-            event.preventDefault();
-        },
-        { once: true }
-    );
-    fireEvent.click(link);
-
-    expect(link).toHaveAttribute('href', '/en/alojamientos/');
-    expect(directClickPrevented).toBe(intercept);
-    expect(back).toHaveBeenCalledTimes(intercept ? 1 : 0);
 });
 
 it('opens the real guest favorite prompt from the keyboard and restores focus on dismissal', async () => {
@@ -398,14 +424,14 @@ it('swipes the lightbox horizontally while ignoring a vertical drag', () => {
 
     dispatchPointer({ target: figure, type: 'pointerdown', clientX: 100 });
     dispatchPointer({ target: figure, type: 'pointerup', clientX: 50 });
-    expect(within(dialog).getByText('2 / 2')).toBeInTheDocument();
+    expect(within(dialog).getByText('2/2')).toBeInTheDocument();
     dispatchPointer({ target: figure, type: 'pointerdown', clientX: 100 });
     dispatchPointer({ target: figure, type: 'pointerup', clientX: 150, clientY: 70 });
 
-    expect(within(dialog).getByText('2 / 2')).toBeInTheDocument();
+    expect(within(dialog).getByText('2/2')).toBeInTheDocument();
 });
 
-it('sizes the overlay favorite like the 44px share/back buttons', () => {
+it('sizes the overlay favorite like the 44px share button', () => {
     const css = readFileSync('src/components/ImageGalleryMobileTrack.module.css', 'utf8');
     const tsx = readFileSync('src/components/ImageGalleryMobileTrack.client.tsx', 'utf8');
 

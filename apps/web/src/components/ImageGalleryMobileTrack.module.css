@@ -62,24 +62,10 @@
     object-fit: cover;
 }
 
-.back,
 .actions,
 .counter,
 .dots {
     position: absolute;
-}
-
-.back {
-    inset-block-start: var(--space-3);
-    inset-inline-start: var(--space-3);
-    display: grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    color: var(--core-foreground);
-    background: var(--core-card);
-    border-radius: var(--radius-pill);
-    box-shadow: var(--shadow-card);
 }
 
 .actions {
@@ -91,7 +77,7 @@
     z-index: 1;
 }
 
-/* Favorite matches the share/back overlay buttons: 44px, no border, card shadow.
+/* Favorite matches the share overlay button: 44px, no border, card shadow.
    Scoped to the gallery overlay; cards keep the 40px FavoriteButton. */
 .actions .favorite {
     width: 2.75rem;
@@ -103,6 +89,10 @@
 .counter,
 .dots {
     inset-block-end: var(--space-3);
+}
+
+/* The counter's pill look lives in GalleryCounter (shared with the lightbox). */
+.dots {
     background: var(--surface-dark);
     color: var(--surface-dark-foreground);
     border-radius: var(--radius-pill);
@@ -111,9 +101,6 @@
 
 .counter {
     inset-inline-end: var(--space-3);
-    padding: var(--space-1) var(--space-2);
-    font-size: 0.875rem;
-    font-variant-numeric: tabular-nums;
 }
 
 .dots {

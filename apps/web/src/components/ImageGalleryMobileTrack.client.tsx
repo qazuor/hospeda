@@ -1,19 +1,23 @@
 import type { ShareCampaign } from '@repo/analytics';
-import { ChevronLeftIcon } from '@repo/icons';
-import type { KeyboardEvent, MouseEvent, RefObject } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import type { FavoriteButtonProps } from '@/components/shared/favorite/FavoriteButton.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { GalleryCounter } from './gallery/GalleryCounter';
 import { buildCellSources, MOBILE_GALLERY_MEDIA } from './gallery/gallery-image-sources';
+import { readSaveData, resolveEagerThrough, whenPageIdle } from './gallery/gallery-preload';
 import type { GalleryImage } from './ImageGallery.client';
 import styles from './ImageGalleryMobileTrack.module.css';
 import { ShareButtons } from './ShareButtons.client';
 
-/** Caller-supplied navigation and public action metadata for the mobile gallery. */
+/**
+ * Caller-supplied public action metadata for the mobile gallery. There is no back
+ * control: the owner removed it from the photo (HOS-2520 smoke) because an arrow over
+ * a photo did not read as "go back"; the browser's own back covers it.
+ */
 export interface MobileGalleryOptions {
-    readonly backHref: string;
     readonly share?: {
         readonly url: string;
         readonly title: string;
@@ -33,27 +37,12 @@ interface Props extends MobileGalleryOptions {
 const ACTIVE_THRESHOLD = 0.6;
 const MAX_DOTS = 8;
 
-function handleBack(event: MouseEvent<HTMLAnchorElement>) {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-    // Astro's ClientRouter keeps an index on each entry; history.length also counts forward entries.
-    const index: unknown = window.history.state?.index;
-    const canGoBack =
-        window.navigation?.canGoBack ??
-        (typeof index === 'number' && Number.isSafeInteger(index) && index > 0);
-    if (canGoBack) {
-        event.preventDefault();
-        window.history.back();
-    }
-}
-
 /** Server-rendered, native scroll-snap gallery for the detail variant's mobile layout. */
 export function ImageGalleryMobileTrack({
     images,
     locale,
     onOpen,
     mosaicTriggerRef,
-    backHref,
     share,
     favorite
 }: Props) {
@@ -62,6 +51,20 @@ export function ImageGalleryMobileTrack({
     const trackRef = useRef<HTMLElement>(null);
     const count = images.length;
     const current = Math.min(index, count - 1);
+    // Progressive preload (HOS-2520 smoke): slides up to this index load eagerly.
+    const [eagerThrough, setEagerThrough] = useState(0);
+    const [pageReady, setPageReady] = useState(false);
+
+    useEffect(() => whenPageIdle({ win: window, onReady: () => setPageReady(true) }).cleanup, []);
+
+    useEffect(() => {
+        const { saveData } = readSaveData({ nav: navigator });
+        setEagerThrough(
+            (previous) =>
+                resolveEagerThrough({ current, count, ready: pageReady, saveData, previous })
+                    .eagerThrough
+        );
+    }, [current, count, pageReady]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: replaced images can replace the observed nodes even when the count is unchanged.
     useEffect(() => {
@@ -151,7 +154,7 @@ export function ImageGalleryMobileTrack({
                                     alt={alt}
                                     width={800}
                                     height={600}
-                                    loading={slide === 0 ? 'eager' : 'lazy'}
+                                    loading={slide <= eagerThrough ? 'eager' : 'lazy'}
                                     fetchPriority={slide === 0 ? 'high' : undefined}
                                     draggable={false}
                                 />
@@ -160,18 +163,6 @@ export function ImageGalleryMobileTrack({
                     );
                 })}
             </section>
-            <a
-                className={styles.back}
-                href={backHref}
-                aria-label={t('ui.actions.goBack')}
-                onClick={handleBack}
-            >
-                <ChevronLeftIcon
-                    size={22}
-                    aria-hidden="true"
-                    color="currentColor"
-                />
-            </a>
             {(share || favorite) && (
                 <div className={styles.actions}>
                     {share && (
@@ -192,16 +183,13 @@ export function ImageGalleryMobileTrack({
                     )}
                 </div>
             )}
-            <span
+            <GalleryCounter
                 className={styles.counter}
-                aria-live="polite"
-                aria-atomic="true"
-            >
-                {t('ui.accessibility.galleryCounter', undefined, {
+                label={t('ui.accessibility.galleryCounter', '{{current}}/{{total}}', {
                     current: current + 1,
                     total: count
                 })}
-            </span>
+            />
             {count > 1 && (
                 <div
                     className={styles.dots}
