@@ -1,6 +1,15 @@
 import type { DrizzleClient, SelectSubscription } from '@repo/db';
-import { buildEmailDedupKey, buildEventOccurrence, emailOutboxModel, eq, users } from '@repo/db';
+import {
+    buildEmailDedupKey,
+    buildEventOccurrence,
+    emailOutboxModel,
+    eq,
+    plans,
+    planVersions,
+    users
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
+import { resolvePlanDisplayName } from '../plan-display-name';
 
 const logger = createLogger('signup-declined-notice');
 
@@ -12,6 +21,26 @@ export interface EnqueueSignupDeclinedInput {
     readonly subscription: SelectSubscription;
     readonly declineReason: string | null;
     readonly successionPredecessor: boolean;
+}
+
+/**
+ * Reads the display name of the plan the signup tried to buy, through the subscription's plan
+ * version. Null when the row carries no plan version (the mail then names only the vertical).
+ */
+async function readAttemptPlanName(input: {
+    readonly tx: DrizzleClient;
+    readonly subscription: SelectSubscription;
+}): Promise<string | null> {
+    const { tx, subscription } = input;
+    if (!subscription.planVersionId) return null;
+    const [plan] = await tx
+        .select({ slug: plans.slug, name: plans.name })
+        .from(planVersions)
+        .innerJoin(plans, eq(plans.id, planVersions.planId))
+        .where(eq(planVersions.id, subscription.planVersionId))
+        .limit(1);
+    if (!plan) return null;
+    return resolvePlanDisplayName({ vertical: subscription.vertical, plan });
 }
 
 /**
@@ -33,6 +62,7 @@ export async function enqueueSignupDeclinedNotice(
         return;
     }
 
+    const planName = await readAttemptPlanName({ tx, subscription });
     const template = SIGNUP_DECLINED_TEMPLATE;
     const recipient = subscription.userId ?? '';
     const dedupKey = buildEmailDedupKey({
@@ -48,6 +78,7 @@ export async function enqueueSignupDeclinedNotice(
             payload: {
                 subscriptionId: subscription.id,
                 vertical: subscription.vertical,
+                planName,
                 declineReason,
                 successionPredecessor
             },

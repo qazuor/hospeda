@@ -205,7 +205,14 @@ describe('TEST:B3:17 declineFirstCharge', () => {
         expect(row?.nextChargeAt).toEqual(own.row.nextChargeAt);
         const mails = await ownOutbox(own.started.subscriptionId);
         expect(mails).toHaveLength(1);
-        expect(mails[0]?.payload).toMatchObject({ declineReason: 'issuer_declined' });
+        expect(mails[0]?.payload).toEqual({
+            subscriptionId: own.started.subscriptionId,
+            vertical: 'accommodation',
+            // HOS-2193: the mail names the plan the signup tried to buy, not only the vertical.
+            planName: 'Básico',
+            declineReason: 'issuer_declined',
+            successionPredecessor: false
+        });
     });
 
     it('TEST:B3:17 b — keeps CHARGE_DECLINED and logs when cancel fails', async () => {
