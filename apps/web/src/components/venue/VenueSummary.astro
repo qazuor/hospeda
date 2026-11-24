@@ -11,8 +11,8 @@
  * price sits in `MobileBookingSummary` and the experience price in
  * `ExperienceSummary`.
  *
- * The action is the same `ListingContactActions` the mobile bar uses, with
- * origin `summary`:
+ * The action is `ListingSummaryActions`, the mobile bar's `ListingContactActions`
+ * pinned to origin `summary`:
  * - a venue with a published menu gets «Ver carta» as a plain outbound link
  *   (HOS-2520 §7.8, owner decision D-1), reported by the page's delegated
  *   `[data-contact-channel]` listener;
@@ -23,7 +23,7 @@
  * Renders nothing when there is neither a price range nor an action. Public
  * listing data only, so the cached page stays session-blind.
  */
-import { ListingContactActions } from '@/components/listing/contact/ListingContactActions';
+import { ListingSummaryActions } from '@/components/listing/contact/ListingSummaryActions.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { VenueContactMode } from '@/lib/listing-contact/listing-channels';
@@ -61,7 +61,7 @@ const hasAction = contactMode.kind !== 'none';
             </p>
         )}
         {hasAction && (
-            <ListingContactActions
+            <ListingSummaryActions
                 client:idle
                 listingId={listingId}
                 vertical="venue"
@@ -73,7 +73,6 @@ const hasAction = contactMode.kind !== 'none';
                         ? 'accommodations.detail.listingContact.bar.viewMenu'
                         : 'accommodations.detail.listingContact.bar.contact'
                 }
-                origin="summary"
                 fallbackHref={fallbackHref}
                 primaryLink={contactMode.kind === 'menu' ? { href: contactMode.href, channel: 'menu' } : undefined}
             />
