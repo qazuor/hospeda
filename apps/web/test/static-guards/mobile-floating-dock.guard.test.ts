@@ -44,7 +44,7 @@ const FIXED_POSITION_FILES: Readonly<Record<string, FixedPositionCategory>> = Ob
     'components/accommodation/AiChatWidget.tsx': 'comment',
     'components/ai-search/AiSearchEntry.module.css': 'dock',
     'components/accommodation/AiChatFab.module.css': 'dock',
-    'components/ImageGallery.module.css': 'overlay',
+    'components/gallery/GalleryLightbox.module.css': 'overlay',
     'components/auth/AuthRequiredPopover.client.tsx': 'comment',
     'components/accommodation/AiChatWidget.module.css': 'overlay',
     'components/legal/CookieConsentBanner.module.css': 'bottom-bar',

@@ -13,7 +13,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const CSS = readFileSync(
-    resolve(__dirname, '../../src/components/ImageGallery.module.css'),
+    resolve(__dirname, '../../src/components/gallery/GalleryLightbox.module.css'),
     'utf8'
 );
 // The lightbox moved to gallery/GalleryLightbox.tsx (HOS-2520) to keep the island under 500 lines.

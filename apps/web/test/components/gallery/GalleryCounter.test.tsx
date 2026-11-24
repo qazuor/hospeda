@@ -36,7 +36,7 @@ describe('GalleryCounter', () => {
 
     it('owns the pill look; callers only position it', () => {
         const pill = readFileSync('src/components/gallery/GalleryCounter.module.css', 'utf8');
-        const lightbox = readFileSync('src/components/ImageGallery.module.css', 'utf8');
+        const lightbox = readFileSync('src/components/gallery/GalleryLightbox.module.css', 'utf8');
         expect(pill).toMatch(/background: var\(--surface-dark\);/);
         expect(pill).toMatch(/font-variant-numeric: tabular-nums;/);
         const lightboxRule = lightbox.match(/\.lightboxCounter \{[^}]*\}/)?.[0] ?? '';

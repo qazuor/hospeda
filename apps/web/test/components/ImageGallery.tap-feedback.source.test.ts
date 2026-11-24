@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string): string => readFileSync(resolve(__dirname, '../../src', path), 'utf8');
 const GALLERY_CSS = read('components/ImageGallery.module.css');
 const TRACK_CSS = read('components/ImageGalleryMobileTrack.module.css');
+const LIGHTBOX_CSS = read('components/gallery/GalleryLightbox.module.css');
 
 /** Body of the first rule whose selector list contains `selector`. */
 function ruleFor({ css, selector }: { readonly css: string; readonly selector: string }): string {
@@ -81,13 +82,13 @@ describe('gallery tap feedback CSS', () => {
 
 describe('lightbox open cost CSS', () => {
     it('gives the photo a fixed-size stage and lays the placeholder over it', () => {
-        expect(GALLERY_CSS).toMatch(/\.lightboxStage \{[^}]*height:\s*70vh/);
-        expect(GALLERY_CSS).toMatch(/\.lightboxPlaceholder \{[^}]*position:\s*absolute/);
-        expect(GALLERY_CSS).toMatch(/\.lightboxPlaceholder \{[^}]*object-fit:\s*contain/);
+        expect(LIGHTBOX_CSS).toMatch(/\.lightboxStage \{[^}]*height:\s*70vh/);
+        expect(LIGHTBOX_CSS).toMatch(/\.lightboxPlaceholder \{[^}]*position:\s*absolute/);
+        expect(LIGHTBOX_CSS).toMatch(/\.lightboxPlaceholder \{[^}]*object-fit:\s*contain/);
     });
 
     it('skips rendering off-screen strip thumbnails', () => {
-        expect(GALLERY_CSS).toMatch(/\.lightboxThumbs > li \{[^}]*content-visibility:\s*auto/);
+        expect(LIGHTBOX_CSS).toMatch(/\.lightboxThumbs > li \{[^}]*content-visibility:\s*auto/);
     });
 });
 

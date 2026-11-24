@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import type { GalleryImage } from '../ImageGallery.client';
-import styles from '../ImageGallery.module.css';
+import styles from './GalleryLightbox.module.css';
 import { buildLightboxThumbUrl } from './gallery-image-sources';
 
 /**

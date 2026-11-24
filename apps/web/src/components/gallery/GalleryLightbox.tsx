@@ -19,9 +19,9 @@ import {
 } from '@/components/shared/ui/Dialog.client';
 import { useSwipe } from '@/hooks/useSwipe';
 import type { GalleryImage } from '../ImageGallery.client';
-import styles from '../ImageGallery.module.css';
 import mobileStyles from '../ImageGalleryMobileTrack.module.css';
 import { GalleryCounter } from './GalleryCounter';
+import styles from './GalleryLightbox.module.css';
 import { LightboxCaption } from './GalleryLightboxCaption';
 import { GalleryLightboxThumbs } from './GalleryLightboxThumbs';
 import { buildLightboxUrl } from './gallery-image-sources';

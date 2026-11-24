@@ -6,7 +6,7 @@
 
 import { useId, useState } from 'react';
 import type { GalleryImage } from '../ImageGallery.client';
-import styles from '../ImageGallery.module.css';
+import styles from './GalleryLightbox.module.css';
 
 /** Description length above which the mobile "ver más" toggle is offered. */
 const DESCRIPTION_TOGGLE_THRESHOLD = 90;
