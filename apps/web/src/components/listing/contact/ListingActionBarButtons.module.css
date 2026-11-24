@@ -26,15 +26,15 @@
 
 /* Primary by every means except width: first, larger (52×44), white with the
  * brand orange (HOS-2607, owner rule: white with orange or white with blue, never
- * orange on the blue-ish dock). `--on-action-accent` is white in both themes. The
- * orange ink keeps the light `--brand-accent-text` lightness in dark mode too
- * (that token lightens to 0.72 there, too light on white), and a soft orange ring
- * plus the card shadow keep it reading as the primary control. */
+ * orange on the blue-ish dock). `--on-action-accent` is white in both themes.
+ * `--brand-accent-l82` is the brand orange at ~0.58 lightness in BOTH themes
+ * (`--brand-accent-text` lightens to 0.72 in dark, too light on white), and a
+ * soft orange ring plus the card shadow keep it reading as the primary control. */
 .primary {
     inline-size: 52px;
     border: 1.5px solid var(--brand-accent-a35);
     background: var(--on-action-accent);
-    color: oklch(from var(--brand-accent-text) min(l, 0.58) c h);
+    color: var(--brand-accent-l82);
     box-shadow: var(--shadow-card);
 }
 
