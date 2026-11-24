@@ -25,13 +25,13 @@ export function GraceReminder({
     readonly scheduledChange?: { readonly planName: string; readonly effectiveDate: string };
 }) {
     const verticalName = formatTrialVerticals({ verticals: [vertical] });
-    const remaining = daysBefore === 1 ? '1 día' : `${daysBefore} días`;
+    const remaining = daysBefore === 1 ? 'Falta 1 día' : `Faltan ${daysBefore} días`;
     return (
         <EmailLayout previewText={GRACE_REMINDER_SUBJECT}>
             <Heading>{GRACE_REMINDER_SUBJECT}</Heading>
             <Text>
-                Tu suscripción de {verticalName} sigue en período de gracia. Faltan {remaining} para
-                el {formatDate({ dateString: graceEndDate })}, cuando termina este período.
+                Tu suscripción de {verticalName} sigue en período de gracia. {remaining} para el{' '}
+                {formatDate({ dateString: graceEndDate })}, cuando termina este período.
             </Text>
             {paymentMethod === 'CARD' ? (
                 <Text>

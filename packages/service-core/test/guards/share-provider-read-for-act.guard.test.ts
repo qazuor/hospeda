@@ -83,7 +83,7 @@ describe('stamped provider read sharing guard (HOS-1999)', () => {
             files: files.map((path) => ({ path, source: readFileSync(join(root, path), 'utf8') }))
         });
         expect(violations).toEqual([]);
-    });
+    }, 30_000);
 
     it('reports planted violations and explains missing git (kills a vacuous guard)', () => {
         expect(

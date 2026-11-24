@@ -14,6 +14,7 @@ import {
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import type { SinkFact } from '../../../src/services/billing/facts/billing-fact-sink.js';
 import { grantPermanentGrant } from '../../../src/services/billing/grant/permanent-grant.service.js';
 import { runS13InTransaction } from '../../../src/services/billing/grant/permanent-grant-s13.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
@@ -86,13 +87,17 @@ async function seedCase(vertical = V, status = 'ACTIVE') {
     });
 }
 
-function ports(onNotice: () => Promise<void> = async () => undefined) {
+function ports(onNotice: () => Promise<void> = async () => undefined, facts: SinkFact[] = []) {
     const clock = { now: () => now };
     return {
         planPolicy: currentFloorPolicy,
         clock,
         provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
-        billingFacts: { emit: () => undefined },
+        billingFacts: {
+            emit: (fact: SinkFact) => {
+                facts.push(fact);
+            }
+        },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: onNotice },
         orphanhood: {
@@ -400,6 +405,35 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 .where(eq(subscriptions.id, seeded.subscriptionId));
             expect(again.cancelled).toEqual([]);
             expect(after?.updatedAt).toEqual(before?.updatedAt);
+        });
+
+        it('g — a courtesy cancellation emits one exact subscription-cancelled fact', async () => {
+            const seeded = await seedCase(V, 'ACTIVE');
+            const facts: SinkFact[] = [];
+            await grantPermanentGrant(
+                {
+                    beneficiaryUserId: seeded.userId,
+                    actor: grantSignerActor(seeded.adminId),
+                    reason: 'S13 analytics fact',
+                    includesAddons: false,
+                    anchors: [{ vertical: V, ...seeded.anchor }]
+                },
+                ports(undefined, facts)
+            );
+            expect(facts).toEqual([
+                {
+                    kind: 'SUBSCRIPTION_CANCELLED',
+                    userId: seeded.userId,
+                    vertical: V,
+                    subscriptionId: seeded.subscriptionId,
+                    subscriptionClass: 'PRINCIPAL',
+                    actorKind: 'ADMIN',
+                    cancelledBy: 'ADMIN',
+                    path: 'INHERITED_BY_PLAN',
+                    wasScheduled: false,
+                    occurredAt: now
+                }
+            ]);
         });
     }
 );

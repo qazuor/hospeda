@@ -14,6 +14,7 @@ import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
 import {
     BEFORE_CANCEL_TEMPLATE_BY_KIND,
@@ -46,10 +47,41 @@ const serviceInputSchema = z.strictObject({
     everyMonths: z.number().int().min(1).max(12)
 });
 
+/** The R18 service end and the basis that produced it, for the analytics fact. */
+export interface OurCancellationDecision {
+    readonly serviceEndsAt: Date;
+    readonly basis: 'PAID_PERIOD' | 'CREDIT' | 'NOW';
+}
+
 /**
- * Computes the service end date for the R18 mirror using the newest open paid
- * period (via `billingPeriodEnd`) or the remaining first-charge credit
- * (`DEC-SUB-006`). Pure function — no database access, no side effects.
+ * Computes the service end date and its basis for the R18 mirror using the newest open paid
+ * period (via `billingPeriodEnd`) or the remaining first-charge credit (`DEC-SUB-006`). Pure
+ * function — no database access, no side effects.
+ * @param input - Payment period, cadence, optional first-charge credit and fresh read instant
+ * @returns The scheduled service end date and the basis that produced it
+ */
+export function ourCancellationDecision(input: {
+    readonly lastPaidPeriodStart: Date | null;
+    readonly everyMonths: number;
+    readonly firstChargeAt: Date | null;
+    readonly readAt: Date;
+}): OurCancellationDecision {
+    const value = inputSchema.parse(input);
+    if (value.lastPaidPeriodStart)
+        return {
+            serviceEndsAt: billingPeriodEnd({
+                periodStart: value.lastPaidPeriodStart,
+                everyMonths: value.everyMonths
+            }).periodEnd,
+            basis: 'PAID_PERIOD'
+        };
+    if (value.firstChargeAt && value.firstChargeAt > value.readAt)
+        return { serviceEndsAt: value.firstChargeAt, basis: 'CREDIT' };
+    return { serviceEndsAt: value.readAt, basis: 'NOW' };
+}
+
+/**
+ * Computes the service end date for the R18 mirror.
  * @param input - Payment period, cadence, optional first-charge credit and fresh read instant
  * @returns The scheduled service end date
  */
@@ -59,14 +91,7 @@ export function ourCancellationServiceEnd(input: {
     readonly firstChargeAt: Date | null;
     readonly readAt: Date;
 }): Date {
-    const value = inputSchema.parse(input);
-    if (value.lastPaidPeriodStart)
-        return billingPeriodEnd({
-            periodStart: value.lastPaidPeriodStart,
-            everyMonths: value.everyMonths
-        }).periodEnd;
-    if (value.firstChargeAt && value.firstChargeAt > value.readAt) return value.firstChargeAt;
-    return value.readAt;
+    return ourCancellationDecision(input).serviceEndsAt;
 }
 
 export type MirrorOurCancellationResult =
@@ -85,8 +110,9 @@ export type MirrorOurCancellationResult =
  * the row, verifies we enqueued a «before-cancel» notice by `kind` (template)
  * + `payload.subscriptionId` (Coord-522: never the occurrence or dedup_key),
  * computes the service end from the newest open paid period, writes
- * `CANCEL_SCHEDULED` with the computed end, and emits a post-commit `CHANGED`
- * coverage notice. It never opens a `coverage_loss` record, calls the
+ * `CANCEL_SCHEDULED` with the computed end, emits a post-commit `CANCEL_SCHEDULED`
+ * analytics fact so the scheduled cancellation is not lost (HOS-2356), and emits a
+ * post-commit `CHANGED` coverage notice. It never opens a `coverage_loss` record, calls the
  * payment provider, enqueues only the paid-after-cancellation notice required by
  * AC:B13a:17 in the same transaction, or touches grace-clock columns.
  *
@@ -98,7 +124,7 @@ export type MirrorOurCancellationResult =
  * same transaction after the `UPDATE`, in HOS-1562 (B7.5).
  *
  * @param input - The receiver's already re-read subscription and cadence
- * @param ports - Clock and optional post-commit coverage listener
+ * @param ports - Clock, optional post-commit coverage listener and fact sink
  * @returns Whether our notice was found and the active row was scheduled
  */
 export async function mirrorOurCancellationOnActive(
@@ -109,6 +135,7 @@ export async function mirrorOurCancellationOnActive(
         readonly complements?: ComplementPolicyPorts;
         readonly provider?: PaymentProvider;
         readonly beforeCancelNotice?: BeforeCancelNotice;
+        readonly billingFacts?: BillingFactSink;
     }
 ): Promise<MirrorOurCancellationResult> {
     const value = serviceInputSchema.parse(input);
@@ -144,12 +171,13 @@ export async function mirrorOurCancellationOnActive(
             )
             .orderBy(sql`${coveredPeriods.periodStart} DESC`)
             .limit(1);
-        const serviceEndsAt = ourCancellationServiceEnd({
+        const decision = ourCancellationDecision({
             lastPaidPeriodStart: period?.periodStart ?? null,
             everyMonths: value.everyMonths,
             firstChargeAt: row.firstChargeAt,
             readAt: value.readAt
         });
+        const serviceEndsAt = decision.serviceEndsAt;
         const [updated] = await tx
             .update(subscriptions)
             .set({ status: 'CANCEL_SCHEDULED', serviceEndsAt, updatedAt: ports.clock.now() })
@@ -172,6 +200,7 @@ export async function mirrorOurCancellationOnActive(
         return {
             outcome: 'SCHEDULED' as const,
             serviceEndsAt,
+            basis: decision.basis,
             userId: updated.userId,
             vertical: updated.vertical,
             ...(complements ? { complements: complements.decided } : {})
@@ -180,6 +209,20 @@ export async function mirrorOurCancellationOnActive(
     if (result.outcome !== 'SCHEDULED') return result;
     const vertical = VerticalEnumSchema.safeParse(result.vertical);
     if (result.userId && vertical.success) {
+        emitBillingFact({
+            sink: ports.billingFacts,
+            fact: {
+                kind: 'CANCEL_SCHEDULED',
+                userId: result.userId,
+                vertical: vertical.data,
+                subscriptionId: value.subscriptionId,
+                subscriptionClass: 'PRINCIPAL',
+                actorKind: 'SYSTEM',
+                occurredAt: ports.clock.now(),
+                serviceEndsAt: result.serviceEndsAt,
+                basis: result.basis
+            }
+        });
         try {
             await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
                 userId: result.userId,

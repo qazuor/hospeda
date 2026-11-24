@@ -23,7 +23,7 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
         expect(result.subject).toBe(GRACE_REMINDER_SUBJECT);
         expect(html).toContain('Comer y salir');
         expect(html).toContain('19 de octubre de 2026');
-        expect(html).toContain('3 días');
+        expect(html).toContain('Faltan 3 días');
         expect(html).toContain('Mercado Pago');
         expect(html).toContain('https://hospeda.test/es/mi-cuenta/suscripcion/');
         expect(html).not.toContain('private-id');
@@ -41,7 +41,9 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
         const result = renderers['billing.grace-reminder']!({
             row: row({ template: 'billing.grace-reminder', payload: { ...base, daysBefore: 1 } })
         });
-        expect(renderToStaticMarkup(result.react)).toContain('1 día');
+        const singularHtml = renderToStaticMarkup(result.react);
+        expect(singularHtml).toContain('Falta 1 día');
+        expect(singularHtml).not.toContain('Faltan 1 día');
         expect(() =>
             renderers['billing.grace-reminder']!({
                 row: row({ template: 'billing.grace-reminder', payload: {} })
