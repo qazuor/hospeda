@@ -10,11 +10,11 @@
     margin: 0;
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     line-height: 1.45;
     color: var(--core-foreground);
     text-align: center;
     background-color: var(--surface-warm);
     border: 1px solid var(--border);
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
 }

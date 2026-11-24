@@ -17,8 +17,8 @@
     height: 96px;
     border-radius: 50%;
     overflow: hidden;
-    border: 3px solid var(--border, oklch(0.8 0 0));
-    background-color: var(--surface-warm, oklch(0.97 0.01 60));
+    border: 3px solid var(--border);
+    background-color: var(--surface-warm);
     flex-shrink: 0;
 }
 
@@ -35,12 +35,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--brand-primary, oklch(0.5 0.18 260));
+    background-color: var(--brand-primary);
 }
 
 .initials {
     font-family: var(--font-heading);
-    font-size: 1.75rem;
+    font-size: var(--app-title-size);
     font-weight: 700;
     color: var(--primary-foreground);
     line-height: 1;
@@ -52,7 +52,7 @@
 .overlay {
     position: absolute;
     inset: 0;
-    background-color: oklch(0 0 0 / 0.45);
+    background-color: var(--overlay-bg-light);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -72,7 +72,7 @@
     display: inline-block;
     width: 24px;
     height: 24px;
-    border: 3px solid white;
+    border: 3px solid var(--palette-neutral-50);
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.75s linear infinite;
@@ -94,7 +94,7 @@
 
 .hint {
     font-family: var(--font-sans);
-    font-size: 0.78rem;
+    font-size: var(--app-caption-size);
     color: var(--core-muted-foreground);
     margin: 0;
     text-align: center;
@@ -115,8 +115,8 @@
 
 .errorMsg {
     font-family: var(--font-sans);
-    font-size: 0.85rem;
-    color: var(--destructive, oklch(0.55 0.22 25));
+    font-size: var(--app-ui-size);
+    color: var(--destructive);
     margin: 0;
     text-align: center;
     max-width: 260px;
@@ -124,8 +124,8 @@
 
 .successMsg {
     font-family: var(--font-sans);
-    font-size: 0.85rem;
-    color: var(--success, oklch(0.55 0.18 145));
+    font-size: var(--app-ui-size);
+    color: var(--success);
     margin: 0;
     text-align: center;
     max-width: 260px;

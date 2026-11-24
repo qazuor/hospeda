@@ -13,7 +13,7 @@
 .text {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     line-height: 1.5;
     color: var(--core-foreground);
 }
@@ -21,7 +21,7 @@
 .trialNote {
     margin: var(--space-3, 12px) 0 0;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     line-height: 1.5;
     color: var(--core-muted-foreground);
 }
@@ -29,7 +29,7 @@
 .error {
     margin: var(--space-3, 12px) 0 0;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--destructive);
 }
 
@@ -40,10 +40,10 @@
     justify-content: center;
     min-height: 44px;
     padding: 8px 18px;
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-button);
     font-family: var(--font-sans);
     font-weight: 500;
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     text-decoration: none;
     white-space: nowrap;
     cursor: pointer;
@@ -53,23 +53,23 @@
 }
 
 .primary {
-    background-color: oklch(0.55 0.18 145);
-    color: #ffffff;
-    border: 1px solid oklch(0.5 0.18 145);
+    background-color: var(--success);
+    color: var(--success-foreground);
+    border: 1px solid var(--success);
 }
 
 .primary:hover:not(:disabled) {
-    background-color: oklch(0.5 0.18 145);
+    background-color: var(--status-success-solid);
 }
 
 .secondary {
-    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+    background-color: var(--surface-warm);
     color: var(--core-foreground);
     border: 1px solid var(--border);
 }
 
 .secondary:hover {
-    background-color: var(--muted, oklch(0.93 0.01 60));
+    background-color: var(--muted);
 }
 
 .primary:disabled {

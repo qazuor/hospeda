@@ -1,17 +1,1 @@
-{
-    "apps/web/src/components/account/HostTradeEditForm.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/account/WhatsNewModal.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/host/editor/CalendarSyncPanel.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/host/editor/amenity-catalog/AmenityDetailsDialog.module.css": {
-        "media": 1
-    },
-    "apps/web/src/components/newsletter/WhatsAppCTA.module.css": {
-        "media": 1
-    }
-}
+{}

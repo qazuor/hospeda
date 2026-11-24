@@ -15,7 +15,7 @@
 .sectionTitle {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 1.125rem;
+    font-size: var(--app-card-title-size);
     color: var(--core-foreground);
     margin: 0 0 var(--space-2, 0.5rem);
     padding-bottom: var(--space-2, 0.5rem);
@@ -29,7 +29,7 @@
     flex-direction: column;
     gap: var(--space-2, 0.5rem);
     padding: var(--space-3, 1rem);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: var(--surface-warm);
     border: 1px solid var(--border);
 }
@@ -37,14 +37,14 @@
 .channelIntroTitle {
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     color: var(--core-foreground);
     margin: 0;
 }
 
 .channelIntroBody {
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     color: var(--core-muted-foreground);
     margin: 0;
     line-height: 1.5;
@@ -52,7 +52,7 @@
 
 .channelIntroNote {
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     font-weight: 500;
     color: var(--core-foreground);
     margin: 0;
@@ -61,12 +61,12 @@
 
 .error {
     padding: 0.625rem 0.875rem;
-    border-radius: var(--radius-md, 10px);
-    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
+    border-radius: var(--radius-md);
+    background-color: var(--destructive-a10);
     color: var(--destructive);
-    border: 1px solid var(--destructive-a25, oklch(0.88 0.06 25));
+    border: 1px solid var(--destructive-a25);
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     margin: 0;
 }
 
@@ -77,7 +77,7 @@
 .question {
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-foreground);
     margin: 0 0 var(--space-1, 0.25rem);
     word-break: break-word;
@@ -96,18 +96,18 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.125rem 0.5rem;
-    border-radius: var(--radius-pill, 9999px);
+    border-radius: var(--radius-pill);
     background: var(--surface-warm);
     border: 1px solid var(--border);
     color: var(--core-muted-foreground);
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: var(--app-caption-size);
     font-weight: 500;
 }
 
 .answer {
     font-family: var(--font-sans);
-    font-size: var(--text-body-sm, 0.9375rem);
+    font-size: var(--text-body-sm);
     color: var(--core-muted-foreground);
     margin: 0;
     display: -webkit-box;
@@ -124,11 +124,11 @@
     gap: 0.375rem;
     padding: 0.25rem 0.625rem;
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm, 0.25rem);
+    border-radius: var(--radius-sm);
     background: var(--core-background);
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: 0.8125rem;
+    font-size: var(--app-meta-size);
     cursor: pointer;
     transition:
         border-color 150ms ease-out,
@@ -155,7 +155,7 @@
 .fieldLabel {
     font-family: var(--font-sans);
     font-weight: 500;
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
 }
 
@@ -163,11 +163,11 @@
     width: 100%;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: var(--core-background);
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: var(--text-body, 1rem);
+    font-size: var(--text-body);
     resize: vertical;
     box-sizing: border-box;
 }
@@ -180,14 +180,14 @@
 /* Invalid state (HOS-794) — same treatment as `.fieldInput[aria-invalid]`
  * in the rest of the editor (BasicInfoSection & co.). */
 .textarea[aria-invalid="true"] {
-    border-color: oklch(0.55 0.22 25);
+    border-color: var(--status-danger-solid);
 }
 
 /* Per-field validation message (HOS-794) */
 .fieldError {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
-    color: oklch(0.45 0.2 25);
+    font-size: var(--app-caption-size);
+    color: var(--status-danger-fg);
     margin: 0;
 }
 
@@ -203,7 +203,7 @@
     align-items: center;
     gap: 0.375rem;
     font-family: var(--font-sans);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
     color: var(--core-foreground);
     cursor: pointer;
 }
@@ -217,12 +217,12 @@
 .saveBtn {
     padding: var(--space-2) var(--space-4);
     border: none;
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: var(--brand-primary);
-    color: var(--primary-foreground, #fff);
+    color: var(--primary-foreground);
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     cursor: pointer;
 }
 
@@ -234,11 +234,11 @@
 .cancelBtn {
     padding: var(--space-2) var(--space-4);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--core-foreground);
     font-family: var(--font-sans);
-    font-size: 0.9375rem;
+    font-size: var(--app-control-size);
     cursor: pointer;
 }
 
@@ -249,7 +249,7 @@
 .aiDraftButton {
     margin-block: var(--space-2);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md);
     padding: var(--space-2) var(--space-3);
     background: var(--surface-warm);
     color: var(--brand-primary);
@@ -264,5 +264,5 @@
 .aiDraftDisclaimer {
     margin-block: 0 var(--space-2);
     color: var(--core-muted-foreground);
-    font-size: 0.875rem;
+    font-size: var(--app-ui-size);
 }
