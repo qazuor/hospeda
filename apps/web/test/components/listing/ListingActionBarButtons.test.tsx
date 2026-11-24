@@ -149,7 +149,9 @@ describe('ListingActionBarButtons: render rules', () => {
         ]);
         const consultar = screen.getByRole('link', { name: 'Consultar' });
         expect(consultar).toHaveAttribute('data-action', 'primary');
-        expect(consultar.className).toContain('btn-gradient--accent');
+        // HOS-2607: white with orange, never the orange gradient on the dock.
+        expect(consultar.className).not.toContain('btn-gradient');
+        expect(consultar.className).toMatch(/primary/);
         expect(screen.getByRole('link', { name: 'Escribir por WhatsApp' })).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'Llamar' })).toHaveAttribute(
             'href',
@@ -310,7 +312,8 @@ describe('ListingActionBarButtons: render rules', () => {
         expect(actionsOf(container)[0]).toBe('primary');
         const menu = screen.getByRole('link', { name: 'Ver carta' });
         expect(menu).toHaveAttribute('data-action', 'primary');
-        expect(menu.className).toContain('btn-gradient--accent');
+        expect(menu.className).not.toContain('btn-gradient');
+        expect(menu.className).toMatch(/primary/);
         expect(menu).toHaveAttribute('data-contact-channel', 'menu');
         expect(menu).toHaveAttribute('href', 'https://bar.test/carta');
         expect(screen.queryByRole('link', { name: 'Consultar' })).not.toBeInTheDocument();

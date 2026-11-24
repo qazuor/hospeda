@@ -160,7 +160,7 @@ export function ListingActionBarButtons({
             {primary?.kind === 'menu' && (
                 <a
                     href={primary.href}
-                    className={`${styles.primary} btn-gradient--accent`}
+                    className={styles.primary}
                     aria-label={t('accommodations.detail.listingContact.bar.actions.viewMenu')}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -170,6 +170,7 @@ export function ListingActionBarButtons({
                 >
                     <ForkKnifeIcon
                         size={22}
+                        weight="bold"
                         aria-hidden="true"
                     />
                 </a>
@@ -177,7 +178,7 @@ export function ListingActionBarButtons({
             {primary?.kind === 'inquire' && (
                 <a
                     href={fallbackHref}
-                    className={`${styles.primary} btn-gradient--accent`}
+                    className={styles.primary}
                     aria-label={t('accommodations.detail.listingContact.bar.actions.inquire')}
                     aria-haspopup={panelReady ? 'dialog' : undefined}
                     data-action="primary"
@@ -185,6 +186,7 @@ export function ListingActionBarButtons({
                 >
                     <ChatIcon
                         size={22}
+                        weight="bold"
                         aria-hidden="true"
                     />
                 </a>
@@ -247,7 +249,6 @@ export function ListingActionBarButtons({
                 <FavoriteButton
                     entityId={listingId}
                     entityType={FAVORITE_ENTITY_TYPES[vertical]}
-                    variant="compact"
                     locale={locale}
                     origin="bar"
                     labels={{
