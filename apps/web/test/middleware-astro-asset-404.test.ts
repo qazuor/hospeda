@@ -23,13 +23,22 @@ vi.mock('../src/lib/middleware-helpers', async (importOriginal) => {
 
 import { onRequest } from '../src/middleware';
 
+/** Stand-in for the rendered `/404` error page, as Astro returns it from `rewrite`. */
+const errorPage = (): Response =>
+    new Response('<html><body>not found</body></html>', {
+        status: 404,
+        headers: { 'content-type': 'text/html' }
+    });
+
 /** Run the middleware for `pathname`, with `downstream` standing in for Astro's router. */
 async function run({
     pathname,
-    downstream
+    downstream,
+    rewritten
 }: {
     readonly pathname: string;
     readonly downstream: () => Response;
+    readonly rewritten?: () => Response;
 }): Promise<Response> {
     const context = {
         url: new URL(`https://hospeda.test${pathname}`),
@@ -39,7 +48,7 @@ async function run({
         redirect: (target: string, status = 302) =>
             new Response(null, { status, headers: { location: target } }),
         cookies: { get: vi.fn() },
-        rewrite: async () => downstream()
+        rewrite: async () => (rewritten ?? downstream)()
     };
     const handler = onRequest as unknown as (
         ctx: unknown,
@@ -87,5 +96,86 @@ describe('middleware: /_astro/* 404 (HOS-2578)', () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get('Cache-Control')).toBe(immutable);
+    });
+});
+
+describe('middleware: other 404s (HOS-2578)', () => {
+    it('forbids caching a 404 from the image endpoint', async () => {
+        // Arrange
+        const downstream = () => new Response('Not Found', { status: 404 });
+
+        // Act
+        const response = await run({ pathname: '/_image', downstream });
+
+        // Assert
+        expect(response.status).toBe(404);
+        expect(response.headers.get('Cache-Control')).toBe('no-store');
+    });
+
+    it('forbids caching a 404 from a content-addressed endpoint (icons sprite)', async () => {
+        const downstream = () => new Response('Not Found', { status: 404 });
+
+        const response = await run({ pathname: '/icons/sprite.deadbeef.svg', downstream });
+
+        expect(response.status).toBe(404);
+        expect(response.headers.get('Cache-Control')).toBe('no-store');
+    });
+
+    it.each([
+        '/es/nope-xyz/',
+        '/es/alojamientos/slug-not-published-yet/'
+    ])('forbids caching the rendered 404 page for %s', async (pathname) => {
+        // Arrange: the page answers a body-less 404, middleware rewrites to /404
+        const downstream = () => new Response(null, { status: 404 });
+
+        // Act
+        const response = await run({ pathname, downstream, rewritten: errorPage });
+
+        // Assert
+        expect(response.status).toBe(404);
+        expect(response.headers.get('Cache-Control')).toBe('no-store');
+        expect(response.headers.get('Cache-Tag')).toBeNull();
+    });
+
+    it('replaces a shared Cache-Control the 404 page might carry, and drops its Cache-Tag', async () => {
+        const downstream = () => new Response(null, { status: 404 });
+        const rewritten = () =>
+            new Response('<html></html>', {
+                status: 404,
+                headers: {
+                    'content-type': 'text/html',
+                    'Cache-Control': 'public, s-maxage=3600',
+                    'Cache-Tag': 'x'
+                }
+            });
+
+        const response = await run({ pathname: '/es/nope-xyz/', downstream, rewritten });
+
+        expect(response.headers.get('Cache-Control')).toBe('no-store');
+    });
+
+    it('leaves a 200 page cache header untouched', async () => {
+        const downstream = () =>
+            new Response('<html></html>', {
+                status: 200,
+                headers: { 'content-type': 'text/html', 'Cache-Control': 'private, no-cache' }
+            });
+
+        const response = await run({ pathname: '/es/alojamientos/', downstream });
+
+        expect(response.headers.get('Cache-Control')).toBe('private, no-cache');
+    });
+
+    it('keeps 410 semantics: status 410 and no forced no-store', async () => {
+        const downstream = () => new Response(null, { status: 410 });
+
+        const response = await run({
+            pathname: '/es/partners/gone/',
+            downstream,
+            rewritten: errorPage
+        });
+
+        expect(response.status).toBe(410);
+        expect(response.headers.get('Cache-Control')).not.toBe('no-store');
     });
 });
