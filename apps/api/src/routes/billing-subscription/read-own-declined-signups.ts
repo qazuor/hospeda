@@ -1,34 +1,28 @@
 import {
     type DeclinedSignupNotice,
     type ExpiredDeclinedSignupNotice,
-    readOwnDeclinedSignupNotices,
-    readOwnExpiredDeclinedSignups
+    readOwnDeclinedSignupsForPage
 } from '@repo/service-core';
 import { getClock } from '../../utils/clock';
 
 export type { DeclinedSignupNotice, ExpiredDeclinedSignupNotice } from '@repo/service-core';
 
-/**
- * Reads the caller's declined signups with the API clock. The rule itself lives in
- * service-core (`declined-signup-notices.ts`), shared with every reader that shows a
- * `CHARGE_DECLINED` row (HOS-2553).
- *
- * @param userId - The authenticated owner.
- * @returns The declined signups the owner should still hear about.
- */
-export async function readOwnDeclinedSignups(userId: string): Promise<DeclinedSignupNotice[]> {
-    return readOwnDeclinedSignupNotices({ userId, now: getClock().clock.now() });
+/** The caller's two declined-signup notices, from one read and one clock instant. */
+export interface OwnDeclinedSignups {
+    /** Declined signups still inside the seven-day retry window (HOS-2064). */
+    readonly retry: DeclinedSignupNotice[];
+    /** Declined signups past the window, offered a fresh start (HOS-2193). */
+    readonly expired: ExpiredDeclinedSignupNotice[];
 }
 
 /**
- * Reads the caller's declined signups whose seven-day retry window has passed (HOS-2193), with
- * the API clock. The page offers a fresh start for each one's vertical.
+ * Reads the caller's declined signups with the API clock, once. The rules live in service-core
+ * (`declined-signup-notices.ts`); both lists come from the same rows and the same instant, so a
+ * signup is never in both (HOS-2553, HOS-2193).
  *
  * @param userId - The authenticated owner.
- * @returns The expired declined signups, one per vertical at most.
+ * @returns The retry notices and the expired notices.
  */
-export async function readOwnExpiredDeclinedSignupNotices(
-    userId: string
-): Promise<ExpiredDeclinedSignupNotice[]> {
-    return readOwnExpiredDeclinedSignups({ userId, now: getClock().clock.now() });
+export async function readOwnDeclinedSignups(userId: string): Promise<OwnDeclinedSignups> {
+    return readOwnDeclinedSignupsForPage({ userId, now: getClock().clock.now() });
 }

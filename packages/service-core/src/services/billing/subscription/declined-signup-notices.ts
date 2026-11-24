@@ -134,7 +134,9 @@ export interface ExpiredDeclinedSignupNotice {
  * Pure rule for the notice that follows {@link selectDeclinedSignupNotices} (one per vertical at
  * most, ordered by vertical). A declined row is listed when it is the vertical's LAST signup
  * attempt, the vertical has no live subscription, and at least
- * {@link DECLINED_SIGNUP_NOTICE_DAYS} days have passed since the decline. It is the exact
+ * {@link DECLINED_SIGNUP_NOTICE_DAYS} days have passed since the decline. It deliberately does
+ * not look at `billingOptionId`, unlike the retry notice: it offers a fresh start, which needs
+ * no billing option, so a declined row without one still gets the restart path. It is the exact
  * complement of the retry notice, so a vertical never shows both.
  *
  * @param input.rows - Every PRINCIPAL row of one owner, any status.
@@ -177,19 +179,31 @@ export async function readOwnDeclinedSignupNotices(input: {
     return selectDeclinedSignupNotices({ rows: candidates, now: input.now });
 }
 
+/** Both declined-signup notices of one owner, derived from one snapshot and one instant. */
+export interface OwnDeclinedSignupsForPage {
+    /** Declined signups still inside the retry window. */
+    readonly retry: DeclinedSignupNotice[];
+    /** Declined signups whose retry window has passed (restart path only). */
+    readonly expired: ExpiredDeclinedSignupNotice[];
+}
+
 /**
- * Reads the owner's PRINCIPAL rows and applies {@link selectExpiredDeclinedSignups}.
+ * Reads the owner's PRINCIPAL rows ONCE and derives both the retry notices and the expired
+ * notices from those rows and the same instant, so a row can never be in both lists.
  *
  * @param input.userId - The owner; only their own rows are read.
- * @param input.now - The caller's clock instant.
- * @returns The declined signups whose retry window has passed.
+ * @param input.now - The caller's clock instant, used for both rules.
+ * @returns The retry notices and the expired notices.
  */
-export async function readOwnExpiredDeclinedSignups(input: {
+export async function readOwnDeclinedSignupsForPage(input: {
     readonly userId: string;
     readonly now: Date;
-}): Promise<ExpiredDeclinedSignupNotice[]> {
-    const candidates = await readOwnPrincipalCandidates(input.userId);
-    return selectExpiredDeclinedSignups({ rows: candidates, now: input.now });
+}): Promise<OwnDeclinedSignupsForPage> {
+    const rows = await readOwnPrincipalCandidates(input.userId);
+    return {
+        retry: selectDeclinedSignupNotices({ rows, now: input.now }),
+        expired: selectExpiredDeclinedSignups({ rows, now: input.now })
+    };
 }
 
 async function readOwnPrincipalCandidates(userId: string): Promise<DeclinedSignupCandidateRow[]> {

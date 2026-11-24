@@ -13,7 +13,7 @@
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { Hono } from 'hono';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { protectedBillingSubscriptionReadRoutes } from '../../../src/routes/billing-subscription/index';
 import type { AppBindings } from '../../../src/types';
 import { injectClock } from '../../../src/utils/clock';
@@ -27,8 +27,7 @@ const OPTION_ID = '77777777-7777-4777-8777-777777777777';
 
 const mocks = vi.hoisted(() => ({
     readOwnPlanState: vi.fn(),
-    readOwnDeclinedSignups: vi.fn(),
-    readOwnExpiredDeclinedSignupNotices: vi.fn()
+    readOwnDeclinedSignups: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
@@ -36,8 +35,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     readOwnPlanState: mocks.readOwnPlanState
 }));
 vi.mock('../../../src/routes/billing-subscription/read-own-declined-signups', () => ({
-    readOwnDeclinedSignups: mocks.readOwnDeclinedSignups,
-    readOwnExpiredDeclinedSignupNotices: mocks.readOwnExpiredDeclinedSignupNotices
+    readOwnDeclinedSignups: mocks.readOwnDeclinedSignups
 }));
 
 /** The two rows the reader returns, exactly as `readOwnSubscriptions` builds them. */
@@ -199,15 +197,11 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
         injectClock({ clock: { now: () => new Date('2026-11-19T12:00:00.000Z') } });
     });
 
-    beforeEach(() => {
-        mocks.readOwnExpiredDeclinedSignupNotices.mockResolvedValue([]);
-    });
-
     afterEach(() => {
         vi.clearAllMocks();
     });
 
-    it('answers byte for byte what it answered before, without the reader-only planVersionId', async () => {
+    it('answers the frozen contract body (declined and expired notices included), without the reader-only planVersionId', async () => {
         // Arrange
         mocks.readOwnPlanState.mockResolvedValue({
             subscriptions: readerRows(),
@@ -215,16 +209,19 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
                 { courtesyGrantId: COURTESY_ID, vertical: 'accommodation', balanceMonths: 3 }
             ]
         });
-        mocks.readOwnDeclinedSignups.mockResolvedValue([
-            {
-                subscriptionId: SUBSCRIPTION_ID,
-                vertical: 'venue',
-                billingOptionId: OPTION_ID,
-                declaredPayerEmail: null,
-                declinedAt: new Date('2026-11-01T10:00:00.000Z'),
-                plan: { slug: 'venue-pro', name: 'venue-pro' }
-            }
-        ]);
+        mocks.readOwnDeclinedSignups.mockResolvedValue({
+            retry: [
+                {
+                    subscriptionId: SUBSCRIPTION_ID,
+                    vertical: 'venue',
+                    billingOptionId: OPTION_ID,
+                    declaredPayerEmail: null,
+                    declinedAt: new Date('2026-11-01T10:00:00.000Z'),
+                    plan: { slug: 'venue-pro', name: 'venue-pro' }
+                }
+            ],
+            expired: []
+        });
 
         // Act
         const response = await app().request('/api/v1/protected/billing-subscription', {
@@ -254,16 +251,19 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
             ],
             deferredCourtesies: []
         });
-        mocks.readOwnDeclinedSignups.mockResolvedValue([
-            {
-                subscriptionId: SUCCESSOR_ID,
-                vertical: 'accommodation',
-                billingOptionId: OPTION_ID,
-                declaredPayerEmail: null,
-                declinedAt: new Date('2026-11-18T10:00:00.000Z'),
-                plan: { slug: 'owner-pro', name: 'owner-pro' }
-            }
-        ]);
+        mocks.readOwnDeclinedSignups.mockResolvedValue({
+            retry: [
+                {
+                    subscriptionId: SUCCESSOR_ID,
+                    vertical: 'accommodation',
+                    billingOptionId: OPTION_ID,
+                    declaredPayerEmail: null,
+                    declinedAt: new Date('2026-11-18T10:00:00.000Z'),
+                    plan: { slug: 'owner-pro', name: 'owner-pro' }
+                }
+            ],
+            expired: []
+        });
 
         // Act
         const response = await app().request('/api/v1/protected/billing-subscription', {
@@ -287,15 +287,17 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
     it('exposes the expired declined signups with an ISO declinedAt (HOS-2193)', async () => {
         // Arrange
         mocks.readOwnPlanState.mockResolvedValue({ subscriptions: [], deferredCourtesies: [] });
-        mocks.readOwnDeclinedSignups.mockResolvedValue([]);
-        mocks.readOwnExpiredDeclinedSignupNotices.mockResolvedValue([
-            {
-                subscriptionId: SUBSCRIPTION_ID,
-                vertical: 'venue',
-                declinedAt: new Date('2026-11-01T10:00:00.000Z'),
-                plan: { slug: 'venue-pro', name: 'Pro' }
-            }
-        ]);
+        mocks.readOwnDeclinedSignups.mockResolvedValue({
+            retry: [],
+            expired: [
+                {
+                    subscriptionId: SUBSCRIPTION_ID,
+                    vertical: 'venue',
+                    declinedAt: new Date('2026-11-01T10:00:00.000Z'),
+                    plan: { slug: 'venue-pro', name: 'Pro' }
+                }
+            ]
+        });
 
         // Act
         const response = await app().request('/api/v1/protected/billing-subscription', {
@@ -305,7 +307,7 @@ describe('GET /protected/billing-subscription/ after the reader extraction (AC-P
 
         // Assert
         expect(response.status).toBe(200);
-        expect(mocks.readOwnExpiredDeclinedSignupNotices).toHaveBeenCalledWith(OWNER_ID);
+        expect(mocks.readOwnDeclinedSignups).toHaveBeenCalledWith(OWNER_ID);
         expect(body.data.expiredDeclinedSignups).toEqual([
             {
                 subscriptionId: SUBSCRIPTION_ID,

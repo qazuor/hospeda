@@ -261,4 +261,30 @@ describe('HOS-2193 selectExpiredDeclinedSignups', () => {
         // Assert
         expect(result.map((notice) => notice.vertical)).toEqual(['tourist', 'venue']);
     });
+
+    it('never puts the same row in both lists for the same rows and instant, at the exact boundary', () => {
+        // Arrange: one row per millisecond around the seven-day edge, each in its own vertical
+        const verticals = ['accommodation', 'venue', 'experience', 'tourist', 'partner'];
+        const offsets = [-2, -1, 0, 1, 2];
+        const rows = offsets.map((offset, index) =>
+            row({
+                id: `00000000-0000-4000-8000-00000000010${index}`,
+                vertical: verticals[index] ?? 'accommodation',
+                updatedAt: new Date(OLD.getTime() + offset),
+                createdAt: new Date(OLD.getTime() + offset)
+            })
+        );
+        // Act
+        const retry = selectDeclinedSignupNotices({ rows, now: NOW }).map(
+            (notice) => notice.subscriptionId
+        );
+        const expired = selectExpiredDeclinedSignups({ rows, now: NOW }).map(
+            (notice) => notice.subscriptionId
+        );
+        // Assert: strictly inside the window -> retry, at or past the edge -> expired
+        expect([...retry].sort()).toEqual([rows[3]?.id, rows[4]?.id].sort());
+        expect([...expired].sort()).toEqual([rows[0]?.id, rows[1]?.id, rows[2]?.id].sort());
+        expect(retry.filter((id) => expired.includes(id))).toEqual([]);
+        expect(retry.length + expired.length).toBe(rows.length);
+    });
 });
