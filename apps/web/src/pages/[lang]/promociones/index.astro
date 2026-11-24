@@ -1,0 +1,68 @@
+---
+/**
+ * @file promociones/index.astro
+ * @description The public promotions page (HOS-2589 D-2).
+ *
+ * Session-blind and edge-cacheable: the SSR renders only the shell (title, SEO copy
+ * and the list container). The promotions themselves depend on who reads them (a
+ * free reader sees up to X «Para todos» promotions per page in full and the rest
+ * blurred; a VIP sees everything), so the list is the `PromotionsListing` island,
+ * which reads the per-actor listing in the browser. No promotion title, discount or
+ * place name is ever in this HTML (AC-21). It is the weekly VIP digest's link
+ * target, and `/mi-cuenta/ofertas-exclusivas` redirects here (AC-32).
+ *
+ * @route     /{lang}/promociones/
+ * @rendering SSR + Cloudflare cache (static class, no API call)
+ */
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import { PromotionsListing } from '@/components/promotions/PromotionsListing.client';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// No session and no API call: the shell is i18n + code only.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'static',
+    tags: [CACHE_TAG_SITE_CONFIG]
+});
+---
+
+<DefaultLayout
+    locale={locale}
+    title={t('common.promotions.page.title')}
+    description={t('common.promotions.page.description')}
+>
+    <section class="promotions-page section">
+        <div class="promotions-page__container">
+            <SectionHeader
+                tagline={t('common.promotions.page.tagline')}
+                title={t('common.promotions.page.heading')}
+                subtitle={t('common.promotions.page.description')}
+            />
+            <div class="promotions-page__list">
+                <PromotionsListing client:load locale={locale} apiUrl={getApiUrl()} />
+            </div>
+        </div>
+    </section>
+</DefaultLayout>
+
+<style>
+    .promotions-page__container {
+        width: min(100% - 2rem, var(--container-max, 1200px));
+        margin-inline: auto;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6, 24px);
+    }
+</style>

@@ -59,9 +59,8 @@ import { resolveListingBarPhoneHref } from '@/lib/listing-contact/listing-action
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
-import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
+import { PlacePromotions } from '@/components/promotions/PlacePromotions.client';
+import { accommodationsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import type { NearbyPoi } from '@repo/schemas';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -249,7 +248,6 @@ const [
     eventsResult,
     reviewsResult,
     externalReputationResult,
-    promotionsResult,
     nearbyPoisResult,
     bookmarkCountResult
 ] = await Promise.allSettled([
@@ -259,7 +257,6 @@ const [
         eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 6 }),
         accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 }),
         accommodationsApi.getExternalReputation({ id: accommodation.id }),
-        ownerPromotionsApi.listByAccommodation({ accommodationId: accommodation.id }),
         accommodationsApi.getNearbyPois({ slug }),
         userBookmarksPublicApi.count({
             entityType: 'ACCOMMODATION',
@@ -330,7 +327,6 @@ const eventItems = extractItems(eventsResult).slice(0, 6);
 const hasRelatedContent = similarCards.length + ownerCards.length + postItems.length + eventItems.length > 0;
 
 // Active promotions for this accommodation — graceful degradation via extractItems.
-const activePromos = extractItems(promotionsResult) as unknown as OwnerPromotionPublicItem[];
 
 // Nearby points of interest (HOS-145 T-009) — graceful degradation via extractItems;
 // WhatsNearbySection renders nothing when the array is empty.
@@ -718,11 +714,9 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
                  on purpose: this copy shows up to 1024px (where
                  MobileBookingSummary shows), the slot-6 copy above it, so DOM
                  order and visual order match at every width. -->
-            {activePromos.length > 0 && (
-                <div class="acc-promos acc-promos--summary">
-                    <PromotionBanner promos={activePromos} locale={locale} />
-                </div>
-            )}
+            <div class="acc-promos acc-promos--summary">
+                <PlacePromotions client:idle locale={locale} apiUrl={getApiUrl()} entityType="accommodation" entityId={accommodation.id} />
+            </div>
         </ListingDetailSlot>
         <!-- Slot 3: description with «Leer más». -->
         {hasDescriptionSection && (
@@ -751,11 +745,11 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
             </ListingDetailSlot>
         )}
         <!-- Slot 6: promotions (the wide-layout copy, see slot 2). -->
-        {activePromos.length > 0 && (
-            <ListingDetailSlot name="promotions" class="acc-promos--content">
-                <PromotionBanner promos={activePromos} locale={locale} />
-            </ListingDetailSlot>
-        )}
+        <!-- HOS-2589: promotions are per reader, so the cached page carries none of
+             them; the island reads the per-actor endpoint in the browser. -->
+        <ListingDetailSlot name="promotions" class="acc-promos--content">
+            <PlacePromotions client:idle locale={locale} apiUrl={getApiUrl()} entityType="accommodation" entityId={accommodation.id} />
+        </ListingDetailSlot>
         <!-- Slot 7: location, then what's nearby. -->
         <ListingDetailSlot name="location">
             <LocationSection {...locationSection} />
