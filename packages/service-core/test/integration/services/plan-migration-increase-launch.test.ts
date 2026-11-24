@@ -266,6 +266,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 currency: 'ARS',
                 applicationDate: preview.rows[0]?.applicationDate,
                 losesPromo: false,
+                // HOS-2608: the live promo keeps applying, so the mail says so.
+                keepsPromo: true,
                 variant: 'SCHEDULED',
                 deadlinesVersion: preview.deadlineVersion,
                 reason: 'PRICE_INCREASE'

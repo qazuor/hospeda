@@ -16,6 +16,7 @@ import {
 } from '../../../src/services/billing/deadlines/billing-deadlines.service.js';
 import { launchPlanMigration } from '../../../src/services/billing/plan-migration/plan-migration-launch.service.js';
 import {
+    PLAN_MIGRATION_ANNOUNCED_TEMPLATE,
     PLAN_MIGRATION_UPCOMING_TEMPLATE,
     planMigrationNoticeDedupKey
 } from '../../../src/services/billing/plan-migration/plan-migration-notice.js';
@@ -23,6 +24,7 @@ import { previewPlanMigration } from '../../../src/services/billing/plan-migrati
 import { applyPlanMigrationUpcomingNotice } from '../../../src/services/billing/plan-migration/plan-migration-upcoming-notice.js';
 import { sendPlanMigrationNotices } from '../../../src/services/billing/plan-migration/send-plan-migration-notices.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import { seedPlanChangePromo } from './support/plan-change-fixtures.js';
 import {
     cleanupPlanMigrationCases,
     createPriceIncreaseCase,
@@ -205,6 +207,46 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     reason: 'PRICE_INCREASE'
                 }
             ]);
+        });
+
+        it('HOS-2608 con una promo viva, el anuncio y los recordatorios llevan keepsPromo: true y sin ella no lo llevan', async () => {
+            const withPromo = await createPriceIncreaseCase({ targetAmountMinor: 350000 });
+            await seedPlanChangePromo({
+                subscriptionId: withPromo.predecessor.id,
+                userId: withPromo.user.id
+            });
+            const { scope } = await launchIncrease(withPromo);
+            const applicationDate = getLocalDateString({ instant: scope.applicationDate });
+            const db = getServiceTestDb();
+            await db.transaction((tx) =>
+                applyPlanMigrationUpcomingNotice({
+                    tx,
+                    planMigrationSubscriptionId: scope.id,
+                    now: instantAt(shiftLocalDay(applicationDate, -30))
+                })
+            );
+            const payloadsOf = async (userId: string, template: string) =>
+                (
+                    await db
+                        .select({ payload: emailOutbox.payload })
+                        .from(emailOutbox)
+                        .where(
+                            and(
+                                eq(emailOutbox.recipientUserId, userId),
+                                eq(emailOutbox.template, template)
+                            )
+                        )
+                ).map((row) => row.payload as Record<string, unknown>);
+
+            const announced = await payloadsOf(
+                withPromo.user.id,
+                PLAN_MIGRATION_ANNOUNCED_TEMPLATE
+            );
+            const upcoming = await payloadsOf(withPromo.user.id, PLAN_MIGRATION_UPCOMING_TEMPLATE);
+            expect(announced).toHaveLength(1);
+            expect(announced[0]).toMatchObject({ keepsPromo: true, losesPromo: false });
+            expect(upcoming).toHaveLength(1);
+            expect(upcoming[0]).toMatchObject({ keepsPromo: true, losesPromo: false });
         });
 
         it('el lote de avisos toma la fila del aumento a 30 días', async () => {

@@ -194,6 +194,7 @@ export async function applyPlanMigrationUpcomingNotice(input: {
             applicationDate,
             daysBefore: due.daysBefore,
             losesPromo: pricing.losesPromo,
+            ...(pricing.keepsPromo ? { keepsPromo: true } : {}),
             variant: 'SCHEDULED',
             // Only an increase names its motive; a retirement payload stays byte-identical.
             ...(reason.data === 'PRICE_INCREASE' ? { reason: reason.data } : {}),
