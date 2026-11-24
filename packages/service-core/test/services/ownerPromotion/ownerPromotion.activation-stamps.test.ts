@@ -12,7 +12,10 @@ import {
     TouristAudienceEnum
 } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { resolveActivationStamps } from '../../../src/services/owner-promotion/ownerPromotion.helpers';
+import {
+    isVipResumption,
+    resolveActivationStamps
+} from '../../../src/services/owner-promotion/ownerPromotion.helpers';
 import { buildVenueCreateInput } from '../../../src/services/owner-promotion/ownerPromotion.venue';
 
 const NOW = new Date('2026-11-24T12:00:00.000Z');
@@ -86,6 +89,61 @@ describe('resolveActivationStamps', () => {
         expect(
             resolveActivationStamps({ previous, data: { title: 'x' } as never, now: NOW })
         ).toEqual({});
+    });
+});
+
+describe('VIP pause is never lifted by a bare re-activation (security review, D-8)', () => {
+    const paused = {
+        lifecycleState: LifecycleStatusEnum.INACTIVE,
+        touristAudience: TouristAudienceEnum.VIP,
+        firstActivatedAt: EARLIER,
+        vipPausedAt: EARLIER
+    };
+
+    it('re-activating as «Solo VIP» without a verified key keeps the pause stamp', () => {
+        expect(
+            resolveActivationStamps({
+                previous: paused,
+                data: { lifecycleState: LifecycleStatusEnum.ACTIVE },
+                now: NOW
+            })
+        ).toEqual({});
+    });
+
+    it('re-activating as «Solo VIP» with a verified key clears it', () => {
+        expect(
+            resolveActivationStamps({
+                previous: paused,
+                data: { lifecycleState: LifecycleStatusEnum.ACTIVE },
+                now: NOW,
+                vipOnlyVerified: true
+            })
+        ).toEqual({ vipPausedAt: null });
+    });
+
+    it('isVipResumption flags exactly a paused vip promotion going live as vip', () => {
+        expect(
+            isVipResumption({
+                previous: paused,
+                data: { lifecycleState: LifecycleStatusEnum.ACTIVE }
+            })
+        ).toBe(true);
+        expect(
+            isVipResumption({
+                previous: paused,
+                data: {
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    touristAudience: TouristAudienceEnum.PLUS
+                }
+            })
+        ).toBe(false);
+        expect(isVipResumption({ previous: paused, data: { title: 'x' } as never })).toBe(false);
+        expect(
+            isVipResumption({
+                previous: { ...paused, vipPausedAt: null },
+                data: { lifecycleState: LifecycleStatusEnum.ACTIVE }
+            })
+        ).toBe(false);
     });
 });
 
