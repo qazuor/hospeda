@@ -532,8 +532,12 @@ Each AC is a test (unit/vitest unless marked E2E).
 - **AC-2.1** Section tabs: only tabs for present sections; clicking scrolls to the
   section below the sticky band; active tab follows the scroll.
 - **AC-2.2** Desktop tabs show price + «Consultar» once the gallery is out of view.
-- **AC-2.3** Amenities: 6 visible on mobile / 8 on desktop; «Ver las N» opens a
-  sheet with all N; the inline expand script no longer exists.
+- **AC-2.3** Amenities and features: 6 visible on mobile / 8 on desktop (features:
+  6 on both), and a breakpoint collapses ONLY when at least 5 items would be hidden
+  there (owner decision 2026-11-23). With 4 or fewer hidden, that breakpoint shows
+  every item and renders no «Ver las N» button (amenities: up to 10 items on mobile
+  and up to 12 on desktop show all; features: up to 10). Otherwise «Ver las N» opens
+  a sheet with all N; the inline expand script no longer exists.
 - **AC-2.4** Description clamp with «Leer más» toggling `aria-expanded`; full text
   always in the DOM; no toggle when the text fits.
 - **AC-2.5** Host section renders only existing fields; its button opens the panel.
