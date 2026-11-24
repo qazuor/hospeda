@@ -12,12 +12,12 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ExpiredDeclinedSignupNotice } from '../../../src/components/account/ExpiredDeclinedSignupNotice';
 import { NEUTRAL_PLANS_PATH, plansPathForVertical } from '../../../src/lib/billing/addon-purchase';
+import { SUPPORTED_LOCALES } from '../../../src/lib/i18n';
 
 const PAGE = readFileSync(
     resolve(__dirname, '../../../src/pages/[lang]/mi-cuenta/suscripcion/index.astro'),
     'utf8'
 );
-const LOCALES = ['es', 'en', 'pt'] as const;
 
 describe('ExpiredDeclinedSignupNotice', () => {
     it('renders the title, the body and one link to the given plans page', () => {
@@ -106,7 +106,24 @@ describe('expiredDeclined copy', () => {
         expect(copy.body).toContain('{{vertical}}');
     });
 
-    it('covers every supported locale', () => {
-        expect(LOCALES).toHaveLength(3);
+    it.each(
+        SUPPORTED_LOCALES
+    )('has the expiredDeclined keys in the %s account file, for every supported locale', (locale) => {
+        const account = JSON.parse(
+            readFileSync(
+                resolve(
+                    __dirname,
+                    '../../../../../packages/i18n/src/locales',
+                    locale,
+                    'account.json'
+                ),
+                'utf8'
+            )
+        ) as { subscription: { mine: { expiredDeclined?: Record<string, string> } } };
+        expect(Object.keys(account.subscription.mine.expiredDeclined ?? {}).sort()).toEqual([
+            'body',
+            'cta',
+            'title'
+        ]);
     });
 });
