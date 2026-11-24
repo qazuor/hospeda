@@ -10,7 +10,7 @@
  * Preconditions:
  *   - At least one ACTIVE/PUBLIC accommodation with a known slug in the seeded DB.
  *   - Public count endpoint mounted at `/api/v1/public/user-bookmarks/count`.
- *   - DetailHeader.astro integrates FavoriteButton and the counter.
+ *   - ListingHeader.astro integrates FavoriteButton and the counter.
  *
  * What this validates (AC-01.1, AC-09.1, AC-09.3):
  *   1. Authenticated user can toggle favorite from the detail page.
@@ -132,7 +132,7 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
         if (counterCount === 0) {
             test.skip(
                 true,
-                'Bookmark counter element not found in DetailHeader — ' +
+                'Bookmark counter element not found in ListingHeader — ' +
                     'check that counter is rendered with matching text or [data-testid="bookmark-count"]'
             );
             return;
@@ -178,7 +178,7 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
             test.skip(
                 true,
                 'FavoriteButton [data-testid="favorite-button"] not found on detail page — ' +
-                    'check that FavoriteButton.client.tsx is integrated into DetailHeader.astro'
+                    'check that FavoriteButton.client.tsx is integrated into ListingHeader.astro'
             );
             return;
         }

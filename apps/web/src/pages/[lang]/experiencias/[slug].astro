@@ -20,22 +20,28 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import ListingHeader from '@/components/listing/header/ListingHeader.astro';
+import { buildExperienceHeader } from '@/lib/listing-header/build-listing-header';
+import { buildExperienceContactBlock } from '@/lib/listing-contact/listing-contact-block';
+import { buildExperienceLocation } from '@/lib/listing-location/build-location-section';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
-import ExperienceHero from '@/components/experience/ExperienceHero.astro';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
-import ExperienceMeetingPoint from '@/components/experience/ExperienceMeetingPoint.astro';
+import LocationSection from '@/components/listing/location/LocationSection.astro';
 import ExperiencePreparation from '@/components/experience/ExperiencePreparation.astro';
+import ExperienceSummary from '@/components/experience/ExperienceSummary.astro';
 import ExperienceCancellationPolicy from '@/components/experience/ExperienceCancellationPolicy.astro';
 import ExperiencePrivateGroups from '@/components/experience/ExperiencePrivateGroups.astro';
-import ExperienceContactBlock from '@/components/experience/ExperienceContactBlock.astro';
+import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
-import { hasPublicContactChannel } from '@/lib/experience-contact';
+import { buildExperienceGalleryImages } from '@/lib/experience/experience-gallery-images';
+import { fetchExperienceSecondaryData } from '@/lib/experience/experience-secondary-data';
+import { EXPERIENCE_CONTACT_ANCHOR_ID, hasPublicContactChannel } from '@/lib/experience-contact';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -47,9 +53,6 @@ import {
     buildExperienceChannels,
     buildExperienceContactPrice
 } from '@/lib/listing-contact/listing-channels';
-import { EXPERIENCE_CONTACT_ANCHOR_ID } from '@/lib/experience-contact';
-import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
-import type { DetailFaq } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
@@ -115,34 +118,12 @@ applyCacheHeaders({
 // edge cache so the failure is not frozen in as "this owner did not pay".
 markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
-// --- Parallel secondary fetches ---
-const [reviewsSettled, faqsSettled] = await Promise.allSettled([
-    experiencesApi.getReviews({ id: experience.id, page: 1, pageSize: 5 }),
-    experiencesApi.getFaqs({ id: experience.id })
-]);
-
-const reviewsResult =
-    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
-const faqsResult =
-    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
-
-const reviews: readonly ExperienceReviewPublicItem[] =
-    reviewsResult?.ok ? reviewsResult.data.items : [];
-const totalReviews: number =
-    reviewsResult?.ok ? reviewsResult.data.pagination.total : experience.reviewsCount;
-
-// FAQs: prefer inline entity FAQs, fall back to standalone endpoint
-const faqs: readonly DetailFaq[] =
-    experience.faqs.length > 0
-        ? experience.faqs
-        : faqsResult?.ok && Array.isArray(faqsResult.data)
-          ? (faqsResult.data as Array<Record<string, unknown>>).map((faq) => ({
-                id: String(faq.id || ''),
-                question: String(faq.question || ''),
-                answer: String(faq.answer || ''),
-                category: faq.category ? String(faq.category) : null
-            }))
-          : [];
+// --- Parallel secondary fetches (reviews + FAQs, inline FAQs first) ---
+const { reviews, totalReviews, faqs } = await fetchExperienceSecondaryData({
+    experienceId: experience.id,
+    inlineFaqs: experience.faqs,
+    fallbackTotalReviews: experience.reviewsCount
+});
 
 // --- FAQPage JSON-LD when FAQs exist (HOS-2579 §6.6, same helper as accommodation) ---
 const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
@@ -150,37 +131,12 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     locale
 });
 
-// --- Gallery images ---
-const galleryImages = (() => {
-    const mediaObj = raw.media as
-        | { gallery?: Array<{ url?: string; caption?: string; description?: string }> }
-        | undefined;
-    const gallery = mediaObj?.gallery ?? [];
-    if (gallery.length > 0) {
-        return gallery
-            .filter((g) => g.url)
-            .map((g) => ({
-                url: String(g.url),
-                alt: g.caption ?? experience.name,
-                caption: g.caption,
-                description: g.description
-            }));
-    }
-    if (
-        experience.featuredImage.url &&
-        !experience.featuredImage.url.includes('placeholder')
-    ) {
-        return [
-            {
-                url: experience.featuredImage.url,
-                alt: experience.featuredImage.caption ?? experience.name,
-                caption: experience.featuredImage.caption
-            }
-        ];
-    }
-    return [];
-})();
-
+// --- Gallery images (media.gallery on the raw payload, featured image fallback) ---
+const { images: galleryImages } = buildExperienceGalleryImages({
+    media: raw.media,
+    name: experience.name,
+    featuredImage: experience.featuredImage
+});
 
 // --- SSR bookmark status for hero ---
 let bookmarkCount: number | undefined;
@@ -197,7 +153,6 @@ try {
     // graceful degradation
 }
 
-
 const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/` });
 
 // --- SEO ---
@@ -210,7 +165,7 @@ const seoDescription =
     t('experience.listing.subtitle', 'Experiencias y servicios en el Litoral Entrerriano');
 
 /**
- * HOS-1056: whether `ExperienceContactBlock` will render anything at all.
+ * HOS-1056: whether the experience `ListingContactBlock` will render anything at all.
  *
  * Computed HERE, from the same predicate the block itself uses, because the
  * private-groups CTA is an anchor into that block: if the block self-hides for
@@ -223,7 +178,7 @@ const hasContactBlock = hasPublicContactChannel({ contactInfo: experience.contac
 
 // --- Mobile contact bar + panel (HOS-2532) ---
 // Channels only: no form and no WhatsApp (HOS-363). The bar and the panel exist
-// exactly when `ExperienceContactBlock` does, so the bar's no-JS fallback anchor
+// exactly when the experience `ListingContactBlock` does, so the bar's no-JS fallback anchor
 // always has a target and no bar promises a channel that is not there.
 const contactChannels = hasContactBlock
     ? buildExperienceChannels({ contactInfo: experience.contactInfo })
@@ -245,6 +200,35 @@ const breadcrumbItems = [
     },
     { name: experience.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
+
+/**
+ * HOS-2579 §6.5: the meeting point (free) and, only with
+ * `meetingPointDirectionsEnabled`, the exact map and the directions (HOS-1049).
+ * `null` when the owner declared no meeting point.
+ */
+const locationSection = buildExperienceLocation({ experience, locale });
+
+/**
+ * HOS-2579 §6.4: the shared contact block, now also carrying the social
+ * profiles that used to render as emoji pills inside `ExperienceInfo`. It
+ * exists whenever `hasContactBlock` is true (and also for a socials-only
+ * listing), so the private-groups anchor never points at a missing element.
+ */
+const contactBlock = buildExperienceContactBlock({
+    listingId: experience.id,
+    contactInfo: experience.contactInfo,
+    socialNetworks: experience.socialNetworks,
+    locale
+});
+
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
+const headerProps = buildExperienceHeader({
+    experience,
+    locale,
+    shareUrl: `${siteOrigin}${Astro.url.pathname}`,
+    bookmarkCount,
+    hasMobileGalleryControls: galleryImages.length > 0
+});
 ---
 
 <DetailLayout
@@ -293,12 +277,7 @@ const breadcrumbItems = [
 
     <!-- Hero (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
-        <ExperienceHero
-            experience={experience}
-            locale={locale}
-            bookmarkCount={bookmarkCount}
-            hasMobileGalleryControls={galleryImages.length > 0}
-        />
+        <ListingHeader {...headerProps} />
     </Fragment>
 
     <div class="exp-detail">
@@ -323,6 +302,20 @@ const breadcrumbItems = [
             </div>
         )}
 
+        <!-- Slot 2 «summary» (HOS-2579): price and duration (moved out of the
+             header) and «Consultar». -->
+        <ExperienceSummary
+            listingId={experience.id}
+            locale={locale}
+            priceFrom={experience.priceFrom}
+            priceUnit={experience.priceUnit}
+            isPriceOnRequest={experience.isPriceOnRequest}
+            durationMinutes={experience.durationMinutes}
+            hasContactChannel={contactChannels.length > 0}
+            panelId={panelId}
+            fallbackHref={`#${EXPERIENCE_CONTACT_ANCHOR_ID}`}
+        />
+
         <!-- Description, opening hours, social networks -->
         <ExperienceInfo experience={experience} locale={locale} />
 
@@ -332,17 +325,10 @@ const breadcrumbItems = [
              owner declared no meeting point. The meeting point TEXT carries no
              entitlement check — it is ficha data from the basic tier. The map
              that draws the coordinates and the how-to-get-there instructions
-             are the paid half (HOS-1049), rendered by the same component and
-             gated on `meetingPointDirectionsEnabled`, which the API resolves
-             live from the provider's current plan. -->
-        <ExperienceMeetingPoint
-            meetingPoint={experience.meetingPoint}
-            meetingPointLat={experience.meetingPointLat}
-            meetingPointLong={experience.meetingPointLong}
-            meetingPointDirections={experience.meetingPointDirections}
-            meetingPointDirectionsEnabled={experience.meetingPointDirectionsEnabled}
-            locale={locale}
-        />
+             are the paid half (HOS-1049), gated by `buildExperienceLocation` on
+             `meetingPointDirectionsEnabled`, which the API resolves live from
+             the provider's current plan. -->
+        {locationSection && <LocationSection {...locationSection} />}
 
         <!-- What to bring and what is required (HOS-1046). Right after the
              meeting point, because the reading order of somebody planning a
@@ -377,11 +363,7 @@ const breadcrumbItems = [
              contact affordance was the site-wide WhatsApp button pointing at
              HOSPEDA's number — not the provider's. The published subset is
              narrowed by `ExperiencePublicContactInfoSchema`. -->
-        <ExperienceContactBlock
-            listingId={experience.id}
-            contactInfo={experience.contactInfo}
-            locale={locale}
-        />
+        {contactBlock && <ListingContactBlock {...contactBlock} />}
 
         <!-- Reviews (interactive island) -->
         <ExperienceReviews

@@ -12,8 +12,8 @@
  *
  * Three sections are deliberately `false`:
  *
- * - `price` is painted by `VenueDetailHeader` (the page's frame, above the
- *   body).
+ * - `price` is painted by `VenueSummary` (slot 2, right under the gallery,
+ *   HOS-2579), outside the catalog-ordered body.
  * - `media` is the fixed gallery at the top of the page (the listing's cover),
  *   not an in-flow section.
  * - `translations` is management metadata and never renders publicly.

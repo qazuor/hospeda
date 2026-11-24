@@ -2,21 +2,19 @@
 /**
  * @file ExperienceInfo.astro
  * @description Info block for an experience detail page (SPEC-240 T-027).
- * Renders summary, description, opening hours, amenities/features, and social
- * networks. Mirrors VenueDescription + OpeningHoursSection pattern.
+ * Renders summary, description, opening hours and amenities/features. Mirrors
+ * VenueDescription + OpeningHoursSection pattern.
  *
  * The amenities/features half of that sentence was a promise this file made and
  * did not keep until HOS-1072: the word appeared in this docstring and nowhere
  * else in the file, while the provider ticked "incluye transporte", "el guía
- * habla inglés" and the rest and none of it reached a reader. Contact info is
- * NOT rendered here — `ExperienceContactBlock` owns it (HOS-815) — so it is no
- * longer claimed above.
+ * habla inglés" and the rest and none of it reached a reader. Contact info and
+ * the social profiles are NOT rendered here: the shared `ListingContactBlock`
+ * owns both (HOS-815, HOS-2579 §6.4).
  */
 
 import { renderContent } from '@/lib/render-content';
 import { renderPlain } from '@/lib/render-plain';
-import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ExperienceDetailData, ExperienceOpeningHoursEntry } from '@/data/types';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
@@ -35,7 +33,6 @@ interface Props {
 }
 
 const { experience, locale } = Astro.props;
-const { t } = createTranslations(locale);
 
 // Render rich markdown to HTML only when the field is present and non-empty.
 const richHtml =
@@ -84,49 +81,6 @@ const openingHours =
 <FeaturesGrid features={experience.features} lang={locale} />
 <AmenitiesGrid amenities={experience.amenities} lang={locale} />
 <ListingHouseRules policies={experience.policies} locale={locale} />
-
-<!-- Social networks. No longer the page's only contact affordance: HOS-815
-     added `ExperienceContactBlock`, which publishes the phone / email /
-     website the provider filled in — and HOS-924 made one of those channels a
-     publish requirement, so a live experience always has one. -->
-{experience.socialNetworks && Object.values(experience.socialNetworks).some(Boolean) && (
-    <section class="exp-info__social">
-        <h3 class="exp-info__social-title">{t('experience.detail.social', 'Redes sociales')}</h3>
-        <ul class="exp-info__social-list">
-            {[
-                { key: 'website', label: 'Sitio web', icon: '🌐' },
-                { key: 'instagram', label: 'Instagram', icon: '📷' },
-                { key: 'facebook', label: 'Facebook', icon: '📘' },
-                { key: 'twitter', label: 'Twitter / X', icon: '🐦' },
-                { key: 'youtube', label: 'YouTube', icon: '▶️' },
-                { key: 'tiktok', label: 'TikTok', icon: '🎵' }
-            ].map(({ key, label, icon }) => {
-                // Owner-authored content: `z.string().url()` accepts
-                // `javascript:`, so this allow-list — not the schema — is what
-                // keeps a payload out of the href (HOS-592 / F-02). A refused
-                // value renders no row at all.
-                const href = resolveSafeExternalUrl(
-                    experience.socialNetworks?.[key as keyof typeof experience.socialNetworks]
-                );
-                if (!href) return null;
-                return (
-                    <li class="exp-info__social-item">
-                        <a
-                            href={href}
-                            class="exp-info__social-link"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={label}
-                        >
-                            <span aria-hidden="true">{icon}</span>
-                            <span>{label}</span>
-                        </a>
-                    </li>
-                );
-            })}
-        </ul>
-    </section>
-)}
 
 <style>
     .exp-info__summary {
@@ -180,55 +134,5 @@ const openingHours =
 
     .exp-info__body--rich :global(li) {
         margin-bottom: var(--space-1, 4px);
-    }
-
-    /* Social networks */
-    .exp-info__social {
-        margin-top: var(--space-6, 24px);
-    }
-
-    .exp-info__social-title {
-        font-family: var(--font-heading);
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--core-foreground);
-        margin-bottom: var(--space-3, 12px);
-    }
-
-    .exp-info__social-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .exp-info__social-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: var(--radius-pill, 9999px);
-        border: 1px solid var(--border);
-        background-color: var(--core-card);
-        color: var(--core-foreground);
-        font-family: var(--font-sans);
-        font-size: 0.85rem;
-        font-weight: 500;
-        text-decoration: none;
-        transition:
-            background-color 150ms ease-out,
-            border-color 150ms ease-out;
-    }
-
-    .exp-info__social-link:hover {
-        background-color: var(--surface-warm);
-        border-color: var(--brand-primary);
-    }
-
-    .exp-info__social-link:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
     }
 </style>

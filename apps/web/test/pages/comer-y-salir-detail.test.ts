@@ -79,8 +79,9 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('detail blocks', () => {
-        it('renders VenueDetailHeader', () => {
-            expect(src).toContain('VenueDetailHeader');
+        it('renders the shared ListingHeader (HOS-2579)', () => {
+            expect(src).toContain('<ListingHeader {...headerProps} />');
+            expect(src).not.toContain('VenueDetailHeader');
         });
 
         it('renders VenueDescription', () => {
@@ -92,8 +93,11 @@ describe('comer-y-salir/[slug].astro', () => {
             expect(src).toContain('venue.openingHours');
         });
 
-        it('renders VenueContactBlock for menu + social', () => {
-            expect(src).toContain('VenueContactBlock');
+        it('renders the shared ListingContactBlock for menu + social (HOS-2579)', () => {
+            expect(src).toContain('buildVenueContactBlock({');
+            expect(src).toContain(
+                'Component: ListingContactBlock, props: { ...venueContactBlock }'
+            );
         });
 
         it('reuses FaqAccordion from accommodation components', () => {

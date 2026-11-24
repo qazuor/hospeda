@@ -179,7 +179,8 @@
                 "everyDay": "Every day",
                 "now": "Now"
             }
-        }
+        },
+        "priceRangeLabel": "Price range"
     },
     "types": {
         "RESTAURANT": "Restaurant",

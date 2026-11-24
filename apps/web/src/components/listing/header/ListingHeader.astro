@@ -1,0 +1,296 @@
+---
+/**
+ * @file ListingHeader.astro
+ * @description The one header of the accommodation, venue and experience
+ * detail pages (HOS-2579 §6.3). It replaces three parallel copies
+ * (`DetailHeader`, `VenueDetailHeader`, `ExperienceHero`) that had drifted
+ * apart: a text heart on one, hand-drawn stars on two, a destination link on
+ * one only, and no share button on any.
+ *
+ * Frame: back button, badges, `<h1>`, location line, rating + bookmark count,
+ * and the action cluster (compare on accommodation, favorite, share). The page
+ * never builds the props by hand: `build-listing-header.ts` maps each
+ * vertical's data to them.
+ *
+ * Compact behaviour comes from the shared `.wh-compact-*` utilities (contract in
+ * `WaveHeader.astro`): `wh-compact-row` collapses the main stack to one line,
+ * `wh-compact-title` shrinks the H1, `wh-compact-hide` drops the back row and
+ * the rating, `wh-compact-demote` inlines the location, and
+ * `wh-compact-hide-mobile` collapses the badges below 768px. The shared
+ * `.listing-header-badge` contract (components.css) sizes every badge.
+ *
+ * Layout: a grid keeps the action cluster in a right column at every width
+ * without changing the DOM order (title, then actions, then location, which
+ * is also the tab order). With `hasMobileGalleryControls`, below 768px the
+ * back row, favorite and share are hidden: the gallery overlay carries them.
+ */
+import { FavoriteIcon } from '@repo/icons';
+import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
+import RatingStars from '@/components/shared/ui/RatingStars.astro';
+import { createTranslations } from '@/lib/i18n';
+import ListingHeaderActions from './ListingHeaderActions.astro';
+import ListingHeaderBadges from './ListingHeaderBadges.astro';
+import ListingLocationLine from './ListingLocationLine.astro';
+import type { ListingHeaderProps } from './listing-header.types';
+
+type Props = ListingHeaderProps;
+
+const {
+    vertical,
+    locale,
+    entityId,
+    title,
+    backHref,
+    badges,
+    rating,
+    location,
+    share,
+    compare,
+    bookmarkCount,
+    hasMobileGalleryControls
+} = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+
+const showsRating = rating !== null && rating.count > 0;
+const showsMeta = showsRating || bookmarkCount !== undefined;
+---
+
+<header
+    class:list={[
+        'listing-header',
+        `listing-header--${vertical}`,
+        { 'listing-header--mobile-gallery': hasMobileGalleryControls }
+    ]}
+>
+    <div class="listing-header__back-row wh-compact-hide">
+        <HeaderBackButton href={backHref} locale={locale} />
+    </div>
+
+    <div class="listing-header__body">
+        <div class="listing-header__main wh-compact-row">
+            <ListingHeaderBadges badges={badges} locale={locale} />
+
+            <h1 class="listing-header__title wh-compact-title">{title}</h1>
+
+            <ListingHeaderActions
+                vertical={vertical}
+                locale={locale}
+                entityId={entityId}
+                title={title}
+                share={share}
+                compare={compare}
+            />
+
+            {location && <ListingLocationLine location={location} />}
+
+            {showsMeta && (
+                <div class="listing-header__meta wh-compact-hide">
+                    {showsRating && rating && (
+                        <span class="listing-header__rating">
+                            <RatingStars rating={rating.average} size="sm" showValue />
+                            <span class="listing-header__reviews-count">
+                                ({tPlural('review.list.totalReviews', rating.count, { count: rating.count })})
+                            </span>
+                        </span>
+                    )}
+                    {bookmarkCount !== undefined && (
+                        <span
+                            class:list={[
+                                'listing-header__bookmark-count',
+                                { 'listing-header__bookmark-count--after-rating': showsRating }
+                            ]}
+                            data-testid="bookmark-count"
+                        >
+                            <FavoriteIcon
+                                size={14}
+                                weight="fill"
+                                color="var(--destructive)"
+                                aria-hidden="true"
+                            />
+                            {bookmarkCount === 0
+                                ? t('accommodations.detail.bookmark_count_zero', 'Sé el primero en guardarlo')
+                                : tPlural('accommodations.detail.bookmark_count', bookmarkCount)}
+                        </span>
+                    )}
+                </div>
+            )}
+        </div>
+    </div>
+</header>
+
+<style>
+    /* Vertical stack: back-button row on top, then the body row. */
+    .listing-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    /* Back-button row: collapses via `wh-compact-hide`, so it declares its own
+       max-height/opacity transition to animate. */
+    .listing-header__back-row {
+        overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
+        transition:
+            max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
+            opacity 0.2s ease;
+    }
+
+    /* The action cluster stays top right without changing the DOM order. */
+    .listing-header__main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "badges actions"
+            "title actions"
+            "location actions"
+            "meta meta";
+        gap: var(--space-2, 8px) var(--space-3, 12px);
+        transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .listing-header__title {
+        grid-area: title;
+        font-family: var(--font-heading);
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+        transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .listing-header__meta {
+        grid-area: meta;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2, 8px);
+        overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
+        transition:
+            max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
+            opacity 0.2s ease;
+    }
+
+    .listing-header__rating {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2, 8px);
+    }
+
+    .listing-header__reviews-count {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
+    }
+
+    /* Bookmark count (non-interactive, info only). The number is plain text, so
+       its label is read as is; the heart is decorative. */
+    .listing-header__bookmark-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3em;
+        font-family: var(--font-sans);
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+    }
+
+    .listing-header__bookmark-count--after-rating {
+        border-left: 1px solid var(--border);
+        padding-left: var(--space-2, 8px);
+        margin-left: var(--space-1, 4px);
+    }
+
+    /* Compact state: only the overrides the shared `.wh-compact-*` utilities
+       cannot express. */
+    :global(.wave-header--compact) .listing-header__main {
+        display: flex;
+    }
+
+    :global(.wave-header--compact) .listing-header__main > :global(.listing-header__actions) {
+        align-self: center;
+        order: 1;
+    }
+
+    @media (min-width: 768px) {
+        :global(.wave-header.wave-header--compact) .listing-header__main {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, max-content)) 1fr auto;
+            grid-template-areas:
+                "badges title location . actions"
+                "meta meta meta . actions";
+            row-gap: 0;
+        }
+
+        :global(.wave-header--compact) .listing-header__main > :global(.listing-header__actions) {
+            align-self: start;
+            order: 0;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .listing-header--mobile-gallery .listing-header__back-row {
+            display: none;
+        }
+
+        /* Long titles wrap to 5 lines at the desktop-derived size; use the h3 step. */
+        .listing-header--mobile-gallery .listing-header__title {
+            font-size: var(--text-h3, 1.25rem);
+        }
+
+        /* Compare (accommodation) stays beside the title, aligned with its first
+           line, in the expanded and the compact state alike. */
+        :global(.wave-header) .listing-header--mobile-gallery .listing-header__main {
+            grid-template-areas:
+                "badges badges"
+                "title actions"
+                "location location"
+                "meta meta";
+            align-items: center;
+        }
+
+        :global(.wave-header) .listing-header--mobile-gallery .listing-header__main > :global(.listing-header__actions) {
+            align-self: start;
+            order: 0;
+        }
+
+        :global(.wave-header--compact) .listing-header--mobile-gallery .listing-header__main {
+            display: grid;
+            row-gap: 2px;
+        }
+
+        /* The location already has its own row, even in compact mode. */
+        :global(.wave-header--compact) .listing-header--mobile-gallery :global(.wh-compact-demote)::before {
+            content: none;
+        }
+
+        /* Mobile compact (owner smoke, HOS-2520): the badges collapse, the
+           title drops to one ellipsised body-size line and the band tightens,
+           so the sticky strip reads as a condensed header, not a glitch. */
+        :global(.wave-header--compact) .listing-header--mobile-gallery .listing-header__title {
+            font-size: var(--text-body, 1rem);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        :global(.wave-header.wave-header--compact .wave-header__content:has(.listing-header--mobile-gallery)) {
+            padding-top: var(--space-3, 12px);
+            padding-bottom: var(--space-3, 12px);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .listing-header__back-row,
+        .listing-header__main,
+        .listing-header__title,
+        .listing-header__meta {
+            transition: none;
+        }
+    }
+</style>

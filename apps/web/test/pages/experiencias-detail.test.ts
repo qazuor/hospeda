@@ -31,10 +31,10 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('experiencesApi.getBySlug');
         });
 
-        it('uses Promise.allSettled for parallel reviews + faqs fetch', () => {
-            expect(src).toContain('Promise.allSettled');
-            expect(src).toContain('experiencesApi.getReviews');
-            expect(src).toContain('experiencesApi.getFaqs');
+        it('fetches reviews + faqs in parallel through fetchExperienceSecondaryData', () => {
+            // Promise.allSettled and both calls are unit-tested in
+            // test/lib/experience/experience-secondary-data.test.ts.
+            expect(src).toContain('fetchExperienceSecondaryData');
         });
     });
 
@@ -69,22 +69,24 @@ describe('experiencias/[slug].astro', () => {
     });
 
     describe('detail blocks', () => {
-        it('renders ExperienceHero with hero, type, pricing, rating', () => {
-            expect(src).toContain('ExperienceHero');
+        it('renders the shared ListingHeader (HOS-2579)', () => {
+            expect(src).toContain('<ListingHeader {...headerProps} />');
+            expect(src).not.toContain('ExperienceHero');
         });
 
         it('renders ExperienceInfo with description, hours, social', () => {
             expect(src).toContain('ExperienceInfo');
         });
 
-        it('renders ExperienceContactBlock with the provider channels', () => {
-            expect(src).toContain('ExperienceContactBlock');
+        it('renders the shared ListingContactBlock with the provider channels (HOS-2579)', () => {
+            expect(src).toContain('buildExperienceContactBlock({');
+            expect(src).toContain('<ListingContactBlock {...contactBlock} />');
         });
 
         it('no longer renders the dormant WhatsApp CTA (HOS-363)', () => {
             // It read `contactInfo.whatsapp`, which the public payload never
-            // carries, so it never rendered. What remains is
-            // `ExperienceContactBlock`, and HOS-924 made one of the channels it
+            // carries, so it never rendered. What remains is the shared
+            // `ListingContactBlock`, and HOS-924 made one of the channels it
             // shows a publish requirement.
             expect(src).not.toContain('ExperienceContactCTA');
         });
@@ -110,9 +112,9 @@ describe('experiencias/[slug].astro', () => {
         // `test/lib/api/transform-experience-meeting-point.test.ts`, and whether
         // the field survives the projection at all in the full public-tier parse
         // under `packages/schemas`.
-        it('wires ExperienceMeetingPoint to the transformed meeting point', () => {
-            expect(src).toContain('ExperienceMeetingPoint');
-            expect(src).toContain('meetingPoint={experience.meetingPoint}');
+        it('wires the shared LocationSection to the meeting point builder (HOS-2579)', () => {
+            expect(src).toContain('buildExperienceLocation({ experience, locale })');
+            expect(src).toContain('{locationSection && <LocationSection {...locationSection} />}');
         });
 
         // HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. SOURCE reads, with the same
@@ -135,7 +137,7 @@ describe('experiencias/[slug].astro', () => {
 
         it('wires the private-groups block with the contact-block guard (HOS-1056)', () => {
             // `hasContactBlock` is the load-bearing prop: the CTA anchors into
-            // `ExperienceContactBlock`, which self-hides when the listing
+            // the shared `ListingContactBlock`, which self-hides when the listing
             // publishes no usable channel. Passing the flag is what lets the CTA
             // degrade to plain text instead of linking to an element that is not
             // on the page — the HOS-363 failure mode, silent by construction.
@@ -154,7 +156,7 @@ describe('experiencias/[slug].astro', () => {
             expect(src).not.toContain('loadEntitlements');
         });
 
-        it('hands the map and the directions to ExperienceMeetingPoint (HOS-1049)', () => {
+        it('hands the map and the directions to the location builder (HOS-1049)', () => {
             // HOS-1048 asserted the opposite here — no map, no coordinates on
             // this page — because the paid half did not exist yet. It does now,
             // and the page's job is to FORWARD it: the coordinates, the
@@ -164,12 +166,21 @@ describe('experiencias/[slug].astro', () => {
             // `meetingPointDirectionsEnabled` renders a component whose gate
             // reads `undefined` and shows nothing, on every listing, for every
             // tier — a paid feature that ships and never appears.
-            expect(src).toContain('meetingPointLat={experience.meetingPointLat}');
-            expect(src).toContain('meetingPointLong={experience.meetingPointLong}');
-            expect(src).toContain('meetingPointDirections={experience.meetingPointDirections}');
-            expect(src).toContain(
-                'meetingPointDirectionsEnabled={experience.meetingPointDirectionsEnabled}'
+            // HOS-2579: the page hands the whole experience to
+            // `buildExperienceLocation`, which reads the four fields (its unit
+            // test covers each gate); here the builder must name all four.
+            const builder = readFileSync(
+                resolve(__dirname, '../../src/lib/listing-location/build-location-section.ts'),
+                'utf8'
             );
+            for (const field of [
+                'experience.meetingPointLat',
+                'experience.meetingPointLong',
+                'experience.meetingPointDirections',
+                'experience.meetingPointDirectionsEnabled === true'
+            ]) {
+                expect(builder).toContain(field);
+            }
         });
 
         it('still runs no entitlement machinery of its own (HOS-1049)', () => {
@@ -209,7 +220,8 @@ describe('experiencias/[slug].astro', () => {
 
     describe('FAQs', () => {
         it('prefers inline entity FAQs over standalone endpoint', () => {
-            expect(src).toContain('experience.faqs.length > 0');
+            // The precedence itself is unit-tested in test/lib/experience/experience-faqs.test.ts.
+            expect(src).toContain('inlineFaqs: experience.faqs');
         });
     });
 

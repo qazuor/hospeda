@@ -1,0 +1,64 @@
+---
+/**
+ * @file ListingLocationLine.astro
+ * @description Location line of the shared listing header (HOS-2579 §6.3):
+ * `LocationIcon` plus the destination name, as a link to the destination page
+ * when the builder resolved one, and as plain text otherwise. The builder never
+ * invents a URL, so `href: null` is the honest "slug unknown" case.
+ *
+ * Carries `wh-compact-demote`, so in the compact WaveHeader the line shrinks and
+ * sits inline after the title with a dot separator.
+ */
+import { LocationIcon } from '@repo/icons';
+import type { ListingHeaderLocation } from './listing-header.types';
+
+interface Props {
+    readonly location: ListingHeaderLocation;
+}
+
+const { location } = Astro.props;
+---
+
+<div class="listing-header__location wh-compact-demote">
+    <LocationIcon size={16} weight="fill" aria-hidden="true" />
+    {location.href ? (
+        <a href={location.href} class="listing-header__location-link">{location.name}</a>
+    ) : (
+        <span class="listing-header__location-text">{location.name}</span>
+    )}
+</div>
+
+<style>
+    .listing-header__location {
+        grid-area: location;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+        transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .listing-header__location-link {
+        color: var(--brand-primary-link);
+        text-decoration: none;
+        overflow-wrap: anywhere;
+    }
+
+    .listing-header__location-link:hover {
+        text-decoration: underline;
+    }
+
+    .listing-header__location-text {
+        overflow-wrap: anywhere;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .listing-header__location {
+            transition: none;
+        }
+    }
+</style>

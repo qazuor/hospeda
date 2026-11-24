@@ -123,7 +123,7 @@ describe('ExperienceInfo.astro — keeps the promise its own JSDoc made (HOS-107
         );
     });
 
-    it('no longer claims to render contact info, which ExperienceContactBlock owns', () => {
+    it('no longer claims to render contact info, which ListingContactBlock owns', () => {
         // The docstring is the subject here, so this one assertion reads the
         // RAW file — the stripper would remove exactly what is under test.
         const raw = readFileSync(

@@ -21,10 +21,14 @@ import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
 import VenueJsonLd from '@/components/seo/VenueJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import ListingHeader from '@/components/listing/header/ListingHeader.astro';
+import { buildVenueHeader } from '@/lib/listing-header/build-listing-header';
+import { buildVenueContactBlock } from '@/lib/listing-contact/listing-contact-block';
+import { buildVenueLocation } from '@/lib/listing-location/build-location-section';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
-import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
 import VenueDescription from '@/components/venue/VenueDescription.astro';
+import VenueSummary from '@/components/venue/VenueSummary.astro';
 import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
 import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
@@ -32,9 +36,9 @@ import VenuePromotions from '@/components/venue/VenuePromotions.astro';
 import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
-import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
+import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
 import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
-import VenueAddress from '@/components/venue/VenueAddress.astro';
+import LocationSection from '@/components/listing/location/LocationSection.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
@@ -241,7 +245,7 @@ const descriptionText = renderPlain({ raw: venue.description });
 // `policies`; only an explicit `true` turns the CTA on.
 //
 // The CTA has no external `href` of its own — it is an in-page anchor to
-// `VenueContactBlock` (see `VenueEventsCta.astro`'s header for why:
+// the venue `ListingContactBlock` (see `VenueEventsCta.astro`'s header for why:
 // venue has no single public contact channel to pick, especially since
 // HOS-1076 found `socialNetworks.whatsapp` never carried real data and
 // removed it — HOS-1088 tracks the open question of a real phone/WhatsApp
@@ -249,7 +253,7 @@ const descriptionText = renderPlain({ raw: venue.description });
 // href-sanitization guard (HOS-592/F-02): there is nothing external to
 // sanitize.
 //
-// `hasVenueContact` is the SAME predicate `VenueContactBlock` uses to decide
+// `hasVenueContact` is the SAME predicate the venue `ListingContactBlock` uses to decide
 // whether it renders anything at all (`hasVenuePublicContact`, shared through
 // `@/lib/venue-contact` since HOS-2042 added the business channels). Without it, the CTA
 // could point at an anchor with nothing behind it, which is worse than no CTA
@@ -308,7 +312,7 @@ const jsonLdPriceRange = venue.priceRange ? priceRangeMap[venue.priceRange] ?? u
 // --- Body sections (HOS-1787 leaf 6.1) ---
 // The body renders the catalog's own order and only the sections it paints:
 // the block registry below is a lookup, never a comparison against a section
-// id. `price` lives in the header, `media` is the fixed gallery above, and
+// id. `price` lives in `VenueSummary`, `media` is the fixed gallery above, and
 // `translations` never renders publicly — see `venue-detail-sections.ts`.
 // Conditions are applied while building each list, so the template just paints.
 interface VenueDetailBlock {
@@ -319,6 +323,21 @@ interface VenueDetailBlock {
 const hasOpeningHours =
     venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
 const hasContactBlock = hasVenueContact;
+/** HOS-2579 §6.5: the street line, the exact pin and the counted map link; `null` without an address. */
+const venueLocation = buildVenueLocation({ venue, locale });
+
+/**
+ * HOS-2579 §6.4: the shared contact block. Its builder renders on the same
+ * `hasVenuePublicContact` predicate as `hasVenueContact`, so it is non-null
+ * exactly when `hasContactBlock` is true.
+ */
+const venueContactBlock = buildVenueContactBlock({
+    listingId: venue.id,
+    contactInfo: venue.contactInfo,
+    socialNetworks: venue.socialNetworks,
+    menuUrl: venue.menuUrl,
+    locale
+});
 
 const venueDetailSectionBlocks: Readonly<
     Record<VenueDetailBodySectionId, readonly VenueDetailBlock[]>
@@ -333,19 +352,7 @@ const venueDetailSectionBlocks: Readonly<
             }
         }
     ],
-    location: venue.location
-        ? [
-              {
-                  Component: VenueAddress,
-                  props: {
-                      location: venue.location,
-                      cityName: venue.destinationName,
-                      venueName: venue.name,
-                      locale
-                  }
-              }
-          ]
-        : [],
+    location: venueLocation ? [{ Component: LocationSection, props: { ...venueLocation } }] : [],
     openingHours: hasOpeningHours
         ? [
               {
@@ -371,19 +378,8 @@ const venueDetailSectionBlocks: Readonly<
         ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
     ],
     contact: [
-        ...(hasContactBlock
-            ? [
-                  {
-                      Component: VenueContactBlock,
-                      props: {
-                          contactInfo: venue.contactInfo,
-                          listingId: venue.id,
-                          menuUrl: venue.menuUrl,
-                          socialNetworks: venue.socialNetworks,
-                          locale
-                      }
-                  }
-              ]
+        ...(venueContactBlock
+            ? [{ Component: ListingContactBlock, props: { ...venueContactBlock } }]
             : []),
         // HOS-2256: the WhatsApp button. The component decides by itself whether
         // there is anything to show (the owner's choice rides the public payload;
@@ -447,6 +443,15 @@ const breadcrumbItems = [
     },
     { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
 ];
+
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
+const headerProps = buildVenueHeader({
+    venue,
+    locale,
+    shareUrl: `${siteOrigin}${Astro.url.pathname}`,
+    bookmarkCount,
+    hasMobileGalleryControls: galleryImages.length > 0
+});
 ---
 
 <DetailLayout
@@ -498,12 +503,7 @@ const breadcrumbItems = [
 
     <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
     <Fragment slot="page-header">
-        <VenueDetailHeader
-            venue={venue}
-            locale={locale}
-            bookmarkCount={bookmarkCount}
-            hasMobileGalleryControls={galleryImages.length > 0}
-        />
+        <ListingHeader {...headerProps} />
     </Fragment>
 
     <div class="venue-detail">
@@ -537,6 +537,17 @@ const breadcrumbItems = [
                 <ListingVideoSection videos={venue.videos} locale={locale} scope="venue" />
             </div>
         )}
+
+        <!-- Slot 2 «summary» (HOS-2579): the price range (moved out of the
+             header) and «Ver carta» / «Consultar». -->
+        <VenueSummary
+            listingId={venue.id}
+            locale={locale}
+            priceRange={venue.priceRange}
+            contactMode={contactMode}
+            panelId={contactPanelId}
+            fallbackHref={`#${VENUE_CONTACT_ANCHOR_ID}`}
+        />
 
         <!-- Body: every catalog section in catalog order (sub-spec 6 § «Ficha»).
              Each id resolves its blocks by lookup in the frontmatter registry;

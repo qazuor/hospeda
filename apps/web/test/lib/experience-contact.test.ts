@@ -1,7 +1,7 @@
 /**
  * @file experience-contact.test.ts
  * @description `hasPublicContactChannel` (HOS-1056) — the predicate that decides
- * both whether `ExperienceContactBlock` renders and whether the private-groups
+ * both whether the experience `ListingContactBlock` renders and whether the private-groups
  * CTA is a link or a plain sentence.
  *
  * The CTA is an ANCHOR into that block, so the two decisions must come from one
@@ -46,7 +46,7 @@ describe('hasPublicContactChannel', () => {
 
     it('rejects a website the safe-URL allow-list refuses', () => {
         // THE case the two sides could have disagreed on. `z.string().url()`
-        // accepts `javascript:`, and `ExperienceContactBlock` drops such a link
+        // accepts `javascript:`, and `buildExperienceContactBlock` drops such a link
         // entirely — so if this returned true for it, a listing whose only
         // channel was a javascript: URL would render no block and still get a
         // CTA anchored to it.

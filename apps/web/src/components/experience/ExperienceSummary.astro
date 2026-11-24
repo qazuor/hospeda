@@ -1,0 +1,137 @@
+---
+/**
+ * @file ExperienceSummary.astro
+ * @description Slot 2 («summary») of the experience detail page (HOS-2579
+ * §6.1.1): the price, the duration and «Consultar», right under the gallery.
+ *
+ * Price and duration used to live in `ExperienceHero`. The header is now one
+ * frame for the three verticals (`ListingHeader`), so they moved here, next to
+ * the action they argue for. They stay together on purpose (HOS-898): they are
+ * the two facts that decide whether an excursion fits somebody's day.
+ *
+ * - The price comes from `ExperiencePriceTag` («Consultar precio», never "$0",
+ *   HOS-1943).
+ * - The duration renders only when the owner declared one. It carries no
+ *   entitlement check: ficha data from the basic tier.
+ * - «Consultar» is `ListingSummaryActions`, the mobile bar's
+ *   `ListingContactActions` pinned to origin `summary`. It opens the channels panel and falls back to the
+ *   in-page contact block before hydration. Without a public channel there is
+ *   no button (HOS-363: never promise a channel that is not there).
+ *
+ * Public listing data only, so the cached page stays session-blind.
+ */
+import { ClockIcon } from '@repo/icons';
+import { ListingSummaryActions } from '@/components/listing/contact/ListingSummaryActions.client';
+import { formatDurationMinutes } from '@/lib/experience-duration';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import ExperiencePriceTag from './ExperiencePriceTag.astro';
+
+interface Props {
+    readonly listingId: string;
+    readonly locale: SupportedLocale;
+    /** Base price in centavos, `null` when on request (HOS-1943). */
+    readonly priceFrom: number | null;
+    readonly priceUnit: string | null;
+    readonly isPriceOnRequest: boolean;
+    /** Declared duration in minutes, `null` when none. */
+    readonly durationMinutes: number | null;
+    /** Whether the listing publishes a contact channel (the panel exists). */
+    readonly hasContactChannel: boolean;
+    readonly panelId: string;
+    /** In-page anchor of the contact block (no-JS / pre-hydration fallback). */
+    readonly fallbackHref: string;
+}
+
+const {
+    listingId,
+    locale,
+    priceFrom,
+    priceUnit,
+    isPriceOnRequest,
+    durationMinutes,
+    hasContactChannel,
+    panelId,
+    fallbackHref
+} = Astro.props;
+const { t } = createTranslations(locale);
+
+/**
+ * HOS-898: `null` when the owner declared no duration, which is also what the
+ * formatter returns for a zero or corrupt value, so the single presence check
+ * in the markup is the whole gate.
+ */
+const durationLabel = formatDurationMinutes({
+    totalMinutes: durationMinutes,
+    labels: {
+        day: t('experience.detail.duration.dayShort', 'd'),
+        hour: t('experience.detail.duration.hourShort', 'h'),
+        minute: t('experience.detail.duration.minuteShort', 'min')
+    },
+    locale
+});
+---
+
+<section
+    class="exp-summary"
+    aria-label={t('accommodations.detail.listingContact.summary.title')}
+>
+    <div class="exp-summary__facts">
+        <ExperiencePriceTag
+            priceFrom={priceFrom}
+            priceUnit={priceUnit}
+            isPriceOnRequest={isPriceOnRequest}
+            locale={locale}
+        />
+        {durationLabel && (
+            <span class="exp-summary__duration">
+                <ClockIcon size={14} aria-hidden="true" />
+                <span>{durationLabel}</span>
+            </span>
+        )}
+    </div>
+    {hasContactChannel && (
+        <ListingSummaryActions
+            client:idle
+            listingId={listingId}
+            vertical="experience"
+            locale={locale}
+            hasWhatsapp={false}
+            panelId={panelId}
+            primaryLabelKey="accommodations.detail.listingContact.bar.contact"
+            fallbackHref={fallbackHref}
+        />
+    )}
+</section>
+
+<style>
+    .exp-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3, 12px);
+        padding: var(--space-4, 16px);
+        background: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+    }
+
+    .exp-summary__facts {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .exp-summary__duration {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--core-foreground);
+        opacity: 0.85;
+    }
+</style>

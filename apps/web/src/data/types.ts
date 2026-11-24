@@ -1093,6 +1093,11 @@ export interface VenueCardData {
     readonly destinationId: string;
     /** Human-readable name of the destination (derived from API join). */
     readonly destinationName: string;
+    /**
+     * Slug of the destination (API join), used to link the header location line
+     * to `/{lang}/destinos/{slug}/` (HOS-2579). Absent when the join carried none.
+     */
+    readonly destinationSlug?: string | null;
     /** Price tier enum value (`'BUDGET'` | `'MID'` | `'HIGH'` | `'PREMIUM'`). Null when not set. */
     readonly priceRange: string | null;
     /** Average star rating (0–5). */
@@ -1486,6 +1491,11 @@ export interface ExperienceCardData {
     readonly destinationId: string;
     /** Human-readable name of the destination (derived from API join). */
     readonly destinationName: string;
+    /**
+     * Slug of the destination (API join), used to link the header location line
+     * to `/{lang}/destinos/{slug}/` (HOS-2579). Absent when the join carried none.
+     */
+    readonly destinationSlug?: string | null;
     /**
      * Base price in centavos (integer). Divide by 100 for display.
      * `null` when `isPriceOnRequest` is true (HOS-1943: no price is stored).

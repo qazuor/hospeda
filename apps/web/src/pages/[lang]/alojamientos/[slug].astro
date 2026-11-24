@@ -18,12 +18,15 @@ import { buildFaqJsonLdSections } from '@/lib/seo/faq-jsonld-sections';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import GalleryTapBridge from '@/components/gallery/GalleryTapBridge.astro';
 import { formatPhotoCredit } from '@/lib/photo-credit';
-import DetailHeader from '@/components/accommodation/DetailHeader.astro';
+import ListingHeader from '@/components/listing/header/ListingHeader.astro';
+import { buildAccommodationHeader } from '@/lib/listing-header/build-listing-header';
+import { buildAccommodationContactBlock } from '@/lib/listing-contact/listing-contact-block';
+import { buildAccommodationLocation } from '@/lib/listing-location/build-location-section';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import MobileBookingSummary from '@/components/accommodation/MobileBookingSummary.astro';
 import Description from '@/components/accommodation/Description.astro';
 import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
-import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
+import ListingContactBlock from '@/components/listing/contact/ListingContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
@@ -32,7 +35,7 @@ import ExternalReputation from '@/components/accommodation/ExternalReputation.as
 import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
 import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
-import LocationSection from '@/components/accommodation/LocationSection.astro';
+import LocationSection from '@/components/listing/location/LocationSection.astro';
 import WhatsNearbySection from '@/components/accommodation/WhatsNearbySection.astro';
 import WaveDivider from '@/components/shared/ui/WaveDivider.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
@@ -499,7 +502,7 @@ const lodgingGeo = buildLodgingGeo({
     approximateLocation: accommodation.approximateLocation
 });
 
-// HOS-585 P-4: the same number `AccommodationContactBlock` already renders as a
+// HOS-585 P-4: the same number the accommodation `ListingContactBlock` already renders as a
 // `tel:` link, so this publishes nothing the page does not.
 const lodgingTelephone = buildLodgingTelephone({ contactInfo: accommodation.contactInfo });
 
@@ -562,6 +565,26 @@ const sectionTabs = buildListingSectionTabs({
     }
 });
 
+/** HOS-2579 §6.5: slot 7, the approximate circle (SPEC-097). */
+const locationSection = buildAccommodationLocation({ accommodation, locale });
+
+/** HOS-2579 §6.4: the shared contact block, `null` when nothing is publishable (H-118). */
+const contactBlock = buildAccommodationContactBlock({
+    listingId: accommodation.id,
+    contactInfo: accommodation.contactInfo,
+    socialNetworks: accommodation.socialNetworks,
+    locale
+});
+
+// --- Header (HOS-2579): the shared frame, built from the detail data ---
+const headerProps = buildAccommodationHeader({
+    accommodation,
+    locale,
+    shareUrl: `${siteOrigin}${Astro.url.pathname}`,
+    bookmarkCount,
+    hasMobileGalleryControls: true
+});
+
 // --- FAQPage JSON-LD when FAQs exist (REQ-096-37 / T-067; shared helper since HOS-2579) ---
 const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSections({
     faqs: accommodation.faqs,
@@ -621,13 +644,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
     </div>
 
     <Fragment slot="page-header">
-        <DetailHeader
-            accommodation={accommodation}
-            lang={locale}
-            accommodationId={accommodation.id}
-            bookmarkCount={bookmarkCount}
-            hasMobileGalleryControls
-        />
+        <ListingHeader {...headerProps} />
     </Fragment>
 
     <!-- Main content -->
@@ -707,12 +724,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
              the host filled in via the editor's contact form, previously captured
              but never shown on the public page). The existing WhatsApp button
              (sidebar, ContactCard) is untouched — this block never carries that number. -->
-        <AccommodationContactBlock
-            listingId={accommodation.id}
-            contactInfo={accommodation.contactInfo}
-            socialNetworks={accommodation.socialNetworks}
-            locale={locale}
-        />
+        {contactBlock && <ListingContactBlock {...contactBlock} />}
 
         {hasAmenitiesSection && (
             <div id={LISTING_SECTION_IDS.amenities} class="acc-anchor acc-anchor--stack">
@@ -755,12 +767,7 @@ const { sections: faqSections, inLanguage: faqInLanguage } = buildFaqJsonLdSecti
         </div>
         )}
         <div id={LISTING_SECTION_IDS.location} class="acc-anchor acc-anchor--stack">
-        <LocationSection
-            destination={accommodation.destination}
-            approximateLocation={accommodation.approximateLocation}
-            accommodationName={accommodation.name}
-            lang={locale}
-        />
+        <LocationSection {...locationSection} />
         <WhatsNearbySection pointsOfInterest={nearbyPois} locale={locale} />
         </div>
     </div>

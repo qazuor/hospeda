@@ -68,17 +68,16 @@ const CONTACT_LINKS: ReadonlyArray<{ file: string; className: string }> = [
     }
 ];
 
-/** HOS-2533/HOS-2520: the three blocks render their channels through one shared component. */
-const CONTACT_BLOCK_WRAPPERS: readonly string[] = [
-    'accommodation/AccommodationContactBlock.astro',
-    'venue/VenueContactBlock.astro',
-    'experience/ExperienceContactBlock.astro'
-];
+/**
+ * HOS-2579: the three verticals build their channels in one module and render
+ * them through one shared component (`ListingContactBlock`).
+ */
+const CONTACT_BUILDERS = 'lib/listing-contact/listing-contact-block.ts';
 
 describe('label in name (WCAG 2.5.3): GradientButton contact channels', () => {
-    it('listing/contact/ListingContactChannels.astro: visible value is the label and the context rides in srHint', () => {
+    it('listing/contact/ListingContactBlock.astro: visible value is the label and the context rides in srHint', () => {
         // Arrange
-        const src = read('listing/contact/ListingContactChannels.astro');
+        const src = read('listing/contact/ListingContactBlock.astro');
 
         // Assert: no aria-label replaces the visible text, context is appended
         expect(src).toContain('<GradientButton');
@@ -90,14 +89,15 @@ describe('label in name (WCAG 2.5.3): GradientButton contact channels', () => {
         }
     });
 
-    for (const file of CONTACT_BLOCK_WRAPPERS) {
-        it(`${file}: every channel supplies its context as a srHint starting with a comma`, () => {
-            const src = read(file);
-            expect(src).toContain('<ListingContactChannels');
-            expect(src).toContain('srHint: `, ');
-            expect(src).not.toMatch(/aria-label(ledby)?=/);
-        });
-    }
+    it(`${CONTACT_BUILDERS}: every channel supplies its context as a srHint starting with a comma`, () => {
+        const src = readFileSync(resolve(__dirname, '../../src', CONTACT_BUILDERS), 'utf8');
+        const hints = src.match(/srHint: `[^`]*`/g) ?? [];
+        expect(hints.length).toBeGreaterThanOrEqual(10);
+        for (const hint of hints) {
+            expect(hint.startsWith('srHint: `, ')).toBe(true);
+        }
+        expect(src).not.toMatch(/aria-label(ledby)?=/);
+    });
 });
 
 describe('label in name (WCAG 2.5.3): contact links', () => {

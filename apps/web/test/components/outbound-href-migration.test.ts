@@ -75,19 +75,25 @@ const MIGRATED: readonly MigratedLink[] = [
         ]
     },
     {
-        file: 'components/experience/ExperienceInfo.astro',
-        renders: ['const href = resolveSafeExternalUrl(', 'href={href}'],
-        neverRenders: ['href={url}']
-    },
-    {
-        file: 'components/venue/VenueContactBlock.astro',
+        // HOS-2579 §6.4: the venue and experience social rows (the second one
+        // used to live in `ExperienceInfo.astro`), the venue menu link and the
+        // accommodation website/Facebook/Instagram are built in ONE module.
+        file: 'lib/listing-contact/listing-contact-block.ts',
         renders: [
+            'const href = resolveSafeExternalUrl(input.socialNetworks?.[key] ?? undefined)',
             'const menuHref = resolveSafeExternalUrl(menuUrl)',
-            'const href = resolveSafeExternalUrl(socialNetworks?.[key])',
-            'href={menuHref}',
+            'const websiteHref = resolveSafeExternalUrl(contactInfo?.website)',
+            'const facebookHref = resolveSafeExternalUrl(socialNetworks?.facebook)',
+            'const instagramHref = resolveSafeExternalUrl(socialNetworks?.instagram)',
+            "menuLink: { href: menuHref, label: t('venue.detail.menu', 'Ver menú') }",
             'return [{ href, ariaLabel: label'
         ],
-        neverRenders: ['href={menuUrl}', 'href={url}']
+        neverRenders: [
+            'href: menuUrl',
+            'href: url',
+            'href: contactInfo.website',
+            'href: socialNetworks.'
+        ]
     },
     {
         file: 'components/account/PartnerMentionsSection.astro',
