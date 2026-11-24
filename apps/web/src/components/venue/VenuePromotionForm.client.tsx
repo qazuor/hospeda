@@ -1,8 +1,8 @@
 import type { VenuePromotionListOutput } from '@repo/schemas';
 import { OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
 import type { Dispatch, FormEventHandler, RefObject, SetStateAction } from 'react';
+import { Button } from '@/components/account/ui/Button';
 import fieldStyles from '@/components/listing/editor/editor-fields.module.css';
-import { GradientButton } from '@/components/ui/GradientButtonReact';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { formatPromotionWindow } from '@/lib/venue/promotion-window';
@@ -274,21 +274,19 @@ export function VenuePromotionForm({
                 </small>
             </fieldset>
             <div className={styles.formActions}>
-                <GradientButton
-                    as="button"
+                <Button
                     type="submit"
-                    variant="accent"
-                    shape="rounded"
-                    label={t('venue.owner.editor.promotionsManager.actions.save')}
-                />
-                <GradientButton
-                    as="button"
+                    variant="primary"
+                >
+                    {t('venue.owner.editor.promotionsManager.actions.save')}
+                </Button>
+                <Button
                     type="button"
-                    variant="outline-primary"
-                    shape="rounded"
+                    variant="secondary"
                     onClick={onCancel}
-                    label={t('common.cancel', 'Cancelar')}
-                />
+                >
+                    {t('common.cancel', 'Cancelar')}
+                </Button>
             </div>
         </form>
     );
