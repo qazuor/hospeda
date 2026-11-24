@@ -32,12 +32,13 @@ src/templates/
 
 ## Shared Layout
 
-All templates use `EmailLayout` from **`@repo/email`** (HOS-2519). It is the single layout for every Hospeda email, auth mails included; there is no layout inside this package anymore. It provides:
+All templates use `EmailLayout` from **`@repo/email`** (HOS-2519). It is the single layout for every Hospeda email, auth mails included; there is no layout inside this package anymore. It has two variants (HOS-2565 PR-4):
 
-- **Header** .. White band with the hosted PNG logo (`alt="Hospeda"`), the "Turismo en el Litoral" tagline and a brand accent bar. Skipped in the text/plain part
-- **Content area** .. Padded 600px card, fluid down to 320px
-- **Footer** .. "Hospeda - Turismo en el Litoral", the platform description, a `hospeda.com.ar` link and the optional preferences link
-- **Email-client-safe** .. `<html lang="es">`, light color-scheme, inline styles with `emailPalette` hex colors, no flexbox/grid/CSS variables/SVG
+- **`variant="user"`** (default) .. The owner-approved design: wave header with the live "hospeda" wordmark and the "Descubrí el Litoral" tagline, a section bar plus the declared illustration above the body, and the rich footer (help, FAQ, channels, trust strip, social, small print with "Elegí qué correos recibís" and the D16 account link). Supports dark mode through one media block
+- **`variant="staff"`** .. The HOS-2519 layout, frozen. The 13 staff templates (admin, contact/feedback, AI cost alert, billing ops, `listing-fix-reported`) pass it
+- **Email-client-safe** .. `<html lang="es">`, inline styles with `emailPalette` hex colors, no flexbox/grid/CSS variables/SVG
+
+Per-send layout data is declared in the catalog, not in templates: `src/catalog/layout-declarations.ts` maps each domain (and, when it does not fit, each key) to an illustration and 3-4 help article ids. The transport and the previewer pass it through `renderEmailBodies({ layout })`. `SendEmailInput.recipientVerticals` picks the D16 account link; without it the footer says "Gestioná tu cuenta".
 
 ```tsx
 import { EmailLayout } from '@repo/email';
@@ -62,9 +63,12 @@ Full reference: [`packages/email/CLAUDE.md`](../../../email/CLAUDE.md).
 |------|------|---------|-------------|
 | `previewText` | `string` | Optional | Preview text shown in email client inbox (every template in this package sets it) |
 | `children` | `ReactNode` | Required | Main email content |
-| `footerLink` | `'preferences' \| 'none'` | `'none'` | `'preferences'` links to `https://hospeda.com.ar/es/mi-cuenta/preferencias/` |
+| `variant` | `'user' \| 'staff'` | `'user'` | Staff mails pass `'staff'` |
+| `footerLink` | `'preferences' \| 'none'` | `'preferences'` (user), `'none'` (staff) | User `'none'` hides the preferences and account links |
 
-Use `footerLink="preferences"` only when the recipient has an account AND the web preferences page actually controls that email. No template qualifies today: the page writes `settings.notifications.allowEmails`, which `PreferenceService` does not read, so REMINDER opt-outs are not driven by it (HOS-2519 OQ-2). The 13 REMINDER templates (trial ending, trial win-back, renewal reminder) and the anonymous-guest conversation token mails therefore set `footerLink="none"` explicitly. Never ship a `{{placeholder}}` href: nothing substitutes it.
+Readers who may have no account pass `footerLink="none"`: the 2 auth mails, the 5 anonymous conversation mails, the 3 newsletter mails, `alliance_claim_invite`, `partner-claim-notice` and `partner-application-rejected` (HOS-2565 §8.3, frozen by `email-catalog-layout.test.ts`). Every other user mail keeps the default. Never ship a `{{placeholder}}` href: nothing substitutes it.
+
+For a section title after the first, `Heading accent="teal" | "orange"` draws the section bar. `OptionCard` (`@repo/email`) is the "Opción 1/2" card; today only `plan_downgrade_limit_warning` uses it.
 
 ### Button (CTA) and Callout
 

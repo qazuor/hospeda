@@ -14,7 +14,7 @@ This file provides guidance for working with the Email package (`@repo/email`).
 - **`sendEmail`**: a provider call over the **Brevo** REST API (`POST /smtp/email`). There is no Resend anymore; "resend" in some file and class names elsewhere is legacy.
 - The two auth templates (`VerifyEmailTemplate`, `ResetPasswordTemplate`) and their subject constants.
 
-It depends only on `@repo/logger`, `@repo/design-tokens` (for `emailPalette`), `@repo/analytics` (the UTM vocabulary and slug helpers, bundled into the CJS output because that package is ESM-only) and `@react-email/*`. It must never depend on `@repo/notifications` or `@repo/db` (`@repo/notifications` depends on it).
+It depends only on `@repo/logger`, `@repo/design-tokens` (for `emailPalette` and `emailDarkPalette`), `@repo/analytics` and `@repo/config` (the UTM vocabulary, and the brand social profiles and contact data; both bundled into the CJS output because they are ESM-only), `@repo/help` (footer FAQ titles), `@repo/schemas` (the D16 account-link rule) and `@react-email/*`. It must never depend on `@repo/notifications` or `@repo/db` (`@repo/notifications` depends on it).
 
 ## Key Commands
 
@@ -38,7 +38,10 @@ packages/email/
 │   ├── send.ts                 # sendEmail(input) → { success, messageId?, error? } (never throws)
 │   ├── subjects.ts             # RESET_PASSWORD_EMAIL_SUBJECT, VERIFY_EMAIL_SUBJECT
 │   ├── templates/
-│   │   ├── email-layout.tsx    # EmailLayout + EMAIL_* URL constants
+│   │   ├── email-layout.tsx    # EmailLayout: dispatches on `variant` + EMAIL_* URL constants
+│   │   ├── staff-layout.tsx    # the HOS-2519 layout, frozen for the 13 staff mails
+│   │   ├── email-layout-context.ts # per-send layout data (illustration, help ids, verticals)
+│   │   ├── user-layout/        # the user variant: header, footer, styles, assets, help + account links
 │   │   ├── greeting.ts         # resolveGreeting (auth templates)
 │   │   ├── verify-email.tsx    # VerifyEmailTemplate
 │   │   └── reset-password.tsx  # ResetPasswordTemplate
@@ -76,9 +79,21 @@ export function MyEmail() {
 |---|---|---|---|
 | `previewText` | `string?` | none | Inbox preheader. Omitted: no `<Preview>` is rendered |
 | `children` | `ReactNode` | required | Email body |
-| `footerLink` | `'preferences' \| 'none'` | `'none'` | `'preferences'` adds "Administrar preferencias de notificaciones" linking to `EMAIL_PREFERENCES_URL` |
+| `variant` | `'user' \| 'staff'` | `'user'` | Who reads it (HOS-2565 D10). Staff templates pass `'staff'` |
+| `footerLink` | `'preferences' \| 'none'` | `'preferences'` (user), `'none'` (staff) | User: `'none'` hides the account sentence, "Elegí qué correos recibís" and the account link (readers without an account). Staff: `'preferences'` adds the old preferences link |
 
-What it renders (HOS-2519 §5.1):
+### The user variant (HOS-2565 PR-4, owner-approved 2026-11-23)
+
+- Header: the blue-to-teal wave PNG, the isotipo next to the live wordmark "hospeda" (bold, `brandStrong`), and the tagline "Descubrí el Litoral" as a teal PNG. All `data-skip-in-text`.
+- Intro row: a teal section bar above the first title and the illustration the mail declares (`payments`, `listings`, `account`, `plan`, `messages`, `alerts`; absent = none). Templates draw more bars through `SectionBar` or the notifications `Heading accent`.
+- Footer on a light blue band with a wave: "¿Necesitás ayuda?", "Preguntas frecuentes" (the declared help articles, titles from `@repo/help`, default set otherwise), "Nuestros canales", the trust strip, the logo with Instagram/Facebook/X (`BRAND_SOCIAL_PROFILES`), and the small print with "Elegí qué correos recibís" and the D16 account link ("Gestioná tus publicaciones" or "Gestioná tu cuenta", from `resolveEmailAccountLink` in `@repo/schemas`; never a branch on `VerticalEnum`, a test enforces it).
+- Per-send data (illustration, help ids, recipient verticals) does NOT come through props: the host passes `renderEmailBodies({ layout })`, which fills `EmailLayoutContext`. `@repo/notifications` builds it from the catalog declarations (`catalog/layout-declarations.ts`).
+- Dark mode: `color-scheme: light dark` metas and ONE `@media (prefers-color-scheme: dark)` block in the single `<style>` (`EMAIL_USER_STYLE_BLOCK`), with the mockup's own dark palette (`emailDarkPalette`, the Apple Mail look the owner picked, not Gmail's inversion). The wordmark turns white. No `u + .body` trick. Clients that strip `<style>` get the correct light mail.
+- Images: every PNG lives in `apps/web/public/email/user/` and is resolved with `resolveEmailAssetUrl({ path })`, so it follows the deployment origin like the isotipo.
+
+### The staff variant
+
+What it renders (HOS-2519 §5.1, frozen byte for byte by `email-layout-staff-snapshot.test.tsx` apart from `data-layout-variant="staff"`):
 
 - `<html lang="es" dir="ltr">` with `color-scheme: light` metas (limits dark-mode inversion).
 - A centered card, `width="100%"`, `max-width: 600px`, fluid down to 320px with no media query.
@@ -101,11 +116,11 @@ Only the drawing is an image: `apps/web/public/email/hospeda-isotipo@2x.png` (89
 
 The layout renders `resolveEmailIsotipoUrl()`, which follows the origin set by `configureEmailAssets({ siteUrl })` (HOS-2540). The host app calls it once at startup with its validated site URL (`apps/api/src/index.ts`, `HOSPEDA_SITE_URL`); the default is production, so an app that never configures it gets `EMAIL_ISOTIPO_URL` (`https://hospeda.com.ar/email/hospeda-isotipo@2x.png`, kept as the production default constant). `siteUrl` must be an absolute http(s) URL (`TypeError` otherwise); a trailing slash is stripped. Tests call `resetEmailAssets()` to restore the default. Only the isotipo follows it: the footer link and `EMAIL_PREFERENCES_URL` stay on production. If the asset changes, keep `EMAIL_ISOTIPO_WIDTH`/`EMAIL_ISOTIPO_HEIGHT` at the asset's aspect ratio (Outlook desktop honours the `height` attribute).
 
-No `prefers-color-scheme: dark` rule on purpose: the card, header and body copy are hard-coded light, so turning the wordmark white for Apple Mail/Outlook would put white text on a white header unless the whole layout and every template got a dark variant. The `color-scheme: light` metas stay.
+The staff variant keeps `color-scheme: light` and no dark block.
 
-### `footerLink="preferences"`: when it is allowed
+### `footerLink="none"`: who passes it
 
-Only when the recipient has an account AND the web preferences page (`/es/mi-cuenta/preferencias/`) really controls that email. Today no template qualifies: the page writes `settings.notifications.allowEmails`, while `PreferenceService` reads `emailEnabled` / `disabledCategories`, so REMINDER opt-outs are not driven by it (HOS-2519 OQ-2). Anonymous recipients (conversation token mails) never get it.
+HOS-2565 §8.3 made the preferences link the user default (owner decision, 2026-11-22; it replaces HOS-2519 OQ-2). Readers who may have no account pass `footerLink="none"`: the 2 auth mails, the 5 anonymous conversation mails, the 3 newsletter mails, `alliance_claim_invite`, `partner-claim-notice` and `partner-application-rejected`. `apps/api/test/services/email-preview/email-catalog-layout.test.ts` freezes that set.
 
 ## Rendering and sending
 
@@ -142,7 +157,7 @@ if (!result.success) {
 | `VerifyEmailTemplate` | `VERIFY_EMAIL_SUBJECT` | `name?`, `verificationUrl` | 24 hours |
 | `ResetPasswordTemplate` | `RESET_PASSWORD_EMAIL_SUBJECT` | `name?`, `resetUrl` | 1 hour |
 
-Both render inside `EmailLayout` with no preheader and `footerLink` `'none'` (transactional). Their copy is owner-approved: do not change it without sign-off. Used by `apps/api/src/lib/auth.ts`.
+Both render inside the user `EmailLayout` with no preheader and `footerLink="none"` (the reader has no account yet). Their copy is owner-approved: do not change it without sign-off. Used by `apps/api/src/lib/auth.ts`.
 
 ## Adding a template
 
@@ -154,7 +169,9 @@ Most templates belong in `@repo/notifications` (`src/templates/<domain>/`), not 
 
 ## Testing
 
-- `test/templates/email-layout.test.tsx`: layout structure, footer link, email-safe CSS, text part.
+- `test/templates/email-layout-user.test.tsx`: the user variant (header, illustration, dark mode, footer, account links, text part).
+- `test/templates/email-layout.test.tsx` + `email-layout-staff-snapshot.test.tsx`: the staff variant.
+- `test/templates/user-layout-parts.test.tsx`: assets on disk, help links, D16 link, `SectionBar`, `OptionCard`, the no-vertical-branch guard.
 - `test/templates/{verify-email,reset-password}.test.tsx`: copy and transactional signals.
 - `test/send.test.ts`, `test/render.test.tsx`: Brevo request shape and the HTML/text pairing (fetch is mocked).
 - Catalog-wide layout assertions live in `apps/api/test/services/email-preview/`.
