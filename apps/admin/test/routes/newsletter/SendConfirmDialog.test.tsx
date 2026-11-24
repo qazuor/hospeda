@@ -81,4 +81,29 @@ describe('SendConfirmDialog audience', () => {
             screen.getByText('admin-newsletter.campaigns.confirmSendSoftcapNote')
         ).toBeInTheDocument();
     });
+
+    it('shows an error message (not a perpetual ellipsis) when the estimate fails', () => {
+        mockUseAudience.mockReturnValue({ data: undefined, isError: true });
+        renderDialog();
+        expect(
+            screen.getByText('admin-newsletter.campaigns.confirmSendAudienceError')
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/confirmSendAudience_other/)).not.toBeInTheDocument();
+    });
+
+    it('renders labels through i18n keys instead of hardcoded Spanish', () => {
+        mockUseAudience.mockReturnValue({
+            data: { eligible: 1, softCapped: 0, totalCandidates: 1 }
+        });
+        renderDialog();
+        expect(
+            screen.getByText('admin-newsletter.campaigns.confirmSendSubjectLabel')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('admin-newsletter.campaigns.ignoreSoftCapHint')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('admin-newsletter.campaigns.confirmSendCancel')
+        ).toBeInTheDocument();
+    });
 });

@@ -65,7 +65,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
     // uses (language + content segmentation + frequency limit). Only fetched while
     // the dialog is open; follows the ignoreSoftCap toggle so the number matches
     // what the send would enqueue.
-    const { data: audience } = useCampaignAudienceCount({
+    const { data: audience, isError: audienceError } = useCampaignAudienceCount({
         id: campaign.id,
         ignoreSoftCap,
         enabled: open
@@ -78,7 +78,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
 
     const localeLabel =
         campaign.localeFilter === 'all'
-            ? 'Todos'
+            ? t('admin-newsletter.campaigns.confirmSendLocaleAll')
             : campaign.localeFilter === 'es'
               ? 'Español'
               : campaign.localeFilter === 'en'
@@ -101,7 +101,9 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
             }
 
             addToast({
-                message: `Campaña enviada. ${result.enqueued ?? 0} emails encolados.`,
+                message: t('admin-newsletter.campaigns.sendSuccessToast', {
+                    count: String(result.enqueued ?? 0)
+                }),
                 variant: 'success'
             });
 
@@ -113,10 +115,14 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
             });
         } catch (err) {
             const msg =
-                err instanceof Error ? err.message : 'Error desconocido al enviar la campaña.';
+                err instanceof Error
+                    ? err.message
+                    : t('admin-newsletter.campaigns.sendUnknownError');
 
             // 409 conflict — campaign no longer in draft
-            setInlineError(msg.includes('409') ? 'Esta campaña ya no se puede enviar.' : msg);
+            setInlineError(
+                msg.includes('409') ? t('admin-newsletter.campaigns.sendNoLongerSendable') : msg
+            );
         }
     }
 
@@ -140,22 +146,33 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                         <div className="space-y-3 pt-2">
                             {/* Campaign subject */}
                             <div className="rounded-md bg-muted/40 px-4 py-3">
-                                <p className="font-medium text-sm">Asunto</p>
+                                <p className="font-medium text-sm">
+                                    {t('admin-newsletter.campaigns.confirmSendSubjectLabel')}
+                                </p>
                                 <p className="mt-0.5 text-foreground text-sm">{campaign.subject}</p>
                             </div>
 
                             {/* Audience count */}
                             <p className="text-sm">
-                                {audienceCount === null
-                                    ? t('admin-newsletter.campaigns.confirmSendAudience_other', {
-                                          count: '…',
-                                          locale: localeLabel
-                                      })
-                                    : tPlural(
-                                          'admin-newsletter.campaigns.confirmSendAudience',
-                                          audienceCount,
-                                          { locale: localeLabel }
-                                      )}
+                                {audienceError ? (
+                                    <span
+                                        role="alert"
+                                        className="text-destructive"
+                                    >
+                                        {t('admin-newsletter.campaigns.confirmSendAudienceError')}
+                                    </span>
+                                ) : audienceCount === null ? (
+                                    t('admin-newsletter.campaigns.confirmSendAudience_other', {
+                                        count: '…',
+                                        locale: localeLabel
+                                    })
+                                ) : (
+                                    tPlural(
+                                        'admin-newsletter.campaigns.confirmSendAudience',
+                                        audienceCount,
+                                        { locale: localeLabel }
+                                    )
+                                )}
                             </p>
 
                             {/* Soft-cap notice */}
@@ -175,7 +192,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                                         {t('admin-newsletter.campaigns.ignoreSoftCap')}
                                     </p>
                                     <p className="mt-0.5 text-muted-foreground text-xs">
-                                        Enviar incluso a quienes recibieron un email recientemente.
+                                        {t('admin-newsletter.campaigns.ignoreSoftCapHint')}
                                     </p>
                                 </div>
                                 <Switch
@@ -189,8 +206,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                             {/* Warning when ignoreSoftCap is on */}
                             {ignoreSoftCap && (
                                 <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-foreground text-sm">
-                                    Todos los suscriptores elegibles recibirán esta campaña,
-                                    ignorando el límite de frecuencia de 7 días.
+                                    {t('admin-newsletter.campaigns.ignoreSoftCapWarning')}
                                 </div>
                             )}
 
@@ -214,7 +230,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                         onClick={() => handleOpenChange(false)}
                         disabled={sendMutation.isPending}
                     >
-                        Cancelar
+                        {t('admin-newsletter.campaigns.confirmSendCancel')}
                     </Button>
                     <Button
                         type="button"
